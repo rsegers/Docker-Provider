@@ -304,7 +304,7 @@ TEST_STATUS:
 
 test : TEST_STATUS $(SCXPAL_INTERMEDIATE_DIR) $(TARGET_DIR)/testrunner
 	@echo "========================= Performing container testrun execution"
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(OMI_ROOT)/output/lib; cd $(TARGET_DIR); ./testrunner
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(OMI_ROOT)/output/lib; cd $(TARGET_DIR); sudo ./testrunner
 
 #--------------------------------------------------------------------------------
 # Build the distribution kit
