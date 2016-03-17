@@ -105,10 +105,10 @@ protected:
 		char path[128];
 		snprintf(path, 128, "/tmp/docker_container_ids_%d.txt", getpid());
 		snprintf(command, 128, "docker ps -aq --no-trunc > %s", path);
-		CPPUNIT_ASSERT_MESSAGE(string(strerror(errno)), !system(command));
+		CPPUNIT_ASSERT_MESSAGE(string(SCXCoreLib::strerror(errno)), !system(command));
 
 		FILE* idFile = fopen(path, "r");
-		CPPUNIT_ASSERT_MESSAGE(string(strerror(errno)), idFile);
+		CPPUNIT_ASSERT_MESSAGE(string(SCXCoreLib::strerror(errno)), idFile);
 
 		wchar_t id[13];
 		set<wstring> allIds;
@@ -120,7 +120,7 @@ protected:
 		}
 
 		fclose(idFile);
-		CPPUNIT_ASSERT_MESSAGE(string(strerror(errno)), !remove(path));
+		CPPUNIT_ASSERT_MESSAGE(string(SCXCoreLib::strerror(errno)), !remove(path));
 
 		CPPUNIT_ASSERT_EQUAL(allIds.size(), context.Size());
 
@@ -156,10 +156,10 @@ protected:
 		char path[128];
 		snprintf(path, 128, "/tmp/docker_container_inventory_%d.txt", getpid());
 		snprintf(command, 256, "python %sContainerInventory.py > %s", TEST_SCRIPT_PATH, path);
-		CPPUNIT_ASSERT_MESSAGE(string(strerror(errno)), !system(command));
+		CPPUNIT_ASSERT_MESSAGE(string(SCXCoreLib::strerror(errno)), !system(command));
 
 		FILE* containerFile = fopen(path, "r");
-		CPPUNIT_ASSERT_MESSAGE(string(strerror(errno)), containerFile);
+		CPPUNIT_ASSERT_MESSAGE(string(SCXCoreLib::strerror(errno)), containerFile);
 
 		char buffer[1024];
 		vector<cJSON*> containersList;
@@ -170,7 +170,7 @@ protected:
 		}
 
 		fclose(containerFile);
-		CPPUNIT_ASSERT_MESSAGE(string(strerror(errno)), !remove(path));
+		CPPUNIT_ASSERT_MESSAGE(string(SCXCoreLib::strerror(errno)), !remove(path));
 
 		// Should have no more current containers than current + deleted containers
 		CPPUNIT_ASSERT(containersList.size() <= context.Size());
