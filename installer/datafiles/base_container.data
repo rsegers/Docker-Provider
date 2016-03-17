@@ -26,8 +26,6 @@ MAINTAINER:              'Microsoft Corporation'
 
 /etc/opt/microsoft/docker-cimprov/container.conf;				installer/conf/container.conf;                      644; root; root
 
-/var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt; installer/LastEventQueryTime.txt;					644; root; root
-
 %Links
 /opt/omi/lib/libcontainer.${{SHLIB_EXT}}; /opt/microsoft/docker-cimprov/lib/libcontainer.${{SHLIB_EXT}}; 644; root; root
 
@@ -71,6 +69,9 @@ WriteInstallInfo() {
 }
 WriteInstallInfo
 
+# Get the state file in place with proper permissions
+touch /var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt
+chmod 644 /var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt
 chown omsagent:omsagent /var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt
 
 mv /etc/opt/microsoft/docker-cimprov/container.conf /etc/opt/microsoft/omsagent/conf/omsagent.d/container.conf
