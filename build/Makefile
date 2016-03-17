@@ -29,22 +29,22 @@ PROVIDER_TEST_DIR := $(TEST_DIR)/providers
 PAL_INCLUDE_DIR := $(SCXPAL_DIR)/source/code/include
 PAL_TESTUTILS_DIR := $(SCXPAL_DIR)/test/code/testutils
 
-INTERMEDIATE_DIR=$(BASE_DIR)/intermediate/$(BUILD_CONFIGURATION)
+INTERMEDIATE_DIR := $(BASE_DIR)/intermediate/$(BUILD_CONFIGURATION)
 TARGET_DIR := $(BASE_DIR)/target/$(BUILD_CONFIGURATION)
-PROVIDER_LIBRARY := $(TARGET_DIR)/libcontainer.so
+PROVIDER_LIBRARY := $(INTERMEDIATE_DIR)/libcontainer.so
 
-INSTALLER_TMPDIR := $(TARGET_DIR)/installer_tmp
+INSTALLER_TMPDIR := $(INTERMEDIATE_DIR)/installer_tmp
 
 # Include files
 
-INCLUDE_DEFINES := $(TARGET_DIR)/defines.h
+INCLUDE_DEFINES := $(INTERMEDIATE_DIR)/defines.h
 
 # Compiler flags
 
 OMI_INCLUDE_FLAGS := -I$(OMI_ROOT)/output/include
-PROVIDER_INCLUDE_FLAGS := -I$(PAL_INCLUDE_DIR) -I$(TARGET_DIR)
+PROVIDER_INCLUDE_FLAGS := -I$(PAL_INCLUDE_DIR) -I$(INTERMEDIATE_DIR)
 
-PROVIDER_TEST_INCLUDE_FLAGS := -Wmissing-include-dirs -Wno-non-virtual-dtor -I$(SCXPAL_DIR)/source/code/include -I$(TARGET_DIR) -I$(SCXPAL_DIR)/test/ext/include -I$(OMI_ROOT)/output/include -I$(OMI_ROOT) -I$(OMI_ROOT)/common -I$(SCXPAL_DIR)/test/code/include $(PROVIDER_INCLUDE_FLAGS) -I$(PROVIDER_DIR)
+PROVIDER_TEST_INCLUDE_FLAGS := -Wmissing-include-dirs -Wno-non-virtual-dtor -I$(SCXPAL_DIR)/source/code/include -I$(INTERMEDIATE_DIR) -I$(SCXPAL_DIR)/test/ext/include -I$(OMI_ROOT)/output/include -I$(OMI_ROOT) -I$(OMI_ROOT)/common -I$(SCXPAL_DIR)/test/code/include $(PROVIDER_INCLUDE_FLAGS) -I$(PROVIDER_DIR)
 
 ifeq ($(ENABLE_DEBUG),1)
 PROV_DEBUG_FLAGS := -g
@@ -60,10 +60,12 @@ SHARED_FLAGS := -shared
 
 # Support for installbuilder
 
-STAGING_DIR := $(TARGET_DIR)/staging
+STAGING_DIR := $(INTERMEDIATE_DIR)/staging
 
 ifeq ($(ULINUX),1)
-  OUTPUT_PACKAGE_PREFIX=docker-cimprov-$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH)-$(CONTAINER_BUILDVERSION_BUILDNR).universal.$(PF_ARCH)
+  # For consistency, the architecture should be i686 (for x86) and x86_64 (for x64)
+  DOCKER_ARCH := $(shell echo $(PF_ARCH) | sed -e 's/x86$$/i686/' -e 's/x64$$/x86_64/')
+  OUTPUT_PACKAGE_PREFIX=docker-cimprov-$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH)-$(CONTAINER_BUILDVERSION_BUILDNR).universal.$(DOCKER_ARCH)
 else
   PF_DISTRO_LC := $(shell echo $(PF_DISTRO) | tr A-Z a-z)
   OUTPUT_PACKAGE_PREFIX=docker-cimprov-$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH)-$(CONTAINER_BUILDVERSION_BUILDNR).$(PF_DISTRO_LC).$(PF_MAJOR).$(PF_ARCH)
@@ -257,7 +259,7 @@ $(PROVIDER_LIBRARY): CFLAGS += $(PROVIDER_COMPILE_FLAGS)
 $(PROVIDER_LIBRARY): CXXFLAGS += $(PROVIDER_COMPILE_FLAGS)
 $(PROVIDER_LIBRARY): $(STATIC_PROVIDERLIB_OBJFILES) $(STATIC_PROVIDERLIB_LOGPOLICY) $(INCLUDE_DEFINES) $(PROVIDER_HEADERS)
 	$(MKPATH) $(INTERMEDIATE_DIR)
-	$(MKPATH) $(TARGET_DIR)
+	$(MKPATH) $(INTERMEDIATE_DIR)
 	g++ $(PROVIDER_COMPILE_FLAGS) $(SHARED_FLAGS) $(PROVIDER_INCLUDE_FLAGS) -o $@ $(STATIC_PROVIDERLIB_OBJFILES) $(LINK_LIBRARIES)
 
 #--------------------------------------------------------------------------------
@@ -288,12 +290,12 @@ STATIC_PROVIDER_PAL_UNITFILES = \
 
 STATIC_PROVIDER_TEST_OBJFILES = $(call src_to_obj,$(STATIC_PROVIDER_UNITFILES))
 
-$(TARGET_DIR)/testrunner: INCLUDES += $(PROVIDER_TEST_INCLUDE_FLAGS) -I$(PAL_INCLUDE_DIR) -I$(PAL_TESTUTILS_DIR) -I$(PROVIDER_DIR) -I$(SOURCE_DIR)
-$(TARGET_DIR)/testrunner: CFLAGS += $(PROVIDER_COMPILE_FLAGS)
-$(TARGET_DIR)/testrunner: CXXFLAGS += $(PROVIDER_COMPILE_FLAGS)
-$(TARGET_DIR)/testrunner : $(STATIC_PROVIDER_TEST_OBJFILES) $(STATIC_PROVIDERLIB_OBJFILES) $(INCLUDE_DEFINES) $(PROVIDER_HEADERS)
+$(INTERMEDIATE_DIR)/testrunner: INCLUDES += $(PROVIDER_TEST_INCLUDE_FLAGS) -I$(PAL_INCLUDE_DIR) -I$(PAL_TESTUTILS_DIR) -I$(PROVIDER_DIR) -I$(SOURCE_DIR)
+$(INTERMEDIATE_DIR)/testrunner: CFLAGS += $(PROVIDER_COMPILE_FLAGS)
+$(INTERMEDIATE_DIR)/testrunner: CXXFLAGS += $(PROVIDER_COMPILE_FLAGS)
+$(INTERMEDIATE_DIR)/testrunner : $(STATIC_PROVIDER_TEST_OBJFILES) $(STATIC_PROVIDERLIB_OBJFILES) $(INCLUDE_DEFINES) $(PROVIDER_HEADERS)
 	$(MKPATH) $(INTERMEDIATE_DIR)
-	$(MKPATH) $(TARGET_DIR)
+	$(MKPATH) $(INTERMEDIATE_DIR)
 	g++ $(PROVIDER_COMPILE_FLAGS) $(PROVIDER_TEST_INCLUDE_FLAGS) -o $@ $(STATIC_PROVIDER_PAL_UNITFILES) $(STATIC_PROVIDER_TEST_OBJFILES) $(STATIC_PROVIDERLIB_OBJFILES) $(LINK_LIBRARIES) $(PROVIDER_TEST_LINK_LIBRARIES)
 
 testrun : test
@@ -302,9 +304,9 @@ TEST_STATUS:
 	@echo "========================= Performing Building provider tests"
 	@echo \#define TEST_SCRIPT_PATH \"$(TEST_DIR)/scripts/\" > $(TEST_DIR)/providers/TestScriptPath.h
 
-test : TEST_STATUS $(SCXPAL_INTERMEDIATE_DIR) $(TARGET_DIR)/testrunner
+test : TEST_STATUS $(SCXPAL_INTERMEDIATE_DIR) $(INTERMEDIATE_DIR)/testrunner
 	@echo "========================= Performing container testrun execution"
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(OMI_ROOT)/output/lib; cd $(TARGET_DIR); sudo ./testrunner
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(OMI_ROOT)/output/lib; cd $(INTERMEDIATE_DIR); sudo ./testrunner
 
 #--------------------------------------------------------------------------------
 # Build the distribution kit
@@ -322,10 +324,10 @@ ifeq ($(ULINUX),1)
 	@echo "========================= Performing Building RPM and DPKG packages"
 	$(MKPATH) $(INSTALLER_TMPDIR)
 	sudo $(RMDIR) $(STAGING_DIR)
-	$(MKPATH) $(TARGET_DIR)
+	$(MKPATH) $(INTERMEDIATE_DIR)
 	python $(SCXPAL_DIR)/installer/InstallBuilder/installbuilder.py \
 		--BASE_DIR=$(BASE_DIR) \
-		--TARGET_DIR=$(TARGET_DIR) \
+		--TARGET_DIR=$(INTERMEDIATE_DIR) \
 		--INTERMEDIATE_DIR=$(INSTALLER_TMPDIR) \
 		--STAGING_DIR=$(STAGING_DIR) \
 		--BUILD_TYPE=$(BUILD_TYPE) \
@@ -334,18 +336,18 @@ ifeq ($(ULINUX),1)
 		--PFDISTRO=$(PF_DISTRO) \
 		--PFMAJOR=$(PF_MAJOR) \
 		--PFMINOR=$(PF_MINOR) \
-		--VERSION=1.0.0 \
-		--RELEASE=1 \
+		--VERSION=$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH) \
+		--RELEASE=$(CONTAINER_BUILDVERSION_BUILDNR) \
 		--CONTAINER_BUILD_LIBRARY=$(CONTAINERLIB_FILENAME) \
 		--OUTPUTFILE=$(OUTPUT_PACKAGE_PREFIX) \
 		--DATAFILE_PATH=$(BASE_DIR)/installer/datafiles \
 		base_container.data linux.data linux_rpm.data
 
 	sudo $(RMDIR) $(STAGING_DIR)
-	$(MKPATH) $(TARGET_DIR)
+	$(MKPATH) $(INTERMEDIATE_DIR)
 	python $(SCXPAL_DIR)/installer/InstallBuilder/installbuilder.py \
 		--BASE_DIR=$(BASE_DIR) \
-		--TARGET_DIR=$(TARGET_DIR) \
+		--TARGET_DIR=$(INTERMEDIATE_DIR) \
 		--INTERMEDIATE_DIR=$(INSTALLER_TMPDIR) \
 		--STAGING_DIR=$(STAGING_DIR) \
 		--BUILD_TYPE=$(BUILD_TYPE) \
@@ -354,8 +356,8 @@ ifeq ($(ULINUX),1)
 		--PFDISTRO=$(PF_DISTRO) \
 		--PFMAJOR=$(PF_MAJOR) \
 		--PFMINOR=$(PF_MINOR) \
-		--VERSION=1.0.0 \
-		--RELEASE=1 \
+		--VERSION=$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH) \
+		--RELEASE=$(CONTAINER_BUILDVERSION_BUILDNR) \
 		--CONTAINER_BUILD_LIBRARY=$(CONTAINERLIB_FILENAME) \
 		$(DPKG_LOCATION) \
 		--OUTPUTFILE=$(OUTPUT_PACKAGE_PREFIX) \
@@ -363,20 +365,24 @@ ifeq ($(ULINUX),1)
 		base_container.data linux.data linux_dpkg.data
 
 	# Strip the package extension from the package filename
-	sed -re 's/.rpm$$|.deb$$//' $(TARGET_DIR)/package_filename > $(TARGET_DIR)/package_file.tmp
+	sed -re 's/.rpm$$|.deb$$//' $(INTERMEDIATE_DIR)/package_filename > $(INTERMEDIATE_DIR)/package_file.tmp; mv $(INTERMEDIATE_DIR)/package_file.tmp $(INTERMEDIATE_DIR)/package_filename
 
 	# Build the tar file containing both .rpm and .deb packages
-	cd $(TARGET_DIR); tar cvf $(OUTPUT_PACKAGE_PREFIX).tar $(OUTPUT_PACKAGE_PREFIX).rpm $(OUTPUT_PACKAGE_PREFIX).deb
+	cd $(INTERMEDIATE_DIR); tar cvf $(OUTPUT_PACKAGE_PREFIX).tar $(OUTPUT_PACKAGE_PREFIX).rpm $(OUTPUT_PACKAGE_PREFIX).deb
 
-	../installer/bundle/create_bundle.sh $(PF)_$(PF_DISTRO) $(TARGET_DIR) $(OUTPUT_PACKAGE_PREFIX)
+	../installer/bundle/create_bundle.sh $(PF)_$(PF_DISTRO) $(INTERMEDIATE_DIR) $(OUTPUT_PACKAGE_PREFIX)
+	# Copy the shell bundle to the target directory
+	mkdir -p $(TARGET_DIR)
+	cd $(INTERMEDIATE_DIR); cp `cat $(INTERMEDIATE_DIR)/package_filename`.sh $(TARGET_DIR)
+
 else
 
 	@echo "========================= Performing Building RPM and DPKG packages"
 	sudo $(RMDIR) $(STAGING_DIR)
-	$(MKPATH) $(TARGET_DIR)
+	$(MKPATH) $(INTERMEDIATE_DIR)
 	python $(SCXPAL_DIR)/installer/InstallBuilder/installbuilder.py \
 		--BASE_DIR=$(BASE_DIR) \
-		--TARGET_DIR=$(TARGET_DIR) \
+		--TARGET_DIR=$(INTERMEDIATE_DIR) \
 		--INTERMEDIATE_DIR=$(INSTALLER_TMPDIR) \
 		--STAGING_DIR=$(STAGING_DIR) \
 		--BUILD_TYPE=$(BUILD_TYPE) \
@@ -385,11 +391,12 @@ else
 		--PFDISTRO=$(PF_DISTRO) \
 		--PFMAJOR=$(PF_MAJOR) \
 		--PFMINOR=$(PF_MINOR) \
-		--VERSION=1.0.0 \
-		--RELEASE=1 \
+		--VERSION=$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH) \
+		--RELEASE=$(CONTAINER_BUILDVERSION_BUILDNR) \
 		--CONTAINER_BUILD_LIBRARY=$(CONTAINERLIB_FILENAME) \
 		$(DPKG_LOCATION) \
 		--OUTPUTFILE=$(OUTPUT_PACKAGE_PREFIX) \
 		--DATAFILE_PATH=$(BASE_DIR)/installer/datafiles \
 		base_container.data linux.data linux_dpkg.data
+
 endif
