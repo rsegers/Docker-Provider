@@ -13,11 +13,14 @@ if ${{PERFORMING_UPGRADE_NOT}}; then
 fi
 
 echo
-echo "In order to view container logs in OMS, Docker needs to be configured with the correct log driver using the option:" 1>&2
-echo
+echo "In order to view container logs in OMS, Docker needs to be configured" 1>&2
+echo "with the correct log driver using the option:" 1>&2
+echo 1>&2
 echo "    --log-driver=fluentd --log-opt fluentd-address=localhost:<port>" 1>&2
-echo
-echo "where <port> is the port that is exposed in the config file (default: 25225). Specify this option either when starting the Docker daemon or when starting any container that you want to send logs to OMS." 1>&2
+echo 1>&2
+echo "where <port> is the port that is exposed in the config file (default:" 1>&2
+echo "25225). Specify this option either when starting the Docker daemon or" 1>&2
+echo "when starting any container that you want to send logs to OMS." 1>&2
 
 %Postuninstall_1000
 # Calling sequence for RPM pre/post scripts, during upgrade, is as follows:
@@ -31,20 +34,20 @@ echo "where <port> is the port that is exposed in the config file (default: 2522
 #
 # Thus, if we're an upgrade, skip all of this cleanup
 if ${{PERFORMING_UPGRADE_NOT}}; then 
-   # Remove linkage in case it exists
-   CONTAINER_BUILD_LIBRARY=${{CONTAINER_BUILD_LIBRARY}}
-   LIBRARY_DIR='/opt/microsoft/docker-cimprov/lib'
-   [ -e ${LIBRARY_DIR}/${CONTAINER_BUILD_LIBRARY} ] && rm ${LIBRARY_DIR}/${CONTAINER_BUILD_LIBRARY}
-   rmdir /opt/microsoft/docker-cimprov/lib 2> /dev/null
-   rmdir /opt/microsoft/docker-cimprov 2> /dev/null
-   rmdir /opt/microsoft 2> /dev/null
-   rmdir /opt 2> /dev/null
+    # Remove linkage in case it exists
+    CONTAINER_BUILD_LIBRARY=${{CONTAINER_BUILD_LIBRARY}}
+    LIBRARY_DIR='/opt/microsoft/docker-cimprov/lib'
+    [ -e ${LIBRARY_DIR}/${CONTAINER_BUILD_LIBRARY} ] && rm ${LIBRARY_DIR}/${CONTAINER_BUILD_LIBRARY}
+    rmdir /opt/microsoft/docker-cimprov/lib 2> /dev/null
+    rmdir /opt/microsoft/docker-cimprov 2> /dev/null
+    rmdir /opt/microsoft 2> /dev/null
+    rmdir /opt 2> /dev/null
 fi
 
 %Postuninstall_1100
 # If we're called for upgrade, don't do anything
 if ${{PERFORMING_UPGRADE_NOT}}; then
-	# Reload the OMI server
-	${{OMI_SERVICE}} reload
-	${{OMS_SERVICE}} reload
+    # Reload the OMI server
+    ${{OMI_SERVICE}} reload
+    ${{OMS_SERVICE}} reload
 fi
