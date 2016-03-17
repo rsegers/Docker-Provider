@@ -14,6 +14,13 @@ ifndef ENABLE_DEBUG
 $(error "ENABLE_DEBUG is not set.  Please re-run configure")
 endif
 
+# Include the version file
+include ../../docker.version
+
+ifndef CONTAINER_BUILDVERSION_STATUS
+$(error "Is Makefile.version missing?  Please re-run configure")
+endif
+
 SOURCE_DIR := $(BASE_DIR)/source/code
 TEST_DIR := $(BASE_DIR)/test/code
 
@@ -54,11 +61,6 @@ SHARED_FLAGS := -shared
 # Support for installbuilder
 
 STAGING_DIR := $(TARGET_DIR)/staging
-
-CONTAINER_BUILDVERSION_MAJOR := 1
-CONTAINER_BUILDVERSION_MINOR := 0
-CONTAINER_BUILDVERSION_PATCH := 0
-CONTAINER_BUILDVERSION_BUILDNR := 0
 
 ifeq ($(ULINUX),1)
   OUTPUT_PACKAGE_PREFIX=docker-cimprov-$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH)-$(CONTAINER_BUILDVERSION_BUILDNR).universal.$(PF_ARCH)

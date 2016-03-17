@@ -1,35 +1,5 @@
 #!/bin/bash
 
-#--------------------------------- START OF LICENSE ----------------------------
-#
-# MySQL cimprov ver. 1.0
-#
-# Copyright (c) Microsoft Corporation
-#
-# All rights reserved. 
-#
-# MIT License
-#
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the ""Software""), to deal
-# in the Software without restriction, including without limitation the rights to
-# use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-# of the Software, and to permit persons to whom the Software is furnished to do
-# so, subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-#
-#---------------------------------- END OF LICENSE -----------------------------
-
 scxomi_dir=`(cd ../../OMI/Unix; pwd -P)`
 scxpal_dir=`(cd ../../Pal; pwd -P)`
 
@@ -39,7 +9,6 @@ enable_purify_agent=""
 enable_purify_server=""
 enable_omi_tools=""
 enable_omi_tools_flag=0
-opensource_distro=0
 build_type=Release
 ULINUX=0
 NOULINIX=0
@@ -49,6 +18,13 @@ omi_configure_quals=""
 
 if [ ! -d "$scxomi_dir" ]; then
     echo "OMI directory ($scxomi_dir) does not exist"
+    exit 1
+fi
+
+# Do we have a version file from the super project? If not, trigger error
+
+if [ ! -f ../../docker.version ]; then
+    echo "Docker version file does not exist in superproject"
     exit 1
 fi
 
@@ -106,10 +82,6 @@ do
       enable_omi_tools_flag=1
     ;;
 
-    --enable-open-source)
-      opensource_distro=1
-    ;;
-
     *)
       echo "configure: invalid option '$opt'"
       echo "Try configure --help' for more information."
@@ -141,7 +113,6 @@ OPTIONS:
     --enable-purify-agent       Allow agent to be run with purify (memory leak detection)
     --enable-purify-server      Allow server to be run with purify (memory leak detection)
     --enable-omi-tools          Build to allow use of OMI tools (omischema and omireg)
-    --enable-open-source        Build for open source distribution
 
 EOF
     exit 0
@@ -150,27 +121,6 @@ fi
 omi_configure_quals="${enable_debug} ${enable_purify_agent} ${enable_purify_server} ${enable_omi_tools} ${omi_configure_quals}"
 pal_configure_quals="${enable_debug}"
 
-if [ "$ULINUX" -eq 1 -a "$opensource_distro" -eq 1 ]; then
-    echo "*** ULINUX not permitted for open source distributions; ULINUX disabled ***"
-    ULINUX=0
-fi
-
-if [ "$opensource_distro" -eq 1 ]; then
-    # We really don't want ULINUX, not even defaulted
-    NOULINUX=1
-fi
-
-# See if we're running on a SuSE 10 (universal) system; if so, assume ULINUX
-if [ "$NOULINUX" != "1" ]; then
-    if [ -e /etc/SuSE-release ]; then 
-        PF_MAJOR=`head -n 1 /etc/SuSE-release | sed 's/.* \([0-9][0-9]*\)[ \.].*/\1/'`
-        PF_MINOR=`(head -n 1 /etc/SuSE-release | sed 's/.* [0-9][0-9]*[\.]\([0-9][0-9]*\).*/\1/') | grep -v '[^0-9]' || echo '0'`
-        if [ "$PF_MAJOR" = "10" -a "$PF_MINOR" = "0" ]; then
-            ULINUX=1
-        fi
-    fi
-fi
-
 # Note: Most of this code came from the PAL configure file
 
 set_ulinux_pf() 
@@ -178,15 +128,6 @@ set_ulinux_pf()
     PF_MAJOR=1
     PF_MINOR=0
     PF_DISTRO=ULINUX
-    PF_DISTRO_ULINUX_D=`[ -e /usr/bin/dpkg ] && echo 1`
-    if [ -n "$PF_DISTRO_ULINUX_D" ]; then
-        PF_DISTOR_ULINUX_R=
-        BUILD_DPKG=1
-        PKG_SUFFIX=deb
-    else
-        PF_DISTRO_ULINUX_R=`[ -e /usr/bin/rpmbuild ] && echo 1`
-        BUILD_RPM=1
-    fi
 }
 
 uname=`uname`
@@ -226,19 +167,15 @@ case $uname in
         case `uname -m` in
             *64*)
                 PF_ARCH=x64
-                ARCH=x64
             ;;
             *86*)
                 PF_ARCH=x86
-                ARCH=ia32
             ;;
             *athlon*)
                 PF_ARCH=x86
-                ARCH=ia32
             ;;
             *)
                 PF_ARCH=UNKNOWN
-                ARCH=UNKNOWN
             ;;
         esac
 
@@ -267,7 +204,6 @@ PF=$PF
 PF_MAJOR=$PF_MAJOR
 PF_MINOR=$PF_MINOR
 PF_ARCH=$PF_ARCH
-ARCH=$ARCH
 PF_WIDTH=$PF_WIDTH
 PF_DISTRO=$PF_DISTRO
 ULINUX=$ULINUX
