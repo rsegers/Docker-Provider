@@ -2,7 +2,7 @@
 
 /intermediate/
 /target/
-build/config.mak
+/build/config.mak
 
 # Unit test files
 
