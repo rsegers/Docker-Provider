@@ -30,6 +30,7 @@ PAL_INCLUDE_DIR := $(SCXPAL_DIR)/source/code/include
 PAL_TESTUTILS_DIR := $(SCXPAL_DIR)/test/code/testutils
 
 INTERMEDIATE_DIR := $(BASE_DIR)/intermediate/$(BUILD_CONFIGURATION)
+INTERMEDIATE_TESTFILES := $(INTERMEDIATE_DIR)/testfiles
 TARGET_DIR := $(BASE_DIR)/target/$(BUILD_CONFIGURATION)
 PROVIDER_LIBRARY := $(INTERMEDIATE_DIR)/libcontainer.so
 
@@ -304,7 +305,10 @@ TEST_STATUS:
 
 test : TEST_STATUS $(SCXPAL_INTERMEDIATE_DIR) $(INTERMEDIATE_DIR)/testrunner
 	@echo "========================= Performing container testrun execution"
-	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(OMI_ROOT)/output/lib; cd $(INTERMEDIATE_DIR); sudo ./testrunner
+	$(MKPATH) $(INTERMEDIATE_TESTFILES)
+	$(COPY) $(TEST_DIR)/scripts/createEnv.sh $(TEST_DIR)/scripts/testrun_wrapper $(INTERMEDIATE_TESTFILES)
+	export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$(OMI_ROOT)/output/lib; cd $(INTERMEDIATE_TESTFILES); ./createEnv.sh
+	cd $(INTERMEDIATE_TESTFILES); ./testrun_wrapper $(INTERMEDIATE_DIR)
 
 #--------------------------------------------------------------------------------
 # Build the distribution kit
@@ -371,7 +375,7 @@ ifeq ($(ULINUX),1)
 	../installer/bundle/create_bundle.sh $(PF)_$(PF_DISTRO) $(INTERMEDIATE_DIR) $(OUTPUT_PACKAGE_PREFIX)
 	# Copy the shell bundle to the target directory
 	$(MKPATH) $(TARGET_DIR)
-	cd $(INTERMEDIATE_DIR); cp `cat $(INTERMEDIATE_DIR)/package_filename`.sh $(TARGET_DIR)
+	cd $(INTERMEDIATE_DIR); $(COPY) `cat $(INTERMEDIATE_DIR)/package_filename`.sh $(TARGET_DIR)
 
 else
 
