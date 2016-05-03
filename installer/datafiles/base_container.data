@@ -36,25 +36,27 @@ MAINTAINER:              'Microsoft Corporation'
 /var;                                                   755; root; root; sysdir
 /var/opt;                                               755; root; root; sysdir
 
-/etc/opt/microsoft;                                     755; root; root
+/etc/opt/microsoft;                                     755; root; root; sysdir
 /etc/opt/microsoft/docker-cimprov;                      755; root; root
 /etc/opt/microsoft/docker-cimprov/conf;                 755; root; root
 
-/etc/opt/omi;                                           755; root; root
-/etc/opt/omi/conf;                                      755; root; root
-/etc/opt/omi/conf/omiregister;                          755; root; root
+/etc/opt/omi;                                           755; root; root; sysdir
+/etc/opt/omi/conf;                                      755; root; root; sysdir
+/etc/opt/omi/conf/omiregister;                          755; root; root; sysdir
 /etc/opt/omi/conf/omiregister/root-cimv2;               755; root; root
 
-/opt/microsoft;                                         755; root; root
+/opt/microsoft;                                         755; root; root; sysdir
 /opt/microsoft/docker-cimprov;                          755; root; root
 /opt/microsoft/docker-cimprov/bin;                      755; root; root
 /opt/microsoft/docker-cimprov/lib;                      755; root; root
-/opt/microsoft/omsagent/plugin/;						755; root; root
 
-/opt/omi;                                               755; root; root
-/opt/omi/lib;                                           755; root; root
+/opt/microsoft/omsagent;                                755; root; root; sysdir
+/opt/microsoft/omsagent/plugin;                         755; root; root; sysdir
 
-/var/opt/microsoft;                                     755; root; root
+/opt/omi;                                               755; root; root; sysdir
+/opt/omi/lib;                                           755; root; root; sysdir
+
+/var/opt/microsoft;                                     755; root; root; sysdir
 /var/opt/microsoft/docker-cimprov;                      755; root; root
 /var/opt/microsoft/docker-cimprov/state;                755; root; root
 /var/opt/microsoft/docker-cimprov/state/ContainerInventory; 755; root; root
