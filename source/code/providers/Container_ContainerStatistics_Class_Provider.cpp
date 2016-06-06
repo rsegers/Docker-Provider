@@ -22,287 +22,287 @@ MI_BEGIN_NAMESPACE
 class StatsQuery
 {
 private:
-	///
-	/// Get network send/receive if available
-	///
-	/// \param[in] instance The instance to set data on
-	/// \param[in] stats JSON of stats returned by Docker
-	///
-	static void TrySetContainerNetworkData(Container_ContainerStatistics_Class& instance, cJSON* stats)
-	{
-		int totalRx = 0;
-		int totalTx = 0;
+    ///
+    /// Get network send/receive if available
+    ///
+    /// \param[in] instance The instance to set data on
+    /// \param[in] stats JSON of stats returned by Docker
+    ///
+    static void TrySetContainerNetworkData(Container_ContainerStatistics_Class& instance, cJSON* stats)
+    {
+        int totalRx = 0;
+        int totalTx = 0;
 		
-		if (stats)
-		{
-			cJSON* network = cJSON_GetObjectItem(stats, "networks");
+        if (stats)
+        {
+            cJSON* network = cJSON_GetObjectItem(stats, "networks");
 
-			if (network)
-			{
-				// Docker 1.9+
-				network = network->child;
+            if (network)
+            {
+                // Docker 1.9+
+                network = network->child;
 
-				// Sum the number of bytes from each NIC if there is more than one
-				while (network)
-				{
-					totalRx += cJSON_GetObjectItem(network, "rx_bytes")->valueint;
-					totalTx += cJSON_GetObjectItem(network, "tx_bytes")->valueint;
+                // Sum the number of bytes from each NIC if there is more than one
+                while (network)
+                {
+                    totalRx += cJSON_GetObjectItem(network, "rx_bytes")->valueint;
+                    totalTx += cJSON_GetObjectItem(network, "tx_bytes")->valueint;
 
-					network = network->next;
-				}
-			}
-			else
-			{
-				// Docker 1.8.x
-				network = cJSON_GetObjectItem(stats, "network");
-				totalRx = cJSON_GetObjectItem(network, "rx_bytes")->valueint;
-				totalTx = cJSON_GetObjectItem(network, "tx_bytes")->valueint;
-			}
-		}
-		else
-		{
-			syslog(LOG_WARNING, "Null stats JSON was passed to TrySetContainerNetworkData");
-		}
+                    network = network->next;
+                }
+            }
+            else
+            {
+                // Docker 1.8.x
+                network = cJSON_GetObjectItem(stats, "network");
+                totalRx = cJSON_GetObjectItem(network, "rx_bytes")->valueint;
+                totalTx = cJSON_GetObjectItem(network, "tx_bytes")->valueint;
+            }
+        }
+        else
+        {
+            syslog(LOG_WARNING, "Null stats JSON was passed to TrySetContainerNetworkData");
+        }
 
-		instance.NetRXBytes_value(totalRx);
-		instance.NetTXBytes_value(totalTx);
-	}
+        instance.NetRXBytes_value(totalRx);
+        instance.NetTXBytes_value(totalTx);
+    }
 
-	///
-	/// Get memory usage if available
-	///
-	/// \param[in] instance The instance to set data on
-	/// \param[in] stats JSON of stats returned by Docker
-	///
-	static void TrySetContainerMemoryData(Container_ContainerStatistics_Class& instance, cJSON* stats)
-	{
-		if (stats)
-		{
-			cJSON* memory_stats = cJSON_GetObjectItem(stats, "memory_stats");
-			instance.MemUsedMB_value((unsigned long long)cJSON_GetObjectItem(memory_stats, "usage")->valuedouble / (unsigned long long)NUMBYTESPERMB);
-		}
-		else
-		{
-			syslog(LOG_WARNING, "Null stats JSON was passed to TrySetContainerMemoryData");
-		}
-	}
+    ///
+    /// Get memory usage if available
+    ///
+    /// \param[in] instance The instance to set data on
+    /// \param[in] stats JSON of stats returned by Docker
+    ///
+    static void TrySetContainerMemoryData(Container_ContainerStatistics_Class& instance, cJSON* stats)
+    {
+        if (stats)
+        {
+            cJSON* memory_stats = cJSON_GetObjectItem(stats, "memory_stats");
+            instance.MemUsedMB_value((unsigned long long)cJSON_GetObjectItem(memory_stats, "usage")->valuedouble / (unsigned long long)NUMBYTESPERMB);
+        }
+        else
+        {
+            syslog(LOG_WARNING, "Null stats JSON was passed to TrySetContainerMemoryData");
+        }
+    }
 
-	///
-	/// Get disk read/write if available
-	///
-	/// \param[in] instance The instance to set data on
-	/// \param[in] stats JSON of stats returned by Docker
-	///
-	static void TrySetContainerDiskData(Container_ContainerStatistics_Class& instance, cJSON* stats)
-	{
-		instance.DiskBytesRead_value(0);
-		instance.DiskBytesWritten_value(0);
+    ///
+    /// Get disk read/write if available
+    ///
+    /// \param[in] instance The instance to set data on
+    /// \param[in] stats JSON of stats returned by Docker
+    ///
+    static void TrySetContainerDiskData(Container_ContainerStatistics_Class& instance, cJSON* stats)
+    {
+        instance.DiskBytesRead_value(0);
+        instance.DiskBytesWritten_value(0);
 
-		if (stats)
-		{
-			cJSON* blkio_stats = cJSON_GetObjectItem(stats, "blkio_stats");
+        if (stats)
+        {
+            cJSON* blkio_stats = cJSON_GetObjectItem(stats, "blkio_stats");
 
-			if (blkio_stats)
-			{
-				cJSON* values = cJSON_GetObjectItem(blkio_stats, "io_service_bytes_recursive");
+            if (blkio_stats)
+            {
+                cJSON* values = cJSON_GetObjectItem(blkio_stats, "io_service_bytes_recursive");
 
-				bool readFlag = false;
-				bool writeFlag = false;
+                bool readFlag = false;
+                bool writeFlag = false;
 
-				for (int i = 0; values && !readFlag && !writeFlag && i < cJSON_GetArraySize(values); i++)
-				{
-					cJSON* entry = cJSON_GetArrayItem(values, i);
+                for (int i = 0; values && !readFlag && !writeFlag && i < cJSON_GetArraySize(values); i++)
+                {
+                    cJSON* entry = cJSON_GetArrayItem(values, i);
 
-					if (entry)
-					{
-						cJSON* op = cJSON_GetObjectItem(entry, "op");
-						cJSON* rawValue = cJSON_GetObjectItem(entry, "value");
+                    if (entry)
+                    {
+                        cJSON* op = cJSON_GetObjectItem(entry, "op");
+                        cJSON* rawValue = cJSON_GetObjectItem(entry, "value");
 
-						if (op && rawValue)
-						{
-							if (!strcmp(op->valuestring, "Read"))
-							{
-								instance.DiskBytesRead_value(rawValue->valueint / NUMBYTESPERMB);
-								readFlag = true;
-							}
-							else if (!strcmp(op->valuestring, "Write"))
-							{
-								instance.DiskBytesWritten_value(rawValue->valueint / NUMBYTESPERMB);
-								writeFlag = true;
-							}
-						}
-					}
-				}
-			}
-		}
-		else
-		{
-			syslog(LOG_WARNING, "Null stats JSON was passed to TrySetContainerDiskData");
-		}
-	}
+                        if (op && rawValue)
+                        {
+                            if (!strcmp(op->valuestring, "Read"))
+                            {
+                                instance.DiskBytesRead_value(rawValue->valueint / NUMBYTESPERMB);
+                                readFlag = true;
+                            }
+                            else if (!strcmp(op->valuestring, "Write"))
+                            {
+                                instance.DiskBytesWritten_value(rawValue->valueint / NUMBYTESPERMB);
+                                writeFlag = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            syslog(LOG_WARNING, "Null stats JSON was passed to TrySetContainerDiskData");
+        }
+    }
 
-	///
-	/// Get CPU metrics if available
-	///
-	/// \param[in] stats JSON of stats returned by Docker
-	///
-	static map<string, unsigned long long> PreliminarySetContainerCpuData(cJSON* stats)
-	{
-		map<string, unsigned long long> result;
+    ///
+    /// Get CPU metrics if available
+    ///
+    /// \param[in] stats JSON of stats returned by Docker
+    ///
+    static map<string, unsigned long long> PreliminarySetContainerCpuData(cJSON* stats)
+    {
+        map<string, unsigned long long> result;
 
-		result["container"] = 0;
-		result["system"] = 0;
+        result["container"] = 0;
+        result["system"] = 0;
 
-		if (stats)
-		{
-			cJSON* cpu_stats = cJSON_GetObjectItem(stats, "cpu_stats");
+        if (stats)
+        {
+            cJSON* cpu_stats = cJSON_GetObjectItem(stats, "cpu_stats");
 
-			if (cpu_stats)
-			{
-				cJSON* cpu_usage = cJSON_GetObjectItem(cpu_stats, "cpu_usage");
+            if (cpu_stats)
+            {
+                cJSON* cpu_usage = cJSON_GetObjectItem(cpu_stats, "cpu_usage");
 
-				if (cpu_usage)
-				{
-					result["container"] = (unsigned long long)cJSON_GetObjectItem(cpu_usage, "total_usage")->valuedouble;
-					result["system"] = (unsigned long long)cJSON_GetObjectItem(cpu_stats, "system_cpu_usage")->valuedouble;
-				}
-			}
-		}
-		else
-		{
-			syslog(LOG_WARNING, "Null stats JSON was passed to PreliminarySetContainerCpuData");
-		}
+                if (cpu_usage)
+                {
+                    result["container"] = (unsigned long long)cJSON_GetObjectItem(cpu_usage, "total_usage")->valuedouble;
+                    result["system"] = (unsigned long long)cJSON_GetObjectItem(cpu_stats, "system_cpu_usage")->valuedouble;
+                }
+            }
+        }
+        else
+        {
+            syslog(LOG_WARNING, "Null stats JSON was passed to PreliminarySetContainerCpuData");
+        }
 
-		return result;
-	}
+        return result;
+    }
 
-	///
-	/// Get CPU metrics if available
-	///
-	/// \param[in] instance The instance to set data on
-	/// \param[in] stats JSON of stats returned by Docker
-	///
-	static void TrySetContainerCpuData(Container_ContainerStatistics_Class& instance, cJSON* stats, map<string, unsigned long long> previousStats)
-	{
-		instance.CPUTotal_value(0);
-		instance.CPUTotalPct_value(0);
+    ///
+    /// Get CPU metrics if available
+    ///
+    /// \param[in] instance The instance to set data on
+    /// \param[in] stats JSON of stats returned by Docker
+    ///
+    static void TrySetContainerCpuData(Container_ContainerStatistics_Class& instance, cJSON* stats, map<string, unsigned long long> previousStats)
+    {
+        instance.CPUTotal_value(0);
+        instance.CPUTotalPct_value(0);
 
-		if (stats)
-		{
-			cJSON* cpu_stats = cJSON_GetObjectItem(stats, "cpu_stats");
+        if (stats)
+        {
+            cJSON* cpu_stats = cJSON_GetObjectItem(stats, "cpu_stats");
 
-			if (cpu_stats)
-			{
-				cJSON* cpu_usage = cJSON_GetObjectItem(cpu_stats, "cpu_usage");
+            if (cpu_stats)
+            {
+                cJSON* cpu_usage = cJSON_GetObjectItem(cpu_stats, "cpu_usage");
 
-				if (cpu_usage)
-				{
-					unsigned long long containerUsage = (unsigned long long)cJSON_GetObjectItem(cpu_usage, "total_usage")->valuedouble;
-					unsigned long long systemTotalUsage = (unsigned long long)cJSON_GetObjectItem(cpu_stats, "system_cpu_usage")->valuedouble;
+                if (cpu_usage)
+                {
+                    unsigned long long containerUsage = (unsigned long long)cJSON_GetObjectItem(cpu_usage, "total_usage")->valuedouble;
+                    unsigned long long systemTotalUsage = (unsigned long long)cJSON_GetObjectItem(cpu_stats, "system_cpu_usage")->valuedouble;
 
-					instance.CPUTotal_value((unsigned long)(containerUsage / (unsigned long long)1000000000));
+                    instance.CPUTotal_value((unsigned long)(containerUsage / (unsigned long long)1000000000));
 
-					if (systemTotalUsage - previousStats["system"])
-					{
-						instance.CPUTotalPct_value((unsigned short)((containerUsage - previousStats["container"]) * 100 / (systemTotalUsage - previousStats["system"])));
-					}
-				}
-			}
-		}
-	}
+                    if (systemTotalUsage - previousStats["system"])
+                    {
+                        instance.CPUTotalPct_value((unsigned short)((containerUsage - previousStats["container"]) * 100 / (systemTotalUsage - previousStats["system"])));
+                    }
+                }
+            }
+        }
+    }
 
 public:
-	///
-	/// Get perf information about all running containers on the host
-	///
-	/// \returns Vector containing objects representing each container
-	///
-	static vector<Container_ContainerStatistics_Class> QueryAll()
-	{
-		openlog("Container_ContainerStatistics", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+    ///
+    /// Get perf information about all running containers on the host
+    ///
+    /// \returns Vector containing objects representing each container
+    ///
+    static vector<Container_ContainerStatistics_Class> QueryAll()
+    {
+        openlog("Container_ContainerStatistics", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-		vector<Container_ContainerStatistics_Class> result;
+        vector<Container_ContainerStatistics_Class> result;
 
-		// Request running containers
-		vector<string> request(1, DockerRestHelper::restDockerPsRunning());
-		vector<cJSON*> response = getResponse(request);
+        // Request running containers
+        vector<string> request(1, DockerRestHelper::restDockerPsRunning());
+        vector<cJSON*> response = getResponse(request);
 
-		// See http://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#list-containers for example output
-		if (!response.empty() && response[0])
-		{
-			vector<map<string, unsigned long long> > previousStatsList;
+        // See http://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#list-containers for example output
+        if (!response.empty() && response[0])
+        {
+            vector<map<string, unsigned long long> > previousStatsList;
 
-			for (int i = 0; i < cJSON_GetArraySize(response[0]); i++)
-			{
-				cJSON* entry = cJSON_GetArrayItem(response[0], i);
+            for (int i = 0; i < cJSON_GetArraySize(response[0]); i++)
+            {
+                cJSON* entry = cJSON_GetArrayItem(response[0], i);
 
-				if (entry)
-				{
-					// New perf entry
-					Container_ContainerStatistics_Class instance;
+                if (entry)
+                {
+                    // New perf entry
+                    Container_ContainerStatistics_Class instance;
 
-					// Set container ID
-					char* id = cJSON_GetObjectItem(entry, "Id")->valuestring;
-					instance.InstanceID_value(id);
+                    // Set container ID
+                    char* id = cJSON_GetObjectItem(entry, "Id")->valuestring;
+                    instance.InstanceID_value(id);
 
-					// Set container name
-					cJSON* names = cJSON_GetObjectItem(entry, "Names");
+                    // Set container name
+                    cJSON* names = cJSON_GetObjectItem(entry, "Names");
 
-					if (cJSON_GetArraySize(names))
-					{
-						instance.ElementName_value(cJSON_GetArrayItem(names, 0)->valuestring + 1);
-					}
-					else
-					{
-						syslog(LOG_WARNING, "Attempt in QueryAll to get name of container %s failed", id);
-					}
+                    if (cJSON_GetArraySize(names))
+                    {
+                        instance.ElementName_value(cJSON_GetArrayItem(names, 0)->valuestring + 1);
+                    }
+                    else
+                    {
+                        syslog(LOG_WARNING, "Attempt in QueryAll to get name of container %s failed", id);
+                    }
 
-					// Request container stats
-					vector<string> subRequest(1, DockerRestHelper::restDockerStats(string(id)));
-					vector<cJSON*> subResponse = getResponse(subRequest);
+                    // Request container stats
+                    vector<string> subRequest(1, DockerRestHelper::restDockerStats(string(id)));
+                    vector<cJSON*> subResponse = getResponse(subRequest);
 
-					// See http://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#get-container-stats-based-on-resource-usage for example output
-					if (!subResponse.empty() && subResponse[0])
-					{
-						TrySetContainerNetworkData(instance, subResponse[0]);
-						TrySetContainerMemoryData(instance, subResponse[0]);
-						TrySetContainerDiskData(instance, subResponse[0]);
-						previousStatsList.push_back(PreliminarySetContainerCpuData(subResponse[0]));
+                    // See http://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#get-container-stats-based-on-resource-usage for example output
+                    if (!subResponse.empty() && subResponse[0])
+                    {
+                        TrySetContainerNetworkData(instance, subResponse[0]);
+                        TrySetContainerMemoryData(instance, subResponse[0]);
+                        TrySetContainerDiskData(instance, subResponse[0]);
+                        previousStatsList.push_back(PreliminarySetContainerCpuData(subResponse[0]));
 
-						// Clean up object
-						cJSON_Delete(subResponse[0]);
-					}
+                        // Clean up object
+                        cJSON_Delete(subResponse[0]);
+                    }
 
-					result.push_back(instance);
-				}
-			}
+                    result.push_back(instance);
+                }
+            }
 
-			// Wait 1 second and query CPU time again to get % CPU usage
-			sleep(1);
+            // Wait 1 second and query CPU time again to get % CPU usage
+            sleep(1);
 
-			for (unsigned i = 0; i < result.size(); i++)
-			{
-				// Request container stats
-				vector<string> subRequest(1, DockerRestHelper::restDockerStats(string(result[i].InstanceID_value().Str())));
-				vector<cJSON*> subResponse = getResponse(subRequest);
+            for (unsigned i = 0; i < result.size(); i++)
+            {
+                // Request container stats
+                vector<string> subRequest(1, DockerRestHelper::restDockerStats(string(result[i].InstanceID_value().Str())));
+                vector<cJSON*> subResponse = getResponse(subRequest);
 
-				// See http://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#get-container-stats-based-on-resource-usage for example output
-				if (!subResponse.empty() && subResponse[0])
-				{
-					TrySetContainerCpuData(result[i], subResponse[0], previousStatsList[i]);
+                // See http://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#get-container-stats-based-on-resource-usage for example output
+                if (!subResponse.empty() && subResponse[0])
+                {
+                    TrySetContainerCpuData(result[i], subResponse[0], previousStatsList[i]);
 
-					// Clean up object
-					cJSON_Delete(subResponse[0]);
-				}
-			}
+                    // Clean up object
+                    cJSON_Delete(subResponse[0]);
+                }
+            }
 
-			// Clean up object
-			cJSON_Delete(response[0]);
-		}
+            // Clean up object
+            cJSON_Delete(response[0]);
+        }
 
-		closelog();
-		return result;
-	}
+        closelog();
+        return result;
+    }
 };
 
 #ifdef _MSC_VER
@@ -315,44 +315,44 @@ Container_ContainerStatistics_Class_Provider::~Container_ContainerStatistics_Cla
 
 void Container_ContainerStatistics_Class_Provider::Load(Context& context)
 {
-	context.Post(MI_RESULT_OK);
+    context.Post(MI_RESULT_OK);
 }
 
 void Container_ContainerStatistics_Class_Provider::Unload(Context& context)
 {
-	context.Post(MI_RESULT_OK);
+    context.Post(MI_RESULT_OK);
 }
 
 void Container_ContainerStatistics_Class_Provider::EnumerateInstances(Context& context, const String& nameSpace, const PropertySet& propertySet, bool keysOnly, const MI_Filter* filter)
 {
-	vector<Container_ContainerStatistics_Class> queryResult = StatsQuery::QueryAll();
+    vector<Container_ContainerStatistics_Class> queryResult = StatsQuery::QueryAll();
 
-	for (unsigned i = 0; i < queryResult.size(); i++)
-	{
-		context.Post(queryResult[i]);
-	}
+    for (unsigned i = 0; i < queryResult.size(); i++)
+    {
+        context.Post(queryResult[i]);
+    }
 
-	context.Post(MI_RESULT_OK);
+    context.Post(MI_RESULT_OK);
 }
 
 void Container_ContainerStatistics_Class_Provider::GetInstance(Context& context, const String& nameSpace, const Container_ContainerStatistics_Class& instanceName, const PropertySet& propertySet)
 {
-	context.Post(MI_RESULT_NOT_SUPPORTED);
+    context.Post(MI_RESULT_NOT_SUPPORTED);
 }
 
 void Container_ContainerStatistics_Class_Provider::CreateInstance(Context& context, const String& nameSpace, const Container_ContainerStatistics_Class& newInstance)
 {
-	context.Post(MI_RESULT_NOT_SUPPORTED);
+    context.Post(MI_RESULT_NOT_SUPPORTED);
 }
 
 void Container_ContainerStatistics_Class_Provider::ModifyInstance(Context& context, const String& nameSpace, const Container_ContainerStatistics_Class& modifiedInstance, const PropertySet& propertySet)
 {
-	context.Post(MI_RESULT_NOT_SUPPORTED);
+    context.Post(MI_RESULT_NOT_SUPPORTED);
 }
 
 void Container_ContainerStatistics_Class_Provider::DeleteInstance(Context& context, const String& nameSpace, const Container_ContainerStatistics_Class& instanceName)
 {
-	context.Post(MI_RESULT_NOT_SUPPORTED);
+    context.Post(MI_RESULT_NOT_SUPPORTED);
 }
 
 #ifdef _MSC_VER

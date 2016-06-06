@@ -16,15 +16,15 @@ Copyright (c) Microsoft Corporation. All rights reserved. See license.txt for li
 
 namespace SCXCoreLib
 {
-	namespace SCXProductDependencies
-	{
-		void WriteLogFileHeader(SCXHandle<std::wfstream> &stream, int logFileRunningNumber, SCXCalendarTime& procStartTimestamp){}
+    namespace SCXProductDependencies
+    {
+        void WriteLogFileHeader(SCXHandle<std::wfstream> &stream, int logFileRunningNumber, SCXCalendarTime& procStartTimestamp){}
 
-		void WrtieItemToLog(SCXHandle<std::wfstream> &stream, const SCXLogItem& item, const std::wstring& message)
-		{
-			(void)item;
+        void WrtieItemToLog(SCXHandle<std::wfstream> &stream, const SCXLogItem& item, const std::wstring& message)
+        {
+            (void)item;
 
-			(*stream) << message << std::endl;
-		}
-	}
+            (*stream) << message << std::endl;
+        }
+    }
 }

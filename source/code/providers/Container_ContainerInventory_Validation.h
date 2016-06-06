@@ -16,49 +16,49 @@ using std::set;
 class ContainerInventoryValidation
 {
 public:
-	///
-	/// Constructor
-	///
-	ContainerInventoryValidation(bool isImages = false)
-	{
-		openlog("ContainerInventoryValidation", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+    ///
+    /// Constructor
+    ///
+    ContainerInventoryValidation(bool isImages = false)
+    {
+        openlog("ContainerInventoryValidation", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-		struct dirent* dt;
-		DIR* dir = opendir(isImages ? IMAGEINVENTORYDIR : INVENTORYDIR);
+        struct dirent* dt;
+        DIR* dir = opendir(isImages ? IMAGEINVENTORYDIR : INVENTORYDIR);
 
-		// Get the container IDs stored previously
-		if (dir)
-		{
-			while (dt = readdir(dir))
-			{
-				if (dt->d_name && strlen(dt->d_name) == 64)
-				{
-					internalSet.insert(string(dt->d_name));
-				}
-			}
-		}
-		else
-		{
-			syslog(LOG_ERR, "opendir() returned null: %s", strerror(errno));
-		}
+        // Get the container IDs stored previously
+        if (dir)
+        {
+            while (dt = readdir(dir))
+            {
+                if (dt->d_name && strlen(dt->d_name) == 64)
+                {
+                    internalSet.insert(string(dt->d_name));
+                }
+            }
+        }
+        else
+        {
+            syslog(LOG_ERR, "opendir() returned null: %s", strerror(errno));
+        }
 
-		closelog();
-	}
+        closelog();
+    }
 
-	///
-	/// Find the container IDs that were deleted
-	///
-	/// \param[in] currentContainers Set of container IDs that are still there
-	/// \returns Set of container IDs that is in the previous set and not the current
-	///
-	set<string> GetDeletedContainers(set<string>& currentContainers)
-	{
-		set<string> result;
-		std::set_difference(internalSet.begin(), internalSet.end(), currentContainers.begin(), currentContainers.end(), std::inserter(result, result.end()));
+    ///
+    /// Find the container IDs that were deleted
+    ///
+    /// \param[in] currentContainers Set of container IDs that are still there
+    /// \returns Set of container IDs that is in the previous set and not the current
+    ///
+    set<string> GetDeletedContainers(set<string>& currentContainers)
+    {
+        set<string> result;
+        std::set_difference(internalSet.begin(), internalSet.end(), currentContainers.begin(), currentContainers.end(), std::inserter(result, result.end()));
 
-		return result;
-	}
+        return result;
+    }
 
 private:
-	set<string> internalSet;
+    set<string> internalSet;
 };

@@ -20,122 +20,122 @@ MI_BEGIN_NAMESPACE
 class ContainerInventorySerializer
 {
 public:
-	///
-	/// Serialize the object to file
-	///
-	static void SerializeObject(Container_ContainerInventory_Class& object)
-	{
-		openlog("ContainerInventorySerializer", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+    ///
+    /// Serialize the object to file
+    ///
+    static void SerializeObject(Container_ContainerInventory_Class& object)
+    {
+        openlog("ContainerInventorySerializer", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-		char filename[128];
-		const char* id = object.InstanceID_value().Str();
-		sprintf(filename, "%s%s", DIRECTORY, id);
+        char filename[128];
+        const char* id = object.InstanceID_value().Str();
+        sprintf(filename, "%s%s", DIRECTORY, id);
 
-		FILE* target = fopen(filename, "w");
+        FILE* target = fopen(filename, "w");
 
-		if (target)
-		{
-			cJSON* root = cJSON_CreateObject();
+        if (target)
+        {
+            cJSON* root = cJSON_CreateObject();
 
-			// Add all fields to JSON
-			cJSON_AddStringToObject(root, "ElementName", object.ElementName_value().Str());
-			cJSON_AddStringToObject(root, "CreatedTime", object.CreatedTime_value().Str());
-			cJSON_AddStringToObject(root, "State", object.State_value().Str());
-			cJSON_AddNumberToObject(root, "ExitCode", object.ExitCode_value());
-			cJSON_AddStringToObject(root, "StartedTime", object.StartedTime_value().Str());
-			cJSON_AddStringToObject(root, "FinishedTime", object.FinishedTime_value().Str());
-			cJSON_AddStringToObject(root, "ImageId", object.ImageId_value().Str());
-			cJSON_AddStringToObject(root, "Image", object.Image_value().Str());
-			cJSON_AddStringToObject(root, "Repository", object.Repository_value().Str());
-			cJSON_AddStringToObject(root, "ImageTag", object.ImageTag_value().Str());
-			cJSON_AddStringToObject(root, "ComposeGroup", object.ComposeGroup_value().Str());
-			cJSON_AddStringToObject(root, "ContainerHostname", object.ContainerHostname_value().Str());
-			cJSON_AddStringToObject(root, "Computer", object.Computer_value().Str());
-			cJSON_AddStringToObject(root, "Command", object.Command_value().Str());
-			cJSON_AddStringToObject(root, "EnvironmentVar", object.EnvironmentVar_value().Str());
-			cJSON_AddStringToObject(root, "Ports", object.Ports_value().Str());
-			cJSON_AddStringToObject(root, "Links", object.Links_value().Str());
+            // Add all fields to JSON
+            cJSON_AddStringToObject(root, "ElementName", object.ElementName_value().Str());
+            cJSON_AddStringToObject(root, "CreatedTime", object.CreatedTime_value().Str());
+            cJSON_AddStringToObject(root, "State", object.State_value().Str());
+            cJSON_AddNumberToObject(root, "ExitCode", object.ExitCode_value());
+            cJSON_AddStringToObject(root, "StartedTime", object.StartedTime_value().Str());
+            cJSON_AddStringToObject(root, "FinishedTime", object.FinishedTime_value().Str());
+            cJSON_AddStringToObject(root, "ImageId", object.ImageId_value().Str());
+            cJSON_AddStringToObject(root, "Image", object.Image_value().Str());
+            cJSON_AddStringToObject(root, "Repository", object.Repository_value().Str());
+            cJSON_AddStringToObject(root, "ImageTag", object.ImageTag_value().Str());
+            cJSON_AddStringToObject(root, "ComposeGroup", object.ComposeGroup_value().Str());
+            cJSON_AddStringToObject(root, "ContainerHostname", object.ContainerHostname_value().Str());
+            cJSON_AddStringToObject(root, "Computer", object.Computer_value().Str());
+            cJSON_AddStringToObject(root, "Command", object.Command_value().Str());
+            cJSON_AddStringToObject(root, "EnvironmentVar", object.EnvironmentVar_value().Str());
+            cJSON_AddStringToObject(root, "Ports", object.Ports_value().Str());
+            cJSON_AddStringToObject(root, "Links", object.Links_value().Str());
 
-			fprintf(target, "%s", cJSON_PrintUnformatted(root));
-			fclose(target);
-			cJSON_Delete(root);
-		}
-		else
-		{
-			syslog(LOG_ERR, "Failed to serialize %s - file could not be opened: %s", id, strerror(errno));
-		}
+            fprintf(target, "%s", cJSON_PrintUnformatted(root));
+            fclose(target);
+            cJSON_Delete(root);
+        }
+        else
+        {
+            syslog(LOG_ERR, "Failed to serialize %s - file could not be opened: %s", id, strerror(errno));
+        }
 
-		closelog();
-	}
+        closelog();
+    }
 
-	///
-	/// Deserialize class object
-	///
-	/// \param[in] id ID of object
-	///
-	static Container_ContainerInventory_Class DeserializeObject(string& id)
-	{
-		openlog("ContainerInventorySerializer", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+    ///
+    /// Deserialize class object
+    ///
+    /// \param[in] id ID of object
+    ///
+    static Container_ContainerInventory_Class DeserializeObject(string& id)
+    {
+        openlog("ContainerInventorySerializer", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
 
-		// New inventory entry
-		Container_ContainerInventory_Class instance;
+        // New inventory entry
+        Container_ContainerInventory_Class instance;
 
-		instance.InstanceID_value(id.c_str());
+        instance.InstanceID_value(id.c_str());
 
-		char filename[128];
-		sprintf(filename, "%s%s", DIRECTORY, id.c_str());
+        char filename[128];
+        sprintf(filename, "%s%s", DIRECTORY, id.c_str());
 
-		FILE* target = fopen(filename, "r");
+        FILE* target = fopen(filename, "r");
 
-		if (target)
-		{
-			char buffer[4096];
+        if (target)
+        {
+            char buffer[4096];
 
-			if (fgets(buffer, 4095, target))
-			{
-				cJSON* root = cJSON_Parse(buffer);
+            if (fgets(buffer, 4095, target))
+            {
+                cJSON* root = cJSON_Parse(buffer);
 
-				// Get all fields from JSON
-				instance.ElementName_value(cJSON_GetObjectItem(root, "ElementName")->valuestring);
-				instance.CreatedTime_value(cJSON_GetObjectItem(root, "CreatedTime")->valuestring);
-				instance.State_value(cJSON_GetObjectItem(root, "State")->valuestring);
-				instance.ExitCode_value(cJSON_GetObjectItem(root, "ExitCode")->valueint);
-				instance.StartedTime_value(cJSON_GetObjectItem(root, "StartedTime")->valuestring);
-				instance.FinishedTime_value(cJSON_GetObjectItem(root, "FinishedTime")->valuestring);
-				instance.ImageId_value(cJSON_GetObjectItem(root, "ImageId")->valuestring);
-				instance.Image_value(cJSON_GetObjectItem(root, "Image")->valuestring);
-				instance.Repository_value(cJSON_GetObjectItem(root, "Repository")->valuestring);
-				instance.ImageTag_value(cJSON_GetObjectItem(root, "ImageTag")->valuestring);
-				instance.ComposeGroup_value(cJSON_GetObjectItem(root, "ComposeGroup")->valuestring);
-				instance.ContainerHostname_value(cJSON_GetObjectItem(root, "ContainerHostname")->valuestring);
-				instance.Computer_value(cJSON_GetObjectItem(root, "Computer")->valuestring);
-				instance.Command_value(cJSON_GetObjectItem(root, "Command")->valuestring);
-				instance.EnvironmentVar_value(cJSON_GetObjectItem(root, "EnvironmentVar")->valuestring);
-				instance.Ports_value(cJSON_GetObjectItem(root, "Ports")->valuestring);
-				instance.Links_value(cJSON_GetObjectItem(root, "Links")->valuestring);
+                // Get all fields from JSON
+                instance.ElementName_value(cJSON_GetObjectItem(root, "ElementName")->valuestring);
+                instance.CreatedTime_value(cJSON_GetObjectItem(root, "CreatedTime")->valuestring);
+                instance.State_value(cJSON_GetObjectItem(root, "State")->valuestring);
+                instance.ExitCode_value(cJSON_GetObjectItem(root, "ExitCode")->valueint);
+                instance.StartedTime_value(cJSON_GetObjectItem(root, "StartedTime")->valuestring);
+                instance.FinishedTime_value(cJSON_GetObjectItem(root, "FinishedTime")->valuestring);
+                instance.ImageId_value(cJSON_GetObjectItem(root, "ImageId")->valuestring);
+                instance.Image_value(cJSON_GetObjectItem(root, "Image")->valuestring);
+                instance.Repository_value(cJSON_GetObjectItem(root, "Repository")->valuestring);
+                instance.ImageTag_value(cJSON_GetObjectItem(root, "ImageTag")->valuestring);
+                instance.ComposeGroup_value(cJSON_GetObjectItem(root, "ComposeGroup")->valuestring);
+                instance.ContainerHostname_value(cJSON_GetObjectItem(root, "ContainerHostname")->valuestring);
+                instance.Computer_value(cJSON_GetObjectItem(root, "Computer")->valuestring);
+                instance.Command_value(cJSON_GetObjectItem(root, "Command")->valuestring);
+                instance.EnvironmentVar_value(cJSON_GetObjectItem(root, "EnvironmentVar")->valuestring);
+                instance.Ports_value(cJSON_GetObjectItem(root, "Ports")->valuestring);
+                instance.Links_value(cJSON_GetObjectItem(root, "Links")->valuestring);
 
-				cJSON_Delete(root);
-			}
-			else
-			{
-				syslog(LOG_ERR, "Failed to deserialize %s - file could not be read: %s", id.c_str(), strerror(errno));
-			}
+                cJSON_Delete(root);
+            }
+            else
+            {
+                syslog(LOG_ERR, "Failed to deserialize %s - file could not be read: %s", id.c_str(), strerror(errno));
+            }
 
-			fclose(target);
+            fclose(target);
 
-			if (remove(filename))
-			{
-				syslog(LOG_ERR, "Failed to remove %s after deserialization: %s", id.c_str(), strerror(errno));
-			}
-		}
-		else
-		{
-			syslog(LOG_ERR, "Failed to deserialize %s - file could not be opened: %s", id.c_str(), strerror(errno));
-		}
+            if (remove(filename))
+            {
+                syslog(LOG_ERR, "Failed to remove %s after deserialization: %s", id.c_str(), strerror(errno));
+            }
+        }
+        else
+        {
+            syslog(LOG_ERR, "Failed to deserialize %s - file could not be opened: %s", id.c_str(), strerror(errno));
+        }
 
-		closelog();
-		return instance;
-	}
+        closelog();
+        return instance;
+    }
 };
 
 MI_END_NAMESPACE
