@@ -297,6 +297,12 @@ public:
         // Get computer name
         char name[256];
         string hostname = gethostname(name, 256) ? "Unknown" : string(name);
+        // in case get full name, extract up to '.'
+        size_t dotpos = hostname.find('.');
+        if (dotpos != string::npos)
+        {
+            hostname = hostname.substr(0, dotpos);
+        }
 
         vector<Container_ContainerInventory_Class> result;
 
