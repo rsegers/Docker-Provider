@@ -15,7 +15,12 @@ module Fluent
 		def configure(conf)
 			super
 			@hostname = Socket.gethostname
-			
+			# in case get full name, extract up to '.'
+			dotpos = @hostname.index('.')
+			if dotpos != nil
+				@hostname = @hostname[0..dotpos-1]
+			end
+
 			# Cache the image name and ID of each container so we don't have to inspect each time
 			@containerCache = Hash.new
 			
