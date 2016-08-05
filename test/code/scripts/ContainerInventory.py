@@ -30,15 +30,15 @@ for container in containers:
 	result["Computer"] = node()
 
 	if inspect["State"]["Running"]:
-		result["State"] = "Running"
-	else:
 		if inspect["State"]["Paused"]:
 			result["State"] = "Paused"
 		else:
-			if inspect["State"]["ExitCode"]:
-			   result["State"] = "Failed"
-			else:
-			   result["State"] = "Stopped"
+			result["State"] = "Running"
+	else:
+		if inspect["State"]["ExitCode"]:
+		   result["State"] = "Failed"
+		else:
+		   result["State"] = "Stopped"
 
 	result["InstanceID"] = inspect["Id"]
 	result["ImageId"] = inspect["Image"]
