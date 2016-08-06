@@ -192,7 +192,24 @@ private:
             else
             {
                 // Set the Container status : Running/Paused/Stopped
-                instance.State_value(cJSON_GetObjectItem(state, "Status")->valuestring);
+                if (cJSON_GetObjectItem(state, "Running")->valueint)
+                 {
+                     // Container running
+                     if (cJSON_GetObjectItem(state, "Paused")->valueint)
+                     {
+                         // Container paused
+                         instance.State_value("Paused");
+                     }
+                     else
+                     {
+                         instance.State_value("Running");
+                     }
+                 }
+                 else
+                 {
+                     // Container exited
+                     instance.State_value("Stopped");
+                 }
             }
 
             instance.StartedTime_value(cJSON_GetObjectItem(state, "StartedAt")->valuestring);
