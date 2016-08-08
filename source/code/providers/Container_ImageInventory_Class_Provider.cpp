@@ -134,10 +134,6 @@ private:
             if (cJSON_GetObjectItem(state, "Running")->valueint)
             {
                 // Running container
-                instances[idTable[id]].Running_value(instances[idTable[id]].Running_value() + 1);
-            }
-            else
-            {
                 if (cJSON_GetObjectItem(state, "Paused")->valueint)
                 {
                     // Paused container
@@ -145,16 +141,20 @@ private:
                 }
                 else
                 {
-                    if (cJSON_GetObjectItem(state, "ExitCode")->valueint)
-                    {
-                        // Container exited nonzero
-                        instances[idTable[id]].Failed_value(instances[idTable[id]].Failed_value() + 1);
-                    }
-                    else
-                    {
-                        // Container exited normally
-                        instances[idTable[id]].Stopped_value(instances[idTable[id]].Stopped_value() + 1);
-                    }
+                    instances[idTable[id]].Running_value(instances[idTable[id]].Running_value() + 1);
+                }
+            }
+            else
+            {
+                if (cJSON_GetObjectItem(state, "ExitCode")->valueint)
+                {
+                    // Container exited nonzero
+                    instances[idTable[id]].Failed_value(instances[idTable[id]].Failed_value() + 1);
+                }
+                else
+                {
+                    // Container exited normally
+                    instances[idTable[id]].Stopped_value(instances[idTable[id]].Stopped_value() + 1);
                 }
             }
 

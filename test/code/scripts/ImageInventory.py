@@ -36,15 +36,15 @@ for container in containers:
 	inspect = c.inspect_container(container)
 
 	if inspect["State"]["Running"]:
-		tempDict[inspect["Image"]]["Running"] += 1
-	else:
 		if inspect["State"]["Paused"]:
 			tempDict[inspect["Image"]]["Paused"] += 1
 		else:
-			if inspect["State"]["ExitCode"]:
-			   tempDict[inspect["Image"]]["Failed"] += 1
-			else:
-			   tempDict[inspect["Image"]]["Stopped"] += 1
+			tempDict[inspect["Image"]]["Running"] += 1
+	else:
+		if inspect["State"]["ExitCode"]:
+			tempDict[inspect["Image"]]["Failed"] += 1
+		else:
+			tempDict[inspect["Image"]]["Stopped"] += 1
 
 	tempDict[inspect["Image"]]["Total"] += 1
 
