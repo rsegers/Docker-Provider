@@ -19,7 +19,7 @@ public:
     ///
     static string restDockerImages()
     {
-        return "GET /images/json?all=0 HTTP/1.1\r\n\r\n";
+        return "GET /images/json?all=0 HTTP/1.1\r\nHost: localhost\r\n\r\n";
     }
 
     ///
@@ -30,7 +30,7 @@ public:
     ///
     static string restDockerPs()
     {
-        return "GET /containers/json?all=1 HTTP/1.1\r\n\r\n";
+        return "GET /containers/json?all=1 HTTP/1.1\r\nHost: localhost\r\n\r\n";
     }
 
     ///
@@ -41,7 +41,7 @@ public:
     ///
     static string restDockerPsRunning()
     {
-        return "GET /containers/json HTTP/1.1\r\n\r\n";
+        return "GET /containers/json HTTP/1.1\r\nHost: localhost\r\n\r\n";
     }
 
     ///
@@ -53,7 +53,7 @@ public:
     ///
     static string restDockerInspect(string id)
     {
-        return "GET /containers/" + id + "/json HTTP/1.1\r\n\r\n";
+        return "GET /containers/" + id + "/json HTTP/1.1\r\nHost: localhost\r\n\r\n";
     }
 
     ///
@@ -64,8 +64,8 @@ public:
     ///
     static string restDockerEvents(int start, int end)
     {
-        char result[70];
-        snprintf(result, 70, "GET /events?since=%d&until=%d HTTP/1.1\r\n\r\n", start, end);
+        char result[128];
+        snprintf(result, 128, "GET /events?since=%d&until=%d HTTP/1.1\r\nHost: localhost\r\n\r\n", start, end);
         return string(result);
     }
 
@@ -78,7 +78,7 @@ public:
     ///
     static string restDockerStats(string id)
     {
-        return "GET /containers/" + id + "/stats?stream=false HTTP/1.1\r\n\r\n";
+        return "GET /containers/" + id + "/stats?stream=false HTTP/1.1\r\nHost: localhost\r\n\r\n";
     }
 
     ///
@@ -111,7 +111,7 @@ public:
         char* json = cJSON_PrintUnformatted(root);
 
         char result[2048];
-        snprintf(result, 2048, "POST /containers/%s/exec HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: %zu\r\n\r\n%s", id.c_str(), strlen(json), json);
+        snprintf(result, 2048, "POST /containers/%s/exec HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: %zu\r\n\r\n%s", id.c_str(), strlen(json), json);
 
         return string(result);
     }
@@ -134,7 +134,7 @@ public:
         char* json = cJSON_PrintUnformatted(root);
 
         char result[512];
-        snprintf(result, 512, "POST /exec/%s/start HTTP/1.1\r\nContent-Type: application/json\r\nContent-Length: %zu\r\n\r\n%s", execId.c_str(), strlen(json), json);
+        snprintf(result, 512, "POST /exec/%s/start HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: %zu\r\n\r\n%s", execId.c_str(), strlen(json), json);
 
         return string(result);
     }
