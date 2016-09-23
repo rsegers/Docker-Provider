@@ -73,7 +73,7 @@ module Fluent
 							@log.warn {'The image ID of container ' + containerId + ' could not be determined'}
 						end
 					else
-						@containerCache[containerId]['Image'] = details[0]['Image']
+						@containerCache[containerId]['Image'] = details[0]['Config']['Image']
 						@containerCache[containerId]['ImageName'] = details[0]['Config']['Image']
 					end
 				end
