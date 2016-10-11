@@ -217,6 +217,153 @@ vector<cJSON*> getResponse(vector<string>& request, bool isMultiJson, bool ignor
     return response;
 }
 
+void readLine(char* str, int length, int& readPtr, string& line)
+{
+    while (str && (readPtr < length))
+    {
+        if ((readPtr + 1) < length &&
+            str[readPtr] == '\r' && str[readPtr + 1] == '\n')
+        {
+            readPtr = readPtr + 2;
+            break;
+        }
+        line.append(string(1, str[readPtr]));
+        readPtr++;
+    }
+}
+
+void parseLogs(char* str, int length, vector<string>& logs)
+{
+    int readPtr = 0;
+   
+    if(!str)
+        return;
+
+    // skip header
+    while (readPtr < length)
+    {
+        if ((readPtr + 3) < length &&
+            str[readPtr] == '\r' && str[readPtr + 1] == '\n' && str[readPtr + 2] == '\r' && str[readPtr + 3] == '\n')
+        {
+            readPtr = readPtr + 4;
+            break;
+        }
+        readPtr++;
+    }
+
+    // read the logs
+    while (readPtr < length)
+    {
+        // skip data length
+        string dataLength;
+        readLine(str, length, readPtr, dataLength);
+
+        if (readPtr + 8 > length)
+        {
+            return;
+        }
+
+        // stream type
+        string parsedLog;
+        if(str[readPtr] == 1)
+        {
+            parsedLog = "stdout;";
+        }
+        else
+        {
+            parsedLog = "stderr;";
+        }
+        readPtr = readPtr + 8;
+
+        string message;
+        readLine(str, length, readPtr, message);
+        parsedLog.append(message);
+        logs.push_back(parsedLog);
+    }
+}
+
+vector<string> getContainerLogs(string& request)
+{
+    vector<string> response;
+
+    try
+    {
+        const int bufferSize = 4096;
+        const int timeoutSecond = 2;
+        vector<int> sockfd;
+        int n = 1;
+        createConnection(n, sockfd);
+
+        size_t r = write(sockfd[0], request.c_str(), request.length());
+        if (r != request.length())
+        {
+            throw string("Write to socket in getContainerLogs failed");
+        }
+
+        char readBuf[bufferSize + 1];
+        int read_n = 0;
+        char* raw_response = 0;
+        int raw_reponse_size = 0;
+
+        while ((read_n = readSocket(sockfd[0], readBuf, bufferSize, timeoutSecond)) > 0)
+        {
+            char* tempBuf = new char[raw_reponse_size + read_n];
+            if(raw_reponse_size > 0)
+            {
+                memcpy(tempBuf, raw_response, raw_reponse_size);
+                delete raw_response;
+                raw_response = 0;
+            }
+
+            memcpy(tempBuf + raw_reponse_size, readBuf, read_n);
+            raw_response = tempBuf;
+            raw_reponse_size = raw_reponse_size + read_n;
+        }
+
+        if(raw_reponse_size != 0 && raw_response)
+        {
+            parseLogs(raw_response, raw_reponse_size, response);
+            delete raw_response;
+        }
+
+        close(sockfd[0]);
+    }
+    catch (string str)
+    {
+        openlog("DockerRemoteApi", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
+        syslog(LOG_ERR, "%s", str.c_str());
+    }
+
+    return response;
+}
+
+string getDockerHostName()
+{
+    static string dockerHostName;
+
+    if(dockerHostName.empty())
+    {
+        vector<string> request(1, DockerRestHelper::restDockerInfo());
+        vector<cJSON*> response = getResponse(request);
+
+        if (!response.empty() && response[0])
+        {
+            dockerHostName = string(cJSON_GetObjectItem(response[0], "Name")->valuestring);
+
+            // in case get full name, extract up to '.'
+            size_t dotpos = dockerHostName.find('.');
+            if (dotpos != string::npos)
+            {
+                dockerHostName = dockerHostName.substr(0, dotpos);
+            }
+    
+            cJSON_Delete(response[0]);
+        }
+    }
+
+    return dockerHostName;
+}
+
 ///
 /// Return vector of container IDs
 ///

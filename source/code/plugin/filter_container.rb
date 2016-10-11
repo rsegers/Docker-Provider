@@ -40,6 +40,7 @@ module Fluent
 						when "Container_ImageInventory" then "CONTAINER_IMAGE_INVENTORY_BLOB"
 						when "Container_ContainerInventory" then "CONTAINER_INVENTORY_BLOB"
 						when "Container_DaemonEvent" then "CONTAINER_SERVICE_LOG_BLOB"
+						when "Container_ContainerLog" then "CONTAINER_LOG_BLOB"
 					end
 				end
 			end

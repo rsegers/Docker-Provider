@@ -12,6 +12,7 @@
 #include "Container_DaemonEvent_Class_Provider.h"
 #include "Container_ContainerStatistics_Class_Provider.h"
 #include "Container_ContainerInventory_Class_Provider.h"
+#include "Container_ContainerLog_Class_Provider.h"
 
 using namespace mi;
 
@@ -491,6 +492,125 @@ MI_EXTERN_C void MI_CALL Container_ContainerInventory_DeleteInstance(
     cxxSelf->DeleteInstance(cxxContext, nameSpace, cxxInstanceName);
 }
 
+
+MI_EXTERN_C void MI_CALL Container_ContainerLog_Load(
+    Container_ContainerLog_Self** self,
+    MI_Module_Self* selfModule,
+    MI_Context* context)
+{
+    MI_Result r = MI_RESULT_OK;
+    Context ctx(context, &r);
+    Container_ContainerLog_Class_Provider* prov = new Container_ContainerLog_Class_Provider((Module*)selfModule);
+
+    prov->Load(ctx);
+    if (MI_RESULT_OK != r)
+    {
+        delete prov;
+        MI_Context_PostResult(context, r);
+        return;
+    }
+    *self = (Container_ContainerLog_Self*)prov;
+    MI_Context_PostResult(context, MI_RESULT_OK);
+}
+
+MI_EXTERN_C void MI_CALL Container_ContainerLog_Unload(
+    Container_ContainerLog_Self* self,
+    MI_Context* context)
+{
+    MI_Result r = MI_RESULT_OK;
+    Context ctx(context, &r);
+    Container_ContainerLog_Class_Provider* prov = (Container_ContainerLog_Class_Provider*)self;
+
+    prov->Unload(ctx);
+    delete ((Container_ContainerLog_Class_Provider*)self);
+    MI_Context_PostResult(context, r);
+}
+
+MI_EXTERN_C void MI_CALL Container_ContainerLog_EnumerateInstances(
+    Container_ContainerLog_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const MI_PropertySet* propertySet,
+    MI_Boolean keysOnly,
+    const MI_Filter* filter)
+{
+    Container_ContainerLog_Class_Provider* cxxSelf =((Container_ContainerLog_Class_Provider*)self);
+    Context  cxxContext(context);
+
+    cxxSelf->EnumerateInstances(
+        cxxContext,
+        nameSpace,
+        __PropertySet(propertySet),
+        __bool(keysOnly),
+        filter);
+}
+
+MI_EXTERN_C void MI_CALL Container_ContainerLog_GetInstance(
+    Container_ContainerLog_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_ContainerLog* instanceName,
+    const MI_PropertySet* propertySet)
+{
+    Container_ContainerLog_Class_Provider* cxxSelf =((Container_ContainerLog_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_ContainerLog_Class cxxInstanceName(instanceName, true);
+
+    cxxSelf->GetInstance(
+        cxxContext,
+        nameSpace,
+        cxxInstanceName,
+        __PropertySet(propertySet));
+}
+
+MI_EXTERN_C void MI_CALL Container_ContainerLog_CreateInstance(
+    Container_ContainerLog_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_ContainerLog* newInstance)
+{
+    Container_ContainerLog_Class_Provider* cxxSelf =((Container_ContainerLog_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_ContainerLog_Class cxxNewInstance(newInstance, false);
+
+    cxxSelf->CreateInstance(cxxContext, nameSpace, cxxNewInstance);
+}
+
+MI_EXTERN_C void MI_CALL Container_ContainerLog_ModifyInstance(
+    Container_ContainerLog_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_ContainerLog* modifiedInstance,
+    const MI_PropertySet* propertySet)
+{
+    Container_ContainerLog_Class_Provider* cxxSelf =((Container_ContainerLog_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_ContainerLog_Class cxxModifiedInstance(modifiedInstance, false);
+
+    cxxSelf->ModifyInstance(
+        cxxContext,
+        nameSpace,
+        cxxModifiedInstance,
+        __PropertySet(propertySet));
+}
+
+MI_EXTERN_C void MI_CALL Container_ContainerLog_DeleteInstance(
+    Container_ContainerLog_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_ContainerLog* instanceName)
+{
+    Container_ContainerLog_Class_Provider* cxxSelf =((Container_ContainerLog_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_ContainerLog_Class cxxInstanceName(instanceName, true);
+
+    cxxSelf->DeleteInstance(cxxContext, nameSpace, cxxInstanceName);
+}
 
 MI_EXTERN_C MI_SchemaDecl schemaDecl;
 
