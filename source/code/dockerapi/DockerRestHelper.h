@@ -82,6 +82,32 @@ public:
     }
 
     ///
+    /// Create the REST request to get container logs
+    /// https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#get-container-stats-based-on-resource-usage
+    ///
+    /// \param[in] id ID of the container
+    /// \param[in] start Time from where logs has to be collected
+    /// \returns Request in string format
+    ///
+    static string restDockerLogs(string id, int start)
+    {
+        char result[516];
+        snprintf(result, 516, "GET /containers/%s/logs?stderr=1&stdout=1&since=%d HTTP/1.1\r\nHost: localhost\r\n\r\n", id.c_str(), start);
+        return string(result);
+    }
+
+    ///
+    /// Create the REST request to get docker info
+    /// https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#get-container-stats-based-on-resource-usage
+    ///
+    /// \returns Request in string format
+    ///
+    static string restDockerInfo()
+    {
+        return "GET /info HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    }
+
+    ///
     /// Create the REST request to create an exec instance
     /// https://docs.docker.com/engine/reference/api/docker_remote_api_v1.21/#exec-create
     ///

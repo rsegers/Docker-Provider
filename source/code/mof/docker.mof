@@ -158,3 +158,35 @@ class Container_ContainerInventory : CIM_ManagedElement
 	[ Description ( "JSON of container links" ) ]
 	String Links;
 };
+
+// Container_ContainerLog
+// -------------------------------------------------------------------
+[   Version ( "1.0.0" ),
+	Description ( "Docker Container Logs Information" )
+]
+class Container_ContainerLog : CIM_ManagedElement
+{
+	[ Key, Description ( "GUID" ) ]
+	String InstanceID;
+
+	[ Description ( "Image Id" ) ]
+	String Image;
+
+	[ Description ( "Image Name" ) ]
+	String ImageName;
+
+	[ Description ( "Container ID" ) ]
+	String Id;
+
+	[ Description ( "Container Name" ) ]
+	String Name;
+
+	[ Description ( "Log source" ) ]
+	String LogEntrySource;
+
+	[ Description ( "Log message" ) ]
+	String LogEntry;
+
+	[ Description ( "Host name of Docker host" ) ]
+	String Computer;
+};

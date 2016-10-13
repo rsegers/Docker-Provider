@@ -12,6 +12,7 @@
 #include "Container_DaemonEvent.h"
 #include "Container_ContainerStatistics.h"
 #include "Container_ContainerInventory.h"
+#include "Container_ContainerLog.h"
 
 /*
 **==============================================================================
@@ -1269,6 +1270,230 @@ MI_CONST MI_ClassDecl Container_ContainerInventory_rtti =
 /*
 **==============================================================================
 **
+** Container_ContainerLog
+**
+**==============================================================================
+*/
+
+/* property Container_ContainerLog.InstanceID */
+static MI_CONST MI_PropertyDecl Container_ContainerLog_InstanceID_prop =
+{
+    MI_FLAG_PROPERTY|MI_FLAG_KEY, /* flags */
+    0x0069640A, /* code */
+    MI_T("InstanceID"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_ContainerLog, InstanceID), /* offset */
+    MI_T("CIM_ManagedElement"), /* origin */
+    MI_T("Container_ContainerLog"), /* propagator */
+    NULL,
+};
+
+/* property Container_ContainerLog.Image */
+static MI_CONST MI_PropertyDecl Container_ContainerLog_Image_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00696505, /* code */
+    MI_T("Image"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_ContainerLog, Image), /* offset */
+    MI_T("Container_ContainerLog"), /* origin */
+    MI_T("Container_ContainerLog"), /* propagator */
+    NULL,
+};
+
+/* property Container_ContainerLog.ImageName */
+static MI_CONST MI_PropertyDecl Container_ContainerLog_ImageName_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00696509, /* code */
+    MI_T("ImageName"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_ContainerLog, ImageName), /* offset */
+    MI_T("Container_ContainerLog"), /* origin */
+    MI_T("Container_ContainerLog"), /* propagator */
+    NULL,
+};
+
+/* property Container_ContainerLog.Id */
+static MI_CONST MI_PropertyDecl Container_ContainerLog_Id_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00696402, /* code */
+    MI_T("Id"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_ContainerLog, Id), /* offset */
+    MI_T("Container_ContainerLog"), /* origin */
+    MI_T("Container_ContainerLog"), /* propagator */
+    NULL,
+};
+
+/* property Container_ContainerLog.Name */
+static MI_CONST MI_PropertyDecl Container_ContainerLog_Name_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x006E6504, /* code */
+    MI_T("Name"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_ContainerLog, Name), /* offset */
+    MI_T("Container_ContainerLog"), /* origin */
+    MI_T("Container_ContainerLog"), /* propagator */
+    NULL,
+};
+
+/* property Container_ContainerLog.LogEntrySource */
+static MI_CONST MI_PropertyDecl Container_ContainerLog_LogEntrySource_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x006C650E, /* code */
+    MI_T("LogEntrySource"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_ContainerLog, LogEntrySource), /* offset */
+    MI_T("Container_ContainerLog"), /* origin */
+    MI_T("Container_ContainerLog"), /* propagator */
+    NULL,
+};
+
+/* property Container_ContainerLog.LogEntry */
+static MI_CONST MI_PropertyDecl Container_ContainerLog_LogEntry_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x006C7908, /* code */
+    MI_T("LogEntry"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_ContainerLog, LogEntry), /* offset */
+    MI_T("Container_ContainerLog"), /* origin */
+    MI_T("Container_ContainerLog"), /* propagator */
+    NULL,
+};
+
+/* property Container_ContainerLog.Computer */
+static MI_CONST MI_PropertyDecl Container_ContainerLog_Computer_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00637208, /* code */
+    MI_T("Computer"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_ContainerLog, Computer), /* offset */
+    MI_T("Container_ContainerLog"), /* origin */
+    MI_T("Container_ContainerLog"), /* propagator */
+    NULL,
+};
+
+static MI_PropertyDecl MI_CONST* MI_CONST Container_ContainerLog_props[] =
+{
+    &Container_ContainerLog_InstanceID_prop,
+    &CIM_ManagedElement_Caption_prop,
+    &CIM_ManagedElement_Description_prop,
+    &CIM_ManagedElement_ElementName_prop,
+    &Container_ContainerLog_Image_prop,
+    &Container_ContainerLog_ImageName_prop,
+    &Container_ContainerLog_Id_prop,
+    &Container_ContainerLog_Name_prop,
+    &Container_ContainerLog_LogEntrySource_prop,
+    &Container_ContainerLog_LogEntry_prop,
+    &Container_ContainerLog_Computer_prop,
+};
+
+static MI_CONST MI_ProviderFT Container_ContainerLog_funcs =
+{
+  (MI_ProviderFT_Load)Container_ContainerLog_Load,
+  (MI_ProviderFT_Unload)Container_ContainerLog_Unload,
+  (MI_ProviderFT_GetInstance)Container_ContainerLog_GetInstance,
+  (MI_ProviderFT_EnumerateInstances)Container_ContainerLog_EnumerateInstances,
+  (MI_ProviderFT_CreateInstance)Container_ContainerLog_CreateInstance,
+  (MI_ProviderFT_ModifyInstance)Container_ContainerLog_ModifyInstance,
+  (MI_ProviderFT_DeleteInstance)Container_ContainerLog_DeleteInstance,
+  (MI_ProviderFT_AssociatorInstances)NULL,
+  (MI_ProviderFT_ReferenceInstances)NULL,
+  (MI_ProviderFT_EnableIndications)NULL,
+  (MI_ProviderFT_DisableIndications)NULL,
+  (MI_ProviderFT_Subscribe)NULL,
+  (MI_ProviderFT_Unsubscribe)NULL,
+  (MI_ProviderFT_Invoke)NULL,
+};
+
+static MI_CONST MI_Char* Container_ContainerLog_UMLPackagePath_qual_value = MI_T("CIM::Core::CoreElements");
+
+static MI_CONST MI_Qualifier Container_ContainerLog_UMLPackagePath_qual =
+{
+    MI_T("UMLPackagePath"),
+    MI_STRING,
+    0,
+    &Container_ContainerLog_UMLPackagePath_qual_value
+};
+
+static MI_CONST MI_Char* Container_ContainerLog_Version_qual_value = MI_T("1.0.0");
+
+static MI_CONST MI_Qualifier Container_ContainerLog_Version_qual =
+{
+    MI_T("Version"),
+    MI_STRING,
+    MI_FLAG_ENABLEOVERRIDE|MI_FLAG_TRANSLATABLE|MI_FLAG_RESTRICTED,
+    &Container_ContainerLog_Version_qual_value
+};
+
+static MI_Qualifier MI_CONST* MI_CONST Container_ContainerLog_quals[] =
+{
+    &Container_ContainerLog_UMLPackagePath_qual,
+    &Container_ContainerLog_Version_qual,
+};
+
+/* class Container_ContainerLog */
+MI_CONST MI_ClassDecl Container_ContainerLog_rtti =
+{
+    MI_FLAG_CLASS, /* flags */
+    0x00636716, /* code */
+    MI_T("Container_ContainerLog"), /* name */
+    Container_ContainerLog_quals, /* qualifiers */
+    MI_COUNT(Container_ContainerLog_quals), /* numQualifiers */
+    Container_ContainerLog_props, /* properties */
+    MI_COUNT(Container_ContainerLog_props), /* numProperties */
+    sizeof(Container_ContainerLog), /* size */
+    MI_T("CIM_ManagedElement"), /* superClass */
+    &CIM_ManagedElement_rtti, /* superClassDecl */
+    NULL, /* methods */
+    0, /* numMethods */
+    &schemaDecl, /* schema */
+    &Container_ContainerLog_funcs, /* functions */
+    NULL, /* owningClass */
+};
+
+
+/*
+**==============================================================================
+**
 ** __mi_server
 **
 **==============================================================================
@@ -1290,6 +1515,7 @@ static MI_ClassDecl MI_CONST* MI_CONST classes[] =
     &Container_ContainerStatistics_rtti,
     &Container_DaemonEvent_rtti,
     &Container_ImageInventory_rtti,
+    &Container_ContainerLog_rtti,
 };
 
 MI_SchemaDecl schemaDecl =

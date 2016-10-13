@@ -237,7 +237,8 @@ STATIC_PROVIDERLIB_SRCFILES = \
 	$(PROVIDER_DIR)/Container_ContainerInventory_Class_Provider.cpp \
 	$(PROVIDER_DIR)/Container_ContainerStatistics_Class_Provider.cpp \
 	$(PROVIDER_DIR)/Container_DaemonEvent_Class_Provider.cpp \
-	$(PROVIDER_DIR)/Container_ImageInventory_Class_Provider.cpp
+	$(PROVIDER_DIR)/Container_ImageInventory_Class_Provider.cpp \
+	$(PROVIDER_DIR)/Container_ContainerLog_Class_Provider.cpp
 
 STATIC_PROVIDERLIB_SRCFILES += \
 	$(PROVIDER_DIR)/module.cpp \
