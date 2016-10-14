@@ -289,7 +289,7 @@ vector<string> getContainerLogs(string& request)
     try
     {
         const int bufferSize = 4096;
-        const int timeoutSecond = 2;
+        const int timeoutSecond = 1;
         vector<int> sockfd;
         int n = 1;
         createConnection(n, sockfd);
@@ -375,7 +375,7 @@ vector<string> listContainer(bool all)
     vector<string> request(1, all ? DockerRestHelper::restDockerPs() : DockerRestHelper::restDockerPsRunning());
     vector<cJSON*> response = getResponse(request);
 
-    if (response[0])
+    if (!response.empty() && response[0])
     {
         int n = cJSON_GetArraySize(response[0]);
 
@@ -402,7 +402,7 @@ set<string> listContainerSet(bool all)
     vector<string> request(1, all ? DockerRestHelper::restDockerPs() : DockerRestHelper::restDockerPsRunning());
     vector<cJSON*> response = getResponse(request);
 
-    if (response[0])
+    if (!response.empty() && response[0])
     {
         int n = cJSON_GetArraySize(response[0]);
 
