@@ -291,6 +291,9 @@ public:
                 {
                     TrySetContainerCpuData(result[i], subResponse[0], previousStatsList[i]);
 
+                    // Set container name in 'InstanceName' field of Perf data.
+                    result[i].InstanceID_value(result[i].ElementName_value());
+
                     // Clean up object
                     cJSON_Delete(subResponse[0]);
                 }
