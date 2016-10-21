@@ -212,6 +212,7 @@ vector<cJSON*> getResponse(vector<string>& request, bool isMultiJson, bool ignor
     {
         openlog("DockerRemoteApi", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
         syslog(LOG_ERR, "%s", str.c_str());
+        closelog();
     }
 
     return response;
@@ -332,6 +333,7 @@ vector<string> getContainerLogs(string& request)
     {
         openlog("DockerRemoteApi", LOG_PID | LOG_NDELAY, LOG_LOCAL1);
         syslog(LOG_ERR, "%s", str.c_str());
+        closelog();
     }
 
     return response;

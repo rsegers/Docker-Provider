@@ -29,13 +29,14 @@ public:
         // Get the container IDs stored previously
         if (dir)
         {
-            while (dt = readdir(dir))
+            while ((dt = readdir(dir)) != NULL)
             {
                 if (dt->d_name && strlen(dt->d_name) == 64)
                 {
                     internalSet.insert(string(dt->d_name));
                 }
             }
+            closedir(dir);
         }
         else
         {
