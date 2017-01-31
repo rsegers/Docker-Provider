@@ -77,7 +77,7 @@ chmod 644 /var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt
 chown omsagent:omsagent /var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt
 
 mv /etc/opt/microsoft/docker-cimprov/container.conf /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
-chown omsagent:omsagent /etc/opt/microsoft/omsagent/conf/omsagent.d/container.conf
+chown omsagent:omsagent /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
 
 %Postuninstall_10
 # If we're an upgrade, skip all of this cleanup
