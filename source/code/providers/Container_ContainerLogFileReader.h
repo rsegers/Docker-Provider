@@ -116,8 +116,17 @@ public:
 
                         for (int i = 0; !logfound && !errfound && i < length; i++)
                         {
-                            string var = string(cJSON_GetArrayItem(env, i)->valuestring);
-							
+                            //Initialize an empty string
+                            string var = "";
+                            cJSON* arrItem = cJSON_GetArrayItem(env, i);
+                            //Try a string cast only if the json object exists and is of type string, a cast of type string(NULL) results in a coredump
+                            if(arrItem != NULL)
+                            {
+                                if(arrItem->valuestring != NULL)
+                                {
+                                    var = string(arrItem->valuestring);
+                                }
+                            }
                             // Check beginning of string
                             if (!logfound && var.length() > 8 && !var.find("OMSLOGS="))
                             {
