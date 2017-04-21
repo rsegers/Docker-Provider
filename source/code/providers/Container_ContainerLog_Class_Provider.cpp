@@ -15,26 +15,11 @@
 #include "../cjson/cJSON.h"
 #include "../dockerapi/DockerRemoteApi.h"
 #include "../dockerapi/DockerRestHelper.h"
+#include "Helper.h"
 
 #define LASTLOGQUERYTIMEFILE "/var/opt/microsoft/docker-cimprov/state/LastLogQueryTime.txt"
 
 using namespace std;
-
-class Guid
-{
-public:
-    ///
-    /// Create a guid and represent it as string
-    ///
-    static string NewToString()
-    {
-        uuid_t uuid;
-        uuid_generate_random(uuid);
-        char s[37];
-        uuid_unparse(uuid, s);
-        return string(s);
-    }
-};
 
 MI_BEGIN_NAMESPACE
 

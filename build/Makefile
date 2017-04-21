@@ -238,7 +238,8 @@ STATIC_PROVIDERLIB_SRCFILES = \
 	$(PROVIDER_DIR)/Container_ContainerStatistics_Class_Provider.cpp \
 	$(PROVIDER_DIR)/Container_DaemonEvent_Class_Provider.cpp \
 	$(PROVIDER_DIR)/Container_ImageInventory_Class_Provider.cpp \
-	$(PROVIDER_DIR)/Container_ContainerLog_Class_Provider.cpp
+	$(PROVIDER_DIR)/Container_ContainerLog_Class_Provider.cpp \
+	$(PROVIDER_DIR)/Container_HostInventory_Class_Provider.cpp
 
 STATIC_PROVIDERLIB_SRCFILES += \
 	$(PROVIDER_DIR)/module.cpp \
@@ -281,6 +282,7 @@ STATIC_PROVIDER_UNITFILES = \
 	$(PROVIDER_TEST_DIR)/Container_ContainerStatistics_Class_Provider_UnitTest.cpp \
 	$(PROVIDER_TEST_DIR)/Container_DaemonEvent_Class_Provider_UnitTest.cpp \
 	$(PROVIDER_TEST_DIR)/Container_ImageInventory_Class_Provider_UnitTest.cpp \
+	$(PROVIDER_TEST_DIR)/Container_HostInventory_Class_Provider_UnitTest.cpp \
 	$(PROVIDER_TEST_DIR)/support/testrunnerlogpolicy.cpp \
 	$(PROVIDER_TEST_DIR)/support/productdependencies.cpp \
 	$(PROVIDER_TEST_DIR)/providertestutils.cpp

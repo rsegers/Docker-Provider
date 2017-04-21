@@ -13,6 +13,7 @@
 #include "Container_ContainerStatistics_Class_Provider.h"
 #include "Container_ContainerInventory_Class_Provider.h"
 #include "Container_ContainerLog_Class_Provider.h"
+#include "Container_HostInventory_Class_Provider.h"
 
 using namespace mi;
 
@@ -611,6 +612,126 @@ MI_EXTERN_C void MI_CALL Container_ContainerLog_DeleteInstance(
 
     cxxSelf->DeleteInstance(cxxContext, nameSpace, cxxInstanceName);
 }
+
+MI_EXTERN_C void MI_CALL Container_HostInventory_Load(
+    Container_HostInventory_Self** self,
+    MI_Module_Self* selfModule,
+    MI_Context* context)
+{
+    MI_Result r = MI_RESULT_OK;
+    Context ctx(context, &r);
+    Container_HostInventory_Class_Provider* prov = new Container_HostInventory_Class_Provider((Module*)selfModule);
+
+    prov->Load(ctx);
+    if (MI_RESULT_OK != r)
+    {
+        delete prov;
+        MI_Context_PostResult(context, r);
+        return;
+    }
+    *self = (Container_HostInventory_Self*)prov;
+    MI_Context_PostResult(context, MI_RESULT_OK);
+}
+
+MI_EXTERN_C void MI_CALL Container_HostInventory_Unload(
+    Container_HostInventory_Self* self,
+    MI_Context* context)
+{
+    MI_Result r = MI_RESULT_OK;
+    Context ctx(context, &r);
+    Container_HostInventory_Class_Provider* prov = (Container_HostInventory_Class_Provider*)self;
+
+    prov->Unload(ctx);
+    delete ((Container_HostInventory_Class_Provider*)self);
+    MI_Context_PostResult(context, r);
+}
+
+MI_EXTERN_C void MI_CALL Container_HostInventory_EnumerateInstances(
+    Container_HostInventory_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const MI_PropertySet* propertySet,
+    MI_Boolean keysOnly,
+    const MI_Filter* filter)
+{
+    Container_HostInventory_Class_Provider* cxxSelf =((Container_HostInventory_Class_Provider*)self);
+    Context  cxxContext(context);
+
+    cxxSelf->EnumerateInstances(
+        cxxContext,
+        nameSpace,
+        __PropertySet(propertySet),
+        __bool(keysOnly),
+        filter);
+}
+
+MI_EXTERN_C void MI_CALL Container_HostInventory_GetInstance(
+    Container_HostInventory_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_HostInventory* instanceName,
+    const MI_PropertySet* propertySet)
+{
+    Container_HostInventory_Class_Provider* cxxSelf =((Container_HostInventory_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_HostInventory_Class cxxInstanceName(instanceName, true);
+
+    cxxSelf->GetInstance(
+        cxxContext,
+        nameSpace,
+        cxxInstanceName,
+        __PropertySet(propertySet));
+}
+
+MI_EXTERN_C void MI_CALL Container_HostInventory_CreateInstance(
+    Container_HostInventory_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_HostInventory* newInstance)
+{
+    Container_HostInventory_Class_Provider* cxxSelf =((Container_HostInventory_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_HostInventory_Class cxxNewInstance(newInstance, false);
+
+    cxxSelf->CreateInstance(cxxContext, nameSpace, cxxNewInstance);
+}
+
+MI_EXTERN_C void MI_CALL Container_HostInventory_ModifyInstance(
+    Container_HostInventory_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_HostInventory* modifiedInstance,
+    const MI_PropertySet* propertySet)
+{
+    Container_HostInventory_Class_Provider* cxxSelf =((Container_HostInventory_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_HostInventory_Class cxxModifiedInstance(modifiedInstance, false);
+
+    cxxSelf->ModifyInstance(
+        cxxContext,
+        nameSpace,
+        cxxModifiedInstance,
+        __PropertySet(propertySet));
+}
+
+MI_EXTERN_C void MI_CALL Container_HostInventory_DeleteInstance(
+    Container_HostInventory_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_HostInventory* instanceName)
+{
+    Container_HostInventory_Class_Provider* cxxSelf =((Container_HostInventory_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_HostInventory_Class cxxInstanceName(instanceName, true);
+
+    cxxSelf->DeleteInstance(cxxContext, nameSpace, cxxInstanceName);
+}
+
 
 MI_EXTERN_C MI_SchemaDecl schemaDecl;
 

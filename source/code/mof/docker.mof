@@ -190,3 +190,38 @@ class Container_ContainerLog : CIM_ManagedElement
 	[ Description ( "Host name of Docker host" ) ]
 	String Computer;
 };
+
+// Container_HostInventory
+// -------------------------------------------------------------------
+[   Version ( "1.0.0" ),
+	Description ( "Docker Host Inventory" )
+]
+class Container_HostInventory : CIM_ManagedElement
+{
+	[ Key, Description ( "GUID" ) ]
+	String InstanceID;
+
+	[ Description ( "Host name of Docker host" ) ]
+	String Computer;
+
+	[ Description ( "Docker version" ) ]
+	String DockerVersion;
+
+	[ Description ( "Host operating system" ) ]
+	String OperatingSystem;
+
+	[ Description ( "Host volume information" ) ]
+	String Volume;
+
+	[ Description ( "Host network information" ) ]
+	String Network;
+
+	[ Description ( "Host internal IP information" ) ]
+	String InternalIp;
+
+	[ Description ( "Host role" ) ]
+	String NodeRole;
+
+	[ Description ( "Cluster orchestator type" ) ]
+	String OrchestratorType;
+};

@@ -13,6 +13,7 @@
 #include "Container_ContainerStatistics.h"
 #include "Container_ContainerInventory.h"
 #include "Container_ContainerLog.h"
+#include "Container_HostInventory.h"
 
 /*
 **==============================================================================
@@ -1490,6 +1491,246 @@ MI_CONST MI_ClassDecl Container_ContainerLog_rtti =
     NULL, /* owningClass */
 };
 
+/*
+**==============================================================================
+**
+** Container_HostInventory
+**
+**==============================================================================
+*/
+
+/* property Container_HostInventory.InstanceID */
+static MI_CONST MI_PropertyDecl Container_HostInventory_InstanceID_prop =
+{
+    MI_FLAG_PROPERTY|MI_FLAG_KEY, /* flags */
+    0x0069640A, /* code */
+    MI_T("InstanceID"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_HostInventory, InstanceID), /* offset */
+    MI_T("CIM_ManagedElement"), /* origin */
+    MI_T("Container_HostInventory"), /* propagator */
+    NULL,
+};
+
+/* property Container_HostInventory.Computer */
+static MI_CONST MI_PropertyDecl Container_HostInventory_Computer_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00637208, /* code */
+    MI_T("Computer"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_HostInventory, Computer), /* offset */
+    MI_T("Container_HostInventory"), /* origin */
+    MI_T("Container_HostInventory"), /* propagator */
+    NULL,
+};
+
+/* property Container_HostInventory.DockerVersion */
+static MI_CONST MI_PropertyDecl Container_HostInventory_DockerVersion_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00646E0D, /* code */
+    MI_T("DockerVersion"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_HostInventory, DockerVersion), /* offset */
+    MI_T("Container_HostInventory"), /* origin */
+    MI_T("Container_HostInventory"), /* propagator */
+    NULL,
+};
+
+/* property Container_HostInventory.OperatingSystem */
+static MI_CONST MI_PropertyDecl Container_HostInventory_OperatingSystem_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x006F6D0F, /* code */
+    MI_T("OperatingSystem"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_HostInventory, OperatingSystem), /* offset */
+    MI_T("Container_HostInventory"), /* origin */
+    MI_T("Container_HostInventory"), /* propagator */
+    NULL,
+};
+
+/* property Container_HostInventory.Volume */
+static MI_CONST MI_PropertyDecl Container_HostInventory_Volume_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00766506, /* code */
+    MI_T("Volume"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_HostInventory, Volume), /* offset */
+    MI_T("Container_HostInventory"), /* origin */
+    MI_T("Container_HostInventory"), /* propagator */
+    NULL,
+};
+
+/* property Container_HostInventory.Network */
+static MI_CONST MI_PropertyDecl Container_HostInventory_Network_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x006E6B07, /* code */
+    MI_T("Network"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_HostInventory, Network), /* offset */
+    MI_T("Container_HostInventory"), /* origin */
+    MI_T("Container_HostInventory"), /* propagator */
+    NULL,
+};
+
+/* property Container_HostInventory.InternalIp */
+static MI_CONST MI_PropertyDecl Container_HostInventory_InternalIp_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x0069700A, /* code */
+    MI_T("InternalIp"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_HostInventory, InternalIp), /* offset */
+    MI_T("Container_HostInventory"), /* origin */
+    MI_T("Container_HostInventory"), /* propagator */
+    NULL,
+};
+
+/* property Container_HostInventory.NodeRole */
+static MI_CONST MI_PropertyDecl Container_HostInventory_NodeRole_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x006E6508, /* code */
+    MI_T("NodeRole"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_HostInventory, NodeRole), /* offset */
+    MI_T("Container_HostInventory"), /* origin */
+    MI_T("Container_HostInventory"), /* propagator */
+    NULL,
+};
+
+/* property Container_HostInventory.OrchestratorType */
+static MI_CONST MI_PropertyDecl Container_HostInventory_OrchestratorType_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x006F6510, /* code */
+    MI_T("OrchestratorType"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_HostInventory, OrchestratorType), /* offset */
+    MI_T("Container_HostInventory"), /* origin */
+    MI_T("Container_HostInventory"), /* propagator */
+    NULL,
+};
+
+static MI_PropertyDecl MI_CONST* MI_CONST Container_HostInventory_props[] =
+{
+    &Container_HostInventory_InstanceID_prop,
+    &CIM_ManagedElement_Caption_prop,
+    &CIM_ManagedElement_Description_prop,
+    &CIM_ManagedElement_ElementName_prop,
+    &Container_HostInventory_Computer_prop,
+    &Container_HostInventory_DockerVersion_prop,
+    &Container_HostInventory_OperatingSystem_prop,
+    &Container_HostInventory_Volume_prop,
+    &Container_HostInventory_Network_prop,
+    &Container_HostInventory_InternalIp_prop,
+    &Container_HostInventory_NodeRole_prop,
+    &Container_HostInventory_OrchestratorType_prop,
+};
+
+static MI_CONST MI_ProviderFT Container_HostInventory_funcs =
+{
+  (MI_ProviderFT_Load)Container_HostInventory_Load,
+  (MI_ProviderFT_Unload)Container_HostInventory_Unload,
+  (MI_ProviderFT_GetInstance)Container_HostInventory_GetInstance,
+  (MI_ProviderFT_EnumerateInstances)Container_HostInventory_EnumerateInstances,
+  (MI_ProviderFT_CreateInstance)Container_HostInventory_CreateInstance,
+  (MI_ProviderFT_ModifyInstance)Container_HostInventory_ModifyInstance,
+  (MI_ProviderFT_DeleteInstance)Container_HostInventory_DeleteInstance,
+  (MI_ProviderFT_AssociatorInstances)NULL,
+  (MI_ProviderFT_ReferenceInstances)NULL,
+  (MI_ProviderFT_EnableIndications)NULL,
+  (MI_ProviderFT_DisableIndications)NULL,
+  (MI_ProviderFT_Subscribe)NULL,
+  (MI_ProviderFT_Unsubscribe)NULL,
+  (MI_ProviderFT_Invoke)NULL,
+};
+
+static MI_CONST MI_Char* Container_HostInventory_UMLPackagePath_qual_value = MI_T("CIM::Core::CoreElements");
+
+static MI_CONST MI_Qualifier Container_HostInventory_UMLPackagePath_qual =
+{
+    MI_T("UMLPackagePath"),
+    MI_STRING,
+    0,
+    &Container_HostInventory_UMLPackagePath_qual_value
+};
+
+static MI_CONST MI_Char* Container_HostInventory_Version_qual_value = MI_T("1.0.0");
+
+static MI_CONST MI_Qualifier Container_HostInventory_Version_qual =
+{
+    MI_T("Version"),
+    MI_STRING,
+    MI_FLAG_ENABLEOVERRIDE|MI_FLAG_TRANSLATABLE|MI_FLAG_RESTRICTED,
+    &Container_HostInventory_Version_qual_value
+};
+
+static MI_Qualifier MI_CONST* MI_CONST Container_HostInventory_quals[] =
+{
+    &Container_HostInventory_UMLPackagePath_qual,
+    &Container_HostInventory_Version_qual,
+};
+
+/* class Container_HostInventory */
+MI_CONST MI_ClassDecl Container_HostInventory_rtti =
+{
+    MI_FLAG_CLASS, /* flags */
+    0x00637917, /* code */
+    MI_T("Container_HostInventory"), /* name */
+    Container_HostInventory_quals, /* qualifiers */
+    MI_COUNT(Container_HostInventory_quals), /* numQualifiers */
+    Container_HostInventory_props, /* properties */
+    MI_COUNT(Container_HostInventory_props), /* numProperties */
+    sizeof(Container_HostInventory), /* size */
+    MI_T("CIM_ManagedElement"), /* superClass */
+    &CIM_ManagedElement_rtti, /* superClassDecl */
+    NULL, /* methods */
+    0, /* numMethods */
+    &schemaDecl, /* schema */
+    &Container_HostInventory_funcs, /* functions */
+    NULL, /* owningClass */
+};
 
 /*
 **==============================================================================
@@ -1516,6 +1757,7 @@ static MI_ClassDecl MI_CONST* MI_CONST classes[] =
     &Container_DaemonEvent_rtti,
     &Container_ImageInventory_rtti,
     &Container_ContainerLog_rtti,
+    &Container_HostInventory_rtti,
 };
 
 MI_SchemaDecl schemaDecl =

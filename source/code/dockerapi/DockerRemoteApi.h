@@ -16,5 +16,6 @@ vector<string> listContainer(bool all = false);
 vector<cJSON*> getResponse(vector<string>& request, bool isMultiJson = false, bool ignoreResponse = false);
 vector<string> getContainerLogs(string& request);
 string getDockerHostName();
+cJSON* parseJson(string& );
 
 #endif
