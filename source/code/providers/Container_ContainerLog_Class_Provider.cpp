@@ -11,6 +11,7 @@
 #include <unistd.h>
 #include <uuid/uuid.h>
 #include <vector>
+#include <deque>
 
 #include "../cjson/cJSON.h"
 #include "../dockerapi/DockerRemoteApi.h"
@@ -103,9 +104,9 @@ public:
     ///
     /// \returns Vector containing logs for each container
     ///
-    static vector<Container_ContainerLog_Class> QueryAll()
+    static deque<Container_ContainerLog_Class> QueryAll()
     {
-        vector<Container_ContainerLog_Class> result;
+        deque<Container_ContainerLog_Class> result;
 
         string logDriver = getLogDriverName();
         if (logDriver.compare("json-file") != 0)
@@ -171,7 +172,7 @@ public:
                                 }
                             }
                             instance.Computer_value(hostname.c_str());
-                            result.push_back(instance);
+                            result.push_front(instance);
                         }
 
                         logResponse.clear();
@@ -225,7 +226,7 @@ void Container_ContainerLog_Class_Provider::EnumerateInstances(
     bool keysOnly,
     const MI_Filter* filter)
 {
-    vector<Container_ContainerLog_Class> queryResult = ContainerLogQuery::QueryAll();
+    deque<Container_ContainerLog_Class> queryResult = ContainerLogQuery::QueryAll();
 
     for (unsigned i = 0; i < queryResult.size(); i++)
     {

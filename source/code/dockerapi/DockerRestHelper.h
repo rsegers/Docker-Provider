@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string>
 #include <string.h>
+#include <stdlib.h>
 
 #include "../cjson/cJSON.h"
 
@@ -92,7 +93,7 @@ public:
     static string restDockerLogs(string id, int start)
     {
         char result[516];
-        snprintf(result, 516, "GET /containers/%s/logs?stderr=1&stdout=1&since=%d HTTP/1.1\r\nHost: localhost\r\n\r\n", id.c_str(), start);
+        snprintf(result, 516, "GET /containers/%s/logs?stderr=1&stdout=1&since=%d&timestamps=1 HTTP/1.1\r\nHost: localhost\r\n\r\n", id.c_str(), start);
         return string(result);
     }
 
@@ -139,6 +140,9 @@ public:
         char result[2048];
         snprintf(result, 2048, "POST /containers/%s/exec HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: %zu\r\n\r\n%s", id.c_str(), strlen(json), json);
 
+        if(root) cJSON_Delete(root);
+        if(json) free(json);
+
         return string(result);
     }
 
@@ -161,6 +165,9 @@ public:
 
         char result[512];
         snprintf(result, 512, "POST /exec/%s/start HTTP/1.1\r\nHost: localhost\r\nContent-Type: application/json\r\nContent-Length: %zu\r\n\r\n%s", execId.c_str(), strlen(json), json);
+
+        if(root) cJSON_Delete(root);
+        if(json) free(json);
 
         return string(result);
     }

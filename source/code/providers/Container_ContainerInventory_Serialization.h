@@ -8,6 +8,7 @@
 #include <string>
 #include <string.h>
 #include <syslog.h>
+#include <stdlib.h>
 
 #include "../cjson/cJSON.h"
 
@@ -56,9 +57,11 @@ public:
             cJSON_AddStringToObject(root, "Ports", object.Ports_value().Str());
             cJSON_AddStringToObject(root, "Links", object.Links_value().Str());
 
-            fprintf(target, "%s", cJSON_PrintUnformatted(root));
+            char* containerInventoryStr = cJSON_PrintUnformatted(root);
+            fprintf(target, "%s", containerInventoryStr);
             fclose(target);
             cJSON_Delete(root);
+            if(containerInventoryStr) free(containerInventoryStr);
         }
         else
         {
@@ -89,32 +92,45 @@ public:
 
         if (target)
         {
-            char buffer[4096];
+	        //Go to EOF
+            fseek(target, 0, SEEK_END);
+            //Get file size
+            long fileSize = ftell(target);
+            //Rewind to beginning
+            rewind(target);
+            //Get a buffer for the size of the file being read
+            char* buffer = (char*) malloc(fileSize + 1);
 
-            if (fgets(buffer, 4095, target))
+            if (fgets(buffer, fileSize+1, target))
             {
                 cJSON* root = cJSON_Parse(buffer);
-
-                // Get all fields from JSON
-                instance.ElementName_value(cJSON_GetObjectItem(root, "ElementName")->valuestring);
-                instance.CreatedTime_value(cJSON_GetObjectItem(root, "CreatedTime")->valuestring);
-                instance.State_value(cJSON_GetObjectItem(root, "State")->valuestring);
-                instance.ExitCode_value(cJSON_GetObjectItem(root, "ExitCode")->valueint);
-                instance.StartedTime_value(cJSON_GetObjectItem(root, "StartedTime")->valuestring);
-                instance.FinishedTime_value(cJSON_GetObjectItem(root, "FinishedTime")->valuestring);
-                instance.ImageId_value(cJSON_GetObjectItem(root, "ImageId")->valuestring);
-                instance.Image_value(cJSON_GetObjectItem(root, "Image")->valuestring);
-                instance.Repository_value(cJSON_GetObjectItem(root, "Repository")->valuestring);
-                instance.ImageTag_value(cJSON_GetObjectItem(root, "ImageTag")->valuestring);
-                instance.ComposeGroup_value(cJSON_GetObjectItem(root, "ComposeGroup")->valuestring);
-                instance.ContainerHostname_value(cJSON_GetObjectItem(root, "ContainerHostname")->valuestring);
-                instance.Computer_value(cJSON_GetObjectItem(root, "Computer")->valuestring);
-                instance.Command_value(cJSON_GetObjectItem(root, "Command")->valuestring);
-                instance.EnvironmentVar_value(cJSON_GetObjectItem(root, "EnvironmentVar")->valuestring);
-                instance.Ports_value(cJSON_GetObjectItem(root, "Ports")->valuestring);
-                instance.Links_value(cJSON_GetObjectItem(root, "Links")->valuestring);
-
-                cJSON_Delete(root);
+		        if(root != NULL)
+                {
+                    // Get all fields from JSON
+                    instance.ElementName_value(cJSON_GetObjectItem(root, "ElementName")->valuestring);
+                    instance.CreatedTime_value(cJSON_GetObjectItem(root, "CreatedTime")->valuestring);
+                    instance.State_value(cJSON_GetObjectItem(root, "State")->valuestring);
+                    instance.ExitCode_value(cJSON_GetObjectItem(root, "ExitCode")->valueint);
+                    instance.StartedTime_value(cJSON_GetObjectItem(root, "StartedTime")->valuestring);
+                    instance.FinishedTime_value(cJSON_GetObjectItem(root, "FinishedTime")->valuestring);
+                    instance.ImageId_value(cJSON_GetObjectItem(root, "ImageId")->valuestring);
+                    instance.Image_value(cJSON_GetObjectItem(root, "Image")->valuestring);
+                    instance.Repository_value(cJSON_GetObjectItem(root, "Repository")->valuestring);
+                    instance.ImageTag_value(cJSON_GetObjectItem(root, "ImageTag")->valuestring);
+                    instance.ComposeGroup_value(cJSON_GetObjectItem(root, "ComposeGroup")->valuestring);
+                    instance.ContainerHostname_value(cJSON_GetObjectItem(root, "ContainerHostname")->valuestring);
+                    instance.Computer_value(cJSON_GetObjectItem(root, "Computer")->valuestring);
+                    instance.Command_value(cJSON_GetObjectItem(root, "Command")->valuestring);
+                    instance.EnvironmentVar_value(cJSON_GetObjectItem(root, "EnvironmentVar")->valuestring);
+                    instance.Ports_value(cJSON_GetObjectItem(root, "Ports")->valuestring);
+                    instance.Links_value(cJSON_GetObjectItem(root, "Links")->valuestring);
+    
+                    cJSON_Delete(root);
+                }
+                else
+                {
+                    syslog(LOG_ERR, "Could not parse deleted container info %s", cJSON_GetErrorPtr());
+                }
             }
             else
             {
@@ -122,6 +138,12 @@ public:
             }
 
             fclose(target);
+
+	        if(buffer) 
+            {
+                free(buffer);
+                buffer = NULL;
+            }
 
             if (remove(filename))
             {

@@ -138,7 +138,8 @@ private:
             instance.EnvironmentVar_value(strcmp(env, "null") ? env : "");
 
             // Command
-            instance.Command_value(cJSON_Print(cJSON_GetObjectItem(config, "Cmd")));
+	        char *cmd = cJSON_Print(cJSON_GetObjectItem(config, "Cmd"));
+            instance.Command_value(cmd);
 
             cJSON* labels = cJSON_GetObjectItem(config, "Labels");
 
@@ -154,6 +155,8 @@ private:
                     instance.ComposeGroup_value(groupName->valuestring);
                 }
             }
+            if(env) free(env);
+            if(cmd) free(cmd);
         }
         else
         {
@@ -240,6 +243,9 @@ private:
             // Ports
             char* ports = cJSON_Print(cJSON_GetObjectItem(hostConfig, "PortBindings"));
             instance.Ports_value(strcmp(ports, "{\n}") ? ports : "");
+
+	    if(links) free(links);
+	    if(ports) free(ports);
         }
         else
         {
@@ -372,14 +378,27 @@ void Container_ContainerInventory_Class_Provider::Unload(Context& context)
 
 void Container_ContainerInventory_Class_Provider::EnumerateInstances(Context& context, const String& nameSpace, const PropertySet& propertySet, bool keysOnly, const MI_Filter* filter)
 {
-    vector<Container_ContainerInventory_Class> queryResult = ContainerQuery::QueryAll();
-
-    for (unsigned i = 0; i < queryResult.size(); i++)
+    try
     {
-        context.Post(queryResult[i]);
+    	vector<Container_ContainerInventory_Class> queryResult = ContainerQuery::QueryAll();
+
+    	for (unsigned i = 0; i < queryResult.size(); i++)
+    	{
+        	context.Post(queryResult[i]);
+    	}
+    	context.Post(MI_RESULT_OK);
     }
 
-    context.Post(MI_RESULT_OK);
+    catch (std::exception &e)
+    {
+        syslog(LOG_ERR, "Container_ContainerInventory %s", e.what());
+        context.Post(MI_RESULT_FAILED);
+    }
+    catch (...)
+    {
+        syslog(LOG_ERR, "Container_ContainerInventory Unknown exception");
+        context.Post(MI_RESULT_FAILED);
+    }
 }
 
 void Container_ContainerInventory_Class_Provider::GetInstance(Context& context, const String& nameSpace, const Container_ContainerInventory_Class& instanceName,

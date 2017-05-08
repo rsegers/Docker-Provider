@@ -127,6 +127,7 @@ private:
                     }
                 }
             }
+            cJSON_Delete(response[0]);
         }
         else
         {
@@ -200,26 +201,26 @@ public:
                         if (tempImageName)
                         {
                             // Container event
+
                             instance.ElementName_value(tempImageName->valuestring);
 
                             char* id = cJSON_GetObjectItem(entry, "id")->valuestring;
                             instance.Id_value(id);
                             string idStr = string(id);
-
-                            // Get the container name
+                            
+			    // Get the container name
                             if (idMap.count(idStr))
                             {
                                 instance.ContainerName_value(idMap[idStr].c_str());
+                                // Add newly created containers to list
+                                if (!strcmp(cJSON_GetObjectItem(entry, "status")->valuestring, "create"))
+                                {
+                                    newContainers.push_back(string(id));
+                                }
                             }
                             else
                             {
                                 syslog(LOG_NOTICE, "No container name found for container %s", id);
-                            }
-
-                            // Add newly created containers to list
-                            if (!strcmp(cJSON_GetObjectItem(entry, "status")->valuestring, "create"))
-                            {
-                                newContainers.push_back(string(id));
                             }
                         }
                         else
@@ -229,7 +230,6 @@ public:
                             instance.Id_value("");
                             instance.ContainerName_value("");
                         }
-
                         result.push_back(instance);
                     }
                     else
@@ -237,9 +237,7 @@ public:
                         syslog(LOG_WARNING, "Attempt in QueryAll to get element %d of event list returned null", i);
                     }
                 }
-
                 LinkFilesNewContainers(newContainers);
-
                 // Clean up object
                 cJSON_Delete(response[0]);
             }
@@ -248,7 +246,6 @@ public:
                 syslog(LOG_ERR, "Attempt in QueryAll to get Docker events failed");
             }
         }
-
         SetPreviousTime(currentTime);
         closelog();
         return result;
@@ -275,14 +272,25 @@ void Container_DaemonEvent_Class_Provider::Unload(Context& context)
 
 void Container_DaemonEvent_Class_Provider::EnumerateInstances(Context& context, const String& nameSpace, const PropertySet& propertySet, bool keysOnly, const MI_Filter* filter)
 {
-    vector<Container_DaemonEvent_Class> queryResult = EventQuery::QueryAll();
-
-    for (unsigned i = 0; i < queryResult.size(); i++)
+    try
     {
-        context.Post(queryResult[i]);
+        vector<Container_DaemonEvent_Class> queryResult = EventQuery::QueryAll();
+        for (unsigned i = 0; i < queryResult.size(); i++)
+        {
+            context.Post(queryResult[i]);
+        }
+        context.Post(MI_RESULT_OK);
     }
-
-    context.Post(MI_RESULT_OK);
+    catch (std::exception &e)
+    {
+        syslog(LOG_ERR, "Container_DaemonEvent %s", e.what());
+        context.Post(MI_RESULT_FAILED);
+    }
+    catch (...)
+    {
+        syslog(LOG_ERR, "Container_DaemonEvent Unknown exception");
+        context.Post(MI_RESULT_FAILED);
+    }
 }
 
 void Container_DaemonEvent_Class_Provider::GetInstance(Context& context, const String& nameSpace, const Container_DaemonEvent_Class& instanceName, const PropertySet& propertySet)

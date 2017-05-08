@@ -43,9 +43,11 @@ public:
             cJSON_AddStringToObject(root, "ImageTag", object.ImageTag_value().Str());
             cJSON_AddStringToObject(root, "Computer", object.Computer_value().Str());
 
-            fprintf(target, "%s", cJSON_PrintUnformatted(root));
+            char* imageInventoryStr = cJSON_PrintUnformatted(root);
+            fprintf(target, "%s", imageInventoryStr);
             fclose(target);
             cJSON_Delete(root);
+            if(imageInventoryStr) free(imageInventoryStr);
         }
         else
         {
@@ -76,26 +78,39 @@ public:
 
         if (target)
         {
-            char buffer[4096];
+            //Go to EOF
+            fseek(target, 0, SEEK_END);
+            //Get file size
+            long fileSize = ftell(target);
+            //Rewind to beginning
+            rewind(target);
+            //Get a buffer for the size of the file being read
+            char* buffer = (char*) malloc(fileSize + 1);
 
-            if (fgets(buffer, 4095, target))
+            if (fgets(buffer, fileSize+1, target))
             {
                 cJSON* root = cJSON_Parse(buffer);
+                if(root != NULL)
+                {
+                    // Get all fields from JSON
+                    instance.Image_value(cJSON_GetObjectItem(root, "Image")->valuestring);
+                    instance.Repository_value(cJSON_GetObjectItem(root, "Repository")->valuestring);
+                    instance.ImageTag_value(cJSON_GetObjectItem(root, "ImageTag")->valuestring);
+                    instance.Computer_value(cJSON_GetObjectItem(root, "Computer")->valuestring);
+                    instance.Running_value(0);
+                    instance.Stopped_value(0);
+                    instance.Failed_value(0);
+                    instance.Paused_value(0);
+                    instance.Total_value(0);
+                    instance.ImageSize_value("0 MB");
+                    instance.VirtualSize_value("0 MB");
 
-                // Get all fields from JSON
-                instance.Image_value(cJSON_GetObjectItem(root, "Image")->valuestring);
-                instance.Repository_value(cJSON_GetObjectItem(root, "Repository")->valuestring);
-                instance.ImageTag_value(cJSON_GetObjectItem(root, "ImageTag")->valuestring);
-                instance.Computer_value(cJSON_GetObjectItem(root, "Computer")->valuestring);
-                instance.Running_value(0);
-                instance.Stopped_value(0);
-                instance.Failed_value(0);
-                instance.Paused_value(0);
-                instance.Total_value(0);
-                instance.ImageSize_value("0 MB");
-                instance.VirtualSize_value("0 MB");
-
-                cJSON_Delete(root);
+                    cJSON_Delete(root);
+                }
+                else
+                {
+                    syslog(LOG_ERR, "Could not parse deleted image info %s", cJSON_GetErrorPtr());
+                }   
             }
             else
             {
@@ -103,6 +118,12 @@ public:
             }
 
             fclose(target);
+
+            if(buffer) 
+            {
+                free(buffer);
+                buffer = NULL;
+            }
 
             if (remove(filename))
             {

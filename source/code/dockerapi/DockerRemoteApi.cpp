@@ -15,6 +15,9 @@
 #include "DockerRestHelper.h"
 
 #define SOCKET_PATH "/var/run/docker.sock"
+#define SELECT_ERROR -1
+#define SELECT_TIMEOUT -2
+#define MAX_RETRIES 6
 
 using namespace std;
 
@@ -24,7 +27,7 @@ using namespace std;
  */
 int readSocket(int fd, char* buf, int size, int timeout)
 {
-    int result = -1;
+    int result = SELECT_ERROR;
 
     fd_set rfds;
     FD_ZERO(&rfds);
@@ -34,7 +37,12 @@ int readSocket(int fd, char* buf, int size, int timeout)
     tv.tv_sec = timeout;
     tv.tv_usec = 0;
 
-    if (select(fd + 1, &rfds, NULL, NULL, &tv) != -1 && FD_ISSET(fd, &rfds))
+    result = select(fd + 1, &rfds, NULL, NULL, &tv);
+    if (result == 0)
+    {
+        result = SELECT_TIMEOUT;
+    }    
+    else if ((result != -1) && FD_ISSET(fd, &rfds))
     {
         result = read(fd, buf, size);
     }
@@ -291,6 +299,7 @@ vector<string> getContainerLogs(string& request)
     {
         const int bufferSize = 4096;
         const int timeoutSecond = 1;
+        int multiplier = 1;
         vector<int> sockfd;
         int n = 1;
         createConnection(n, sockfd);
@@ -306,19 +315,32 @@ vector<string> getContainerLogs(string& request)
         char* raw_response = 0;
         int raw_reponse_size = 0;
 
-        while ((read_n = readSocket(sockfd[0], readBuf, bufferSize, timeoutSecond)) > 0)
+        for(int trial = 0; trial < MAX_RETRIES; trial++)
         {
-            char* tempBuf = new char[raw_reponse_size + read_n];
-            if(raw_reponse_size > 0)
+            while ((read_n = readSocket(sockfd[0], readBuf, bufferSize, (timeoutSecond*multiplier))) > 0)
             {
-                memcpy(tempBuf, raw_response, raw_reponse_size);
-                delete raw_response;
-                raw_response = 0;
-            }
+                char* tempBuf = new char[raw_reponse_size + read_n];
+                if(raw_reponse_size > 0)
+                {
+                    memcpy(tempBuf, raw_response, raw_reponse_size);
+                    delete raw_response;
+                    raw_response = 0;
+                }
 
-            memcpy(tempBuf + raw_reponse_size, readBuf, read_n);
-            raw_response = tempBuf;
-            raw_reponse_size = raw_reponse_size + read_n;
+                memcpy(tempBuf + raw_reponse_size, readBuf, read_n);
+                raw_response = tempBuf;
+                raw_reponse_size = raw_reponse_size + read_n;
+            }
+            if(read_n == SELECT_TIMEOUT)
+            {
+                //back off and retry
+                multiplier *= 2;
+            }
+            else
+            {
+                //read_n retunred either SELECT_ERROR, non zero number of bytes read or zero which says connection was closed
+                break;
+            }
         }
 
         if(raw_reponse_size != 0 && raw_response)
