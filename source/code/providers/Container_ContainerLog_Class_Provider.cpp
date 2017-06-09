@@ -109,7 +109,8 @@ public:
         deque<Container_ContainerLog_Class> result;
 
         string logDriver = getLogDriverName();
-        if (logDriver.compare("json-file") != 0)
+        //Docker rest api endpoint supports both json-file and journald logging drivers
+        if ((logDriver.compare("json-file") != 0) && (logDriver.compare("journald") != 0))
         {
             return result;
         }
