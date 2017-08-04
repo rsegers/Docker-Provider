@@ -9,7 +9,7 @@ ${{OMI_SERVICE}} reload
 ${{OMS_SERVICE}} reload
 
 if ${{PERFORMING_UPGRADE_NOT}}; then
-	/opt/omi/bin/omicli ei root/cimv2 Container_DaemonEvent
+	/opt/omi/bin/omicli ei root/cimv2 Container_HostInventory
 fi
 
 %Postuninstall_1000
