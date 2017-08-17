@@ -8,11 +8,15 @@
 #include <stdio.h>
 #include <uuid/uuid.h>
 #include <cstdlib>
+#include <sys/types.h>
+#include <dirent.h>
 
 #include "../cjson/cJSON.h"
 #include "../dockerapi/DockerRemoteApi.h"
 #include "../dockerapi/DockerRestHelper.h"
 #include "Helper.h"
+
+#define SF_DIR "/etc/servicefabric"
 
 using namespace std;
 
@@ -67,7 +71,8 @@ public:
             string computerName = string((cJSON_GetObjectItem(responseJson, "Name")->valuestring));
             instance.Computer_value(computerName.c_str());
             instance.DockerVersion_value((cJSON_GetObjectItem(responseJson, "ServerVersion")->valuestring));
-            instance.OperatingSystem_value((cJSON_GetObjectItem(responseJson, "OperatingSystem")->valuestring));
+            string operatingSystem = string(cJSON_GetObjectItem(responseJson, "OperatingSystem")->valuestring);
+            instance.OperatingSystem_value(operatingSystem.c_str());
             //Get Volume and Network info from "Plugins"
             cJSON* plugins_entry = cJSON_GetObjectItem(responseJson, "Plugins");
             if(plugins_entry != NULL)
@@ -114,7 +119,20 @@ public:
             }   
 
             //Orchestrator type is obtained from the node name. example of node names swarm-manager-vmss_0 for swarm, k8s-master-71E8D996-0 for kubernetes
-            if(computerName.find("swarmm") != string::npos)
+            if(operatingSystem.find("OpenShift") != string::npos)
+            {
+                //OpenShift
+                instance.OrchestratorType_value("OpenShift");
+                instance.NodeRole_value("Node");
+            }
+            else if (DIR *sfDir = opendir(SF_DIR))
+            {
+                //ServiceFabric
+                instance.OrchestratorType_value("ServiceFabric");
+                closedir(sfDir);
+                instance.NodeRole_value("Node");
+            }
+            else if(computerName.find("swarmm") != string::npos)
             {
                 //swarm
                 instance.OrchestratorType_value("Swarm Mode");  
