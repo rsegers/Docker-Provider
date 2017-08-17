@@ -6,12 +6,7 @@
 #include <uuid/uuid.h>
 #include <vector>
 
-#include <scxcorelib/scxcmn.h>
-#include <scxcorelib/scxprocess.h>
-#include <scxcorelib/stringaid.h>
-#include <testutils/scxunit.h>
-#include <testutils/providertestutils.h>
-
+#include "TestHelper.h"
 #include "Container_HostInventory_Class_Provider.h"
 #include "cjson/cJSON.h"
 
@@ -25,7 +20,6 @@ class ContainerHostInventoryTest : public CppUnit::TestFixture
     CPPUNIT_TEST(TestDcosParsing);
     CPPUNIT_TEST(TestSwarmModeParsing);
     CPPUNIT_TEST(TestSwarmParsing);
-    CPPUNIT_TEST(TestOpenShiftParsing);
     CPPUNIT_TEST(TestNonOrchestratedParsing);
     //Running this test at the end to test that the unset of DOCKER_TESTRUNNER_STRING is successful
     CPPUNIT_TEST(TestEnumerateInstances);
@@ -160,31 +154,6 @@ protected:
             CPPUNIT_ASSERT_EQUAL(std::wstring(L"Agent"), context[i].GetProperty(L"NodeRole", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
             CPPUNIT_ASSERT_EQUAL(std::wstring(L"Swarm"), context[i].GetProperty(L"OrchestratorType", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
         }
-    }
-
-    void TestOpenShiftParsing()
-    {
-        wstring errMsg;
-        TestableContext context;
-        vector<wstring> m_keyNames;
-        m_keyNames.push_back(L"InstanceID");
-        string openShiftNodeInfoString = "\r\n{\"ID\":\"4H4P:Z5O5:MMPA:BSDD:44TG:3FRY:AJ5Z:SPU4:LIEV:2XIF:SDJ3:FWLL\",\"Containers\":23,\"ContainersRunning\":13,\"ContainersPaused\":0,\"ContainersStopped\":10,\"Images\":25,\"Driver\":\"overlay\",\"DriverStatus\":[[\"Backing Filesystem\",\"extfs\"]],\"SystemStatus\":null,\"Plugins\":{\"Volume\":[\"local\"],\"Network\":[\"host\",\"bridge\",\"null\",\"overlay\"],\"Authorization\":null},\"MemoryLimit\":true,\"SwapLimit\":false,\"KernelMemory\":true,\"CpuCfsPeriod\":true,\"CpuCfsQuota\":true,\"CPUShares\":true,\"CPUSet\":true,\"IPv4Forwarding\":true,\"BridgeNfIptables\":true,\"BridgeNfIp6tables\":true,\"Debug\":false,\"NFd\":89,\"OomKillDisable\":true,\"NGoroutines\":89,\"SystemTime\":\"2017-04-25T22:06:56.371719716Z\",\"ExecutionDriver\":\"\",\"LoggingDriver\":\"json-file\",\"CgroupDriver\":\"cgroupfs\",\"NEventsListener\":0,\"KernelVersion\":\"4.4.0-72-generic\",\"OperatingSystem\":\"OpenShift\",\"OSType\":\"linux\",\"Architecture\":\"x86_64\",\"IndexServerAddress\":\"https://index.docker.io/v1/\",\"RegistryConfig\":{\"InsecureRegistryCIDRs\":[\"127.0.0.0/8\"],\"IndexConfigs\":{\"docker.io\":{\"Name\":\"docker.io\",\"Mirrors\":null,\"Secure\":true,\"Official\":true}},\"Mirrors\":null},\"NCPU\":2,\"MemTotal\":7305641984,\"DockerRootDir\":\"/var/lib/docker\",\"HttpProxy\":\"\",\"HttpsProxy\":\"\",\"NoProxy\":\"\",\"Name\":\"swarmm-agent-71E8D996-0\",\"Labels\":null,\"ExperimentalBuild\":false,\"ServerVersion\":\"1.12.6\",\"ClusterStore\":\"\",\"ClusterAdvertise\":\"\",\"SecurityOptions\":[\"apparmor\",\"seccomp\"],\"Runtimes\":{\"runc\":{\"path\":\"docker-runc\"}},\"DefaultRuntime\":\"runc\",\"Swarm\":{\"NodeID\":\"\",\"NodeAddr\":\"\",\"LocalNodeState\":\"inactive\",\"ControlAvailable\":false,\"Error\":\"\",\"RemoteManagers\":null,\"Nodes\":0,\"Managers\":0,\"Cluster\":{\"ID\":\"\",\"Version\":{},\"CreatedAt\":\"0001-01-01T00:00:00Z\",\"UpdatedAt\":\"0001-01-01T00:00:00Z\",\"Spec\":{\"Orchestration\":{},\"Raft\":{},\"Dispatcher\":{},\"CAConfig\":{},\"TaskDefaults\":{}}}},\"LiveRestoreEnabled\":false}";
-        setenv(DOCKER_TESTRUNNER_STRING,openShiftNodeInfoString.c_str(),1);
-
-        // Enumerate provider. Similar to k8 testing
-        StandardTestEnumerateInstances<mi::Container_HostInventory_Class_Provider>(m_keyNames, context, CALL_LOCATION(errMsg));
-        CPPUNIT_ASSERT_EQUAL(1, context.Size());
-
-        for (unsigned i = 0; i < context.Size(); ++i)
-        {
-            wstring instanceId = context[i].GetProperty(L"InstanceID", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg));
-            CPPUNIT_ASSERT(instanceId.length());
-            CPPUNIT_ASSERT_EQUAL(std::wstring(L"swarmm-agent-71E8D996-0"), context[i].GetProperty(L"Computer", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg))) ;
-            CPPUNIT_ASSERT_EQUAL(std::wstring(L"Node"), context[i].GetProperty(L"NodeRole", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
-            CPPUNIT_ASSERT_EQUAL(std::wstring(L"OpenShift"), context[i].GetProperty(L"OrchestratorType", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
-        }
-
-        unsetenv(DOCKER_TESTRUNNER_STRING);
     }
 
     void TestNonOrchestratedParsing()

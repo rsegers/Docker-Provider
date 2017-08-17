@@ -171,4 +171,18 @@ public:
 
         return string(result);
     }
+
+    ///
+    /// Create the REST request to list processes running inside container
+    /// https://docs.docker.com/engine/api/v1.30/#operation/ContainerTop
+    ///
+    /// \returns Request in string format
+    ///
+    static string restDockerTop(string id)
+    {
+        char result[516];
+        snprintf(result, 516, "GET /containers/%s/top HTTP/1.1\r\nHost: localhost\r\n\r\n", id.c_str());
+        return string(result);
+    }
+
 };

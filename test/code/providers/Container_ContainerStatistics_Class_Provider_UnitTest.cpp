@@ -6,12 +6,7 @@
 #include <uuid/uuid.h>
 #include <vector>
 
-#include <scxcorelib/scxcmn.h>
-#include <scxcorelib/scxprocess.h>
-#include <scxcorelib/stringaid.h>
-#include <testutils/scxunit.h>
-#include <testutils/providertestutils.h>
-
+#include "TestHelper.h"
 #include "Container_ContainerStatistics_Class_Provider.h"
 #include "cjson/cJSON.h"
 
@@ -27,33 +22,12 @@ class ContainerStatisticsTest : public CppUnit::TestFixture
 public:
     vector<string> containers;
 
-    static string NewGuid()
-    {
-        uuid_t uuid;
-        uuid_generate_random(uuid);
-        char s[37];
-        uuid_unparse(uuid, s);
-        return s;
-    }
-
-    static string RunCommand(const char* command)
-    {
-        istringstream processInput;
-        ostringstream processOutput;
-        ostringstream processErr;
-
-        CPPUNIT_ASSERT(!SCXProcess::Run(StrFromMultibyte(string(command)), processInput, processOutput, processErr, 0));
-        CPPUNIT_ASSERT_EQUAL(processErr.str(), string());
-
-        return processOutput.str();
-    }
-
 public:
     void setUp()
     {
         // Get some images to use
         fputc('\n', stdout);
-        RunCommand("docker pull centos");
+        TestHelper::RunCommand("docker pull centos");
     }
 
     void tearDown()
@@ -64,7 +38,7 @@ public:
         for (unsigned i = 0; i < containers.size(); i++)
         {
             sprintf(command, "docker rm -f %s", containers[i].c_str());
-            RunCommand(command);
+            TestHelper::RunCommand(command);
         }
 
         containers.clear();
@@ -80,7 +54,7 @@ protected:
         m_keyNames.push_back(L"InstanceID");
 
         char containerName[64];
-        strcpy(containerName, NewGuid().c_str());
+        strcpy(containerName, TestHelper::NewGuid().c_str());
         containers.push_back(string(containerName));
         char command[128];
         sprintf(command, "docker run --name=%s centos sleep 60 &", containerName);

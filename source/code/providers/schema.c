@@ -14,6 +14,7 @@
 #include "Container_ContainerInventory.h"
 #include "Container_ContainerLog.h"
 #include "Container_HostInventory.h"
+#include "Container_Process.h"
 
 /*
 **==============================================================================
@@ -1735,6 +1736,337 @@ MI_CONST MI_ClassDecl Container_HostInventory_rtti =
 /*
 **==============================================================================
 **
+** Container_Process
+**
+**==============================================================================
+*/
+
+/* property Container_Process.InstanceID */
+static MI_CONST MI_PropertyDecl Container_Process_InstanceID_prop =
+{
+    MI_FLAG_PROPERTY|MI_FLAG_KEY, /* flags */
+    0x0069640A, /* code */
+    MI_T("InstanceID"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, InstanceID), /* offset */
+    MI_T("CIM_ManagedElement"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.Uid */
+static MI_CONST MI_PropertyDecl Container_Process_Uid_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00756403, /* code */
+    MI_T("Uid"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, Uid), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.PID */
+static MI_CONST MI_PropertyDecl Container_Process_PID_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00706403, /* code */
+    MI_T("PID"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, PID), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.PPID */
+static MI_CONST MI_PropertyDecl Container_Process_PPID_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00706404, /* code */
+    MI_T("PPID"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, PPID), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.C */
+static MI_CONST MI_PropertyDecl Container_Process_C_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00636301, /* code */
+    MI_T("C"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, C), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.STIME */
+static MI_CONST MI_PropertyDecl Container_Process_STIME_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00736505, /* code */
+    MI_T("STIME"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, STIME), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.Tty */
+static MI_CONST MI_PropertyDecl Container_Process_Tty_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00747903, /* code */
+    MI_T("Tty"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, Tty), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.TIME */
+static MI_CONST MI_PropertyDecl Container_Process_TIME_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00736509, /* code */
+    MI_T("TIME"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, TIME), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.Cmd */
+static MI_CONST MI_PropertyDecl Container_Process_Cmd_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00636403, /* code */
+    MI_T("Cmd"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, Cmd), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.Id */
+static MI_CONST MI_PropertyDecl Container_Process_Id_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00696402, /* code */
+    MI_T("Id"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, Id), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.Name */
+static MI_CONST MI_PropertyDecl Container_Process_Name_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x006E6504, /* code */
+    MI_T("Name"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, Name), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.Pod */
+static MI_CONST MI_PropertyDecl Container_Process_Pod_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00706403, /* code */
+    MI_T("Pod"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, Pod), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.Namespace */
+static MI_CONST MI_PropertyDecl Container_Process_Namespace_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x006E6509, /* code */
+    MI_T("Namespace"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, Namespace), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+/* property Container_Process.Computer */
+static MI_CONST MI_PropertyDecl Container_Process_Computer_prop =
+{
+    MI_FLAG_PROPERTY, /* flags */
+    0x00637208, /* code */
+    MI_T("Computer"), /* name */
+    NULL, /* qualifiers */
+    0, /* numQualifiers */
+    MI_STRING, /* type */
+    NULL, /* className */
+    0, /* subscript */
+    offsetof(Container_Process, Computer), /* offset */
+    MI_T("Container_Process"), /* origin */
+    MI_T("Container_Process"), /* propagator */
+    NULL,
+};
+
+static MI_PropertyDecl MI_CONST* MI_CONST Container_Process_props[] =
+{
+    &Container_Process_InstanceID_prop,
+    &CIM_ManagedElement_Caption_prop,
+    &CIM_ManagedElement_Description_prop,
+    &CIM_ManagedElement_ElementName_prop,
+    &Container_Process_Uid_prop,
+    &Container_Process_PID_prop,
+    &Container_Process_PPID_prop,
+    &Container_Process_C_prop,
+    &Container_Process_STIME_prop,
+    &Container_Process_Tty_prop,
+    &Container_Process_TIME_prop,
+    &Container_Process_Cmd_prop,
+    &Container_Process_Id_prop,
+    &Container_Process_Name_prop,
+    &Container_Process_Pod_prop,
+    &Container_Process_Namespace_prop,
+    &Container_Process_Computer_prop,
+};
+
+static MI_CONST MI_ProviderFT Container_Process_funcs =
+{
+  (MI_ProviderFT_Load)Container_Process_Load,
+  (MI_ProviderFT_Unload)Container_Process_Unload,
+  (MI_ProviderFT_GetInstance)Container_Process_GetInstance,
+  (MI_ProviderFT_EnumerateInstances)Container_Process_EnumerateInstances,
+  (MI_ProviderFT_CreateInstance)Container_Process_CreateInstance,
+  (MI_ProviderFT_ModifyInstance)Container_Process_ModifyInstance,
+  (MI_ProviderFT_DeleteInstance)Container_Process_DeleteInstance,
+  (MI_ProviderFT_AssociatorInstances)NULL,
+  (MI_ProviderFT_ReferenceInstances)NULL,
+  (MI_ProviderFT_EnableIndications)NULL,
+  (MI_ProviderFT_DisableIndications)NULL,
+  (MI_ProviderFT_Subscribe)NULL,
+  (MI_ProviderFT_Unsubscribe)NULL,
+  (MI_ProviderFT_Invoke)NULL,
+};
+
+static MI_CONST MI_Char* Container_Process_UMLPackagePath_qual_value = MI_T("CIM::Core::CoreElements");
+
+static MI_CONST MI_Qualifier Container_Process_UMLPackagePath_qual =
+{
+    MI_T("UMLPackagePath"),
+    MI_STRING,
+    0,
+    &Container_Process_UMLPackagePath_qual_value
+};
+
+static MI_CONST MI_Char* Container_Process_Version_qual_value = MI_T("1.0.0");
+
+static MI_CONST MI_Qualifier Container_Process_Version_qual =
+{
+    MI_T("Version"),
+    MI_STRING,
+    MI_FLAG_ENABLEOVERRIDE|MI_FLAG_TRANSLATABLE|MI_FLAG_RESTRICTED,
+    &Container_Process_Version_qual_value
+};
+
+static MI_Qualifier MI_CONST* MI_CONST Container_Process_quals[] =
+{
+    &Container_Process_UMLPackagePath_qual,
+    &Container_Process_Version_qual,
+};
+
+/* class Container_Process */
+MI_CONST MI_ClassDecl Container_Process_rtti =
+{
+    MI_FLAG_CLASS, /* flags */
+    0x00637311, /* code */
+    MI_T("Container_Process"), /* name */
+    Container_Process_quals, /* qualifiers */
+    MI_COUNT(Container_Process_quals), /* numQualifiers */
+    Container_Process_props, /* properties */
+    MI_COUNT(Container_Process_props), /* numProperties */
+    sizeof(Container_Process), /* size */
+    MI_T("CIM_ManagedElement"), /* superClass */
+    &CIM_ManagedElement_rtti, /* superClassDecl */
+    NULL, /* methods */
+    0, /* numMethods */
+    &schemaDecl, /* schema */
+    &Container_Process_funcs, /* functions */
+    NULL, /* owningClass */
+};
+
+/*
+**==============================================================================
+**
 ** __mi_server
 **
 **==============================================================================
@@ -1758,6 +2090,7 @@ static MI_ClassDecl MI_CONST* MI_CONST classes[] =
     &Container_ImageInventory_rtti,
     &Container_ContainerLog_rtti,
     &Container_HostInventory_rtti,
+	&Container_Process_rtti,
 };
 
 MI_SchemaDecl schemaDecl =

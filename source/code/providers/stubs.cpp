@@ -14,6 +14,7 @@
 #include "Container_ContainerInventory_Class_Provider.h"
 #include "Container_ContainerLog_Class_Provider.h"
 #include "Container_HostInventory_Class_Provider.h"
+#include "Container_Process_Class_Provider.h"
 
 using namespace mi;
 
@@ -728,6 +729,125 @@ MI_EXTERN_C void MI_CALL Container_HostInventory_DeleteInstance(
     Container_HostInventory_Class_Provider* cxxSelf =((Container_HostInventory_Class_Provider*)self);
     Context  cxxContext(context);
     Container_HostInventory_Class cxxInstanceName(instanceName, true);
+
+    cxxSelf->DeleteInstance(cxxContext, nameSpace, cxxInstanceName);
+}
+
+MI_EXTERN_C void MI_CALL Container_Process_Load(
+    Container_Process_Self** self,
+    MI_Module_Self* selfModule,
+    MI_Context* context)
+{
+    MI_Result r = MI_RESULT_OK;
+    Context ctx(context, &r);
+    Container_Process_Class_Provider* prov = new Container_Process_Class_Provider((Module*)selfModule);
+
+    prov->Load(ctx);
+    if (MI_RESULT_OK != r)
+    {
+        delete prov;
+        MI_Context_PostResult(context, r);
+        return;
+    }
+    *self = (Container_Process_Self*)prov;
+    MI_Context_PostResult(context, MI_RESULT_OK);
+}
+
+MI_EXTERN_C void MI_CALL Container_Process_Unload(
+    Container_Process_Self* self,
+    MI_Context* context)
+{
+    MI_Result r = MI_RESULT_OK;
+    Context ctx(context, &r);
+    Container_Process_Class_Provider* prov = (Container_Process_Class_Provider*)self;
+
+    prov->Unload(ctx);
+    delete ((Container_Process_Class_Provider*)self);
+    MI_Context_PostResult(context, r);
+}
+
+MI_EXTERN_C void MI_CALL Container_Process_EnumerateInstances(
+    Container_Process_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const MI_PropertySet* propertySet,
+    MI_Boolean keysOnly,
+    const MI_Filter* filter)
+{
+    Container_Process_Class_Provider* cxxSelf =((Container_Process_Class_Provider*)self);
+    Context  cxxContext(context);
+
+    cxxSelf->EnumerateInstances(
+        cxxContext,
+        nameSpace,
+        __PropertySet(propertySet),
+        __bool(keysOnly),
+        filter);
+}
+
+MI_EXTERN_C void MI_CALL Container_Process_GetInstance(
+    Container_Process_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_Process* instanceName,
+    const MI_PropertySet* propertySet)
+{
+    Container_Process_Class_Provider* cxxSelf =((Container_Process_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_Process_Class cxxInstanceName(instanceName, true);
+
+    cxxSelf->GetInstance(
+        cxxContext,
+        nameSpace,
+        cxxInstanceName,
+        __PropertySet(propertySet));
+}
+
+MI_EXTERN_C void MI_CALL Container_Process_CreateInstance(
+    Container_Process_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_Process* newInstance)
+{
+    Container_Process_Class_Provider* cxxSelf =((Container_Process_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_Process_Class cxxNewInstance(newInstance, false);
+
+    cxxSelf->CreateInstance(cxxContext, nameSpace, cxxNewInstance);
+}
+
+MI_EXTERN_C void MI_CALL Container_Process_ModifyInstance(
+    Container_Process_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_Process* modifiedInstance,
+    const MI_PropertySet* propertySet)
+{
+    Container_Process_Class_Provider* cxxSelf =((Container_Process_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_Process_Class cxxModifiedInstance(modifiedInstance, false);
+
+    cxxSelf->ModifyInstance(
+        cxxContext,
+        nameSpace,
+        cxxModifiedInstance,
+        __PropertySet(propertySet));
+}
+
+MI_EXTERN_C void MI_CALL Container_Process_DeleteInstance(
+    Container_Process_Self* self,
+    MI_Context* context,
+    const MI_Char* nameSpace,
+    const MI_Char* className,
+    const Container_Process* instanceName)
+{
+    Container_Process_Class_Provider* cxxSelf =((Container_Process_Class_Provider*)self);
+    Context  cxxContext(context);
+    Container_Process_Class cxxInstanceName(instanceName, true);
 
     cxxSelf->DeleteInstance(cxxContext, nameSpace, cxxInstanceName);
 }

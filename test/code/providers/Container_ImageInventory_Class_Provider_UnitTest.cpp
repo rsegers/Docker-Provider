@@ -7,12 +7,7 @@
 #include <vector>
 #include <wchar.h>
 
-#include <scxcorelib/scxcmn.h>
-#include <scxcorelib/scxprocess.h>
-#include <scxcorelib/stringaid.h>
-#include <testutils/scxunit.h>
-#include <testutils/providertestutils.h>
-
+#include "TestHelper.h"
 #include "Container_ImageInventory_Class_Provider.h"
 #include "cjson/cJSON.h"
 #include "TestScriptPath.h"
@@ -32,35 +27,14 @@ class ImageInventoryTest : public CppUnit::TestFixture
 private:
     vector<string> containers;
 
-    static string NewGuid()
-    {
-        uuid_t uuid;
-        uuid_generate_random(uuid);
-        char s[37];
-        uuid_unparse(uuid, s);
-        return s;
-    }
-
-    static string RunCommand(const char* command)
-    {
-        istringstream processInput;
-        ostringstream processOutput;
-        ostringstream processErr;
-
-        CPPUNIT_ASSERT(!SCXProcess::Run(StrFromMultibyte(string(command)), processInput, processOutput, processErr, 0));
-        CPPUNIT_ASSERT_EQUAL(processErr.str(), string());
-
-        return processOutput.str();
-    }
-
 public:
     void setUp()
     {
         // Get some images to use
         fputc('\n', stdout);
-        RunCommand("docker pull hello-world");
-        RunCommand("docker pull centos");
-        RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ImageInventory/*");
+        TestHelper::RunCommand("docker pull hello-world");
+        TestHelper::RunCommand("docker pull centos");
+        TestHelper::RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ImageInventory/*");
     }
 
     void tearDown()
@@ -71,7 +45,7 @@ public:
         for (unsigned i = 0; i < containers.size(); i++)
         {
             sprintf(command, "docker rm -f %s", containers[i].c_str());
-            RunCommand(command);
+            TestHelper::RunCommand(command);
         }
 
         containers.clear();
@@ -87,13 +61,13 @@ protected:
         m_keyNames.push_back(L"InstanceID");
 
         // Remove cached state
-        RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ContainerInventory/*");
+        TestHelper::RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ContainerInventory/*");
 
         // Enumerate provider
         StandardTestEnumerateInstances<mi::Container_ImageInventory_Class_Provider>(m_keyNames, context, CALL_LOCATION(errMsg));
 
         // Get images info using command line
-        wstring dockerimages = StrFromMultibyte(RunCommand("docker images --no-trunc"));
+        wstring dockerimages = StrFromMultibyte(TestHelper::RunCommand("docker images --no-trunc"));
         // split into lines
         vector<wstring> lines;
         StrTokenize(dockerimages, lines, L"\n");
@@ -158,7 +132,7 @@ protected:
         m_keyNames.push_back(L"InstanceID");
 
         // Remove cached state
-        RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ContainerInventory/*");
+        TestHelper::RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ContainerInventory/*");
 
         // Enumerate provider
         StandardTestEnumerateInstances<mi::Container_ImageInventory_Class_Provider>(m_keyNames, context, CALL_LOCATION(errMsg));
@@ -256,10 +230,10 @@ protected:
         m_keyNames.push_back(L"InstanceID");
 
         // Remove cached state
-        RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ContainerInventory/*");
+        TestHelper::RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ContainerInventory/*");
 
         char containerName[64];
-        strcpy(containerName, NewGuid().c_str());
+        strcpy(containerName, TestHelper::NewGuid().c_str());
         containers.push_back(string(containerName));
         char command[128];
         sprintf(command, "docker run --name=%s hello-world", containerName);
@@ -292,10 +266,10 @@ protected:
         m_keyNames.push_back(L"InstanceID");
 
         // Remove cached state
-        RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ContainerInventory/*");
+        TestHelper::RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ContainerInventory/*");
 
         char containerName[64];
-        strcpy(containerName, NewGuid().c_str());
+        strcpy(containerName, TestHelper::NewGuid().c_str());
         containers.push_back(string(containerName));
         char command[128];
         sprintf(command, "docker run --name=%s centos false", containerName);
