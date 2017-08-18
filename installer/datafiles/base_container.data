@@ -22,9 +22,13 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/opt/omi/conf/omiregister/root-cimv2/container.reg;			installer/conf/omi/container.reg;					755; root; root
 
 /opt/microsoft/omsagent/plugin/filter_docker_log.rb;			source/code/plugin/filter_docker_log.rb;			644; root; root
-/opt/microsoft/omsagent/plugin/filter_container.rb;			source/code/plugin/filter_container.rb;				644; root; root
+/opt/microsoft/omsagent/plugin/filter_container.rb;			    source/code/plugin/filter_container.rb;				644; root; root
 
-/etc/opt/microsoft/docker-cimprov/container.conf;			installer/conf/container.conf;                      644; root; root
+/opt/microsoft/omsagent/plugin/in_kube_podinventory.rb;			source/code/plugin/in_kube_podinventory.rb;			644; root; root
+/opt/microsoft/omsagent/plugin/in_kube_events.rb;			    source/code/plugin/in_kube_events.rb;				644; root; root
+/opt/microsoft/omsagent/plugin/KubernetesApiClient.rb;			source/code/plugin/KubernetesApiClient.rb;			644; root; root
+
+/etc/opt/microsoft/docker-cimprov/container.conf;			    installer/conf/container.conf;                      644; root; root
 
 %Links
 /opt/omi/lib/libcontainer.${{SHLIB_EXT}}; /opt/microsoft/docker-cimprov/lib/libcontainer.${{SHLIB_EXT}}; 644; root; root
@@ -75,6 +79,10 @@ WriteInstallInfo
 touch /var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt
 chmod 644 /var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt
 chown omsagent:omsagent /var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt
+
+touch /var/opt/microsoft/docker-cimprov/state/KubeEventQueryState.yaml
+chmod 644 /var/opt/microsoft/docker-cimprov/state/KubeEventQueryState.yaml
+chown omsagent:omsagent /var/opt/microsoft/docker-cimprov/state/KubeEventQueryState.yaml
 
 mv /etc/opt/microsoft/docker-cimprov/container.conf /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
 chown omsagent:omsagent /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
