@@ -25,6 +25,9 @@ public:
     {        
         processCmd.push_back(wstring(L"/bin/sh -c sleep inf;"));
         processCmd.push_back(wstring(L"sleep inf"));
+        fputc('\n', stdout);
+        //delete all running containers
+        system("docker ps -a -q | xargs docker rm -f");
     }
 
     void tearDown()
@@ -40,7 +43,7 @@ protected:
         vector<wstring> m_keyNames;
         m_keyNames.push_back(L"InstanceID");
 
-        TestHelper::RunCommand("docker run -d --name=k8s_cpt.sandboxname_cptpodname_cptnamepsace_cptid ubuntu /bin/sh -c \"sleep inf;\"");
+        system("docker run -d --name=k8s_cpt.sandboxname_cptpodname_cptnamepsace_cptid ubuntu /bin/sh -c \"sleep inf;\"");
 
         StandardTestEnumerateInstances<mi::Container_Process_Class_Provider>(m_keyNames, context, CALL_LOCATION(errMsg));
         CPPUNIT_ASSERT_EQUAL(2, context.Size());        
@@ -62,7 +65,8 @@ protected:
             CPPUNIT_ASSERT(context[i].GetProperty(L"Id", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)).length());
             CPPUNIT_ASSERT_EQUAL(wstring(L"k8s_cpt.sandboxname_cptpodname_cptnamepsace_cptid"), context[i].GetProperty(L"Name", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
         }
-        TestHelper::RunCommand("docker rm -f k8s_cpt.sandboxname_cptpodname_cptnamepsace_cptid");
+        system("docker rm -f k8s_cpt.sandboxname_cptpodname_cptnamepsace_cptid");
+
     }
 
     void TestNonk8EnumerateInstances()
@@ -72,7 +76,7 @@ protected:
         vector<wstring> m_keyNames;
         m_keyNames.push_back(L"InstanceID");
 
-        TestHelper::RunCommand("docker run -d --name=ContainerProcessTest ubuntu /bin/sh -c \"sleep inf;\"");
+        system("docker run -d --name=ContainerProcessTest ubuntu /bin/sh -c \"sleep inf;\"");
 
         StandardTestEnumerateInstances<mi::Container_Process_Class_Provider>(m_keyNames, context, CALL_LOCATION(errMsg));
         CPPUNIT_ASSERT_EQUAL(2, context.Size());        
@@ -94,7 +98,7 @@ protected:
             CPPUNIT_ASSERT(context[i].GetProperty(L"Id", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)).length());
             CPPUNIT_ASSERT_EQUAL(wstring(L"ContainerProcessTest"),context[i].GetProperty(L"Name", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
         }
-        TestHelper::RunCommand("docker rm -f ContainerProcessTest");
+        system("docker rm -f ContainerProcessTest");
     }
 };
 

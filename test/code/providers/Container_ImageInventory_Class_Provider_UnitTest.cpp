@@ -30,8 +30,11 @@ private:
 public:
     void setUp()
     {
-        // Get some images to use
         fputc('\n', stdout);
+        //clean up test environment 
+        system("docker ps -a -q | xargs docker rm -f");
+        system("docker images -q | xargs docker rmi ");
+        // Get some images to use
         TestHelper::RunCommand("docker pull hello-world");
         TestHelper::RunCommand("docker pull centos");
         TestHelper::RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ImageInventory/*");

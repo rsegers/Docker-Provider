@@ -33,8 +33,10 @@ private:
 public:
     void setUp()
     {
-        // Get some images to use
         fputc('\n', stdout);
+        //delete all container
+        system("docker ps -a -q | xargs docker rm -f");
+        // Get some images to use
         TestHelper::RunCommand("docker pull hello-world");
         TestHelper::RunCommand("rm -f /var/opt/microsoft/docker-cimprov/state/ContainerInventory/*");
     }
