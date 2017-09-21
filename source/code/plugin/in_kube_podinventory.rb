@@ -21,56 +21,65 @@ module Fluent
     end
 
     def start
-      if KubernetesApiClient.isNodeMaster 
-        #run only if master node
-        if @run_interval
-          @finished = false
-          @condition = ConditionVariable.new
-          @mutex = Mutex.new
-          @thread = Thread.new(&method(:run_periodic))
-        else
-          enumerate
-        end
+      if KubernetesApiClient.isNodeMaster && @run_interval
+        @finished = false
+        @condition = ConditionVariable.new
+        @mutex = Mutex.new
+        @thread = Thread.new(&method(:run_periodic))
+      else
+        enumerate
       end  
     end
 
     def shutdown
-      if KubernetesApiClient.isNodeMaster
-        if @run_interval
-          @mutex.synchronize {
-            @finished = true
-            @condition.signal
-          }
-          @thread.join
-        end
-      end  
+      if KubernetesApiClient.isNodeMaster && @run_interval
+        @mutex.synchronize {
+          @finished = true
+          @condition.signal
+        }
+        @thread.join
+      end 
     end
 
     def enumerate(podList = nil)
       time = Time.now.to_f
-      if podList.nil?
-        podInventory = KubernetesApiClient.getKubeResourceInfo('pods')
-      else
-        podInventory = podList
-      end    
-      podInventory['items'].each do |items|
-        record = {}
-        begin 
-          record['Name'] = items['metadata']['name']
-          record['PodUid'] = items['metadata']['uid']
-          record['PodLabel'] = items['metadata']['labels']
-          record['Namespace'] = items['metadata']['namespace']
-          record['PodCreationTimeStamp'] = items['metadata']['creationTimestamp']
-          record['PodStatus'] = items['status']['phase']
-          record['PodIp'] =items['status']['podIP']
-          record['Computer'] = items['spec']['nodeName']
-          record['ClusterName'] = KubernetesApiClient.getClusterName
-          router.emit(@tag, time, record) if record
-        rescue  => errorStr
-          $log.warn line.dump, error: errorStr.to_s
-          $log.debug_backtrace(e.backtrace)
+      if KubernetesApiClient.isNodeMaster
+        if podList.nil?
+          podInventory = KubernetesApiClient.getKubeResourceInfo('pods')
+        else
+          podInventory = podList
+        end    
+        podInventory['items'].each do |items|
+          record = {}
+          begin 
+            record['Name'] = items['metadata']['name']
+            record['PodUid'] = items['metadata']['uid']
+            record['PodLabel'] = items['metadata']['labels']
+            record['Namespace'] = items['metadata']['namespace']
+            record['PodCreationTimeStamp'] = items['metadata']['creationTimestamp']
+            record['PodStatus'] = items['status']['phase']
+            record['PodIp'] =items['status']['podIP']
+            record['Computer'] = items['spec']['nodeName']
+            record['ClusterName'] = KubernetesApiClient.getClusterName
+            router.emit(@tag, time, record) if record
+          rescue  => errorStr
+            $log.warn line.dump, error: errorStr.to_s
+            $log.debug_backtrace(e.backtrace)
+          end
         end
-      end
+      else
+        record = {}
+        record['Name'] = ""
+        record['PodUid'] = ""
+        record['PodLabel'] = ""
+        record['Namespace'] = ""
+        record['PodCreationTimeStamp'] = ""
+        record['PodStatus'] = ""
+        record['PodIp'] = ""
+        record['Computer'] = ""
+        record['ClusterName'] = ""
+        router.emit(@tag, time, record)  
+      end  
     end
 
     def run_periodic

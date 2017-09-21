@@ -24,70 +24,79 @@ module Fluent
     end
 
     def start
-
-      if KubernetesApiClient.isNodeMaster 
-        #run only if master node
-        if @run_interval
-          @finished = false
-          @condition = ConditionVariable.new
-          @mutex = Mutex.new
-          @thread = Thread.new(&method(:run_periodic))
-        else
-          enumerate
-        end
-      end 
+      if KubernetesApiClient.isNodeMaster && @run_interval
+        @finished = false
+        @condition = ConditionVariable.new
+        @mutex = Mutex.new
+        @thread = Thread.new(&method(:run_periodic))
+      else
+        enumerate
+      end
     end
 
     def shutdown
-      if KubernetesApiClient.isNodeMaster
-        if @run_interval
-          @mutex.synchronize {
-            @finished = true
-            @condition.signal
-          }
-          @thread.join
-        end
+      if KubernetesApiClient.isNodeMaster && @run_interval
+        @mutex.synchronize {
+          @finished = true
+          @condition.signal
+        }
+        @thread.join
       end  
     end
 
     def enumerate(eventList = nil)
         time = Time.now.to_f
-        if eventList.nil?
-          events = KubernetesApiClient.getKubeResourceInfo('events')
+        if KubernetesApiClient.isNodeMaster
+          if eventList.nil?
+            events = KubernetesApiClient.getKubeResourceInfo('events')
+          else
+            events = eventList
+          end   
+          eventQueryState = getEventQueryState
+          newEventQueryState = []
+          events['items'].each do |items|
+              record = {}
+              begin
+                  eventId = items['metadata']['uid']
+                  newEventQueryState.push(eventId)
+                  if !eventQueryState.empty? && eventQueryState.include?(eventId)
+                    next
+                  end  
+                  record['ObjectKind']= items['involvedObject']['kind']
+                  record['Namespace'] = items['involvedObject']['namespace']
+                  record['Name'] = items['involvedObject']['name']
+                  record['Reason'] = items['reason']
+                  record['Message'] = items['message']
+                  record['Type'] = items['type']
+                  record['TimeGenerated'] = items['metadata']['creationTimestamp']
+                  record['SourceComponent'] = items['source']['component']
+                  if items['source'].key?('host')
+                          record['Computer'] = items['source']['host']
+                  else
+                          record['Computer'] = (OMS::Common.get_hostname)
+                  end
+                  record['ClusterName'] = KubernetesApiClient.getClusterName
+                  router.emit(@tag, time, record) if record
+              rescue  => errorStr
+                  $log.warn line.dump, error: errorStr.to_s
+                  $log.debug_backtrace(e.backtrace)
+              end    
+          end
+          writeEventQueryState(newEventQueryState)
         else
-          events = eventList
-        end   
-        eventQueryState = getEventQueryState
-        newEventQueryState = []
-        events['items'].each do |items|
-            record = {}
-            begin
-                eventId = items['metadata']['uid']
-                newEventQueryState.push(eventId)
-                if !eventQueryState.empty? && eventQueryState.include?(eventId)
-                  next
-                end  
-                record['ObjectKind']= items['involvedObject']['kind']
-                record['Namespace'] = items['involvedObject']['namespace']
-                record['Name'] = items['involvedObject']['name']
-                record['Reason'] = items['reason']
-                record['Message'] = items['message']
-                record['Type'] = items['type']
-                record['TimeGenerated'] = items['metadata']['creationTimestamp']
-                record['SourceComponent'] = items['source']['component']
-                if items['source'].key?('host')
-                        record['Computer'] = items['source']['host']
-                else
-                        record['Computer'] = (OMS::Common.get_hostname)
-                end
-                record['ClusterName'] = KubernetesApiClient.getClusterName
-                router.emit(@tag, time, record) if record
-            rescue  => errorStr
-                $log.warn line.dump, error: errorStr.to_s
-                $log.debug_backtrace(e.backtrace)
-            end    
-        end
-        writeEventQueryState(newEventQueryState)
+          record = {}
+          record['ObjectKind']= ""
+          record['Namespace'] = ""
+          record['Name'] = ""
+          record['Reason'] = ""
+          record['Message'] = ""
+          record['Type'] = ""
+          record['TimeGenerated'] = ""
+          record['SourceComponent'] = ""
+          record['Computer'] = ""
+          record['ClusterName'] = ""
+          router.emit(@tag, time, record)  
+        end 
     end 
 
     def run_periodic

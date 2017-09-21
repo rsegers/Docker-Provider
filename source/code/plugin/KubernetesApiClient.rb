@@ -107,7 +107,7 @@ class KubernetesApiClient
                     thisNodeName = OMS::Common.get_hostname
                     allNodesInfo['items'].each do |item|
                         if item['metadata']['name'].casecmp(thisNodeName) == 0
-                            if item['metadata']['labels'].to_s.include? "master"
+                            if !item['metadata']['labels'].to_s.include?("master") && item['metadata']['labels']["kubernetes.io/hostname"].to_s.split('-').last == '0'
                                 @@IsNodeMaster = true                                    
                             end    
                             break
@@ -118,9 +118,9 @@ class KubernetesApiClient
                 @Log.warn("node role request failed: #{error}")    
             end
             if(@@IsNodeMaster == true)
-                @Log.info("Kubernetes master node")
+                @Log.info("Electing current node to talk to k8 api")
             else
-                @Log.info("Not Kubernetes master node")
+                @Log.info("Not Electing current node to talk to k8 api")
             end
             return @@IsNodeMaster
         end                    
