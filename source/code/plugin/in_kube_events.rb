@@ -10,6 +10,7 @@ module Fluent
     def initialize
       super
       require 'yaml'
+      require 'json'
 
       require_relative 'KubernetesApiClient'
       require_relative 'oms_common'
@@ -24,7 +25,7 @@ module Fluent
     end
 
     def start
-      if KubernetesApiClient.isNodeMaster && @run_interval
+      if KubernetesApiClient.isValidRunningNode && @run_interval
         @finished = false
         @condition = ConditionVariable.new
         @mutex = Mutex.new
@@ -35,23 +36,23 @@ module Fluent
     end
 
     def shutdown
-      if KubernetesApiClient.isNodeMaster && @run_interval
+      if KubernetesApiClient.isValidRunningNode && @run_interval
         @mutex.synchronize {
           @finished = true
           @condition.signal
         }
         @thread.join
-      end  
+      end
     end
 
     def enumerate(eventList = nil)
         time = Time.now.to_f
-        if KubernetesApiClient.isNodeMaster
+        if KubernetesApiClient.isValidRunningNode
           if eventList.nil?
-            events = KubernetesApiClient.getKubeResourceInfo('events')
+            events = JSON.parse(KubernetesApiClient.getKubeResourceInfo('events').body)
           else
             events = eventList
-          end   
+          end
           eventQueryState = getEventQueryState
           newEventQueryState = []
           events['items'].each do |items|
@@ -61,7 +62,7 @@ module Fluent
                   newEventQueryState.push(eventId)
                   if !eventQueryState.empty? && eventQueryState.include?(eventId)
                     next
-                  end  
+                  end
                   record['ObjectKind']= items['involvedObject']['kind']
                   record['Namespace'] = items['involvedObject']['namespace']
                   record['Name'] = items['involvedObject']['name']
@@ -80,7 +81,7 @@ module Fluent
               rescue  => errorStr
                   $log.warn line.dump, error: errorStr.to_s
                   $log.debug_backtrace(e.backtrace)
-              end    
+              end
           end
           writeEventQueryState(newEventQueryState)
         else
@@ -95,9 +96,9 @@ module Fluent
           record['SourceComponent'] = ""
           record['Computer'] = ""
           record['ClusterName'] = ""
-          router.emit(@tag, time, record)  
-        end 
-    end 
+          router.emit(@tag, time, record)
+        end
+    end
 
     def run_periodic
       @mutex.lock
@@ -128,8 +129,8 @@ module Fluent
     end
 
     def writeEventQueryState(eventQueryState)
-      begin     
-        File.write(@@KubeEventsStateFile, eventQueryState.to_yaml)       
+      begin
+        File.write(@@KubeEventsStateFile, eventQueryState.to_yaml)
       rescue  => errorStr
         $log.warn $log.warn line.dump, error: errorStr.to_s
         $log.debug_backtrace(e.backtrace)
@@ -139,5 +140,4 @@ module Fluent
   end # Kube_Event_Input
 
 end # module
-
 

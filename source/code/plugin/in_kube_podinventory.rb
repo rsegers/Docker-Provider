@@ -8,6 +8,8 @@ module Fluent
     def initialize
       super
       require 'yaml'
+      require 'json'
+
       require_relative 'KubernetesApiClient'
       require_relative 'oms_common'
       require_relative 'omslog'
@@ -21,37 +23,37 @@ module Fluent
     end
 
     def start
-      if KubernetesApiClient.isNodeMaster && @run_interval
+      if KubernetesApiClient.isValidRunningNode && @run_interval
         @finished = false
         @condition = ConditionVariable.new
         @mutex = Mutex.new
         @thread = Thread.new(&method(:run_periodic))
       else
         enumerate
-      end  
+      end
     end
 
     def shutdown
-      if KubernetesApiClient.isNodeMaster && @run_interval
+      if KubernetesApiClient.isValidRunningNode && @run_interval
         @mutex.synchronize {
           @finished = true
           @condition.signal
         }
         @thread.join
-      end 
+      end
     end
 
     def enumerate(podList = nil)
       time = Time.now.to_f
-      if KubernetesApiClient.isNodeMaster
+      if KubernetesApiClient.isValidRunningNode
         if podList.nil?
-          podInventory = KubernetesApiClient.getKubeResourceInfo('pods')
+          podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
         else
           podInventory = podList
-        end    
+        end
         podInventory['items'].each do |items|
           record = {}
-          begin 
+          begin
             record['Name'] = items['metadata']['name']
             record['PodUid'] = items['metadata']['uid']
             record['PodLabel'] = items['metadata']['labels']
@@ -78,8 +80,8 @@ module Fluent
         record['PodIp'] = ""
         record['Computer'] = ""
         record['ClusterName'] = ""
-        router.emit(@tag, time, record)  
-      end  
+        router.emit(@tag, time, record)
+      end
     end
 
     def run_periodic
@@ -96,7 +98,7 @@ module Fluent
       end
       @mutex.unlock
     end
-    
+
   end # Kube_Pod_Input
 
 end # module
