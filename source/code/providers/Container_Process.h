@@ -43,6 +43,7 @@ typedef struct _Container_Process /* extends CIM_ManagedElement */
     MI_ConstStringField Id;
     MI_ConstStringField Name;
     MI_ConstStringField Pod;
+    MI_ConstStringField PodUid;
     MI_ConstStringField Namespace;
     MI_ConstStringField Computer;
 }
@@ -616,13 +617,45 @@ MI_INLINE MI_Result MI_CALL Container_Process_Clear_Pod(
         14);
 }
 
-MI_INLINE MI_Result MI_CALL Container_Process_Set_Namespace(
+MI_INLINE MI_Result MI_CALL Container_Process_Set_PodUid(
     Container_Process* self,
     const MI_Char* str)
 {
     return self->__instance.ft->SetElementAt(
         (MI_Instance*)&self->__instance,
         15,
+        (MI_Value*)&str,
+        MI_STRING,
+        0);
+}
+
+MI_INLINE MI_Result MI_CALL Container_Process_SetPtr_PodUid(
+    Container_Process* self,
+    const MI_Char* str)
+{
+    return self->__instance.ft->SetElementAt(
+        (MI_Instance*)&self->__instance,
+        15,
+        (MI_Value*)&str,
+        MI_STRING,
+        MI_FLAG_BORROW);
+}
+
+MI_INLINE MI_Result MI_CALL Container_Process_Clear_PodUid(
+    Container_Process* self)
+{
+    return self->__instance.ft->ClearElementAt(
+        (MI_Instance*)&self->__instance,
+        15);
+}
+
+MI_INLINE MI_Result MI_CALL Container_Process_Set_Namespace(
+    Container_Process* self,
+    const MI_Char* str)
+{
+    return self->__instance.ft->SetElementAt(
+        (MI_Instance*)&self->__instance,
+        16,
         (MI_Value*)&str,
         MI_STRING,
         0);
@@ -634,7 +667,7 @@ MI_INLINE MI_Result MI_CALL Container_Process_SetPtr_Namespace(
 {
     return self->__instance.ft->SetElementAt(
         (MI_Instance*)&self->__instance,
-        15,
+        16,
         (MI_Value*)&str,
         MI_STRING,
         MI_FLAG_BORROW);
@@ -645,7 +678,7 @@ MI_INLINE MI_Result MI_CALL Container_Process_Clear_Namespace(
 {
     return self->__instance.ft->ClearElementAt(
         (MI_Instance*)&self->__instance,
-        15);
+        16);
 }
 
 MI_INLINE MI_Result MI_CALL Container_Process_Set_Computer(
@@ -654,7 +687,7 @@ MI_INLINE MI_Result MI_CALL Container_Process_Set_Computer(
 {
     return self->__instance.ft->SetElementAt(
         (MI_Instance*)&self->__instance,
-        16,
+        17,
         (MI_Value*)&str,
         MI_STRING,
         0);
@@ -666,7 +699,7 @@ MI_INLINE MI_Result MI_CALL Container_Process_SetPtr_Computer(
 {
     return self->__instance.ft->SetElementAt(
         (MI_Instance*)&self->__instance,
-        16,
+        17,
         (MI_Value*)&str,
         MI_STRING,
         MI_FLAG_BORROW);
@@ -677,7 +710,7 @@ MI_INLINE MI_Result MI_CALL Container_Process_Clear_Computer(
 {
     return self->__instance.ft->ClearElementAt(
         (MI_Instance*)&self->__instance,
-        16);
+        17);
 }
 
 /*
@@ -1243,6 +1276,46 @@ public:
     void Pod_clear()
     {
         const size_t n = offsetof(Self, Pod);
+        GetField<String>(n).Clear();
+    }
+
+    //
+    // Container_Process_Class.PodUid
+    //
+    
+    const Field<String>& PodUid() const
+    {
+        const size_t n = offsetof(Self, PodUid);
+        return GetField<String>(n);
+    }
+    
+    void PodUid(const Field<String>& x)
+    {
+        const size_t n = offsetof(Self, PodUid);
+        GetField<String>(n) = x;
+    }
+    
+    const String& PodUid_value() const
+    {
+        const size_t n = offsetof(Self, PodUid);
+        return GetField<String>(n).value;
+    }
+    
+    void PodUid_value(const String& x)
+    {
+        const size_t n = offsetof(Self, PodUid);
+        GetField<String>(n).Set(x);
+    }
+    
+    bool PodUid_exists() const
+    {
+        const size_t n = offsetof(Self, PodUid);
+        return GetField<String>(n).exists ? true : false;
+    }
+    
+    void PodUid_clear()
+    {
+        const size_t n = offsetof(Self, PodUid);
         GetField<String>(n).Clear();
     }
 
