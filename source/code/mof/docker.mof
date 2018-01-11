@@ -225,3 +225,57 @@ class Container_HostInventory : CIM_ManagedElement
 	[ Description ( "Cluster orchestator type" ) ]
 	String OrchestratorType;
 };
+
+// Container_Process
+// -------------------------------------------------------------------
+[   Version ( "1.0.0" ),
+	Description ( "Container process" )
+]
+class Container_Process : CIM_ManagedElement
+{
+	[ Key, Description ( "GUID" ) ]
+	String InstanceID;
+
+	[ Description ( "User ID number" ) ]
+	String Uid;
+
+	[ Description ( "Process ID" ) ]
+	String PID;
+
+	[ Description ( "Parent process ID" ) ]
+	String PPID;
+
+	[ Description ( "Cpu utilization" ) ]
+	String C;
+
+	[ Description ( "Host volume information" ) ]
+	String STIME;
+
+	[ Description ( "The device number of the controling tty" ) ]
+	String Tty;
+
+	[ Description ( "Time process was started" ) ]
+	String TIME;
+
+	[ Description ( "Name of executable" ) ]
+	String Cmd;
+	
+	[ Description ( "Cluster orchestator type" ) ]
+	String Id;
+	
+	[ Description ( "Container name" ) ]
+	String Name;
+	
+	[ Description ( "pod name" ) ]
+	String Pod;
+	
+	[ Description ( "Pod uuid" ) ]
+	String PodUid;
+	
+	[ Description ( "Namespace " ) ]
+	String Namespace;
+	
+	[ Description ( "Host name" ) ]
+	String Computer;
+};
+
