@@ -55,35 +55,40 @@ module Fluent
           end
           eventQueryState = getEventQueryState
           newEventQueryState = []
-          events['items'].each do |items|
-              record = {}
-              begin
-                  eventId = items['metadata']['uid']
-                  newEventQueryState.push(eventId)
-                  if !eventQueryState.empty? && eventQueryState.include?(eventId)
-                    next
-                  end
-                  record['ObjectKind']= items['involvedObject']['kind']
-                  record['Namespace'] = items['involvedObject']['namespace']
-                  record['Name'] = items['involvedObject']['name']
-                  record['Reason'] = items['reason']
-                  record['Message'] = items['message']
-                  record['Type'] = items['type']
-                  record['TimeGenerated'] = items['metadata']['creationTimestamp']
-                  record['SourceComponent'] = items['source']['component']
-                  if items['source'].key?('host')
-                          record['Computer'] = items['source']['host']
-                  else
-                          record['Computer'] = (OMS::Common.get_hostname)
-                  end
-                  record['ClusterName'] = KubernetesApiClient.getClusterName
-                  router.emit(@tag, time, record) if record
-              rescue  => errorStr
-                  $log.warn line.dump, error: errorStr.to_s
-                  $log.debug_backtrace(e.backtrace)
+          begin
+            if(!events.empty?)
+              events['items'].each do |items|
+                record = {}
+                eventId = items['metadata']['uid'] + "/" + items['count'].to_s  
+                newEventQueryState.push(eventId)
+                if !eventQueryState.empty? && eventQueryState.include?(eventId)
+                  next
+                end  
+                record['ObjectKind']= items['involvedObject']['kind']
+                record['Namespace'] = items['involvedObject']['namespace']
+                record['Name'] = items['involvedObject']['name']
+                record['Reason'] = items['reason']
+                record['Message'] = items['message']
+                record['Type'] = items['type']
+                record['TimeGenerated'] = items['metadata']['creationTimestamp']
+                record['SourceComponent'] = items['source']['component']
+                record['FirstSeen'] = items['firstTimestamp']
+                record['LastSeen'] = items['lastTimestamp']
+                record['Count'] = items['count']
+                if items['source'].key?('host')
+                        record['Computer'] = items['source']['host']
+                else
+                        record['Computer'] = (OMS::Common.get_hostname)
+                end
+                record['ClusterName'] = KubernetesApiClient.getClusterName
+                router.emit(@tag, time, record) if record   
               end
-          end
-          writeEventQueryState(newEventQueryState)
+            end  
+            writeEventQueryState(newEventQueryState)
+          rescue  => errorStr
+            $log.warn line.dump, error: errorStr.to_s
+            $log.debug_backtrace(e.backtrace)
+          end   
         else
           record = {}
           record['ObjectKind']= ""
@@ -94,6 +99,9 @@ module Fluent
           record['Type'] = ""
           record['TimeGenerated'] = ""
           record['SourceComponent'] = ""
+          record['FirstSeen'] = ""
+          record['LastSeen'] = ""
+          record['Count'] = "0"
           record['Computer'] = ""
           record['ClusterName'] = ""
           router.emit(@tag, time, record)

@@ -51,23 +51,46 @@ module Fluent
         else
           podInventory = podList
         end
-        podInventory['items'].each do |items|
-          record = {}
-          begin
-            record['Name'] = items['metadata']['name']
-            record['PodUid'] = items['metadata']['uid']
-            record['PodLabel'] = items['metadata']['labels']
-            record['Namespace'] = items['metadata']['namespace']
-            record['PodCreationTimeStamp'] = items['metadata']['creationTimestamp']
-            record['PodStatus'] = items['status']['phase']
-            record['PodIp'] =items['status']['podIP']
-            record['Computer'] = items['spec']['nodeName']
-            record['ClusterName'] = KubernetesApiClient.getClusterName
-            router.emit(@tag, time, record) if record
-          rescue  => errorStr
-            $log.warn line.dump, error: errorStr.to_s
-            $log.debug_backtrace(e.backtrace)
-          end
+        begin
+          if(!podInventory.empty?)    
+            podInventory['items'].each do |items|
+              records = []
+              record = {}
+                record['Name'] = items['metadata']['name']
+                record['PodUid'] = items['metadata']['uid']
+                record['PodLabel'] = items['metadata']['labels']
+                record['Namespace'] = items['metadata']['namespace']
+                record['PodCreationTimeStamp'] = items['metadata']['creationTimestamp']
+                record['PodStartTime'] = items['status']['startTime']
+                record['PodStatus'] = items['status']['phase']
+                record['PodIp'] =items['status']['podIP']
+                record['Computer'] = items['spec']['nodeName']
+                record['ClusterName'] = KubernetesApiClient.getClusterName
+                podRestartCount = 0
+                items['status']['containerStatuses'].each do |container|
+                  containerRestartCount = 0
+                  #container Id is of the form 
+                  #docker://dfd9da983f1fd27432fb2c1fe3049c0a1d25b1c697b2dc1a530c986e58b16527
+                  record['ContainerID'] = container['containerID'].split("//")[1]
+                  #keeping this as InstanceName so as to be consistent with perf table
+                  record['InstanceName'] = container['name']
+                  #Pod restart count is a sumtotal of restart counts of individual containers
+                  #within the pod. The restart count of a container is maintained by kubernetes
+                  #itself in the form of a container label.
+                  containerRestartCount = container['restartCount']
+                  record['ContainerRestartCount'] = containerRestartCount
+                  podRestartCount += containerRestartCount
+                  records.push(record)
+                end
+                records.each do |record|
+                  record['PodRestartCount'] = podRestartCount
+                  router.emit(@tag, time, record) if record    
+                end  
+            end
+          end  
+        rescue  => errorStr
+          $log.warn "Failed to retrieve pod inventory: #{errorStr}"
+          $log.debug_backtrace(errorStr.backtrace)
         end
       else
         record = {}
@@ -80,6 +103,11 @@ module Fluent
         record['PodIp'] = ""
         record['Computer'] = ""
         record['ClusterName'] = ""
+        record['ContainerID'] = ""
+        record['InstanceName'] = ""
+        record['ContainerRestartCount'] = ""
+        record['PodRestartCount'] = "0"
+        record['PodStartTime'] = ""
         router.emit(@tag, time, record)
       end
     end
