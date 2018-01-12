@@ -58,7 +58,7 @@ module Fluent
               record = {}
                 record['Name'] = items['metadata']['name']
                 record['PodUid'] = items['metadata']['uid']
-                record['PodLabel'] = items['metadata']['labels']
+                record['PodLabel'] = [items['metadata']['labels']]
                 record['Namespace'] = items['metadata']['namespace']
                 record['PodCreationTimeStamp'] = items['metadata']['creationTimestamp']
                 record['PodStartTime'] = items['status']['startTime']
