@@ -53,7 +53,6 @@ protected:
             wstring instanceId = context[i].GetProperty(L"InstanceID", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg));
             CPPUNIT_ASSERT(instanceId.length());
             CPPUNIT_ASSERT_EQUAL(wstring(L"cptpodname"), context[i].GetProperty(L"Pod", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
-            CPPUNIT_ASSERT_EQUAL(wstring(L"cptid"), context[i].GetProperty(L"PodUid", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
             CPPUNIT_ASSERT_EQUAL(wstring(L"cptnamepsace"), context[i].GetProperty(L"Namespace", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
             CPPUNIT_ASSERT_EQUAL(wstring(L"root"), context[i].GetProperty(L"Uid", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
             CPPUNIT_ASSERT(context[i].GetProperty(L"PID", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)).length());
@@ -87,7 +86,6 @@ protected:
             wstring instanceId = context[i].GetProperty(L"InstanceID", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg));
             CPPUNIT_ASSERT(instanceId.length());
             CPPUNIT_ASSERT_EQUAL(wstring(L"None"), context[i].GetProperty(L"Pod", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
-            CPPUNIT_ASSERT_EQUAL(wstring(L"00000000-0000-0000-0000-000000000000"), context[i].GetProperty(L"PodUid", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
             CPPUNIT_ASSERT_EQUAL(wstring(L"None"), context[i].GetProperty(L"Namespace", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
             CPPUNIT_ASSERT_EQUAL(wstring(L"root"),context[i].GetProperty(L"Uid", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)));
             CPPUNIT_ASSERT(context[i].GetProperty(L"PID", CALL_LOCATION(errMsg)).GetValue_MIString(CALL_LOCATION(errMsg)).length());

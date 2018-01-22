@@ -11,8 +11,6 @@
 #include "../dockerapi/DockerRemoteApi.h"
 #include "../dockerapi/DockerRestHelper.h"
 
-#define EMPTYGUID "00000000-0000-0000-0000-000000000000"
-
 using namespace std;
 
 MI_BEGIN_NAMESPACE
@@ -60,8 +58,7 @@ public:
                 {
                     string containerId = string(cJSON_GetObjectItem(containerEntry, "Id")->valuestring);
                     string containerName;
-                    string containerPod;      
-                    string containerPodUid;              
+                    string containerPod;                   
                     string containerNamespace;
 
                     // Get container name
@@ -76,13 +73,11 @@ public:
                             //add namespace pod info
                             containerPod = containerMetaInformation[2];
                             containerNamespace = containerMetaInformation[3];
-                            containerPodUid = containerMetaInformation[4];
                         }
                         else
                         {
                             containerPod = "None";
                             containerNamespace = "None";
-                            containerPodUid = EMPTYGUID;
                         }
                     }
 
@@ -117,7 +112,6 @@ public:
                                     processInstance.Id_value(containerId.c_str());
                                     processInstance.Name_value(containerName.c_str());
                                     processInstance.Pod_value(containerPod.c_str());
-                                    processInstance.PodUid_value(containerPodUid.c_str());
                                     processInstance.Namespace_value(containerNamespace.c_str());
                                     processInstance.Computer_value(hostname.c_str());                                
                                 }
