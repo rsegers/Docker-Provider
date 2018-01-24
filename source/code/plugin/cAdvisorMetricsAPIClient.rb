@@ -62,18 +62,18 @@ class CAdvisorMetricsApiClient
                             pod['containers'].each do |container|
                                 containerName = container['name']
                                 cpuUsageNanoCores = container['cpu']['usageNanoCores']
-                                metrictime = container['cpu']['time']
-                                metricItem = 
-                                    DataItems : {
-                                        Host : (OMS::Common.get_hostname)
-                                        Timestamp : metrictime,
-                                        ObjectName : "K8SContainer",
-                                        InstanceName : podUid + "/" + containerName,
-                                        Collections : {
-                                            CounterName : "cpuUsageNanoCores"
-                                            Value : cpuUsageNanoCores
-                                        }
-                                    }
+                                metricTime = container['cpu']['time']
+                                metricItem = {}
+                                metricItem['DataItems'] ={}
+                                metricItem['DataItems']['Host'] = (OMS::Common.get_hostname)
+                                metricItem['DataItems']['Timestamp'] = metricTime
+                                metricItem['DataItems']['ObjectName'] = "K8SContainer"
+                                metricItem['DataItems']['InstanceName'] = podUid + "/" + containerName
+                                metricItem['DataItems']['Collections'] = []
+                                metricCollections = {}
+                                metricCollections['CounterName'] = "cpuUsageNanoCores"
+                                metricCollections['Value'] = cpuUsageNanoCores
+                                metricItem['DataItems']['Collections'].push(metricCollections)
                                 metricDataItems.push(metricItem)
                             end
                         end
