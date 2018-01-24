@@ -45,7 +45,7 @@ class CAdvisorMetricsApiClient
                         nodeIP = ENV['NODE_IP']
                         if !nodeIP.nil
                             @Log.info("Using #{nodeIP + relativeUri} for CAdvisor Uri")
-                            return "http://#{ENV['NODE_IP']}:10255" + relativeUri
+                            return "http://#{nodeIP}:10255" + relativeUri
                         else
                             @Log.warn ("NODE_IP environment variable not set. Using default as : #{defaultHost + relativeUri} ")
                             return defaultHost + relativeUri
