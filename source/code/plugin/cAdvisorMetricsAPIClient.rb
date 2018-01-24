@@ -43,7 +43,7 @@ class CAdvisorMetricsApiClient
                         defaultHost = "http://localhost:10255"
                         relativeUri = "/stats/summary"
                         nodeIP = ENV['NODE_IP']
-                        if !nodeIP.nil
+                        if !nodeIP.nil?
                             @Log.info("Using #{nodeIP + relativeUri} for CAdvisor Uri")
                             return "http://#{nodeIP}:10255" + relativeUri
                         else
@@ -64,16 +64,21 @@ class CAdvisorMetricsApiClient
                                 cpuUsageNanoCores = container['cpu']['usageNanoCores']
                                 metricTime = container['cpu']['time']
                                 metricItem = {}
-                                metricItem['DataItems'] ={}
-                                metricItem['DataItems']['Host'] = (OMS::Common.get_hostname)
-                                metricItem['DataItems']['Timestamp'] = metricTime
-                                metricItem['DataItems']['ObjectName'] = "K8SContainer"
-                                metricItem['DataItems']['InstanceName'] = podUid + "/" + containerName
-                                metricItem['DataItems']['Collections'] = []
+                                metricItem['DataItems'] = []
+                                
+                                metricProps = {}
+                                metricProps['Host'] = (OMS::Common.get_hostname)
+                                metricProps['Timestamp'] = metricTime
+                                metricProps['ObjectName'] = "K8SContainer"
+                                metricProps['InstanceName'] = podUid + "/" + containerName
+                                
+                                metricProps['Collections'] = []
                                 metricCollections = {}
                                 metricCollections['CounterName'] = "cpuUsageNanoCores"
                                 metricCollections['Value'] = cpuUsageNanoCores
-                                metricItem['DataItems']['Collections'].push(metricCollections)
+
+                                metricProps['Collections'].push(metricCollections)
+                                metricItem['DataItems'].push(metricProps)
                                 metricDataItems.push(metricItem)
                             end
                         end
