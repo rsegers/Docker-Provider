@@ -67,8 +67,8 @@ class CAdvisorMetricsApiClient
                                 metricItem['DataItems'] = []
                                 
                                 metricProps = {}
-                                metricProps['Host'] = (OMS::Common.get_hostname)
                                 metricProps['Timestamp'] = metricTime
+                                metricProps['Host'] = (OMS::Common.get_hostname)
                                 metricProps['ObjectName'] = "K8SContainer"
                                 metricProps['InstanceName'] = podUid + "/" + containerName
                                 
