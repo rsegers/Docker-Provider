@@ -58,8 +58,14 @@ class CAdvisorMetricsAPIClient
                     begin
                         hostName = (OMS::Common.get_hostname)
                         metricInfo = JSON.parse(getSummaryStatsFromCAdvisor().body)
-                        metricDataItems.push(getContainerCpuMetricItem(metricInfo, hostName, "usageNanoCores","cpuUsageNanoCores"))
-                        metricDataItems.push(getContainerMemoryMetricItem(metricInfo, hostName, "usageBytes", "memoryUsageBytes"))
+                        metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores","cpuUsageNanoCores"))
+                        metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "usageBytes", "memoryUsageBytes"))
+
+                        metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "cpu", "usageNanoCores", "cpuUsageNanoCores"))
+                        metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "usageBytes", "memoryUsageBytes"))
+                        metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "rxBytes", "networkRxBytes"))
+                        metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "txBytes", "networkTxBytes"))
+                        
                         rescue => error
                         @Log.warn("getContainerMetrics failed: #{error}")
                         return metricDataItems
@@ -67,8 +73,8 @@ class CAdvisorMetricsAPIClient
                     return metricDataItems
                 end
 
-                def getContainerCpuMetricItem(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn)
-                    metricItem = {}
+                def getContainerCpuMetricItems(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn)
+                    metricItems = []
                     begin
                         metricInfo = metricJSON
                         metricInfo['pods'].each do |pod|
@@ -78,7 +84,7 @@ class CAdvisorMetricsAPIClient
                                 containerName = container['name']
                                 metricValue = container['cpu'][cpuMetricNameToCollect]
                                 metricTime = container['cpu']['time']
-                                
+                                metricItem = {}
                                 metricItem['DataItems'] = []
                                 
                                 metricProps = {}
@@ -94,17 +100,18 @@ class CAdvisorMetricsAPIClient
 
                                 metricProps['Collections'].push(metricCollections)
                                 metricItem['DataItems'].push(metricProps)
+                                metricItems.push(metricItem)
                             end
                         end
                         rescue => error
-                        @Log.warn("getcontainerCpuMetrics failed: #{error} for metric #{cpuMetricNameToCollect}")
-                        return metricItem
+                        @Log.warn("getcontainerCpuMetricItems failed: #{error} for metric #{cpuMetricNameToCollect}")
+                        return metricItems
                     end
-                    return metricItem                       
+                    return metricItems                       
                 end
 
-                def getContainerMemoryMetricItem(metricJSON, hostName, memoryMetricNameToCollect, metricNametoReturn)
-                    metricItem = {}
+                def getContainerMemoryMetricItems(metricJSON, hostName, memoryMetricNameToCollect, metricNametoReturn)
+                    metricItems = []
                     begin
                         metricInfo = metricJSON
                         metricInfo['pods'].each do |pod|
@@ -114,6 +121,7 @@ class CAdvisorMetricsAPIClient
                                 metricValue = container['memory'][memoryMetricNameToCollect]
                                 metricTime = container['memory']['time']
                                 
+                                metricItem = {}
                                 metricItem['DataItems'] = []
                                 
                                 metricProps = {}
@@ -129,13 +137,48 @@ class CAdvisorMetricsAPIClient
 
                                 metricProps['Collections'].push(metricCollections)
                                 metricItem['DataItems'].push(metricProps)
+                                metricItems.push(metricItem)
                             end
                         end
                         rescue => error
-                        @Log.warn("getcontainerMemoryMetrics failed: #{error} for metric #{memoryMetricNameToCollect}")
+                        @Log.warn("getcontainerMemoryMetricItems failed: #{error} for metric #{memoryMetricNameToCollect}")
+                        return metricItems
+                    end
+                    return metricItems                      
+                end
+
+                def getNodeMetricItem(metricJSON, hostName, metricCategory, metricNameToCollect, metricNametoReturn)
+                    metricItem = {}
+                    begin
+                        metricInfo = metricJSON
+                        node = metricInfo['node']
+                        nodeName = node['nodeName']
+                        
+                        
+                        metricValue = node[metricCategory][metricNameToCollect]
+                        metricTime = node[metricCategory]['time']
+                        
+                        metricItem['DataItems'] = []
+                        
+                        metricProps = {}
+                        metricProps['Timestamp'] = metricTime
+                        metricProps['Host'] = hostName
+                        metricProps['ObjectName'] = "K8SNode"
+                        metricProps['InstanceName'] = nodeName
+                        
+                        metricProps['Collections'] = []
+                        metricCollections = {}
+                        metricCollections['CounterName'] = metricNametoReturn
+                        metricCollections['Value'] = metricValue
+
+                        metricProps['Collections'].push(metricCollections)
+                        metricItem['DataItems'].push(metricProps)
+                        
+                        rescue => error
+                        @Log.warn("getNodeMetricItem failed: #{error} for metric #{metricNameToCollect}")
                         return metricItem
                     end
-                    return metricItem                       
+                    return metricItem                      
                 end
 
             end
