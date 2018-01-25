@@ -56,37 +56,87 @@ class CAdvisorMetricsAPIClient
                 def getMetrics()
                     metricDataItems = []
                     begin
+                        hostName = (OMS::Common.get_hostname)
                         metricInfo = JSON.parse(getSummaryStatsFromCAdvisor().body)
+                        metricDataItems.push(getContainerCpuMetricItem(metricInfo, hostName, "usageNanoCores","cpuUsageNanoCores"))
+                        metricDataItems.push(getContainerMemoryMetricItem(metricInfo, hostName, "usageBytes", "memoryUsageBytes"))
+                        rescue => error
+                        @Log.warn("getContainerMetrics failed: #{error}")
+                        return metricDataItems
+                    end
+                    return metricDataItems
+                end
+
+                def getContainerCpuMetricItem(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn)
+                    metricItem = {}
+                    begin
+                        metricInfo = metricJSON
                         metricInfo['pods'].each do |pod|
                             podUid = pod['podRef']['uid']
                             pod['containers'].each do |container|
+                                #cpu metric
                                 containerName = container['name']
-                                cpuUsageNanoCores = container['cpu']['usageNanoCores']
+                                metricValue = container['cpu'][cpuMetricNameToCollect]
                                 metricTime = container['cpu']['time']
-                                metricItem = {}
+                                
                                 metricItem['DataItems'] = []
                                 
                                 metricProps = {}
                                 metricProps['Timestamp'] = metricTime
-                                metricProps['Host'] = (OMS::Common.get_hostname)
+                                metricProps['Host'] = hostName
                                 metricProps['ObjectName'] = "K8SContainer"
                                 metricProps['InstanceName'] = podUid + "/" + containerName
                                 
                                 metricProps['Collections'] = []
                                 metricCollections = {}
-                                metricCollections['CounterName'] = "cpuUsageNanoCores"
-                                metricCollections['Value'] = cpuUsageNanoCores
+                                metricCollections['CounterName'] = metricNametoReturn
+                                metricCollections['Value'] = metricValue
 
                                 metricProps['Collections'].push(metricCollections)
                                 metricItem['DataItems'].push(metricProps)
-                                metricDataItems.push(metricItem)
                             end
                         end
                         rescue => error
-                        @Log.warn("getMetrics failed: #{error}")
-                        return []
+                        @Log.warn("getcontainerCpuMetrics failed: #{error} for metric #{cpuMetricNameToCollect}")
+                        return metricItem
                     end
-                    return metricDataItems
+                    return metricItem                       
                 end
+
+                def getContainerMemoryMetricItem(metricJSON, hostName, memoryMetricNameToCollect, metricNametoReturn)
+                    metricItem = {}
+                    begin
+                        metricInfo = metricJSON
+                        metricInfo['pods'].each do |pod|
+                            podUid = pod['podRef']['uid']
+                            pod['containers'].each do |container|
+                                containerName = container['name']
+                                metricValue = container['memory'][memoryMetricNameToCollect]
+                                metricTime = container['memory']['time']
+                                
+                                metricItem['DataItems'] = []
+                                
+                                metricProps = {}
+                                metricProps['Timestamp'] = metricTime
+                                metricProps['Host'] = hostName
+                                metricProps['ObjectName'] = "K8SContainer"
+                                metricProps['InstanceName'] = podUid + "/" + containerName
+                                
+                                metricProps['Collections'] = []
+                                metricCollections = {}
+                                metricCollections['CounterName'] = metricNametoReturn
+                                metricCollections['Value'] = metricValue
+
+                                metricProps['Collections'].push(metricCollections)
+                                metricItem['DataItems'].push(metricProps)
+                            end
+                        end
+                        rescue => error
+                        @Log.warn("getcontainerMemoryMetrics failed: #{error} for metric #{memoryMetricNameToCollect}")
+                        return metricItem
+                    end
+                    return metricItem                       
+                end
+
             end
         end
