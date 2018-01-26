@@ -67,6 +67,10 @@ module Fluent
               record['PodIp'] =items['status']['podIP']
               record['Computer'] = items['spec']['nodeName']
               record['ClusterName'] = KubernetesApiClient.getClusterName
+              if !items['metadata']['ownerReferences'].nil?
+                record['ControllerKind'] = items['metadata']['ownerReferences'][0]['kind']
+                record['ControllerName'] = items['metadata']['ownerReferences'][0]['name']
+              end  
               podRestartCount = 0
               record['PodRestartCount'] = 0		    
               items['status']['containerStatuses'].each do |container|		
