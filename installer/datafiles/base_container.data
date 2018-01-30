@@ -69,6 +69,7 @@ MAINTAINER:              'Microsoft Corporation'
 /var/opt/microsoft/docker-cimprov/state;                755; root; root
 /var/opt/microsoft/docker-cimprov/state/ContainerInventory; 755; root; root
 /var/opt/microsoft/docker-cimprov/state/ImageInventory; 755; root; root
+/var/opt/microsoft/docker-cimprov/log;                  755; root; root
 
 %Dependencies
 
@@ -80,7 +81,8 @@ WriteInstallInfo() {
 WriteInstallInfo
 
 #Setup sudo permission for containerlogtailfilereader
-if [[ -z $(cat /etc/sudoers.d/omsagent | grep /containerlogtailfilereader.rb) ]]; then
+if [ -z $(cat /etc/sudoers.d/omsagent | grep /containerlogtailfilereader.rb) ]
+then
     chmod +w /etc/sudoers.d/omsagent
     echo "#run containerlogtailfilereader.rb for docker-provider" >> /etc/sudoers.d/omsagent
     echo "omsagent ALL=(ALL) NOPASSWD: /opt/microsoft/omsagent/ruby/bin/ruby /opt/microsoft/omsagent/plugin/containerlogtailfilereader.rb *" >> /etc/sudoers.d/omsagent
@@ -100,6 +102,10 @@ touch /var/opt/microsoft/docker-cimprov/state/KubeLogQueryState.yaml
 chmod 644 /var/opt/microsoft/docker-cimprov/state/KubeLogQueryState.yaml
 chown omsagent:omsagent /var/opt/microsoft/docker-cimprov/state/KubeLogQueryState.yaml
 
+touch /var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt
+chmod 666 /var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt
+chown omsagent:omiusers /var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt
+
 mv /etc/opt/microsoft/docker-cimprov/container.conf /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
 chown omsagent:omsagent /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
 
@@ -109,11 +115,26 @@ if ${{PERFORMING_UPGRADE_NOT}}; then
    # Clean up installinfo.txt file (registered as "conf" file to pass rpmcheck)
    rm -f /etc/opt/microsoft/docker-cimprov/conf/installinfo.txt*
    rm -f /var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt
+   rm -f /var/opt/microsoft/docker-cimprov/state/KubeEventQueryState.yaml
+   rm -f /var/opt/microsoft/docker-cimprov/state/KubeLogQueryState.yaml
+   rm -f /var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt
    rm -f /etc/opt/microsoft/omsagent/conf/omsagent.d/container.conf
+   rmdir /var/opt/microsoft/docker-cimprov/log 2> /dev/null
+   rmdir /var/opt/microsoft/docker-cimprov/state/ContainerInventory 2> /dev/null
+   rmdir /var/opt/microsoft/docker-cimprov/state/ImageInventory 2> /dev/null
+   rmdir /var/opt/microsoft/docker-cimprov/state 2> /dev/null
+   rmdir /var/opt/microsoft/docker-cimprov 2> /dev/null
    rmdir /etc/opt/microsoft/docker-cimprov/conf 2> /dev/null
    rmdir /etc/opt/microsoft/docker-cimprov 2> /dev/null
    rmdir /etc/opt/microsoft 2> /dev/null
    rmdir /etc/opt 2> /dev/null
+   #Remove sudoers file edit
+   if [ -s /etc/sudoers.d/omsagent ]
+   then
+    chmod +w /etc/sudoers.d/omsagent
+    sed -i '/docker\-provider/,+1 d' /etc/sudoers.d/omsagent
+    chmod 440 /etc/sudoers.d/omsagent
+   fi
 fi
 
 %Preinstall_0
