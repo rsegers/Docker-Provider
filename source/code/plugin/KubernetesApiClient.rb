@@ -17,7 +17,7 @@ class KubernetesApiClient
         @@IsValidRunningNode = nil
         @@IsLinuxCluster = nil
         @@KubeSystemNamespace = "kube-system"
-        @LogPath = "/var/opt/microsoft/omsagent/log/kubernetes_client_log.txt"
+        @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt"
         @Log = Logger.new(@LogPath, 'weekly')
         @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
         @@TokenStr = nil

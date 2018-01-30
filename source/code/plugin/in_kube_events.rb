@@ -87,7 +87,7 @@ module Fluent
             writeEventQueryState(newEventQueryState)
           rescue  => errorStr
             $log.warn line.dump, error: errorStr.to_s
-            $log.debug_backtrace(e.backtrace)
+            $log.debug_backtrace(errorStr.backtrace)
           end   
         else
           record = {}
@@ -131,7 +131,7 @@ module Fluent
         end
       rescue  => errorStr
         $log.warn $log.warn line.dump, error: errorStr.to_s
-        $log.debug_backtrace(e.backtrace)
+        $log.debug_backtrace(errorStr.backtrace)
       end
       return eventQueryState
     end
@@ -141,7 +141,7 @@ module Fluent
         File.write(@@KubeEventsStateFile, eventQueryState.to_yaml)
       rescue  => errorStr
         $log.warn $log.warn line.dump, error: errorStr.to_s
-        $log.debug_backtrace(e.backtrace)
+        $log.debug_backtrace(errorStr.backtrace)
       end
     end
 

@@ -159,9 +159,9 @@ module Fluent
                 done = @finished
                 @mutex.unlock
                 if !done
-                    $log.info "calling enumerate"
+                    $log.debug "calling enumerate for KubeLogs"
                     enumerate
-                    $log.info "done with enumerate"
+                    $log.debug "done with enumerate for KubeLogs"
                 end
                 @mutex.lock
             end
