@@ -270,7 +270,7 @@ class KubernetesApiClient
                             metricItem['DataItems'] = []
                             metricProps = {}
                             metricProps['Timestamp'] = metricTime
-                            metricProps['Host'] = hostName
+                            metricProps['Host'] = node['metadata']['name']
                             metricProps['ObjectName'] = "K8SNode"
                             metricProps['InstanceName'] = node['metadata']['name']
                             metricProps['Collections'] = []
