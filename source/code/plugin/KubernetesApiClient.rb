@@ -346,13 +346,13 @@ class KubernetesApiClient
                         else #assuming there are no units specified, it is bytes (the below conversion will fail for other unsupported 'units')
                             metricValue = Float(metricValue)
                         end
-                    when "cpu" #convert to millicores for cpu
+                    when "cpu" #convert to nanocores for cpu
                         #https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/
                         if (metricValue.end_with?("m")) 
                             metricValue.chomp!("m")
-                            metricValue = Float(metricValue)
-                        else #assuming no units specified, it is cores that we are converting to millicores (the below conversion will fail for other unsupported 'units')
-                            metricValue = Float(metricValue) * 1000.0 ** 1
+                            metricValue = Float(metricValue) * 1000.0 ** 2
+                        else #assuming no units specified, it is cores that we are converting to nanocores (the below conversion will fail for other unsupported 'units')
+                            metricValue = Float(metricValue) * 1000.0 ** 3
                         end
                     else 
                         @Log.warn("getMetricNumericValue: Unsupported metric #{metricName}. Returning 0 for metric value")
