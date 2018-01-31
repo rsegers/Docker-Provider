@@ -7,6 +7,7 @@ class KubernetesApiClient
         require 'net/http'
         require 'net/https'
         require 'uri'
+        require 'time'
 
         require_relative 'oms_common'
 
@@ -210,6 +211,123 @@ class KubernetesApiClient
                 end
                 return containerLogs
             end
+
+            def getContainerResourceRequestsAndLimits(metricJSON, metricCategory, hostName, metricNameToCollect, metricNametoReturn)
+                metricItems = []
+                begin
+                    metricInfo = metricJSON
+                    metricInfo['items'].each do |pod|
+                        podUid = pod['metadata']['uid']
+                        if (!pod['spec']['containers'].nil?)
+                            pod['spec']['containers'].each do |container|
+                                containerName = container['name']
+                                if (!container['resources'].nil? && !container['resources'][metricCategory].nil? && !container['resources'][metricCategory][metricNameToCollect].nil?)
+                                    metricValue = getMetricNumericValue(metricNameToCollect, container['resources'][metricCategory][metricNameToCollect])
+                                    metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
+
+                                    metricItem = {}
+                                    metricItem['DataItems'] = []
+                                    
+                                    metricProps = {}
+                                    metricProps['Timestamp'] = metricTime
+                                    metricProps['Host'] = hostName
+                                    metricProps['ObjectName'] = "K8SContainer"
+                                    metricProps['InstanceName'] = podUid + "/" + containerName
+                                    
+                                    metricProps['Collections'] = []
+                                    metricCollections = {}
+                                    metricCollections['CounterName'] = metricNametoReturn
+                                    metricCollections['Value'] = metricValue
+
+                                    metricProps['Collections'].push(metricCollections)
+                                    metricItem['DataItems'].push(metricProps)
+                                    metricItems.push(metricItem)
+                                end
+                            end
+                        end
+                    end
+                    rescue => error
+                    @Log.warn("getcontainerResourceRequestsAndLimits failed: #{error} for metric #{metricCategory} #{metricNameToCollect}")
+                    return metricItems
+                end
+                return metricItems          
+            end #getContainerResourceRequestAndLimits
+
+            def getMetricNumericValue(metricName, metricVal)
+                metricValue = metricVal
+                begin
+                    case metricName
+                    when "memory" #convert to bytes for memory
+                        #https://kubernetes.io/docs/tasks/configure-pod-container/assign-memory-resource/
+                        if (metricValue.end_with?("Ki")) 
+                            metricValue.chomp!("Ki")
+                            metricValue = Float(metricValue) * 1024.0 ** 1
+                        elsif (metricValue.end_with?("Mi"))
+                            metricValue.chomp!("Mi")
+                            metricValue = Float(metricValue) * 1024.0 ** 2
+                        elsif (metricValue.end_with?("Gi"))
+                            metricValue.chomp!("Gi")
+                            metricValue = Float(metricValue) * 1024.0 ** 3
+                        elsif (metricValue.end_with?("Ti"))
+                            metricValue.chomp!("Ti")
+                            metricValue = Float(metricValue) * 1024.0 ** 4
+                        elsif (metricValue.end_with?("Pi"))
+                            metricValue.chomp!("Pi")
+                            metricValue = Float(metricValue) * 1024.0 ** 5
+                        elsif (metricValue.end_with?("Ei"))
+                            metricValue.chomp!("Ei")
+                            metricValue = Float(metricValue) * 1024.0 ** 6
+                        elsif (metricValue.end_with?("Zi"))
+                            metricValue.chomp!("Zi")
+                            metricValue = Float(metricValue) * 1024.0 ** 7
+                        elsif (metricValue.end_with?("Yi"))
+                            metricValue.chomp!("Yi")
+                            metricValue = Float(metricValue) * 1024.0 ** 8
+                        elsif (metricValue.end_with?("K")) 
+                            metricValue.chomp!("K")
+                            metricValue = Float(metricValue) * 1000.0 ** 1
+                        elsif (metricValue.end_with?("M"))
+                            metricValue.chomp!("M")
+                            metricValue = Float(metricValue) * 1000.0 ** 2
+                        elsif (metricValue.end_with?("G"))
+                            metricValue.chomp!("G")
+                            metricValue = Float(metricValue) * 1000.0 ** 3
+                        elsif (metricValue.end_with?("T"))
+                            metricValue.chomp!("T")
+                            metricValue = Float(metricValue) * 1000.0 ** 4
+                        elsif (metricValue.end_with?("P"))
+                            metricValue.chomp!("P")
+                            metricValue = Float(metricValue) * 1000.0 ** 5
+                        elsif (metricValue.end_with?("E"))
+                            metricValue.chomp!("E")
+                            metricValue = Float(metricValue) * 1000.0 ** 6
+                        elsif (metricValue.end_with?("Z"))
+                            metricValue.chomp!("Z")
+                            metricValue = Float(metricValue) * 1000.0 ** 7
+                        elsif (metricValue.end_with?("Y"))
+                            metricValue.chomp!("Y")
+                            metricValue = Float(metricValue) * 1000.0 ** 8
+                        else #assuming there are no units specified, it is bytes (the below conversion will fail for other unsupported 'units')
+                            metricValue = Float(metricValue)
+                        end
+                    when "cpu" #convert to millicores for cpu
+                        #https://kubernetes.io/docs/tasks/configure-pod-container/assign-cpu-resource/
+                        if (metricValue.end_with?("m")) 
+                            metricValue.chomp!("m")
+                            metricValue = Float(metricValue)
+                        else #assuming no units specified, it is cores that we are converting to millicores (the below conversion will fail for other unsupported 'units')
+                            metricValue = Float(metricValue) * 1000.0 ** 1
+                        end
+                    else 
+                        @Log.warn("getMetricNumericValue: Unsupported metric #{metricName}. Returning 0 for metric value")
+                        metricValue = 0
+                    end #case statement
+                    rescue => error
+                    @Log.warn("getMetricNumericValue failed: #{error} for metric #{metricName} with value #{metricVal}. Returning 0 formetric value")
+                    return 0
+                end
+                return metricValue
+            end # getMetricNumericValue
         end
     end
 
