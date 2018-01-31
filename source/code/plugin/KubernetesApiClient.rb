@@ -221,8 +221,8 @@ class KubernetesApiClient
                         if (!pod['spec']['containers'].nil?)
                             pod['spec']['containers'].each do |container|
                                 containerName = container['name']
-                                if (!container['resources'].nil? && !container['resources'][metricCategory] && !container['resources'][metricCategory][metricNameToCollect])
-                                    metricValue = getMetricNumericValue(metricNameToCollect, container['resources'][metricCategory][memoryMetricNameToCollect])
+                                if (!container['resources'].nil? && !container['resources'][metricCategory].nil? && !container['resources'][metricCategory][metricNameToCollect].nil?)
+                                    metricValue = getMetricNumericValue(metricNameToCollect, container['resources'][metricCategory][metricNameToCollect])
                                     metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
 
                                     metricItem = {}
@@ -307,7 +307,7 @@ class KubernetesApiClient
                         elsif (metricValue.end_with?("Y"))
                             metricValue.chomp!("Y")
                             metricValue = Float(metricValue) * 1000.0 ** 8
-                        else 
+                        else #assuming there are no units specified, it is bytes (the below conversion will fail for other unsupported 'units')
                             metricValue = Float(metricValue)
                         end
                     when "cpu" #convert to millicores for cpu
@@ -315,7 +315,7 @@ class KubernetesApiClient
                         if (metricValue.end_with?("m")) 
                             metricValue.chomp!("m")
                             metricValue = Float(metricValue)
-                        else
+                        else #assuming no units specified, it is cores that we are converting to millicores (the below conversion will fail for other unsupported 'units')
                             metricValue = Float(metricValue) * 1000.0 ** 1
                         end
                     else 
