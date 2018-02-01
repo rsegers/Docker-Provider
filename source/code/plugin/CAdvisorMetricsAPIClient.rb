@@ -79,28 +79,30 @@ class CAdvisorMetricsAPIClient
                         metricInfo = metricJSON
                         metricInfo['pods'].each do |pod|
                             podUid = pod['podRef']['uid']
-                            pod['containers'].each do |container|
-                                #cpu metric
-                                containerName = container['name']
-                                metricValue = container['cpu'][cpuMetricNameToCollect]
-                                metricTime = container['cpu']['time']
-                                metricItem = {}
-                                metricItem['DataItems'] = []
-                                
-                                metricProps = {}
-                                metricProps['Timestamp'] = metricTime
-                                metricProps['Host'] = hostName
-                                metricProps['ObjectName'] = "K8SContainer"
-                                metricProps['InstanceName'] = podUid + "/" + containerName
-                                
-                                metricProps['Collections'] = []
-                                metricCollections = {}
-                                metricCollections['CounterName'] = metricNametoReturn
-                                metricCollections['Value'] = metricValue
+                            if (!pod['containers'].nil?)
+                                pod['containers'].each do |container|
+                                    #cpu metric
+                                    containerName = container['name']
+                                    metricValue = container['cpu'][cpuMetricNameToCollect]
+                                    metricTime = container['cpu']['time']
+                                    metricItem = {}
+                                    metricItem['DataItems'] = []
+                                    
+                                    metricProps = {}
+                                    metricProps['Timestamp'] = metricTime
+                                    metricProps['Host'] = hostName
+                                    metricProps['ObjectName'] = "K8SContainer"
+                                    metricProps['InstanceName'] = podUid + "/" + containerName
+                                    
+                                    metricProps['Collections'] = []
+                                    metricCollections = {}
+                                    metricCollections['CounterName'] = metricNametoReturn
+                                    metricCollections['Value'] = metricValue
 
-                                metricProps['Collections'].push(metricCollections)
-                                metricItem['DataItems'].push(metricProps)
-                                metricItems.push(metricItem)
+                                    metricProps['Collections'].push(metricCollections)
+                                    metricItem['DataItems'].push(metricProps)
+                                    metricItems.push(metricItem)
+                                end
                             end
                         end
                         rescue => error
@@ -116,28 +118,30 @@ class CAdvisorMetricsAPIClient
                         metricInfo = metricJSON
                         metricInfo['pods'].each do |pod|
                             podUid = pod['podRef']['uid']
-                            pod['containers'].each do |container|
-                                containerName = container['name']
-                                metricValue = container['memory'][memoryMetricNameToCollect]
-                                metricTime = container['memory']['time']
-                                
-                                metricItem = {}
-                                metricItem['DataItems'] = []
-                                
-                                metricProps = {}
-                                metricProps['Timestamp'] = metricTime
-                                metricProps['Host'] = hostName
-                                metricProps['ObjectName'] = "K8SContainer"
-                                metricProps['InstanceName'] = podUid + "/" + containerName
-                                
-                                metricProps['Collections'] = []
-                                metricCollections = {}
-                                metricCollections['CounterName'] = metricNametoReturn
-                                metricCollections['Value'] = metricValue
+                            if (!pod['containers'].nil?)
+                                pod['containers'].each do |container|
+                                    containerName = container['name']
+                                    metricValue = container['memory'][memoryMetricNameToCollect]
+                                    metricTime = container['memory']['time']
+                                    
+                                    metricItem = {}
+                                    metricItem['DataItems'] = []
+                                    
+                                    metricProps = {}
+                                    metricProps['Timestamp'] = metricTime
+                                    metricProps['Host'] = hostName
+                                    metricProps['ObjectName'] = "K8SContainer"
+                                    metricProps['InstanceName'] = podUid + "/" + containerName
+                                    
+                                    metricProps['Collections'] = []
+                                    metricCollections = {}
+                                    metricCollections['CounterName'] = metricNametoReturn
+                                    metricCollections['Value'] = metricValue
 
-                                metricProps['Collections'].push(metricCollections)
-                                metricItem['DataItems'].push(metricProps)
-                                metricItems.push(metricItem)
+                                    metricProps['Collections'].push(metricCollections)
+                                    metricItem['DataItems'].push(metricProps)
+                                    metricItems.push(metricItem)
+                                end
                             end
                         end
                         rescue => error
