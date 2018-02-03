@@ -167,7 +167,7 @@ module Fluent
                 
                 selectorLabels = item['spec']['selector']
                 selectorLabels.each do |key,value|
-                  if !labels.select {|k,v| k==key && v==value}.length > 0 #=> {"b" => 200}
+                  if !(labels.select {|k,v| k==key && v==value}.length > 0)
                     break
                   end
                   found = found + 1
