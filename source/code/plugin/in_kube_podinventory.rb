@@ -84,6 +84,7 @@ module Fluent
               record['PodIp'] =items['status']['podIP']
               record['Computer'] = items['spec']['nodeName']
               record['ClusterName'] = KubernetesApiClient.getClusterName
+              record['ServiceName'] = getServiceNameFromLabels(items['metadata']['namespace'], items['metadata']['labels'])
               if !items['metadata']['ownerReferences'].nil?
                 record['ControllerKind'] = items['metadata']['ownerReferences'][0]['kind']
                 record['ControllerName'] = items['metadata']['ownerReferences'][0]['name']
@@ -128,6 +129,7 @@ module Fluent
         record['PodIp'] = ""
         record['Computer'] = ""
         record['ClusterName'] = ""
+        record['ServiceName'] = ""
         record['ContainerID'] = ""		
         record['InstanceName'] = ""		
         record['ContainerRestartCount'] = ""		
@@ -151,6 +153,37 @@ module Fluent
         @mutex.lock
       end
       @mutex.unlock
+    end
+
+    def getServiceNameFromLabels(namespace, labels)
+      serviceName = ""
+      begin
+        if KubernetesApiClient.isValidRunningNode && !labels.nil? && !labels.empty?
+          serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
+          if(!serviceList.empty?)
+            serviceList['items'].each do |item|
+              found = 0
+              if !item['spec'].nil? && !item['spec']['selector'].nil? && item['metadata']['namespace'] == namespace
+                
+                selectorLabels = item['spec']['selector']
+                selectorLabels.each do |key,value|
+                  if !labels.select {|k,v| k==key && v==value}.length > 0 #=> {"b" => 200}
+                    break
+                  end
+                  found = found + 1
+                end
+                if found == selectorLabels.length
+                  return item['metadata']['name']
+                end
+              end  
+            end
+          end  
+        end
+      rescue  => errorStr
+        $log.warn "Failed to retrieve service name from labels: #{errorStr}"
+        $log.debug_backtrace(errorStr.backtrace)
+      end
+      return serviceName
     end
 
   end # Kube_Pod_Input
