@@ -101,13 +101,19 @@ module Fluent
                 #within the pod. The restart count of a container is maintained by kubernetes		
                 #itself in the form of a container label.		
                 containerRestartCount = container['restartCount']		
-                record['ContainerRestartCount'] = containerRestartCount		
+                record['ContainerRestartCount'] = containerRestartCount
+                containerStatus = container['state']
+                record['ContainerStatus'] = containerStatus
+                if containerStatus == "running"
+                  record['ContainerCreationTimeStamp'] = container['running']['startedAt']
+                end
                 podRestartCount += containerRestartCount	
                 records.push(record)		
               end
               records.each do |record|
                 if !record.nil? 		
                   record['PodRestartCount'] = podRestartCount		
+                  $log.info record
                   router.emit(@tag, time, record) 
                 end    		
               end       
