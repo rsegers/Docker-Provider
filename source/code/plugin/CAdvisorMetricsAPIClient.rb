@@ -7,11 +7,16 @@ class CAdvisorMetricsAPIClient
             require 'net/http'
             require 'net/https'
             require 'uri'
+            require 'date'
     
             require_relative 'oms_common'
     
             @LogPath = "/var/opt/microsoft/omsagent/log/kubernetes_perf_log.txt"
             @Log = Logger.new(@LogPath, 'weekly')
+            @@rxBytesLast = nil
+            @@rxBytesTimeLast = nil
+            @@txBytesLast = nil
+            @@txBytesTimeLast = nil
     
             def initialize
             end
@@ -65,6 +70,16 @@ class CAdvisorMetricsAPIClient
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "usageBytes", "memoryUsageBytes"))
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "rxBytes", "networkRxBytes"))
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "txBytes", "networkTxBytes"))
+                        
+                        networkRxRate = getNodeMetricItemRate(metricInfo, hostName, "network", "rxBytes", "networkRxBytesPerSec")
+                        if networkRxRate && !networkRxRate.empty? && !networkRxRate.nil?
+                            metricDataItems.push(networkRxRate)
+                        end
+                        networkTxRate = getNodeMetricItemRate(metricInfo, hostName, "network", "txBytes", "networkTxBytesPerSec")
+                        if networkTxRate && !networkTxRate.empty? && !networkTxRate.nil?
+                            metricDataItems.push(networkTxRate)
+                        end
+                        
                         
                         rescue => error
                         @Log.warn("getContainerMetrics failed: #{error}")
@@ -183,6 +198,61 @@ class CAdvisorMetricsAPIClient
                         return metricItem
                     end
                     return metricItem                      
+                end
+
+                def getNodeMetricItemRate(metricJSON, hostName, metricCategory, metricNameToCollect, metricNametoReturn)
+                    metricItem = {}
+                    begin
+                        
+                        metricInfo = metricJSON
+                        node = metricInfo['node']
+                        nodeName = node['nodeName']
+                        
+                        metricValue = node[metricCategory][metricNameToCollect]
+                        metricTime = node[metricCategory]['time']
+
+                        if !(metricNameToCollect == "rxBytes" || metricNameToCollect == "txBytes" )
+                            @Log.warn("getNodeMetricItemRate : rateMetric is supported only for rxBytes & txBytes and not for #{metricNameToCollect}")
+                            return nil
+                        elsif metricNameToCollect == "rxBytes"
+                            if @@rxBytesLast.nil? || @@rxBytesTimeLast.nil?
+                                @@rxBytesLast = metricValue
+                                @@rxBytesTimeLast = metricTime
+                                return nil
+                            else
+                                metricValue = ((metricValue - @@rxBytesLast) * 1.0)/(DateTime.parse(metricTime).to_time - DateTime.parse(@@rxBytesTimeLast).to_time)
+                            end
+                        else
+                            if @@txBytesLast.nil? || @@txBytesTimeLast.nil?
+                                @@txBytesLast = metricValue
+                                @@txBytesTimeLast = metricTime
+                                return nil
+                            else
+                                metricValue = ((metricValue - @@txBytesLast) * 1.0)/(DateTime.parse(metricTime).to_time - DateTime.parse(@@txBytesTimeLast).to_time)
+                            end
+                        end
+                        
+                        metricItem['DataItems'] = []
+                        
+                        metricProps = {}
+                        metricProps['Timestamp'] = metricTime
+                        metricProps['Host'] = hostName
+                        metricProps['ObjectName'] = "K8SNode"
+                        metricProps['InstanceName'] = nodeName
+                        
+                        metricProps['Collections'] = []
+                        metricCollections = {}
+                        metricCollections['CounterName'] = metricNametoReturn
+                        metricCollections['Value'] = metricValue
+
+                        metricProps['Collections'].push(metricCollections)
+                        metricItem['DataItems'].push(metricProps)
+                        
+                        rescue => error
+                        @Log.warn("getNodeMetricItemRate failed: #{error} for metric #{metricNameToCollect}")
+                        return nil
+                    end
+                    return metricItem
                 end
 
             end
