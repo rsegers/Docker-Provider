@@ -22,6 +22,7 @@ class KubernetesApiClient
         @Log = Logger.new(@LogPath, 'weekly')
         @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
         @@TokenStr = nil
+        @@NodeMetrics = Hash.new
 
         def initialize
         end
@@ -218,13 +219,14 @@ class KubernetesApiClient
                     metricInfo = metricJSON
                     metricInfo['items'].each do |pod|
                         podUid = pod['metadata']['uid']
+                        nodeName = pod['spec']['nodeName']
                         if (!pod['spec']['containers'].nil?)
                             pod['spec']['containers'].each do |container|
                                 containerName = container['name']
+                                metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
                                 if (!container['resources'].nil? && !container['resources'][metricCategory].nil? && !container['resources'][metricCategory][metricNameToCollect].nil?)
                                     metricValue = getMetricNumericValue(metricNameToCollect, container['resources'][metricCategory][metricNameToCollect])
-                                    metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
-
+                                    
                                     metricItem = {}
                                     metricItem['DataItems'] = []
                                     
@@ -242,6 +244,31 @@ class KubernetesApiClient
                                     metricProps['Collections'].push(metricCollections)
                                     metricItem['DataItems'].push(metricProps)
                                     metricItems.push(metricItem)
+                                #No container level limit for the given metric, so default to node level limit
+                                else
+                                    nodeMetricsHashKey = nodeName + "_" + "allocatable" +  "_" + metricNameToCollect
+                                    if (metricCategory == "limits" && @@NodeMetrics.has_key?(nodeMetricsHashKey))
+                                        
+                                        metricValue = @@NodeMetrics[nodeMetricsHashKey]
+                                        @Log.info("Limits not set for container #{podUid + "/" + containerName} using node level limits: #{nodeMetricsHashKey}=#{metricValue} ")
+                                        metricItem = {}
+                                        metricItem['DataItems'] = []
+                                        
+                                        metricProps = {}
+                                        metricProps['Timestamp'] = metricTime
+                                        metricProps['Host'] = hostName
+                                        metricProps['ObjectName'] = "K8SContainer"
+                                        metricProps['InstanceName'] = podUid + "/" + containerName
+                                        
+                                        metricProps['Collections'] = []
+                                        metricCollections = {}
+                                        metricCollections['CounterName'] = metricNametoReturn
+                                        metricCollections['Value'] = metricValue
+
+                                        metricProps['Collections'].push(metricCollections)
+                                        metricItem['DataItems'].push(metricProps)
+                                        metricItems.push(metricItem)
+                                    end
                                 end
                             end
                         end
@@ -281,6 +308,10 @@ class KubernetesApiClient
                             metricProps['Collections'].push(metricCollections)
                             metricItem['DataItems'].push(metricProps)
                             metricItems.push(metricItem)
+                            #push node level metrics to a inmem hash so that we can use it looking up at container level.
+                            #Currently if container level cpu & memory limits are not defined we default to node level limits
+                            @@NodeMetrics[node['metadata']['name'] + "_" + metricCategory + "_" + metricNameToCollect] = metricValue
+                            @Log.info ("Node metric hash: #{@@NodeMetrics}")
                         end
                     end
                 rescue => error
