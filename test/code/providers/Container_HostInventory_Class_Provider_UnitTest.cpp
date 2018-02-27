@@ -63,6 +63,7 @@ protected:
         m_keyNames.push_back(L"InstanceID");
         string k8NodeInfoString = "\r\n{\"ID\":\"4H4P:Z5O5:MMPA:BSDD:44TG:3FRY:AJ5Z:SPU4:LIEV:2XIF:SDJ3:FWLL\",\"Containers\":23,\"ContainersRunning\":13,\"ContainersPaused\":0,\"ContainersStopped\":10,\"Images\":25,\"Driver\":\"overlay\",\"DriverStatus\":[[\"Backing Filesystem\",\"extfs\"]],\"SystemStatus\":null,\"Plugins\":{\"Volume\":[\"local\"],\"Network\":[\"host\",\"bridge\",\"null\",\"overlay\"],\"Authorization\":null},\"MemoryLimit\":true,\"SwapLimit\":false,\"KernelMemory\":true,\"CpuCfsPeriod\":true,\"CpuCfsQuota\":true,\"CPUShares\":true,\"CPUSet\":true,\"IPv4Forwarding\":true,\"BridgeNfIptables\":true,\"BridgeNfIp6tables\":true,\"Debug\":false,\"NFd\":89,\"OomKillDisable\":true,\"NGoroutines\":89,\"SystemTime\":\"2017-04-25T22:06:56.371719716Z\",\"ExecutionDriver\":\"\",\"LoggingDriver\":\"json-file\",\"CgroupDriver\":\"cgroupfs\",\"NEventsListener\":0,\"KernelVersion\":\"4.4.0-72-generic\",\"OperatingSystem\":\"Ubuntu 16.04 LTS\",\"OSType\":\"linux\",\"Architecture\":\"x86_64\",\"IndexServerAddress\":\"https://index.docker.io/v1/\",\"RegistryConfig\":{\"InsecureRegistryCIDRs\":[\"127.0.0.0/8\"],\"IndexConfigs\":{\"docker.io\":{\"Name\":\"docker.io\",\"Mirrors\":null,\"Secure\":true,\"Official\":true}},\"Mirrors\":null},\"NCPU\":2,\"MemTotal\":7305641984,\"DockerRootDir\":\"/var/lib/docker\",\"HttpProxy\":\"\",\"HttpsProxy\":\"\",\"NoProxy\":\"\",\"Name\":\"k8-master-71E8D996-0\",\"Labels\":null,\"ExperimentalBuild\":false,\"ServerVersion\":\"1.12.6\",\"ClusterStore\":\"\",\"ClusterAdvertise\":\"\",\"SecurityOptions\":[\"apparmor\",\"seccomp\"],\"Runtimes\":{\"runc\":{\"path\":\"docker-runc\"}},\"DefaultRuntime\":\"runc\",\"Swarm\":{\"NodeID\":\"\",\"NodeAddr\":\"\",\"LocalNodeState\":\"inactive\",\"ControlAvailable\":false,\"Error\":\"\",\"RemoteManagers\":null,\"Nodes\":0,\"Managers\":0,\"Cluster\":{\"ID\":\"\",\"Version\":{},\"CreatedAt\":\"0001-01-01T00:00:00Z\",\"UpdatedAt\":\"0001-01-01T00:00:00Z\",\"Spec\":{\"Orchestration\":{},\"Raft\":{},\"Dispatcher\":{},\"CAConfig\":{},\"TaskDefaults\":{}}}},\"LiveRestoreEnabled\":false}";
         setenv(DOCKER_TESTRUNNER_STRING,k8NodeInfoString.c_str(),1);
+        setenv(KUBENETES_SERVICE_HOST_STRING ,"somevalue",1);
 
         // Enumerate provider. Use k8 specific response instead of the standard docker info response
         StandardTestEnumerateInstances<mi::Container_HostInventory_Class_Provider>(m_keyNames, context, CALL_LOCATION(errMsg));
@@ -81,6 +82,7 @@ protected:
         }
 
         unsetenv(DOCKER_TESTRUNNER_STRING);
+        unserenv(KUBENETES_SERVICE_HOST_STRING);
     }
 
     void TestDcosParsing()
