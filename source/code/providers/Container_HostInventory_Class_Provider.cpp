@@ -134,7 +134,7 @@ public:
             }
             else if(computerName.find("swarmm") != string::npos)
             {
-                //swarm
+                //swarm mode
                 instance.OrchestratorType_value("Swarm Mode");  
             }
             else if(computerName.find("swarm") != string::npos)
@@ -142,14 +142,14 @@ public:
                 //swarm
                 instance.OrchestratorType_value("Swarm");  
             }
-            else if(computerName.find("k8") != string::npos)
+            else if(getenv(KUBENETES_SERVICE_HOST_STRING) != NULL)
             {
-                //swarm
+                //kubernetes
                 instance.OrchestratorType_value("Kubernetes");  
             }
             else if(computerName.find("dcos") != string::npos)
             {
-                //swarm
+                //dc/os
                 instance.OrchestratorType_value("DC/OS");  
             }
             else
