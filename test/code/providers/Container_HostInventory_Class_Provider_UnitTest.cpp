@@ -82,7 +82,7 @@ protected:
         }
 
         unsetenv(DOCKER_TESTRUNNER_STRING);
-        unserenv(KUBENETES_SERVICE_HOST_STRING);
+        unsetenv(KUBENETES_SERVICE_HOST_STRING);
     }
 
     void TestDcosParsing()
