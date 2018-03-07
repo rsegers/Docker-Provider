@@ -45,6 +45,7 @@ module Fluent
   
       def enumerate
         time = Time.now.to_f
+        batchTime = Time.now.utc.iso8601
         if KubernetesApiClient.isValidRunningNode
           nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
           begin
@@ -54,19 +55,20 @@ module Fluent
                 #<TODO> Node capacity is different from node allocatable. Allocatable is what is avaialble for allocating pods.
                 # In theory Capacity = Allocatable + kube-reserved + system-reserved + eviction-threshold
                 # For more details refer to https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable 
-                metricDataItems = []
-                metricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "cpu", "cpuAllocatableNanoCores"))
-                metricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "memory", "memoryAllocatableBytes"))
+                #metricDataItems = []
+                #metricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "cpu", "cpuAllocatableNanoCores"))
+                #metricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "memory", "memoryAllocatableBytes"))
 
-                metricDataItems.each do |record|
-                record['DataType'] = "LINUX_PERF_BLOB"
-                record['IPName'] = "LogManagement"
-                router.emit("oms.api.KubePerf", time, record) if record  
-                end  
+                #metricDataItems.each do |record|
+                #record['DataType'] = "LINUX_PERF_BLOB"
+                #record['IPName'] = "LogManagement"
+                #router.emit("oms.api.KubePerf", time, record) if record  
+                #end  
 
                 #get node inventory 
                 nodeInventory['items'].each do |items|
                     record = {}
+                    record['CollectionTime'] = batchTime
                     record['Computer'] = items['metadata']['name']   
                     record['CreationTimeStamp'] = items['metadata']['creationTimestamp'] 
                     record['Labels'] = [items['metadata']['labels']]
@@ -85,7 +87,7 @@ module Fluent
                     
                     record['KubeletVersion'] = items['status']['nodeInfo']['kubeletVersion']
                     record['KubeProxyVersion'] = items['status']['nodeInfo']['kubeProxyVersion']
-                    router.emit(@tag, time, record)
+                    router.emit(@tag, time, record) if record
                 end 
     
             end  
