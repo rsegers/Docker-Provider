@@ -11,6 +11,7 @@ module Fluent
           require 'json'
     
           require_relative 'CAdvisorMetricsAPIClient'
+          require_relative 'KubernetesApiClient'
           require_relative 'oms_common'
           require_relative 'omslog'
         end
@@ -51,7 +52,44 @@ module Fluent
                       record['DataType'] = "LINUX_PERF_BLOB"
                       record['IPName'] = "LogManagement"
                       router.emit(@tag, time, record) if record    
+              end 
+              
+              if KubernetesApiClient.isValidRunningNode
+                #get resource requests & resource limits per container as perf data 
+                podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
+                if(!podInventory.empty?) 
+                  containerMetricDataItems = []
+                  hostName = (OMS::Common.get_hostname)
+                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "cpu","cpuRequestNanoCores"))
+                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "memory","memoryRequestBytes"))
+                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "cpu","cpuLimitNanoCores"))
+                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "memory","memoryLimitBytes"))
+      
+                  containerMetricDataItems.each do |record|
+                    record['DataType'] = "LINUX_PERF_BLOB"
+                    record['IPName'] = "LogManagement"
+                    router.emit(@tag, time, record) if record  
+                  end
+                end
+
+                #get allocatable limits per node as perf data
+                #<TODO> Node capacity is different from node allocatable. Allocatable is what is avaialble for allocating pods.
+                # In theory Capacity = Allocatable + kube-reserved + system-reserved + eviction-threshold
+                # For more details refer to https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable
+                nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
+                if(!nodeInventory.empty?)
+                  nodeMetricDataItems = []
+                  nodeMetricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "cpu", "cpuAllocatableNanoCores"))
+                  nodeMetricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "memory", "memoryAllocatableBytes"))
+  
+                  nodeMetricDataItems.each do |record|
+                    record['DataType'] = "LINUX_PERF_BLOB"
+                    record['IPName'] = "LogManagement"
+                    router.emit(@tag, time, record) if record 
+                  end 
+                end
               end  
+                        
               rescue  => errorStr
               $log.warn "Failed to retrieve metric data: #{errorStr}"
               $log.debug_backtrace(errorStr.backtrace)

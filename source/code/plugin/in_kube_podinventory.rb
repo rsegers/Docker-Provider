@@ -45,6 +45,7 @@ module Fluent
 
     def enumerate(podList = nil)
       time = Time.now.to_f
+      batchTime = Time.now.utc.iso8601
       if KubernetesApiClient.isValidRunningNode
         if podList.nil?
           podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
@@ -56,23 +57,24 @@ module Fluent
           if(!podInventory.empty?) 
 
             #get resource requests & resource limits per container as perf data
-            metricDataItems = []
-            hostName = (OMS::Common.get_hostname)
-            metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "cpu","cpuRequestNanoCores"))
-            metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "memory","memoryRequestBytes"))
-            metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "cpu","cpuLimitNanoCores"))
-            metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "memory","memoryLimitBytes"))
+            #metricDataItems = []
+            #hostName = (OMS::Common.get_hostname)
+            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "cpu","cpuRequestNanoCores"))
+            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "memory","memoryRequestBytes"))
+            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "cpu","cpuLimitNanoCores"))
+            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "memory","memoryLimitBytes"))
 
-            metricDataItems.each do |record|
-              record['DataType'] = "LINUX_PERF_BLOB"
-              record['IPName'] = "LogManagement"
-              router.emit("oms.api.KubePerf", time, record) if record  
-            end  
+            #metricDataItems.each do |record|
+            #  record['DataType'] = "LINUX_PERF_BLOB"
+            #  record['IPName'] = "LogManagement"
+            #  router.emit("oms.api.KubePerf", time, record) if record  
+            #end  
 
             #get pod inventory
             podInventory['items'].each do |items|
               records = []
               record = {}
+              record['CollectionTime'] = batchTime
               record['Name'] = items['metadata']['name']
               podUid = items['metadata']['uid']
               record['PodUid'] = podUid
@@ -137,6 +139,7 @@ module Fluent
         end
       else
         record = {}
+        record['CollectionTime'] = ""
         record['Name'] = ""
         record['PodUid'] = ""
         record['PodLabel'] = ""
