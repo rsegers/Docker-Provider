@@ -79,9 +79,13 @@ module Fluent
                 nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
                 if(!nodeInventory.empty?)
                   nodeMetricDataItems = []
+                  #allocatable metrics @ node level
                   nodeMetricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "cpu", "cpuAllocatableNanoCores"))
                   nodeMetricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "memory", "memoryAllocatableBytes"))
-  
+                  #capacity metrics @ node level
+                  nodeMetricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "capacity", "cpu", "cpuCapacityNanoCores"))
+                  nodeMetricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "capacity", "memory", "memoryCapacityBytes"))
+
                   nodeMetricDataItems.each do |record|
                     record['DataType'] = "LINUX_PERF_BLOB"
                     record['IPName'] = "LogManagement"
