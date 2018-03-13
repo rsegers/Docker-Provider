@@ -18,7 +18,7 @@ module Fluent
     end
 
     config_param :run_interval, :time, :default => '10m'
-    config_param :tag, :string, :default => "oms.api.KubeEvents"
+    config_param :tag, :string, :default => "oms.api.KubeEvents.CollectionTime"
 
     def configure (conf)
       super
@@ -46,7 +46,9 @@ module Fluent
     end
 
     def enumerate(eventList = nil)
-        time = Time.now.to_f
+        currentTime = Time.now
+        emitTime = currentTime.to_f
+        batchTime = currentTime.utc.iso8601
         if KubernetesApiClient.isValidRunningNode
           if eventList.nil?
             events = JSON.parse(KubernetesApiClient.getKubeResourceInfo('events').body)
@@ -59,6 +61,7 @@ module Fluent
             if(!events.empty?)
               events['items'].each do |items|
                 record = {}
+                record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
                 eventId = items['metadata']['uid'] + "/" + items['count'].to_s  
                 newEventQueryState.push(eventId)
                 if !eventQueryState.empty? && eventQueryState.include?(eventId)
@@ -81,7 +84,7 @@ module Fluent
                         record['Computer'] = (OMS::Common.get_hostname)
                 end
                 record['ClusterName'] = KubernetesApiClient.getClusterName
-                router.emit(@tag, time, record) if record   
+                router.emit(@tag, emitTime, record) if record   
               end
             end  
             writeEventQueryState(newEventQueryState)
@@ -91,6 +94,7 @@ module Fluent
           end   
         else
           record = {}
+          record['CollectionTime'] = batchTime
           record['ObjectKind']= ""
           record['Namespace'] = ""
           record['Name'] = ""
@@ -104,7 +108,7 @@ module Fluent
           record['Count'] = "0"
           record['Computer'] = ""
           record['ClusterName'] = ""
-          router.emit(@tag, time, record)
+          router.emit(@tag, emitTime, record)
         end
     end
 
