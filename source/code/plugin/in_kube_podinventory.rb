@@ -104,11 +104,11 @@ module Fluent
                 #   }
                 # },
                 record['ContainerStatus'] = containerStatus.keys[0]
-                if containerStatus == "running"
-                  record['ContainerCreationTimeStamp'] = container['running']['startedAt']
+                if containerStatus.keys[0] == "running"
+                  record['ContainerCreationTimeStamp'] = container['state']['running']['startedAt']
                 end
                 podRestartCount += containerRestartCount	
-                records.push(record)		
+                records.push(record.dup)		
               end
               records.each do |record|
                 if !record.nil? 		
