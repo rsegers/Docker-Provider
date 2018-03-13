@@ -16,7 +16,7 @@ module Fluent
     end
 
     config_param :run_interval, :time, :default => '10m'
-    config_param :tag, :string, :default => "oms.api.KubePodInventory"
+    config_param :tag, :string, :default => "oms.api.KubePodInventory.CollectionTime"
 
     def configure (conf)
       super
@@ -44,8 +44,9 @@ module Fluent
     end
 
     def enumerate(podList = nil)
-      time = Time.now.to_f
-      batchTime = Time.now.utc.iso8601
+      currentTime = Time.now
+      emitTime = currentTime.to_f
+      batchTime = currentTime.utc.iso8601
       if KubernetesApiClient.isValidRunningNode
         if podList.nil?
           podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
@@ -55,26 +56,11 @@ module Fluent
         end
         begin
           if(!podInventory.empty?) 
-
-            #get resource requests & resource limits per container as perf data
-            #metricDataItems = []
-            #hostName = (OMS::Common.get_hostname)
-            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "cpu","cpuRequestNanoCores"))
-            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "memory","memoryRequestBytes"))
-            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "cpu","cpuLimitNanoCores"))
-            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "memory","memoryLimitBytes"))
-
-            #metricDataItems.each do |record|
-            #  record['DataType'] = "LINUX_PERF_BLOB"
-            #  record['IPName'] = "LogManagement"
-            #  router.emit("oms.api.KubePerf", time, record) if record  
-            #end  
-
             #get pod inventory
             podInventory['items'].each do |items|
               records = []
               record = {}
-              record['CollectionTime'] = batchTime
+              record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
               record['Name'] = items['metadata']['name']
               podUid = items['metadata']['uid']
               record['PodUid'] = podUid
@@ -128,7 +114,7 @@ module Fluent
                 if !record.nil? 		
                   record['PodRestartCount'] = podRestartCount		
                   $log.info record
-                  router.emit(@tag, time, record) 
+                  router.emit(@tag, emitTime, record) 
                 end    		
               end       
             end
@@ -139,7 +125,7 @@ module Fluent
         end
       else
         record = {}
-        record['CollectionTime'] = ""
+        record['CollectionTime'] = batchTime
         record['Name'] = ""
         record['PodUid'] = ""
         record['PodLabel'] = ""
@@ -156,7 +142,7 @@ module Fluent
         record['PodRestartCount'] = "0"		
         record['PodStartTime'] = ""
         record['ContainerStartTime'] = ""        
-        router.emit(@tag, time, record)
+        router.emit(@tag, emitTime, record)
       end
     end
 

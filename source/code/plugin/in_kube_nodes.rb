@@ -16,7 +16,7 @@ module Fluent
       end
   
       config_param :run_interval, :time, :default => '10m'
-      config_param :tag, :string, :default => "oms.api.KubeNodeInventory"
+      config_param :tag, :string, :default => "oms.api.KubeNodeInventory.CollectionTime"
   
       def configure (conf)
         super
@@ -44,8 +44,9 @@ module Fluent
       end
   
       def enumerate
-        time = Time.now.to_f
-        batchTime = Time.now.utc.iso8601
+        currentTime = Time.now
+        emitTime = currentTime.to_f
+        batchTime = currentTime.utc.iso8601
         if KubernetesApiClient.isValidRunningNode
           nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
           begin
@@ -68,7 +69,7 @@ module Fluent
                 #get node inventory 
                 nodeInventory['items'].each do |items|
                     record = {}
-                    record['CollectionTime'] = batchTime
+                    record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
                     record['Computer'] = items['metadata']['name']   
                     record['CreationTimeStamp'] = items['metadata']['creationTimestamp'] 
                     record['Labels'] = [items['metadata']['labels']]
@@ -87,7 +88,7 @@ module Fluent
                     
                     record['KubeletVersion'] = items['status']['nodeInfo']['kubeletVersion']
                     record['KubeProxyVersion'] = items['status']['nodeInfo']['kubeProxyVersion']
-                    router.emit(@tag, time, record) if record
+                    router.emit(@tag, emitTime, record) if record
                 end 
     
             end  
