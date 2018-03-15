@@ -51,21 +51,6 @@ module Fluent
           nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
           begin
             if(!nodeInventory.empty?)
-
-                #get allocatable limits per node as perf data
-                #<TODO> Node capacity is different from node allocatable. Allocatable is what is avaialble for allocating pods.
-                # In theory Capacity = Allocatable + kube-reserved + system-reserved + eviction-threshold
-                # For more details refer to https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable 
-                #metricDataItems = []
-                #metricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "cpu", "cpuAllocatableNanoCores"))
-                #metricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "memory", "memoryAllocatableBytes"))
-
-                #metricDataItems.each do |record|
-                #record['DataType'] = "LINUX_PERF_BLOB"
-                #record['IPName'] = "LogManagement"
-                #router.emit("oms.api.KubePerf", time, record) if record  
-                #end  
-
                 #get node inventory 
                 nodeInventory['items'].each do |items|
                     record = {}
@@ -84,6 +69,10 @@ module Fluent
                         if condition['status'] == "True"
                             record['Status'] += condition['type']
                         end 
+                        #collect last transition to/from ready (no matter ready is true/false)
+                        if condition['type'] == "Ready" && !condition['lastTransitionTime'].nil?
+                          record['LastTransitionTimeReady'] = condition['lastTransitionTime']
+                        end
                     end 
                     
                     record['KubeletVersion'] = items['status']['nodeInfo']['kubeletVersion']
