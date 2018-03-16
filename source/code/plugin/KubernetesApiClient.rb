@@ -232,7 +232,7 @@ class KubernetesApiClient
                                     
                                     metricProps = {}
                                     metricProps['Timestamp'] = metricTime
-                                    metricProps['Host'] = hostName
+                                    metricProps['Host'] = nodeName
                                     metricProps['ObjectName'] = "K8SContainer"
                                     metricProps['InstanceName'] = podUid + "/" + containerName
                                     
@@ -256,7 +256,7 @@ class KubernetesApiClient
                                         
                                         metricProps = {}
                                         metricProps['Timestamp'] = metricTime
-                                        metricProps['Host'] = hostName
+                                        metricProps['Host'] = nodeName
                                         metricProps['ObjectName'] = "K8SContainer"
                                         metricProps['InstanceName'] = podUid + "/" + containerName
                                         
