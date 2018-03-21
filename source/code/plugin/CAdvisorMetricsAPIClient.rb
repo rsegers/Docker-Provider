@@ -10,6 +10,7 @@ class CAdvisorMetricsAPIClient
             require 'date'
     
             require_relative 'oms_common'
+            require_relative 'KubernetesApiClient'
     
             @LogPath = "/var/opt/microsoft/omsagent/log/kubernetes_perf_log.txt"
             @Log = Logger.new(@LogPath, 'weekly')
@@ -70,6 +71,7 @@ class CAdvisorMetricsAPIClient
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "usageBytes", "memoryUsageBytes"))
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "rxBytes", "networkRxBytes"))
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "txBytes", "networkTxBytes"))
+                        metricDataItems.push(getNodeLastRebootTimeMetric(metricInfo, hostName, "restartTimeEpoch"))
                         
                         networkRxRate = getNodeMetricItemRate(metricInfo, hostName, "network", "rxBytes", "networkRxBytesPerSec")
                         if networkRxRate && !networkRxRate.empty? && !networkRxRate.nil?
@@ -90,6 +92,7 @@ class CAdvisorMetricsAPIClient
 
                 def getContainerCpuMetricItems(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn)
                     metricItems = []
+                    clusterId = KubernetesApiClient.getClusterId
                     begin
                         metricInfo = metricJSON
                         metricInfo['pods'].each do |pod|
@@ -107,7 +110,7 @@ class CAdvisorMetricsAPIClient
                                     metricProps['Timestamp'] = metricTime
                                     metricProps['Host'] = hostName
                                     metricProps['ObjectName'] = "K8SContainer"
-                                    metricProps['InstanceName'] = podUid + "/" + containerName
+                                    metricProps['InstanceName'] = clusterId + " /" + podUid + "/" + containerName
                                     
                                     metricProps['Collections'] = []
                                     metricCollections = {}
@@ -129,6 +132,7 @@ class CAdvisorMetricsAPIClient
 
                 def getContainerMemoryMetricItems(metricJSON, hostName, memoryMetricNameToCollect, metricNametoReturn)
                     metricItems = []
+                    clusterId = KubernetesApiClient.getClusterId
                     begin
                         metricInfo = metricJSON
                         metricInfo['pods'].each do |pod|
@@ -146,7 +150,7 @@ class CAdvisorMetricsAPIClient
                                     metricProps['Timestamp'] = metricTime
                                     metricProps['Host'] = hostName
                                     metricProps['ObjectName'] = "K8SContainer"
-                                    metricProps['InstanceName'] = podUid + "/" + containerName
+                                    metricProps['InstanceName'] = clusterId + " /" + podUid + "/" + containerName
                                     
                                     metricProps['Collections'] = []
                                     metricCollections = {}
@@ -168,6 +172,7 @@ class CAdvisorMetricsAPIClient
 
                 def getNodeMetricItem(metricJSON, hostName, metricCategory, metricNameToCollect, metricNametoReturn)
                     metricItem = {}
+                    clusterId = KubernetesApiClient.getClusterId
                     begin
                         metricInfo = metricJSON
                         node = metricInfo['node']
@@ -183,7 +188,7 @@ class CAdvisorMetricsAPIClient
                         metricProps['Timestamp'] = metricTime
                         metricProps['Host'] = hostName
                         metricProps['ObjectName'] = "K8SNode"
-                        metricProps['InstanceName'] = nodeName
+                        metricProps['InstanceName'] = clusterId + "/" + nodeName
                         
                         metricProps['Collections'] = []
                         metricCollections = {}
@@ -202,6 +207,7 @@ class CAdvisorMetricsAPIClient
 
                 def getNodeMetricItemRate(metricJSON, hostName, metricCategory, metricNameToCollect, metricNametoReturn)
                     metricItem = {}
+                    clusterId = KubernetesApiClient.getClusterId
                     begin
                         
                         metricInfo = metricJSON
@@ -238,7 +244,7 @@ class CAdvisorMetricsAPIClient
                         metricProps['Timestamp'] = metricTime
                         metricProps['Host'] = hostName
                         metricProps['ObjectName'] = "K8SNode"
-                        metricProps['InstanceName'] = nodeName
+                        metricProps['InstanceName'] = clusterId + "/" + nodeName
                         
                         metricProps['Collections'] = []
                         metricCollections = {}
@@ -253,6 +259,42 @@ class CAdvisorMetricsAPIClient
                         return nil
                     end
                     return metricItem
+                end
+
+                def getNodeLastRebootTimeMetric(metricJSON, hostName, metricNametoReturn)
+                    metricItem = {}
+                    clusterId = KubernetesApiClient.getClusterId
+                    
+                    begin
+                        metricInfo = metricJSON
+                        node = metricInfo['node']
+                        nodeName = node['nodeName']
+                        
+                        
+                        metricValue = node['startTime']
+                        metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
+                        
+                        metricItem['DataItems'] = []
+                        
+                        metricProps = {}
+                        metricProps['Timestamp'] = metricTime
+                        metricProps['Host'] = hostName
+                        metricProps['ObjectName'] = "K8SNode"
+                        metricProps['InstanceName'] = clusterId + "/" + nodeName
+                        
+                        metricProps['Collections'] = []
+                        metricCollections = {}
+                        metricCollections['CounterName'] = metricNametoReturn
+                        metricCollections['Value'] = DateTime.parse(metricValue).to_time.to_i
+
+                        metricProps['Collections'].push(metricCollections)
+                        metricItem['DataItems'].push(metricProps)
+                        
+                        rescue => error
+                        @Log.warn("getNodeLastRebootTimeMetric failed: #{error} ")
+                        return metricItem
+                    end
+                    return metricItem                      
                 end
 
             end

@@ -84,6 +84,7 @@ module Fluent
                         record['Computer'] = (OMS::Common.get_hostname)
                 end
                 record['ClusterName'] = KubernetesApiClient.getClusterName
+                record['ClusterId'] = KubernetesApiClient.getClusterId
                 router.emit(@tag, emitTime, record) if record   
               end
             end  
@@ -108,6 +109,7 @@ module Fluent
           record['Count'] = "0"
           record['Computer'] = ""
           record['ClusterName'] = ""
+          record['ClusterId'] = ""
           router.emit(@tag, emitTime, record)
         end
     end

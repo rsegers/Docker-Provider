@@ -57,6 +57,7 @@ module Fluent
                     record['ServiceName'] = items['metadata']['name']
                     record['Namespace'] = items['metadata']['namespace']
                     record['SelectorLabels'] = [items['spec']['selector']]
+                    record['ClusterId'] = KubernetesApiClient.getClusterId
                     record['ClusterName'] = KubernetesApiClient.getClusterName
                     record['ClusterIP'] = items['spec']['clusterIP']
                     record['ServiceType'] = items['spec']['type']
