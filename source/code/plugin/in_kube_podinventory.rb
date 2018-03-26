@@ -114,7 +114,7 @@ module Fluent
               records.each do |record|
                 if !record.nil? 		
                   record['PodRestartCount'] = podRestartCount		
-                  $log.info record
+                  #$log.info record
                   router.emit(@tag, emitTime, record) 
                 end    		
               end       

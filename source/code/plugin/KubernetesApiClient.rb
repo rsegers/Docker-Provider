@@ -20,7 +20,7 @@ class KubernetesApiClient
         @@IsLinuxCluster = nil
         @@KubeSystemNamespace = "kube-system"
         @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt"
-        @Log = Logger.new(@LogPath, 'weekly')
+        @Log = Logger.new(@LogPath, 2, 10*1048576) #keep last 2 files, max log file size = 10M
         @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
         @@TokenStr = nil
         @@NodeMetrics = Hash.new
@@ -144,11 +144,7 @@ class KubernetesApiClient
                 rescue => error
                     @Log.warn("node role request failed: #{error}")
                 end
-                if(@@IsNodeMaster == true)
-                    @Log.info("Electing current node to talk to k8 api")
-                else
-                    @Log.info("Not Electing current node to talk to k8 api")
-                end
+                
                 return @@IsNodeMaster
             end
 
@@ -166,6 +162,11 @@ class KubernetesApiClient
                     end
                 rescue => error
                     @Log.warn("Checking Node Type failed: #{error}")
+                end
+                if(@@IsValidRunningNode == true)
+                    @Log.info("Electing current node to talk to k8 api")
+                else
+                    @Log.info("Not Electing current node to talk to k8 api")
                 end
                 return @@IsValidRunningNode
             end
@@ -336,7 +337,7 @@ class KubernetesApiClient
                             #push node level metrics to a inmem hash so that we can use it looking up at container level.
                             #Currently if container level cpu & memory limits are not defined we default to node level limits
                             @@NodeMetrics[clusterId + "/" + node['metadata']['name'] + "_" + metricCategory + "_" + metricNameToCollect] = metricValue
-                            @Log.info ("Node metric hash: #{@@NodeMetrics}")
+                            #@Log.info ("Node metric hash: #{@@NodeMetrics}")
                         end
                     end
                 rescue => error

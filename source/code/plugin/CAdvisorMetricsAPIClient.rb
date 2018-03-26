@@ -13,7 +13,7 @@ class CAdvisorMetricsAPIClient
             require_relative 'KubernetesApiClient'
     
             @LogPath = "/var/opt/microsoft/omsagent/log/kubernetes_perf_log.txt"
-            @Log = Logger.new(@LogPath, 'weekly')
+            @Log = Logger.new(@LogPath, 2, 10*1048576) #keep last 2 files, max log file size = 10M
             @@rxBytesLast = nil
             @@rxBytesTimeLast = nil
             @@txBytesLast = nil
@@ -65,10 +65,10 @@ class CAdvisorMetricsAPIClient
                         hostName = (OMS::Common.get_hostname)
                         metricInfo = JSON.parse(getSummaryStatsFromCAdvisor().body)
                         metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores","cpuUsageNanoCores"))
-                        metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "usageBytes", "memoryUsageBytes"))
+                        metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", "memoryUsageBytes"))
 
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "cpu", "usageNanoCores", "cpuUsageNanoCores"))
-                        metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "usageBytes", "memoryUsageBytes"))
+                        metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "workingSetBytes", "memoryUsageBytes"))
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "rxBytes", "networkRxBytes"))
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "txBytes", "networkTxBytes"))
                         metricDataItems.push(getNodeLastRebootTimeMetric(metricInfo, hostName, "restartTimeEpoch"))
