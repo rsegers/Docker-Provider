@@ -170,8 +170,8 @@ module Fluent
       serviceName = ""
       begin
         if KubernetesApiClient.isValidRunningNode && !labels.nil? && !labels.empty?
-         # serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
-          if(!serviceList.empty?)
+          
+          if( !serviceList.nil? && !serviceList.empty?)
             serviceList['items'].each do |item|
               found = 0
               if !item['spec'].nil? && !item['spec']['selector'].nil? && item['metadata']['namespace'] == namespace
