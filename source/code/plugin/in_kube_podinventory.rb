@@ -55,7 +55,8 @@ module Fluent
           podInventory = podList
         end
         begin
-          if(!podInventory.empty?) 
+          if(!podInventory.empty?)
+            serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body) 
             #get pod inventory
             podInventory['items'].each do |items|
               records = []
@@ -73,7 +74,7 @@ module Fluent
               record['Computer'] = items['spec']['nodeName']
               record['ClusterId'] = KubernetesApiClient.getClusterId
               record['ClusterName'] = KubernetesApiClient.getClusterName
-              record['ServiceName'] = getServiceNameFromLabels(items['metadata']['namespace'], items['metadata']['labels'])
+              record['ServiceName'] = getServiceNameFromLabels(items['metadata']['namespace'], items['metadata']['labels'], serviceList)
               if !items['metadata']['ownerReferences'].nil?
                 record['ControllerKind'] = items['metadata']['ownerReferences'][0]['kind']
                 record['ControllerName'] = items['metadata']['ownerReferences'][0]['name']
@@ -163,12 +164,12 @@ module Fluent
       @mutex.unlock
     end
 
-    def getServiceNameFromLabels(namespace, labels)
+    def getServiceNameFromLabels(namespace, labels, serviceList)
       serviceName = ""
       begin
         if KubernetesApiClient.isValidRunningNode && !labels.nil? && !labels.empty?
-          serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
-          if(!serviceList.empty?)
+          
+          if( !serviceList.nil? && !serviceList.empty?)
             serviceList['items'].each do |item|
               found = 0
               if !item['spec'].nil? && !item['spec']['selector'].nil? && item['metadata']['namespace'] == namespace
