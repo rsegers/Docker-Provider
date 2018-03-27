@@ -12,7 +12,7 @@ class CAdvisorMetricsAPIClient
             require_relative 'oms_common'
             require_relative 'KubernetesApiClient'
     
-            @LogPath = "/var/opt/microsoft/omsagent/log/kubernetes_perf_log.txt"
+            @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_perf_log.txt"
             @Log = Logger.new(@LogPath, 2, 10*1048576) #keep last 2 files, max log file size = 10M
             @@rxBytesLast = nil
             @@rxBytesTimeLast = nil

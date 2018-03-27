@@ -46,17 +46,18 @@ module Fluent
     def enumerate(podList = nil)
       currentTime = Time.now
       emitTime = currentTime.to_f
-      batchTime = currentTime.utc.iso8601
+      batchTime = currentTime.utc.iso8601 
       if KubernetesApiClient.isValidRunningNode
         if podList.nil?
-          podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
-          
+          podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)          
         else
           podInventory = podList
         end
         begin
           if(!podInventory.empty?) 
-            #get pod inventory
+            #get pod inventory & services 
+            serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
+            eventStream = MultiEventStream.new
             podInventory['items'].each do |items|
               records = []
               record = {}
@@ -73,7 +74,7 @@ module Fluent
               record['Computer'] = items['spec']['nodeName']
               record['ClusterId'] = KubernetesApiClient.getClusterId
               record['ClusterName'] = KubernetesApiClient.getClusterName
-              record['ServiceName'] = getServiceNameFromLabels(items['metadata']['namespace'], items['metadata']['labels'])
+              record['ServiceName'] = getServiceNameFromLabels(items['metadata']['namespace'], items['metadata']['labels'], serviceList)
               if !items['metadata']['ownerReferences'].nil?
                 record['ControllerKind'] = items['metadata']['ownerReferences'][0]['kind']
                 record['ControllerName'] = items['metadata']['ownerReferences'][0]['name']
@@ -115,9 +116,11 @@ module Fluent
                 if !record.nil? 		
                   record['PodRestartCount'] = podRestartCount		
                   #$log.info record
-                  router.emit(@tag, emitTime, record) 
+                  eventStream.add(emitTime, record) if record 
+                  #router.emit(@tag, emitTime, record) 
                 end    		
-              end       
+              end
+              router.emit(@tag, eventStream) if eventStream       
             end
           end  
         rescue  => errorStr
@@ -163,11 +166,11 @@ module Fluent
       @mutex.unlock
     end
 
-    def getServiceNameFromLabels(namespace, labels)
+    def getServiceNameFromLabels(namespace, labels, serviceList)
       serviceName = ""
       begin
         if KubernetesApiClient.isValidRunningNode && !labels.nil? && !labels.empty?
-          serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
+         # serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
           if(!serviceList.empty?)
             serviceList['items'].each do |item|
               found = 0

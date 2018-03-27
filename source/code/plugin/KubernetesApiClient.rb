@@ -275,7 +275,7 @@ class KubernetesApiClient
                                     if (metricCategory == "limits" && @@NodeMetrics.has_key?(nodeMetricsHashKey))
                                         
                                         metricValue = @@NodeMetrics[nodeMetricsHashKey]
-                                        @Log.info("Limits not set for container #{clusterId + "/" + podUid + "/" + containerName} using node level limits: #{nodeMetricsHashKey}=#{metricValue} ")
+                                        #@Log.info("Limits not set for container #{clusterId + "/" + podUid + "/" + containerName} using node level limits: #{nodeMetricsHashKey}=#{metricValue} ")
                                         metricItem = {}
                                         metricItem['DataItems'] = []
                                         

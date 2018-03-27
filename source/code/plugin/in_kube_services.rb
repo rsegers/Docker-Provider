@@ -51,6 +51,7 @@ module Fluent
               serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
               begin
                 if(!serviceList.empty?)
+                  eventStream = MultiEventStream.new
                   serviceList['items'].each do |items|
                     record = {}
                     record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
@@ -62,8 +63,9 @@ module Fluent
                     record['ClusterIP'] = items['spec']['clusterIP']
                     record['ServiceType'] = items['spec']['type']
                     #<TODO> : Add ports and status fields
-                    router.emit(@tag, emitTime, record) if record   
+                    eventStream.add(emitTime, record) if record   
                   end
+                  router.emit(@tag, eventStream) if eventStream
                 end  
               rescue  => errorStr
                 $log.warn line.dump, error: errorStr.to_s
