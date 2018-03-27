@@ -51,6 +51,7 @@ module Fluent
           nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
           begin
             if(!nodeInventory.empty?)
+              eventStream = MultiEventStream.new
                 #get node inventory 
                 nodeInventory['items'].each do |items|
                     record = {}
@@ -79,9 +80,9 @@ module Fluent
                     
                     record['KubeletVersion'] = items['status']['nodeInfo']['kubeletVersion']
                     record['KubeProxyVersion'] = items['status']['nodeInfo']['kubeProxyVersion']
-                    router.emit(@tag, emitTime, record) if record
+                    eventStream.add(emitTime, record) if record
                 end 
-    
+                router.emit_stream(@tag, eventStream) if eventStream
             end  
           rescue  => errorStr
             $log.warn "Failed to retrieve node inventory: #{errorStr}"

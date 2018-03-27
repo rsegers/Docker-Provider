@@ -47,11 +47,13 @@ module Fluent
         def enumerate()
           time = Time.now.to_f
           begin
+              eventStream = MultiEventStream.new
               metricData = CAdvisorMetricsAPIClient.getMetrics()
               metricData.each do |record|
                       record['DataType'] = "LINUX_PERF_BLOB"
                       record['IPName'] = "LogManagement"
-                      router.emit(@tag, time, record) if record    
+                      eventStream.add(time, record) if record
+                      #router.emit(@tag, time, record) if record    
               end 
               
               if KubernetesApiClient.isValidRunningNode
@@ -68,7 +70,8 @@ module Fluent
                   containerMetricDataItems.each do |record|
                     record['DataType'] = "LINUX_PERF_BLOB"
                     record['IPName'] = "LogManagement"
-                    router.emit(@tag, time, record) if record  
+                    eventStream.add(time, record) if record
+                    #router.emit(@tag, time, record) if record  
                   end
                 end
 
@@ -89,11 +92,12 @@ module Fluent
                   nodeMetricDataItems.each do |record|
                     record['DataType'] = "LINUX_PERF_BLOB"
                     record['IPName'] = "LogManagement"
-                    router.emit(@tag, time, record) if record 
+                    eventStream.add(time, record) if record
+                    #router.emit(@tag, time, record) if record 
                   end 
                 end
               end  
-                        
+              router.emit_stream(@tag, eventStream) if eventStream          
               rescue  => errorStr
               $log.warn "Failed to retrieve metric data: #{errorStr}"
               $log.debug_backtrace(errorStr.backtrace)

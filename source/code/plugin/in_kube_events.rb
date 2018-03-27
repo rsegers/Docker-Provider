@@ -59,6 +59,7 @@ module Fluent
           newEventQueryState = []
           begin
             if(!events.empty?)
+              eventStream = MultiEventStream.new
               events['items'].each do |items|
                 record = {}
                 record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
@@ -85,8 +86,9 @@ module Fluent
                 end
                 record['ClusterName'] = KubernetesApiClient.getClusterName
                 record['ClusterId'] = KubernetesApiClient.getClusterId
-                router.emit(@tag, emitTime, record) if record   
+                eventStream.add(emitTime, record) if record    
               end
+              router.emit_stream(@tag, eventStream) if eventStream
             end  
             writeEventQueryState(newEventQueryState)
           rescue  => errorStr

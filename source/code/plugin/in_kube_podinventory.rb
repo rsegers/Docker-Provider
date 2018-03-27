@@ -46,18 +46,18 @@ module Fluent
     def enumerate(podList = nil)
       currentTime = Time.now
       emitTime = currentTime.to_f
-      batchTime = currentTime.utc.iso8601
+      batchTime = currentTime.utc.iso8601 
       if KubernetesApiClient.isValidRunningNode
         if podList.nil?
-          podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
-          
+          podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)          
         else
           podInventory = podList
         end
         begin
-          if(!podInventory.empty?)
-            serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body) 
-            #get pod inventory
+          if(!podInventory.empty?) 
+            #get pod inventory & services 
+            serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
+            eventStream = MultiEventStream.new
             podInventory['items'].each do |items|
               records = []
               record = {}
@@ -116,9 +116,11 @@ module Fluent
                 if !record.nil? 		
                   record['PodRestartCount'] = podRestartCount		
                   #$log.info record
-                  router.emit(@tag, emitTime, record) 
+                  eventStream.add(emitTime, record) if record 
+                  #router.emit(@tag, emitTime, record) 
                 end    		
-              end       
+              end
+              router.emit_stream(@tag, eventStream) if eventStream       
             end
           end  
         rescue  => errorStr
