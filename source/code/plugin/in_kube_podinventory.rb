@@ -71,6 +71,7 @@ module Fluent
               record['PodStatus'] = items['status']['phase']
               record['PodIp'] =items['status']['podIP']
               record['Computer'] = items['spec']['nodeName']
+              record['ClusterId'] = KubernetesApiClient.getClusterId
               record['ClusterName'] = KubernetesApiClient.getClusterName
               record['ServiceName'] = getServiceNameFromLabels(items['metadata']['namespace'], items['metadata']['labels'])
               if !items['metadata']['ownerReferences'].nil?
@@ -113,7 +114,7 @@ module Fluent
               records.each do |record|
                 if !record.nil? 		
                   record['PodRestartCount'] = podRestartCount		
-                  $log.info record
+                  #$log.info record
                   router.emit(@tag, emitTime, record) 
                 end    		
               end       
@@ -134,6 +135,7 @@ module Fluent
         record['PodStatus'] = ""
         record['PodIp'] = ""
         record['Computer'] = ""
+        record['ClusterId'] = ""
         record['ClusterName'] = ""
         record['ServiceName'] = ""
         record['ContainerID'] = ""		

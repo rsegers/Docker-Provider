@@ -55,7 +55,9 @@ module Fluent
                 nodeInventory['items'].each do |items|
                     record = {}
                     record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
-                    record['Computer'] = items['metadata']['name']   
+                    record['Computer'] = items['metadata']['name'] 
+                    record['ClusterName'] = KubernetesApiClient.getClusterName
+                    record['ClusterId'] = KubernetesApiClient.getClusterId  
                     record['CreationTimeStamp'] = items['metadata']['creationTimestamp'] 
                     record['Labels'] = [items['metadata']['labels']]
                     record['Status'] = ""

@@ -14,12 +14,13 @@ class KubernetesApiClient
         @@ApiVersion = "v1"
         @@CaFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
         @@ClusterName = nil
+        @@ClusterId = nil
         @@IsNodeMaster = nil
         @@IsValidRunningNode = nil
         @@IsLinuxCluster = nil
         @@KubeSystemNamespace = "kube-system"
         @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt"
-        @Log = Logger.new(@LogPath, 'weekly')
+        @Log = Logger.new(@LogPath, 2, 10*1048576) #keep last 2 files, max log file size = 10M
         @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
         @@TokenStr = nil
         @@NodeMetrics = Hash.new
@@ -83,23 +84,45 @@ class KubernetesApiClient
 
             def getClusterName
                 return @@ClusterName if !@@ClusterName.nil?
+                @@ClusterName = "None"
                 begin
-                    kubesystemResourceUri = "namespaces/" + @@KubeSystemNamespace + "/pods"
-                    podInfo = JSON.parse(getKubeResourceInfo(kubesystemResourceUri).body)
-                    @@ClusterName = "None"
-                    podInfo['items'].each do |items|
-                        if items['metadata']['name'].include? "kube-controller-manager"
-                           items['spec']['containers'][0]['command'].each do |command|
-                               if command.include? "--cluster-name"
-                                   @@ClusterName = command.split('=')[1]
-                               end
-                           end
+                    #try getting resource ID for aks 
+                    cluster = ENV['AKS_RESOURCE_ID']
+                    if  cluster && !cluster.nil? && !cluster.empty?
+                        @@ClusterName = cluster.split("/").last
+                    else
+                        kubesystemResourceUri = "namespaces/" + @@KubeSystemNamespace + "/pods"
+                        podInfo = JSON.parse(getKubeResourceInfo(kubesystemResourceUri).body)
+                        podInfo['items'].each do |items|
+                            if items['metadata']['name'].include? "kube-controller-manager"
+                            items['spec']['containers'][0]['command'].each do |command|
+                                if command.include? "--cluster-name"
+                                    @@ClusterName = command.split('=')[1]
+                                end
+                            end
+                            end
                         end
                     end
                 rescue => error
-                    @Log.warn("cluster name request failed: #{error}")
+                    @Log.warn("getClusterName failed: #{error}")
                 end
                 return @@ClusterName
+            end
+
+            def getClusterId
+                return @@ClusterId if !@@ClusterId.nil?
+                #By default initialize ClusterId to ClusterName. 
+                #<TODO> In ACS/On-prem, we need to fiure out how we can generate ClusterId
+                @@ClusterId = getClusterName
+                begin
+                    cluster = ENV['AKS_RESOURCE_ID']
+                    if  cluster && !cluster.nil? && !cluster.empty?
+                        @@ClusterId = cluster
+                    end
+                rescue => error
+                    @Log.warn("getClusterId failed: #{error}")
+                end
+                return @@ClusterId
             end
 
             def isNodeMaster
@@ -121,11 +144,7 @@ class KubernetesApiClient
                 rescue => error
                     @Log.warn("node role request failed: #{error}")
                 end
-                if(@@IsNodeMaster == true)
-                    @Log.info("Electing current node to talk to k8 api")
-                else
-                    @Log.info("Not Electing current node to talk to k8 api")
-                end
+                
                 return @@IsNodeMaster
             end
 
@@ -143,6 +162,11 @@ class KubernetesApiClient
                     end
                 rescue => error
                     @Log.warn("Checking Node Type failed: #{error}")
+                end
+                if(@@IsValidRunningNode == true)
+                    @Log.info("Electing current node to talk to k8 api")
+                else
+                    @Log.info("Not Electing current node to talk to k8 api")
                 end
                 return @@IsValidRunningNode
             end
@@ -213,9 +237,10 @@ class KubernetesApiClient
                 return containerLogs
             end
 
-            def getContainerResourceRequestsAndLimits(metricJSON, metricCategory, hostName, metricNameToCollect, metricNametoReturn)
+            def getContainerResourceRequestsAndLimits(metricJSON, metricCategory, metricNameToCollect, metricNametoReturn)
                 metricItems = []
                 begin
+                    clusterId = getClusterId
                     metricInfo = metricJSON
                     metricInfo['items'].each do |pod|
                         podUid = pod['metadata']['uid']
@@ -234,7 +259,7 @@ class KubernetesApiClient
                                     metricProps['Timestamp'] = metricTime
                                     metricProps['Host'] = nodeName
                                     metricProps['ObjectName'] = "K8SContainer"
-                                    metricProps['InstanceName'] = podUid + "/" + containerName
+                                    metricProps['InstanceName'] = clusterId + "/" + podUid + "/" + containerName
                                     
                                     metricProps['Collections'] = []
                                     metricCollections = {}
@@ -246,11 +271,11 @@ class KubernetesApiClient
                                     metricItems.push(metricItem)
                                 #No container level limit for the given metric, so default to node level limit
                                 else
-                                    nodeMetricsHashKey = nodeName + "_" + "allocatable" +  "_" + metricNameToCollect
+                                    nodeMetricsHashKey = clusterId + "/" + nodeName + "_" + "allocatable" +  "_" + metricNameToCollect
                                     if (metricCategory == "limits" && @@NodeMetrics.has_key?(nodeMetricsHashKey))
                                         
                                         metricValue = @@NodeMetrics[nodeMetricsHashKey]
-                                        @Log.info("Limits not set for container #{podUid + "/" + containerName} using node level limits: #{nodeMetricsHashKey}=#{metricValue} ")
+                                        @Log.info("Limits not set for container #{clusterId + "/" + podUid + "/" + containerName} using node level limits: #{nodeMetricsHashKey}=#{metricValue} ")
                                         metricItem = {}
                                         metricItem['DataItems'] = []
                                         
@@ -258,7 +283,7 @@ class KubernetesApiClient
                                         metricProps['Timestamp'] = metricTime
                                         metricProps['Host'] = nodeName
                                         metricProps['ObjectName'] = "K8SContainer"
-                                        metricProps['InstanceName'] = podUid + "/" + containerName
+                                        metricProps['InstanceName'] = clusterId + "/" + podUid + "/" + containerName
                                         
                                         metricProps['Collections'] = []
                                         metricCollections = {}
@@ -284,6 +309,7 @@ class KubernetesApiClient
                 metricItems = []
                 begin
                     metricInfo = metricJSON
+                    clusterId = getClusterId
                     #Since we are getting all node data at the same time and kubernetes doesnt specify a timestamp for the capacity and allocation metrics,
                     #if we are coming up with the time it should be same for all nodes
                     metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
@@ -299,7 +325,7 @@ class KubernetesApiClient
                             metricProps['Timestamp'] = metricTime
                             metricProps['Host'] = node['metadata']['name']
                             metricProps['ObjectName'] = "K8SNode"
-                            metricProps['InstanceName'] = node['metadata']['name']
+                            metricProps['InstanceName'] = clusterId + "/" + node['metadata']['name']
                             metricProps['Collections'] = []
                             metricCollections = {}
                             metricCollections['CounterName'] = metricNametoReturn
@@ -310,8 +336,8 @@ class KubernetesApiClient
                             metricItems.push(metricItem)
                             #push node level metrics to a inmem hash so that we can use it looking up at container level.
                             #Currently if container level cpu & memory limits are not defined we default to node level limits
-                            @@NodeMetrics[node['metadata']['name'] + "_" + metricCategory + "_" + metricNameToCollect] = metricValue
-                            @Log.info ("Node metric hash: #{@@NodeMetrics}")
+                            @@NodeMetrics[clusterId + "/" + node['metadata']['name'] + "_" + metricCategory + "_" + metricNameToCollect] = metricValue
+                            #@Log.info ("Node metric hash: #{@@NodeMetrics}")
                         end
                     end
                 rescue => error
