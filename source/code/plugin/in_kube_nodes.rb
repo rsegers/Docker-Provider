@@ -82,7 +82,7 @@ module Fluent
                     record['KubeProxyVersion'] = items['status']['nodeInfo']['kubeProxyVersion']
                     eventStream.add(emitTime, record) if record
                 end 
-                router.emit(@tag, eventStream) if eventStream
+                router.emit_stream(@tag, eventStream) if eventStream
             end  
           rescue  => errorStr
             $log.warn "Failed to retrieve node inventory: #{errorStr}"

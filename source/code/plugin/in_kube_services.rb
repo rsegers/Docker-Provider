@@ -65,7 +65,7 @@ module Fluent
                     #<TODO> : Add ports and status fields
                     eventStream.add(emitTime, record) if record   
                   end
-                  router.emit(@tag, eventStream) if eventStream
+                  router.emit_stream(@tag, eventStream) if eventStream
                 end  
               rescue  => errorStr
                 $log.warn line.dump, error: errorStr.to_s

@@ -97,7 +97,7 @@ module Fluent
                   end 
                 end
               end  
-              router.emit(@tag, eventStream) if eventStream          
+              router.emit_stream(@tag, eventStream) if eventStream          
               rescue  => errorStr
               $log.warn "Failed to retrieve metric data: #{errorStr}"
               $log.debug_backtrace(errorStr.backtrace)

@@ -88,7 +88,7 @@ module Fluent
                 record['ClusterId'] = KubernetesApiClient.getClusterId
                 eventStream.add(emitTime, record) if record    
               end
-              router.emit(@tag, eventStream) if eventStream
+              router.emit_stream(@tag, eventStream) if eventStream
             end  
             writeEventQueryState(newEventQueryState)
           rescue  => errorStr

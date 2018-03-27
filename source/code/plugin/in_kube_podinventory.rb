@@ -120,7 +120,7 @@ module Fluent
                   #router.emit(@tag, emitTime, record) 
                 end    		
               end
-              router.emit(@tag, eventStream) if eventStream       
+              router.emit_stream(@tag, eventStream) if eventStream       
             end
           end  
         rescue  => errorStr
