@@ -110,7 +110,7 @@ class CAdvisorMetricsAPIClient
                                     metricProps['Timestamp'] = metricTime
                                     metricProps['Host'] = hostName
                                     metricProps['ObjectName'] = "K8SContainer"
-                                    metricProps['InstanceName'] = clusterId + " /" + podUid + "/" + containerName
+                                    metricProps['InstanceName'] = clusterId + "/" + podUid + "/" + containerName
                                     
                                     metricProps['Collections'] = []
                                     metricCollections = {}
@@ -150,7 +150,7 @@ class CAdvisorMetricsAPIClient
                                     metricProps['Timestamp'] = metricTime
                                     metricProps['Host'] = hostName
                                     metricProps['ObjectName'] = "K8SContainer"
-                                    metricProps['InstanceName'] = clusterId + " /" + podUid + "/" + containerName
+                                    metricProps['InstanceName'] = clusterId + "/" + podUid + "/" + containerName
                                     
                                     metricProps['Collections'] = []
                                     metricCollections = {}
