@@ -114,17 +114,7 @@ module Fluent
       paths = ""
       Dir.glob(@containerIDFilePath).select { |p|
 	      cName = p.split('/').last;
-	      #Using docker inspect to find the generic log file path on all flavours of linux
-              #Example container log file path -> /var/lib/docker/containers/{ContainerID}/{ContainerID}-json.log
-              #We have read permission on this file but don't have execute permission on the below mentioned path. Hence wildcard character searches to find the container ID's doesn't work
-              begin
-                Open3.popen3("sudo docker inspect --format='{{.LogPath}}' #{cName}")  {|stdin, stdout, stderr|
-                p = stdout.gets
-              }
-              rescue
-                $log.warn "Error in popen3 docker inspect for log file path"
-              end
-              p = p.gsub("\n","")
+	      p = @containerLogFilePath + cName + "/" + cName + "-json.log"
 	      paths += readable_path(p) + " "
       }
       if !system("sudo test -r #{@pos_file}")
