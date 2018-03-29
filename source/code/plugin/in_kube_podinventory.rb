@@ -16,7 +16,7 @@ module Fluent
     end
 
     config_param :run_interval, :time, :default => '10m'
-    config_param :tag, :string, :default => "oms.api.KubePodInventory"
+    config_param :tag, :string, :default => "oms.api.KubePodInventory.CollectionTime"
 
     def configure (conf)
       super
@@ -44,37 +44,24 @@ module Fluent
     end
 
     def enumerate(podList = nil)
-      time = Time.now.to_f
-      batchTime = Time.now.utc.iso8601
+      currentTime = Time.now
+      emitTime = currentTime.to_f
+      batchTime = currentTime.utc.iso8601 
       if KubernetesApiClient.isValidRunningNode
         if podList.nil?
-          podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
-          
+          podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)          
         else
           podInventory = podList
         end
         begin
           if(!podInventory.empty?) 
-
-            #get resource requests & resource limits per container as perf data
-            #metricDataItems = []
-            #hostName = (OMS::Common.get_hostname)
-            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "cpu","cpuRequestNanoCores"))
-            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "memory","memoryRequestBytes"))
-            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "cpu","cpuLimitNanoCores"))
-            #metricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "memory","memoryLimitBytes"))
-
-            #metricDataItems.each do |record|
-            #  record['DataType'] = "LINUX_PERF_BLOB"
-            #  record['IPName'] = "LogManagement"
-            #  router.emit("oms.api.KubePerf", time, record) if record  
-            #end  
-
-            #get pod inventory
+            #get pod inventory & services 
+            serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
+            eventStream = MultiEventStream.new
             podInventory['items'].each do |items|
               records = []
               record = {}
-              record['CollectionTime'] = batchTime
+              record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
               record['Name'] = items['metadata']['name']
               podUid = items['metadata']['uid']
               record['PodUid'] = podUid
@@ -85,8 +72,9 @@ module Fluent
               record['PodStatus'] = items['status']['phase']
               record['PodIp'] =items['status']['podIP']
               record['Computer'] = items['spec']['nodeName']
+              record['ClusterId'] = KubernetesApiClient.getClusterId
               record['ClusterName'] = KubernetesApiClient.getClusterName
-              record['ServiceName'] = getServiceNameFromLabels(items['metadata']['namespace'], items['metadata']['labels'])
+              record['ServiceName'] = getServiceNameFromLabels(items['metadata']['namespace'], items['metadata']['labels'], serviceList)
               if !items['metadata']['ownerReferences'].nil?
                 record['ControllerKind'] = items['metadata']['ownerReferences'][0]['kind']
                 record['ControllerName'] = items['metadata']['ownerReferences'][0]['name']
@@ -118,19 +106,21 @@ module Fluent
                 #   }
                 # },
                 record['ContainerStatus'] = containerStatus.keys[0]
-                if containerStatus == "running"
-                  record['ContainerCreationTimeStamp'] = container['running']['startedAt']
+                if containerStatus.keys[0] == "running"
+                  record['ContainerCreationTimeStamp'] = container['state']['running']['startedAt']
                 end
                 podRestartCount += containerRestartCount	
-                records.push(record)		
+                records.push(record.dup)		
               end
               records.each do |record|
                 if !record.nil? 		
                   record['PodRestartCount'] = podRestartCount		
-                  $log.info record
-                  router.emit(@tag, time, record) 
+                  #$log.info record
+                  eventStream.add(emitTime, record) if record 
+                  #router.emit(@tag, emitTime, record) 
                 end    		
-              end       
+              end
+              router.emit_stream(@tag, eventStream) if eventStream       
             end
           end  
         rescue  => errorStr
@@ -139,7 +129,7 @@ module Fluent
         end
       else
         record = {}
-        record['CollectionTime'] = ""
+        record['CollectionTime'] = batchTime
         record['Name'] = ""
         record['PodUid'] = ""
         record['PodLabel'] = ""
@@ -148,6 +138,7 @@ module Fluent
         record['PodStatus'] = ""
         record['PodIp'] = ""
         record['Computer'] = ""
+        record['ClusterId'] = ""
         record['ClusterName'] = ""
         record['ServiceName'] = ""
         record['ContainerID'] = ""		
@@ -156,7 +147,7 @@ module Fluent
         record['PodRestartCount'] = "0"		
         record['PodStartTime'] = ""
         record['ContainerStartTime'] = ""        
-        router.emit(@tag, time, record)
+        router.emit(@tag, emitTime, record)
       end
     end
 
@@ -175,12 +166,12 @@ module Fluent
       @mutex.unlock
     end
 
-    def getServiceNameFromLabels(namespace, labels)
+    def getServiceNameFromLabels(namespace, labels, serviceList)
       serviceName = ""
       begin
         if KubernetesApiClient.isValidRunningNode && !labels.nil? && !labels.empty?
-          serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
-          if(!serviceList.empty?)
+          
+          if( !serviceList.nil? && !serviceList.empty?)
             serviceList['items'].each do |item|
               found = 0
               if !item['spec'].nil? && !item['spec']['selector'].nil? && item['metadata']['namespace'] == namespace

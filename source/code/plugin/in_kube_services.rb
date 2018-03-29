@@ -16,7 +16,7 @@ module Fluent
         end
     
         config_param :run_interval, :time, :default => '1m'
-        config_param :tag, :string, :default => "oms.api.KubeServices"
+        config_param :tag, :string, :default => "oms.api.KubeServices.CollectionTime"
     
         def configure (conf)
           super
@@ -44,22 +44,28 @@ module Fluent
         end
     
         def enumerate
-            time = Time.now.to_f
+            currentTime = Time.now
+            emitTime = currentTime.to_f
+            batchTime = currentTime.utc.iso8601
             if KubernetesApiClient.isValidRunningNode
               serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
               begin
                 if(!serviceList.empty?)
+                  eventStream = MultiEventStream.new
                   serviceList['items'].each do |items|
                     record = {}
+                    record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
                     record['ServiceName'] = items['metadata']['name']
                     record['Namespace'] = items['metadata']['namespace']
                     record['SelectorLabels'] = [items['spec']['selector']]
+                    record['ClusterId'] = KubernetesApiClient.getClusterId
                     record['ClusterName'] = KubernetesApiClient.getClusterName
                     record['ClusterIP'] = items['spec']['clusterIP']
                     record['ServiceType'] = items['spec']['type']
                     #<TODO> : Add ports and status fields
-                    router.emit(@tag, time, record) if record   
+                    eventStream.add(emitTime, record) if record   
                   end
+                  router.emit_stream(@tag, eventStream) if eventStream
                 end  
               rescue  => errorStr
                 $log.warn line.dump, error: errorStr.to_s

@@ -113,6 +113,10 @@ touch /var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt
 chmod 666 /var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt
 chown omsagent:omiusers /var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt
 
+touch /var/opt/microsoft/docker-cimprov/log/kubernetes_perf_log.txt
+chmod 666 /var/opt/microsoft/docker-cimprov/log/kubernetes_perf_log.txt
+chown omsagent:omiusers /var/opt/microsoft/docker-cimprov/log/kubernetes_perf_log.txt
+
 mv /etc/opt/microsoft/docker-cimprov/container.conf /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
 chown omsagent:omsagent /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
 
@@ -125,6 +129,7 @@ if ${{PERFORMING_UPGRADE_NOT}}; then
    rm -f /var/opt/microsoft/docker-cimprov/state/KubeEventQueryState.yaml
    rm -f /var/opt/microsoft/docker-cimprov/state/KubeLogQueryState.yaml
    rm -f /var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt
+   rm -f /var/opt/microsoft/docker-cimprov/log/kubernetes_perf_log.txt
    rm -f /etc/opt/microsoft/omsagent/conf/omsagent.d/container.conf
    rmdir /var/opt/microsoft/docker-cimprov/log 2> /dev/null
    rmdir /var/opt/microsoft/docker-cimprov/state/ContainerInventory 2> /dev/null

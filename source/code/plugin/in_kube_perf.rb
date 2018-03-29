@@ -47,11 +47,13 @@ module Fluent
         def enumerate()
           time = Time.now.to_f
           begin
+              eventStream = MultiEventStream.new
               metricData = CAdvisorMetricsAPIClient.getMetrics()
               metricData.each do |record|
                       record['DataType'] = "LINUX_PERF_BLOB"
                       record['IPName'] = "LogManagement"
-                      router.emit(@tag, time, record) if record    
+                      eventStream.add(time, record) if record
+                      #router.emit(@tag, time, record) if record    
               end 
               
               if KubernetesApiClient.isValidRunningNode
@@ -60,15 +62,16 @@ module Fluent
                 if(!podInventory.empty?) 
                   containerMetricDataItems = []
                   hostName = (OMS::Common.get_hostname)
-                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "cpu","cpuRequestNanoCores"))
-                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", hostName, "memory","memoryRequestBytes"))
-                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "cpu","cpuLimitNanoCores"))
-                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", hostName, "memory","memoryLimitBytes"))
+                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", "cpu","cpuRequestNanoCores"))
+                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "requests", "memory","memoryRequestBytes"))
+                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", "cpu","cpuLimitNanoCores"))
+                  containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", "memory","memoryLimitBytes"))
       
                   containerMetricDataItems.each do |record|
                     record['DataType'] = "LINUX_PERF_BLOB"
                     record['IPName'] = "LogManagement"
-                    router.emit(@tag, time, record) if record  
+                    eventStream.add(time, record) if record
+                    #router.emit(@tag, time, record) if record  
                   end
                 end
 
@@ -79,17 +82,22 @@ module Fluent
                 nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
                 if(!nodeInventory.empty?)
                   nodeMetricDataItems = []
+                  #allocatable metrics @ node level
                   nodeMetricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "cpu", "cpuAllocatableNanoCores"))
                   nodeMetricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "memory", "memoryAllocatableBytes"))
-  
+                  #capacity metrics @ node level
+                  nodeMetricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "capacity", "cpu", "cpuCapacityNanoCores"))
+                  nodeMetricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "capacity", "memory", "memoryCapacityBytes"))
+
                   nodeMetricDataItems.each do |record|
                     record['DataType'] = "LINUX_PERF_BLOB"
                     record['IPName'] = "LogManagement"
-                    router.emit(@tag, time, record) if record 
+                    eventStream.add(time, record) if record
+                    #router.emit(@tag, time, record) if record 
                   end 
                 end
               end  
-                        
+              router.emit_stream(@tag, eventStream) if eventStream          
               rescue  => errorStr
               $log.warn "Failed to retrieve metric data: #{errorStr}"
               $log.debug_backtrace(errorStr.backtrace)

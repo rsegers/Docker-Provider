@@ -16,7 +16,7 @@ module Fluent
       end
   
       config_param :run_interval, :time, :default => '10m'
-      config_param :tag, :string, :default => "oms.api.KubeNodeInventory"
+      config_param :tag, :string, :default => "oms.api.KubeNodeInventory.CollectionTime"
   
       def configure (conf)
         super
@@ -44,32 +44,21 @@ module Fluent
       end
   
       def enumerate
-        time = Time.now.to_f
-        batchTime = Time.now.utc.iso8601
+        currentTime = Time.now
+        emitTime = currentTime.to_f
+        batchTime = currentTime.utc.iso8601
         if KubernetesApiClient.isValidRunningNode
           nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
           begin
             if(!nodeInventory.empty?)
-
-                #get allocatable limits per node as perf data
-                #<TODO> Node capacity is different from node allocatable. Allocatable is what is avaialble for allocating pods.
-                # In theory Capacity = Allocatable + kube-reserved + system-reserved + eviction-threshold
-                # For more details refer to https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable 
-                #metricDataItems = []
-                #metricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "cpu", "cpuAllocatableNanoCores"))
-                #metricDataItems.concat(KubernetesApiClient.parseNodeLimits(nodeInventory, "allocatable", "memory", "memoryAllocatableBytes"))
-
-                #metricDataItems.each do |record|
-                #record['DataType'] = "LINUX_PERF_BLOB"
-                #record['IPName'] = "LogManagement"
-                #router.emit("oms.api.KubePerf", time, record) if record  
-                #end  
-
+              eventStream = MultiEventStream.new
                 #get node inventory 
                 nodeInventory['items'].each do |items|
                     record = {}
-                    record['CollectionTime'] = batchTime
-                    record['Computer'] = items['metadata']['name']   
+                    record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
+                    record['Computer'] = items['metadata']['name'] 
+                    record['ClusterName'] = KubernetesApiClient.getClusterName
+                    record['ClusterId'] = KubernetesApiClient.getClusterId  
                     record['CreationTimeStamp'] = items['metadata']['creationTimestamp'] 
                     record['Labels'] = [items['metadata']['labels']]
                     record['Status'] = ""
@@ -83,13 +72,17 @@ module Fluent
                         if condition['status'] == "True"
                             record['Status'] += condition['type']
                         end 
+                        #collect last transition to/from ready (no matter ready is true/false)
+                        if condition['type'] == "Ready" && !condition['lastTransitionTime'].nil?
+                          record['LastTransitionTimeReady'] = condition['lastTransitionTime']
+                        end
                     end 
                     
                     record['KubeletVersion'] = items['status']['nodeInfo']['kubeletVersion']
                     record['KubeProxyVersion'] = items['status']['nodeInfo']['kubeProxyVersion']
-                    router.emit(@tag, time, record) if record
+                    eventStream.add(emitTime, record) if record
                 end 
-    
+                router.emit_stream(@tag, eventStream) if eventStream
             end  
           rescue  => errorStr
             $log.warn "Failed to retrieve node inventory: #{errorStr}"
