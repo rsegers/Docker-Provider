@@ -15,12 +15,13 @@ module Fluent
       super
       @command = nil
       @paths = []
-      #This folder contains a list of all the containers running/stopped and we're using it to get all the container ID's which will be needed for the log file path below
-      @containerIDFilePath = "/var/opt/microsoft/docker-cimprov/state/ContainerInventory/*"
-      #Using this to construct the file path for all every container json log file.
-      #Example container log file path -> /var/lib/docker/containers/{ContainerID}/{ContainerID}-json.log
-      #We have read permission on this file but don't have execute permission on the below mentioned path. Hence wildcard character searches to find the container ID's doesn't work.
+      #Using this to construct the file path for all every container json log file.	
+      #Example container log file path -> /var/lib/docker/containers/{ContainerID}/{ContainerID}-json.log	
+      #We have read permission on this file but don't have execute permission on the below mentioned path. Hence wildcard character searches to find the container ID's doesn't work.	
       @containerLogFilePath = "/var/lib/docker/containers/"
+      #This folder contains a list of all the containers running/stopped and we're using it to get all the container ID's which will be needed for the log file path below
+      #TODO : Use generic path from docker REST endpoint and find a way to mount the correct folder in the omsagent.yaml	    
+      @containerIDFilePath = "/var/opt/microsoft/docker-cimprov/state/ContainerInventory/*"
     end
 
     attr_accessor :command
