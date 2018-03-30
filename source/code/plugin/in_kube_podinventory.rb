@@ -63,10 +63,20 @@ module Fluent
               record = {}
               record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
               record['Name'] = items['metadata']['name']
-              podUid = items['metadata']['uid']
+              podNameSpace = items['metadata']['namespace']
+              if podNameSpace.eql?("kube-system") && !items['metadata'].key?("ownerReferences")
+                # The above case seems to be the only case where you have horizontal scaling of pods
+                # but no controller, in which case cAdvisor picks up kubernetes.io/config.hash
+                # instead of the actual poduid. Since this uid is not being surface into the UX
+                # its ok to use this.
+                # Use kubernetes.io/config.hash to be able to correlate with cadvisor data
+                podUid = items['metadata']['annotations']['kubernetes.io/config.hash']
+              else
+                podUid = items['metadata']['uid']
+              end
               record['PodUid'] = podUid
               record['PodLabel'] = [items['metadata']['labels']]
-              record['Namespace'] = items['metadata']['namespace']
+              record['Namespace'] = podNameSpace
               record['PodCreationTimeStamp'] = items['metadata']['creationTimestamp']
               record['PodStartTime'] = items['status']['startTime']
               record['PodStatus'] = items['status']['phase']
