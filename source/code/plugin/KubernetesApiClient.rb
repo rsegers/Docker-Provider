@@ -91,15 +91,20 @@ class KubernetesApiClient
                     if  cluster && !cluster.nil? && !cluster.empty?
                         @@ClusterName = cluster.split("/").last
                     else
-                        kubesystemResourceUri = "namespaces/" + @@KubeSystemNamespace + "/pods"
-                        podInfo = JSON.parse(getKubeResourceInfo(kubesystemResourceUri).body)
-                        podInfo['items'].each do |items|
-                            if items['metadata']['name'].include? "kube-controller-manager"
-                            items['spec']['containers'][0]['command'].each do |command|
-                                if command.include? "--cluster-name"
-                                    @@ClusterName = command.split('=')[1]
+                        cluster = ENV['ACS_RESOURCE_NAME']
+                        if cluster && !cluster.nil? && !cluster.empty?
+                            @@ClusterName = cluster
+                        else
+                            kubesystemResourceUri = "namespaces/" + @@KubeSystemNamespace + "/pods"
+                            podInfo = JSON.parse(getKubeResourceInfo(kubesystemResourceUri).body)
+                            podInfo['items'].each do |items|
+                                if items['metadata']['name'].include? "kube-controller-manager"
+                                items['spec']['containers'][0]['command'].each do |command|
+                                    if command.include? "--cluster-name"
+                                        @@ClusterName = command.split('=')[1]
+                                    end
                                 end
-                            end
+                                end
                             end
                         end
                     end
@@ -112,7 +117,7 @@ class KubernetesApiClient
             def getClusterId
                 return @@ClusterId if !@@ClusterId.nil?
                 #By default initialize ClusterId to ClusterName. 
-                #<TODO> In ACS/On-prem, we need to fiure out how we can generate ClusterId
+                #<TODO> In ACS/On-prem, we need to figure out how we can generate ClusterId
                 @@ClusterId = getClusterName
                 begin
                     cluster = ENV['AKS_RESOURCE_ID']
