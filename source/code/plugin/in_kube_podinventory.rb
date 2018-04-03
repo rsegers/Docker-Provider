@@ -127,9 +127,9 @@ module Fluent
                   eventStream.add(emitTime, record) if record 
                   #router.emit(@tag, emitTime, record) 
                 end    		
-              end
-              router.emit_stream(@tag, eventStream) if eventStream       
+              end      
             end
+            router.emit_stream(@tag, eventStream) if eventStream 
           end  
         rescue  => errorStr
           $log.warn "Failed to retrieve pod inventory: #{errorStr}"
