@@ -1,5 +1,7 @@
 # Copyright (c) Microsoft Corporation.  All rights reserved.
 
+# frozen_string_literal: true
+
 module Fluent
 	require 'logger'
 	require 'socket'
