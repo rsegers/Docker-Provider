@@ -30,8 +30,6 @@ module Fluent
             @condition = ConditionVariable.new
             @mutex = Mutex.new
             @thread = Thread.new(&method(:run_periodic))
-          else
-            enumerate
           end
         end
     
