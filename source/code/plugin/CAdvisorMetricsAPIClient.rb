@@ -67,6 +67,7 @@ class CAdvisorMetricsAPIClient
                         metricInfo = JSON.parse(getSummaryStatsFromCAdvisor().body)
                         metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores","cpuUsageNanoCores"))
                         metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", "memoryUsageBytes"))
+                        metricDataItems.concat(getContainerStartTimeMetricItems(metricInfo, hostName, "restartTimeEpoch"))
 
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "cpu", "usageNanoCores", "cpuUsageNanoCores"))
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "workingSetBytes", "memoryUsageBytes"))
@@ -298,5 +299,45 @@ class CAdvisorMetricsAPIClient
                     return metricItem                      
                 end
 
+                def getContainerStartTimeMetricItems(metricJSON, hostName, metricNametoReturn)
+                    metricItems = []
+                    clusterId = KubernetesApiClient.getClusterId
+                    currentTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
+                    begin
+                        metricInfo = metricJSON
+                        metricInfo['pods'].each do |pod|
+                            podUid = pod['podRef']['uid']
+                            if (!pod['containers'].nil?)
+                                pod['containers'].each do |container|
+                                    containerName = container['name']
+                                    metricValue = container['startTime']
+                                    metricTime = currentTime
+                                    
+                                    metricItem = {}
+                                    metricItem['DataItems'] = []
+                                    
+                                    metricProps = {}
+                                    metricProps['Timestamp'] = metricTime
+                                    metricProps['Host'] = hostName
+                                    metricProps['ObjectName'] = "K8SContainer"
+                                    metricProps['InstanceName'] = clusterId + "/" + podUid + "/" + containerName
+                                    
+                                    metricProps['Collections'] = []
+                                    metricCollections = {}
+                                    metricCollections['CounterName'] = metricNametoReturn
+                                    metricCollections['Value'] = DateTime.parse(metricValue).to_time.to_i
+
+                                    metricProps['Collections'].push(metricCollections)
+                                    metricItem['DataItems'].push(metricProps)
+                                    metricItems.push(metricItem)
+                                end
+                            end
+                        end
+                        rescue => error
+                        @Log.warn("getContainerStartTimeMetric failed: #{error} for metric #{metricNametoReturn}")
+                        return metricItems
+                    end
+                    return metricItems                       
+                end
             end
         end
