@@ -114,6 +114,8 @@ module Fluent
                 #   }
                 # },
                 record['ContainerStatus'] = containerStatus.keys[0]
+                #TODO : Remove ContainerCreationTimeStamp from here since we are sending it as a metric
+                #Picking up both container and node start time from cAdvisor to be consistent
                 if containerStatus.keys[0] == "running"
                   record['ContainerCreationTimeStamp'] = container['state']['running']['startedAt']
                 end
