@@ -360,7 +360,6 @@ void Container_ImageInventory_Class_Provider::EnumerateInstances(Context& contex
     if(modeStr.find("COIN") == string::npos)
     {
         vector<Container_ImageInventory_Class> queryResult = InventoryQuery::QueryAll();
-
         for (unsigned i = 0; i < queryResult.size(); i++)
         {
             context.Post(queryResult[i]);
