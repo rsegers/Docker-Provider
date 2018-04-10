@@ -211,6 +211,22 @@ class KubernetesApiClient
                 return pods
             end
 
+            def getContainerIDs(namespace)
+                containers = Hash.new
+                begin
+                    kubesystemResourceUri = "namespaces/" + namespace + "/pods"
+                    podInfo = JSON.parse(getKubeResourceInfo(kubesystemResourceUri).body)
+                    podInfo['items'].each do |items|
+                        items['status']['containerStatuses'].each do |cntr|
+                            containers[cntr['containerID']] = "kube-system"
+                        end
+                    end
+                rescue => error
+                    @Log.warn("List ContainerIDs request failed: #{error}")
+                end
+                return containers
+            end
+
             def getContainerLogs(namespace, pod, container, showTimeStamp)
                 containerLogs = ""
                 begin

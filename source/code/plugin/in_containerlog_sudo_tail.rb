@@ -7,6 +7,7 @@ require 'fluent/parser'
 require 'open3'
 require 'json'
 require_relative 'omslog'
+require_relative 'KubernetesApiClient'
 
 module Fluent
   class ContainerLogSudoTail < Input
@@ -23,6 +24,18 @@ module Fluent
       #This folder contains a list of all the containers running/stopped and we're using it to get all the container ID's which will be needed for the log file path below
       #TODO : Use generic path from docker REST endpoint and find a way to mount the correct folder in the omsagent.yaml	    
       @containerIDFilePath = "/var/opt/microsoft/docker-cimprov/state/ContainerInventory/*"
+      @@systemPodsNamespace = 'kube-system'
+      @@getSystemPodsTimeIntervalSecs = 300 #refresh system container list every 5 minutes
+      @@lastSystemPodsGetTime = nil;
+      @@systemContainerIDList = Hash.new
+      @@disableKubeSystemLogCollection = ENV['DISABLE_KUBE_SYSTEM_LOG_COLLECTION']
+      if !@@disableKubeSystemLogCollection.nil? && !@@disableKubeSystemLogCollection.empty? && @@disableKubeSystemLogCollection.casecmp('true') == 0
+        @@disableKubeSystemLogCollection = 'true'
+        $log.info("in_container_sudo_tail : System container log collection is disabled")
+      else
+        @@disableKubeSystemLogCollection = 'false'
+        $log.info("in_container_sudo_tail : System container log collection is enabled")
+      end
     end
 
     attr_accessor :command
@@ -109,14 +122,30 @@ module Fluent
     end
 
     def set_system_command
-      date = Time.now
+      timeNow = DateTime.now
       cName = "Unkown"
       tempContainerInfo = {}
       paths = ""
+      
+      #if we are on agent & system containers log collection is disabled, get system containerIDs to exclude logs from containers in system containers namespace from being tailed 
+      if !KubernetesApiClient.isNodeMaster && @@disableKubeSystemLogCollection.casecmp('true') == 0 
+        if @@lastSystemPodsGetTime.nil? || ((timeNow - @@lastSystemPodsGetTime)*24*60*60).to_i >= @@getSystemPodsTimeIntervalSecs
+          $log.info("in_container_sudo_tail : System Container list last refreshed at #{@@lastSystemPodsGetTime} - refreshing now at #{timeNow}")
+          sysContainers = KubernetesApiClient.getContainerIDs(@@systemPodsNamespace)
+          @@systemContainerIDList = sysContainers
+          @@lastSystemPodsGetTime = timeNow
+          $log.info("in_container_sudo_tail : System Container ID List: #{@@systemContainerIDList}")
+        end
+      end
+      
       Dir.glob(@containerIDFilePath).select { |p|
-	      cName = p.split('/').last;
-	      p = @containerLogFilePath + cName + "/" + cName + "-json.log"
-	      paths += readable_path(p) + " "
+        cName = p.split('/').last;
+        if !@@systemContainerIDList.key?("docker://" + cName)
+	        p = @containerLogFilePath + cName + "/" + cName + "-json.log"
+          paths += readable_path(p) + " "
+        else
+          $log.info("in_container_sudo_tail : Excluding system container with ID #{cName} from tailng for log collection")
+        end
       }
       if !system("sudo test -r #{@pos_file}")
 	      system("sudo touch #{@pos_file}")
@@ -128,18 +157,22 @@ module Fluent
       until @finished
         begin
           sleep @run_interval
-	      set_system_command
-          Open3.popen3(@command) {|writeio, readio, errio, wait_thread|
-            writeio.close
-            while line = readio.gets
-              receive_data(line)
-            end
-            while line = errio.gets
-              receive_log(line)
-            end
-            
-            wait_thread.value #wait until child process terminates
-          }
+          #if we are on master & system containers log collection is disabled, collect nothing (i.e NO COntainer log collection for ANY container)
+          #we will be not collection omsagent log as well in this case, but its insignificant & okay!
+          if !KubernetesApiClient.isNodeMaster || @@disableKubeSystemLogCollection.casecmp('true') != 0 
+            set_system_command
+            Open3.popen3(@command) {|writeio, readio, errio, wait_thread|
+              writeio.close
+              while line = readio.gets
+                receive_data(line)
+              end
+              while line = errio.gets
+                receive_log(line)
+              end
+              
+              wait_thread.value #wait until child process terminates
+            }
+          end
         rescue
           $log.error "containerlog_sudo_tail failed to run or shutdown child proces", error => $!.to_s, :error_class => $!.class.to_s
           $log.warn_backtrace $!.backtrace
