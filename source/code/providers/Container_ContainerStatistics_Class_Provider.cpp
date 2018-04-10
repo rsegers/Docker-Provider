@@ -331,12 +331,13 @@ void Container_ContainerStatistics_Class_Provider::Unload(Context& context)
 
 void Container_ContainerStatistics_Class_Provider::EnumerateInstances(Context& context, const String& nameSpace, const PropertySet& propertySet, bool keysOnly, const MI_Filter* filter)
 {
+    string modeStr;
     if(getenv("MODE") != NULL) 
     {
-        string modeStr = string(getenv("MODE"));
+        modeStr = string(getenv("MODE"));
     }                  
-    //Run only for container insights     
-    if(modeStr.find("COIN") != string::npos)
+    //Dont run only for container insights     
+    if(modeStr.find("COIN") == string::npos)
     {
         vector<Container_ContainerStatistics_Class> queryResult = StatsQuery::QueryAll();
 
@@ -345,7 +346,6 @@ void Container_ContainerStatistics_Class_Provider::EnumerateInstances(Context& c
             context.Post(queryResult[i]);
         }
     }
-
     context.Post(MI_RESULT_OK);
 }
 

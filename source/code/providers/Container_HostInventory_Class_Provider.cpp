@@ -181,7 +181,7 @@ void Container_HostInventory_Class_Provider::Unload(
     context.Post(MI_RESULT_OK);
 }
 
-void Container_HostInventory_Class_Provider::(
+void Container_HostInventory_Class_Provider::EnumerateInstances(
     Context& context,
     const String& nameSpace,
     const PropertySet& propertySet,
@@ -190,12 +190,13 @@ void Container_HostInventory_Class_Provider::(
 {
     try
     {
+        string modeStr;
         if(getenv("MODE") != NULL) 
         {
-            string modeStr = string(getenv("MODE"));
+            modeStr = string(getenv("MODE"));
         }                  
-        //Run only for container insights     
-        if(modeStr.find("COIN") != string::npos)
+        //Dont run only for container insights     
+        if(modeStr.find("COIN") == string::npos)
         {
             Container_HostInventory_Class queryResult = ContainerHostInventoryQuery::InspectHost();
             context.Post(queryResult);

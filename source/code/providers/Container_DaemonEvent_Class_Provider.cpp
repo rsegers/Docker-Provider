@@ -274,12 +274,13 @@ void Container_DaemonEvent_Class_Provider::EnumerateInstances(Context& context, 
 {
     try
     {
+        string modeStr;
         if(getenv("MODE") != NULL) 
         {
-            string modeStr = string(getenv("MODE"));
+            modeStr = string(getenv("MODE"));
         }                  
-        //Run only for container insights     
-        if(modeStr.find("COIN") != string::npos)
+        //Dont run only for container insights     
+        if(modeStr.find("COIN") == string::npos)
         {
             vector<Container_DaemonEvent_Class> queryResult = EventQuery::QueryAll();
             for (unsigned i = 0; i < queryResult.size(); i++)
