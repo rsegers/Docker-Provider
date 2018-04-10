@@ -160,20 +160,21 @@ void Container_Process_Class_Provider::EnumerateInstances(
 {
     try
     {
+        string modeStr;
         if(getenv("MODE") != NULL) 
         {
-            string modeStr = string(getenv("MODE"));
+            modeStr = string(getenv("MODE"));
         }                  
-        //Run only for container insights     
-        if(modeStr.find("COIN") != string::npos)
+        //Dont run only for container insights     
+        if(modeStr.find("COIN") == string::npos)
         {
             vector<Container_Process_Class> queryResult = ContainerProcessQuery::GetProcessInfoPerContainer();
             for (unsigned i = 0; i < queryResult.size(); i++)
             {
                 context.Post(queryResult[i]);
             }
-            context.Post(MI_RESULT_OK);
         }
+        context.Post(MI_RESULT_OK);
     }
     catch (std::exception &e)
     {

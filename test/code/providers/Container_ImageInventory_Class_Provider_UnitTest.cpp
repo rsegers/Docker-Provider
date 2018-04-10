@@ -22,6 +22,7 @@ class ImageInventoryTest : public CppUnit::TestFixture
     CPPUNIT_TEST(TestEnumerateVerifyAllValues);
     CPPUNIT_TEST(TestRunContainer);
     CPPUNIT_TEST(TestRunFailedContainer);
+    
     CPPUNIT_TEST_SUITE_END();
 
 private:
@@ -294,8 +295,7 @@ protected:
                 flag = true;
             }
         }
-    }
-	
+    }	
 };
 
 CPPUNIT_TEST_SUITE_REGISTRATION(ImageInventoryTest);
