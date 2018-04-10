@@ -351,13 +351,20 @@ void Container_ImageInventory_Class_Provider::Unload(Context& context)
 
 void Container_ImageInventory_Class_Provider::EnumerateInstances(Context& context, const String& nameSpace, const PropertySet& propertySet, bool keysOnly, const MI_Filter* filter)
 {
-    vector<Container_ImageInventory_Class> queryResult = InventoryQuery::QueryAll();
-
-    for (unsigned i = 0; i < queryResult.size(); i++)
+    if(getenv("MODE") != NULL) 
     {
-        context.Post(queryResult[i]);
-    }
+        string modeStr = string(getenv("MODE"));
+    }                  
+    //Run only for container insights     
+    if(modeStr.find("COIN") != string::npos)
+    {
+        vector<Container_ImageInventory_Class> queryResult = InventoryQuery::QueryAll();
 
+        for (unsigned i = 0; i < queryResult.size(); i++)
+        {
+            context.Post(queryResult[i]);
+        }
+    }
     context.Post(MI_RESULT_OK);
 }
 
