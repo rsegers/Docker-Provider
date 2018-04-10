@@ -66,12 +66,14 @@ class CAdvisorMetricsAPIClient
                         hostName = (OMS::Common.get_hostname)
                         metricInfo = JSON.parse(getSummaryStatsFromCAdvisor().body)
                         metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores","cpuUsageNanoCores"))
+                        #<ToDo> Remove memoryUsageBytes once queries use workinset and rss
                         metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "usageBytes", "memoryUsageBytes"))
                         metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", "memoryWorkingSetBytes"))
                         metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "rssBytes", "memoryRssBytes"))
                         metricDataItems.concat(getContainerStartTimeMetricItems(metricInfo, hostName, "restartTimeEpoch"))
 
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "cpu", "usageNanoCores", "cpuUsageNanoCores"))
+                        #<ToDo> Remove memoryUsageBytes once queries use workinset and rss
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "usageBytes", "memoryUsageBytes"))
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "workingSetBytes", "memoryWorkingSetBytes"))
                         metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "rssBytes", "memoryRssBytes"))
