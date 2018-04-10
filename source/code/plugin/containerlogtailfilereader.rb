@@ -151,7 +151,7 @@ module ContainerLogTailscript
           @io = io
           @pe = pe
           @log = log
-          @read_lines_limit = 1000 
+          @read_lines_limit = 100 
           @receive_lines = receive_lines
           @buffer = ''.force_encoding('ASCII-8BIT')
           @iobuf = ''.force_encoding('ASCII-8BIT')
@@ -167,9 +167,9 @@ module ContainerLogTailscript
               begin
                 while true
                   if @buffer.empty?
-                    @io.readpartial(2048, @buffer)
+                    @io.readpartial(512, @buffer)
                   else
-                    @buffer << @io.readpartial(2048, @iobuf)
+                    @buffer << @io.readpartial(512, @iobuf)
                   end
                   while line = @buffer.slice!(/.*?\n/m)
                     @lines << line
