@@ -181,7 +181,7 @@ void Container_HostInventory_Class_Provider::Unload(
     context.Post(MI_RESULT_OK);
 }
 
-void Container_HostInventory_Class_Provider::EnumerateInstances(
+void Container_HostInventory_Class_Provider::(
     Context& context,
     const String& nameSpace,
     const PropertySet& propertySet,
@@ -190,8 +190,16 @@ void Container_HostInventory_Class_Provider::EnumerateInstances(
 {
     try
     {
-        Container_HostInventory_Class queryResult = ContainerHostInventoryQuery::InspectHost();
-        context.Post(queryResult);
+        if(getenv("MODE") != NULL) 
+        {
+            string modeStr = string(getenv("MODE"));
+        }                  
+        //Run only for container insights     
+        if(modeStr.find("COIN") != string::npos)
+        {
+            Container_HostInventory_Class queryResult = ContainerHostInventoryQuery::InspectHost();
+            context.Post(queryResult);
+        }
         context.Post(MI_RESULT_OK);
     }
     catch (std::exception &e)

@@ -274,10 +274,18 @@ void Container_DaemonEvent_Class_Provider::EnumerateInstances(Context& context, 
 {
     try
     {
-        vector<Container_DaemonEvent_Class> queryResult = EventQuery::QueryAll();
-        for (unsigned i = 0; i < queryResult.size(); i++)
+        if(getenv("MODE") != NULL) 
         {
-            context.Post(queryResult[i]);
+            string modeStr = string(getenv("MODE"));
+        }                  
+        //Run only for container insights     
+        if(modeStr.find("COIN") != string::npos)
+        {
+            vector<Container_DaemonEvent_Class> queryResult = EventQuery::QueryAll();
+            for (unsigned i = 0; i < queryResult.size(); i++)
+            {
+                context.Post(queryResult[i]);
+            }
         }
         context.Post(MI_RESULT_OK);
     }
