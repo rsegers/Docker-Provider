@@ -340,7 +340,6 @@ void Container_ContainerStatistics_Class_Provider::EnumerateInstances(Context& c
     if(modeStr.find("COIN") == string::npos)
     {
         vector<Container_ContainerStatistics_Class> queryResult = StatsQuery::QueryAll();
-
         for (unsigned i = 0; i < queryResult.size(); i++)
         {
             context.Post(queryResult[i]);
