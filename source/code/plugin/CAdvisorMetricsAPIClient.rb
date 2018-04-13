@@ -296,8 +296,7 @@ class CAdvisorMetricsAPIClient
                         metricProps['Collections'] = []
                         metricCollections = {}
                         metricCollections['CounterName'] = metricNametoReturn
-                        #metricCollections['Value'] = DateTime.parse(metricValue).to_time.to_i
-                        #Try to read it from /proc/uptime
+                        #Read it from /proc/uptime
                         metricCollections['Value'] = DateTime.parse(metricTime).to_time.to_i - IO.read("/proc/uptime").split[0].to_f
 
                         metricProps['Collections'].push(metricCollections)
