@@ -265,7 +265,17 @@ class KubernetesApiClient
                     clusterId = getClusterId
                     metricInfo = metricJSON
                     metricInfo['items'].each do |pod|
-                        podUid = pod['metadata']['uid']
+                        podNameSpace = pod['metadata']['namespace']
+                        if podNameSpace.eql?("kube-system") && !pod['metadata'].key?("ownerReferences")
+                        # The above case seems to be the only case where you have horizontal scaling of pods
+                        # but no controller, in which case cAdvisor picks up kubernetes.io/config.hash
+                        # instead of the actual poduid. Since this uid is not being surface into the UX
+                        # its ok to use this.
+                        # Use kubernetes.io/config.hash to be able to correlate with cadvisor data
+                            podUid = pod['metadata']['annotations']['kubernetes.io/config.hash']
+                        else
+                            podUid = pod['metadata']['uid']
+                        end
                         nodeName = pod['spec']['nodeName']
                         if (!pod['spec']['containers'].nil?)
                             pod['spec']['containers'].each do |container|
