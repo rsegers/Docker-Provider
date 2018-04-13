@@ -173,6 +173,7 @@ class CAdvisorMetricsAPIClient
                         end
                         rescue => error
                         @Log.warn("getcontainerMemoryMetricItems failed: #{error} for metric #{memoryMetricNameToCollect}")
+                        @Log.warn metricJSON
                         return metricItems
                     end
                     return metricItems                      
@@ -208,6 +209,7 @@ class CAdvisorMetricsAPIClient
                         
                         rescue => error
                         @Log.warn("getNodeMetricItem failed: #{error} for metric #{metricNameToCollect}")
+                        @Log.warn metricJSON
                         return metricItem
                     end
                     return metricItem                      
@@ -264,6 +266,7 @@ class CAdvisorMetricsAPIClient
                         
                         rescue => error
                         @Log.warn("getNodeMetricItemRate failed: #{error} for metric #{metricNameToCollect}")
+                        @Log.warn metricJSON
                         return nil
                     end
                     return metricItem
@@ -293,13 +296,16 @@ class CAdvisorMetricsAPIClient
                         metricProps['Collections'] = []
                         metricCollections = {}
                         metricCollections['CounterName'] = metricNametoReturn
-                        metricCollections['Value'] = DateTime.parse(metricValue).to_time.to_i
+                        #metricCollections['Value'] = DateTime.parse(metricValue).to_time.to_i
+                        #Try to read it from /proc/uptime
+                        metricCollections['Value'] = DateTime.parse(metricTime).to_time.to_i - IO.read("/proc/uptime").split[0].to_f
 
                         metricProps['Collections'].push(metricCollections)
                         metricItem['DataItems'].push(metricProps)
                         
                         rescue => error
                         @Log.warn("getNodeLastRebootTimeMetric failed: #{error} ")
+                        @Log.warn metricJSON
                         return metricItem
                     end
                     return metricItem                      
@@ -341,6 +347,7 @@ class CAdvisorMetricsAPIClient
                         end
                         rescue => error
                         @Log.warn("getContainerStartTimeMetric failed: #{error} for metric #{metricNametoReturn}")
+                        @Log.warn metricJSON
                         return metricItems
                     end
                     return metricItems                       
