@@ -124,9 +124,14 @@ module Fluent
               end
               records.each do |record|
                 if !record.nil? 		
-                  record['PodRestartCount'] = podRestartCount		
+                  record['PodRestartCount'] = podRestartCount	
+		  wrapper = {
+                                "DataType"=>"KUBE_POD_INVENTORY_BLOB",
+                                "IPName"=>"ContainerInsights",
+                                "DataItems"=>[record.each{|k,v| record[k]=v}]
+                        }	
                   #$log.info record
-                  eventStream.add(emitTime, record) if record 
+                  eventStream.add(emitTime, wrapper) if wrapper
                   #router.emit(@tag, emitTime, record) 
                 end    		
               end      
