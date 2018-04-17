@@ -15,7 +15,7 @@ module Fluent
       require_relative 'omslog'
     end
 
-    config_param :run_interval, :time, :default => '10m'
+    config_param :run_interval, :time, :default => '1m'
     config_param :tag, :string, :default => "oms.api.KubePodInventory.CollectionTime"
 
     def configure (conf)
@@ -47,14 +47,18 @@ module Fluent
       batchTime = currentTime.utc.iso8601 
       if KubernetesApiClient.isValidRunningNode
         if podList.nil?
-          podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)          
+          $log.info("in_kube_podinventory::enumerate : Getting pods from Kube API @ #{Time.now.utc.iso8601}")
+          podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
+          $log.info("in_kube_podinventory::enumerate : Done getting pods from Kube API @ #{Time.now.utc.iso8601}")          
         else
           podInventory = podList
         end
         begin
           if(!podInventory.empty?) 
             #get pod inventory & services 
+            $log.info("in_kube_podinventory::enumerate : Getting services from Kube API @ #{Time.now.utc.iso8601}")
             serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
+            $log.info("in_kube_podinventory::enumerate : Done getting pods from Kube API @ #{Time.now.utc.iso8601}")
             eventStream = MultiEventStream.new
             podInventory['items'].each do |items|
               records = []
@@ -169,6 +173,7 @@ module Fluent
         done = @finished
         @mutex.unlock
         if !done
+          $log.info("in_kube_podinventory::run_periodic @ #{Time.now.utc.iso8601}")
           enumerate
         end
         @mutex.lock

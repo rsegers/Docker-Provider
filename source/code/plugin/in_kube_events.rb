@@ -18,7 +18,7 @@ module Fluent
       require_relative 'omslog'
     end
 
-    config_param :run_interval, :time, :default => '10m'
+    config_param :run_interval, :time, :default => '1m'
     config_param :tag, :string, :default => "oms.api.KubeEvents.CollectionTime"
 
     def configure (conf)
@@ -50,7 +50,9 @@ module Fluent
         batchTime = currentTime.utc.iso8601
         if KubernetesApiClient.isValidRunningNode
           if eventList.nil?
+            $log.info("in_kube_events::enumerate : Getting events from Kube API @ #{Time.now.utc.iso8601}")
             events = JSON.parse(KubernetesApiClient.getKubeResourceInfo('events').body)
+            $log.info("in_kube_events::enumerate : Done getting events from Kube API @ #{Time.now.utc.iso8601}")
           else
             events = eventList
           end
@@ -123,6 +125,7 @@ module Fluent
         done = @finished
         @mutex.unlock
         if !done
+          $log.info("in_kube_events::run_periodic @ #{Time.now.utc.iso8601}")
           enumerate
         end
         @mutex.lock
