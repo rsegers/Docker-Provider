@@ -17,7 +17,7 @@ module Fluent
           require_relative 'omslog'
         end
     
-        config_param :run_interval, :time, :default => '10m'
+        config_param :run_interval, :time, :default => '1m'
         config_param :tag, :string, :default => "oms.api.KubePerf"
     
         def configure (conf)
@@ -56,8 +56,10 @@ module Fluent
               end 
               
               if KubernetesApiClient.isValidRunningNode
+                $log.info("in_kube_perf::enumerate : Getting pods from Kube API @ #{Time.now.utc.iso8601}")
                 #get resource requests & resource limits per container as perf data 
                 podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
+                $log.info("in_kube_perf::enumerate : Done getting pods from Kube API @ #{Time.now.utc.iso8601}")
                 if(!podInventory.empty?) 
                   containerMetricDataItems = []
                   hostName = (OMS::Common.get_hostname)
@@ -78,7 +80,9 @@ module Fluent
                 #<TODO> Node capacity is different from node allocatable. Allocatable is what is avaialble for allocating pods.
                 # In theory Capacity = Allocatable + kube-reserved + system-reserved + eviction-threshold
                 # For more details refer to https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable
+                $log.info("in_kube_perf::enumerate : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
                 nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
+                $log.info("in_kube_perf::enumerate : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
                 if(!nodeInventory.empty?)
                   nodeMetricDataItems = []
                   #allocatable metrics @ node level
@@ -111,6 +115,7 @@ module Fluent
             done = @finished
             @mutex.unlock
             if !done
+              $log.info("in_kube_perf::run_periodic @ #{Time.now.utc.iso8601}")
               enumerate
             end
             @mutex.lock
