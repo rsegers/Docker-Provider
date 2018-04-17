@@ -58,7 +58,7 @@ module Fluent
             #get pod inventory & services 
             $log.info("in_kube_podinventory::enumerate : Getting services from Kube API @ #{Time.now.utc.iso8601}")
             serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
-            $log.info("in_kube_podinventory::enumerate : Done getting pods from Kube API @ #{Time.now.utc.iso8601}")
+            $log.info("in_kube_podinventory::enumerate : Done getting services from Kube API @ #{Time.now.utc.iso8601}")
             eventStream = MultiEventStream.new
             podInventory['items'].each do |items|
               records = []
