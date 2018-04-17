@@ -100,6 +100,8 @@ module Fluent
           record['PodIp'] =items['status']['podIP']
           if !items['spec']['nodeName'].nil?
             record['Computer'] = items['spec']['nodeName']
+          else
+            next  
           end  
           record['ClusterId'] = KubernetesApiClient.getClusterId
           record['ClusterName'] = KubernetesApiClient.getClusterName
