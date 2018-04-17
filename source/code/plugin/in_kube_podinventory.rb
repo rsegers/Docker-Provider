@@ -98,7 +98,9 @@ module Fluent
           record['PodStartTime'] = items['status']['startTime']
           record['PodStatus'] = items['status']['phase']
           record['PodIp'] =items['status']['podIP']
-          record['Computer'] = items['spec']['nodeName']
+          if !items['spec']['nodeName'].nil?
+            record['Computer'] = items['spec']['nodeName']
+          end  
           record['ClusterId'] = KubernetesApiClient.getClusterId
           record['ClusterName'] = KubernetesApiClient.getClusterName
           record['ServiceName'] = getServiceNameFromLabels(items['metadata']['namespace'], items['metadata']['labels'], serviceList)
