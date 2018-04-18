@@ -293,8 +293,8 @@ class KubernetesApiClient
                         else
                             podUid = pod['metadata']['uid']
                         end
-                        nodeName = pod['spec']['nodeName']
-                        if (!pod['spec']['containers'].nil?)
+                        if (!pod['spec']['containers'].nil? && !pod['spec']['nodeName'].nil?)
+                            nodeName = pod['spec']['nodeName']
                             pod['spec']['containers'].each do |container|
                                 containerName = container['name']
                                 metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
