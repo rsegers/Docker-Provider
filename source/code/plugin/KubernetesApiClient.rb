@@ -50,11 +50,15 @@ class KubernetesApiClient
 
                         kubeApiRequest = Net::HTTP::Get.new(uri.request_uri)
                         kubeApiRequest['Authorization'] = "Bearer " + getTokenStr
+                        @Log.info "KubernetesAPIClient::getKubeResourceInfo : Making request to #{uri.request_uri} @ #{Time.now.utc.iso8601}"
                         response = http.request(kubeApiRequest)
-                        @Log.info "Got response of #{response.code}"
+                        @Log.info "KubernetesAPIClient::getKubeResourceInfo : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
                     end
                 rescue => error
-                    @Log.warn("kubernetes api request failed: #{error}")
+                    @Log.warn("kubernetes api request failed: #{error} for #{resource} @ #{Time.now.utc.iso8601}")
+                end
+                if (response.body.empty?)
+                    @Log.warn("KubernetesAPIClient::getKubeResourceInfo : Got empty response from Kube API for #{resource} @ #{Time.now.utc.iso8601}")
                 end
                 return response
             end
@@ -97,7 +101,9 @@ class KubernetesApiClient
                             @@ClusterName = cluster
                         else
                             kubesystemResourceUri = "namespaces/" + @@KubeSystemNamespace + "/pods"
+                            @Log.info("KubernetesApiClient::getClusterName : Getting pods from Kube API @ #{Time.now.utc.iso8601}")
                             podInfo = JSON.parse(getKubeResourceInfo(kubesystemResourceUri).body)
+                            @Log.info("KubernetesApiClient::getClusterName : Done getting pods from Kube API @ #{Time.now.utc.iso8601}")
                             podInfo['items'].each do |items|
                                 if items['metadata']['name'].include? "kube-controller-manager"
                                 items['spec']['containers'][0]['command'].each do |command|
@@ -135,7 +141,9 @@ class KubernetesApiClient
                 return @@IsNodeMaster if !@@IsNodeMaster.nil?
                 @@IsNodeMaster = false
                 begin
+                    @Log.info("KubernetesApiClient::isNodeMaster : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
                     allNodesInfo = JSON.parse(getKubeResourceInfo('nodes').body)
+                    @Log.info("KubernetesApiClient::isNodeMaster : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
                     if !allNodesInfo.nil? && !allNodesInfo.empty?
                         thisNodeName = OMS::Common.get_hostname
                         allNodesInfo['items'].each do |item|
@@ -148,7 +156,7 @@ class KubernetesApiClient
                         end
                     end
                 rescue => error
-                    @Log.warn("node role request failed: #{error}")
+                    @Log.warn("KubernetesApiClient::isNodeMaster : node role request failed: #{error}")
                 end
                 
                 return @@IsNodeMaster
@@ -181,7 +189,9 @@ class KubernetesApiClient
                 return @@IsLinuxCluster if !@@IsLinuxCluster.nil?
                 @@IsLinuxCluster = true
                 begin
+                    @Log.info("KubernetesApiClient::isLinuxCluster : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
                     allNodesInfo = JSON.parse(getKubeResourceInfo('nodes').body)
+                    @Log.info("KubernetesApiClient::isLinuxCluster : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
                     if !allNodesInfo.nil? && !allNodesInfo.empty?
                         allNodesInfo['items'].each do |item|
                             if !(item['status']['nodeInfo']['operatingSystem'].casecmp('linux') == 0)
@@ -191,7 +201,7 @@ class KubernetesApiClient
                         end
                     end
                 rescue => error
-                    @Log.warn("node role request failed: #{error}")
+                    @Log.warn("KubernetesApiClient::isLinuxCluster : node role request failed: #{error}")
                 end
                 return @@IsLinuxCluster
             end
@@ -215,14 +225,18 @@ class KubernetesApiClient
                 containers = Hash.new
                 begin
                     kubesystemResourceUri = "namespaces/" + namespace + "/pods"
+                    @Log.info("KubernetesApiClient::getContainerIDs : Getting pods from Kube API @ #{Time.now.utc.iso8601}")
                     podInfo = JSON.parse(getKubeResourceInfo(kubesystemResourceUri).body)
-                    podInfo['items'].each do |items|
-                        items['status']['containerStatuses'].each do |cntr|
-                            containers[cntr['containerID']] = "kube-system"
+                    @Log.info("KubernetesApiClient::getContainerIDs : Done getting pods from Kube API @ #{Time.now.utc.iso8601}")
+                    podInfo['items'].each do |item|
+                        if (!item['status'].nil? && !item['status'].empty? && !item['status']['containerStatuses'].nil? && !item['status']['containerStatuses'].empty?)
+                            item['status']['containerStatuses'].each do |cntr|
+                                containers[cntr['containerID']] = "kube-system"
+                            end
                         end
                     end
                 rescue => error
-                    @Log.warn("List ContainerIDs request failed: #{error}")
+                    @Log.warn("KubernetesApiClient::getContainerIDs : List ContainerIDs request failed: #{error}")
                 end
                 return containers
             end
@@ -234,8 +248,9 @@ class KubernetesApiClient
                     if showTimeStamp
                         kubesystemResourceUri += "&timestamps=true"
                     end
-
+                    @Log.info("KubernetesApiClient::getContainerLogs : Getting logs from Kube API @ #{Time.now.utc.iso8601}")
                     containerLogs = getKubeResourceInfo(kubesystemResourceUri).body
+                    @Log.info("KubernetesApiClient::getContainerLogs : Done getting logs from Kube API @ #{Time.now.utc.iso8601}")
                 rescue => error
                     @Log.warn("Pod logs request failed: #{error}")
                 end
@@ -252,7 +267,9 @@ class KubernetesApiClient
                         kubesystemResourceUri += "&timestamps=true"
                     end
                     @Log.info("calling #{kubesystemResourceUri}")
+                    @Log.info("KubernetesApiClient::getContainerLogsSinceTime : Getting logs from Kube API @ #{Time.now.utc.iso8601}")
                     containerLogs = getKubeResourceInfo(kubesystemResourceUri).body
+                    @Log.info("KubernetesApiClient::getContainerLogsSinceTime : Done getting logs from Kube API @ #{Time.now.utc.iso8601}")
                 rescue => error
                     @Log.warn("Pod logs request failed: #{error}")
                 end
@@ -276,12 +293,12 @@ class KubernetesApiClient
                         else
                             podUid = pod['metadata']['uid']
                         end
-                        nodeName = pod['spec']['nodeName']
-                        if (!pod['spec']['containers'].nil?)
+                        if (!pod['spec']['containers'].nil? && !pod['spec']['nodeName'].nil?)
+                            nodeName = pod['spec']['nodeName']
                             pod['spec']['containers'].each do |container|
                                 containerName = container['name']
                                 metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
-                                if (!container['resources'].nil? && !container['resources'][metricCategory].nil? && !container['resources'][metricCategory][metricNameToCollect].nil?)
+                                if (!container['resources'].nil? && !container['resources'].empty? && !container['resources'][metricCategory].nil? && !container['resources'][metricCategory][metricNameToCollect].nil?)
                                     metricValue = getMetricNumericValue(metricNameToCollect, container['resources'][metricCategory][metricNameToCollect])
                                     
                                     metricItem = {}

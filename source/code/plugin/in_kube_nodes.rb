@@ -16,8 +16,8 @@ module Fluent
         require_relative 'omslog'
       end
   
-      config_param :run_interval, :time, :default => '10m'
-      config_param :tag, :string, :default => "oms.containerinsights.KubeNodeInventory"
+      config_param :run_interval, :time, :default => '1m'
+      config_param :tag, :string, :default => "oms.api.KubeNodeInventory.CollectionTime"
   
       def configure (conf)
         super
@@ -47,7 +47,9 @@ module Fluent
         emitTime = currentTime.to_f
         batchTime = currentTime.utc.iso8601
         if KubernetesApiClient.isValidRunningNode
+          $log.info("in_kube_nodes::enumerate : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
           nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
+          $log.info("in_kube_nodes::enumerate : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
           begin
             if(!nodeInventory.empty?)
               eventStream = MultiEventStream.new
@@ -67,16 +69,18 @@ module Fluent
                     # populate the KubeNodeInventory Status field. A possible value for this field could be "Ready OutofDisk"
                     # implying that the node is ready for hosting pods, however its out of disk.
                     
-                    items['status']['conditions'].each do |condition|
-                        if condition['status'] == "True"
-                            record['Status'] += condition['type']
-                        end 
-                        #collect last transition to/from ready (no matter ready is true/false)
-                        if condition['type'] == "Ready" && !condition['lastTransitionTime'].nil?
-                          record['LastTransitionTimeReady'] = condition['lastTransitionTime']
-                        end
-                    end 
-                    
+                    if items['status'].key?("conditions") && !items['status']['conditions'].empty? 
+                      items['status']['conditions'].each do |condition|
+                          if condition['status'] == "True"
+                              record['Status'] += condition['type']
+                          end 
+                          #collect last transition to/from ready (no matter ready is true/false)
+                          if condition['type'] == "Ready" && !condition['lastTransitionTime'].nil?
+                            record['LastTransitionTimeReady'] = condition['lastTransitionTime']
+                          end
+                      end 
+                    end
+
                     record['KubeletVersion'] = items['status']['nodeInfo']['kubeletVersion']
                     record['KubeProxyVersion'] = items['status']['nodeInfo']['kubeProxyVersion']
                     
@@ -104,6 +108,7 @@ module Fluent
           done = @finished
           @mutex.unlock
           if !done
+            $log.info("in_kube_nodes::run_periodic @ #{Time.now.utc.iso8601}")
             enumerate
           end
           @mutex.lock

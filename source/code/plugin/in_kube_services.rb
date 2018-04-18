@@ -47,7 +47,9 @@ module Fluent
             emitTime = currentTime.to_f
             batchTime = currentTime.utc.iso8601
             if KubernetesApiClient.isValidRunningNode
+              $log.info("in_kube_services::enumerate : Getting services from Kube API @ #{Time.now.utc.iso8601}")
               serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
+              $log.info("in_kube_services::enumerate : Done getting services from Kube API @ #{Time.now.utc.iso8601}")
               begin
                 if(!serviceList.empty?)
                   eventStream = MultiEventStream.new
@@ -81,6 +83,7 @@ module Fluent
             done = @finished
             @mutex.unlock
             if !done
+              $log.info("in_kube_services::run_periodic @ #{Time.now.utc.iso8601}")
               enumerate
             end
             @mutex.lock
