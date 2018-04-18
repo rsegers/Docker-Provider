@@ -115,8 +115,12 @@ module Fluent
             done = @finished
             @mutex.unlock
             if !done
-              $log.info("in_kube_perf::run_periodic @ #{Time.now.utc.iso8601}")
-              enumerate
+              begin
+                $log.info("in_kube_perf::run_periodic @ #{Time.now.utc.iso8601}")
+                enumerate
+              rescue => errorStr
+                $log.warn "in_kube_perf::run_periodic: enumerate Failed to retrieve kube perf metrics: #{errorStr}"
+              end
             end
             @mutex.lock
           end
