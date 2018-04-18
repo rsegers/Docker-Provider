@@ -17,7 +17,7 @@ module Fluent
     end
 
     config_param :run_interval, :time, :default => '1m'
-    config_param :tag, :string, :default => "oms.api.KubePodInventory.CollectionTime"
+    config_param :tag, :string, :default => "oms.containerinsights.KubePodInventory"
 
     def configure (conf)
       super
@@ -151,7 +151,12 @@ module Fluent
           records.each do |record|
             if !record.nil?
               record['PodRestartCount'] = podRestartCount
-              eventStream.add(emitTime, record) if record 
+              wrapper = {
+                          "DataType"=>"KUBE_POD_INVENTORY_BLOB",
+                          "IPName"=>"ContainerInsights",
+                          "DataItems"=>[record.each{|k,v| record[k]=v}]
+                        }
+              eventStream.add(emitTime, wrapper) if wrapper
             end  
           end  
         end  #podInventory block end
@@ -238,4 +243,5 @@ module Fluent
   end # Kube_Pod_Input
 
 end # module
+
 
