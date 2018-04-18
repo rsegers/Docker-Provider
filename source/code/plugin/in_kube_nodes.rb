@@ -84,10 +84,10 @@ module Fluent
                     record['KubeletVersion'] = items['status']['nodeInfo']['kubeletVersion']
                     record['KubeProxyVersion'] = items['status']['nodeInfo']['kubeProxyVersion']
                     wrapper = {
-                                "DataType"=>"KUBE_NODE_INVENTORY_BLOB",
-                                "IPName"=>"ContainerInsights",
-                                "DataItems"=>[record.each{|k,v| record[k]=v}]
-                              }
+                      "DataType"=>"KUBE_NODE_INVENTORY_BLOB",
+                      "IPName"=>"ContainerInsights",
+                      "DataItems"=>[record.each{|k,v| record[k]=v}]
+                    }
                     eventStream.add(emitTime, wrapper) if wrapper
                 end 
                 router.emit_stream(@tag, eventStream) if eventStream
@@ -107,8 +107,12 @@ module Fluent
           done = @finished
           @mutex.unlock
           if !done
-            $log.info("in_kube_nodes::run_periodic @ #{Time.now.utc.iso8601}")
-            enumerate
+            begin
+              $log.info("in_kube_nodes::run_periodic @ #{Time.now.utc.iso8601}")
+              enumerate
+            rescue => errorStr
+              $log.warn "in_kube_nodes::run_periodic: enumerate Failed to retrieve node inventory: #{errorStr}"
+            end
           end
           @mutex.lock
         end
@@ -118,4 +122,5 @@ module Fluent
     end # Kube_Node_Input
   
   end # module
+  
   
