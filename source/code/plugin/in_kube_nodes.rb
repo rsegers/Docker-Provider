@@ -17,7 +17,7 @@ module Fluent
       end
   
       config_param :run_interval, :time, :default => '1m'
-      config_param :tag, :string, :default => "oms.api.KubeNodeInventory.CollectionTime"
+      config_param :tag, :string, :default => "oms.containerinsights.KubeNodeInventory"
   
       def configure (conf)
         super
@@ -83,7 +83,12 @@ module Fluent
 
                     record['KubeletVersion'] = items['status']['nodeInfo']['kubeletVersion']
                     record['KubeProxyVersion'] = items['status']['nodeInfo']['kubeProxyVersion']
-                    eventStream.add(emitTime, record) if record
+                    wrapper = {
+                      "DataType"=>"KUBE_NODE_INVENTORY_BLOB",
+                      "IPName"=>"ContainerInsights",
+                      "DataItems"=>[record.each{|k,v| record[k]=v}]
+                    }
+                    eventStream.add(emitTime, wrapper) if wrapper
                 end 
                 router.emit_stream(@tag, eventStream) if eventStream
             end  
