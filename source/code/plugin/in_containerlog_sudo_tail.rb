@@ -132,7 +132,12 @@ module Fluent
         if @@lastSystemPodsGetTime.nil? || ((timeNow - @@lastSystemPodsGetTime)*24*60*60).to_i >= @@getSystemPodsTimeIntervalSecs
           $log.info("in_container_sudo_tail : System Container list last refreshed at #{@@lastSystemPodsGetTime} - refreshing now at #{timeNow}")
           sysContainers = KubernetesApiClient.getContainerIDs(@@systemPodsNamespace)
-          @@systemContainerIDList = sysContainers
+          #BugBug - https://msecg.visualstudio.com/OMS/_workitems/edit/215107 - we get 200 with empty payloaf from time to time
+          if (!sysContainers.nil? && !sysContainers.empty?)
+            @@systemContainerIDList = sysContainers
+          else
+            $log.info("in_container_sudo_tail : System Container ID List is empty!!!! Continuing to use currently cached list.")
+          end
           @@lastSystemPodsGetTime = timeNow
           $log.info("in_container_sudo_tail : System Container ID List: #{@@systemContainerIDList}")
         end
