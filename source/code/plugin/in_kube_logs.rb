@@ -28,7 +28,7 @@ module Fluent
         end
 
         def start
-            if KubernetesApiClient.isValidRunningNode && @run_interval
+            if @run_interval
                 @finished = false
                 @condition = ConditionVariable.new
                 @mutex = Mutex.new
@@ -37,7 +37,7 @@ module Fluent
         end
 
         def shutdown
-            if KubernetesApiClient.isValidRunningNode && @run_interval
+            if @run_interval
                 @mutex.synchronize {
                     @finished = true
                     @condition.signal
@@ -54,8 +54,6 @@ module Fluent
             end
 
             time = Time.now.to_f
-            if KubernetesApiClient.isValidRunningNode
-
                 if podList.nil?
                     pods = KubernetesApiClient.getPods(namespace)
                 else
@@ -136,18 +134,6 @@ module Fluent
                         $log.debug_backtrace(errorStr.backtrace)
                     end
                 end
-            else
-                record = {}
-                record['Namespace'] = ""
-                record['Pod'] = ""
-                record['Container'] = ""
-                record['Message'] = ""
-                record['TimeGenerated'] = ""
-                record['Node'] = ""
-                record['Computer'] = ""
-                record['ClusterName'] = ""
-                router.emit(@tag, time, record)
-            end
         end
 
         def run_periodic

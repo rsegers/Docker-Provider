@@ -26,7 +26,7 @@ module Fluent
     end
 
     def start
-      if KubernetesApiClient.isValidRunningNode && @run_interval
+      if @run_interval
         @finished = false
         @condition = ConditionVariable.new
         @mutex = Mutex.new
@@ -35,7 +35,7 @@ module Fluent
     end
 
     def shutdown
-      if KubernetesApiClient.isValidRunningNode && @run_interval
+      if @run_interval
         @mutex.synchronize {
           @finished = true
           @condition.signal
@@ -48,7 +48,6 @@ module Fluent
         currentTime = Time.now
         emitTime = currentTime.to_f
         batchTime = currentTime.utc.iso8601
-        if KubernetesApiClient.isValidRunningNode
           if eventList.nil?
             $log.info("in_kube_events::enumerate : Getting events from Kube API @ #{Time.now.utc.iso8601}")
             events = JSON.parse(KubernetesApiClient.getKubeResourceInfo('events').body)
@@ -96,25 +95,6 @@ module Fluent
             $log.warn line.dump, error: errorStr.to_s
             $log.debug_backtrace(errorStr.backtrace)
           end   
-        else
-          record = {}
-          record['CollectionTime'] = batchTime
-          record['ObjectKind']= ""
-          record['Namespace'] = ""
-          record['Name'] = ""
-          record['Reason'] = ""
-          record['Message'] = ""
-          record['Type'] = ""
-          record['TimeGenerated'] = ""
-          record['SourceComponent'] = ""
-          record['FirstSeen'] = ""
-          record['LastSeen'] = ""
-          record['Count'] = "0"
-          record['Computer'] = ""
-          record['ClusterName'] = ""
-          record['ClusterId'] = ""
-          router.emit(@tag, emitTime, record)
-        end
     end
 
     def run_periodic

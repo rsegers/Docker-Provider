@@ -24,7 +24,7 @@ module Fluent
         end
     
         def start
-          if KubernetesApiClient.isValidRunningNode && @run_interval
+          if @run_interval
             @finished = false
             @condition = ConditionVariable.new
             @mutex = Mutex.new
@@ -33,7 +33,7 @@ module Fluent
         end
     
         def shutdown
-          if KubernetesApiClient.isValidRunningNode && @run_interval
+          if @run_interval
             @mutex.synchronize {
               @finished = true
               @condition.signal
@@ -46,7 +46,6 @@ module Fluent
             currentTime = Time.now
             emitTime = currentTime.to_f
             batchTime = currentTime.utc.iso8601
-            if KubernetesApiClient.isValidRunningNode
               $log.info("in_kube_services::enumerate : Getting services from Kube API @ #{Time.now.utc.iso8601}")
               serviceList = JSON.parse(KubernetesApiClient.getKubeResourceInfo('services').body)
               $log.info("in_kube_services::enumerate : Done getting services from Kube API @ #{Time.now.utc.iso8601}")
@@ -72,7 +71,6 @@ module Fluent
                 $log.warn line.dump, error: errorStr.to_s
                 $log.debug_backtrace(e.backtrace)
               end   
-            end
         end
     
         def run_periodic
