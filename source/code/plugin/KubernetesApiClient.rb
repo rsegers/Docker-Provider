@@ -17,8 +17,8 @@ class KubernetesApiClient
         @@ClusterName = nil
         @@ClusterId = nil
         @@IsNodeMaster = nil
-        @@IsValidRunningNode = nil
-        @@IsLinuxCluster = nil
+        #@@IsValidRunningNode = nil
+        #@@IsLinuxCluster = nil
         @@KubeSystemNamespace = "kube-system"
         @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt"
         @Log = Logger.new(@LogPath, 2, 10*1048576) #keep last 2 files, max log file size = 10M
@@ -162,49 +162,49 @@ class KubernetesApiClient
                 return @@IsNodeMaster
             end
 
-            def isValidRunningNode
-                return @@IsValidRunningNode if !@@IsValidRunningNode.nil?
-                @@IsValidRunningNode = false
-                begin
-                    thisNodeName = OMS::Common.get_hostname
-                    if isLinuxCluster
-                        # Run on agent node [0]
-                        @@IsValidRunningNode = !isNodeMaster && thisNodeName.to_s.split('-').last == '0'
-                    else
-                        # Run on master node [0]
-                        @@IsValidRunningNode = isNodeMaster && thisNodeName.to_s.split('-').last == '0'
-                    end
-                rescue => error
-                    @Log.warn("Checking Node Type failed: #{error}")
-                end
-                if(@@IsValidRunningNode == true)
-                    @Log.info("Electing current node to talk to k8 api")
-                else
-                    @Log.info("Not Electing current node to talk to k8 api")
-                end
-                return @@IsValidRunningNode
-            end
+            #def isValidRunningNode
+            #    return @@IsValidRunningNode if !@@IsValidRunningNode.nil?
+            #    @@IsValidRunningNode = false
+            #    begin
+            #        thisNodeName = OMS::Common.get_hostname
+            #        if isLinuxCluster
+            #            # Run on agent node [0]
+            #            @@IsValidRunningNode = !isNodeMaster && thisNodeName.to_s.split('-').last == '0'
+            #        else
+            #            # Run on master node [0]
+            #            @@IsValidRunningNode = isNodeMaster && thisNodeName.to_s.split('-').last == '0'
+            #        end
+            #    rescue => error
+            #        @Log.warn("Checking Node Type failed: #{error}")
+            #    end
+            #    if(@@IsValidRunningNode == true)
+            #        @Log.info("Electing current node to talk to k8 api")
+            #    else
+            #        @Log.info("Not Electing current node to talk to k8 api")
+            #    end
+            #    return @@IsValidRunningNode
+            #end
 
-            def isLinuxCluster
-                return @@IsLinuxCluster if !@@IsLinuxCluster.nil?
-                @@IsLinuxCluster = true
-                begin
-                    @Log.info("KubernetesApiClient::isLinuxCluster : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
-                    allNodesInfo = JSON.parse(getKubeResourceInfo('nodes').body)
-                    @Log.info("KubernetesApiClient::isLinuxCluster : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
-                    if !allNodesInfo.nil? && !allNodesInfo.empty?
-                        allNodesInfo['items'].each do |item|
-                            if !(item['status']['nodeInfo']['operatingSystem'].casecmp('linux') == 0)
-                                @@IsLinuxCluster = false
-                                break
-                            end
-                        end
-                    end
-                rescue => error
-                    @Log.warn("KubernetesApiClient::isLinuxCluster : node role request failed: #{error}")
-                end
-                return @@IsLinuxCluster
-            end
+            #def isLinuxCluster
+            #    return @@IsLinuxCluster if !@@IsLinuxCluster.nil?
+            #    @@IsLinuxCluster = true
+            #    begin
+            #        @Log.info("KubernetesApiClient::isLinuxCluster : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
+            #        allNodesInfo = JSON.parse(getKubeResourceInfo('nodes').body)
+            #        @Log.info("KubernetesApiClient::isLinuxCluster : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
+            #        if !allNodesInfo.nil? && !allNodesInfo.empty?
+            #            allNodesInfo['items'].each do |item|
+            #                if !(item['status']['nodeInfo']['operatingSystem'].casecmp('linux') == 0)
+            #                    @@IsLinuxCluster = false
+            #                    break
+            #                end
+            #            end
+            #        end
+            #    rescue => error
+            #        @Log.warn("KubernetesApiClient::isLinuxCluster : node role request failed: #{error}")
+            #    end
+            #    return @@IsLinuxCluster
+            #end
 
             # returns an arry of pods (json)
             def getPods(namespace)

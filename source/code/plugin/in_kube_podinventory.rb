@@ -24,7 +24,7 @@ module Fluent
     end
 
     def start
-      if KubernetesApiClient.isValidRunningNode && @run_interval
+      if @run_interval
         @finished = false
         @condition = ConditionVariable.new
         @mutex = Mutex.new
@@ -33,7 +33,7 @@ module Fluent
     end
 
     def shutdown
-      if KubernetesApiClient.isValidRunningNode && @run_interval
+      if @run_interval
         @mutex.synchronize {
           @finished = true
           @condition.signal
@@ -43,7 +43,6 @@ module Fluent
     end
 
     def enumerate(podList = nil) 
-      if KubernetesApiClient.isValidRunningNode
         if podList.nil?
           $log.info("in_kube_podinventory::enumerate : Getting pods from Kube API @ #{Time.now.utc.iso8601}")
           podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
@@ -65,9 +64,6 @@ module Fluent
           $log.warn "Failed in enumerate pod inventory: #{errorStr}"
           $log.debug_backtrace(errorStr.backtrace)
         end  
-      else
-        emit_empty
-      end
     end
 
     def parse_and_emit_records(podInventory, serviceList)
@@ -167,32 +163,6 @@ module Fluent
       end #begin block end  
     end  
 
-    def emit_empty
-      record = {}
-      currentTime = Time.now
-      emitTime = currentTime.to_f
-      batchTime = currentTime.utc.iso8601
-      record['CollectionTime'] = batchTime
-      record['Name'] = ""
-      record['PodUid'] = ""
-      record['PodLabel'] = ""
-      record['Namespace'] = ""
-      record['PodCreationTimeStamp'] = ""
-      record['PodStatus'] = ""
-      record['PodIp'] = ""
-      record['Computer'] = ""
-      record['ClusterId'] = ""
-      record['ClusterName'] = ""
-      record['ServiceName'] = ""
-      record['ContainerID'] = ""		
-      record['InstanceName'] = ""		
-      record['ContainerRestartCount'] = ""		
-      record['PodRestartCount'] = "0"		
-      record['PodStartTime'] = ""
-      record['ContainerStartTime'] = ""        
-      router.emit(@tag, emitTime, record)
-    end 
-
     def run_periodic
       @mutex.lock
       done = @finished
@@ -216,7 +186,7 @@ module Fluent
     def getServiceNameFromLabels(namespace, labels, serviceList)
       serviceName = ""
       begin
-        if KubernetesApiClient.isValidRunningNode && !labels.nil? && !labels.empty? 
+        if !labels.nil? && !labels.empty? 
           if( !serviceList.nil? && !serviceList.empty? && serviceList.key?("items") && !serviceList['items'].empty?)
             serviceList['items'].each do |item|
               found = 0

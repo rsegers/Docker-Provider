@@ -11,7 +11,6 @@ module Fluent
           require 'yaml'
           require 'json'
     
-          require_relative 'CAdvisorMetricsAPIClient'
           require_relative 'KubernetesApiClient'
           require_relative 'oms_common'
           require_relative 'omslog'
@@ -47,15 +46,7 @@ module Fluent
           time = Time.now.to_f
           begin
               eventStream = MultiEventStream.new
-              metricData = CAdvisorMetricsAPIClient.getMetrics()
-              metricData.each do |record|
-                      record['DataType'] = "LINUX_PERF_BLOB"
-                      record['IPName'] = "LogManagement"
-                      eventStream.add(time, record) if record
-                      #router.emit(@tag, time, record) if record    
-              end 
               
-              if KubernetesApiClient.isValidRunningNode
                 $log.info("in_kube_perf::enumerate : Getting pods from Kube API @ #{Time.now.utc.iso8601}")
                 #get resource requests & resource limits per container as perf data 
                 podInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('pods').body)
@@ -99,7 +90,6 @@ module Fluent
                     #router.emit(@tag, time, record) if record 
                   end 
                 end
-              end  
               router.emit_stream(@tag, eventStream) if eventStream          
               rescue  => errorStr
               $log.warn "Failed to retrieve metric data: #{errorStr}"
