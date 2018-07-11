@@ -92,13 +92,39 @@ module Fluent
           record['PodLabel'] = [items['metadata']['labels']]
           record['Namespace'] = podNameSpace
           record['PodCreationTimeStamp'] = items['metadata']['creationTimestamp']
-          record['PodStartTime'] = items['status']['startTime']
-          record['PodStatus'] = items['status']['phase']
-          record['PodIp'] =items['status']['podIP']
+          #for unscheduled (non-started) pods startTime does NOT exist
+          if !items['status']['startTime'].nil?
+            record['PodStartTime'] = items['status']['startTime']
+          else
+            record['PodStartTime'] = ""
+          end
+          #podStatus
+          # the below is for accounting 'NodeLost' scenario, where-in the pod(s) in the lost node is still being reported as running
+          podReadyCondition = true
+          if !items['status']['reason'].nil? && items['status']['reason'] == "NodeLost"
+            items['status']['conditions'].each do |condition|
+              if condition['type'] == "Ready" && condition['status'] == "False"
+                podReadyCondition = false
+                break
+              end
+            end
+          end
+          if podReadyCondition == false
+            record['PodStatus'] = "Unknown"
+          else
+            record['PodStatus'] = items['status']['phase']
+          end
+          #for unscheduled (non-started) pods podIP does NOT exist
+          if !items['status']['podIP'].nil?
+            record['PodIp'] =items['status']['podIP']
+          else
+            record['PodIp'] = ""
+          end
+          #for unscheduled (non-started) pods nodeName does NOT exist
           if !items['spec']['nodeName'].nil?
             record['Computer'] = items['spec']['nodeName']
           else
-            next  
+            record['Computer'] = ""
           end  
           record['ClusterId'] = KubernetesApiClient.getClusterId
           record['ClusterName'] = KubernetesApiClient.getClusterName
@@ -134,7 +160,12 @@ module Fluent
               #      "message": "Back-off 5m0s restarting failed container=metrics-server pod=metrics-server-2011498749-3g453_kube-system(5953be5f-fcae-11e7-a356-000d3ae0e432)"
               #   }
               # },
-              record['ContainerStatus'] = containerStatus.keys[0]
+              # the below is for accounting 'NodeLost' scenario, where-in the containers in the lost node/pod(s) is still being reported as running
+              if podReadyCondition == false
+                record['ContainerStatus'] = "Unknown"
+              else
+                record['ContainerStatus'] = containerStatus.keys[0]
+              end
               #TODO : Remove ContainerCreationTimeStamp from here since we are sending it as a metric
               #Picking up both container and node start time from cAdvisor to be consistent
               if containerStatus.keys[0] == "running"
@@ -142,7 +173,9 @@ module Fluent
               end
               podRestartCount += containerRestartCount	
               records.push(record.dup) 
-            end  
+            end 
+          else # for unscheduled pods there are no status.containerStatuses, in this case we still want the pod
+            records.push(record) 
           end  #container status block end
           records.each do |record|
             if !record.nil?
