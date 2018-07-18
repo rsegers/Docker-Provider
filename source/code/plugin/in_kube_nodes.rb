@@ -68,16 +68,25 @@ module Fluent
                     # populate the KubeNodeInventory Status field. A possible value for this field could be "Ready OutofDisk"
                     # implying that the node is ready for hosting pods, however its out of disk.
                     
-                    if items['status'].key?("conditions") && !items['status']['conditions'].empty? 
+                    if items['status'].key?("conditions") && !items['status']['conditions'].empty?
+                      allNodeConditions="" 
                       items['status']['conditions'].each do |condition|
                           if condition['status'] == "True"
-                              record['Status'] += condition['type']
+                            if !allNodeConditions.empty?
+                              allNodeConditions = allNodeConditions + "," + condition['type']
+                            else
+                              allNodeConditions = condition['type']
+                            end
                           end 
                           #collect last transition to/from ready (no matter ready is true/false)
                           if condition['type'] == "Ready" && !condition['lastTransitionTime'].nil?
                             record['LastTransitionTimeReady'] = condition['lastTransitionTime']
                           end
                       end 
+                      if !allNodeConditions.empty?
+                        record['Status'] = allNodeConditions
+                      end
+
                     end
 
                     record['KubeletVersion'] = items['status']['nodeInfo']['kubeletVersion']
