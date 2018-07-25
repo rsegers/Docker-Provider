@@ -58,6 +58,7 @@ module Fluent
             if (ENV['ISTEST'] == true && eventStream.count > 0)
               $log.info("in_cadvisor_perf::emit-stream : Success @ #{Time.now.utc.iso8601}")
             end
+
             rescue  => errorStr
             $log.warn "Failed to retrieve cadvisor metric data: #{errorStr}"
             $log.debug_backtrace(errorStr.backtrace)
