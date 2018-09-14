@@ -1,5 +1,5 @@
-hash: a4b073d827b5cbb4a772dada9ff3bcf55c55afc3cda83ddec1e6edcdca8e219a
-updated: 2018-09-06T04:07:01.808678175Z
+hash: bb32415f402ab29751f29b8e394bc974cbc31861453d817aaeb94ef83dacc488
+updated: 2018-09-14T18:14:28.748047598Z
 imports:
 - name: github.com/fluent/fluent-bit-go
   version: c4a158a6e3a793166c6ecfa2d5c80d71eada8959
@@ -83,6 +83,8 @@ imports:
   - rate
 - name: gopkg.in/inf.v0
   version: 3887ee99ecf07df5b447e9b00d9c0b2adaa9f3e4
+- name: gopkg.in/natefinch/lumberjack.v2
+  version: a96e63847dc3c67d17befa69c303767e2f84e54f
 - name: gopkg.in/yaml.v2
   version: 670d4cfef0544295bc27a114dbac37980d83185a
 - name: k8s.io/api

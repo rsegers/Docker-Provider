@@ -5,6 +5,8 @@ import:
   - output
 - package: github.com/mitchellh/mapstructure
   version: ^1.0.0
+- package: gopkg.in/natefinch/lumberjack.v2
+  version: ^2.1.0
 - package: k8s.io/apimachinery
   subpackages:
   - pkg/apis/meta/v1
