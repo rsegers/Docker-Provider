@@ -143,7 +143,8 @@ module Fluent
               if !container['containerID'].nil?	
                 record['ContainerID'] = container['containerID'].split("//")[1]		
               else 
-                record['ContainerID'] = "00000000-0000-0000-0000-000000000000"  
+                # for containers that have image issues (like invalid image/tag etc..) this will be empty. do not make it all 0
+                record['ContainerID'] = ""  
               end
               #keeping this as <PodUid/container_name> which is same as InstanceName in perf table		
               record['ContainerName'] = podUid + "/" +container['name']		
