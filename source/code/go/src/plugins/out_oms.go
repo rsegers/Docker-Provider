@@ -18,7 +18,7 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 // ctx (context) pointer to fluentbit context (state/ c code)
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	Log("Initializing out_oms go plugin for fluentbit")
-	PluginConfiguration = ReadConfig("/etc/opt/microsoft/docker-cimprov/out_oms.conf")
+	PluginConfiguration = InitializeConfig("/etc/opt/microsoft/docker-cimprov/out_oms.conf")
 	CreateHTTPClient()
 	updateContainersData()
 	return output.FLB_OK

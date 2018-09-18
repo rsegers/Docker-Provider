@@ -26,7 +26,6 @@ const DataType = "CONTAINER_LOG_BLOB"
 
 // IPName for Container Log
 const IPName = "Containers"
-const containerInventoryPath = "/var/opt/microsoft/docker-cimprov/state/ContainerInventory"
 const defaultContainerInventoryRefreshInterval = 60
 const defaultKubeSystemContainersRefreshInterval = 300
 
@@ -51,6 +50,9 @@ var (
 
 	// DataUpdateMutex read and write mutex access to the container id set
 	DataUpdateMutex = &sync.Mutex{}
+
+	// ClientSet for querying KubeAPIs
+	ClientSet *kubernetes.Clientset
 )
 
 var (
@@ -60,27 +62,6 @@ var (
 	// Log wrapper function
 	Log = FLBLogger.Printf
 )
-
-// ContainerInventory represents the container info
-type ContainerInventory struct {
-	ElementName       string `json:"ElementName"`
-	CreatedTime       string `json:"CreatedTime"`
-	State             string `json:"State"`
-	ExitCode          int    `json:"ExitCode"`
-	StartedTime       string `json:"StartedTime"`
-	FinishedTime      string `json:"FinishedTime"`
-	ImageID           string `json:"ImageId"`
-	Image             string `json:"Image"`
-	Repository        string `json:"Repository"`
-	ImageTag          string `json:"ImageTag"`
-	ComposeGroup      string `json:"ComposeGroup"`
-	ContainerHostname string `json:"ContainerHostname"`
-	Computer          string `json:"Computer"`
-	Command           string `json:"Command"`
-	EnvironmentVar    string `json:"EnvironmentVar"`
-	Ports             string `json:"Ports"`
-	Links             string `json:"Links"`
-}
 
 // DataItem represents the object corresponding to the json that is sent by fluentbit tail plugin
 type DataItem struct {
@@ -108,29 +89,25 @@ func populateMaps() {
 
 	_imageIDMap := make(map[string]string)
 	_nameIDMap := make(map[string]string)
-	files, err := ioutil.ReadDir(containerInventoryPath)
 
+	pods, err := ClientSet.CoreV1().Pods("").List(metav1.ListOptions{})
 	if err != nil {
-		Log("error when reading container inventory %s\n", err.Error())
+		Log("Error getting pods %s\n", err.Error())
 	}
 
-	for _, file := range files {
-		fullPath := fmt.Sprintf("%s/%s", containerInventoryPath, file.Name())
-		fileContent, err := ioutil.ReadFile(fullPath)
-		if err != nil {
-			Log("Error reading file content %s", fullPath)
-			Log(err.Error())
+	for _, pod := range pods.Items {
+		for _, status := range pod.Status.ContainerStatuses {
+			lastSlashIndex := strings.LastIndex(status.ContainerID, "/")
+			containerID := status.ContainerID[lastSlashIndex+1 : len(status.ContainerID)]
+			image := status.Image
+			name := fmt.Sprintf("%s/%s", pod.UID, status.Name)
+			if containerID != "" {
+				_imageIDMap[containerID] = image
+				_nameIDMap[containerID] = name
+			}
 		}
-		var containerInventory ContainerInventory
-		unmarshallErr := json.Unmarshal(fileContent, &containerInventory)
-
-		if unmarshallErr != nil {
-			Log("Unmarshall error when reading file %s %s \n", fullPath, unmarshallErr.Error())
-		}
-
-		_imageIDMap[file.Name()] = containerInventory.Image
-		_nameIDMap[file.Name()] = containerInventory.ElementName
 	}
+
 	Log("Locking to update image and name maps")
 	DataUpdateMutex.Lock()
 	ImageIDMap = _imageIDMap
@@ -164,7 +141,7 @@ func createLogger() *log.Logger {
 	logger.SetOutput(&lumberjack.Logger{
 		Filename:   path,
 		MaxSize:    10, //megabytes
-		MaxBackups: 3,
+		MaxBackups: 1,
 		MaxAge:     28,   //days
 		Compress:   true, // false by default
 	})
@@ -222,17 +199,8 @@ func updateKubeSystemContainerIDs() {
 	}
 
 	Log("Kube System Log Collection is DISABLED. Collecting containerIds to drop their records")
-	config, err := rest.InClusterConfig()
-	if err != nil {
-		Log("Error getting config %s\n", err.Error())
-	}
 
-	clientset, err := kubernetes.NewForConfig(config)
-	if err != nil {
-		Log("Error getting clientset %s", err.Error())
-	}
-
-	pods, err := clientset.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
+	pods, err := ClientSet.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
 	if err != nil {
 		Log("Error getting pods %s\n", err.Error())
 	}
@@ -278,8 +246,27 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		stringMap["Id"] = containerID
-		stringMap["Image"] = ImageIDMap[containerID]
-		stringMap["Name"] = NameIDMap[containerID]
+
+		if val, ok := ImageIDMap[containerID]; ok {
+			stringMap["Image"] = val
+		} else {
+			Log("ContainerId %s not present in Map ", containerID)
+			Log("CurrentMap Snapshot \n")
+			for k, v := range ImageIDMap {
+				Log("%s ==> %s", k, v)
+			}
+		}
+
+		if val, ok := NameIDMap[containerID]; ok {
+			stringMap["Name"] = val
+		} else {
+			Log("ContainerId %s not present in Map ", containerID)
+			Log("CurrentMap Snapshot \n")
+			for k, v := range NameIDMap {
+				Log("%s ==> %s", k, v)
+			}
+		}
+
 		stringMap["Computer"] = Computer
 		mapstructure.Decode(stringMap, &dataItem)
 		dataItems = append(dataItems, dataItem)
@@ -334,8 +321,8 @@ func getContainerIDFromFilePath(filepath string) string {
 	return filepath[start+1 : end]
 }
 
-// ReadConfig reads and populates plugin configuration
-func ReadConfig(pluginConfPath string) map[string]string {
+// InitializeConfig reads and populates plugin configuration
+func InitializeConfig(pluginConfPath string) map[string]string {
 
 	pluginConf, err := ReadConfiguration(pluginConfPath)
 	omsadminConf, err := ReadConfiguration(pluginConf["omsadmin_conf_path"])
@@ -354,6 +341,16 @@ func ReadConfig(pluginConfPath string) map[string]string {
 
 	OMSEndpoint = omsadminConf["OMS_ENDPOINT"]
 	Log("OMSEndpoint %s", OMSEndpoint)
+
+	config, err := rest.InClusterConfig()
+	if err != nil {
+		Log("Error getting config %s\n", err.Error())
+	}
+
+	ClientSet, err = kubernetes.NewForConfig(config)
+	if err != nil {
+		Log("Error getting clientset %s", err.Error())
+	}
 
 	return pluginConf
 }
