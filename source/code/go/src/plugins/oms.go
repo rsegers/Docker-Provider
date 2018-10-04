@@ -12,11 +12,11 @@ import (
 	"strings"
 	"sync"
 	"time"
-)
-import (
+
 	"github.com/fluent/fluent-bit-go/output"
-	"github.com/mitchellh/mapstructure"
+
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
+
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -81,7 +81,6 @@ type DataItem struct {
 	Name              string `json:"Name"`
 	SourceSystem      string `json:"SourceSystem"`
 	Computer          string `json:"Computer"`
-	Filepath          string `json:"Filepath"`
 }
 
 // ContainerLogBlob represents the object corresponding to the payload that is sent to the ODS end point
@@ -199,23 +198,18 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	for _, record := range tailPluginRecords {
 
-		filepath := toString(record["Filepath"])
-		containerID := getContainerIDFromFilePath(filepath)
+		containerID := GetContainerIDFromFilePath(toString(record["filepath"]))
 
 		if containerID == "" || containsKey(IgnoreIDSet, containerID) {
 			continue
 		}
 
-		var dataItem DataItem
 		stringMap := make(map[string]string)
 
-		// convert map[interface{}]interface{} to  map[string]string
-		for key, value := range record {
-			strKey := fmt.Sprintf("%v", key)
-			strValue := toString(value)
-			stringMap[strKey] = strValue
-		}
-
+		stringMap["LogEntry"] = toString(record["log"])
+		stringMap["LogEntrySource"] = toString(record["stream"])
+		stringMap["LogEntryTimeStamp"] = toString(record["time"])
+		stringMap["SourceSystem"] = "Containers"
 		stringMap["Id"] = containerID
 
 		if val, ok := ImageIDMap[containerID]; ok {
@@ -238,8 +232,17 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 		}
 
-		stringMap["Computer"] = Computer
-		mapstructure.Decode(stringMap, &dataItem)
+		dataItem := DataItem{
+			ID:                stringMap["Id"],
+			LogEntry:          stringMap["LogEntry"],
+			LogEntrySource:    stringMap["LogEntrySource"],
+			LogEntryTimeStamp: stringMap["LogEntryTimeStamp"],
+			SourceSystem:      stringMap["SourceSystem"],
+			Computer:          Computer,
+			Image:             stringMap["Image"],
+			Name:              stringMap["Name"],
+		}
+
 		dataItems = append(dataItems, dataItem)
 	}
 
@@ -281,11 +284,17 @@ func containsKey(currentMap map[string]bool, key string) bool {
 }
 
 func toString(s interface{}) string {
-	value := s.([]uint8)
-	return string([]byte(value[:]))
+	switch t := s.(type) {
+	case []byte:
+		// prevent encoding to base64
+		return string(t)
+	default:
+		return ""
+	}
 }
 
-func getContainerIDFromFilePath(filepath string) string {
+// GetContainerIDFromFilePath Gets the container ID From the file Path
+func GetContainerIDFromFilePath(filepath string) string {
 	start := strings.LastIndex(filepath, "-")
 	end := strings.LastIndex(filepath, ".")
 	if start >= end || start == -1 || end == -1 {

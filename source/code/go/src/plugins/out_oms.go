@@ -10,7 +10,7 @@ import (
 
 //export FLBPluginRegister
 func FLBPluginRegister(ctx unsafe.Pointer) int {
-	return output.FLBPluginRegister(ctx, "oms", "Stdout GO!")
+	return output.FLBPluginRegister(ctx, "oms", "OMS GO!")
 }
 
 //export FLBPluginInit
