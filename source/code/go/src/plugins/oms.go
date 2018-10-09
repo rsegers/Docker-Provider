@@ -133,6 +133,7 @@ func updateContainerImageNameMaps() {
 		pods, err := ClientSet.CoreV1().Pods("").List(metav1.ListOptions{})
 		if err != nil {
 			Log("Error getting pods %s\nIt is ok to log here and continue, because the logs will be missing image and Name, but the logs will still have the containerID", err.Error())
+			continue
 		}
 
 		for _, pod := range pods.Items {
@@ -216,20 +217,12 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			stringMap["Image"] = val
 		} else {
 			Log("ContainerId %s not present in Map ", containerID)
-			Log("CurrentMap Snapshot \n")
-			for k, v := range ImageIDMap {
-				Log("%s ==> %s", k, v)
-			}
 		}
 
 		if val, ok := NameIDMap[containerID]; ok {
 			stringMap["Name"] = val
 		} else {
 			Log("ContainerId %s not present in Map ", containerID)
-			Log("CurrentMap Snapshot \n")
-			for k, v := range NameIDMap {
-				Log("%s ==> %s", k, v)
-			}
 		}
 
 		dataItem := DataItem{
@@ -253,6 +246,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			DataItems: dataItems}
 
 		marshalled, err := json.Marshal(logEntry)
+		if err != nil {
+			Log("Error while Marshalling log Entry: %s", err.Error())
+			return output.FLB_OK
+		}
 		req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(marshalled))
 		req.Header.Set("Content-Type", "application/json")
 
