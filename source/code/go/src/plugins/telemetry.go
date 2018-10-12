@@ -81,19 +81,21 @@ func initialize(telemetryPushIntervalProperty string, agentVersion string) (int,
 		CommonProperties["ResourceGroupName"] = ""
 		CommonProperties["ClusterName"] = ""
 		CommonProperties["Region"] = ""
+		CommonProperties["AKS_RESOURCE_ID"] = ""
 
 	} else {
 		CommonProperties["ACSResourceName"] = ""
+		CommonProperties["AKS_RESOURCE_ID"] = aksResourceID
 		splitStrings := strings.Split(aksResourceID, "/")
-		CommonProperties["SubscriptionID"] = splitStrings[2]
-		CommonProperties["ResourceGroupName"] = splitStrings[4]
-		CommonProperties["ClusterName"] = splitStrings[8]
+		if len(aksResourceID) > 0 && len(aksResourceID) < 10 {
+			CommonProperties["SubscriptionID"] = splitStrings[2]
+			CommonProperties["ResourceGroupName"] = splitStrings[4]
+			CommonProperties["ClusterName"] = splitStrings[8]
+		}
 		CommonProperties["ClusterType"] = clusterTypeAKS
 
 		region := os.Getenv("AKS_REGION")
-		if region != "" {
-			CommonProperties["Region"] = region
-		}
+		CommonProperties["Region"] = region
 	}
 
 	TelemetryClient.Context().CommonProperties = CommonProperties
@@ -112,40 +114,26 @@ func SendContainerLogFlushRateMetric(telemetryPushIntervalProperty string, agent
 	SendEvent(EventNameContainerLogInit, make(map[string]string))
 
 	for ; true; <-ContainerLogTelemetryTicker.C {
-		flushRate := FlushedRecordsCount / FlushedRecordsTimeTaken * 1000
-		metric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)
-		Log("Flushed Records : %f Time Taken : %f flush Rate : %f", FlushedRecordsCount, FlushedRecordsTimeTaken, flushRate)
-		TelemetryClient.Track(metric)
 		DataUpdateMutex.Lock()
+		flushRate := FlushedRecordsCount / FlushedRecordsTimeTaken * 1000
+		Log("Flushed Records : %f Time Taken : %f flush Rate : %f", FlushedRecordsCount, FlushedRecordsTimeTaken, flushRate)
 		FlushedRecordsCount = 0.0
 		FlushedRecordsTimeTaken = 0.0
 		DataUpdateMutex.Unlock()
+		metric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)
+		TelemetryClient.Track(metric)
 	}
 }
 
 // SendEvent sends an event to App Insights
 func SendEvent(eventName string, dimensions map[string]string) {
-	// this is because the TelemetryClient is initialized in a different goroutine. A simple wait loop here is just waiting for it to be initialized. This will happen only for the init event. Any subsequent Event should work just fine
-	for TelemetryClient == nil {
-		Log("Waiting for Telemetry Client to be initialized")
-		time.Sleep(1 * time.Second)
-	}
-
-	// take a copy so the CommonProperties can be restored later
-	_commonProps := make(map[string]string)
-	for k, v := range TelemetryClient.Context().CommonProperties {
-		_commonProps[k] = v
-	}
-
-	// add any extra dimensions
-	for k, v := range dimensions {
-		TelemetryClient.Context().CommonProperties[k] = v
-	}
-
 	Log("Sending Event : %s\n", eventName)
 	event := appinsights.NewEventTelemetry(eventName)
-	TelemetryClient.Track(event)
 
-	// restore original CommonProperties
-	TelemetryClient.Context().CommonProperties = _commonProps
+	// add any extra Properties
+	for k, v := range dimensions {
+		event.Properties[k] = v
+	}
+
+	TelemetryClient.Track(event)
 }
