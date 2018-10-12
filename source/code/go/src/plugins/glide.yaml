@@ -1,10 +1,8 @@
-package: plugins
+package: .
 import:
 - package: github.com/fluent/fluent-bit-go
   subpackages:
   - output
-- package: github.com/mitchellh/mapstructure
-  version: ^1.0.0
 - package: gopkg.in/natefinch/lumberjack.v2
   version: ^2.1.0
 - package: k8s.io/apimachinery
@@ -15,3 +13,7 @@ import:
   subpackages:
   - kubernetes
   - rest
+- package: github.com/Microsoft/ApplicationInsights-Go
+  version: ^0.4.2
+  subpackages:
+  - appinsights

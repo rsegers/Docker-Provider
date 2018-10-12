@@ -42,6 +42,8 @@ var (
 	OMSEndpoint string
 	// Computer (Hostname) when ingesting into ContainerLog table
 	Computer string
+	// WorkspaceID log analytics workspace id
+	WorkspaceID string
 )
 
 var (
@@ -170,6 +172,7 @@ func updateKubeSystemContainerIDs() {
 		pods, err := ClientSet.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
 		if err != nil {
 			Log("Error getting pods %s\nIt is ok to log here and continue. Kube-system logs will be collected", err.Error())
+			continue
 		}
 
 		_ignoreIDSet := make(map[string]bool)
@@ -269,7 +272,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			return output.FLB_RETRY
 		}
 
-		Log("Successfully flushed %d records in %s", len(dataItems), elapsed)
+		numRecords := len(dataItems)
+		Log("Successfully flushed %d records in %s", numRecords, elapsed)
+		FlushedRecordsCount += float64(numRecords)
+		FlushedRecordsTimeTaken += float64(elapsed / time.Millisecond)
 	}
 
 	return output.FLB_OK
@@ -322,6 +328,7 @@ func InitializePlugin(pluginConfPath string) {
 		log.Fatalf("Error Reading omsadmin configuration %s\n", err.Error())
 	}
 	OMSEndpoint = omsadminConf["OMS_ENDPOINT"]
+	WorkspaceID = omsadminConf["WORKSPACE_ID"]
 	Log("OMSEndpoint %s", OMSEndpoint)
 
 	// Initialize image,name map refresh ticker

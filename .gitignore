@@ -8,3 +8,6 @@
 
 /test/code/providers/TestScriptPath.h
 /test/code/providers/providertestutils.cpp
+source/code/go/src/plugins/profiling
+.vscode/launch.json
+source/code/go/src/plugins/vendor/

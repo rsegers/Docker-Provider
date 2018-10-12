@@ -1,5 +1,5 @@
-hash: bb32415f402ab29751f29b8e394bc974cbc31861453d817aaeb94ef83dacc488
-updated: 2018-09-14T18:14:28.748047598Z
+hash: a6a873d09ed9c3d890a70122e61efba992ead9850fe48f6fcb020d86800d4ade
+updated: 2018-10-10T13:37:51.9703908-07:00
 imports:
 - name: github.com/fluent/fluent-bit-go
   version: c4a158a6e3a793166c6ecfa2d5c80d71eada8959
@@ -38,8 +38,10 @@ imports:
   - diskcache
 - name: github.com/json-iterator/go
   version: f2b4162afba35581b6d4a50d3b8f34e33c144682
-- name: github.com/mitchellh/mapstructure
-  version: fa473d140ef3c6adf42d6b391fe76707f1f243c8
+- name: github.com/Microsoft/ApplicationInsights-Go
+  version: d2df5d440eda5372f24fcac03839a64d6cb5f7e5
+  subpackages:
+  - appinsights
 - name: github.com/modern-go/concurrent
   version: bacd9c7ef1dd9b15be4a9909b8ac7a4e313eec94
 - name: github.com/modern-go/reflect2

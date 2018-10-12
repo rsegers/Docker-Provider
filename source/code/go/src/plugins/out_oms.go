@@ -5,6 +5,7 @@ import (
 )
 import (
 	"C"
+	"strings"
 	"unsafe"
 )
 
@@ -19,6 +20,14 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	Log("Initializing out_oms go plugin for fluentbit")
 	InitializePlugin(ContainerLogPluginConfFilePath)
+	enablePlugin := output.FLBPluginConfigKey(ctx, "EnableTelemetry")
+	telemetryPushInterval := output.FLBPluginConfigKey(ctx, "TelemetryPushInterval")
+	agentVersion := output.FLBPluginConfigKey(ctx, "AgentVersion")
+
+	if strings.Compare(strings.ToLower(enablePlugin), "true") == 0 {
+		go SendContainerLogFlushRateMetric(telemetryPushInterval, agentVersion)
+		SendEvent(EventNameContainerLogInit, make(map[string]string))
+	}
 	return output.FLB_OK
 }
 
@@ -48,6 +57,7 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 
 // FLBPluginExit exits the plugin
 func FLBPluginExit() int {
+	defer TelemetryShutdown()
 	KubeSystemContainersRefreshTicker.Stop()
 	ContainerImageNameRefreshTicker.Stop()
 	return output.FLB_OK
