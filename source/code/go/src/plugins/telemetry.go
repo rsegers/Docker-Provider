@@ -26,15 +26,15 @@ var (
 )
 
 const (
-	clusterTypeACS               = "ACS"
-	clusterTypeAKS               = "AKS"
-	controllerTypeDaemonSet      = "DaemonSet"
-	controllerTypeReplicaSet     = "ReplicaSet"
-	envAKSResourceID             = "AKS_RESOURCE_ID"
-	envACSResourceName           = "ACS_RESOURCE_NAME"
-	envAppInsightsAuth           = "APPLICATIONINSIGHTS_AUTH"
-	metricNameAvgFlushRate       = "ContainerLogAvgRecordsFlushedPerSec"
-	defaultTelemetryPushInterval = 300
+	clusterTypeACS                      = "ACS"
+	clusterTypeAKS                      = "AKS"
+	controllerTypeDaemonSet             = "DaemonSet"
+	controllerTypeReplicaSet            = "ReplicaSet"
+	envAKSResourceID                    = "AKS_RESOURCE_ID"
+	envACSResourceName                  = "ACS_RESOURCE_NAME"
+	envAppInsightsAuth                  = "APPLICATIONINSIGHTS_AUTH"
+	metricNameAvgFlushRate              = "ContainerLogAvgRecordsFlushedPerSec"
+	defaultTelemetryPushIntervalSeconds = 300
 
 	// EventNameContainerLogInit name of the event
 	EventNameContainerLogInit = "ContainerLogPluginInitialized"
@@ -45,8 +45,8 @@ func initialize(telemetryPushIntervalProperty string, agentVersion string) (int,
 
 	telemetryPushInterval, err := strconv.Atoi(telemetryPushIntervalProperty)
 	if err != nil {
-		Log("Error Converting telemetryPushIntervalProperty %s. Using Default Interval... %d \n", telemetryPushIntervalProperty, defaultTelemetryPushInterval)
-		telemetryPushInterval = defaultTelemetryPushInterval
+		Log("Error Converting telemetryPushIntervalProperty %s. Using Default Interval... %d \n", telemetryPushIntervalProperty, defaultTelemetryPushIntervalSeconds)
+		telemetryPushInterval = defaultTelemetryPushIntervalSeconds
 	}
 
 	ContainerLogTelemetryTicker = time.NewTicker(time.Second * time.Duration(telemetryPushInterval))
@@ -116,15 +116,11 @@ func SendContainerLogFlushRateMetric(telemetryPushIntervalProperty string, agent
 		metric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)
 		Log("Flushed Records : %f Time Taken : %f flush Rate : %f", FlushedRecordsCount, FlushedRecordsTimeTaken, flushRate)
 		TelemetryClient.Track(metric)
+		DataUpdateMutex.Lock()
 		FlushedRecordsCount = 0.0
 		FlushedRecordsTimeTaken = 0.0
+		DataUpdateMutex.Unlock()
 	}
-}
-
-// TelemetryShutdown stops the ticker that sends data to App Insights periodically
-func TelemetryShutdown() {
-	Log("Shutting down ContainerLog Telemetry\n")
-	ContainerLogTelemetryTicker.Stop()
 }
 
 // SendEvent sends an event to App Insights

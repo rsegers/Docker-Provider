@@ -21,13 +21,13 @@ func FLBPluginInit(ctx unsafe.Pointer) int {
 	Log("Initializing out_oms go plugin for fluentbit")
 	InitializePlugin(ContainerLogPluginConfFilePath)
 	enableTelemetry := output.FLBPluginConfigKey(ctx, "EnableTelemetry")
-	telemetryPushInterval := output.FLBPluginConfigKey(ctx, "TelemetryPushInterval")
-	agentVersion := output.FLBPluginConfigKey(ctx, "AgentVersion")
-
 	if strings.Compare(strings.ToLower(enableTelemetry), "true") == 0 {
+		telemetryPushInterval := output.FLBPluginConfigKey(ctx, "TelemetryPushIntervalSeconds")
+		agentVersion := output.FLBPluginConfigKey(ctx, "AgentVersion")
 		go SendContainerLogFlushRateMetric(telemetryPushInterval, agentVersion)
 	} else {
 		Log("Telemetry is not enabled for the plugin %s \n", output.FLBPluginConfigKey(ctx, "Name"))
+		return output.FLB_OK
 	}
 	return output.FLB_OK
 }
@@ -58,7 +58,7 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 
 // FLBPluginExit exits the plugin
 func FLBPluginExit() int {
-	defer TelemetryShutdown()
+	ContainerLogTelemetryTicker.Stop()
 	KubeSystemContainersRefreshTicker.Stop()
 	ContainerImageNameRefreshTicker.Stop()
 	return output.FLB_OK
