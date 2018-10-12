@@ -20,13 +20,14 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	Log("Initializing out_oms go plugin for fluentbit")
 	InitializePlugin(ContainerLogPluginConfFilePath)
-	enablePlugin := output.FLBPluginConfigKey(ctx, "EnableTelemetry")
+	enableTelemetry := output.FLBPluginConfigKey(ctx, "EnableTelemetry")
 	telemetryPushInterval := output.FLBPluginConfigKey(ctx, "TelemetryPushInterval")
 	agentVersion := output.FLBPluginConfigKey(ctx, "AgentVersion")
 
-	if strings.Compare(strings.ToLower(enablePlugin), "true") == 0 {
+	if strings.Compare(strings.ToLower(enableTelemetry), "true") == 0 {
 		go SendContainerLogFlushRateMetric(telemetryPushInterval, agentVersion)
-		SendEvent(EventNameContainerLogInit, make(map[string]string))
+	} else {
+		Log("Telemetry is not enabled for the plugin %s \n", output.FLBPluginConfigKey(ctx, "Name"))
 	}
 	return output.FLB_OK
 }

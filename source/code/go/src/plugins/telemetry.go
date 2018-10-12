@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"os"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -25,39 +26,40 @@ var (
 )
 
 const (
-	clusterTypeACS                   = "ACS"
-	clusterTypeAKS                   = "AKS"
-	controllerTypeDaemonSet          = "DaemonSet"
-	controllerTypeReplicaSet         = "ReplicaSet"
-	envAKSResourceID                 = "AKS_RESOURCE_ID"
-	envACSResourceName               = "ACS_RESOURCE_NAME"
-	envAppInsightsInstrumentationKey = "APPLICATIONINSIGHTS_INSTRUMENTATIONKEY"
-	metricNameAvgFlushRate           = "ContainerLogAvgRecordsFlushedPerSec"
-	defaultTelemetryPushInterval     = 300
+	clusterTypeACS               = "ACS"
+	clusterTypeAKS               = "AKS"
+	controllerTypeDaemonSet      = "DaemonSet"
+	controllerTypeReplicaSet     = "ReplicaSet"
+	envAKSResourceID             = "AKS_RESOURCE_ID"
+	envACSResourceName           = "ACS_RESOURCE_NAME"
+	envAppInsightsAuth           = "APPLICATIONINSIGHTS_AUTH"
+	metricNameAvgFlushRate       = "ContainerLogAvgRecordsFlushedPerSec"
+	defaultTelemetryPushInterval = 300
 
 	// EventNameContainerLogInit name of the event
 	EventNameContainerLogInit = "ContainerLogPluginInitialized"
 )
 
 // Initialize initializes the telemetry artifacts
-func initialize(telemetryIntervalProperty string, agentVersion string) (int, error) {
+func initialize(telemetryPushIntervalProperty string, agentVersion string) (int, error) {
 
-	telemetryInterval, err := strconv.Atoi(telemetryIntervalProperty)
+	telemetryPushInterval, err := strconv.Atoi(telemetryPushIntervalProperty)
 	if err != nil {
-		telemetryInterval = defaultTelemetryPushInterval
+		Log("Error Converting telemetryPushIntervalProperty %s. Using Default Interval... %d \n", telemetryPushIntervalProperty, defaultTelemetryPushInterval)
+		telemetryPushInterval = defaultTelemetryPushInterval
 	}
 
-	ContainerLogTelemetryTicker = time.NewTicker(time.Second * time.Duration(telemetryInterval))
+	ContainerLogTelemetryTicker = time.NewTicker(time.Second * time.Duration(telemetryPushInterval))
 
-	encodedIkey := os.Getenv(envAppInsightsInstrumentationKey)
+	encodedIkey := os.Getenv(envAppInsightsAuth)
 	if encodedIkey == "" {
-		Log("App Insights IKey missing in Environment Variables \n")
-		return -1, errors.New("Missing App Insights Instrumentation Key Environment Variable")
+		Log("Environment Variable Missing \n")
+		return -1, errors.New("Missing Environment Variable")
 	}
 
 	decIkey, err := base64.StdEncoding.DecodeString(encodedIkey)
 	if err != nil {
-		Log("Error Decoding encoded Instrumentation key %s", err.Error())
+		Log("Decoding Error %s", err.Error())
 		return -1, err
 	}
 
@@ -99,13 +101,15 @@ func initialize(telemetryIntervalProperty string, agentVersion string) (int, err
 }
 
 // SendContainerLogFlushRateMetric is a go-routine that flushes the data periodically (every 5 mins to App Insights)
-func SendContainerLogFlushRateMetric(telemetryIntervalProperty string, agentVersion string) {
+func SendContainerLogFlushRateMetric(telemetryPushIntervalProperty string, agentVersion string) {
 
-	ret, err := initialize(telemetryIntervalProperty, agentVersion)
+	ret, err := initialize(telemetryPushIntervalProperty, agentVersion)
 	if ret != 0 || err != nil {
 		Log("Error During Telemetry Initialization :%s", err.Error())
-		return
+		runtime.Goexit()
 	}
+
+	SendEvent(EventNameContainerLogInit, make(map[string]string))
 
 	for ; true; <-ContainerLogTelemetryTicker.C {
 		flushRate := FlushedRecordsCount / FlushedRecordsTimeTaken * 1000
