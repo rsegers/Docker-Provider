@@ -36,8 +36,8 @@ const (
 	metricNameAvgFlushRate              = "ContainerLogAvgRecordsFlushedPerSec"
 	defaultTelemetryPushIntervalSeconds = 300
 
-	// EventNameContainerLogInit name of the event
-	EventNameContainerLogInit = "ContainerLogPluginInitialized"
+	eventNameContainerLogInit   = "ContainerLogPluginInitialized"
+	eventNameDaemonSetHeartbeat = "ContainerLogDaemonSetHeartbeatEvent"
 )
 
 // Initialize initializes the telemetry artifacts
@@ -111,9 +111,10 @@ func SendContainerLogFlushRateMetric(telemetryPushIntervalProperty string, agent
 		runtime.Goexit()
 	}
 
-	SendEvent(EventNameContainerLogInit, make(map[string]string))
+	SendEvent(eventNameContainerLogInit, make(map[string]string))
 
 	for ; true; <-ContainerLogTelemetryTicker.C {
+		SendEvent(eventNameDaemonSetHeartbeat, make(map[string]string))
 		DataUpdateMutex.Lock()
 		flushRate := FlushedRecordsCount / FlushedRecordsTimeTaken * 1000
 		Log("Flushed Records : %f Time Taken : %f flush Rate : %f", FlushedRecordsCount, FlushedRecordsTimeTaken, flushRate)
