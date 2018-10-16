@@ -35,7 +35,7 @@ private:
         string result = "";
 		try {
 
-			if (tags && cJSON_GetArraySize(tags))
+			if ((tags != NULL) && cJSON_GetArraySize(tags))
 			{
 				bool flag = false;
 
@@ -164,7 +164,7 @@ private:
 		try {
 			cJSON* state = cJSON_GetObjectItem(entry, "State");
 
-			if (state)
+			if (state != NULL)
 			{
 				cJSON* objItem = cJSON_GetObjectItem(entry, "Image");
 				if (objItem != NULL)
@@ -173,10 +173,12 @@ private:
 					{
 						string id = string(objItem->valuestring);
 
-						if (cJSON_GetObjectItem(state, "Running")->valueint)
+						cJSON* runningItem = cJSON_GetObjectItem(state, "Running");
+						if (runningItem != NULL && runningItem->valueint)
 						{
 							// Running container
-							if (cJSON_GetObjectItem(state, "Paused")->valueint)
+							cJSON* pausedItem = cJSON_GetObjectItem(state, "Paused");
+							if (pausedItem != NULL && pausedItem->valueint)
 							{
 								// Paused container
 								instances[idTable[id]].Paused_value(instances[idTable[id]].Paused_value() + 1);
@@ -188,7 +190,8 @@ private:
 						}
 						else
 						{
-							if (cJSON_GetObjectItem(state, "ExitCode")->valueint)
+							cJSON* exitCodeItem = cJSON_GetObjectItem(state, "ExitCode");
+							if (exitCodeItem != NULL && exitCodeItem->valueint)
 							{
 								// Container exited nonzero
 								instances[idTable[id]].Failed_value(instances[idTable[id]].Failed_value() + 1);
@@ -206,7 +209,11 @@ private:
 			}
 			else
 			{
-				syslog(LOG_WARNING, "Attempt in ObtainContainerState to get container %s state information returned null", cJSON_GetObjectItem(entry, "Id")->valuestring);
+				cJSON* idItem = cJSON_GetObjectItem(entry, "Id");
+				if (idItem != NULL)
+				{
+					syslog(LOG_WARNING, "Attempt in ObtainContainerState to get container %s state information returned null", idItem->valuestring);
+				}
 			}
 		}
 		catch (std::exception &e)
@@ -239,7 +246,7 @@ private:
 				{
 					cJSON* entry = cJSON_GetArrayItem(response[0], i);
 
-					if (entry)
+					if (entry != NULL)
 					{
 						cJSON* objItem = cJSON_GetObjectItem(entry, "Id");
 						if (objItem != NULL)
@@ -260,7 +267,7 @@ private:
 								}
 								else
 								{
-									syslog(LOG_WARNING, "API call in AggregateContainerStatus to inspect container %s returned null", cJSON_GetObjectItem(entry, "Id")->valuestring);
+									syslog(LOG_WARNING, "API call in AggregateContainerStatus to inspect container %s returned null", objItem->valuestring);
 								}
 							}
 						}
@@ -321,7 +328,7 @@ public:
 				{
 					cJSON* entry = cJSON_GetArrayItem(response[0], i);
 
-					if (entry)
+					if (entry != NULL)
 					{
 						// New inventory entry
 						Container_ImageInventory_Class instance;

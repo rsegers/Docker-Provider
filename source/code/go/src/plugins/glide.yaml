@@ -1,0 +1,19 @@
+package: .
+import:
+- package: github.com/fluent/fluent-bit-go
+  subpackages:
+  - output
+- package: gopkg.in/natefinch/lumberjack.v2
+  version: ^2.1.0
+- package: k8s.io/apimachinery
+  subpackages:
+  - pkg/apis/meta/v1
+- package: k8s.io/client-go
+  version: ^8.0.0
+  subpackages:
+  - kubernetes
+  - rest
+- package: github.com/Microsoft/ApplicationInsights-Go
+  version: ^0.4.2
+  subpackages:
+  - appinsights

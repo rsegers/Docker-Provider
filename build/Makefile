@@ -36,6 +36,9 @@ PROVIDER_LIBRARY := $(INTERMEDIATE_DIR)/libcontainer.so
 
 INSTALLER_TMPDIR := $(INTERMEDIATE_DIR)/installer_tmp
 
+# GO Source dir for custom fluent bit plugin
+GO_SOURCE_DIR := $(SOURCE_DIR)/go/src/plugins
+
 # Include files
 
 INCLUDE_DEFINES := $(INTERMEDIATE_DIR)/defines.h
@@ -88,9 +91,9 @@ CXXFLAGS = $(COMPILE_FLAGS)
 # Build targets
 
 ifeq ($(ULINUX),1)
-all : $(OMI_ROOT)/output $(SCXPAL_INTERMEDIATE_DIR) PROVIDER_STATUS $(PROVIDER_LIBRARY) KIT_STATUS kit
+all : $(OMI_ROOT)/output $(SCXPAL_INTERMEDIATE_DIR) PROVIDER_STATUS $(PROVIDER_LIBRARY) KIT_STATUS kit fluentbitplugin
 else
-all : $(OMI_ROOT)/output $(SCXPAL_INTERMEDIATE_DIR) PROVIDER_STATUS $(PROVIDER_LIBRARY)
+all : $(OMI_ROOT)/output $(SCXPAL_INTERMEDIATE_DIR) PROVIDER_STATUS $(PROVIDER_LIBRARY) fluentbitplugin
 endif
 
 clean :
@@ -131,6 +134,14 @@ $(OMI_ROOT)/output/lib/libmicxx.so :
 ifeq ($(PERFORM_OMI_MAKEINSTALL),1)
 	make -C $(OMI_ROOT) install
 endif
+
+#---------------------------------------------------------------------------------
+# fluentbit go plugin build. This is required to send container logs to ODS endpoint
+#
+fluentbitplugin : 
+	@echo "========================= Building fluentbit out_oms go plugin for logs"
+	make -C $(GO_SOURCE_DIR) fbplugin
+	$(COPY) $(GO_SOURCE_DIR)/out_oms.so $(INTERMEDIATE_DIR)
 
 #--------------------------------------------------------------------------------
 # PAL build
@@ -324,7 +335,7 @@ test : TEST_STATUS $(SCXPAL_INTERMEDIATE_DIR) $(INTERMEDIATE_DIR)/testrunner
 # Assume we ALWAYS build DPKG, but only build RPM if --enable-ulinux is speified in configure.
 
 kit : CONTAINERLIB_FILENAME = libcontainer.so
-kit : $(OMI_ROOT)/output $(PROVIDER_LIBRARY)
+kit : $(OMI_ROOT)/output $(PROVIDER_LIBRARY) fluentbitplugin
 
 ifeq ($(ULINUX),1)
 

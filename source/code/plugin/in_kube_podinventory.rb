@@ -143,7 +143,8 @@ module Fluent
               if !container['containerID'].nil?	
                 record['ContainerID'] = container['containerID'].split("//")[1]		
               else 
-                record['ContainerID'] = "00000000-0000-0000-0000-000000000000"  
+                # for containers that have image issues (like invalid image/tag etc..) this will be empty. do not make it all 0
+                record['ContainerID'] = ""  
               end
               #keeping this as <PodUid/container_name> which is same as InstanceName in perf table		
               record['ContainerName'] = podUid + "/" +container['name']		
@@ -190,8 +191,9 @@ module Fluent
           end  
         end  #podInventory block end
         router.emit_stream(@tag, eventStream) if eventStream
-        if (ENV['ISTEST'] == true && eventStream.count > 0)
-          $log.info("in_kube_podinventory::emit-stream : Success @ #{Time.now.utc.iso8601}")
+        @@istestvar = ENV['ISTEST']
+        if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp('true') == 0 && eventStream.count > 0)
+          $log.info("kubePodInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
         end
       rescue  => errorStr
         $log.warn "Failed in parse_and_emit_record pod inventory: #{errorStr}"

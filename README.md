@@ -9,6 +9,14 @@ additional questions or comments.
 
 ## Release History
 
+### 10/16/2018 - Version microsoft/oms:ciprod10162018
+- Fix for containerID being 00000-00000-00000
+- Move from fluentD to fluentbit for container log collection
+- Seg fault fixes in json parsing for container inventory & container image inventory
+- Telemetry enablement
+- Remove ContainerPerf, ContainerServiceLog, ContainerProcess fluentd-->OMI workflows
+- Update log level for all fluentD based workflows 
+
 ### 7/31/2018 - Version microsoft/oms:ciprod07312018
 - Changes for node lost scenario (roll-up pod & container statuses as Unknown)
 - Discover unscheduled pods
@@ -33,5 +41,3 @@ additional questions or comments.
 - Latest released omsagent (1.6.0-42)
 - Bug fix so that we do not collect kube-system namespace container logs when kube api calls fail occasionally (Bug #215107)
 - .yaml changes (for RBAC)
-
-
