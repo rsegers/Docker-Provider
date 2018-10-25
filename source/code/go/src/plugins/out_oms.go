@@ -34,7 +34,6 @@ func FLBPluginInit(ctx unsafe.Pointer) int {
 
 //export FLBPluginFlush
 func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
-	var count int
 	var ret int
 	var record map[interface{}]interface{}
 	var records []map[interface{}]interface{}
@@ -43,7 +42,6 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 	dec := output.NewDecoder(data, int(length))
 
 	// Iterate Records
-	count = 0
 	for {
 		// Extract Record
 		ret, _, record = output.GetRecord(dec)
@@ -51,7 +49,6 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 			break
 		}
 		records = append(records, record)
-		count++
 	}
 	return PostDataHelper(records)
 }

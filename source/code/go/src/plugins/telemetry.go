@@ -34,13 +34,14 @@ const (
 	envACSResourceName                  = "ACS_RESOURCE_NAME"
 	envAppInsightsAuth                  = "APPLICATIONINSIGHTS_AUTH"
 	metricNameAvgFlushRate              = "ContainerLogAvgRecordsFlushedPerSec"
+	metricNameAvgLogGenerationRate      = "ContainerLogsGeneratedPerSec"
 	defaultTelemetryPushIntervalSeconds = 300
 
 	eventNameContainerLogInit   = "ContainerLogPluginInitialized"
 	eventNameDaemonSetHeartbeat = "ContainerLogDaemonSetHeartbeatEvent"
 )
 
-// Initialize initializes the telemetry artifacts
+// initialize initializes the telemetry artifacts
 func initialize(telemetryPushIntervalProperty string, agentVersion string) (int, error) {
 
 	telemetryPushInterval, err := strconv.Atoi(telemetryPushIntervalProperty)
@@ -87,7 +88,7 @@ func initialize(telemetryPushIntervalProperty string, agentVersion string) (int,
 		CommonProperties["ACSResourceName"] = ""
 		CommonProperties["AKS_RESOURCE_ID"] = aksResourceID
 		splitStrings := strings.Split(aksResourceID, "/")
-		if len(aksResourceID) > 0 && len(aksResourceID) < 10 {
+		if len(splitStrings) > 0 && len(splitStrings) < 10 {
 			CommonProperties["SubscriptionID"] = splitStrings[2]
 			CommonProperties["ResourceGroupName"] = splitStrings[4]
 			CommonProperties["ClusterName"] = splitStrings[8]
@@ -110,19 +111,24 @@ func SendContainerLogFlushRateMetric(telemetryPushIntervalProperty string, agent
 		Log("Error During Telemetry Initialization :%s", err.Error())
 		runtime.Goexit()
 	}
-
+	start := time.Now()
 	SendEvent(eventNameContainerLogInit, make(map[string]string))
 
 	for ; true; <-ContainerLogTelemetryTicker.C {
 		SendEvent(eventNameDaemonSetHeartbeat, make(map[string]string))
-		DataUpdateMutex.Lock()
+		elapsed := time.Since(start)
+		ContainerLogTelemetryMutex.Lock()
 		flushRate := FlushedRecordsCount / FlushedRecordsTimeTaken * 1000
-		Log("Flushed Records : %f Time Taken : %f flush Rate : %f", FlushedRecordsCount, FlushedRecordsTimeTaken, flushRate)
+		logRate := FlushedRecordsCount / float64(elapsed/time.Second)
 		FlushedRecordsCount = 0.0
 		FlushedRecordsTimeTaken = 0.0
-		DataUpdateMutex.Unlock()
-		metric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)
-		TelemetryClient.Track(metric)
+		ContainerLogTelemetryMutex.Unlock()
+
+		flushRateMetric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)
+		TelemetryClient.Track(flushRateMetric)
+		logRateMetric := appinsights.NewMetricTelemetry(metricNameAvgLogGenerationRate, logRate)
+		TelemetryClient.Track(logRateMetric)
+		start = time.Now()
 	}
 }
 
@@ -137,4 +143,11 @@ func SendEvent(eventName string, dimensions map[string]string) {
 	}
 
 	TelemetryClient.Track(event)
+}
+
+// SendException  send an event to the configured app insights instance
+func SendException(err interface{}) {
+	if TelemetryClient != nil {
+		TelemetryClient.TrackException(err)
+	}
 }
