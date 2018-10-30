@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 // ReadConfiguration reads a property file
@@ -21,8 +22,8 @@ func ReadConfiguration(filename string) (map[string]string, error) {
 	file, err := os.Open(filename)
 	if err != nil {
 		SendException(err)
-		log.Fatal(err)
-
+		time.Sleep(30 * time.Second)
+		fmt.Printf("%s", err.Error())
 		return nil, err
 	}
 	defer file.Close()
@@ -43,7 +44,8 @@ func ReadConfiguration(filename string) (map[string]string, error) {
 
 	if err := scanner.Err(); err != nil {
 		SendException(err)
-		log.Fatal(err)
+		time.Sleep(30 * time.Second)
+		log.Fatalf("%s", err.Error())
 		return nil, err
 	}
 
@@ -52,11 +54,11 @@ func ReadConfiguration(filename string) (map[string]string, error) {
 
 // CreateHTTPClient used to create the client for sending post requests to OMSEndpoint
 func CreateHTTPClient() {
-
 	cert, err := tls.LoadX509KeyPair(PluginConfiguration["cert_file_path"], PluginConfiguration["key_file_path"])
 	if err != nil {
 		message := fmt.Sprintf("Error when loading cert %s", err.Error())
 		SendException(message)
+		time.Sleep(30 * time.Second)
 		Log(message)
 		log.Fatalf("Error when loading cert %s", err.Error())
 	}
@@ -71,4 +73,15 @@ func CreateHTTPClient() {
 	HTTPClient = http.Client{Transport: transport}
 
 	Log("Successfully created HTTP Client")
+}
+
+// ToString converts an interface into a string
+func ToString(s interface{}) string {
+	switch t := s.(type) {
+	case []byte:
+		// prevent encoding to base64
+		return string(t)
+	default:
+		return ""
+	}
 }

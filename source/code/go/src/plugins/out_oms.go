@@ -19,12 +19,12 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 // ctx (context) pointer to fluentbit context (state/ c code)
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	Log("Initializing out_oms go plugin for fluentbit")
-	InitializePlugin(ContainerLogPluginConfFilePath)
+	agentVersion := output.FLBPluginConfigKey(ctx, "AgentVersion")
+	InitializePlugin(ContainerLogPluginConfFilePath, agentVersion)
 	enableTelemetry := output.FLBPluginConfigKey(ctx, "EnableTelemetry")
 	if strings.Compare(strings.ToLower(enableTelemetry), "true") == 0 {
 		telemetryPushInterval := output.FLBPluginConfigKey(ctx, "TelemetryPushIntervalSeconds")
-		agentVersion := output.FLBPluginConfigKey(ctx, "AgentVersion")
-		go SendContainerLogFlushRateMetric(telemetryPushInterval, agentVersion)
+		go SendContainerLogPluginMetrics(telemetryPushInterval)
 	} else {
 		Log("Telemetry is not enabled for the plugin %s \n", output.FLBPluginConfigKey(ctx, "Name"))
 		return output.FLB_OK
@@ -50,6 +50,12 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 		}
 		records = append(records, record)
 	}
+
+	incomingTag := C.GoString(tag)
+	if strings.Contains(strings.ToLower(incomingTag), "oms.container.log.flbplugin") {
+		return PushToAppInsightsTraces(records)
+	}
+
 	return PostDataHelper(records)
 }
 

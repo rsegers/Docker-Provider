@@ -223,7 +223,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	for _, record := range tailPluginRecords {
 
-		containerID := GetContainerIDFromFilePath(toString(record["filepath"]))
+		containerID := GetContainerIDFromFilePath(ToString(record["filepath"]))
 
 		if containerID == "" || containsKey(ignoreIDSet, containerID) {
 			continue
@@ -231,9 +231,9 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		stringMap := make(map[string]string)
 
-		stringMap["LogEntry"] = toString(record["log"])
-		stringMap["LogEntrySource"] = toString(record["stream"])
-		stringMap["LogEntryTimeStamp"] = toString(record["time"])
+		stringMap["LogEntry"] = ToString(record["log"])
+		stringMap["LogEntrySource"] = ToString(record["stream"])
+		stringMap["LogEntryTimeStamp"] = ToString(record["time"])
 		stringMap["SourceSystem"] = "Containers"
 		stringMap["Id"] = containerID
 
@@ -314,16 +314,6 @@ func containsKey(currentMap map[string]bool, key string) bool {
 	return c
 }
 
-func toString(s interface{}) string {
-	switch t := s.(type) {
-	case []byte:
-		// prevent encoding to base64
-		return string(t)
-	default:
-		return ""
-	}
-}
-
 // GetContainerIDFromFilePath Gets the container ID From the file Path
 func GetContainerIDFromFilePath(filepath string) string {
 	start := strings.LastIndex(filepath, "-")
@@ -338,11 +328,18 @@ func GetContainerIDFromFilePath(filepath string) string {
 }
 
 // InitializePlugin reads and populates plugin configuration
-func InitializePlugin(pluginConfPath string) {
+func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	IgnoreIDSet = make(map[string]bool)
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
+
+	ret, err := InitializeTelemetryClient(agentVersion)
+	if ret != 0 || err != nil {
+		message := fmt.Sprintf("Error During Telemetry Initialization :%s", err.Error())
+		fmt.Printf(message)
+		Log(message)
+	}
 
 	pluginConfig, err := ReadConfiguration(pluginConfPath)
 	if err != nil {
@@ -355,9 +352,11 @@ func InitializePlugin(pluginConfPath string) {
 
 	omsadminConf, err := ReadConfiguration(pluginConfig["omsadmin_conf_path"])
 	if err != nil {
-		Log(err.Error())
-		SendException(err.Error())
-		log.Fatalf("Error Reading omsadmin configuration %s\n", err.Error())
+		message := fmt.Sprintf("Error Reading omsadmin configuration %s\n", err.Error())
+		Log(message)
+		SendException(message)
+		time.Sleep(30 * time.Second)
+		log.Fatalln(message)
 	}
 	OMSEndpoint = omsadminConf["OMS_ENDPOINT"]
 	WorkspaceID = omsadminConf["WORKSPACE_ID"]
@@ -396,7 +395,7 @@ func InitializePlugin(pluginConfPath string) {
 		Log(message)
 		SendException(message)
 	}
-	Computer = strings.TrimSuffix(toString(containerHostName), "\n")
+	Computer = strings.TrimSuffix(ToString(containerHostName), "\n")
 	Log("Computer == %s \n", Computer)
 
 	// Initialize KubeAPI Client
