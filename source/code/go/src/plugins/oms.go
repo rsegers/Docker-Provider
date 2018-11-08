@@ -334,13 +334,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
 
-	ret, err := InitializeTelemetryClient(agentVersion)
-	if ret != 0 || err != nil {
-		message := fmt.Sprintf("Error During Telemetry Initialization :%s", err.Error())
-		fmt.Printf(message)
-		Log(message)
-	}
-
 	pluginConfig, err := ReadConfiguration(pluginConfPath)
 	if err != nil {
 		message := fmt.Sprintf("Error Reading plugin config path : %s \n", err.Error())
@@ -397,6 +390,13 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	}
 	Computer = strings.TrimSuffix(ToString(containerHostName), "\n")
 	Log("Computer == %s \n", Computer)
+
+	ret, err := InitializeTelemetryClient(agentVersion)
+	if ret != 0 || err != nil {
+		message := fmt.Sprintf("Error During Telemetry Initialization :%s", err.Error())
+		fmt.Printf(message)
+		Log(message)
+	}
 
 	// Initialize KubeAPI Client
 	config, err := rest.InClusterConfig()
