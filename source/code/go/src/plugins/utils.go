@@ -70,7 +70,10 @@ func CreateHTTPClient() {
 	tlsConfig.BuildNameToCertificate()
 	transport := &http.Transport{TLSClientConfig: tlsConfig}
 
-	HTTPClient = http.Client{Transport: transport}
+	HTTPClient = http.Client{
+		Transport: transport,
+		Timeout:   30 * time.Second,
+	}
 
 	Log("Successfully created HTTP Client")
 }
