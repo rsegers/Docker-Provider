@@ -101,7 +101,7 @@ module Fluent
           #podStatus
           # the below is for accounting 'NodeLost' scenario, where-in the pod(s) in the lost node is still being reported as running
           podReadyCondition = true
-          if !items['status']['reason'].nil? && items['status']['reason'] == "NodeLost"
+          if !items['status']['reason'].nil? && items['status']['reason'] == "NodeLost" && !items['status']['conditions'].nil?
             items['status']['conditions'].each do |condition|
               if condition['type'] == "Ready" && condition['status'] == "False"
                 podReadyCondition = false
