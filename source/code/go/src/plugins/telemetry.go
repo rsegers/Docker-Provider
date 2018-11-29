@@ -4,12 +4,12 @@ import (
 	"encoding/base64"
 	"errors"
 	"os"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Microsoft/ApplicationInsights-Go/appinsights"
+	"github.com/fluent/fluent-bit-go/output"
 )
 
 var (
@@ -34,15 +34,15 @@ const (
 	envACSResourceName                  = "ACS_RESOURCE_NAME"
 	envAppInsightsAuth                  = "APPLICATIONINSIGHTS_AUTH"
 	metricNameAvgFlushRate              = "ContainerLogAvgRecordsFlushedPerSec"
+	metricNameAvgLogGenerationRate      = "ContainerLogsGeneratedPerSec"
 	defaultTelemetryPushIntervalSeconds = 300
 
 	eventNameContainerLogInit   = "ContainerLogPluginInitialized"
 	eventNameDaemonSetHeartbeat = "ContainerLogDaemonSetHeartbeatEvent"
 )
 
-// Initialize initializes the telemetry artifacts
-func initialize(telemetryPushIntervalProperty string, agentVersion string) (int, error) {
-
+// SendContainerLogPluginMetrics is a go-routine that flushes the data periodically (every 5 mins to App Insights)
+func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 	telemetryPushInterval, err := strconv.Atoi(telemetryPushIntervalProperty)
 	if err != nil {
 		Log("Error Converting telemetryPushIntervalProperty %s. Using Default Interval... %d \n", telemetryPushIntervalProperty, defaultTelemetryPushIntervalSeconds)
@@ -51,6 +51,49 @@ func initialize(telemetryPushIntervalProperty string, agentVersion string) (int,
 
 	ContainerLogTelemetryTicker = time.NewTicker(time.Second * time.Duration(telemetryPushInterval))
 
+	start := time.Now()
+	SendEvent(eventNameContainerLogInit, make(map[string]string))
+
+	for ; true; <-ContainerLogTelemetryTicker.C {
+		SendEvent(eventNameDaemonSetHeartbeat, make(map[string]string))
+		elapsed := time.Since(start)
+		ContainerLogTelemetryMutex.Lock()
+		flushRate := FlushedRecordsCount / FlushedRecordsTimeTaken * 1000
+		logRate := FlushedRecordsCount / float64(elapsed/time.Second)
+		FlushedRecordsCount = 0.0
+		FlushedRecordsTimeTaken = 0.0
+		ContainerLogTelemetryMutex.Unlock()
+
+		flushRateMetric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)
+		TelemetryClient.Track(flushRateMetric)
+		logRateMetric := appinsights.NewMetricTelemetry(metricNameAvgLogGenerationRate, logRate)
+		TelemetryClient.Track(logRateMetric)
+		start = time.Now()
+	}
+}
+
+// SendEvent sends an event to App Insights
+func SendEvent(eventName string, dimensions map[string]string) {
+	Log("Sending Event : %s\n", eventName)
+	event := appinsights.NewEventTelemetry(eventName)
+
+	// add any extra Properties
+	for k, v := range dimensions {
+		event.Properties[k] = v
+	}
+
+	TelemetryClient.Track(event)
+}
+
+// SendException  send an event to the configured app insights instance
+func SendException(err interface{}) {
+	if TelemetryClient != nil {
+		TelemetryClient.TrackException(err)
+	}
+}
+
+// InitializeTelemetryClient sets up the telemetry client to send telemetry to the App Insights instance
+func InitializeTelemetryClient(agentVersion string) (int, error) {
 	encodedIkey := os.Getenv(envAppInsightsAuth)
 	if encodedIkey == "" {
 		Log("Environment Variable Missing \n")
@@ -87,7 +130,7 @@ func initialize(telemetryPushIntervalProperty string, agentVersion string) (int,
 		CommonProperties["ACSResourceName"] = ""
 		CommonProperties["AKS_RESOURCE_ID"] = aksResourceID
 		splitStrings := strings.Split(aksResourceID, "/")
-		if len(aksResourceID) > 0 && len(aksResourceID) < 10 {
+		if len(splitStrings) > 0 && len(splitStrings) < 10 {
 			CommonProperties["SubscriptionID"] = splitStrings[2]
 			CommonProperties["ResourceGroupName"] = splitStrings[4]
 			CommonProperties["ClusterName"] = splitStrings[8]
@@ -102,39 +145,14 @@ func initialize(telemetryPushIntervalProperty string, agentVersion string) (int,
 	return 0, nil
 }
 
-// SendContainerLogFlushRateMetric is a go-routine that flushes the data periodically (every 5 mins to App Insights)
-func SendContainerLogFlushRateMetric(telemetryPushIntervalProperty string, agentVersion string) {
-
-	ret, err := initialize(telemetryPushIntervalProperty, agentVersion)
-	if ret != 0 || err != nil {
-		Log("Error During Telemetry Initialization :%s", err.Error())
-		runtime.Goexit()
+// PushToAppInsightsTraces sends the log lines as trace messages to the configured App Insights Instance
+func PushToAppInsightsTraces(records []map[interface{}]interface{}) int {
+	var logLines []string
+	for _, record := range records {
+		logLines = append(logLines, ToString(record["log"]))
 	}
 
-	SendEvent(eventNameContainerLogInit, make(map[string]string))
-
-	for ; true; <-ContainerLogTelemetryTicker.C {
-		SendEvent(eventNameDaemonSetHeartbeat, make(map[string]string))
-		DataUpdateMutex.Lock()
-		flushRate := FlushedRecordsCount / FlushedRecordsTimeTaken * 1000
-		Log("Flushed Records : %f Time Taken : %f flush Rate : %f", FlushedRecordsCount, FlushedRecordsTimeTaken, flushRate)
-		FlushedRecordsCount = 0.0
-		FlushedRecordsTimeTaken = 0.0
-		DataUpdateMutex.Unlock()
-		metric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)
-		TelemetryClient.Track(metric)
-	}
-}
-
-// SendEvent sends an event to App Insights
-func SendEvent(eventName string, dimensions map[string]string) {
-	Log("Sending Event : %s\n", eventName)
-	event := appinsights.NewEventTelemetry(eventName)
-
-	// add any extra Properties
-	for k, v := range dimensions {
-		event.Properties[k] = v
-	}
-
-	TelemetryClient.Track(event)
+	traceEntry := strings.Join(logLines, "\n")
+	TelemetryClient.TrackTrace(traceEntry, 1)
+	return output.FLB_OK
 }

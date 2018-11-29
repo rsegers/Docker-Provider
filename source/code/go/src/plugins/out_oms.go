@@ -19,12 +19,12 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 // ctx (context) pointer to fluentbit context (state/ c code)
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	Log("Initializing out_oms go plugin for fluentbit")
-	InitializePlugin(ContainerLogPluginConfFilePath)
+	agentVersion := output.FLBPluginConfigKey(ctx, "AgentVersion")
+	InitializePlugin(ContainerLogPluginConfFilePath, agentVersion)
 	enableTelemetry := output.FLBPluginConfigKey(ctx, "EnableTelemetry")
 	if strings.Compare(strings.ToLower(enableTelemetry), "true") == 0 {
 		telemetryPushInterval := output.FLBPluginConfigKey(ctx, "TelemetryPushIntervalSeconds")
-		agentVersion := output.FLBPluginConfigKey(ctx, "AgentVersion")
-		go SendContainerLogFlushRateMetric(telemetryPushInterval, agentVersion)
+		go SendContainerLogPluginMetrics(telemetryPushInterval)
 	} else {
 		Log("Telemetry is not enabled for the plugin %s \n", output.FLBPluginConfigKey(ctx, "Name"))
 		return output.FLB_OK
@@ -34,7 +34,6 @@ func FLBPluginInit(ctx unsafe.Pointer) int {
 
 //export FLBPluginFlush
 func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
-	var count int
 	var ret int
 	var record map[interface{}]interface{}
 	var records []map[interface{}]interface{}
@@ -43,7 +42,6 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 	dec := output.NewDecoder(data, int(length))
 
 	// Iterate Records
-	count = 0
 	for {
 		// Extract Record
 		ret, _, record = output.GetRecord(dec)
@@ -51,8 +49,13 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 			break
 		}
 		records = append(records, record)
-		count++
 	}
+
+	incomingTag := C.GoString(tag)
+	if strings.Contains(strings.ToLower(incomingTag), "oms.container.log.flbplugin") {
+		return PushToAppInsightsTraces(records)
+	}
+
 	return PostDataHelper(records)
 }
 

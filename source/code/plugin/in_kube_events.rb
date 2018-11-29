@@ -10,7 +10,6 @@ module Fluent
 
     def initialize
       super
-      require 'yaml'
       require 'json'
 
       require_relative 'KubernetesApiClient'
@@ -62,6 +61,7 @@ module Fluent
               eventStream = MultiEventStream.new
               events['items'].each do |items|
                 record = {}
+                #<BUGBUG> - Not sure if ingestion has the below mapping for this custom type. Fix it as part of fixed type conversion
                 record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
                 eventId = items['metadata']['uid'] + "/" + items['count'].to_s  
                 newEventQueryState.push(eventId)
@@ -86,7 +86,7 @@ module Fluent
                 end
                 record['ClusterName'] = KubernetesApiClient.getClusterName
                 record['ClusterId'] = KubernetesApiClient.getClusterId
-                eventStream.add(emitTime, record) if record    
+                eventStream.add(emitTime, record) if record 
               end
               router.emit_stream(@tag, eventStream) if eventStream
             end  
@@ -121,7 +121,10 @@ module Fluent
       eventQueryState = []
       begin
         if File.file?(@@KubeEventsStateFile)
-          eventQueryState = YAML.load_file(@@KubeEventsStateFile, [])
+          # Do not read the entire file in one shot as it spikes memory (50+MB) for ~5k events
+          File.foreach(@@KubeEventsStateFile) do |line|
+            eventQueryState.push(line.chomp) #puts will append newline which needs to be removed
+          end
         end
       rescue  => errorStr
         $log.warn $log.warn line.dump, error: errorStr.to_s
@@ -132,7 +135,12 @@ module Fluent
 
     def writeEventQueryState(eventQueryState)
       begin
-        File.write(@@KubeEventsStateFile, eventQueryState.to_yaml)
+        if(!eventQueryState.nil? && !eventQueryState.empty?)
+          # No need to close file handle (f) due to block scope
+          File.open(@@KubeEventsStateFile, "w") do |f|
+            f.puts(eventQueryState)
+          end
+        end
       rescue  => errorStr
         $log.warn $log.warn line.dump, error: errorStr.to_s
         $log.debug_backtrace(errorStr.backtrace)
