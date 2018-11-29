@@ -57,7 +57,6 @@ var (
 	DataUpdateMutex = &sync.Mutex{}
 	// ContainerLogTelemetryMutex read and write mutex access to the Container Log Telemetry
 	ContainerLogTelemetryMutex = &sync.Mutex{}
-
 	// ClientSet for querying KubeAPIs
 	ClientSet *kubernetes.Clientset
 )

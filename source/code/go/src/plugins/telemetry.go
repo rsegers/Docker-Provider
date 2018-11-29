@@ -43,7 +43,6 @@ const (
 
 // SendContainerLogPluginMetrics is a go-routine that flushes the data periodically (every 5 mins to App Insights)
 func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
-
 	telemetryPushInterval, err := strconv.Atoi(telemetryPushIntervalProperty)
 	if err != nil {
 		Log("Error Converting telemetryPushIntervalProperty %s. Using Default Interval... %d \n", telemetryPushIntervalProperty, defaultTelemetryPushIntervalSeconds)
