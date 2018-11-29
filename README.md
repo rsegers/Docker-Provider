@@ -1,4 +1,4 @@
-# AKS Container Health monitoring
+# Azure Monitor for Containers
 
 ## Code of Conduct
 
