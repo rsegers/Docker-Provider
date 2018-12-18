@@ -8,7 +8,7 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
-
+Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
 ### 11/29/2018 - Version microsoft/oms:ciprod11292018
 - Disable Container Image inventory workflow
