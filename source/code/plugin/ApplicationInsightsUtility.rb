@@ -13,12 +13,12 @@ class ApplicationInsightsUtility
     @@Exception = 'ExceptionEvent'
     @@AcsClusterType = 'ACS'
     @@AksClusterType = 'AKS'
-    @@DaemonsetControllerType = 'DaemonSet'
     @OmsAdminFilePath = '/etc/opt/microsoft/omsagent/conf/omsadmin.conf'
     @@EnvAcsResourceName = 'ACS_RESOURCE_NAME'
     @@EnvAksRegion = 'AKS_REGION'
     @@EnvAgentVersion = 'AGENT_VERSION'
     @@EnvApplicationInsightsKey = 'APPLICATIONINSIGHTS_AUTH'
+    @@EnvControllerType = 'CONTROLLER_TYPE'
     @@CustomProperties = {}
     @@Tc = nil
     @@hostName = (OMS::Common.get_hostname)
@@ -54,12 +54,10 @@ class ApplicationInsightsUtility
 		            @@CustomProperties["ClusterName"] = clusterName
 		            @@CustomProperties["Region"] = ENV[@@EnvAksRegion]
                 end
-                @@CustomProperties['ControllerType'] = @@DaemonsetControllerType
-                dockerInfo = DockerApiClient.dockerInfo
-                @@CustomProperties['DockerVersion'] = dockerInfo['Version']
-                @@CustomProperties['DockerApiVersion'] = dockerInfo['ApiVersion']
+                getDockerInfo()
                 @@CustomProperties['WorkspaceID'] = getWorkspaceId
                 @@CustomProperties['AgentVersion'] = ENV[@@EnvAgentVersion]
+                @@CustomProperties['ControllerType'] = ENV[@@EnvControllerType]
                 encodedAppInsightsKey = ENV[@@EnvApplicationInsightsKey]
                 if !encodedAppInsightsKey.nil?
                     decodedAppInsightsKey = Base64.decode64(encodedAppInsightsKey)
@@ -67,6 +65,14 @@ class ApplicationInsightsUtility
                 end
             rescue => errorStr
                 $log.warn("Exception in AppInsightsUtility: initilizeUtility - error: #{errorStr}")
+            end
+        end
+
+        def getDockerInfo() 
+            dockerInfo = DockerApiClient.dockerInfo
+            if (!dockerInfo.nil? && !dockerInfo.empty?)
+                @@CustomProperties['DockerVersion'] = dockerInfo['Version']
+                @@CustomProperties['DockerApiVersion'] = dockerInfo['ApiVersion']
             end
         end
 
@@ -100,7 +106,9 @@ class ApplicationInsightsUtility
         def sendExceptionTelemetry(errorStr)
             begin
                 if @@CustomProperties.empty? || @@CustomProperties.nil?
-                    initializeUtility
+                    initializeUtility()
+                elsif @@CustomProperties['DockerVersion'].nil?
+                    getDockerInfo()
                 end
                 if !(@@Tc.nil?)
                     @@Tc.track_exception errorStr , :properties => @@CustomProperties
@@ -116,7 +124,9 @@ class ApplicationInsightsUtility
         def sendTelemetry(pluginName, properties)
             begin
                 if @@CustomProperties.empty? || @@CustomProperties.nil?
-                    initializeUtility
+                    initializeUtility()
+                elsif @@CustomProperties['DockerVersion'].nil?
+                    getDockerInfo()
                 end
                 @@CustomProperties['Computer'] = properties['Computer']
                 sendHeartBeatEvent(pluginName)
@@ -134,7 +144,9 @@ class ApplicationInsightsUtility
                     return
                 end
                 if @@CustomProperties.empty? || @@CustomProperties.nil?
-                    initializeUtility
+                    initializeUtility()
+                elsif @@CustomProperties['DockerVersion'].nil?
+                    getDockerInfo()
                 end
                 telemetryProps = {}
                 telemetryProps["Computer"] = @@hostName
