@@ -20,7 +20,7 @@ module Fluent
     end
 
     config_param :run_interval, :time, :default => '1m'
-    config_param :tag, :string, :default => "oms.api.KubeEvents.CollectionTime"
+    config_param :tag, :string, :default => "oms.containerinsights.KubeEvents"
 
     def configure (conf)
       super
@@ -88,7 +88,12 @@ module Fluent
                 end
                 record['ClusterName'] = KubernetesApiClient.getClusterName
                 record['ClusterId'] = KubernetesApiClient.getClusterId
-                eventStream.add(emitTime, record) if record 
+                wrapper = {
+                  "DataType"=>"KUBE_EVENTS_BLOB",
+                  "IPName"=>"ContainerInsights",
+                  "DataItems"=>[record.each{|k,v| record[k]=v}]
+                }
+                eventStream.add(emitTime, wrapper) if wrapper
               end
               router.emit_stream(@tag, eventStream) if eventStream
             end  
