@@ -86,7 +86,15 @@ class DockerApiClient
             containers = getResponse(request, true, false)
             if !containers.nil? && !containers.empty?
                 containers.each do |container|
-                    ids.push(container['Id'])
+                    labels = (!container['Labels'].nil?)? container['Labels'] : container['labels']
+                    if !labels.nil?
+                        labelKeys = labels.keys
+                        #Case insensitive lookup for pod uid label
+                        keyValue = labelKeys.find {|k| 'io.kubernetes.pod.uid'.downcase == k.downcase}
+                        if !labels[keyValue].nil?
+                            ids.push(container['Id'])
+                        end
+                    end
                 end
             end
             return ids
