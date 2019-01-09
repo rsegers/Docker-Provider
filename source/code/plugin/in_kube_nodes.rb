@@ -6,14 +6,18 @@ module Fluent
     class Kube_nodeInventory_Input < Input
       Plugin.register_input('kubenodeinventory', self)
   
+      @@ContainerNodeInventoryTag = 'oms.api.ContainerNodeInventory'
+
       def initialize
         super
         require 'yaml'
         require 'json'
   
         require_relative 'KubernetesApiClient'
+        require_relative 'ApplicationInsightsUtility'
         require_relative 'oms_common'
         require_relative 'omslog'
+
       end
   
       config_param :run_interval, :time, :default => '1m'
@@ -29,6 +33,7 @@ module Fluent
           @condition = ConditionVariable.new
           @mutex = Mutex.new
           @thread = Thread.new(&method(:run_periodic))
+          @@nodeTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
       end
   
@@ -46,15 +51,22 @@ module Fluent
         currentTime = Time.now
         emitTime = currentTime.to_f
         batchTime = currentTime.utc.iso8601
-          $log.info("in_kube_nodes::enumerate : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
-          nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
-          $log.info("in_kube_nodes::enumerate : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
+        telemetrySent = false
+        $log.info("in_kube_nodes::enumerate : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
+        nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo('nodes').body)
+        $log.info("in_kube_nodes::enumerate : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
           begin
             if(!nodeInventory.empty?)
               eventStream = MultiEventStream.new
+              containerNodeInventoryEventStream = MultiEventStream.new 
                 #get node inventory 
                 nodeInventory['items'].each do |items|
                     record = {}
+                    # Sending records for ContainerNodeInventory
+                    containerNodeInventoryRecord = {}
+                    containerNodeInventoryRecord['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
+                    containerNodeInventoryRecord['Computer'] = items['metadata']['name']
+
                     record['CollectionTime'] = batchTime #This is the time that is mapped to become TimeGenerated
                     record['Computer'] = items['metadata']['name'] 
                     record['ClusterName'] = KubernetesApiClient.getClusterName
@@ -89,16 +101,40 @@ module Fluent
 
                     end
 
-                    record['KubeletVersion'] = items['status']['nodeInfo']['kubeletVersion']
-                    record['KubeProxyVersion'] = items['status']['nodeInfo']['kubeProxyVersion']
+                    nodeInfo = items['status']['nodeInfo']
+                    record['KubeletVersion'] = nodeInfo['kubeletVersion']
+                    record['KubeProxyVersion'] = nodeInfo['kubeProxyVersion']
+                    containerNodeInventoryRecord['OperatingSystem'] = nodeInfo['osImage']
+                    dockerVersion = nodeInfo['containerRuntimeVersion']
+                    dockerVersion.slice! "docker://"
+                    containerNodeInventoryRecord['DockerVersion'] = dockerVersion
+                    # ContainerNodeInventory data for docker version and operating system.
+                    containerNodeInventoryEventStream.add(emitTime, containerNodeInventoryRecord) if containerNodeInventoryRecord
+
                     wrapper = {
                       "DataType"=>"KUBE_NODE_INVENTORY_BLOB",
                       "IPName"=>"ContainerInsights",
                       "DataItems"=>[record.each{|k,v| record[k]=v}]
                     }
                     eventStream.add(emitTime, wrapper) if wrapper
+                    # Adding telemetry to send node telemetry every 5 minutes
+                    timeDifference =  (DateTime.now.to_time.to_i - @@nodeTelemetryTimeTracker).abs
+                    timeDifferenceInMinutes = timeDifference/60
+                    if (timeDifferenceInMinutes >= 5)
+                      properties = {}
+                      properties["Computer"] = record["Computer"]
+                      properties["KubeletVersion"] = record["KubeletVersion"]
+                      capacityInfo = items['status']['capacity']
+                      ApplicationInsightsUtility.sendMetricTelemetry("NodeCoreCapacity", capacityInfo["cpu"] , properties)
+                      ApplicationInsightsUtility.sendMetricTelemetry("NodeMemory", capacityInfo["memory"] , properties)
+                      telemetrySent = true
+                    end
                 end 
                 router.emit_stream(@tag, eventStream) if eventStream
+                router.emit_stream(@@ContainerNodeInventoryTag, containerNodeInventoryEventStream) if containerNodeInventoryEventStream
+                if telemetrySent == true
+                  @@nodeTelemetryTimeTracker = DateTime.now.to_time.to_i
+                end
                 @@istestvar = ENV['ISTEST']
                 if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp('true') == 0 && eventStream.count > 0)
                   $log.info("kubeNodeInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -107,6 +143,7 @@ module Fluent
           rescue  => errorStr
             $log.warn "Failed to retrieve node inventory: #{errorStr}"
             $log.debug_backtrace(errorStr.backtrace)
+            ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
           end       
       end
   
@@ -123,6 +160,7 @@ module Fluent
               enumerate
             rescue => errorStr
               $log.warn "in_kube_nodes::run_periodic: enumerate Failed to retrieve node inventory: #{errorStr}"
+              ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
             end
           end
           @mutex.lock

@@ -10,10 +10,11 @@ class DockerApiClient
     require_relative 'DockerApiRestHelper'
     require_relative 'ApplicationInsightsUtility'
 
-    @@SocketPath = "/var/run/docker.sock"
+    @@SocketPath = "/var/run/host/docker.sock"
     @@ChunkSize = 4096
     @@TimeoutInSeconds = 5
     @@PluginName = 'ContainerInventory'
+
     def initialize
     end
 
@@ -85,7 +86,23 @@ class DockerApiClient
             containers = getResponse(request, true, false)
             if !containers.nil? && !containers.empty?
                 containers.each do |container|
-                    ids.push(container['Id'])
+                    labels = (!container['Labels'].nil?)? container['Labels'] : container['labels']
+                    if !labels.nil?
+                        labelKeys = labels.keys
+                        dockerTypeLabel = labelKeys.find {|k| 'io.kubernetes.docker.type'.downcase == k.downcase}
+                        if !dockerTypeLabel.nil?
+                            dockerTypeLabelValue = labels[dockerTypeLabel]
+                            # Checking for 'io.kubernetes.docker.type' label for docker containers to exclude the pause-amd64 containers
+                            if !(dockerTypeLabelValue.downcase == "podsandbox".downcase)
+                                # Case insensitive lookup for pod uid label - This is to exclude containers created using docker run and only include containers that 
+                                # are created in the pods for ContainerInventory
+                                keyValue = labelKeys.find {|k| 'io.kubernetes.pod.uid'.downcase == k.downcase}
+                                if !labels[keyValue].nil?
+                                    ids.push(container['Id'])
+                                end
+                            end
+                        end
+                    end
                 end
             end
             return ids

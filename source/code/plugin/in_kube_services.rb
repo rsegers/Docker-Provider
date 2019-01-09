@@ -14,10 +14,12 @@ module Fluent
           require_relative 'KubernetesApiClient'
           require_relative 'oms_common'
           require_relative 'omslog'
+          require_relative 'ApplicationInsightsUtility'
+
         end
     
         config_param :run_interval, :time, :default => '1m'
-        config_param :tag, :string, :default => "oms.api.KubeServices.CollectionTime"
+        config_param :tag, :string, :default => "oms.containerinsights.KubeServices"
     
         def configure (conf)
           super
@@ -63,13 +65,19 @@ module Fluent
                     record['ClusterIP'] = items['spec']['clusterIP']
                     record['ServiceType'] = items['spec']['type']
                     #<TODO> : Add ports and status fields
-                    eventStream.add(emitTime, record) if record   
+                    wrapper = {
+                      "DataType"=>"KUBE_SERVICES_BLOB",
+                      "IPName"=>"ContainerInsights",
+                      "DataItems"=>[record.each{|k,v| record[k]=v}]
+                    }
+                    eventStream.add(emitTime, wrapper) if wrapper  
                   end
                   router.emit_stream(@tag, eventStream) if eventStream
                 end  
               rescue  => errorStr
                 $log.warn line.dump, error: errorStr.to_s
                 $log.debug_backtrace(e.backtrace)
+                ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
               end   
         end
     
@@ -86,6 +94,7 @@ module Fluent
                 enumerate
               rescue => errorStr
                 $log.warn "in_kube_services::run_periodic: enumerate Failed to kube services: #{errorStr}"
+                ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
               end
             end
             @mutex.lock
