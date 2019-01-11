@@ -11,7 +11,7 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
   
-### 01/09/2018 - Version microsoft/oms:ciprod01092019-2
+### 01/09/2018 - Version microsoft/oms:ciprod01092019
 - Omsagent - 1.8.1.256 (nov 2018 release)
 - Persist fluentbit state between container restarts
 - Populate 'TimeOfCommand' for agent ingest time for container logs
