@@ -61,9 +61,16 @@ class ApplicationInsightsUtility
                 @@CustomProperties['AgentVersion'] = ENV[@@EnvAgentVersion]
                 @@CustomProperties['ControllerType'] = ENV[@@EnvControllerType]
                 encodedAppInsightsKey = ENV[@@EnvApplicationInsightsKey]
-                if !encodedAppInsightsKey.nil?
+
+                #Check if telemetry is turned off
+                telemetryOffSwitch = ENV['DISABLE_TELEMETRY']
+                if telemetryOffSwitch && !telemetryOffSwitch.nil? && !telemetryOffSwitch.empty? && telemetryOffSwitch.downcase == "true".downcase
+                    $log.warn("AppInsightsUtility: Telemetry is disabled")
+                    @@Tc = ApplicationInsights::TelemetryClient.new
+                elsif !encodedAppInsightsKey.nil?
                     decodedAppInsightsKey = Base64.decode64(encodedAppInsightsKey)
                     @@Tc = ApplicationInsights::TelemetryClient.new decodedAppInsightsKey
+                  
                 end
             rescue => errorStr
                 $log.warn("Exception in AppInsightsUtility: initilizeUtility - error: #{errorStr}")
