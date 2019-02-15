@@ -6,6 +6,8 @@ module Fluent
   class Kube_PodInventory_Input < Input
     Plugin.register_input('kubepodinventory', self)
 
+    @@MDMKubePodInventoryTag = 'mdm.kubepodinventory'
+
     def initialize
       super
       require 'yaml'
@@ -208,6 +210,7 @@ module Fluent
           end  
         end  #podInventory block end
         router.emit_stream(@tag, eventStream) if eventStream
+        router.emit_stream(@@MDMKubePodInventoryTag, eventStream) if eventStream
         if telemetryFlush == true
           ApplicationInsightsUtility.sendHeartBeatEvent("KubePodInventory")
           ApplicationInsightsUtility.sendMetricTelemetry("PodCount", podInventory['items'].length , {})
