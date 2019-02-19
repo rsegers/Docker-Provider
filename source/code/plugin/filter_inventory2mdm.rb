@@ -56,7 +56,7 @@ module Fluent
                         "namespace": "insights.container/pods", 
                         "dimNames": [ 
                         "phase", 
-                        "namespace", 
+                        "Kubernetes namespace", 
                         "node", 
                         "controllerName"
                         ], 
@@ -77,7 +77,9 @@ module Fluent
                     } 
                 } 
             }'
-
+        
+        @@pod_phase_values = ['Running', 'Pending', 'Succeeded', 'Failed', 'Unknown']
+        
         @process_incoming_stream = true
 
 		def initialize
@@ -151,7 +153,7 @@ module Fluent
         def process_pod_inventory_records(es)
             timestamp = DateTime.now
             pod_count_hash = Hash.new
-
+            no_phase_dim_values_hash = Hash.new
             begin
                 records = []
                 es.each{|time,record|
@@ -173,6 +175,29 @@ module Fluent
                         pod_count = 1
                         pod_count_hash[pod_key] = pod_count
                     end
+
+                    # Collect all possible combinations of dimension values other than pod phase
+                    key_without_phase_dim_value = [podNodeDimValue, podNamespaceDimValue, podControllerNameDimValue].join('~~')
+                    if no_phase_dim_values_hash.key?(key_without_phase_dim_value)
+                        @log.info "#{key_without_phase_dim_value} already present in #{no_phase_dim_values_hash}"
+                        next
+                    else
+                        @log.info "Adding #{key_without_phase_dim_value} to #{no_phase_dim_values_hash}"
+                        no_phase_dim_values_hash[key_without_phase_dim_value] = true
+                    end
+                }
+
+                # generate all possible values of non_phase_dim_values X pod Phases and zero-fill the ones that are not already present
+                no_phase_dim_values_hash.each {|key, value|
+                    @@pod_phase_values.each{|phase|
+                        pod_key = [key, phase].join('~~')
+                        if !pod_count_hash.key?(pod_key)
+                            pod_count_hash[pod_key] = 0
+                            @log.info "Zero filled #{pod_key}"
+                        else
+                            next
+                        end
+                    }
                 }
 
                 pod_count_hash.each {|key, value|
