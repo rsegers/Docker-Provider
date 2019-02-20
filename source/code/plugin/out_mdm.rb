@@ -126,6 +126,7 @@ module Fluent
         end
       rescue Exception => e
         @log.info "Exception when writing to MDM: #{e}"
+        raise e
       end
     end
 
@@ -149,7 +150,11 @@ module Fluent
           @first_post_attempt_made = true
           ApplicationInsightsUtility.sendExceptionTelemetry(e.backtrace)
           # Not raising exception, as that will cause retries to happen
-        else
+        elsif !response.code.empty? && response.code.start_with?('4')
+          # Log 400 errors and continue
+          @log.info "Non-retryable HTTPServerException when POSTing Metrics to MDM #{e} Response: #{response}"
+        else 
+          # raise if the response code is non-400
           @log.info "HTTPServerException when POSTing Metrics to MDM #{e} Response: #{response}"
           raise e
         end
