@@ -77,15 +77,15 @@ var (
 
 // DataItem represents the object corresponding to the json that is sent by fluentbit tail plugin
 type DataItem struct {
-	LogEntry          		string `json:"LogEntry"`
-	LogEntrySource    		string `json:"LogEntrySource"`
-	LogEntryTimeStamp 		string `json:"LogEntryTimeStamp"`
-	LogEntryTimeOfCommand	string `json:"TimeOfCommand"`
-	ID                string `json:"Id"`
-	Image             string `json:"Image"`
-	Name              string `json:"Name"`
-	SourceSystem      string `json:"SourceSystem"`
-	Computer          string `json:"Computer"`
+	LogEntry              string `json:"LogEntry"`
+	LogEntrySource        string `json:"LogEntrySource"`
+	LogEntryTimeStamp     string `json:"LogEntryTimeStamp"`
+	LogEntryTimeOfCommand string `json:"TimeOfCommand"`
+	ID                    string `json:"Id"`
+	Image                 string `json:"Image"`
+	Name                  string `json:"Name"`
+	SourceSystem          string `json:"SourceSystem"`
+	Computer              string `json:"Computer"`
 }
 
 // ContainerLogBlob represents the object corresponding to the payload that is sent to the ODS end point
@@ -137,7 +137,10 @@ func updateContainerImageNameMaps() {
 		_imageIDMap := make(map[string]string)
 		_nameIDMap := make(map[string]string)
 
-		pods, err := ClientSet.CoreV1().Pods("").List(metav1.ListOptions{})
+		listOptions := metav1.ListOptions{}
+		listOptions.FieldSelector = fmt.Sprintf("spec.nodeName=%s", Computer)
+		pods, err := ClientSet.CoreV1().Pods("").List(listOptions)
+		
 		if err != nil {
 			message := fmt.Sprintf("Error getting pods %s\nIt is ok to log here and continue, because the logs will be missing image and Name, but the logs will still have the containerID", err.Error())
 			Log(message)
@@ -244,31 +247,31 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		if val, ok := imageIDMap[containerID]; ok {
 			stringMap["Image"] = val
 		} else {
-			Log("ContainerId %s not present in Map ", containerID)
+			Log("ContainerId %s not present in Name Map ", containerID)
 		}
 
 		if val, ok := nameIDMap[containerID]; ok {
 			stringMap["Name"] = val
 		} else {
-			Log("ContainerId %s not present in Map ", containerID)
+			Log("ContainerId %s not present in Image Map ", containerID)
 		}
 
 
 		dataItem := DataItem{
-			ID:                		stringMap["Id"],
-			LogEntry:          		stringMap["LogEntry"],
-			LogEntrySource:    		stringMap["LogEntrySource"],
-			LogEntryTimeStamp: 		stringMap["LogEntryTimeStamp"],
-			LogEntryTimeOfCommand: 	start.Format(time.RFC3339),
-			SourceSystem:      		stringMap["SourceSystem"],
-			Computer:          		Computer,
-			Image:             		stringMap["Image"],
-			Name:              		stringMap["Name"],
+			ID:                    stringMap["Id"],
+			LogEntry:              stringMap["LogEntry"],
+			LogEntrySource:        stringMap["LogEntrySource"],
+			LogEntryTimeStamp:     stringMap["LogEntryTimeStamp"],
+			LogEntryTimeOfCommand: start.Format(time.RFC3339),
+			SourceSystem:          stringMap["SourceSystem"],
+			Computer:              Computer,
+			Image:                 stringMap["Image"],
+			Name:                  stringMap["Name"],
 		}
 
 		dataItems = append(dataItems, dataItem)
 		loggedTime, e := time.Parse(time.RFC3339, dataItem.LogEntryTimeStamp)
-		if e!= nil {
+		if e != nil {
 			message := fmt.Sprintf("Error while converting LogEntryTimeStamp for telemetry purposes: %s", e.Error())
 			Log(message)
 			SendException(message)
