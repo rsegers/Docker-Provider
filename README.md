@@ -26,6 +26,7 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
   * MemoryRssBytes & % metric
   * Podcount by node, phase & namespace metric
   * Nodecount metric
+- ContainerNodeInventory_CL to fixed type
   
 ### 01/09/2018 - Version microsoft/oms:ciprod01092019
 - Omsagent - 1.8.1.256 (nov 2018 release)
