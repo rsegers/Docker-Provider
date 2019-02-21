@@ -11,7 +11,7 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
   
-### 01/20/2019 - Version microsoft/oms:ciprod02202019
+### 02/20/2019 - Version microsoft/oms:ciprod02202019
 - Container logs enrichment optimization
   * Get container meta data only for containers in current node (vs cluster before)
 - Update fluent bit 0.13.7 => 0.14.4
