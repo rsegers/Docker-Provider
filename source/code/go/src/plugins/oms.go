@@ -256,6 +256,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			Log("ContainerId %s not present in Image Map ", containerID)
 		}
 
+
 		dataItem := DataItem{
 			ID:                    stringMap["Id"],
 			LogEntry:              stringMap["LogEntry"],
