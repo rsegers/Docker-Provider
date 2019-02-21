@@ -91,7 +91,7 @@ module Fluent
 			@log = nil
 			
 			if @enable_log
-				@log = Logger.new(@log_path, 'weekly')
+				@log = Logger.new(@log_path, 1, 5000000)
 				@log.debug {'Starting filter_inventory2mdm plugin'}
 			end
 		end
@@ -179,10 +179,8 @@ module Fluent
                     # Collect all possible combinations of dimension values other than pod phase
                     key_without_phase_dim_value = [podNodeDimValue, podNamespaceDimValue, podControllerNameDimValue].join('~~')
                     if no_phase_dim_values_hash.key?(key_without_phase_dim_value)
-                        @log.info "#{key_without_phase_dim_value} already present in #{no_phase_dim_values_hash}"
                         next
                     else
-                        @log.info "Adding #{key_without_phase_dim_value} to #{no_phase_dim_values_hash}"
                         no_phase_dim_values_hash[key_without_phase_dim_value] = true
                     end
                 }
