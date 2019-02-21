@@ -63,7 +63,7 @@ module Fluent
 			@log = nil
 			
 			if @enable_log
-				@log = Logger.new(@log_path, 'weekly')
+				@log = Logger.new(@log_path, 1, 5000000)
 				@log.debug {'Starting filter_cadvisor2mdm plugin'}
 			end
 		end
@@ -191,7 +191,6 @@ module Fluent
                     }
                     records.push(JSON.parse(additional_record))
             end
-            @log.info "Metric Name: #{metric_name} Metric Value: #{metric_value} Percentage Metric Value: #{percentage_metric_value}"
             return records
         end
 
