@@ -17,6 +17,7 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
 - Tail only files that were modified since 5 minutes
 - Remove some unwanted logs that are chatty in outoms
 - Fix for MDM disablement for AKS-Engine
+- Fix for Pod count metric (same as container count) in MDM
   
 ### 02/21/2019 - Version microsoft/oms:ciprod02212019
 - Container logs enrichment optimization
