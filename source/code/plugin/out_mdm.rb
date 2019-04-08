@@ -140,6 +140,7 @@ module Fluent
           end
         end
       rescue Exception => e
+        ApplicationInsightsUtility.sendExceptionTelemetry(e.backtrace)
         @log.info "Exception when writing to MDM: #{e}"
         raise e
       end
@@ -163,7 +164,6 @@ module Fluent
           @log.info "Response Code #{response.code} Updating @last_post_attempt_time"
           @last_post_attempt_time = Time.now
           @first_post_attempt_made = true
-          ApplicationInsightsUtility.sendExceptionTelemetry(e.backtrace)
           # Not raising exception, as that will cause retries to happen
         elsif !response.code.empty? && response.code.start_with?("4")
           # Log 400 errors and continue
