@@ -9,11 +9,12 @@ import (
 	"time"
 
 	"github.com/Microsoft/ApplicationInsights-Go/appinsights"
+	"github.com/Microsoft/ApplicationInsights-Go/appinsights/contracts"
 	"github.com/fluent/fluent-bit-go/output"
 )
 
 var (
-	// FlushedRecordsCount indicates the number of flushed records in the current period
+	// FlushedRecordsCount indicates the number of flushed log records in the current period
 	FlushedRecordsCount float64
 	// FlushedRecordsTimeTaken indicates the cumulative time taken to flush the records for the current period
 	FlushedRecordsTimeTaken float64
@@ -27,19 +28,23 @@ var (
 	TelemetryClient appinsights.TelemetryClient
 	// ContainerLogTelemetryTicker sends telemetry periodically
 	ContainerLogTelemetryTicker *time.Ticker
+	//Tracks the number of telegraf metrics sent successfully between telemetry ticker periods (uses ContainerLogTelemetryTicker)
+	TelegrafMetricsSentCount float64
+	//Tracks the number of send errors between telemetry ticker periods (uses ContainerLogTelemetryTicker)
+	TelegrafMetricsSendErrorCount float64
 )
 
 const (
 	clusterTypeACS                      = "ACS"
 	clusterTypeAKS                      = "AKS"
-	controllerTypeDaemonSet             = "DaemonSet"
-	controllerTypeReplicaSet            = "ReplicaSet"
 	envAKSResourceID                    = "AKS_RESOURCE_ID"
 	envACSResourceName                  = "ACS_RESOURCE_NAME"
 	envAppInsightsAuth                  = "APPLICATIONINSIGHTS_AUTH"
 	metricNameAvgFlushRate              = "ContainerLogAvgRecordsFlushedPerSec"
 	metricNameAvgLogGenerationRate      = "ContainerLogsGeneratedPerSec"
 	metricNameAgentLogProcessingMaxLatencyMs = "ContainerLogsAgentSideLatencyMs"
+	metricNameNumberofTelegrafMetricsSentSuccessfully = "TelegrafMetricsSentCount"
+	metricNameNumberofSendErrorsTelegrafMetrics = "TelegrafMetricsSendErrorCount"
 
 	defaultTelemetryPushIntervalSeconds = 300
 
@@ -63,9 +68,14 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 	for ; true; <-ContainerLogTelemetryTicker.C {
 		SendEvent(eventNameDaemonSetHeartbeat, make(map[string]string))
 		elapsed := time.Since(start)
+
 		ContainerLogTelemetryMutex.Lock()
 		flushRate := FlushedRecordsCount / FlushedRecordsTimeTaken * 1000
 		logRate := FlushedRecordsCount / float64(elapsed/time.Second)
+		telegrafMetricsSentCount := TelegrafMetricsSentCount
+		telegrafMetricsSendErrorCount := TelegrafMetricsSendErrorCount
+		TelegrafMetricsSentCount = 0.0
+		TelegrafMetricsSendErrorCount = 0.0
 		FlushedRecordsCount = 0.0
 		FlushedRecordsTimeTaken = 0.0
 		logLatencyMs := AgentLogProcessingMaxLatencyMs
@@ -81,6 +91,8 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		logLatencyMetric := appinsights.NewMetricTelemetry(metricNameAgentLogProcessingMaxLatencyMs, logLatencyMs)
 		logLatencyMetric.Properties["Container"] = logLatencyMsContainer
 		TelemetryClient.Track(logLatencyMetric)
+		TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount))
+		TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSendErrorsTelegrafMetrics, telegrafMetricsSendErrorCount))
 		start = time.Now()
 	}
 }
@@ -129,7 +141,7 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 	CommonProperties = make(map[string]string)
 	CommonProperties["Computer"] = Computer
 	CommonProperties["WorkspaceID"] = WorkspaceID
-	CommonProperties["ControllerType"] = controllerTypeDaemonSet
+	CommonProperties["ControllerType"] = os.Getenv("CONTROLLER_TYPE")
 	CommonProperties["AgentVersion"] = agentVersion
 
 	aksResourceID := os.Getenv(envAKSResourceID)
@@ -164,13 +176,15 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 }
 
 // PushToAppInsightsTraces sends the log lines as trace messages to the configured App Insights Instance
-func PushToAppInsightsTraces(records []map[interface{}]interface{}) int {
+func PushToAppInsightsTraces(records []map[interface{}]interface{}, severityLevel contracts.SeverityLevel, tag string) int {
 	var logLines []string
 	for _, record := range records {
 		logLines = append(logLines, ToString(record["log"]))
 	}
 
 	traceEntry := strings.Join(logLines, "\n")
-	TelemetryClient.TrackTrace(traceEntry, 1)
+	traceTelemetryItem := appinsights.NewTraceTelemetry(traceEntry, severityLevel)
+	traceTelemetryItem.Properties["tag"] = tag
+	TelemetryClient.Track(traceTelemetryItem)
 	return output.FLB_OK
 }

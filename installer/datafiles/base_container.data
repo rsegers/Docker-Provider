@@ -34,6 +34,7 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/microsoft/omsagent/plugin/CAdvisorMetricsAPIClient.rb;     source/code/plugin/CAdvisorMetricsAPIClient.rb;     644; root; root
 /opt/microsoft/omsagent/plugin/in_kube_perf.rb;			        source/code/plugin/in_kube_perf.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/in_cadvisor_perf.rb;			        source/code/plugin/in_cadvisor_perf.rb;			    	644; root; root
+/opt/microsoft/omsagent/plugin/in_win_cadvisor_perf.rb;			    source/code/plugin/in_win_cadvisor_perf.rb;			    644; root; root
 /opt/microsoft/omsagent/plugin/in_kube_services.rb;			        source/code/plugin/in_kube_services.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/in_kube_nodes.rb;			        source/code/plugin/in_kube_nodes.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/filter_inventory2mdm.rb;			     source/code/plugin/filter_inventory2mdm.rb;			    	644; root; root
@@ -97,6 +98,8 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/td-agent-bit/bin/out_oms.so;                                intermediate/${{BUILD_CONFIGURATION}}/out_oms.so;  	755; root; root
 /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf;			    installer/conf/td-agent-bit.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/out_oms.conf;			            installer/conf/out_oms.conf;                    644; root; root
+/etc/opt/microsoft/docker-cimprov/telegraf.conf;			        installer/conf/telegraf.conf;                    644; root; root
+/opt/microsoft/docker-cimprov/bin/TelegrafTCPErrorTelemetry.sh;	        installer/scripts/TelegrafTCPErrorTelemetry.sh;      755; root; root
 
 %Links
 /opt/omi/lib/libcontainer.${{SHLIB_EXT}}; /opt/microsoft/docker-cimprov/lib/libcontainer.${{SHLIB_EXT}}; 644; root; root
@@ -136,6 +139,7 @@ MAINTAINER:              'Microsoft Corporation'
 
 /opt/td-agent-bit;                          755; root; root;sysdir
 /opt/td-agent-bit/bin;                      755; root; root;sysdir
+/etc/telegraf;                              755; root; root;sysdir
 
 /opt/microsoft/omsagent/plugin/lib;												755; root; root; sysdir
 /opt/microsoft/omsagent/plugin/lib/application_insights;                        755; root; root; sysdir
