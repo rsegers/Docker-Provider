@@ -12,8 +12,8 @@ additional questions or comments.
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
   
 ### 04/23/2019 - 
-## Version microsoft/oms:ciprod043232019
-## Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod04232019
+#### Version microsoft/oms:ciprod043232019
+#### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod04232019
 - Windows node monitoring (metrics & inventory)
 - Telegraf integration (Telegraf metrics to LogAnalytics)
 - Node Disk usage metrics (used, free, used%) as InsightsMetrics
