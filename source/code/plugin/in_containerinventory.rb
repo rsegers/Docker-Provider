@@ -47,29 +47,34 @@ module Fluent
       end
     end
 
-    def obtainContainerConfig(instance, container)
+    def obtainContainerConfig(instance, container, clusterCollectEnvironmentVar)
       begin
         configValue = container["Config"]
         if !configValue.nil?
           instance["ContainerHostname"] = configValue["Hostname"]
-
-          envValue = configValue["Env"]
-          envValueString = (envValue.nil?) ? "" : envValue.to_s
-          # Skip environment variable processing if it contains the flag AZMON_COLLECT_ENV=FALSE
-          if /AZMON_COLLECT_ENV=FALSE/i.match(envValueString)
-            envValueString = ["AZMON_COLLECT_ENV=FALSE"]
-            $log.warn("Environment Variable collection for container: #{container["Id"]} skipped because AZMON_COLLECT_ENV is set to false")
-          end
-          # Restricting the ENV string value to 200kb since the size of this string can go very high
-          if envValueString.length > 200000
-            envValueStringTruncated = envValueString.slice(0..200000)
-            lastIndex = envValueStringTruncated.rindex("\", ")
-            if !lastIndex.nil?
-              envValueStringTruncated = envValueStringTruncated.slice(0..lastIndex) + "]"
-            end
-            instance["EnvironmentVar"] = envValueStringTruncated
+          # Check to see if the environment variable collection is disabled at the cluster level - This disables env variable collection for all containers.
+          if !clusterCollectEnvironmentVar.nil? && !clusterCollectEnvironmentVar.empty? && clusterCollectEnvironmentVar.casecmp("false") == 0
+            instance["EnvironmentVar"] = ["AZMON_CLUSTER_COLLECT_ENV_VAR=FALSE"]
           else
-            instance["EnvironmentVar"] = envValueString
+            envValue = configValue["Env"]
+            envValueString = (envValue.nil?) ? "" : envValue.to_s
+            # Skip environment variable processing if it contains the flag AZMON_COLLECT_ENV=FALSE
+            # Check to see if the environment variable collection is disabled for this container.
+            if /AZMON_COLLECT_ENV=FALSE/i.match(envValueString)
+              envValueString = ["AZMON_COLLECT_ENV=FALSE"]
+              $log.warn("Environment Variable collection for container: #{container["Id"]} skipped because AZMON_COLLECT_ENV is set to false")
+            end
+            # Restricting the ENV string value to 200kb since the size of this string can go very high
+            if envValueString.length > 200000
+              envValueStringTruncated = envValueString.slice(0..200000)
+              lastIndex = envValueStringTruncated.rindex("\", ")
+              if !lastIndex.nil?
+                envValueStringTruncated = envValueStringTruncated.slice(0..lastIndex) + "]"
+              end
+              instance["EnvironmentVar"] = envValueStringTruncated
+            else
+              instance["EnvironmentVar"] = envValueString
+            end
           end
 
           cmdValue = configValue["Cmd"]
@@ -151,7 +156,7 @@ module Fluent
       end
     end
 
-    def inspectContainer(id, nameMap)
+    def inspectContainer(id, nameMap, clusterCollectEnvironmentVar)
       containerInstance = {}
       begin
         container = DockerApiClient.dockerInspectContainer(id)
@@ -173,7 +178,7 @@ module Fluent
               containerInstance["ImageTag"] = repoImageTagArray[2]
             end
           end
-          obtainContainerConfig(containerInstance, container)
+          obtainContainerConfig(containerInstance, container, clusterCollectEnvironmentVar)
           obtainContainerState(containerInstance, container)
           obtainContainerHostConfig(containerInstance, container)
         end
@@ -195,9 +200,13 @@ module Fluent
         if !containerIds.empty?
           eventStream = MultiEventStream.new
           nameMap = DockerApiClient.getImageIdMap
+          clusterCollectEnvironmentVar = ENV['AZMON_CLUSTER_COLLECT_ENV_VAR']
+          if !clusterCollectEnvironmentVar.nil? && !clusterCollectEnvironmentVar.empty? && clusterCollectEnvironmentVar.casecmp("false") == 0
+            $log.warn("Environment Variable collection disabled for cluster")
+          end
           containerIds.each do |containerId|
             inspectedContainer = {}
-            inspectedContainer = inspectContainer(containerId, nameMap)
+            inspectedContainer = inspectContainer(containerId, nameMap, clusterCollectEnvironmentVar)
             inspectedContainer["Computer"] = hostname
             inspectedContainer["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
             containerInventory.push inspectedContainer

@@ -17,6 +17,7 @@ import (
 
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -36,12 +37,15 @@ const ResourceNameEnv = "ACS_RESOURCE_NAME"
 
 // Origin prefix for telegraf Metrics (used as prefix for origin field & prefix for azure monitor specific tags)
 const TelegrafMetricOriginPrefix = "container.azm.ms"
+
 // Origin suffix for telegraf Metrics (used as suffix for origin field)
 const TelegrafMetricOriginSuffix = "telegraf"
+
 // Namespace prefix for telegraf Metrics (used as prefix for Namespace field)
 //const TelegrafMetricNamespacePrefix = "plugin"
 // clusterName tag
 const TelegrafTagClusterName = "clusterName"
+
 // clusterId tag
 const TelegrafTagClusterID = "clusterId"
 
@@ -52,7 +56,9 @@ const ReplicaSetContainerLogPluginConfFilePath = "/etc/opt/microsoft/docker-cimp
 // IPName for Container Log
 const IPName = "Containers"
 const defaultContainerInventoryRefreshInterval = 60
-const defaultKubeSystemContainersRefreshInterval = 300
+
+// const defaultKubeSystemContainersRefreshInterval = 300
+const defaultExcludeNamespacesContainersRefreshInterval = 300
 
 var (
 	// PluginConfiguration the plugins configuration
@@ -65,11 +71,11 @@ var (
 	Computer string
 	// WorkspaceID log analytics workspace id
 	WorkspaceID string
-	// ResourceID for resource-centric log analytics data 
+	// ResourceID for resource-centric log analytics data
 	ResourceID string
 	// Resource-centric flag (will be true if we determine if above RseourceID is non-empty - default is false)
 	ResourceCentric bool
-	//ResourceName 
+	//ResourceName
 	ResourceName string
 )
 
@@ -78,8 +84,10 @@ var (
 	ImageIDMap map[string]string
 	// NameIDMap caches the container it to Name mapping
 	NameIDMap map[string]string
-	// IgnoreIDSet set of  container Ids of kube-system pods
-	IgnoreIDSet map[string]bool
+	// StdoutIgnoreIDSet set of  container Ids of excluded namespaces for stdout logs
+	StdoutIgnoreIDSet map[string]bool
+	// StderrIgnoreIDSet set of  container Ids of excluded namespaces for stderr logs
+	StderrIgnoreIDSet map[string]bool
 	// DataUpdateMutex read and write mutex access to the container id set
 	DataUpdateMutex = &sync.Mutex{}
 	// ContainerLogTelemetryMutex read and write mutex access to the Container Log Telemetry
@@ -89,8 +97,8 @@ var (
 )
 
 var (
-	// KubeSystemContainersRefreshTicker updates the kube-system containers
-	KubeSystemContainersRefreshTicker *time.Ticker
+	// ExcludeNamespacesContainersRefreshTicker updates the excludenamespace containers
+	ExcludeNamespacesContainersRefreshTicker *time.Ticker
 	// ContainerImageNameRefreshTicker updates the container image and names periodically
 	ContainerImageNameRefreshTicker *time.Ticker
 )
@@ -118,21 +126,21 @@ type DataItem struct {
 // telegraf metric DataItem represents the object corresponding to the json that is sent by fluentbit tail plugin
 type laTelegrafMetric struct {
 	// 'golden' fields
-	Origin          		string `json:"Origin"`
-	Namespace          		string `json:"Namespace"`
-	Name	          		string `json:"Name"`
-	Value                	float64 `json:"Value"`
-	Tags					string `json:"Tags"`
+	Origin    string  `json:"Origin"`
+	Namespace string  `json:"Namespace"`
+	Name      string  `json:"Name"`
+	Value     float64 `json:"Value"`
+	Tags      string  `json:"Tags"`
 	// specific required fields for LA
-	CollectionTime			string `json:"CollectionTime"` //mapped to TimeGenerated
-	Computer				string `json:"Computer"`
+	CollectionTime string `json:"CollectionTime"` //mapped to TimeGenerated
+	Computer       string `json:"Computer"`
 }
 
 // ContainerLogBlob represents the object corresponding to the payload that is sent to the ODS end point
 type InsightsMetricsBlob struct {
-	DataType  string     			`json:"DataType"`
-	IPName    string     			`json:"IPName"`
-	DataItems []laTelegrafMetric 	`json:"DataItems"`
+	DataType  string             `json:"DataType"`
+	IPName    string             `json:"IPName"`
+	DataItems []laTelegrafMetric `json:"DataItems"`
 }
 
 // ContainerLogBlob represents the object corresponding to the payload that is sent to the ODS end point
@@ -187,7 +195,7 @@ func updateContainerImageNameMaps() {
 		listOptions := metav1.ListOptions{}
 		listOptions.FieldSelector = fmt.Sprintf("spec.nodeName=%s", Computer)
 		pods, err := ClientSet.CoreV1().Pods("").List(listOptions)
-		
+
 		if err != nil {
 			message := fmt.Sprintf("Error getting pods %s\nIt is ok to log here and continue, because the logs will be missing image and Name, but the logs will still have the containerID", err.Error())
 			Log(message)
@@ -217,36 +225,71 @@ func updateContainerImageNameMaps() {
 	}
 }
 
-func updateKubeSystemContainerIDs() {
-	for ; true; <-KubeSystemContainersRefreshTicker.C {
-		if strings.Compare(os.Getenv("DISABLE_KUBE_SYSTEM_LOG_COLLECTION"), "true") != 0 {
-			Log("Kube System Log Collection is ENABLED.")
-			return
-		}
-
-		Log("Kube System Log Collection is DISABLED. Collecting containerIds to drop their records")
-
-		pods, err := ClientSet.CoreV1().Pods("kube-system").List(metav1.ListOptions{})
-		if err != nil {
-			message := fmt.Sprintf("Error getting pods %s\nIt is ok to log here and continue. Kube-system logs will be collected", err.Error())
-			SendException(message)
-			Log(message)
-			continue
-		}
-
-		_ignoreIDSet := make(map[string]bool)
-		for _, pod := range pods.Items {
-			for _, status := range pod.Status.ContainerStatuses {
-				lastSlashIndex := strings.LastIndex(status.ContainerID, "/")
-				_ignoreIDSet[status.ContainerID[lastSlashIndex+1:len(status.ContainerID)]] = true
+func excludeContainerIDPopulator(excludeNamespaceList []string, logStream string) {
+	var podsToExclude []*corev1.PodList
+	listOptions := metav1.ListOptions{}
+	listOptions.FieldSelector = fmt.Sprintf("spec.nodeName=%s", Computer)
+	
+	pods, err := ClientSet.CoreV1().Pods("").List(listOptions)
+	if err != nil {
+		message := fmt.Sprintf("Error getting pods %s - for node %s . All %s logs might be collected", err.Error(), Computer, logStream)
+		SendException(message)
+		Log(message)
+		return
+	}
+	
+	podsToExclude = append(podsToExclude, pods)
+	ignoreNamespaceSet := make(map[string]bool)
+	for _, ns := range excludeNamespaceList {
+		ignoreNamespaceSet[strings.TrimSpace(ns)] = true
+	}
+	
+	_ignoreIDSet := make(map[string]bool)
+	for _, pod := range podsToExclude {
+		for _, pod := range pod.Items {
+			_, ok := ignoreNamespaceSet[pod.Namespace]
+			if ok {
+				Log ("Adding pod %s in namespace %s to %s exclusion list", pod.Name, pod.Namespace, logStream)
+				for _, status := range pod.Status.ContainerStatuses {
+						lastSlashIndex := strings.LastIndex(status.ContainerID, "/")
+						_ignoreIDSet[status.ContainerID[lastSlashIndex+1:len(status.ContainerID)]] = true
+				}
 			}
 		}
+	}
 
-		Log("Locking to update kube-system container IDs")
-		DataUpdateMutex.Lock()
-		IgnoreIDSet = _ignoreIDSet
-		DataUpdateMutex.Unlock()
-		Log("Unlocking after updating kube-system container IDs")
+	Log("Locking to update excluded container IDs for %s", logStream)
+	DataUpdateMutex.Lock()
+	if strings.Compare(logStream, "stdout") == 0 {
+		StdoutIgnoreIDSet = _ignoreIDSet
+	} else {
+		StderrIgnoreIDSet = _ignoreIDSet
+	}
+	DataUpdateMutex.Unlock()
+	Log("Unlocking after updating excluded container IDs for %s", logStream)
+}
+
+func updateExcludeStdoutContainerIDs() {
+	for ; true; <-ExcludeNamespacesContainersRefreshTicker.C {
+		collectStdoutLogs := os.Getenv("AZMON_COLLECT_STDOUT_LOGS")
+		var stdoutNSExcludeList []string
+		excludeList := os.Getenv("AZMON_STDOUT_EXCLUDED_NAMESPACES")
+		if (strings.Compare(collectStdoutLogs, "true") == 0) && (len(excludeList) > 0) {
+			stdoutNSExcludeList = strings.Split(excludeList, ",")
+			excludeContainerIDPopulator(stdoutNSExcludeList, "stdout")
+		}
+	}
+}
+
+func updateExcludeStderrContainerIDs() {
+	for ; true; <-ExcludeNamespacesContainersRefreshTicker.C {
+		collectStderrLogs := os.Getenv("AZMON_COLLECT_STDERR_LOGS")
+		var stderrNSExcludeList []string
+		excludeList := os.Getenv("AZMON_STDERR_EXCLUDED_NAMESPACES")
+		if (strings.Compare(collectStderrLogs, "true") == 0) && (len(excludeList) > 0) {
+			stderrNSExcludeList = strings.Split(excludeList, ",")
+			excludeContainerIDPopulator(stderrNSExcludeList, "stderr")
+		}
 	}
 }
 
@@ -265,24 +308,24 @@ func convert(in interface{}) (float64, bool) {
 		}
 		return float64(0), true
 	default:
-		Log ("returning 0 for %v ", in)
+		Log("returning 0 for %v ", in)
 		return float64(0), false
 	}
 }
 
 //Translates telegraf time series to one or more Azure loganalytics metric(s)
 func translateTelegrafMetrics(m map[interface{}]interface{}) ([]*laTelegrafMetric, error) {
-	
+
 	var laMetrics []*laTelegrafMetric
 	var tags map[interface{}]interface{}
 	tags = m["tags"].(map[interface{}]interface{})
 	tagMap := make(map[string]string)
 	for k, v := range tags {
-		key := fmt.Sprintf("%s",k)
+		key := fmt.Sprintf("%s", k)
 		if key == "" {
 			continue
 		}
-		tagMap[key] = fmt.Sprintf("%s",v)
+		tagMap[key] = fmt.Sprintf("%s", v)
 	}
 
 	//add azure monitor tags
@@ -305,14 +348,14 @@ func translateTelegrafMetrics(m map[interface{}]interface{}) ([]*laTelegrafMetri
 		}
 		i := m["timestamp"].(uint64)
 		laMetric := laTelegrafMetric{
-			Origin: 		fmt.Sprintf("%s/%s", TelegrafMetricOriginPrefix, TelegrafMetricOriginSuffix),
+			Origin: fmt.Sprintf("%s/%s", TelegrafMetricOriginPrefix, TelegrafMetricOriginSuffix),
 			//Namespace:  	fmt.Sprintf("%s/%s", TelegrafMetricNamespacePrefix, m["name"]),
-			Namespace:  	fmt.Sprintf("%s", m["name"]),
-			Name:       	fmt.Sprintf("%s",k),
-			Value:			fv,
-			Tags:     		fmt.Sprintf("%s", tagJson),
-			CollectionTime: time.Unix(int64(i),0).Format(time.RFC3339),
-			Computer: 	Computer, //this is the collection agent's computer name, not necessarily to which computer the metric applies to
+			Namespace:      fmt.Sprintf("%s", m["name"]),
+			Name:           fmt.Sprintf("%s", k),
+			Value:          fv,
+			Tags:           fmt.Sprintf("%s", tagJson),
+			CollectionTime: time.Unix(int64(i), 0).Format(time.RFC3339),
+			Computer:       Computer, //this is the collection agent's computer name, not necessarily to which computer the metric applies to
 		}
 
 		//Log ("la metric:%v", laMetric)
@@ -325,7 +368,7 @@ func translateTelegrafMetrics(m map[interface{}]interface{}) ([]*laTelegrafMetri
 func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int {
 	var laMetrics []*laTelegrafMetric
 
-	if ( (telegrafRecords== nil) || ! (len(telegrafRecords) > 0) ) {
+	if (telegrafRecords == nil) || !(len(telegrafRecords) > 0) {
 		Log("PostTelegrafMetricsToLA::Error:no timeseries to derive")
 		return output.FLB_OK
 	}
@@ -340,7 +383,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		laMetrics = append(laMetrics, translatedMetrics...)
 	}
 
-	if ( (laMetrics == nil) || !(len(laMetrics) > 0) ) {
+	if (laMetrics == nil) || !(len(laMetrics) > 0) {
 		Log("PostTelegrafMetricsToLA::Info:no metrics derived from timeseries data")
 		return output.FLB_OK
 	} else {
@@ -351,7 +394,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 	var metrics []laTelegrafMetric
 	var i int
 
-	for i=0; i < len(laMetrics); i++ {
+	for i = 0; i < len(laMetrics); i++ {
 		metrics = append(metrics, *laMetrics[i])
 	}
 
@@ -368,7 +411,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		SendException(message)
 		return output.FLB_OK
 	}
-	
+
 	//Post metrics data to LA
 	req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(jsonBytes))
 
@@ -376,7 +419,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 
 	//set headers
 	req.Header.Set("x-ms-date", time.Now().Format(time.RFC3339))
-	
+
 	//expensive to do string len for every request, so use a flag
 	if ResourceCentric == true {
 		req.Header.Set("x-ms-AzureResourceId", ResourceID)
@@ -420,20 +463,23 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 
 // PostDataHelper sends data to the OMS endpoint
 func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
-
 	start := time.Now()
 	var dataItems []DataItem
 
 	var maxLatency float64
 	var maxLatencyContainer string
 
-	ignoreIDSet := make(map[string]bool)
+	stdoutIgnoreIDSet := make(map[string]bool)
+	stderrIgnoreIDSet := make(map[string]bool)
 	imageIDMap := make(map[string]string)
 	nameIDMap := make(map[string]string)
 
 	DataUpdateMutex.Lock()
-	for k, v := range IgnoreIDSet {
-		ignoreIDSet[k] = v
+	for k, v := range StdoutIgnoreIDSet {
+		stdoutIgnoreIDSet[k] = v
+	}
+	for k, v := range StderrIgnoreIDSet {
+		stderrIgnoreIDSet[k] = v
 	}
 	for k, v := range ImageIDMap {
 		imageIDMap[k] = v
@@ -444,28 +490,34 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	DataUpdateMutex.Unlock()
 
 	for _, record := range tailPluginRecords {
-
 		containerID := GetContainerIDFromFilePath(ToString(record["filepath"]))
+		logEntrySource := ToString(record["stream"])
 
-		if containerID == "" || containsKey(ignoreIDSet, containerID) {
-			continue
+		if strings.EqualFold(logEntrySource, "stdout") {
+			if containerID == "" || containsKey(stdoutIgnoreIDSet, containerID) {
+				continue
+			}
+		} else if strings.EqualFold(logEntrySource, "stderr") {
+			if containerID == "" || containsKey(stderrIgnoreIDSet, containerID) {
+				continue
+			}
 		}
 
 		stringMap := make(map[string]string)
 
 		stringMap["LogEntry"] = ToString(record["log"])
-		stringMap["LogEntrySource"] = ToString(record["stream"])
+		stringMap["LogEntrySource"] = logEntrySource
 		stringMap["LogEntryTimeStamp"] = ToString(record["time"])
 		stringMap["SourceSystem"] = "Containers"
 		stringMap["Id"] = containerID
 
 		if val, ok := imageIDMap[containerID]; ok {
 			stringMap["Image"] = val
-		} 
+		}
 
 		if val, ok := nameIDMap[containerID]; ok {
 			stringMap["Name"] = val
-		} 
+		}
 
 		dataItem := DataItem{
 			ID:                    stringMap["Id"],
@@ -534,7 +586,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		defer resp.Body.Close()
-
 		numRecords := len(dataItems)
 		Log("Successfully flushed %d records in %s", numRecords, elapsed)
 		ContainerLogTelemetryMutex.Lock()
@@ -573,7 +624,8 @@ func GetContainerIDFromFilePath(filepath string) string {
 // InitializePlugin reads and populates plugin configuration
 func InitializePlugin(pluginConfPath string, agentVersion string) {
 
-	IgnoreIDSet = make(map[string]bool)
+	StdoutIgnoreIDSet = make(map[string]bool)
+	StderrIgnoreIDSet = make(map[string]bool)
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
 
@@ -606,19 +658,19 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		splitted := strings.Split(ResourceID, "/")
 		ResourceName = splitted[len(splitted)-1]
 		Log("ResourceCentric: True")
-		Log("ResourceID=%s",ResourceID)
-		Log("ResourceName=%s",ResourceID)
-	} 
-	
+		Log("ResourceID=%s", ResourceID)
+		Log("ResourceName=%s", ResourceID)
+	}
+
 	if ResourceCentric == false {
 		//AKS-Engine/hybrid scenario
 		ResourceName = os.Getenv(ResourceNameEnv)
 		ResourceID = ResourceName
 		Log("ResourceCentric: False")
-		Log("ResourceID=%s",ResourceID)
-		Log("ResourceName=%s",ResourceName)
+		Log("ResourceID=%s", ResourceID)
+		Log("ResourceName=%s", ResourceName)
 	}
-	
+
 	// Initialize image,name map refresh ticker
 	containerInventoryRefreshInterval, err := strconv.Atoi(pluginConfig["container_inventory_refresh_interval"])
 	if err != nil {
@@ -631,17 +683,16 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("containerInventoryRefreshInterval = %d \n", containerInventoryRefreshInterval)
 	ContainerImageNameRefreshTicker = time.NewTicker(time.Second * time.Duration(containerInventoryRefreshInterval))
 
-	// Initialize Kube System Refresh Ticker
-	kubeSystemContainersRefreshInterval, err := strconv.Atoi(pluginConfig["kube_system_containers_refresh_interval"])
+	excludeNamespacesContainersRefreshInterval, err := strconv.Atoi(pluginConfig["exclude_namespaces_containers_refresh_interval"])
 	if err != nil {
-		message := fmt.Sprintf("Error Reading Kube System Container Ids Refresh Interval %s", err.Error())
+		message := fmt.Sprintf("Error Reading exclude namespaces Container Ids Refresh Interval %s", err.Error())
 		Log(message)
 		SendException(message)
-		Log("Using Default Refresh Interval of %d s\n", defaultKubeSystemContainersRefreshInterval)
-		kubeSystemContainersRefreshInterval = defaultKubeSystemContainersRefreshInterval
+		Log("Using Default Refresh Interval of %d s\n", defaultExcludeNamespacesContainersRefreshInterval)
+		excludeNamespacesContainersRefreshInterval = defaultExcludeNamespacesContainersRefreshInterval
 	}
-	Log("kubeSystemContainersRefreshInterval = %d \n", kubeSystemContainersRefreshInterval)
-	KubeSystemContainersRefreshTicker = time.NewTicker(time.Second * time.Duration(kubeSystemContainersRefreshInterval))
+	Log("excludeNamespacesContainersRefreshInterval = %d \n", excludeNamespacesContainersRefreshInterval)
+	ExcludeNamespacesContainersRefreshTicker = time.NewTicker(time.Second * time.Duration(excludeNamespacesContainersRefreshInterval))
 
 	// Populate Computer field
 	containerHostName, err := ioutil.ReadFile(pluginConfig["container_host_file_path"])
@@ -680,10 +731,16 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	PluginConfiguration = pluginConfig
 
 	CreateHTTPClient()
-	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
-		go updateKubeSystemContainerIDs()
-		go updateContainerImageNameMaps()
-	} else {
+
+  if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
+    defaultExcludePath := os.Getenv("AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH")
+    //further optimization for clusters with default settings. need this cache only when log collection config is overridden with custom config
+    if ( (strings.Compare(defaultExcludePath, "*_kube-system_*.log") != 0) ) {
+      go updateExcludeStdoutContainerIDs()
+      go updateExcludeStderrContainerIDs()
+    }
+    go updateContainerImageNameMaps()
+  } else {
 		Log("Running in replicaset. Disabling kube-system container cache collection & updates \n")
 	}
 }
