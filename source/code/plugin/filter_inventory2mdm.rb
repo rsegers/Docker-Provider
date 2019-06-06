@@ -176,6 +176,10 @@ module Fluent
                     podControllerNameDimValue = record['DataItems'][0]['ControllerName']
                     podNodeDimValue = record['DataItems'][0]['Computer']
 
+                    if podControllerNameDimValue.nil? || podControllerNameDimValue.empty?
+                        podControllerNameDimValue = 'No Controller'
+                    end
+
                     if podNodeDimValue.empty? && podPhaseDimValue.downcase == 'pending'
                         podNodeDimValue = 'unscheduled'
                     elsif podNodeDimValue.empty?
