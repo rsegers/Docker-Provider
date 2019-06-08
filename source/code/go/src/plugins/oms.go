@@ -17,7 +17,6 @@ import (
 
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -57,9 +56,6 @@ const ReplicaSetContainerLogPluginConfFilePath = "/etc/opt/microsoft/docker-cimp
 const IPName = "Containers"
 const defaultContainerInventoryRefreshInterval = 60
 
-// const defaultKubeSystemContainersRefreshInterval = 300
-const defaultExcludeNamespacesContainersRefreshInterval = 300
-
 var (
 	// PluginConfiguration the plugins configuration
 	PluginConfiguration map[string]string
@@ -84,10 +80,10 @@ var (
 	ImageIDMap map[string]string
 	// NameIDMap caches the container it to Name mapping
 	NameIDMap map[string]string
-	// StdoutIgnoreIDSet set of  container Ids of excluded namespaces for stdout logs
-	StdoutIgnoreIDSet map[string]bool
-	// StderrIgnoreIDSet set of  container Ids of excluded namespaces for stderr logs
-	StderrIgnoreIDSet map[string]bool
+	// StdoutIgnoreNamespaceSet set of  excluded K8S namespaces for stdout logs
+	StdoutIgnoreNsSet map[string]bool
+	// StderrIgnoreNamespaceSet set of  excluded K8S namespaces for stderr logs
+	StderrIgnoreNsSet map[string]bool
 	// DataUpdateMutex read and write mutex access to the container id set
 	DataUpdateMutex = &sync.Mutex{}
 	// ContainerLogTelemetryMutex read and write mutex access to the Container Log Telemetry
@@ -97,8 +93,6 @@ var (
 )
 
 var (
-	// ExcludeNamespacesContainersRefreshTicker updates the excludenamespace containers
-	ExcludeNamespacesContainersRefreshTicker *time.Ticker
 	// ContainerImageNameRefreshTicker updates the container image and names periodically
 	ContainerImageNameRefreshTicker *time.Ticker
 )
@@ -225,70 +219,28 @@ func updateContainerImageNameMaps() {
 	}
 }
 
-func excludeContainerIDPopulator(excludeNamespaceList []string, logStream string) {
-	var podsToExclude []*corev1.PodList
-	listOptions := metav1.ListOptions{}
-	listOptions.FieldSelector = fmt.Sprintf("spec.nodeName=%s", Computer)
-	
-	pods, err := ClientSet.CoreV1().Pods("").List(listOptions)
-	if err != nil {
-		message := fmt.Sprintf("Error getting pods %s - for node %s . All %s logs might be collected", err.Error(), Computer, logStream)
-		SendException(message)
-		Log(message)
-		return
-	}
-	
-	podsToExclude = append(podsToExclude, pods)
-	ignoreNamespaceSet := make(map[string]bool)
-	for _, ns := range excludeNamespaceList {
-		ignoreNamespaceSet[strings.TrimSpace(ns)] = true
-	}
-	
-	_ignoreIDSet := make(map[string]bool)
-	for _, pod := range podsToExclude {
-		for _, pod := range pod.Items {
-			_, ok := ignoreNamespaceSet[pod.Namespace]
-			if ok {
-				Log ("Adding pod %s in namespace %s to %s exclusion list", pod.Name, pod.Namespace, logStream)
-				for _, status := range pod.Status.ContainerStatuses {
-						lastSlashIndex := strings.LastIndex(status.ContainerID, "/")
-						_ignoreIDSet[status.ContainerID[lastSlashIndex+1:len(status.ContainerID)]] = true
-				}
-			}
-		}
-	}
-
-	Log("Locking to update excluded container IDs for %s", logStream)
-	DataUpdateMutex.Lock()
-	if strings.Compare(logStream, "stdout") == 0 {
-		StdoutIgnoreIDSet = _ignoreIDSet
-	} else {
-		StderrIgnoreIDSet = _ignoreIDSet
-	}
-	DataUpdateMutex.Unlock()
-	Log("Unlocking after updating excluded container IDs for %s", logStream)
-}
-
-func updateExcludeStdoutContainerIDs() {
-	for ; true; <-ExcludeNamespacesContainersRefreshTicker.C {
-		collectStdoutLogs := os.Getenv("AZMON_COLLECT_STDOUT_LOGS")
-		var stdoutNSExcludeList []string
-		excludeList := os.Getenv("AZMON_STDOUT_EXCLUDED_NAMESPACES")
-		if (strings.Compare(collectStdoutLogs, "true") == 0) && (len(excludeList) > 0) {
-			stdoutNSExcludeList = strings.Split(excludeList, ",")
-			excludeContainerIDPopulator(stdoutNSExcludeList, "stdout")
+func populateExcludedStdoutNamespaces() {
+	collectStdoutLogs := os.Getenv("AZMON_COLLECT_STDOUT_LOGS")
+	var stdoutNSExcludeList []string
+	excludeList := os.Getenv("AZMON_STDOUT_EXCLUDED_NAMESPACES")
+	if (strings.Compare(collectStdoutLogs, "true") == 0) && (len(excludeList) > 0) {
+		stdoutNSExcludeList = strings.Split(excludeList, ",")
+		for _, ns := range stdoutNSExcludeList {
+			Log ("Excluding namespace %s for stdout log collection", ns)
+			StdoutIgnoreNsSet[strings.TrimSpace(ns)] = true
 		}
 	}
 }
 
-func updateExcludeStderrContainerIDs() {
-	for ; true; <-ExcludeNamespacesContainersRefreshTicker.C {
-		collectStderrLogs := os.Getenv("AZMON_COLLECT_STDERR_LOGS")
-		var stderrNSExcludeList []string
-		excludeList := os.Getenv("AZMON_STDERR_EXCLUDED_NAMESPACES")
-		if (strings.Compare(collectStderrLogs, "true") == 0) && (len(excludeList) > 0) {
-			stderrNSExcludeList = strings.Split(excludeList, ",")
-			excludeContainerIDPopulator(stderrNSExcludeList, "stderr")
+func populateExcludedStderrNamespaces() {
+	collectStderrLogs := os.Getenv("AZMON_COLLECT_STDERR_LOGS")
+	var stderrNSExcludeList []string
+	excludeList := os.Getenv("AZMON_STDERR_EXCLUDED_NAMESPACES")
+	if (strings.Compare(collectStderrLogs, "true") == 0) && (len(excludeList) > 0) {
+		stderrNSExcludeList = strings.Split(excludeList, ",")
+		for _, ns := range stderrNSExcludeList {
+			Log ("Excluding namespace %s for stderr log collection", ns)
+			StderrIgnoreNsSet[strings.TrimSpace(ns)] = true
 		}
 	}
 }
@@ -469,18 +421,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	var maxLatency float64
 	var maxLatencyContainer string
 
-	stdoutIgnoreIDSet := make(map[string]bool)
-	stderrIgnoreIDSet := make(map[string]bool)
 	imageIDMap := make(map[string]string)
 	nameIDMap := make(map[string]string)
 
 	DataUpdateMutex.Lock()
-	for k, v := range StdoutIgnoreIDSet {
-		stdoutIgnoreIDSet[k] = v
-	}
-	for k, v := range StderrIgnoreIDSet {
-		stderrIgnoreIDSet[k] = v
-	}
+	
 	for k, v := range ImageIDMap {
 		imageIDMap[k] = v
 	}
@@ -490,15 +435,15 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	DataUpdateMutex.Unlock()
 
 	for _, record := range tailPluginRecords {
-		containerID := GetContainerIDFromFilePath(ToString(record["filepath"]))
+		containerID, k8sNamespace := GetContainerIDK8sNamespaceFromFileName(ToString(record["filepath"]))
 		logEntrySource := ToString(record["stream"])
 
 		if strings.EqualFold(logEntrySource, "stdout") {
-			if containerID == "" || containsKey(stdoutIgnoreIDSet, containerID) {
+			if containerID == "" || containsKey(StdoutIgnoreNsSet, k8sNamespace) {
 				continue
 			}
 		} else if strings.EqualFold(logEntrySource, "stderr") {
-			if containerID == "" || containsKey(stderrIgnoreIDSet, containerID) {
+			if containerID == "" || containsKey(StderrIgnoreNsSet, k8sNamespace) {
 				continue
 			}
 		}
@@ -608,24 +553,38 @@ func containsKey(currentMap map[string]bool, key string) bool {
 	return c
 }
 
-// GetContainerIDFromFilePath Gets the container ID From the file Path
-func GetContainerIDFromFilePath(filepath string) string {
-	start := strings.LastIndex(filepath, "-")
-	end := strings.LastIndex(filepath, ".")
+// GetContainerIDK8sNamespaceFromFileName Gets the container ID From the file Name
+// sample filename kube-proxy-dgcx7_kube-system_kube-proxy-8df7e49e9028b60b5b0d0547f409c455a9567946cf763267b7e6fa053ab8c182.log
+func GetContainerIDK8sNamespaceFromFileName(filename string) (string, string) {
+	id := ""
+	ns := ""
+
+	start := strings.LastIndex(filename, "-")
+	end := strings.LastIndex(filename, ".")
+	
 	if start >= end || start == -1 || end == -1 {
-		// This means the file is not a managed Kubernetes docker log file.
-		// Drop all records from the file
-		Log("File %s is not a Kubernetes managed docker log file. Dropping all records from the file", filepath)
-		return ""
+		id = ""
+	} else {
+		id = filename[start+1 : end]
 	}
-	return filepath[start+1 : end]
+
+	start = strings.Index(filename, "_")
+	end = strings.LastIndex(filename, "_")
+
+	if start >= end || start == -1 || end == -1 {
+		ns = ""
+	} else {
+		ns = filename[start+1 : end]
+	}
+
+	return id, ns
 }
 
 // InitializePlugin reads and populates plugin configuration
 func InitializePlugin(pluginConfPath string, agentVersion string) {
 
-	StdoutIgnoreIDSet = make(map[string]bool)
-	StderrIgnoreIDSet = make(map[string]bool)
+	StdoutIgnoreNsSet = make(map[string]bool)
+	StderrIgnoreNsSet = make(map[string]bool)
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
 
@@ -683,16 +642,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("containerInventoryRefreshInterval = %d \n", containerInventoryRefreshInterval)
 	ContainerImageNameRefreshTicker = time.NewTicker(time.Second * time.Duration(containerInventoryRefreshInterval))
 
-	excludeNamespacesContainersRefreshInterval, err := strconv.Atoi(pluginConfig["exclude_namespaces_containers_refresh_interval"])
-	if err != nil {
-		message := fmt.Sprintf("Error Reading exclude namespaces Container Ids Refresh Interval %s", err.Error())
-		Log(message)
-		SendException(message)
-		Log("Using Default Refresh Interval of %d s\n", defaultExcludeNamespacesContainersRefreshInterval)
-		excludeNamespacesContainersRefreshInterval = defaultExcludeNamespacesContainersRefreshInterval
-	}
-	Log("excludeNamespacesContainersRefreshInterval = %d \n", excludeNamespacesContainersRefreshInterval)
-	ExcludeNamespacesContainersRefreshTicker = time.NewTicker(time.Second * time.Duration(excludeNamespacesContainersRefreshInterval))
 
 	// Populate Computer field
 	containerHostName, err := ioutil.ReadFile(pluginConfig["container_host_file_path"])
@@ -732,15 +681,11 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	CreateHTTPClient()
 
-  if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
-    defaultExcludePath := os.Getenv("AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH")
-    //further optimization for clusters with default settings. need this cache only when log collection config is overridden with custom config
-    if ( (strings.Compare(defaultExcludePath, "*_kube-system_*.log") != 0) ) {
-      go updateExcludeStdoutContainerIDs()
-      go updateExcludeStderrContainerIDs()
-    }
-    go updateContainerImageNameMaps()
-  } else {
-		Log("Running in replicaset. Disabling kube-system container cache collection & updates \n")
+  	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
+		populateExcludedStdoutNamespaces()
+		populateExcludedStderrNamespaces()
+		go updateContainerImageNameMaps()		
+  	} else {
+		Log("Running in replicaset. Disabling container enrichment caching & updates \n")
 	}
 }

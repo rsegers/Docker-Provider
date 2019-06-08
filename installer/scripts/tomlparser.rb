@@ -13,7 +13,7 @@ require_relative "tomlrb"
 @collectClusterEnvVariables = true
 @logTailPath = "/var/log/containers/*.log"
 @logExclusionRegexPattern = "(^((?!stdout|stderr).)*$)"
-@excludePath = "*.csv2"
+@excludePath = "*.csv2" #some invalid path
 
 # Use parser to parse the configmap toml file to a ruby structure
 def parseConfigMap
@@ -76,11 +76,14 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         @collectStderrLogs = parsedConfig[:log_collection_settings][:stderr][:enabled]
         puts "config::Using config map setting for stderr log collection"
         stderrNamespaces = parsedConfig[:log_collection_settings][:stderr][:exclude_namespaces]
-
+        stdoutNamespaces = Array.new
         #Clearing it, so that it can be overridden with the config map settings
         @stderrExcludeNamespaces.clear
         if @collectStderrLogs && !stderrNamespaces.nil?
           if stderrNamespaces.kind_of?(Array)
+            if !@stdoutExcludeNamespaces.nil? && !@stdoutExcludeNamespaces.empty?
+              stdoutNamespaces = @stdoutExcludeNamespaces.split(',')
+            end
             # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
             if stderrNamespaces.length > 0 && stderrNamespaces[0].kind_of?(String)
               stderrNamespaces.each do |namespace|
@@ -89,6 +92,10 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                   @stderrExcludeNamespaces.concat(namespace)
                 else
                   @stderrExcludeNamespaces.concat("," + namespace)
+                end
+                # Add this namespace to excludepath if both stdout & stderr are excluded for this namespace, to ensure are optimized and dont tail these files at all
+                if stdoutNamespaces.include? namespace
+                  @excludePath.concat("," + "*_" + namespace + "_*.log")
                 end
               end
               puts "config::Using config map setting for stderr log collection to exclude namespace"
@@ -113,13 +120,16 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 end
 
   @configSchemaVersion = ENV['AZMON_AGENT_CFG_SCHEMA_VERSION']
-  if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @@configSchemaVersion.strip.casecmp('v1') == 0 #note v1 is the only supported schema version , so hardcoding it
+  if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @configSchemaVersion.strip.casecmp('v1') == 0 #note v1 is the only supported schema version , so hardcoding it
+    puts "****************Start Config Processing********************"
     configMapSettings = parseConfigMap
     if !configMapSettings.nil?
       populateSettingValuesFromConfigMap(configMapSettings)
     end
   else
-    puts "config::unsupported config schema version - #{@configSchemaVersion}, using defaults"
+    if (File.file?(@configMapMountPath))
+      puts "config::unsupported/missing config schema version - '#{@configSchemaVersion}' , using defaults"
+    end 
     @excludePath = "*_kube-system_*.log"
   end
 
@@ -147,6 +157,9 @@ end
     file.write("export AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH=#{@excludePath}\n")
     # Close file after writing all environment variables
     file.close
+    puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "
+    puts "****************End Config Processing********************"
   else
     puts "config::error::Exception while opening file for writing config environment variables"
+    puts "****************End Config Processing********************"
   end
