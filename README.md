@@ -10,6 +10,16 @@ additional questions or comments.
 ## Release History
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
+  
+### 04/23/2019 - 
+##### Version microsoft/oms:ciprod043232019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod04232019
+- Windows node monitoring (metrics & inventory)
+- Telegraf integration (Telegraf metrics to LogAnalytics)
+- Node Disk usage metrics (used, free, used%) as InsightsMetrics
+- Resource stamping for all types (inventory, metrics (perf), metrics (InsightsMetrics), logs) [Applicable only for AKS clusters]
+- Upped daemonset memory request (not limit) from 150Mi to 225 Mi
+- Added liveness probe for fluentbit
+- Fix for MDM filter plugin when kubeapi returns non-200 response
 
 ### 03/12/2019 - Version microsoft/oms:ciprod03122019
 - Fix for closing response.Body in outoms

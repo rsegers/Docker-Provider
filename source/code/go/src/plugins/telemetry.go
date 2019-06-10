@@ -67,6 +67,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 
 	for ; true; <-ContainerLogTelemetryTicker.C {
 		elapsed := time.Since(start)
+
 		ContainerLogTelemetryMutex.Lock()
 		flushRate := FlushedRecordsCount / FlushedRecordsTimeTaken * 1000
 		logRate := FlushedRecordsCount / float64(elapsed/time.Second)
@@ -92,7 +93,6 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 			logLatencyMetric.Properties["Container"] = logLatencyMsContainer
 			TelemetryClient.Track(logLatencyMetric)
 		}
-
 		TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount))
 		TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSendErrorsTelegrafMetrics, telegrafMetricsSendErrorCount))
 		start = time.Now()
