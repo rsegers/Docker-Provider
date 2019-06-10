@@ -66,7 +66,6 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 	SendEvent(eventNameContainerLogInit, make(map[string]string))
 
 	for ; true; <-ContainerLogTelemetryTicker.C {
-		SendEvent(eventNameDaemonSetHeartbeat, make(map[string]string))
 		elapsed := time.Since(start)
 
 		ContainerLogTelemetryMutex.Lock()
@@ -84,13 +83,16 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		AgentLogProcessingMaxLatencyMsContainer = ""
 		ContainerLogTelemetryMutex.Unlock()
 
-		flushRateMetric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)
-		TelemetryClient.Track(flushRateMetric)
-		logRateMetric := appinsights.NewMetricTelemetry(metricNameAvgLogGenerationRate, logRate)
-		TelemetryClient.Track(logRateMetric)
-		logLatencyMetric := appinsights.NewMetricTelemetry(metricNameAgentLogProcessingMaxLatencyMs, logLatencyMs)
-		logLatencyMetric.Properties["Container"] = logLatencyMsContainer
-		TelemetryClient.Track(logLatencyMetric)
+		if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
+			SendEvent(eventNameDaemonSetHeartbeat, make(map[string]string))
+			flushRateMetric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)
+			TelemetryClient.Track(flushRateMetric)
+			logRateMetric := appinsights.NewMetricTelemetry(metricNameAvgLogGenerationRate, logRate)
+			TelemetryClient.Track(logRateMetric)
+			logLatencyMetric := appinsights.NewMetricTelemetry(metricNameAgentLogProcessingMaxLatencyMs, logLatencyMs)
+			logLatencyMetric.Properties["Container"] = logLatencyMsContainer
+			TelemetryClient.Track(logLatencyMetric)
+		}
 		TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount))
 		TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSendErrorsTelegrafMetrics, telegrafMetricsSendErrorCount))
 		start = time.Now()

@@ -13,6 +13,13 @@ class CAdvisorMetricsAPIClient
   require_relative "KubernetesApiClient"
   require_relative "ApplicationInsightsUtility"
 
+  @configMapMountPath = "/etc/config/settings/log-data-collection-settings"
+  @clusterEnvVarCollectionEnabled = ENV["AZMON_CLUSTER_COLLECT_ENV_VAR"]
+  @clusterStdErrLogCollectionEnabled = ENV["AZMON_COLLECT_STDERR_LOGS"]
+  @clusterStdOutLogCollectionEnabled = ENV["AZMON_COLLECT_STDOUT_LOGS"]
+  @clusterLogTailExcludPath = ENV["AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH"]
+  @clusterLogTailPath = ENV["AZMON_LOG_TAIL_PATH"]
+  @clusterAgentSchemaVersion = ENV["AZMON_AGENT_CFG_SCHEMA_VERSION"]
   @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_perf_log.txt"
   @Log = Logger.new(@LogPath, 2, 10 * 1048576) #keep last 2 files, max log file size = 10M
   #   @@rxBytesLast = nil
@@ -192,6 +199,16 @@ class CAdvisorMetricsAPIClient
                     telemetryProps["PodName"] = podName
                     telemetryProps["ContainerName"] = containerName
                     telemetryProps["Computer"] = hostName
+                    #telemetry about custom log collections setting
+                    if (File.file?(@configMapMountPath))
+                      telemetryProps["clustercustomsettings"] = true
+                      telemetryProps["clusterenvvars"] = @clusterEnvVarCollectionEnabled
+                      telemetryProps["clusterstderrlogs"] = @clusterStdErrLogCollectionEnabled
+                      telemetryProps["clusterstdoutlogs"] = @clusterStdOutLogCollectionEnabled
+                      telemetryProps["clusterlogtailexcludepath"] = @clusterLogTailExcludPath
+                      telemetryProps["clusterLogTailPath"] = @clusterLogTailPath
+                      telemetryProps["clusterAgentSchemaVersion"] = @clusterAgentSchemaVersion
+                    end
                     ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
                   end
                 end
