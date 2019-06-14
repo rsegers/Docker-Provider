@@ -243,6 +243,75 @@ func populateExcludedStderrNamespaces() {
 			StderrIgnoreNsSet[strings.TrimSpace(ns)] = true
 		}
 	}
+
+	var metrics []laTelegrafMetric
+	var i int
+
+	for i = 0; i < len(laMetrics); i++ {
+		metrics = append(metrics, *laMetrics[i])
+	}
+
+	laTelegrafMetrics := InsightsMetricsBlob{
+		DataType:  InsightsMetricsDataType,
+		IPName:    IPName,
+		DataItems: metrics}
+
+	jsonBytes, err := json.Marshal(laTelegrafMetrics)
+
+	if err != nil {
+		message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:when marshalling json %q", err)
+		Log(message)
+		SendException(message)
+		return output.FLB_OK
+	}
+
+	//Post metrics data to LA
+	req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(jsonBytes))
+
+	//req.URL.Query().Add("api-version","2016-04-01")
+
+	//set headers
+	req.Header.Set("x-ms-date", time.Now().Format(time.RFC3339))
+
+	//expensive to do string len for every request, so use a flag
+	if ResourceCentric == true {
+		req.Header.Set("x-ms-AzureResourceId", ResourceID)
+	}
+
+	start := time.Now()
+	resp, err := HTTPClient.Do(req)
+	elapsed := time.Since(start)
+
+	if err != nil {
+		message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:(retriable) when sending %v metrics. duration:%v err:%q \n", len(laMetrics), elapsed, err.Error())
+		Log(message)
+		SendException(message)
+		UpdateNumTelegrafMetricsSentTelemetry(0, 1)
+		return output.FLB_RETRY
+	}
+
+	if resp == nil || resp.StatusCode != 200 {
+		if resp != nil {
+			Log("PostTelegrafMetricsToLA::Error:(retriable) Response Status %v Status Code %v", resp.Status, resp.StatusCode)
+		}
+		UpdateNumTelegrafMetricsSentTelemetry(0, 1)
+		return output.FLB_RETRY
+	}
+
+	defer resp.Body.Close()
+
+	numMetrics := len(laMetrics)
+	UpdateNumTelegrafMetricsSentTelemetry(numMetrics, 0)
+	Log("PostTelegrafMetricsToLA::Info:Successfully flushed %v records in %v", numMetrics, elapsed)
+
+	return output.FLB_OK
+}
+
+func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int) {
+	ContainerLogTelemetryMutex.Lock()
+	TelegrafMetricsSentCount += float64(numMetricsSent)
+	TelegrafMetricsSendErrorCount += float64(numSendErrors)
+	ContainerLogTelemetryMutex.Unlock()
 }
 
 //Azure loganalytics metric values have to be numeric, so string values are dropped
@@ -372,174 +441,6 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 	//set headers
 	req.Header.Set("x-ms-date", time.Now().Format(time.RFC3339))
 
-	//expensive to do string len for every request, so use a flag
-	if ResourceCentric == true {
-		req.Header.Set("x-ms-AzureResourceId", ResourceID)
-	}
-
-	start := time.Now()
-	resp, err := HTTPClient.Do(req)
-	elapsed := time.Since(start)
-
-	if err != nil {
-		message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:(retriable) when sending %v metrics. duration:%v err:%q \n", len(laMetrics), elapsed, err.Error())
-		Log(message)
-		SendException(message)
-		UpdateNumTelegrafMetricsSentTelemetry(0, 1)
-		return output.FLB_RETRY
-	}
-
-	if resp == nil || resp.StatusCode != 200 {
-		if resp != nil {
-			Log("PostTelegrafMetricsToLA::Error:(retriable) Response Status %v Status Code %v", resp.Status, resp.StatusCode)
-		}
-		UpdateNumTelegrafMetricsSentTelemetry(0, 1)
-		return output.FLB_RETRY
-	}
-
-	defer resp.Body.Close()
-
-	numMetrics := len(laMetrics)
-	UpdateNumTelegrafMetricsSentTelemetry(numMetrics, 0)
-	Log("PostTelegrafMetricsToLA::Info:Successfully flushed %v records in %v", numMetrics, elapsed)
-
-	return output.FLB_OK
-}
-
-func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int) {
-	ContainerLogTelemetryMutex.Lock()
-	TelegrafMetricsSentCount += float64(numMetricsSent)
-	TelegrafMetricsSendErrorCount += float64(numSendErrors)
-	ContainerLogTelemetryMutex.Unlock()
-}
-
-//Azure loganalytics metric values have to be numeric, so string values are dropped
-func convert(in interface{}) (float64, bool) {
-	switch v := in.(type) {
-	case int64:
-		return float64(v), true
-	case uint64:
-		return float64(v), true
-	case float64:
-		return v, true
-	case bool:
-		if v {
-			return float64(1), true
-		}
-		return float64(0), true
-	default:
-		Log ("returning 0 for %v ", in)
-		return float64(0), false
-	}
-}
-
-//Translates telegraf time series to one or more Azure loganalytics metric(s)
-func translateTelegrafMetrics(m map[interface{}]interface{}) ([]*laTelegrafMetric, error) {
-	
-	var laMetrics []*laTelegrafMetric
-	var tags map[interface{}]interface{}
-	tags = m["tags"].(map[interface{}]interface{})
-	tagMap := make(map[string]string)
-	for k, v := range tags {
-		key := fmt.Sprintf("%s",k)
-		if key == "" {
-			continue
-		}
-		tagMap[key] = fmt.Sprintf("%s",v)
-	}
-
-	//add azure monitor tags
-	tagMap[fmt.Sprintf("%s/%s", TelegrafMetricOriginPrefix, TelegrafTagClusterID)] = ResourceID
-	tagMap[fmt.Sprintf("%s/%s", TelegrafMetricOriginPrefix, TelegrafTagClusterName)] = ResourceName
-
-	var fieldMap map[interface{}]interface{}
-	fieldMap = m["fields"].(map[interface{}]interface{})
-
-	tagJson, err := json.Marshal(&tagMap)
-
-	if err != nil {
-		return nil, err
-	}
-
-	for k, v := range fieldMap {
-		fv, ok := convert(v)
-		if !ok {
-			continue
-		}
-		i := m["timestamp"].(uint64)
-		laMetric := laTelegrafMetric{
-			Origin: 		fmt.Sprintf("%s/%s", TelegrafMetricOriginPrefix, TelegrafMetricOriginSuffix),
-			//Namespace:  	fmt.Sprintf("%s/%s", TelegrafMetricNamespacePrefix, m["name"]),
-			Namespace:  	fmt.Sprintf("%s", m["name"]),
-			Name:       	fmt.Sprintf("%s",k),
-			Value:			fv,
-			Tags:     		fmt.Sprintf("%s", tagJson),
-			CollectionTime: time.Unix(int64(i),0).Format(time.RFC3339),
-			Computer: 	Computer, //this is the collection agent's computer name, not necessarily to which computer the metric applies to
-		}
-
-		//Log ("la metric:%v", laMetric)
-		laMetrics = append(laMetrics, &laMetric)
-	}
-	return laMetrics, nil
-}
-
-//send metrics from Telegraf to LA. 1) Translate telegraf timeseries to LA metric(s) 2) Send it to LA as 'InsightsMetrics' fixed type
-func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int {
-	var laMetrics []*laTelegrafMetric
-
-	if ( (telegrafRecords== nil) || ! (len(telegrafRecords) > 0) ) {
-		Log("PostTelegrafMetricsToLA::Error:no timeseries to derive")
-		return output.FLB_OK
-	}
-
-	for _, record := range telegrafRecords {
-		translatedMetrics, err := translateTelegrafMetrics(record)
-		if err != nil {
-			message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:when translating telegraf metric to log analytics metric %q", err)
-			Log(message)
-			//SendException(message) //This will be too noisy
-		}
-		laMetrics = append(laMetrics, translatedMetrics...)
-	}
-
-	if ( (laMetrics == nil) || !(len(laMetrics) > 0) ) {
-		Log("PostTelegrafMetricsToLA::Info:no metrics derived from timeseries data")
-		return output.FLB_OK
-	} else {
-		message := fmt.Sprintf("PostTelegrafMetricsToLA::Info:derived %v metrics from %v timeseries", len(laMetrics), len(telegrafRecords))
-		Log(message)
-	}
-
-	var metrics []laTelegrafMetric
-	var i int
-
-	for i=0; i < len(laMetrics); i++ {
-		metrics = append(metrics, *laMetrics[i])
-	}
-
-	laTelegrafMetrics := InsightsMetricsBlob{
-		DataType:  InsightsMetricsDataType,
-		IPName:    IPName,
-		DataItems: metrics}
-
-	jsonBytes, err := json.Marshal(laTelegrafMetrics)
-
-	if err != nil {
-		message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:when marshalling json %q", err)
-		Log(message)
-		SendException(message)
-		return output.FLB_OK
-	}
-	
-	//Post metrics data to LA
-	req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(jsonBytes))
-
-	//req.URL.Query().Add("api-version","2016-04-01")
-
-	//set headers
-	req.Header.Set("x-ms-date", time.Now().Format(time.RFC3339))
-	
 	//expensive to do string len for every request, so use a flag
 	if ResourceCentric == true {
 		req.Header.Set("x-ms-AzureResourceId", ResourceID)
