@@ -11,7 +11,7 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
   
-### 06/14/2019 
+### 06/14/2019 - 
 ##### Version microsoft/oms:ciprod06142019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06142019
 - MDM pod metrics bug fixes - MDM rejecting pod metrics due to nodename or controllername dimensions being empty
 - Prometheus metrics collection by default in every node for kubelet docker operations and kubelet docker operation errors
