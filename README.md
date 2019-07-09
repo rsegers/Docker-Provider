@@ -31,7 +31,7 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
   * Replica set memory request by 75M (100M to 175M)
   * Daemonset CPU request by 25m (50m to 75m)
 - Will be pushing image only to MCR ( no more Docker) starting this release. AKS-engine will also start to pull our agent image from MCR
-  
+
 ### 04/23/2019 - 
 ##### Version microsoft/oms:ciprod043232019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod04232019
 - Windows node monitoring (metrics & inventory)
