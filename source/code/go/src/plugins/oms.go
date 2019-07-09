@@ -34,14 +34,12 @@ const ResourceIdEnv = "AKS_RESOURCE_ID"
 //env variable which has ResourceName for NON-AKS
 const ResourceNameEnv = "ACS_RESOURCE_NAME"
 
-// Origin prefix for telegraf Metrics (used as prefix for origin field & prefix for azure monitor specific tags)
+// Origin prefix for telegraf Metrics (used as prefix for origin field & prefix for azure monitor specific tags and also for custom-metrics telemetry )
 const TelegrafMetricOriginPrefix = "container.azm.ms"
 
 // Origin suffix for telegraf Metrics (used as suffix for origin field)
 const TelegrafMetricOriginSuffix = "telegraf"
 
-// Namespace prefix for telegraf Metrics (used as prefix for Namespace field)
-//const TelegrafMetricNamespacePrefix = "plugin"
 // clusterName tag
 const TelegrafTagClusterName = "clusterName"
 
@@ -193,7 +191,6 @@ func updateContainerImageNameMaps() {
 		if err != nil {
 			message := fmt.Sprintf("Error getting pods %s\nIt is ok to log here and continue, because the logs will be missing image and Name, but the logs will still have the containerID", err.Error())
 			Log(message)
-			SendException(message)
 			continue
 		}
 
@@ -384,7 +381,6 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 	if err != nil {
 		message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:(retriable) when sending %v metrics. duration:%v err:%q \n", len(laMetrics), elapsed, err.Error())
 		Log(message)
-		SendException(message)
 		UpdateNumTelegrafMetricsSentTelemetry(0, 1)
 		return output.FLB_RETRY
 	}
@@ -519,7 +515,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		if err != nil {
 			message := fmt.Sprintf("Error when sending request %s \n", err.Error())
 			Log(message)
-			SendException(message)
+			// Commenting this out for now. TODO - Add better telemetry for ods errors using aggregation
+			//SendException(message)
 			Log("Failed to flush %d records after %s", len(dataItems), elapsed)
 
 			return output.FLB_RETRY
