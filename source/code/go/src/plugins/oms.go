@@ -226,7 +226,7 @@ func populateExcludedStdoutNamespaces() {
 	if (strings.Compare(collectStdoutLogs, "true") == 0) && (len(excludeList) > 0) {
 		stdoutNSExcludeList = strings.Split(excludeList, ",")
 		for _, ns := range stdoutNSExcludeList {
-			Log ("Excluding namespace %s for stdout log collection", ns)
+			Log("Excluding namespace %s for stdout log collection", ns)
 			StdoutIgnoreNsSet[strings.TrimSpace(ns)] = true
 		}
 	}
@@ -239,7 +239,7 @@ func populateExcludedStderrNamespaces() {
 	if (strings.Compare(collectStderrLogs, "true") == 0) && (len(excludeList) > 0) {
 		stderrNSExcludeList = strings.Split(excludeList, ",")
 		for _, ns := range stderrNSExcludeList {
-			Log ("Excluding namespace %s for stderr log collection", ns)
+			Log("Excluding namespace %s for stderr log collection", ns)
 			StderrIgnoreNsSet[strings.TrimSpace(ns)] = true
 		}
 	}
@@ -425,7 +425,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	nameIDMap := make(map[string]string)
 
 	DataUpdateMutex.Lock()
-	
+
 	for k, v := range ImageIDMap {
 		imageIDMap[k] = v
 	}
@@ -475,6 +475,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			Image:                 stringMap["Image"],
 			Name:                  stringMap["Name"],
 		}
+
+		FlushedRecordsSize += float64(len(stringMap["LogEntry"]))
 
 		dataItems = append(dataItems, dataItem)
 		loggedTime, e := time.Parse(time.RFC3339, dataItem.LogEntryTimeStamp)
@@ -561,7 +563,7 @@ func GetContainerIDK8sNamespaceFromFileName(filename string) (string, string) {
 
 	start := strings.LastIndex(filename, "-")
 	end := strings.LastIndex(filename, ".")
-	
+
 	if start >= end || start == -1 || end == -1 {
 		id = ""
 	} else {
@@ -641,7 +643,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("containerInventoryRefreshInterval = %d \n", containerInventoryRefreshInterval)
 	ContainerImageNameRefreshTicker = time.NewTicker(time.Second * time.Duration(containerInventoryRefreshInterval))
 
-
 	// Populate Computer field
 	containerHostName, err := ioutil.ReadFile(pluginConfig["container_host_file_path"])
 	if err != nil {
@@ -680,11 +681,11 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	CreateHTTPClient()
 
-  	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
+	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		populateExcludedStdoutNamespaces()
 		populateExcludedStderrNamespaces()
-		go updateContainerImageNameMaps()		
-  	} else {
+		go updateContainerImageNameMaps()
+	} else {
 		Log("Running in replicaset. Disabling container enrichment caching & updates \n")
 	}
 }
