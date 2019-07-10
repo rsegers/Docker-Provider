@@ -24,6 +24,7 @@ only image digest
 customers
 - Bug fixes for region names with spaces being processed incorrectly while sending mdm metrics
 - Add log size in telemetry
+- Remove buffer chunk size and buffer max size from fluentbit configuration
 ### 06/14/2019 - 
 ##### Version microsoft/oms:ciprod06142019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06142019
 - MDM pod metrics bug fixes - MDM rejecting pod metrics due to nodename or controllername dimensions being empty
