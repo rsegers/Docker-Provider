@@ -69,7 +69,7 @@ module Fluent
 
       aks_region = aks_region.gsub(" ","")
 
-      @@post_request_url = @@post_request_url_template % {aks_region: aks_region), aks_resource_id: aks_resource_id}
+      @@post_request_url = @@post_request_url_template % {aks_region: aks_region, aks_resource_id: aks_resource_id}
       @post_request_uri = URI.parse(@@post_request_url)
       @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
       @http_client.use_ssl = true
