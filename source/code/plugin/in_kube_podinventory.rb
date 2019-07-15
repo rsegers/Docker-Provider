@@ -327,6 +327,38 @@ module Fluent
                   record["ContainerStatusReason"] = containerStatus[containerStatus.keys[0]]["reason"]
                 end
               end
+
+              # Record the last state of the container. This may have information on why a container was killed.
+              begin 
+                if !container["lastState"].nil? && container["lastState"].keys.length == 1
+                  lastStateName = container["lastState"].keys[0]
+                  lastStateObject = container["lastState"][lastStateName]
+                  if !lastStateObject.is_a?(Hash)
+                    raise "expected a hash object. This could signify a bug or a kubernetes API change"
+                  end
+
+                  if lastStateObject.key?("reason") && lastStateObject.key?("startedAt") && lastStateObject.key?("finishedAt")
+                    newRecord  = Hash.new
+                    newRecord["lastState"] = lastStateName  # get the name of the last state (ex: terminated)
+                    newRecord["reason"] = lastStateObject["reason"]  # (ex: OOMKilled)
+                    newRecord["startedAt"] = lastStateObject["startedAt"]  # (ex: 2019-07-02T14:58:51Z)
+                    newRecord["finishedAt"] = lastStateObject["finishedAt"]  # (ex: 2019-07-02T14:58:52Z)
+
+                    # only write to the output field if everything previously ran without error
+                    record["ContainerLastStatus"] = newRecord
+                  else
+                    record["ContainerLastStatus"] = Hash.new
+                  end
+                else
+                  record["ContainerLastStatus"] = Hash.new
+                end
+              rescue => errorStr
+                $log.warn "Failed in parse_and_emit_record pod inventory while processing ContainerLastStatus: #{errorStr}"
+                $log.debug_backtrace(errorStr.backtrace)
+                ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+                record["ContainerLastStatus"] = Hash.new
+              end
+
               podRestartCount += containerRestartCount
               records.push(record.dup)
 
