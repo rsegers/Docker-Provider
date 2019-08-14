@@ -67,7 +67,7 @@ module Fluent
             newEventQueryState.push(eventId)
             if !eventQueryState.empty? && eventQueryState.include?(eventId)
               next
-            end
+                end
             record["ObjectKind"] = items["involvedObject"]["kind"]
             record["Namespace"] = items["involvedObject"]["namespace"]
             record["Name"] = items["involvedObject"]["name"]
@@ -94,12 +94,12 @@ module Fluent
             eventStream.add(emitTime, wrapper) if wrapper
           end
           router.emit_stream(@tag, eventStream) if eventStream
-        end
+            end
         writeEventQueryState(newEventQueryState)
       rescue => errorStr
         $log.debug_backtrace(errorStr.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
-      end
+          end
     end
 
     def run_periodic

@@ -91,9 +91,9 @@ CXXFLAGS = $(COMPILE_FLAGS)
 # Build targets
 
 ifeq ($(ULINUX),1)
-all : $(OMI_ROOT)/output $(SCXPAL_INTERMEDIATE_DIR) PROVIDER_STATUS $(PROVIDER_LIBRARY) KIT_STATUS kit fluentbitplugin
+all : $(OMI_ROOT)/output $(SCXPAL_INTERMEDIATE_DIR) PROVIDER_STATUS $(PROVIDER_LIBRARY) KIT_STATUS kit fluentbitplugin rubypluginstests
 else
-all : $(OMI_ROOT)/output $(SCXPAL_INTERMEDIATE_DIR) PROVIDER_STATUS $(PROVIDER_LIBRARY) fluentbitplugin
+all : $(OMI_ROOT)/output $(SCXPAL_INTERMEDIATE_DIR) PROVIDER_STATUS $(PROVIDER_LIBRARY) fluentbitplugin rubypluginstests
 endif
 
 clean :
@@ -142,6 +142,15 @@ fluentbitplugin :
 	@echo "========================= Building fluentbit out_oms go plugin for logs"
 	make -C $(GO_SOURCE_DIR) fbplugin
 	$(COPY) $(GO_SOURCE_DIR)/out_oms.so $(INTERMEDIATE_DIR)
+
+rubypluginstests :
+	@echo "========================= Installing pre-reqs for running tests"
+	sudo apt-add-repository ppa:brightbox/ruby-ng -y
+	sudo apt-get update
+	sudo apt-get install ruby2.4 rake -y
+	sudo gem install minitest
+	@echo "========================= Running tests..."
+	rake test
 
 #--------------------------------------------------------------------------------
 # PAL build
