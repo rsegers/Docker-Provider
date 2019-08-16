@@ -104,9 +104,9 @@ module Fluent
         end
 
         if !pod_inventory.nil?
-          record = process_cpu_oversubscribed_monitor(pod_inventory)
+          record = process_cpu_oversubscribed_monitor(pod_inventory, node_inventory)
           health_monitor_records.push(record) if record
-          record = process_memory_oversubscribed_monitor(pod_inventory)
+          record = process_memory_oversubscribed_monitor(pod_inventory, node_inventory)
           health_monitor_records.push(record) if record
           pods_ready_hash = HealthMonitorUtils.get_pods_ready_hash(pod_inventory, deployment_inventory)
 
@@ -146,11 +146,12 @@ module Fluent
       end
     end
 
-    def process_cpu_oversubscribed_monitor(pod_inventory)
+    def process_cpu_oversubscribed_monitor(pod_inventory, node_inventory)
       timestamp = Time.now.utc.iso8601
+      @@clusterCpuCapacity = HealthMonitorUtils.get_cluster_cpu_memory_capacity(@@hmlog, node_inventory: node_inventory)[0]
       subscription = HealthMonitorUtils.get_resource_subscription(pod_inventory,"cpu", @@clusterCpuCapacity)
+      @@hmlog.info "Refreshed Cluster CPU Capacity #{@@clusterCpuCapacity}"
       state =  subscription > @@clusterCpuCapacity ? "fail" : "pass"
-      #@@hmlog.debug "CPU Oversubscribed Monitor State : #{state}"
 
       #CPU
       monitor_id = HealthMonitorConstants::WORKLOAD_CPU_OVERSUBSCRIBED_MONITOR_ID
@@ -171,8 +172,10 @@ module Fluent
       return health_record
     end
 
-    def process_memory_oversubscribed_monitor(pod_inventory)
+    def process_memory_oversubscribed_monitor(pod_inventory, node_inventory)
       timestamp = Time.now.utc.iso8601
+      @@clusterMemoryCapacity = HealthMonitorUtils.get_cluster_cpu_memory_capacity(@@hmlog,node_inventory: node_inventory)[1]
+      @@hmlog.info "Refreshed Cluster Memory Capacity #{@@clusterMemoryCapacity}"
       subscription = HealthMonitorUtils.get_resource_subscription(pod_inventory,"memory", @@clusterMemoryCapacity)
       state =  subscription > @@clusterMemoryCapacity ? "fail" : "pass"
       #@@hmlog.debug "Memory Oversubscribed Monitor State : #{state}"
