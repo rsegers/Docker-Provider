@@ -33,7 +33,7 @@ module HealthModel
         def initialize_state(deserialized_state)
             @@monitor_states = {}
             deserialized_state.each{|k,v|
-                health_monitor_instance_state_hash = JSON.parse(v)
+                health_monitor_instance_state_hash = v
                 state = HealthMonitorInstanceState.new(*health_monitor_instance_state_hash.values_at(*HealthMonitorInstanceState.members))
                 state.prev_sent_record_time = health_monitor_instance_state_hash["prev_sent_record_time"]
                 state.old_state = health_monitor_instance_state_hash["old_state"]

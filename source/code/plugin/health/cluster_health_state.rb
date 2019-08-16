@@ -16,8 +16,12 @@ module HealthModel
             @token = get_token
         end
 
-        def update_state(state)
+        def update_state(state) #state = hash of monitor_instance_id to HealthMonitorInstanceState struct
             get_request = Net::HTTP::Get.new(@uri.request_uri)
+            monitor_states_hash = {}
+            state.each {|monitor_instance_id, health_monitor_instance_state|
+                monitor_states_hash[monitor_instance_id] = health_monitor_instance_state.to_h
+            }
 
             get_request["Authorization"] = "Bearer #{@token}"
             @log.info "Making GET request to #{@uri.request_uri} @ #{Time.now.utc.iso8601}"
@@ -37,7 +41,7 @@ module HealthModel
             update_request["Authorization"] = "Bearer #{@token}"
 
             update_request_body = get_update_request_body
-            update_request_body["state"] = state.to_json
+            update_request_body["state"] = monitor_states_hash.to_json
             update_request.body = update_request_body.to_json
 
             update_response = @http_client.request(update_request)
