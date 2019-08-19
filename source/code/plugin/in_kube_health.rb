@@ -18,14 +18,18 @@ module Fluent
     @@clusterMemoryCapacity = 0.0
 
     def initialize
-      super
-      require "yaml"
-      require "json"
+      begin
+        super
+        require "yaml"
+        require "json"
 
-      @@cluster_id = KubernetesApiClient.getClusterId
-      @resources = HealthKubernetesResources.instance
-      @provider = HealthMonitorProvider.new(@@cluster_id, HealthMonitorUtils.get_cluster_labels, @resources, @health_monitor_config_path)
-      @@cluster_health_model_enabled = HealthMonitorUtils.is_cluster_health_model_enabled
+        @@cluster_id = KubernetesApiClient.getClusterId
+        @resources = HealthKubernetesResources.instance
+        @provider = HealthMonitorProvider.new(@@cluster_id, HealthMonitorUtils.get_cluster_labels, @resources, @health_monitor_config_path)
+        @@cluster_health_model_enabled = HealthMonitorUtils.is_cluster_health_model_enabled
+      rescue => e
+        ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "Health"})
+      end
     end
 
     include HealthModel

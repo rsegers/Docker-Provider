@@ -47,21 +47,29 @@ module Fluent
         end
 
         def configure(conf)
-            super
-            @log = HealthMonitorUtils.get_log_handle
-            @log.debug {'Starting filter_cadvisor2health plugin'}
+            begin
+                super
+                @log = HealthMonitorUtils.get_log_handle
+                @log.debug {'Starting filter_cadvisor2health plugin'}
+            rescue => e
+                ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "Health"})
+            end
         end
 
         def start
-            super
-            @metrics_to_collect_hash = HealthMonitorUtils.build_metrics_hash(@metrics_to_collect)
-            @log.debug "Calling ensure_cpu_memory_capacity_set cpu_capacity #{@cpu_capacity} memory_capacity #{@memory_capacity}"
-            node_capacity = HealthMonitorUtils.ensure_cpu_memory_capacity_set(@@hm_log, @cpu_capacity, @memory_capacity, @@hostName)
-            @cpu_capacity = node_capacity[0]
-            @memory_capacity = node_capacity[1]
-            @log.info "CPU Capacity #{@cpu_capacity} Memory Capacity #{@memory_capacity}"
-            #HealthMonitorUtils.refresh_kubernetes_api_data(@log, @@hostName)
-            ApplicationInsightsUtility.sendCustomEvent("filter_cadvisor_health Plugin Start", {})
+            begin
+                super
+                @metrics_to_collect_hash = HealthMonitorUtils.build_metrics_hash(@metrics_to_collect)
+                @log.debug "Calling ensure_cpu_memory_capacity_set cpu_capacity #{@cpu_capacity} memory_capacity #{@memory_capacity}"
+                node_capacity = HealthMonitorUtils.ensure_cpu_memory_capacity_set(@@hm_log, @cpu_capacity, @memory_capacity, @@hostName)
+                @cpu_capacity = node_capacity[0]
+                @memory_capacity = node_capacity[1]
+                @log.info "CPU Capacity #{@cpu_capacity} Memory Capacity #{@memory_capacity}"
+                #HealthMonitorUtils.refresh_kubernetes_api_data(@log, @@hostName)
+                ApplicationInsightsUtility.sendCustomEvent("filter_cadvisor_health Plugin Start", {})
+            rescue => e
+                ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "Health"})
+            end
         end
 
         def filter_stream(tag, es)

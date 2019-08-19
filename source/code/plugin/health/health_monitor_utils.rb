@@ -13,7 +13,7 @@ module HealthModel
             $log.info "Error loading KubernetesApiClient #{e.message}"
         end
 
-        @@node_inventory = []
+        @@nodeInventory = {}
 
         @log_path = "/var/opt/microsoft/docker-cimprov/log/health_monitors.log"
 
