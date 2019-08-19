@@ -182,6 +182,7 @@ module Fluent
       batchTime = currentTime.utc.iso8601
       eventStream = MultiEventStream.new
       controllerSet = Set.new []
+      controllerData = {}
       telemetryFlush = false
       winContainerCount = 0
       begin #begin block start
@@ -277,6 +278,13 @@ module Fluent
             record["ControllerName"] = items["metadata"]["ownerReferences"][0]["name"]
             if telemetryFlush == true
               controllerSet.add(record["ControllerKind"] + record["ControllerName"])
+              #Adding controller kind to telemetry ro information about customer workload
+              if (controllerData[record["ControllerKind"]].nil?)
+                controllerData[record["ControllerKind"]] = 1
+              else
+                controllerValue = controllerData[record["ControllerKind"]]
+                controllerData[record["ControllerKind"]] += 1
+              end
             end
           end
           podRestartCount = 0
@@ -327,6 +335,38 @@ module Fluent
                   record["ContainerStatusReason"] = containerStatus[containerStatus.keys[0]]["reason"]
                 end
               end
+
+              # Record the last state of the container. This may have information on why a container was killed.
+              begin
+                if !container["lastState"].nil? && container["lastState"].keys.length == 1
+                  lastStateName = container["lastState"].keys[0]
+                  lastStateObject = container["lastState"][lastStateName]
+                  if !lastStateObject.is_a?(Hash)
+                    raise "expected a hash object. This could signify a bug or a kubernetes API change"
+                  end
+
+                  if lastStateObject.key?("reason") && lastStateObject.key?("startedAt") && lastStateObject.key?("finishedAt")
+                    newRecord = Hash.new
+                    newRecord["lastState"] = lastStateName  # get the name of the last state (ex: terminated)
+                    newRecord["reason"] = lastStateObject["reason"]  # (ex: OOMKilled)
+                    newRecord["startedAt"] = lastStateObject["startedAt"]  # (ex: 2019-07-02T14:58:51Z)
+                    newRecord["finishedAt"] = lastStateObject["finishedAt"]  # (ex: 2019-07-02T14:58:52Z)
+
+                    # only write to the output field if everything previously ran without error
+                    record["ContainerLastStatus"] = newRecord
+                  else
+                    record["ContainerLastStatus"] = Hash.new
+                  end
+                else
+                  record["ContainerLastStatus"] = Hash.new
+                end
+              rescue => errorStr
+                $log.warn "Failed in parse_and_emit_record pod inventory while processing ContainerLastStatus: #{errorStr}"
+                $log.debug_backtrace(errorStr.backtrace)
+                ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+                record["ContainerLastStatus"] = Hash.new
+              end
+
               podRestartCount += containerRestartCount
               records.push(record.dup)
 
@@ -371,7 +411,8 @@ module Fluent
           telemetryProperties["Computer"] = @@hostName
           ApplicationInsightsUtility.sendCustomEvent("KubePodInventoryHeartBeatEvent", telemetryProperties)
           ApplicationInsightsUtility.sendMetricTelemetry("PodCount", podInventory["items"].length, {})
-          ApplicationInsightsUtility.sendMetricTelemetry("ControllerCount", controllerSet.length, {})
+          telemetryProperties["ControllerData"] = controllerData.to_json
+          ApplicationInsightsUtility.sendMetricTelemetry("ControllerCount", controllerSet.length, telemetryProperties)
           if winContainerCount > 0
             telemetryProperties["ClusterWideWindowsContainersCount"] = winContainerCount
             ApplicationInsightsUtility.sendCustomEvent("WindowsContainerInventoryEvent", telemetryProperties)

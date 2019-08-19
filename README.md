@@ -11,7 +11,7 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
-### 07/09/2019 - 
+### 07/09/2019 -
 ##### Version microsoft/oms:ciprod07092019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod07092019
 - Prometheus custom metric collection using config map allowing omsagent to
   * Scrape metrics from user defined urls
@@ -25,7 +25,7 @@ customers
 - Bug fixes for region names with spaces being processed incorrectly while sending mdm metrics
 - Add log size in telemetry
 - Remove buffer chunk size and buffer max size from fluentbit configuration
-### 06/14/2019 - 
+### 06/14/2019 -
 ##### Version microsoft/oms:ciprod06142019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06142019
 - MDM pod metrics bug fixes - MDM rejecting pod metrics due to nodename or controllername dimensions being empty
 - Prometheus metrics collection by default in every node for kubelet docker operations and kubelet docker operation errors
@@ -39,14 +39,14 @@ customers
 - Log collection optimization/tuning for better performance
   * Derive k8s namespaces from log file name (instead of making call to k8s api service)
   * Do not tail log files for containers in the excluded namespace list (if excluded both in stdout & stderr)
-  * Limit buffer size to 1M and flush logs more frequently [every 10 secs (instead of 30 secs)] 
+  * Limit buffer size to 1M and flush logs more frequently [every 10 secs (instead of 30 secs)]
   * Tuning of several other fluent bit settings
--	Increase requests 
+-	Increase requests
   * Replica set memory request by 75M (100M to 175M)
   * Daemonset CPU request by 25m (50m to 75m)
 - Will be pushing image only to MCR ( no more Docker) starting this release. AKS-engine will also start to pull our agent image from MCR
 
-### 04/23/2019 - 
+### 04/23/2019 -
 ##### Version microsoft/oms:ciprod043232019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod04232019
 - Windows node monitoring (metrics & inventory)
 - Telegraf integration (Telegraf metrics to LogAnalytics)
@@ -63,7 +63,7 @@ customers
 - Remove some unwanted logs that are chatty in outoms
 - Fix for MDM disablement for AKS-Engine
 - Fix for Pod count metric (same as container count) in MDM
-  
+
 ### 02/21/2019 - Version microsoft/oms:ciprod02212019
 - Container logs enrichment optimization
   * Get container meta data only for containers in current node (vs cluster before)
@@ -80,7 +80,7 @@ customers
   * Podcount by node, phase & namespace metric
   * Nodecount metric
 - ContainerNodeInventory_CL to fixed type
-  
+
 ### 01/09/2018 - Version microsoft/oms:ciprod01092019
 - Omsagent - 1.8.1.256 (nov 2018 release)
 - Persist fluentbit state between container restarts
@@ -126,7 +126,7 @@ customers
 - Seg fault fixes in json parsing for container inventory & container image inventory
 - Telemetry enablement
 - Remove ContainerPerf, ContainerServiceLog, ContainerProcess fluentd-->OMI workflows
-- Update log level for all fluentD based workflows 
+- Update log level for all fluentD based workflows
 
 ### 7/31/2018 - Version microsoft/oms:ciprod07312018
 - Changes for node lost scenario (roll-up pod & container statuses as Unknown)
@@ -141,11 +141,11 @@ customers
 
 
 ### 6/7/2018 - Version microsoft/oms:ciprod06072018
-- Remove node-0 dependency 
+- Remove node-0 dependency
 - Remove passing WSID & Key as environment variables and pass them as kubernetes secret (for non-AKS; we already pass them as secret for AKS)
-- Please note that if you are manually deploying thru yaml you need to - 
+- Please note that if you are manually deploying thru yaml you need to -
 - Provide workspaceid & key as base64 encoded strings with in double quotes (.yaml has comments to do so as well)
-- Provide cluster name twice (for each container – daemonset & replicaset) 
+- Provide cluster name twice (for each container – daemonset & replicaset)
 
 ### 5/8/2018 - Version microsoft/oms:ciprod05082018
 - Kubernetes RBAC enablement

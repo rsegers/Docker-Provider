@@ -112,8 +112,44 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/opt/microsoft/docker-cimprov/telegraf-rs.conf;			        installer/conf/telegraf-rs.conf;                    644; root; root
 /opt/microsoft/docker-cimprov/bin/TelegrafTCPErrorTelemetry.sh;	    installer/scripts/TelegrafTCPErrorTelemetry.sh;      755; root; root
 /opt/livenessprobe.sh;                                              installer/scripts/livenessprobe.sh;      755; root; root
-/opt/tomlparser.rb;                                                 installer/scripts/tomlparser.rb;     755; root; root 
-/opt/tomlparser-prom-customconfig.rb;                               installer/scripts/tomlparser-prom-customconfig.rb;     755; root; root 
+/opt/tomlparser.rb;                                                 installer/scripts/tomlparser.rb;     755; root; root
+/opt/tomlparser-prom-customconfig.rb;                               installer/scripts/tomlparser-prom-customconfig.rb;     755; root; root
+/opt/td-agent-bit-conf-customizer.rb;                               installer/scripts/td-agent-bit-conf-customizer.rb;     755; root; root
+
+
+
+/opt/microsoft/omsagent/plugin/filter_cadvisor_health_node.rb;                                      source/code/plugin/filter_cadvisor_health_node.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/filter_health_model_builder.rb;                                      source/code/plugin/filter_health_model_builder.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/in_kube_health.rb;                                                   source/code/plugin/in_kube_health.rb; 644; root; root
+/etc/opt/microsoft/docker-cimprov/health/healthmonitorconfig.json;					                installer/conf/healthmonitorconfig.json; 644; root; root
+/etc/opt/microsoft/docker-cimprov/health/health_model_definition.json;					            installer/conf/health_model_definition.json; 644; root; root
+
+
+/opt/microsoft/omsagent/plugin/health/aggregate_monitor.rb;                                         source/code/plugin/health/aggregate_monitor.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/agg_monitor_id_labels.rb;                      		    source/code/plugin/health/agg_monitor_id_labels.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/aggregate_monitor_state_finalizer.rb;                         source/code/plugin/health/aggregate_monitor_state_finalizer.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/cluster_health_state.rb;                                      source/code/plugin/health/cluster_health_state.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_hierarchy_builder.rb;                                  source/code/plugin/health/health_hierarchy_builder.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_kubernetes_resources.rb;                               source/code/plugin/health/health_kubernetes_resources.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_kube_api_down_handler.rb;                              source/code/plugin/health/health_kube_api_down_handler.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_missing_signal_generator.rb;                           source/code/plugin/health/health_missing_signal_generator.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_model_buffer.rb;                                       source/code/plugin/health/health_model_buffer.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_model_builder.rb;                                      source/code/plugin/health/health_model_builder.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_model_constants.rb;                                    source/code/plugin/health/health_model_constants.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/parent_monitor_provider.rb;                                   source/code/plugin/health/parent_monitor_provider.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_model_definition_parser.rb;                            source/code/plugin/health/health_model_definition_parser.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_monitor_helpers.rb;                                    source/code/plugin/health/health_monitor_helpers.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_monitor_optimizer.rb;                                  source/code/plugin/health/health_monitor_optimizer.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_monitor_helpers.rb;                                    source/code/plugin/health/health_monitor_helpers.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_monitor_provider.rb;                                   source/code/plugin/health/health_monitor_provider.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_monitor_record.rb;                                     source/code/plugin/health/health_monitor_record.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_monitor_state.rb;                                      source/code/plugin/health/health_monitor_state.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_monitor_helpers.rb;                                    source/code/plugin/health/health_monitor_helpers.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_monitor_utils.rb;                                      source/code/plugin/health/health_monitor_utils.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/health_signal_reducer.rb;                                     source/code/plugin/health/health_signal_reducer.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/monitor_factory.rb;                                           source/code/plugin/health/monitor_factory.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/monitor_set.rb;                                               source/code/plugin/health/monitor_set.rb; 644; root; root
+/opt/microsoft/omsagent/plugin/health/unit_monitor.rb;                                              source/code/plugin/health/unit_monitor.rb; 644; root; root
 
 %Links
 /opt/omi/lib/libcontainer.${{SHLIB_EXT}}; /opt/microsoft/docker-cimprov/lib/libcontainer.${{SHLIB_EXT}}; 644; root; root
@@ -128,6 +164,7 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/opt/microsoft;                                     755; root; root; sysdir
 /etc/opt/microsoft/docker-cimprov;                      755; root; root
 /etc/opt/microsoft/docker-cimprov/conf;                 755; root; root
+/etc/opt/microsoft/docker-cimprov/health;               755; root; root
 
 /etc/opt/omi;                                           755; root; root; sysdir
 /etc/opt/omi/conf;                                      755; root; root; sysdir
@@ -141,6 +178,7 @@ MAINTAINER:              'Microsoft Corporation'
 
 /opt/microsoft/omsagent;                                755; root; root; sysdir
 /opt/microsoft/omsagent/plugin;                         755; root; root; sysdir
+/opt/microsoft/omsagent/plugin/health;                  755; root; root; sysdir
 
 /opt/omi;                                               755; root; root; sysdir
 /opt/omi/lib;                                           755; root; root; sysdir
@@ -204,12 +242,24 @@ touch /var/opt/microsoft/docker-cimprov/log/filter_inventory2mdm.log
 chmod 666 /var/opt/microsoft/docker-cimprov/log/filter_inventory2mdm.log
 chown omsagent:omiusers /var/opt/microsoft/docker-cimprov/log/filter_inventory2mdm.log
 
+touch /var/opt/microsoft/docker-cimprov/log/health_monitors.log
+chmod 666 /var/opt/microsoft/docker-cimprov/log/health_monitors.log
+chown omsagent:omiusers /var/opt/microsoft/docker-cimprov/log/health_monitors.log
+
+touch /var/opt/microsoft/docker-cimprov/log/filter_health_model_builder.log
+chmod 666 /var/opt/microsoft/docker-cimprov/log/filter_health_model_builder.log
+chown omsagent:omiusers /var/opt/microsoft/docker-cimprov/log/filter_health_model_builder.log
+
+touch /var/opt/microsoft/docker-cimprov/log/fluent_forward_failed.log
+chmod 666 /var/opt/microsoft/docker-cimprov/log/fluent_forward_failed.log
+chown omsagent:omiusers /var/opt/microsoft/docker-cimprov/log/fluent_forward_failed.log
+
 mv /etc/opt/microsoft/docker-cimprov/container.conf /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
 chown omsagent:omsagent /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
 
 %Postuninstall_10
 # If we're an upgrade, skip all of this cleanup
-if ${{PERFORMING_UPGRADE_NOT}}; then 
+if ${{PERFORMING_UPGRADE_NOT}}; then
    # Clean up installinfo.txt file (registered as "conf" file to pass rpmcheck)
    rm -f /etc/opt/microsoft/docker-cimprov/conf/installinfo.txt*
    rm -f /var/opt/microsoft/docker-cimprov/state/LastEventQueryTime.txt

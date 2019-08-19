@@ -44,37 +44,38 @@ module Fluent
       super
       begin
         file = File.read(@@azure_json_path)
+        @data_hash = JSON.parse(file)
+        aks_resource_id = ENV["AKS_RESOURCE_ID"]
+        aks_region = ENV["AKS_REGION"]
+
+        if aks_resource_id.to_s.empty?
+          @log.info "Environment Variable AKS_RESOURCE_ID is not set.. "
+          @can_send_data_to_mdm = false
+        end
+        if aks_region.to_s.empty?
+          @log.info "Environment Variable AKS_REGION is not set.. "
+          @can_send_data_to_mdm = false
+        end
+        aks_region = aks_region.gsub(" ","")
+
+        if @can_send_data_to_mdm
+          @log.info "MDM Metrics supported in #{aks_region} region"
+          @token_url = @@token_url_template % {tenant_id: @data_hash["tenantId"]}
+          @cached_access_token = get_access_token
+          @@post_request_url = @@post_request_url_template % {aks_region: aks_region, aks_resource_id: aks_resource_id}
+          @post_request_uri = URI.parse(@@post_request_url)
+          @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
+          @http_client.use_ssl = true
+          @log.info "POST Request url: #{@@post_request_url}"
+          ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMPluginStart", {})
+        end
       rescue => e
-        @log.info "Unable to read file #{@@azure_json_path} #{e}"
-        @can_send_data_to_mdm = false
-        return
-      end
-      # Handle the case where the file read fails. Send Telemetry and exit the plugin?
-      @data_hash = JSON.parse(file)
-      @token_url = @@token_url_template % {tenant_id: @data_hash["tenantId"]}
-      @cached_access_token = get_access_token
-      aks_resource_id = ENV["AKS_RESOURCE_ID"]
-      aks_region = ENV["AKS_REGION"]
-
-      if aks_resource_id.to_s.empty?
-        @log.info "Environment Variable AKS_RESOURCE_ID is not set.. "
-        @can_send_data_to_mdm = false
-        return
-      end
-      if aks_region.to_s.empty?
-        @log.info "Environment Variable AKS_REGION is not set.. "
+        @log.info "exception when initializing out_mdm #{e}"
+        ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "MDM"})
         @can_send_data_to_mdm = false
         return
       end
 
-      aks_region = aks_region.gsub(" ","")
-
-      @@post_request_url = @@post_request_url_template % {aks_region: aks_region, aks_resource_id: aks_resource_id}
-      @post_request_uri = URI.parse(@@post_request_url)
-      @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
-      @http_client.use_ssl = true
-      @log.info "POST Request url: #{@@post_request_url}"
-      ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMPluginStart", {})
     end
 
     # get the access token only if the time to expiry is less than 5 minutes

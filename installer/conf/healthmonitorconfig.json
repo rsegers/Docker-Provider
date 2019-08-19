@@ -1,0 +1,31 @@
+{
+    "node_cpu_utilization": {
+        "WarnThresholdPercentage": 80.0,
+        "FailThresholdPercentage": 90.0,
+        "ConsecutiveSamplesForStateTransition": 3
+    },
+    "node_memory_utilization": {
+        "WarnThresholdPercentage": 80.0,
+        "FailThresholdPercentage": 90.0,
+        "ConsecutiveSamplesForStateTransition": 3
+    },
+    "container_cpu_utilization": {
+        "WarnThresholdPercentage": 80.0,
+        "FailThresholdPercentage": 90.0,
+        "ConsecutiveSamplesForStateTransition": 3
+    },
+    "container_memory_utilization": {
+        "WarnThresholdPercentage": 80.0,
+        "FailThresholdPercentage": 90.0,
+        "ConsecutiveSamplesForStateTransition": 3
+    },
+    "user_workload_pods_ready": {
+        "WarnThresholdPercentage": 0.0,
+        "FailThresholdPercentage": 10.0,
+        "ConsecutiveSamplesForStateTransition": 2
+    },
+    "system_workload_pods_ready": {
+        "FailThresholdPercentage": 0.0,
+        "ConsecutiveSamplesForStateTransition": 2
+    }
+}
