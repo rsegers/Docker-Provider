@@ -75,7 +75,7 @@ module Fluent
         def filter_stream(tag, es)
             if !@@cluster_health_model_enabled
                 @log.info "Cluster Health Model disabled in filter_cadvisor_health_node"
-                return []
+                return MultiEventStream.new
             end
             new_es = MultiEventStream.new
             #HealthMonitorUtils.refresh_kubernetes_api_data(@log, @hostName)
