@@ -1,4 +1,3 @@
-require_relative 'health_model_constants'
 require 'time'
 
 module HealthModel

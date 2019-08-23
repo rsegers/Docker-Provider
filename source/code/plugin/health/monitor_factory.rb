@@ -1,3 +1,6 @@
+require_relative 'aggregate_monitor'
+require_relative 'unit_monitor'
+
 module HealthModel
     class MonitorFactory
 

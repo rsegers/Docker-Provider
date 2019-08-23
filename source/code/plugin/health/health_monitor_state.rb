@@ -1,3 +1,5 @@
+require_relative 'health_model_constants'
+
 module HealthModel
 
     HealthMonitorInstanceState = Struct.new(:prev_sent_record_time, :old_state, :new_state, :state_change_time, :prev_records, :is_state_change_consistent, :should_send) do
