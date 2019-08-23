@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require_relative 'health_model_constants'
 
 module HealthModel
   class NodeMonitorHierarchyReducer

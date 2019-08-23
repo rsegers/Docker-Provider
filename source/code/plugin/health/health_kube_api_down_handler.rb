@@ -1,3 +1,4 @@
+require_relative 'health_model_constants'
 module HealthModel
     class HealthKubeApiDownHandler
         def initialize

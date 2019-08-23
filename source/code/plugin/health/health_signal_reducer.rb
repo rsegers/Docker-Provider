@@ -1,3 +1,5 @@
+require_relative 'health_model_constants'
+
 module HealthModel
     # this class
     # 1. dedupes daemonset signals and takes only the latest
