@@ -11,6 +11,16 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 08/22/2019 -
+##### Version microsoft/oms:ciprod08222019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08222019
+- Cluster Health Private Preview based on config map setting
+- Update resource requests for replicaset to 110m and 250Mi
+- Update custom metrics supported regions
+- Fix for promethus config map telemetry
+- Telemetry for controller kind
+- Update url to use one of the whitelisted urls for cp monitor telemetry
+- Configmap with clusterid for AKS to be used by Application Insights
+
 ### 07/09/2019 -
 ##### Version microsoft/oms:ciprod07092019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod07092019
 - Prometheus custom metric collection using config map allowing omsagent to
