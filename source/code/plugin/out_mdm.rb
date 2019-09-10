@@ -55,8 +55,9 @@ module Fluent
         if aks_region.to_s.empty?
           @log.info "Environment Variable AKS_REGION is not set.. "
           @can_send_data_to_mdm = false
+        else
+          aks_region = aks_region.gsub(" ","")
         end
-        aks_region = aks_region.gsub(" ","")
 
         if @can_send_data_to_mdm
           @log.info "MDM Metrics supported in #{aks_region} region"

@@ -16,6 +16,7 @@ require 'json'
 @logTailPath = "/var/log/containers/*.log"
 @logExclusionRegexPattern = "(^((?!stdout|stderr).)*$)"
 @excludePath = "*.csv2" #some invalid path
+@enable_health_model = false
 
 # Use parser to parse the configmap toml file to a ruby structure
 def parseConfigMap(path)
@@ -121,10 +122,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
   end
 
   begin
-    if !parsedConfig.nil?  && !parsedConfig[:agent_settings][:health_model].nil? && !parsedConfig[:agent_settings][:health_model][:enabled].nil?
+    if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil? && !parsedConfig[:agent_settings][:health_model].nil? && !parsedConfig[:agent_settings][:health_model][:enabled].nil?
         @enable_health_model = parsedConfig[:agent_settings][:health_model][:enabled]
-        puts "enable_health_model = #{@enable_health_model}"
+    else
+        @enable_health_model = false
     end
+    puts "enable_health_model = #{@enable_health_model}"
   rescue => errorStr
     puts "config::error:Exception while reading config settings for health_model enabled setting - #{errorStr}, using defaults"
     @enable_health_model = false
@@ -140,7 +143,9 @@ if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @configSchemaVe
     Dir["/etc/config/settings/*settings"].each{|file|
         puts "Parsing File #{file}"
         settings = parseConfigMap(file)
-        configMapSettings = configMapSettings.merge(settings)
+        if !settings.nil?
+            configMapSettings = configMapSettings.merge(settings)
+        end
     }
 
   if !configMapSettings.nil?
