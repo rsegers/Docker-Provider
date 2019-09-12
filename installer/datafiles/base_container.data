@@ -30,6 +30,7 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/microsoft/omsagent/plugin/KubernetesApiClient.rb;			source/code/plugin/KubernetesApiClient.rb;			644; root; root
 
 /etc/opt/microsoft/docker-cimprov/container.conf;			    installer/conf/container.conf;                      644; root; root
+/etc/opt/microsoft/docker-cimprov/container-health.conf;		installer/conf/container-health.conf;               644; root; root
 
 /opt/microsoft/omsagent/plugin/CAdvisorMetricsAPIClient.rb;     source/code/plugin/CAdvisorMetricsAPIClient.rb;     644; root; root
 /opt/microsoft/omsagent/plugin/in_kube_perf.rb;			        source/code/plugin/in_kube_perf.rb;			    	644; root; root
@@ -257,6 +258,9 @@ chown omsagent:omiusers /var/opt/microsoft/docker-cimprov/log/fluent_forward_fai
 mv /etc/opt/microsoft/docker-cimprov/container.conf /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
 chown omsagent:omsagent /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
 
+mv /etc/opt/microsoft/docker-cimprov/container-health.conf /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container-health.conf
+chown omsagent:omsagent /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container-health.conf
+
 %Postuninstall_10
 # If we're an upgrade, skip all of this cleanup
 if ${{PERFORMING_UPGRADE_NOT}}; then
@@ -268,6 +272,7 @@ if ${{PERFORMING_UPGRADE_NOT}}; then
    rm -f /var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt
    rm -f /var/opt/microsoft/docker-cimprov/log/kubernetes_perf_log.txt
    rm -f /etc/opt/microsoft/omsagent/conf/omsagent.d/container.conf
+   rm -f /etc/opt/microsoft/omsagent/conf/omsagent.d/container-health.conf
    rmdir /var/opt/microsoft/docker-cimprov/log 2> /dev/null
    rmdir /var/opt/microsoft/docker-cimprov/state/ContainerInventory 2> /dev/null
    rmdir /var/opt/microsoft/docker-cimprov/state/ImageInventory 2> /dev/null
