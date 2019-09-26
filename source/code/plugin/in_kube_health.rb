@@ -34,7 +34,7 @@ module Fluent
 
     include HealthModel
     config_param :run_interval, :time, :default => "1m"
-    config_param :tag, :string, :default => "oms.api.KubeHealth.ReplicaSet"
+    config_param :tag, :string, :default => "kubehealth.ReplicaSet"
 
     def configure(conf)
       super

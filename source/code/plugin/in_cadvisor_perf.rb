@@ -19,8 +19,8 @@ module Fluent
     config_param :run_interval, :time, :default => "1m"
     config_param :tag, :string, :default => "oms.api.cadvisorperf"
     config_param :mdmtag, :string, :default => "mdm.cadvisorperf"
-    config_param :nodehealthtag, :string, :default => "oms.api.KubeHealth.DaemonSet.Node"
-    #config_param :containerhealthtag, :string, :default => "oms.api.KubeHealth.DaemonSet.Container"
+    config_param :nodehealthtag, :string, :default => "kubehealth.DaemonSet.Node"
+    #config_param :containerhealthtag, :string, :default => "kubehealth.DaemonSet.Container"
 
     def configure(conf)
       super
