@@ -20,7 +20,7 @@ module Fluent
     config_param :tag, :string, :default => "oms.api.cadvisorperf"
     config_param :mdmtag, :string, :default => "mdm.cadvisorperf"
     config_param :nodehealthtag, :string, :default => "kubehealth.DaemonSet.Node"
-    #config_param :containerhealthtag, :string, :default => "kubehealth.DaemonSet.Container"
+    config_param :containerhealthtag, :string, :default => "kubehealth.DaemonSet.Container"
 
     def configure(conf)
       super
@@ -54,12 +54,11 @@ module Fluent
           record["DataType"] = "LINUX_PERF_BLOB"
           record["IPName"] = "LogManagement"
           eventStream.add(time, record) if record
-                    #router.emit(@tag, time, record) if record
-            end
+        end
 
         router.emit_stream(@tag, eventStream) if eventStream
         router.emit_stream(@mdmtag, eventStream) if eventStream
-        #router.emit_stream(@containerhealthtag, eventStream) if eventStream
+        router.emit_stream(@containerhealthtag, eventStream) if eventStream
         router.emit_stream(@nodehealthtag, eventStream) if eventStream
 
         @@istestvar = ENV["ISTEST"]
