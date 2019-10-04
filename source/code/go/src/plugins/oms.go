@@ -184,11 +184,11 @@ type laKubeMonAgentEvents struct {
 }
 
 type KubeMonAgentEventTags struct {
-	PodName        string
-	ContainerId    string
-	FirstOccurance string
-	LastOccurance  string
-	Count          int
+	PodName         string
+	ContainerId     string
+	FirstOccurrence string
+	LastOccurrence  string
+	Count           int
 }
 
 type KubeMonAgentEventBlob struct {
@@ -259,7 +259,14 @@ func updateContainerImageNameMaps() {
 		}
 
 		for _, pod := range pods.Items {
-			for _, status := range pod.Status.ContainerStatuses {
+			podContainerStatuses := pod.Status.ContainerStatuses
+
+			// Doing this to include init container logs as well
+			podInitContainerStatuses := pod.Status.InitContainerStatuses
+			if (podInitContainerStatuses != nil) && (len(podInitContainerStatuses) > 0) {
+				podContainerStatuses = append(podContainerStatuses, podInitContainerStatuses...)
+			}
+			for _, status := range podContainerStatuses {
 				lastSlashIndex := strings.LastIndex(status.ContainerID, "/")
 				containerID := status.ContainerID[lastSlashIndex+1 : len(status.ContainerID)]
 				image := status.Image
@@ -344,22 +351,22 @@ func populateKubeMonAgentEventHash(record map[interface{}]interface{}, errType K
 		if val, ok := ConfigErrorEvent[logRecordString]; ok {
 			Log("In config error existing hash update\n")
 			eventCount := val.Count
-			eventFirstOccurance := val.FirstOccurance
+			eventFirstOccurrence := val.FirstOccurrence
 
 			ConfigErrorEvent[logRecordString] = KubeMonAgentEventTags{
-				PodName:        podName,
-				ContainerId:    containerID,
-				FirstOccurance: eventFirstOccurance,
-				LastOccurance:  eventTimeStamp,
-				Count:          eventCount + 1,
+				PodName:         podName,
+				ContainerId:     containerID,
+				FirstOccurrence: eventFirstOccurrence,
+				LastOccurrence:  eventTimeStamp,
+				Count:           eventCount + 1,
 			}
 		} else {
 			ConfigErrorEvent[logRecordString] = KubeMonAgentEventTags{
-				PodName:        podName,
-				ContainerId:    containerID,
-				FirstOccurance: eventTimeStamp,
-				LastOccurance:  eventTimeStamp,
-				Count:          1,
+				PodName:         podName,
+				ContainerId:     containerID,
+				FirstOccurrence: eventTimeStamp,
+				LastOccurrence:  eventTimeStamp,
+				Count:           1,
 			}
 		}
 
@@ -374,22 +381,22 @@ func populateKubeMonAgentEventHash(record map[interface{}]interface{}, errType K
 				if val, ok := PromScrapeErrorEvent[splitString]; ok {
 					Log("In config error existing hash update\n")
 					eventCount := val.Count
-					eventFirstOccurance := val.FirstOccurance
+					eventFirstOccurrence := val.FirstOccurrence
 
 					PromScrapeErrorEvent[splitString] = KubeMonAgentEventTags{
-						PodName:        podName,
-						ContainerId:    containerID,
-						FirstOccurance: eventFirstOccurance,
-						LastOccurance:  eventTimeStamp,
-						Count:          eventCount + 1,
+						PodName:         podName,
+						ContainerId:     containerID,
+						FirstOccurrence: eventFirstOccurrence,
+						LastOccurrence:  eventTimeStamp,
+						Count:           eventCount + 1,
 					}
 				} else {
 					PromScrapeErrorEvent[splitString] = KubeMonAgentEventTags{
-						PodName:        podName,
-						ContainerId:    containerID,
-						FirstOccurance: eventTimeStamp,
-						LastOccurance:  eventTimeStamp,
-						Count:          1,
+						PodName:         podName,
+						ContainerId:     containerID,
+						FirstOccurrence: eventTimeStamp,
+						LastOccurrence:  eventTimeStamp,
+						Count:           1,
 					}
 				}
 			}
@@ -756,16 +763,18 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		FlushedRecordsSize += float64(len(stringMap["LogEntry"]))
 
 		dataItems = append(dataItems, dataItem)
-		loggedTime, e := time.Parse(time.RFC3339, dataItem.LogEntryTimeStamp)
-		if e != nil {
-			message := fmt.Sprintf("Error while converting LogEntryTimeStamp for telemetry purposes: %s", e.Error())
-			Log(message)
-			SendException(message)
-		} else {
-			ltncy := float64(start.Sub(loggedTime) / time.Millisecond)
-			if ltncy >= maxLatency {
-				maxLatency = ltncy
-				maxLatencyContainer = dataItem.Name + "=" + dataItem.ID
+		if dataItem.LogEntryTimeStamp != "" {
+			loggedTime, e := time.Parse(time.RFC3339, dataItem.LogEntryTimeStamp)
+			if e != nil {
+				message := fmt.Sprintf("Error while converting LogEntryTimeStamp for telemetry purposes: %s", e.Error())
+				Log(message)
+				SendException(message)
+			} else {
+				ltncy := float64(start.Sub(loggedTime) / time.Millisecond)
+				if ltncy >= maxLatency {
+					maxLatency = ltncy
+					maxLatencyContainer = dataItem.Name + "=" + dataItem.ID
+				}
 			}
 		}
 	}
