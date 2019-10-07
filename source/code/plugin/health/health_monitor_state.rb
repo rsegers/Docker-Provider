@@ -57,10 +57,11 @@ when do u send?
 2. if there is a "consistent" state change for monitors
 3. if the signal is stale (> 4hrs)
 4. If the latest state is none
+5. If an aggregate monitor has a change in its details, but no change in state
 =end
         def update_state(monitor, #UnitMonitor/AggregateMonitor
-            monitor_config #Hash
-            )
+            monitor_config, #Hash
+            is_aggregate_monitor = false)
             samples_to_keep = 1
             monitor_instance_id = monitor.monitor_instance_id
             log = HealthMonitorHelpers.get_log_handle
@@ -76,12 +77,13 @@ when do u send?
                 samples_to_keep = monitor_config['ConsecutiveSamplesForStateTransition'].to_i
             end
 
+            deleted_record = {}
             if @@monitor_states.key?(monitor_instance_id)
                 health_monitor_instance_state = @@monitor_states[monitor_instance_id]
                 health_monitor_records = health_monitor_instance_state.prev_records #This should be an array
 
                 if health_monitor_records.size == samples_to_keep
-                    health_monitor_records.delete_at(0)
+                    deleted_record = health_monitor_records.delete_at(0)
                 end
                 health_monitor_records.push(monitor.details)
                 health_monitor_instance_state.prev_records = health_monitor_records
@@ -105,7 +107,6 @@ when do u send?
                 health_monitor_instance_state.should_send = true
                 @@monitor_states[monitor_instance_id] = health_monitor_instance_state
             end
-
 
             # update old and new state based on the history and latest record.
             # TODO: this is a little hairy. Simplify
@@ -142,6 +143,10 @@ when do u send?
                     @@first_record_sent[monitor_instance_id] = true
                     health_monitor_instance_state.should_send = true
                     set_state(monitor_instance_id, health_monitor_instance_state)
+                elsif agg_monitor_details_changed?(is_aggregate_monitor, deleted_record, health_monitor_instance_state.prev_records[0])
+                    health_monitor_instance_state.should_send = true
+                    set_state(monitor_instance_id, health_monitor_instance_state)
+                    log.debug "#{monitor_instance_id} condition: agg monitor details changed should_send #{health_monitor_instance_state.should_send}"
                 end
             # latest state is different that last sent state
             else
@@ -211,6 +216,18 @@ when do u send?
                 i += 1
             end
             return true
+        end
+
+        def agg_monitor_details_changed?(is_aggregate_monitor, last_sent_details, latest_details)
+            log = HealthMonitorHelpers.get_log_handle
+            if !is_aggregate_monitor
+                return false
+            end
+            if latest_details['details'] != last_sent_details['details']
+                log.info "Last Sent Details #{JSON.pretty_generate(last_sent_details)} \n Latest Details: #{JSON.pretty_generate(latest_details)}"
+                return true
+            end
+            return false
         end
     end
 end

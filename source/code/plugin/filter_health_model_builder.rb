@@ -184,7 +184,8 @@ module Fluent
                     all_monitors.each{|monitor_instance_id, monitor|
                         if monitor.is_aggregate_monitor
                             @state.update_state(monitor,
-                                @provider.get_config(monitor.monitor_id)
+                                @provider.get_config(monitor.monitor_id),
+                                true
                                 )
                         end
 
