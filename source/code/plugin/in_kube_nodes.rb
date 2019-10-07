@@ -8,6 +8,7 @@ module Fluent
     @@ContainerNodeInventoryTag = "oms.containerinsights.ContainerNodeInventory"
     @@MDMKubeNodeInventoryTag = "mdm.kubenodeinventory"
     @@promConfigMountPath = "/etc/config/settings/prometheus-data-collection-settings"
+    @@AzStackCloudFileName = "/etc/kubernetes/host/azurestackcloud.json"
 
     @@rsPromInterval = ENV["TELEMETRY_RS_PROM_INTERVAL"]
     @@rsPromFieldPassCount = ENV["TELEMETRY_RS_PROM_FIELDPASS_LENGTH"]
@@ -15,6 +16,7 @@ module Fluent
     @@rsPromK8sServiceCount = ENV["TELEMETRY_RS_PROM_K8S_SERVICES_LENGTH"]
     @@rsPromUrlCount = ENV["TELEMETRY_RS_PROM_URLS_LENGTH"]
     @@rsPromMonitorPods = ENV["TELEMETRY_RS_PROM_MONITOR_PODS"]
+    @@rsPromMonitorPodsNamespaceLength = ENV["TELEMETRY_RS_PROM_MONITOR_PODS_NS_LENGTH"]
 
     def initialize
       super
@@ -59,11 +61,19 @@ module Fluent
       emitTime = currentTime.to_f
       batchTime = currentTime.utc.iso8601
       telemetrySent = false
+
+      nodeInventory = nil
+
       $log.info("in_kube_nodes::enumerate : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
-      nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo("nodes").body)
+      nodeInfo = KubernetesApiClient.getKubeResourceInfo("nodes")
       $log.info("in_kube_nodes::enumerate : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
+
+      if !nodeInfo.nil?
+        nodeInventory = JSON.parse(nodeInfo.body)
+      end
+
       begin
-        if (!nodeInventory.empty?)
+        if (!nodeInventory.nil? && !nodeInventory.empty?)
           eventStream = MultiEventStream.new
           containerNodeInventoryEventStream = MultiEventStream.new
           if !nodeInventory["items"].nil?
@@ -82,6 +92,16 @@ module Fluent
               record["CreationTimeStamp"] = items["metadata"]["creationTimestamp"]
               record["Labels"] = [items["metadata"]["labels"]]
               record["Status"] = ""
+
+              if !items["spec"]["providerID"].nil? && !items["spec"]["providerID"].empty?
+                if File.file?(@@AzStackCloudFileName) # existence of this file indicates agent running on azstack
+                  record["KubernetesProviderID"] = "azurestack"
+                else
+                  record["KubernetesProviderID"] = items["spec"]["providerID"]
+                end
+              else
+                record["KubernetesProviderID"] = "onprem"
+              end
 
               # Refer to https://kubernetes.io/docs/concepts/architecture/nodes/#condition for possible node conditions.
               # We check the status of each condition e.g. {"type": "OutOfDisk","status": "False"} . Based on this we
@@ -138,6 +158,9 @@ module Fluent
                 properties["KubeletVersion"] = record["KubeletVersion"]
                 properties["OperatingSystem"] = nodeInfo["operatingSystem"]
                 properties["DockerVersion"] = dockerVersion
+                properties["KubernetesProviderID"] = record["KubernetesProviderID"]
+                properties["KernelVersion"] = nodeInfo["kernelVersion"]
+                properties["OSImage"] = nodeInfo["osImage"]
 
                 capacityInfo = items["status"]["capacity"]
                 ApplicationInsightsUtility.sendMetricTelemetry("NodeMemory", capacityInfo["memory"], properties)
@@ -150,6 +173,7 @@ module Fluent
                   properties["rsPromServ"] = @@rsPromK8sServiceCount
                   properties["rsPromUrl"] = @@rsPromUrlCount
                   properties["rsPromMonPods"] = @@rsPromMonitorPods
+                  properties["rsPromMonPodsNs"] = @@rsPromMonitorPodsNamespaceLength
                 end
                 ApplicationInsightsUtility.sendMetricTelemetry("NodeCoreCapacity", capacityInfo["cpu"], properties)
                 telemetrySent = true

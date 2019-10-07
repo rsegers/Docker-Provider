@@ -1,10 +1,9 @@
 #!/usr/local/bin/ruby
 
 require_relative "tomlrb"
-require 'json'
+require_relative "ConfigParseErrorLogger"
 
-@log_settings_config_map_mount_path = "/etc/config/settings/log-data-collection-settings"
-@agent_settings_config_map_mount_path = "/etc/config/settings/agent-settings"
+@configMapMountPath = "/etc/config/settings/log-data-collection-settings"
 @configVersion = ""
 @configSchemaVersion = ""
 # Setting default values which will be used in case they are not set in the configmap or if configmap doesnt exist
@@ -18,21 +17,21 @@ require 'json'
 @excludePath = "*.csv2" #some invalid path
 
 # Use parser to parse the configmap toml file to a ruby structure
-def parseConfigMap(path)
+def parseConfigMap
   begin
     # Check to see if config map is created
-    if (File.file?(path))
-      puts "config::configmap container-azm-ms-agentconfig for settings mounted, parsing values from #{path}"
-      parsedConfig = Tomlrb.load_file(path, symbolize_keys: true)
-      puts "config::Successfully parsed mounted config map from #{path}"
+    if (File.file?(@configMapMountPath))
+      puts "config::configmap container-azm-ms-agentconfig for settings mounted, parsing values"
+      parsedConfig = Tomlrb.load_file(@configMapMountPath, symbolize_keys: true)
+      puts "config::Successfully parsed mounted config map"
       return parsedConfig
     else
-      puts "config::configmap container-azm-ms-agentconfig for settings not mounted, using defaults for #{path}"
+      puts "config::configmap container-azm-ms-agentconfig for settings not mounted, using defaults"
       @excludePath = "*_kube-system_*.log"
       return nil
     end
   rescue => errorStr
-    puts "config::error::Exception while parsing toml config file: #{errorStr}, using defaults"
+    ConfigParseErrorLogger.logError("Exception while parsing config map for log collection/env variable settings: #{errorStr}, using defaults, please check config map for errors")
     @excludePath = "*_kube-system_*.log"
     return nil
   end
@@ -69,7 +68,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         end
       end
     rescue => errorStr
-      puts "config::error::Exception while reading config settings for stdout log collection - #{errorStr}, using defaults"
+      ConfigParseErrorLogger.logError("Exception while reading config map settings for stdout log collection - #{errorStr}, using defaults, please check config map for errors")
     end
 
     #Get stderr log config settings
@@ -106,7 +105,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         end
       end
     rescue => errorStr
-      puts "config::error:Exception while reading config settings for stderr log collection - #{errorStr}, using defaults"
+      ConfigParseErrorLogger.logError("Exception while reading config map settings for stderr log collection - #{errorStr}, using defaults, please check config map for errors")
     end
 
     #Get environment variables log config settings
@@ -116,38 +115,22 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         puts "config::Using config map setting for cluster level environment variable collection"
       end
     rescue => errorStr
-      puts "config::error::Exception while reading config settings for cluster level environment variable collection - #{errorStr}, using defaults"
+      ConfigParseErrorLogger.logError("Exception while reading config map settings for cluster level environment variable collection - #{errorStr}, using defaults, please check config map for errors")
     end
-  end
-
-  begin
-    if !parsedConfig.nil?  && !parsedConfig[:agent_settings][:health_model].nil? && !parsedConfig[:agent_settings][:health_model][:enabled].nil?
-        @enable_health_model = parsedConfig[:agent_settings][:health_model][:enabled]
-        puts "enable_health_model = #{@enable_health_model}"
-    end
-  rescue => errorStr
-    puts "config::error:Exception while reading config settings for health_model enabled setting - #{errorStr}, using defaults"
-    @enable_health_model = false
   end
 end
 
 @configSchemaVersion = ENV["AZMON_AGENT_CFG_SCHEMA_VERSION"]
 puts "****************Start Config Processing********************"
 if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @configSchemaVersion.strip.casecmp("v1") == 0 #note v1 is the only supported schema version , so hardcoding it
-    configMapSettings = {}
-
-    #iterate over every *settings file and build a hash of settings
-    Dir["/etc/config/settings/*settings"].each{|file|
-        puts "Parsing File #{file}"
-        settings = parseConfigMap(file)
-        configMapSettings = configMapSettings.merge(settings)
-    }
-
+  configMapSettings = parseConfigMap
   if !configMapSettings.nil?
     populateSettingValuesFromConfigMap(configMapSettings)
   end
 else
-    puts "config::unsupported/missing config schema version - '#{@configSchemaVersion}' , using defaults"
+  if (File.file?(@configMapMountPath))
+    ConfigParseErrorLogger.logError("config::unsupported/missing config schema version - '#{@configSchemaVersion}' , using defaults, please use supported schema version")
+  end
   @excludePath = "*_kube-system_*.log"
 end
 
@@ -173,13 +156,11 @@ if !file.nil?
   file.write("export AZMON_STDERR_EXCLUDED_NAMESPACES=#{@stderrExcludeNamespaces}\n")
   file.write("export AZMON_CLUSTER_COLLECT_ENV_VAR=#{@collectClusterEnvVariables}\n")
   file.write("export AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH=#{@excludePath}\n")
-    #health_model settings
-  file.write("export AZMON_CLUSTER_ENABLE_HEALTH_MODEL=#{@enable_health_model}\n")
   # Close file after writing all environment variables
   file.close
   puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "
   puts "****************End Config Processing********************"
 else
-  puts "config::error::Exception while opening file for writing config environment variables"
+  puts "Exception while opening file for writing config environment variables"
   puts "****************End Config Processing********************"
 end

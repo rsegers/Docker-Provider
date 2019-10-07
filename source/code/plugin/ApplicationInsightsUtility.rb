@@ -18,6 +18,7 @@ class ApplicationInsightsUtility
   @@EnvAksRegion = "AKS_REGION"
   @@EnvAgentVersion = "AGENT_VERSION"
   @@EnvApplicationInsightsKey = "APPLICATIONINSIGHTS_AUTH"
+  @@EnvApplicationInsightsEndpoint = "APPLICATIONINSIGHTS_ENDPOINT"
   @@EnvControllerType = "CONTROLLER_TYPE"
 
   @@CustomProperties = {}
@@ -62,6 +63,8 @@ class ApplicationInsightsUtility
         @@CustomProperties["AgentVersion"] = ENV[@@EnvAgentVersion]
         @@CustomProperties["ControllerType"] = ENV[@@EnvControllerType]
         encodedAppInsightsKey = ENV[@@EnvApplicationInsightsKey]
+        appInsightsEndpoint = ENV[@@EnvApplicationInsightsEndpoint]
+        @@CustomProperties["WorkspaceCloud"] = getWorkspaceCloud
 
         #Check if telemetry is turned off
         telemetryOffSwitch = ENV["DISABLE_TELEMETRY"]
@@ -70,7 +73,16 @@ class ApplicationInsightsUtility
           @@Tc = ApplicationInsights::TelemetryClient.new
         elsif !encodedAppInsightsKey.nil?
           decodedAppInsightsKey = Base64.decode64(encodedAppInsightsKey)
-          @@Tc = ApplicationInsights::TelemetryClient.new decodedAppInsightsKey
+          #override ai endpoint if its available otherwise use default.
+          if appInsightsEndpoint && !appInsightsEndpoint.nil? && !appInsightsEndpoint.empty?
+            $log.info("AppInsightsUtility: Telemetry client uses overrided endpoint url : #{appInsightsEndpoint}")
+            telemetrySynchronousSender = ApplicationInsights::Channel::SynchronousSender.new appInsightsEndpoint
+            telemetrySynchronousQueue = ApplicationInsights::Channel::SynchronousQueue.new(telemetrySynchronousSender)
+            telemetryChannel = ApplicationInsights::Channel::TelemetryChannel.new nil, telemetrySynchronousQueue
+            @@Tc = ApplicationInsights::TelemetryClient.new decodedAppInsightsKey, telemetryChannel
+          else
+            @@Tc = ApplicationInsights::TelemetryClient.new decodedAppInsightsKey
+          end
         end
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: initilizeUtility - error: #{errorStr}")
@@ -217,6 +229,33 @@ class ApplicationInsightsUtility
         return workspaceId
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: getWorkspaceId - error: #{errorStr}")
+      end
+    end
+
+    def getWorkspaceCloud()
+      begin
+        adminConf = {}
+        confFile = File.open(@OmsAdminFilePath, "r")
+        confFile.each_line do |line|
+          splitStrings = line.split("=")
+          adminConf[splitStrings[0]] = splitStrings[1]
+        end
+        workspaceDomain = adminConf["URL_TLD"].strip
+        workspaceCloud = "AzureCloud"
+        if workspaceDomain.casecmp("opinsights.azure.com") == 0
+          workspaceCloud = "AzureCloud"
+        elsif workspaceDomain.casecmp("opinsights.azure.cn") == 0
+          workspaceCloud = "AzureChinaCloud"
+        elsif workspaceDomain.casecmp("opinsights.azure.us") == 0
+          workspaceCloud = "AzureUSGovernment"
+        elsif workspaceDomain.casecmp("opinsights.azure.de") == 0
+          workspaceCloud = "AzureGermanCloud"
+        else
+          workspaceCloud = "Unknown"
+        end
+        return workspaceCloud
+      rescue => errorStr
+        $log.warn("Exception in AppInsightsUtility: getWorkspaceCloud - error: #{errorStr}")
       end
     end
   end
