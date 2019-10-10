@@ -32,9 +32,9 @@ module HealthModel
                 if config.nil? || ( config['WarnIfGreaterThanPercentage'].nil? && config['WarnIfLesserThanPercentage'].nil? )
                     warn_percentage = nil
                 else
-                    warn_percentage = config['WarnIfGreaterThanPercentage'].to_f || config['WarnIfLesserThanPercentage'].to_f
+                    warn_percentage = !config['WarnIfGreaterThanPercentage'].nil? ? config['WarnIfGreaterThanPercentage'].to_f : config['WarnIfLesserThanPercentage'].to_f
                 end
-                fail_percentage = config['FailIfGreaterThanPercentage'].to_f || config['FailIfLesserThanPercentage'].to_f # nil.to_f = 0.0, 90 || 0 = 90
+                fail_percentage = !config['FailIfGreaterThanPercentage'].nil? ? config['FailIfGreaterThanPercentage'].to_f : config['FailIfLesserThanPercentage'].to_f
                 is_less_than_comparer = config['FailIfGreaterThanPercentage'].nil? ? true : false # Fail percentage config always present for percentage computation monitors
 
                 if !config.nil? && is_less_than_comparer

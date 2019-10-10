@@ -241,10 +241,23 @@ when do u send?
             if !is_aggregate_monitor
                 return false
             end
-            if latest_details['details'] != last_sent_details['details']
-                log.info "Last Sent Details #{JSON.pretty_generate(last_sent_details)} \n Latest Details: #{JSON.pretty_generate(latest_details)}"
-                return true
-            end
+
+            # Do a deep comparison of the keys under details, since a shallow comparison is hit or miss.
+            # Actual bug was the array inside the keys were in random order and the previous equality comparison was failing
+            latest_details['details'].keys.each{|k|
+                if !last_sent_details['details'].key?(k)
+                    return true
+                end
+                if latest_details['details'][k].size != last_sent_details['details'][k].size
+                    return true
+                end
+            }
+            # Explanation: a = [1,2] b = [2,1] a & b = [1,2] , c = [2,3] d = [2] c & d = [2] c.size != (c&d).size
+            latest_details['details'].keys.each{|k|
+                if !(latest_details['details'][k].size == (last_sent_details['details'][k] & latest_details['details'][k]).size)
+                    return true
+                end
+            }
             return false
         end
     end
