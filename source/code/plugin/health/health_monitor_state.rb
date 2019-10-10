@@ -241,6 +241,7 @@ when do u send?
             if !is_aggregate_monitor
                 return false
             end
+
             # Do a deep comparison of the keys under details, since a shallow comparison is hit or miss.
             # Actual bug was the array inside the keys were in random order and the previous equality comparison was failing
             latest_details['details'].keys.each{|k|
