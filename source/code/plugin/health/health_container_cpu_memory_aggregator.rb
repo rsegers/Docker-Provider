@@ -249,7 +249,7 @@ module HealthModel
             if percent_value > config['FailIfGreaterThanPercentage']
                 return HealthMonitorStates::FAIL
             elsif percent_value > config['WarnIfGreaterThanPercentage']
-                return HealthMonitorStates::WARN
+                return HealthMonitorStates::WARNING
             else
                 return HealthMonitorStates::PASS
             end
