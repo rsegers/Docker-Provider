@@ -13,6 +13,7 @@ module HealthModel
 
         def initialize
             @last_sent_time = Time.now
+            @monitor_records = {}
         end
 
         def send
