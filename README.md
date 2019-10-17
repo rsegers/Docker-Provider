@@ -11,6 +11,15 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 10/11/2019 -
+##### Version microsoft/oms:ciprod10112019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10112019
+- Update prometheus config scraping capability to restrict collecting metrics from pods in specific namespaces.
+- Feature to send custom configuration/prometheus scrape errors to KubeMonAgentEvents table in customer's workspace.
+- Bug fix to collect data for init containers for Container Logs, KubePodInventory and Perf.
+- Bug fix for empty array being a valid setting in custom config in configmap.
+- Restrict kubelet_docker_operations and kubelet_docker_operations_errors to create_containers, remove_containers and pull_image operations.
+- Fix top exceptions in telemetry
+
 ### 08/22/2019 -
 ##### Version microsoft/oms:ciprod08222019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08222019
 - Cluster Health Private Preview based on config map setting
