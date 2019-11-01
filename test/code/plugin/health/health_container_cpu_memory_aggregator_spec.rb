@@ -25,7 +25,7 @@ describe 'HealthContainerCpuMemoryAggregator spec' do
 
         resources.pod_inventory = pods
         resources.node_inventory = nodes
-        resources.set_deployment_inventory(deployments)
+        resources.set_replicaset_inventory(deployments)
         resources.build_pod_uid_lookup #call this in in_kube_health every min
 
         cluster_labels = {
@@ -60,7 +60,7 @@ describe 'HealthContainerCpuMemoryAggregator spec' do
 
         resources.pod_inventory = pods
         resources.node_inventory = nodes
-        resources.set_deployment_inventory(deployments)
+        resources.set_replicaset_inventory(deployments)
         resources.build_pod_uid_lookup #call this in in_kube_health every min
 
         cluster_labels = {
@@ -113,7 +113,7 @@ describe 'HealthContainerCpuMemoryAggregator spec' do
 
         resources.pod_inventory = pods
         resources.node_inventory = nodes
-        resources.set_deployment_inventory(deployments)
+        resources.set_replicaset_inventory(deployments)
         resources.build_pod_uid_lookup #call this in in_kube_health every min
 
         cluster_labels = {
@@ -163,7 +163,7 @@ describe 'HealthContainerCpuMemoryAggregator spec' do
 
         resources.pod_inventory = pods
         resources.node_inventory = nodes
-        resources.set_deployment_inventory(deployments)
+        resources.set_replicaset_inventory(deployments)
         resources.build_pod_uid_lookup #call this in in_kube_health every min
 
         cluster_labels = {

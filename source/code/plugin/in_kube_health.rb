@@ -86,11 +86,11 @@ module Fluent
         node_inventory = JSON.parse(node_inventory_response.body)
         pod_inventory_response = KubernetesApiClient.getKubeResourceInfo("pods")
         pod_inventory = JSON.parse(pod_inventory_response.body)
-        deployment_inventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo("deployments", api_version: "extensions/v1beta1").body)
+        replicaset_inventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo("replicasets", api_version: "extensions/v1beta1").body)
 
         @resources.node_inventory = node_inventory
         @resources.pod_inventory = pod_inventory
-        @resources.set_deployment_inventory(deployment_inventory)
+        @resources.set_replicaset_inventory(replicaset_inventory)
         @resources.build_pod_uid_lookup
 
         if node_inventory_response.code.to_i != 200
@@ -106,7 +106,7 @@ module Fluent
           health_monitor_records.push(record) if record
           record = process_memory_oversubscribed_monitor(pod_inventory, node_inventory)
           health_monitor_records.push(record) if record
-          pods_ready_hash = HealthMonitorUtils.get_pods_ready_hash(pod_inventory, deployment_inventory)
+          pods_ready_hash = HealthMonitorUtils.get_pods_ready_hash(@resources)
 
           system_pods = pods_ready_hash.select{|k,v| v['namespace'] == 'kube-system'}
           workload_pods = pods_ready_hash.select{|k,v| v['namespace'] != 'kube-system'}
@@ -121,7 +121,7 @@ module Fluent
             health_monitor_records.push(record) if record
           end
         else
-            hmlog.info "POD INVENTORY IS NIL"
+            @@hmlog.info "POD INVENTORY IS NIL"
         end
 
         if !node_inventory.nil?
@@ -130,7 +130,7 @@ module Fluent
             health_monitor_records.push(record) if record
           end
         else
-            hmlog.info "NODE INVENTORY IS NIL"
+            @@hmlog.info "NODE INVENTORY IS NIL"
         end
 
         health_monitor_records.each do |record|
@@ -260,14 +260,14 @@ module Fluent
           node_inventory['items'].each do |node|
             node_name = node['metadata']['name']
             conditions = node['status']['conditions']
-            state = HealthMonitorUtils.get_node_state_from_node_conditions(monitor_config, conditions)
+            node_state = HealthMonitorUtils.get_node_state_from_node_conditions(monitor_config, conditions)
             details = {}
             conditions.each do |condition|
-                state = !(condition['status'].downcase == 'true' && condition['type'].downcase != 'ready') ? HealthMonitorStates::PASS : HealthMonitorStates::FAIL
-                details[condition['type']] = {"Reason" => condition['reason'], "Message" => condition['message'], "State" => state}
+                condition_state = !(condition['status'].downcase == 'true' && condition['type'].downcase != 'ready') ? HealthMonitorStates::PASS : HealthMonitorStates::FAIL
+                details[condition['type']] = {"Reason" => condition['reason'], "Message" => condition['message'], "State" => condition_state}
                 #@@hmlog.info "Node Condition details: #{JSON.pretty_generate(details)}"
             end
-            health_monitor_record = {"timestamp" => timestamp, "state" => state, "details" => details}
+            health_monitor_record = {"timestamp" => timestamp, "state" => node_state, "details" => details}
             monitor_instance_id = HealthMonitorUtils.get_monitor_instance_id(monitor_id, [@@cluster_id, node_name])
             health_record = {}
             time_now = Time.now.utc.iso8601
@@ -291,11 +291,11 @@ module Fluent
         node_inventory = JSON.parse(node_inventory_response.body)
         pod_inventory_response = KubernetesApiClient.getKubeResourceInfo("pods")
         pod_inventory = JSON.parse(pod_inventory_response.body)
-        deployment_inventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo("deployments", api_version: "extensions/v1beta1").body)
+        replicaset_inventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo("replicasets", api_version: "extensions/v1beta1").body)
 
         @resources.node_inventory = node_inventory
         @resources.pod_inventory = pod_inventory
-        @resources.set_deployment_inventory(deployment_inventory)
+        @resources.set_replicaset_inventory(replicaset_inventory)
         @resources.build_pod_uid_lookup
     end
 
