@@ -39,17 +39,16 @@ module Fluent
                 @kube_api_down_handler = HealthKubeApiDownHandler.new
                 @resources = HealthKubernetesResources.instance
                 @reducer = HealthSignalReducer.new
-                @state = HealthMonitorState.new
                 @generator = HealthMissingSignalGenerator.new
-                #TODO: cluster_labels needs to be initialized
                 @provider = HealthMonitorProvider.new(@@cluster_id, HealthMonitorUtils.get_cluster_labels, @resources, @health_monitor_config_path)
-                deserialized_state_info = @cluster_health_state.get_state
-                @state = HealthMonitorState.new
-                @state.initialize_state(deserialized_state_info)
                 @cluster_old_state = 'none'
                 @cluster_new_state = 'none'
                 @container_cpu_memory_records = []
                 @telemetry = HealthMonitorTelemetry.new
+                @state = HealthMonitorState.new
+                # move network calls to the end. This will ensure all the instance variables get initialized
+                deserialized_state_info = @cluster_health_state.get_state
+                @state.initialize_state(deserialized_state_info)
             rescue => e
                 ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "Health"})
             end
@@ -99,6 +98,10 @@ module Fluent
                     end
                     container_records_aggregator = HealthContainerCpuMemoryAggregator.new(@resources, @provider)
                     deduped_records = container_records_aggregator.dedupe_records(container_records)
+                    if @container_cpu_memory_records.nil?
+                        @log.info "@container_cpu_memory_records was not initialized"
+                        @container_cpu_memory_records = [] #in some clusters, this is null, so initialize it again.
+                    end
                     @container_cpu_memory_records.push(*deduped_records) # push the records for aggregation later
                     return MultiEventStream.new
                 elsif tag.start_with?("kubehealth.ReplicaSet")
@@ -106,14 +109,16 @@ module Fluent
                     es.each{|time, record|
                         records.push(record)
                     }
-                    @buffer.add_to_buffer(records)
+                    @buffer.add_to_buffer(records) # in_kube_health records
 
-                    container_records_aggregator = HealthContainerCpuMemoryAggregator.new(@resources, @provider)
-                    container_records_aggregator.aggregate(@container_cpu_memory_records)
-                    container_records_aggregator.compute_state
-                    aggregated_container_records = container_records_aggregator.get_records
-                    @buffer.add_to_buffer(aggregated_container_records)
-
+                    aggregated_container_records = []
+                    if !@container_cpu_memory_records.nil? && !@container_cpu_memory_records.empty?
+                        container_records_aggregator = HealthContainerCpuMemoryAggregator.new(@resources, @provider)
+                        container_records_aggregator.aggregate(@container_cpu_memory_records)
+                        container_records_aggregator.compute_state
+                        aggregated_container_records = container_records_aggregator.get_records
+                    end
+                    @buffer.add_to_buffer(aggregated_container_records) #container cpu/memory records
                     records_to_process = @buffer.get_buffer
                     @buffer.reset_buffer
                     @container_cpu_memory_records = []
