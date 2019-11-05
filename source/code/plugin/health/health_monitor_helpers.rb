@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'logger'
 require 'digest'
 require_relative 'health_model_constants'

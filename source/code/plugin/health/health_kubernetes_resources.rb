@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require 'singleton'
 require_relative 'health_model_constants'
 
@@ -5,20 +7,20 @@ module HealthModel
     class HealthKubernetesResources
 
         include Singleton
-        attr_accessor :node_inventory, :pod_inventory, :deployment_inventory, :pod_uid_lookup, :workload_container_count
+        attr_accessor :node_inventory, :pod_inventory, :replicaset_inventory, :pod_uid_lookup, :workload_container_count
         attr_reader :nodes, :pods, :workloads, :deployment_lookup
 
         def initialize
-            @node_inventory = []
-            @pod_inventory =  []
-            @deployment_inventory =  []
+            @node_inventory = {}
+            @pod_inventory =  {}
+            @replicaset_inventory = {}
             @nodes = []
             @pods = []
             @workloads = []
             @log = HealthMonitorHelpers.get_log_handle
             @pod_uid_lookup = {}
-            @deployment_lookup = {}
             @workload_container_count = {}
+            @workload_name_cache = {}
         end
 
         def get_node_inventory
@@ -36,9 +38,8 @@ module HealthModel
             return @nodes
         end
 
-        def set_deployment_inventory(deployments)
-            @deployment_inventory = deployments
-            @deployment_lookup = {}
+        def set_replicaset_inventory(replicasets)
+            @replicaset_inventory = replicasets
         end
 
         def get_workload_names
@@ -51,7 +52,12 @@ module HealthModel
         end
 
         def build_pod_uid_lookup
+            if @pod_inventory.nil? || @pod_inventory['items'].nil? || @pod_inventory['items'].empty? || @pod_inventory['items'].size == 0
+                @log.info "Not Clearing pod_uid_lookup and workload_container_count since pod inventory is nil"
+                return
+            end
             @workload_container_count = {}
+            @pod_uid_lookup = {}
             @pod_inventory['items'].each do |pod|
                 begin
                     namespace = pod['metadata']['namespace']
@@ -92,7 +98,7 @@ module HealthModel
                         end
                     end
                 rescue => e
-                    @log.info "Error in build_pod_uid_lookup  #{pod} #{e.message}"
+                    @log.info "Error in build_pod_uid_lookup  for POD: #{pod_name} #{e.message} #{e.backtrace}"
                 end
             end
         end
@@ -105,19 +111,7 @@ module HealthModel
             return @workload_container_count
         end
 
-        private
         def get_workload_name(pod)
-
-            if @deployment_lookup.empty?
-                @deployment_inventory['items'].each do |deployment|
-                    match_labels = deployment['spec']['selector']['matchLabels'].to_h
-                    namespace = deployment['metadata']['namespace']
-                    match_labels.each{|k,v|
-                        @deployment_lookup["#{namespace}-#{k}=#{v}"] = "#{deployment['metadata']['namespace']}~~#{deployment['metadata']['name']}"
-                    }
-                end
-            end
-
             begin
                 has_owner = !pod['metadata']['ownerReferences'].nil?
                 owner_kind = ''
@@ -129,7 +123,6 @@ module HealthModel
                     controller_name = pod['metadata']['name']
                 end
                 namespace = pod['metadata']['namespace']
-
                 workload_name = ''
                 if owner_kind.nil?
                     owner_kind = 'Pod'
@@ -139,41 +132,22 @@ module HealthModel
                     # we are excluding jobs
                     return nil
                 when 'replicaset'
-                    # get the labels, and see if there is a match. If there is, it is the deployment. If not, use replica set name/controller name
-                    labels = pod['metadata']['labels'].to_h
-                    labels.each {|k,v|
-                        lookup_key = "#{namespace}-#{k}=#{v}"
-                        if @deployment_lookup.key?(lookup_key)
-                            workload_name = @deployment_lookup[lookup_key]
-                            break
-                        end
-                    }
-                    if workload_name.empty?
-                        workload_name = "#{namespace}~~#{controller_name}"
-                    end
+                    #TODO:
+                    workload_name = get_replica_set_owner_ref(controller_name)
+                    workload_name = "#{namespace}~~#{workload_name}"
                 when 'daemonset'
                     workload_name = "#{namespace}~~#{controller_name}"
                 else
-                    workload_name = "#{namespace}~~#{pod['metadata']['name']}"
+                    workload_name = "#{namespace}~~#{controller_name}"
                 end
                 return workload_name
             rescue => e
-                @log.info "Error in get_workload_name(pod) #{e.message}"
+                @log.info "Error in get_workload_name(pod) #{e.message} #{e.backtrace}"
                 return nil
             end
         end
 
         def get_workload_kind(pod)
-            if @deployment_lookup.empty?
-                @deployment_inventory['items'].each do |deployment|
-                    match_labels = deployment['spec']['selector']['matchLabels'].to_h
-                    namespace = deployment['metadata']['namespace']
-                    match_labels.each{|k,v|
-                        @deployment_lookup["#{namespace}-#{k}=#{v}"] = "#{deployment['metadata']['namespace']}~~#{deployment['metadata']['name']}"
-                    }
-                end
-            end
-
             begin
                 has_owner = !pod['metadata']['ownerReferences'].nil?
                 owner_kind = ''
@@ -190,6 +164,30 @@ module HealthModel
             rescue => e
                 @log.info "Error in get_workload_kind(pod) #{e.message}"
                 return nil
+            end
+        end
+
+        private
+        def get_replica_set_owner_ref(controller_name)
+            if @workload_name_cache.key?(controller_name)
+                return @workload_name_cache[controller_name]
+            end
+            begin
+                owner_ref = controller_name
+                @replicaset_inventory['items'].each{|rs|
+                    rs_name = rs['metadata']['name']
+                    if controller_name.casecmp(rs_name) == 0
+                        if !rs['metadata']['ownerReferences'].nil?
+                            owner_ref = rs['metadata']['ownerReferences'][0]['name'] if rs['metadata']['ownerReferences'][0]['name']
+                        end
+                        break
+                    end
+                }
+                @workload_name_cache[controller_name] = owner_ref
+                return owner_ref
+            rescue => e
+                @log.info "Error in get_replica_set_owner_ref(controller_name) #{e.message}"
+                return controller_name
             end
         end
 

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require 'logger'
 require 'digest'
 require_relative 'health_model_constants'
@@ -73,59 +74,17 @@ module HealthModel
                 end
             end
 
-            def get_pods_ready_hash(pod_inventory, deployment_inventory)
+            def get_pods_ready_hash(resources)
                 pods_ready_percentage_hash = {}
-                deployment_lookup = {}
-                deployment_inventory['items'].each do |deployment|
-                    match_labels = deployment['spec']['selector']['matchLabels'].to_h
-                    namespace = deployment['metadata']['namespace']
-                    match_labels.each{|k,v|
-                        deployment_lookup["#{namespace}-#{k}=#{v}"] = "#{deployment['metadata']['namespace']}~~#{deployment['metadata']['name']}"
-                    }
-                end
-                pod_inventory['items'].each do |pod|
+                resources.pod_inventory['items'].each do |pod|
                     begin
-                        has_owner = !pod['metadata']['ownerReferences'].nil?
-                        owner_kind = ''
-                        if has_owner
-                            owner_kind = pod['metadata']['ownerReferences'][0]['kind']
-                            controller_name = pod['metadata']['ownerReferences'][0]['name']
-                        else
-                            owner_kind = pod['kind']
-                            controller_name = pod['metadata']['name']
-                            #log.info "#{JSON.pretty_generate(pod)}"
-                        end
-
+                        workload_name = resources.get_workload_name(pod)
                         namespace = pod['metadata']['namespace']
                         status = pod['status']['phase']
-
-                        workload_name = ''
-                        if owner_kind.nil?
-                            owner_kind = 'Pod'
-                        end
-                        case owner_kind.downcase
-                        when 'job'
-                            # we are excluding jobs
+                        owner_kind = resources.get_workload_kind(pod)
+                        if owner_kind.casecmp('job') == 0
                             next
-                        when 'replicaset'
-                            # get the labels, and see if there is a match. If there is, it is the deployment. If not, use replica set name/controller name
-                            labels = pod['metadata']['labels'].to_h
-                            labels.each {|k,v|
-                                lookup_key = "#{namespace}-#{k}=#{v}"
-                                if deployment_lookup.key?(lookup_key)
-                                    workload_name = deployment_lookup[lookup_key]
-                                    break
-                                end
-                            }
-                            if workload_name.empty?
-                                workload_name = "#{namespace}~~#{controller_name}"
-                            end
-                        when 'daemonset'
-                            workload_name = "#{namespace}~~#{controller_name}"
-                        else
-                            workload_name = "#{namespace}~~#{pod['metadata']['name']}"
                         end
-
                         if pods_ready_percentage_hash.key?(workload_name)
                             total_pods = pods_ready_percentage_hash[workload_name]['totalPods']
                             pods_ready = pods_ready_percentage_hash[workload_name]['podsReady']
@@ -141,7 +100,7 @@ module HealthModel
 
                         pods_ready_percentage_hash[workload_name] = {'totalPods' => total_pods, 'podsReady' => pods_ready, 'namespace' => namespace, 'workload_name' => workload_name, 'kind' => owner_kind}
                     rescue => e
-                        log.info "Error when processing pod #{pod['metadata']['name']} #{e.message}"
+                        @log.info "Error when processing pod #{pod['metadata']['name']} #{e.message}"
                     end
                 end
                 return pods_ready_percentage_hash
@@ -149,33 +108,37 @@ module HealthModel
 
             def get_node_state_from_node_conditions(monitor_config, node_conditions)
                 pass = false
+                warn = false
+                fail = false
                 failtypes = ['outofdisk', 'networkunavailable'].to_set #default fail types
                 if !monitor_config.nil? && !monitor_config["NodeConditionTypesForFailedState"].nil?
                     failtypes = monitor_config["NodeConditionTypesForFailedState"]
-		    if !failtypes.nil?
-		    	failtypes = failtypes.split(',').map{|x| x.downcase}.map{|x| x.gsub(" ","")}.to_set
-		    end
+                    if !failtypes.nil?
+                        failtypes = failtypes.split(',').map{|x| x.downcase}.map{|x| x.gsub(" ","")}.to_set
+                    end
                 end
-		log = get_log_handle
-		#log.info "Fail Types #{failtypes.inspect}"
+		        log = get_log_handle
+		        #log.info "Fail Types #{failtypes.inspect}"
                 node_conditions.each do |condition|
                     type = condition['type']
                     status = condition['status']
 
                     #for each condition in the configuration, check if the type is not false. If yes, update state to fail
                     if (failtypes.include?(type.downcase) && (status == 'True' || status == 'Unknown'))
-                        return "fail"
+                        fail = true
                     elsif ((type == "DiskPressure" || type == "MemoryPressure" || type == "PIDPressure") && (status == 'True' || status == 'Unknown'))
-                        return "warn"
+                        warn = true
                     elsif type == "Ready" &&  status == 'True'
                         pass = true
                     end
                 end
 
-                if pass
-                    return "pass"
+                if fail
+                    return HealthMonitorStates::FAIL
+                elsif warn
+                    return HealthMonitorStates::WARNING
                 else
-                    return "fail"
+                    return HealthMonitorStates::PASS
                 end
             end
 
