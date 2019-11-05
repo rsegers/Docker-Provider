@@ -263,9 +263,17 @@ module Fluent
             node_state = HealthMonitorUtils.get_node_state_from_node_conditions(monitor_config, conditions)
             details = {}
             conditions.each do |condition|
-                condition_state = !(condition['status'].downcase == 'true' && condition['type'].downcase != 'ready') ? HealthMonitorStates::PASS : HealthMonitorStates::FAIL
+                condition_state = HealthMonitorStates::PASS
+                if condition['type'].downcase != 'ready'
+                    if (condition['status'].downcase == 'true' || condition['status'].downcase == 'unknown')
+                        condition_state = HealthMonitorStates::FAIL
+                    end
+                else #Condition == READY
+                    if condition['status'].downcase != 'true'
+                        condition_state = HealthMonitorStates::FAIL
+                    end
+                end
                 details[condition['type']] = {"Reason" => condition['reason'], "Message" => condition['message'], "State" => condition_state}
-                #@@hmlog.info "Node Condition details: #{JSON.pretty_generate(details)}"
             end
             health_monitor_record = {"timestamp" => timestamp, "state" => node_state, "details" => details}
             monitor_instance_id = HealthMonitorUtils.get_monitor_instance_id(monitor_id, [@@cluster_id, node_name])
