@@ -29,6 +29,7 @@ module HealthModel
                 labels = entry['labels']  if entry['labels']
                 aggregation_algorithm = entry['aggregation_algorithm'] if entry['aggregation_algorithm']
                 aggregation_algorithm_params = entry['aggregation_algorithm_params'] if entry['aggregation_algorithm_params']
+                default_parent_monitor_id = entry['default_parent_monitor_id'] if entry['default_parent_monitor_id']
                 if parent_monitor_id.is_a?(Array)
                     conditions = []
                     parent_monitor_id.each{|condition|
@@ -38,7 +39,7 @@ module HealthModel
                         parent_id = condition['id']
                         conditions.push({"key" => key, "operator" => operator, "value" => value, "parent_id" => parent_id})
                     }
-                    @health_model_definition[monitor_id] = {"conditions" => conditions, "labels" => labels, "aggregation_algorithm" => aggregation_algorithm, "aggregation_algorithm_params" =>aggregation_algorithm_params}
+                    @health_model_definition[monitor_id] = {"conditions" => conditions, "labels" => labels, "aggregation_algorithm" => aggregation_algorithm, "aggregation_algorithm_params" =>aggregation_algorithm_params, "default_parent_monitor_id" => default_parent_monitor_id}
                 elsif parent_monitor_id.is_a?(String)
                     @health_model_definition[monitor_id] = {"parent_monitor_id" => parent_monitor_id, "labels" => labels, "aggregation_algorithm" => aggregation_algorithm, "aggregation_algorithm_params" =>aggregation_algorithm_params}
                 elsif parent_monitor_id.nil?

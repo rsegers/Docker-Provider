@@ -49,6 +49,9 @@ module HealthModel
         @@limit_is_array_event_sent = {}
         @@WORKLOAD_CONTAINER_COUNT_EMPTY_EVENT = "WorkloadContainerCountEmptyEvent"
         @@LIMIT_IS_ARRAY_EVENT = "ResourceLimitIsAnArrayEvent"
+        @@cpu_last_sent_monitors = {}
+        @@memory_last_sent_monitors = {}
+
         def initialize(resources, provider)
             @pod_uid_lookup = resources.get_pod_uid_lookup
             @workload_container_count = resources.get_workload_container_count
@@ -137,7 +140,6 @@ module HealthModel
                     end
 
                     container_instance_record = {}
-
                     pod_name = @pod_uid_lookup[lookup_key]["pod_name"]
                     #append the record to the hash
                     # append only if the record is not a duplicate record
@@ -160,13 +162,14 @@ module HealthModel
             # if limits not set, set state to warning
             # if all records present, sort in descending order of metric, compute index based on StateThresholdPercentage, get the state (pass/fail/warn) based on monitor state (Using [Fail/Warn]ThresholdPercentage, and set the state)
             @memory_records.each{|k,v|
+                @@memory_last_sent_monitors.delete(k) #remove from last sent list if the record is present in the current set of signals
                 calculate_monitor_state(v, @provider.get_config(MonitorId::CONTAINER_MEMORY_MONITOR_ID))
             }
 
             @cpu_records.each{|k,v|
+                @@cpu_last_sent_monitors.delete(k) #remove from last sent list if the record is present in the current set of signals
                 calculate_monitor_state(v, @provider.get_config(MonitorId::CONTAINER_CPU_MONITOR_ID))
             }
-
             @log.info "Finished computing state"
         end
 
@@ -175,7 +178,6 @@ module HealthModel
             container_cpu_memory_records = []
 
             @cpu_records.each{|resource_key, record|
-
                 cpu_limit_mc = 1.0
                 if record["limit"].is_a?(Numeric)
                     cpu_limit_mc = record["limit"]/1000000.to_f
@@ -221,6 +223,42 @@ module HealthModel
                 container_cpu_memory_records.push(health_record)
             }
 
+            # If all records that were sent previously are present in current set, this will not be executed
+            if @@cpu_last_sent_monitors.keys.size != 0
+                @@cpu_last_sent_monitors.keys.each{|key|
+                    begin
+                        @log.info "Container CPU monitor #{key} not present in current set. Sending none state transition"
+                        tokens = key.split('_')
+                        namespace = tokens[0]
+                        workload_name = "#{tokens[0]}~~#{tokens[1]}"
+                        container = tokens[2]
+                        health_monitor_record = {
+                            "timestamp" => time_now,
+                            "state" => HealthMonitorStates::NONE,
+                            "details" => {
+                                "reason" => "No record received for workload #{workload_name}",
+                                "workload_name" => workload_name,
+                                "namespace" => namespace,
+                                "container" => container
+                                }
+                            }
+
+                        monitor_instance_id = HealthMonitorHelpers.get_monitor_instance_id(MonitorId::CONTAINER_CPU_MONITOR_ID, key.split('_')) #container_cpu_utilization-namespace-workload-container
+
+                        health_record = {}
+                        health_record[HealthMonitorRecordFields::MONITOR_ID] = MonitorId::CONTAINER_CPU_MONITOR_ID
+                        health_record[HealthMonitorRecordFields::MONITOR_INSTANCE_ID] = monitor_instance_id
+                        health_record[HealthMonitorRecordFields::DETAILS] = health_monitor_record
+                        health_record[HealthMonitorRecordFields::TIME_GENERATED] =  time_now
+                        health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] =  time_now
+                        container_cpu_memory_records.push(health_record)
+                    rescue => e
+                        @log.info "Error when trying to create NONE State transition signal for #{key} for monitor #{monitor_instance_id} #{e.message}"
+                        next
+                    end
+                }
+            end
+
             @memory_records.each{|resource_key, record|
                 health_monitor_record = {
                     "timestamp" => time_now,
@@ -244,6 +282,52 @@ module HealthModel
                 health_record[HealthMonitorRecordFields::TIME_GENERATED] =  time_now
                 health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] =  time_now
                 container_cpu_memory_records.push(health_record)
+            }
+
+            # If all records that were sent previously are present in current set, this will not be executed
+            if @@memory_last_sent_monitors.keys.size != 0
+                @@memory_last_sent_monitors.keys.each{|key|
+                    begin
+                        @log.info "Container Memory monitor #{key} not present in current set. Sending none state transition"
+                        tokens = key.split('_')
+                        namespace = tokens[0]
+                        workload_name = "#{tokens[0]}~~#{tokens[1]}"
+                        container = tokens[2]
+                        health_monitor_record = {
+                            "timestamp" => time_now,
+                            "state" => HealthMonitorStates::NONE,
+                            "details" => {
+                                "reason" => "No record received for workload #{workload_name}",
+                                "workload_name" => workload_name,
+                                "namespace" => namespace,
+                                "container" => container
+                                }
+                            }
+                        monitor_instance_id = HealthMonitorHelpers.get_monitor_instance_id(MonitorId::CONTAINER_MEMORY_MONITOR_ID, key.split('_')) #container_cpu_utilization-namespace-workload-container
+                        health_record = {}
+                        health_record[HealthMonitorRecordFields::MONITOR_ID] = MonitorId::CONTAINER_MEMORY_MONITOR_ID
+                        health_record[HealthMonitorRecordFields::MONITOR_INSTANCE_ID] = monitor_instance_id
+                        health_record[HealthMonitorRecordFields::DETAILS] = health_monitor_record
+                        health_record[HealthMonitorRecordFields::TIME_GENERATED] =  time_now
+                        health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] =  time_now
+                        container_cpu_memory_records.push(health_record)
+                    rescue => e
+                        @log.info "Error when trying to create NONE State transition signal for #{key} for monitor #{monitor_instance_id} #{e.message}"
+                        next
+                    end
+                }
+            end
+
+            #reset the last sent monitors list
+            @@memory_last_sent_monitors = {}
+            @@cpu_last_sent_monitors = {}
+
+            # add the current set of signals for comparison in next iteration
+            @cpu_records.keys.each{|k|
+                @@cpu_last_sent_monitors[k] = true
+            }
+            @memory_records.keys.each{|k|
+                @@memory_last_sent_monitors[k] = true
             }
             return container_cpu_memory_records
         end
