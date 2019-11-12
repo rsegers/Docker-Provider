@@ -84,12 +84,13 @@ module HealthModel
                     else
                         r = resource_instances[instance_name]
                         if record["Timestamp"] > r["Timestamp"]
-                            @log.info "Dropping older record"
+                            @log.info "Dropping older record for instance #{instance_name} new: #{record["Timestamp"]} old: #{r["Timestamp"]}"
                             resource_instances[instance_name] = record
                         end
                     end
                 rescue => e
                     @log.info "Exception when deduping record #{record}"
+                    next
                 end
             end
             return cpu_deduped_instances.values.concat(memory_deduped_instances.values)
