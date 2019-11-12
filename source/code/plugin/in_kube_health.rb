@@ -7,12 +7,12 @@ require_relative "omslog"
 require_relative "ApplicationInsightsUtility"
 
 module Fluent
+  Dir[File.join(__dir__, "./health", "*.rb")].each { |file| require file }
 
-  Dir[File.join(__dir__, './health', '*.rb')].each { |file| require file }
   class KubeHealthInput < Input
     Plugin.register_input("kubehealth", self)
 
-    config_param :health_monitor_config_path, :default => '/etc/opt/microsoft/docker-cimprov/health/healthmonitorconfig.json'
+    config_param :health_monitor_config_path, :default => "/etc/opt/microsoft/docker-cimprov/health/healthmonitorconfig.json"
 
     @@clusterCpuCapacity = 0.0
     @@clusterMemoryCapacity = 0.0
@@ -26,6 +26,7 @@ module Fluent
         @@cluster_id = KubernetesApiClient.getClusterId
         @resources = HealthKubernetesResources.instance
         @provider = HealthMonitorProvider.new(@@cluster_id, HealthMonitorUtils.get_cluster_labels, @resources, @health_monitor_config_path)
+        @@ApiGroupApps = "apps"
       rescue => e
         ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "Health"})
       end
@@ -40,25 +41,25 @@ module Fluent
     end
 
     def start
-        begin
-            if @run_interval
-                @finished = false
-                @condition = ConditionVariable.new
-                @mutex = Mutex.new
-                @thread = Thread.new(&method(:run_periodic))
+      begin
+        if @run_interval
+          @finished = false
+          @condition = ConditionVariable.new
+          @mutex = Mutex.new
+          @thread = Thread.new(&method(:run_periodic))
 
-                @@hmlog = HealthMonitorUtils.get_log_handle
-                @@clusterName = KubernetesApiClient.getClusterName
-                @@clusterRegion = KubernetesApiClient.getClusterRegion
-                cluster_capacity = HealthMonitorUtils.get_cluster_cpu_memory_capacity(@@hmlog)
-                @@clusterCpuCapacity = cluster_capacity[0]
-                @@clusterMemoryCapacity = cluster_capacity[1]
-                @@hmlog.info "Cluster CPU Capacity: #{@@clusterCpuCapacity} Memory Capacity: #{@@clusterMemoryCapacity}"
-                initialize_inventory
-            end
-        rescue => e
-            ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "Health"})
+          @@hmlog = HealthMonitorUtils.get_log_handle
+          @@clusterName = KubernetesApiClient.getClusterName
+          @@clusterRegion = KubernetesApiClient.getClusterRegion
+          cluster_capacity = HealthMonitorUtils.get_cluster_cpu_memory_capacity(@@hmlog)
+          @@clusterCpuCapacity = cluster_capacity[0]
+          @@clusterMemoryCapacity = cluster_capacity[1]
+          @@hmlog.info "Cluster CPU Capacity: #{@@clusterCpuCapacity} Memory Capacity: #{@@clusterMemoryCapacity}"
+          initialize_inventory
         end
+      rescue => e
+        ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "Health"})
+      end
     end
 
     def shutdown
@@ -73,7 +74,6 @@ module Fluent
 
     def enumerate
       begin
-
         currentTime = Time.now
         emitTime = currentTime.to_f
         batchTime = currentTime.utc.iso8601
@@ -86,7 +86,7 @@ module Fluent
         node_inventory = JSON.parse(node_inventory_response.body)
         pod_inventory_response = KubernetesApiClient.getKubeResourceInfo("pods")
         pod_inventory = JSON.parse(pod_inventory_response.body)
-        replicaset_inventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo("replicasets", api_version: "extensions/v1beta1").body)
+        replicaset_inventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo("replicasets", api_group: @@ApiGroupApps).body)
 
         @resources.node_inventory = node_inventory
         @resources.pod_inventory = pod_inventory
@@ -108,8 +108,8 @@ module Fluent
           health_monitor_records.push(record) if record
           pods_ready_hash = HealthMonitorUtils.get_pods_ready_hash(@resources)
 
-          system_pods = pods_ready_hash.select{|k,v| v['namespace'] == 'kube-system'}
-          workload_pods = pods_ready_hash.select{|k,v| v['namespace'] != 'kube-system'}
+          system_pods = pods_ready_hash.select { |k, v| v["namespace"] == "kube-system" }
+          workload_pods = pods_ready_hash.select { |k, v| v["namespace"] != "kube-system" }
 
           system_pods_ready_percentage_records = process_pods_ready_percentage(system_pods, MonitorId::SYSTEM_WORKLOAD_PODS_READY_MONITOR_ID)
           system_pods_ready_percentage_records.each do |record|
@@ -147,13 +147,13 @@ module Fluent
     def process_cpu_oversubscribed_monitor(pod_inventory, node_inventory)
       timestamp = Time.now.utc.iso8601
       @@clusterCpuCapacity = HealthMonitorUtils.get_cluster_cpu_memory_capacity(@@hmlog, node_inventory: node_inventory)[0]
-      subscription = HealthMonitorUtils.get_resource_subscription(pod_inventory,"cpu", @@clusterCpuCapacity)
+      subscription = HealthMonitorUtils.get_resource_subscription(pod_inventory, "cpu", @@clusterCpuCapacity)
       @@hmlog.info "Refreshed Cluster CPU Capacity #{@@clusterCpuCapacity}"
-      state =  subscription > @@clusterCpuCapacity ? "fail" : "pass"
+      state = subscription > @@clusterCpuCapacity ? "fail" : "pass"
 
       #CPU
       monitor_id = MonitorId::WORKLOAD_CPU_OVERSUBSCRIBED_MONITOR_ID
-      health_monitor_record = {"timestamp" => timestamp, "state" => state, "details" => {"clusterCpuCapacity" => @@clusterCpuCapacity/1000000.to_f, "clusterCpuRequests" => subscription/1000000.to_f}}
+      health_monitor_record = {"timestamp" => timestamp, "state" => state, "details" => {"clusterCpuCapacity" => @@clusterCpuCapacity / 1000000.to_f, "clusterCpuRequests" => subscription / 1000000.to_f}}
       # @@hmlog.info health_monitor_record
 
       monitor_instance_id = HealthMonitorUtils.get_monitor_instance_id(monitor_id, [@@cluster_id])
@@ -163,8 +163,8 @@ module Fluent
       health_record[HealthMonitorRecordFields::MONITOR_ID] = monitor_id
       health_record[HealthMonitorRecordFields::MONITOR_INSTANCE_ID] = monitor_instance_id
       health_record[HealthMonitorRecordFields::DETAILS] = health_monitor_record
-      health_record[HealthMonitorRecordFields::TIME_GENERATED] =  time_now
-      health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] =  time_now
+      health_record[HealthMonitorRecordFields::TIME_GENERATED] = time_now
+      health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] = time_now
       health_record[HealthMonitorRecordFields::CLUSTER_ID] = @@cluster_id
       #@@hmlog.info "Successfully processed process_cpu_oversubscribed_monitor"
       return health_record
@@ -172,10 +172,10 @@ module Fluent
 
     def process_memory_oversubscribed_monitor(pod_inventory, node_inventory)
       timestamp = Time.now.utc.iso8601
-      @@clusterMemoryCapacity = HealthMonitorUtils.get_cluster_cpu_memory_capacity(@@hmlog,node_inventory: node_inventory)[1]
+      @@clusterMemoryCapacity = HealthMonitorUtils.get_cluster_cpu_memory_capacity(@@hmlog, node_inventory: node_inventory)[1]
       @@hmlog.info "Refreshed Cluster Memory Capacity #{@@clusterMemoryCapacity}"
-      subscription = HealthMonitorUtils.get_resource_subscription(pod_inventory,"memory", @@clusterMemoryCapacity)
-      state =  subscription > @@clusterMemoryCapacity ? "fail" : "pass"
+      subscription = HealthMonitorUtils.get_resource_subscription(pod_inventory, "memory", @@clusterMemoryCapacity)
+      state = subscription > @@clusterMemoryCapacity ? "fail" : "pass"
       #@@hmlog.debug "Memory Oversubscribed Monitor State : #{state}"
 
       #CPU
@@ -189,8 +189,8 @@ module Fluent
       health_record[HealthMonitorRecordFields::MONITOR_ID] = monitor_id
       health_record[HealthMonitorRecordFields::MONITOR_INSTANCE_ID] = monitor_instance_id
       health_record[HealthMonitorRecordFields::DETAILS] = health_monitor_record
-      health_record[HealthMonitorRecordFields::TIME_GENERATED] =  time_now
-      health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] =  time_now
+      health_record[HealthMonitorRecordFields::TIME_GENERATED] = time_now
+      health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] = time_now
       health_record[HealthMonitorRecordFields::CLUSTER_ID] = @@cluster_id
       #@@hmlog.info "Successfully processed process_memory_oversubscribed_monitor"
       return health_record
@@ -201,7 +201,7 @@ module Fluent
 
       monitor_id = MonitorId::KUBE_API_STATUS
       details = response.each_header.to_h
-      details['ResponseCode'] = response.code
+      details["ResponseCode"] = response.code
       health_monitor_record = {"timestamp" => timestamp, "state" => state, "details" => details}
       hmlog = HealthMonitorUtils.get_log_handle
       #hmlog.info health_monitor_record
@@ -213,8 +213,8 @@ module Fluent
       health_record[HealthMonitorRecordFields::MONITOR_ID] = monitor_id
       health_record[HealthMonitorRecordFields::MONITOR_INSTANCE_ID] = monitor_instance_id
       health_record[HealthMonitorRecordFields::DETAILS] = health_monitor_record
-      health_record[HealthMonitorRecordFields::TIME_GENERATED] =  time_now
-      health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] =  time_now
+      health_record[HealthMonitorRecordFields::TIME_GENERATED] = time_now
+      health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] = time_now
       health_record[HealthMonitorRecordFields::CLUSTER_ID] = @@cluster_id
       #@@hmlog.info "Successfully processed process_kube_api_up_monitor"
       return health_record
@@ -227,10 +227,10 @@ module Fluent
       records = []
       pods_hash.keys.each do |key|
         workload_name = key
-        total_pods = pods_hash[workload_name]['totalPods']
-        pods_ready = pods_hash[workload_name]['podsReady']
-        namespace = pods_hash[workload_name]['namespace']
-        workload_kind = pods_hash[workload_name]['kind']
+        total_pods = pods_hash[workload_name]["totalPods"]
+        pods_ready = pods_hash[workload_name]["podsReady"]
+        namespace = pods_hash[workload_name]["namespace"]
+        workload_kind = pods_hash[workload_name]["kind"]
         percent = pods_ready / total_pods * 100
         timestamp = Time.now.utc.iso8601
 
@@ -242,8 +242,8 @@ module Fluent
         health_record[HealthMonitorRecordFields::MONITOR_ID] = config_monitor_id
         health_record[HealthMonitorRecordFields::MONITOR_INSTANCE_ID] = monitor_instance_id
         health_record[HealthMonitorRecordFields::DETAILS] = health_monitor_record
-        health_record[HealthMonitorRecordFields::TIME_GENERATED] =  time_now
-        health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] =  time_now
+        health_record[HealthMonitorRecordFields::TIME_GENERATED] = time_now
+        health_record[HealthMonitorRecordFields::TIME_FIRST_OBSERVED] = time_now
         health_record[HealthMonitorRecordFields::CLUSTER_ID] = @@cluster_id
         records.push(health_record)
       end
@@ -299,7 +299,7 @@ module Fluent
         node_inventory = JSON.parse(node_inventory_response.body)
         pod_inventory_response = KubernetesApiClient.getKubeResourceInfo("pods")
         pod_inventory = JSON.parse(pod_inventory_response.body)
-        replicaset_inventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo("replicasets", api_version: "extensions/v1beta1").body)
+        replicaset_inventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo("replicasets", api_group: @@ApiGroupApps).body)
 
         @resources.node_inventory = node_inventory
         @resources.pod_inventory = pod_inventory

@@ -12,6 +12,8 @@ class KubernetesApiClient
   require_relative "oms_common"
 
   @@ApiVersion = "v1"
+  @@ApiVersionApps = "v1"
+  @@ApiGroupApps = "apps"
   @@CaFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
   @@ClusterName = nil
   @@ClusterId = nil
@@ -30,13 +32,12 @@ class KubernetesApiClient
   end
 
   class << self
-    def getKubeResourceInfo(resource, api_version: nil)
+    def getKubeResourceInfo(resource, api_group: nil)
       headers = {}
       response = nil
-      @Log.info "Getting Kube resource api_version #{api_version}"
-      @Log.info resource
+      @Log.info "Getting Kube resource: #{resource}"
       begin
-        resourceUri = getResourceUri(resource, api_version: api_version)
+        resourceUri = getResourceUri(resource, api_group)
         if !resourceUri.nil?
           uri = URI.parse(resourceUri)
           http = Net::HTTP.new(uri.host, uri.port)
@@ -85,14 +86,14 @@ class KubernetesApiClient
       end
     end
 
-    def getResourceUri(resource, api_version: nil)
+    def getResourceUri(resource, api_group)
       begin
         if ENV["KUBERNETES_SERVICE_HOST"] && ENV["KUBERNETES_PORT_443_TCP_PORT"]
-            if !api_version.nil?
-                return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/apis/" + api_version + "/" + resource
-            end
-            api_version = @@ApiVersion
-            return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/api/" + api_version + "/" + resource
+          if api_group.nil?
+            return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/api/" + @@ApiVersion + "/" + resource
+          elsif api_group == @@ApiGroupApps
+            return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/apis/apps/" + @@ApiVersionApps + "/" + resource
+          end
         else
           @Log.warn ("Kubernetes environment variable not set KUBERNETES_SERVICE_HOST: #{ENV["KUBERNETES_SERVICE_HOST"]} KUBERNETES_PORT_443_TCP_PORT: #{ENV["KUBERNETES_PORT_443_TCP_PORT"]}. Unable to form resourceUri")
           return nil
