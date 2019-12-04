@@ -9,14 +9,15 @@ module Fluent
     def initialize
       super
       require "yaml"
-      require "json"
+      require 'yajl/json_gem'
+      require "time"
 
       require_relative "CAdvisorMetricsAPIClient"
       require_relative "oms_common"
       require_relative "omslog"
     end
 
-    config_param :run_interval, :time, :default => "1m"
+    config_param :run_interval, :time, :default => 60
     config_param :tag, :string, :default => "oms.api.cadvisorperf"
     config_param :mdmtag, :string, :default => "mdm.cadvisorperf"
     config_param :nodehealthtag, :string, :default => "kubehealth.DaemonSet.Node"
@@ -46,10 +47,12 @@ module Fluent
     end
 
     def enumerate()
-      time = Time.now.to_f
+      currentTime = Time.now
+      time = currentTime.to_f
+      batchTime = currentTime.utc.iso8601
       begin
         eventStream = MultiEventStream.new
-        metricData = CAdvisorMetricsAPIClient.getMetrics()
+        metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, metricTime: batchTime )
         metricData.each do |record|
           record["DataType"] = "LINUX_PERF_BLOB"
           record["IPName"] = "LogManagement"
@@ -74,14 +77,25 @@ module Fluent
     def run_periodic
       @mutex.lock
       done = @finished
+      @nextTimeToRun = Time.now
+      @waitTimeout = @run_interval
       until done
-        @condition.wait(@mutex, @run_interval)
+        @nextTimeToRun = @nextTimeToRun + @run_interval
+        @now = Time.now
+        if @nextTimeToRun <= @now
+          @waitTimeout = 1
+          @nextTimeToRun = @now
+        else
+          @waitTimeout = @nextTimeToRun - @now
+        end
+        @condition.wait(@mutex, @waitTimeout)
         done = @finished
         @mutex.unlock
         if !done
           begin
-            $log.info("in_cadvisor_perf::run_periodic @ #{Time.now.utc.iso8601}")
+            $log.info("in_cadvisor_perf::run_periodic.enumerate.start @ #{Time.now.utc.iso8601}")
             enumerate
+            $log.info("in_cadvisor_perf::run_periodic.enumerate.end @ #{Time.now.utc.iso8601}")
           rescue => errorStr
             $log.warn "in_cadvisor_perf::run_periodic: enumerate Failed to retrieve cadvisor perf metrics: #{errorStr}"
           end

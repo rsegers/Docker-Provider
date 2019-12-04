@@ -4,7 +4,7 @@
 
 module Fluent
     require 'logger'
-    require 'json'
+    require 'yajl/json_gem'
     Dir[File.join(__dir__, './health', '*.rb')].each { |file| require file }
 
 
@@ -97,12 +97,11 @@ module Fluent
                         }
                     end
                     container_records_aggregator = HealthContainerCpuMemoryAggregator.new(@resources, @provider)
-                    deduped_records = container_records_aggregator.dedupe_records(container_records)
                     if @container_cpu_memory_records.nil?
                         @log.info "@container_cpu_memory_records was not initialized"
                         @container_cpu_memory_records = [] #in some clusters, this is null, so initialize it again.
                     end
-                    @container_cpu_memory_records.push(*deduped_records) # push the records for aggregation later
+                    @container_cpu_memory_records.push(*container_records) # push the records for aggregation later
                     return MultiEventStream.new
                 elsif tag.start_with?("kubehealth.ReplicaSet")
                     records = []
@@ -114,7 +113,8 @@ module Fluent
                     aggregated_container_records = []
                     if !@container_cpu_memory_records.nil? && !@container_cpu_memory_records.empty?
                         container_records_aggregator = HealthContainerCpuMemoryAggregator.new(@resources, @provider)
-                        container_records_aggregator.aggregate(@container_cpu_memory_records)
+                        deduped_records = container_records_aggregator.dedupe_records(@container_cpu_memory_records)
+                        container_records_aggregator.aggregate(deduped_records)
                         container_records_aggregator.compute_state
                         aggregated_container_records = container_records_aggregator.get_records
                     end

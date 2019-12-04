@@ -1,6 +1,6 @@
 # frozen_string_literal: true
+require 'yajl/json_gem'
 
-require 'json'
 module HealthModel
     class HealthHierarchyBuilder
 

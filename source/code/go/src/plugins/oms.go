@@ -92,6 +92,8 @@ var (
 	ResourceName string
 	//KubeMonAgentEvents skip first flush
 	skipKubeMonEventsFlush bool
+	// enrich container logs (when true this will add the fields - timeofcommand, containername & containerimage)
+	enrichContainerLogs bool
 )
 
 var (
@@ -746,16 +748,30 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			stringMap["Name"] = val
 		}
 
-		dataItem := DataItem{
-			ID:                    stringMap["Id"],
-			LogEntry:              stringMap["LogEntry"],
-			LogEntrySource:        stringMap["LogEntrySource"],
-			LogEntryTimeStamp:     stringMap["LogEntryTimeStamp"],
-			LogEntryTimeOfCommand: start.Format(time.RFC3339),
-			SourceSystem:          stringMap["SourceSystem"],
-			Computer:              Computer,
-			Image:                 stringMap["Image"],
-			Name:                  stringMap["Name"],
+		var dataItem DataItem
+		if enrichContainerLogs == true {
+			dataItem = DataItem{
+				ID:                    stringMap["Id"],
+				LogEntry:              stringMap["LogEntry"],
+				LogEntrySource:        stringMap["LogEntrySource"],
+				LogEntryTimeStamp:     stringMap["LogEntryTimeStamp"],
+				LogEntryTimeOfCommand: start.Format(time.RFC3339),
+				SourceSystem:          stringMap["SourceSystem"],
+				Computer:              Computer,
+				Image:                 stringMap["Image"],
+				Name:                  stringMap["Name"],
+			}
+		} else { // dont collect timeofcommand field as its part of container log enrivhment
+			dataItem = DataItem{
+				ID:                    stringMap["Id"],
+				LogEntry:              stringMap["LogEntry"],
+				LogEntrySource:        stringMap["LogEntrySource"],
+				LogEntryTimeStamp:     stringMap["LogEntryTimeStamp"],
+				SourceSystem:          stringMap["SourceSystem"],
+				Computer:              Computer,
+				Image:                 stringMap["Image"],
+				Name:                  stringMap["Name"],
+			}
 		}
 
 		FlushedRecordsSize += float64(len(stringMap["LogEntry"]))
@@ -892,6 +908,15 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	// Initilizing this to true to skip the first kubemonagentevent flush since the errors are not populated at this time
 	skipKubeMonEventsFlush = true
 
+	enrichContainerLogsSetting := os.Getenv("AZMON_CLUSTER_CONTAINER_LOG_ENRICH")
+		if (strings.Compare(enrichContainerLogsSetting, "true") == 0) {
+			enrichContainerLogs = true
+			Log("ContainerLogEnrichment=true \n")
+		} else {
+			enrichContainerLogs = false
+			Log("ContainerLogEnrichment=false \n")
+		}
+
 	pluginConfig, err := ReadConfiguration(pluginConfPath)
 	if err != nil {
 		message := fmt.Sprintf("Error Reading plugin config path : %s \n", err.Error())
@@ -989,7 +1014,12 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		populateExcludedStdoutNamespaces()
 		populateExcludedStderrNamespaces()
-		go updateContainerImageNameMaps()
+		if enrichContainerLogs == true {
+			Log("ContainerLogEnrichment=true; starting goroutine to update containerimagenamemaps \n")
+			go updateContainerImageNameMaps()
+		} else {
+			Log("ContainerLogEnrichment=false \n")
+		}
 
 		// Flush config error records every hour
 		go flushKubeMonAgentEventRecords()

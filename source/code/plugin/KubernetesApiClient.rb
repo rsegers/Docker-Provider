@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 class KubernetesApiClient
-  require "json"
+  require "yajl/json_gem"
   require "logger"
   require "net/http"
   require "net/https"
@@ -12,6 +12,8 @@ class KubernetesApiClient
   require_relative "oms_common"
 
   @@ApiVersion = "v1"
+  @@ApiVersionApps = "v1"
+  @@ApiGroupApps = "apps"
   @@CaFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
   @@ClusterName = nil
   @@ClusterId = nil
@@ -30,35 +32,33 @@ class KubernetesApiClient
   end
 
   class << self
-    def getKubeResourceInfo(resource, api_version: nil)
+    def getKubeResourceInfo(resource, api_group: nil)
       headers = {}
       response = nil
-      @Log.info "Getting Kube resource api_version #{api_version}"
-      @Log.info resource
+      @Log.info "Getting Kube resource: #{resource}"
       begin
-        resourceUri = getResourceUri(resource, api_version: api_version)
+        resourceUri = getResourceUri(resource, api_group)
         if !resourceUri.nil?
           uri = URI.parse(resourceUri)
-          http = Net::HTTP.new(uri.host, uri.port)
-          http.use_ssl = true
           if !File.exist?(@@CaFile)
             raise "#{@@CaFile} doesnt exist"
           else
-            http.ca_file = @@CaFile if File.exist?(@@CaFile)
+            Net::HTTP.start(uri.host, uri.port, :use_ssl => true, :ca_file => @@CaFile, :verify_mode => OpenSSL::SSL::VERIFY_PEER, :open_timeout => 20, :read_timeout => 40) do |http|
+              kubeApiRequest = Net::HTTP::Get.new(uri.request_uri)
+              kubeApiRequest["Authorization"] = "Bearer " + getTokenStr
+              @Log.info "KubernetesAPIClient::getKubeResourceInfo : Making request to #{uri.request_uri} @ #{Time.now.utc.iso8601}"
+              response = http.request(kubeApiRequest)
+              @Log.info "KubernetesAPIClient::getKubeResourceInfo : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
+            end
           end
-          http.verify_mode = OpenSSL::SSL::VERIFY_PEER
-
-          kubeApiRequest = Net::HTTP::Get.new(uri.request_uri)
-          kubeApiRequest["Authorization"] = "Bearer " + getTokenStr
-          @Log.info "KubernetesAPIClient::getKubeResourceInfo : Making request to #{uri.request_uri} @ #{Time.now.utc.iso8601}"
-          response = http.request(kubeApiRequest)
-          @Log.info "KubernetesAPIClient::getKubeResourceInfo : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
         end
       rescue => error
         @Log.warn("kubernetes api request failed: #{error} for #{resource} @ #{Time.now.utc.iso8601}")
       end
-      if (!response.nil? && !response.body.nil? && response.body.empty?)
-        @Log.warn("KubernetesAPIClient::getKubeResourceInfo : Got empty response from Kube API for #{resource} @ #{Time.now.utc.iso8601}")
+      if (!response.nil?)
+        if (!response.body.nil? && response.body.empty?)
+          @Log.warn("KubernetesAPIClient::getKubeResourceInfo : Got empty response from Kube API for #{resource} @ #{Time.now.utc.iso8601}")
+        end
       end
       return response
     end
@@ -85,14 +85,14 @@ class KubernetesApiClient
       end
     end
 
-    def getResourceUri(resource, api_version: nil)
+    def getResourceUri(resource, api_group)
       begin
         if ENV["KUBERNETES_SERVICE_HOST"] && ENV["KUBERNETES_PORT_443_TCP_PORT"]
-            if !api_version.nil?
-                return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/apis/" + api_version + "/" + resource
-            end
-            api_version = @@ApiVersion
-            return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/api/" + api_version + "/" + resource
+          if api_group.nil?
+            return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/api/" + @@ApiVersion + "/" + resource
+          elsif api_group == @@ApiGroupApps
+            return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/apis/apps/" + @@ApiVersionApps + "/" + resource
+          end
         else
           @Log.warn ("Kubernetes environment variable not set KUBERNETES_SERVICE_HOST: #{ENV["KUBERNETES_SERVICE_HOST"]} KUBERNETES_PORT_443_TCP_PORT: #{ENV["KUBERNETES_PORT_443_TCP_PORT"]}. Unable to form resourceUri")
           return nil
@@ -335,7 +335,7 @@ class KubernetesApiClient
       return containerLogs
     end
 
-    def getContainerResourceRequestsAndLimits(metricJSON, metricCategory, metricNameToCollect, metricNametoReturn)
+    def getContainerResourceRequestsAndLimits(metricJSON, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
       metricItems = []
       begin
         clusterId = getClusterId
@@ -370,7 +370,7 @@ class KubernetesApiClient
             nodeName = pod["spec"]["nodeName"]
             podContainers.each do |container|
               containerName = container["name"]
-              metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
+              #metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
               if (!container["resources"].nil? && !container["resources"].empty? && !container["resources"][metricCategory].nil? && !container["resources"][metricCategory][metricNameToCollect].nil?)
                 metricValue = getMetricNumericValue(metricNameToCollect, container["resources"][metricCategory][metricNameToCollect])
 
@@ -430,14 +430,14 @@ class KubernetesApiClient
       return metricItems
     end #getContainerResourceRequestAndLimits
 
-    def parseNodeLimits(metricJSON, metricCategory, metricNameToCollect, metricNametoReturn)
+    def parseNodeLimits(metricJSON, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
       metricItems = []
       begin
         metricInfo = metricJSON
         clusterId = getClusterId
         #Since we are getting all node data at the same time and kubernetes doesnt specify a timestamp for the capacity and allocation metrics,
         #if we are coming up with the time it should be same for all nodes
-        metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
+        #metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
         metricInfo["items"].each do |node|
           if (!node["status"][metricCategory].nil?)
 
@@ -548,5 +548,29 @@ class KubernetesApiClient
       end
       return metricValue
     end # getMetricNumericValue
+
+    def getResourcesAndContinuationToken(uri)
+      continuationToken = nil
+      resourceInventory = nil
+      begin
+        @Log.info "KubernetesApiClient::getResourcesAndContinuationToken : Getting resources from Kube API using url: #{uri} @ #{Time.now.utc.iso8601}"
+        resourceInfo = getKubeResourceInfo(uri)
+        @Log.info "KubernetesApiClient::getResourcesAndContinuationToken : Done getting resources from Kube API using url: #{uri} @ #{Time.now.utc.iso8601}"
+        if !resourceInfo.nil?
+          @Log.info "KubernetesApiClient::getResourcesAndContinuationToken:Start:Parsing data for #{uri} using yajl @ #{Time.now.utc.iso8601}"
+          resourceInventory = Yajl::Parser.parse(StringIO.new(resourceInfo.body))
+          @Log.info "KubernetesApiClient::getResourcesAndContinuationToken:End:Parsing data for #{uri} using yajl @ #{Time.now.utc.iso8601}"
+          resourceInfo = nil
+        end
+        if (!resourceInventory.nil? && !resourceInventory["metadata"].nil?)
+          continuationToken = resourceInventory["metadata"]["continue"]
+        end
+      rescue => errorStr
+        @Log.warn "KubernetesApiClient::getResourcesAndContinuationToken:Failed in get resources for #{uri} and continuation token: #{errorStr}"
+        ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+        resourceInventory = nil
+      end
+      return continuationToken, resourceInventory
+    end #getResourcesAndContinuationToken
   end
 end

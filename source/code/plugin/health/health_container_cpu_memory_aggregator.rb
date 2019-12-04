@@ -64,8 +64,8 @@ module HealthModel
         def dedupe_records(container_records)
             cpu_deduped_instances = {}
             memory_deduped_instances = {}
-            container_records = container_records.select{|record| record['CounterName'] == @@memory_counter_name || record['CounterName'] == @@cpu_counter_name}
-
+            container_records = container_records.keep_if{|record| record['CounterName'] == @@memory_counter_name || record['CounterName'] == @@cpu_counter_name}
+           
             container_records.each do |record|
                 begin
                     instance_name = record["InstanceName"]
@@ -84,12 +84,13 @@ module HealthModel
                     else
                         r = resource_instances[instance_name]
                         if record["Timestamp"] > r["Timestamp"]
-                            @log.info "Dropping older record"
+                            @log.info "Dropping older record for instance #{instance_name} new: #{record["Timestamp"]} old: #{r["Timestamp"]}"
                             resource_instances[instance_name] = record
                         end
                     end
                 rescue => e
                     @log.info "Exception when deduping record #{record}"
+                    next
                 end
             end
             return cpu_deduped_instances.values.concat(memory_deduped_instances.values)
@@ -97,7 +98,7 @@ module HealthModel
 
         def aggregate(container_records)
             #filter and select only cpuUsageNanoCores and memoryRssBytes
-            container_records = container_records.select{|record| record['CounterName'] == @@memory_counter_name || record['CounterName'] == @@cpu_counter_name}
+            container_records = container_records.keep_if{|record| record['CounterName'] == @@memory_counter_name || record['CounterName'] == @@cpu_counter_name}
             # poduid lookup has poduid/cname --> workload_name, namespace, cpu_limit, memory limit mapping
             # from the container records, extract the poduid/cname, get the values from poduid_lookup, and aggregate based on namespace_workload_cname
             container_records.each do |record|

@@ -11,6 +11,31 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 12/03/2019 -
+##### Version microsoft/oms:ciprod12032019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12032019
+- Fix scheduler for all input plugins
+- Fix liveness probe
+- Reduce chunk sizes for all fluentD buffers to support larger clusters (nodes & pods)
+- Chunk Kubernetes API calls (pods,nodes,events)
+- Use HTTP.start instead of HTTP.new
+- Merge KubePerf into KubePods & KubeNodes
+- Merge KubeServices into KubePod
+- Use stream based yajl for JSON parsing
+- Health - Query only kube-system pods
+- Health - Use keep_if instead of select
+- Container log enrichment (turned OFF by default for TimeOfCommand, ContainerName & ContainerImage)
+- Application Insights Telemetry - Async
+- Fix metricTime to be batch time for all metric input plugins
+- Close socket connections properly for DockerAPIClient
+- Fix top un handled exceptions in Kubernetes API Client and pod inventory
+- Fix retries, wait between retries, chunk size, thread counts to be consistent for all FluentD workflows
+- Back-off for containerlog enrichment K8S API calls
+- Add new regions (3) for Azure Monitor Custom metrics
+- Increase the cpu & memory limits for replica-set to support larger clusters (nodes & pods)
+- Move to Ubuntu 18.04 LTS
+- Support for Kubernetes 1.16
+- Use ifconfig for detecting network connectivity issues
+
 ### 10/11/2019 -
 ##### Version microsoft/oms:ciprod10112019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10112019
 - Update prometheus config scraping capability to restrict collecting metrics from pods in specific namespaces.

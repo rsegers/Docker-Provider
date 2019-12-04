@@ -26,16 +26,13 @@ MAINTAINER:              'Microsoft Corporation'
 
 /opt/microsoft/omsagent/plugin/in_kube_podinventory.rb;			source/code/plugin/in_kube_podinventory.rb;			644; root; root
 /opt/microsoft/omsagent/plugin/in_kube_events.rb;			    source/code/plugin/in_kube_events.rb;				644; root; root
-/opt/microsoft/omsagent/plugin/in_kube_logs.rb;                 source/code/plugin/in_kube_logs.rb;                 644; root; root
 /opt/microsoft/omsagent/plugin/KubernetesApiClient.rb;			source/code/plugin/KubernetesApiClient.rb;			644; root; root
 
 /etc/opt/microsoft/docker-cimprov/container.conf;			    installer/conf/container.conf;                      644; root; root
 
 /opt/microsoft/omsagent/plugin/CAdvisorMetricsAPIClient.rb;     source/code/plugin/CAdvisorMetricsAPIClient.rb;     644; root; root
-/opt/microsoft/omsagent/plugin/in_kube_perf.rb;			        source/code/plugin/in_kube_perf.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/in_cadvisor_perf.rb;			        source/code/plugin/in_cadvisor_perf.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/in_win_cadvisor_perf.rb;			    source/code/plugin/in_win_cadvisor_perf.rb;			    644; root; root
-/opt/microsoft/omsagent/plugin/in_kube_services.rb;			        source/code/plugin/in_kube_services.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/in_kube_nodes.rb;			        source/code/plugin/in_kube_nodes.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/filter_inventory2mdm.rb;			     source/code/plugin/filter_inventory2mdm.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/CustomMetricsUtils.rb;			     source/code/plugin/CustomMetricsUtils.rb;			    	644; root; root
@@ -143,12 +140,10 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/microsoft/omsagent/plugin/health/health_model_definition_parser.rb;                            source/code/plugin/health/health_model_definition_parser.rb; 644; root; root
 /opt/microsoft/omsagent/plugin/health/health_monitor_helpers.rb;                                    source/code/plugin/health/health_monitor_helpers.rb; 644; root; root
 /opt/microsoft/omsagent/plugin/health/health_monitor_optimizer.rb;                                  source/code/plugin/health/health_monitor_optimizer.rb; 644; root; root
-/opt/microsoft/omsagent/plugin/health/health_monitor_helpers.rb;                                    source/code/plugin/health/health_monitor_helpers.rb; 644; root; root
 /opt/microsoft/omsagent/plugin/health/health_monitor_provider.rb;                                   source/code/plugin/health/health_monitor_provider.rb; 644; root; root
 /opt/microsoft/omsagent/plugin/health/health_monitor_record.rb;                                     source/code/plugin/health/health_monitor_record.rb; 644; root; root
 /opt/microsoft/omsagent/plugin/health/health_monitor_state.rb;                                      source/code/plugin/health/health_monitor_state.rb; 644; root; root
 /opt/microsoft/omsagent/plugin/health/health_monitor_telemetry.rb;                                  source/code/plugin/health/health_monitor_telemetry.rb; 644; root; root
-/opt/microsoft/omsagent/plugin/health/health_monitor_helpers.rb;                                    source/code/plugin/health/health_monitor_helpers.rb; 644; root; root
 /opt/microsoft/omsagent/plugin/health/health_monitor_utils.rb;                                      source/code/plugin/health/health_monitor_utils.rb; 644; root; root
 /opt/microsoft/omsagent/plugin/health/health_signal_reducer.rb;                                     source/code/plugin/health/health_signal_reducer.rb; 644; root; root
 /opt/microsoft/omsagent/plugin/health/monitor_factory.rb;                                           source/code/plugin/health/monitor_factory.rb; 644; root; root

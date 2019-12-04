@@ -1,7 +1,13 @@
 # frozen_string_literal: true
 
 require_relative 'health_model_constants'
-require 'json'
+require 'yajl/json_gem'
+
+# Require only when running inside container.
+# otherwise unit tests will fail due to ApplicationInsightsUtility dependency on base omsagent ruby files. If you have your dev machine starting with omsagent-rs, then GOOD LUCK!
+if Socket.gethostname.start_with?('omsagent-rs')
+    require_relative '../ApplicationInsightsUtility'
+end
 
 module HealthModel
   class AggregateMonitor
@@ -15,6 +21,8 @@ module HealthModel
         MonitorState::HEALTHY => 4,
         MonitorState::NONE => 5
     }
+
+    @@telemetry_sent_hash = {}
 
     # constructor
     def initialize(
@@ -127,17 +135,43 @@ module HealthModel
 
         #sort
         #TODO: What if sorted_filtered is empty? is that even possible?
+        log = HealthMonitorHelpers.get_log_handle
         sorted_filtered = sort_filter_member_monitors(monitor_set)
 
         state_threshold = @aggregation_algorithm_params['state_threshold'].to_f
 
-        size = sorted_filtered.size
+        if sorted_filtered.nil?
+            size = 0
+        else
+            size = sorted_filtered.size
+        end
+
         if size == 1
             @state =  sorted_filtered[0].state
         else
             count = ((state_threshold*size)/100).ceil
             index = size - count
-            @state = sorted_filtered[index].state
+            if sorted_filtered.nil? || sorted_filtered[index].nil?
+                @state = HealthMonitorStates::UNKNOWN
+                if !@@telemetry_sent_hash.key?(@monitor_instance_id)
+                    log.debug "Adding to telemetry sent hash #{@monitor_instance_id}"
+                    @@telemetry_sent_hash[@monitor_instance_id] = true
+                    log.info "Index: #{index} size: #{size} Count: #{count}"
+                    custom_error_event_map = {}
+                    custom_error_event_map["count"] = count
+                    custom_error_event_map["index"] = index
+                    custom_error_event_map["size"] = size
+                    if !sorted_filtered.nil?
+                        sorted_filtered.each_index{|i|
+                            custom_error_event_map[i] = sorted_filtered[i].state
+                        }
+                    end
+                    ApplicationInsightsUtility.sendCustomEvent("PercentageStateCalculationErrorEvent", custom_error_event_map)
+                end
+            else
+                @state = sorted_filtered[index].state
+            end
+            @state
         end
     end
 
@@ -184,7 +218,7 @@ module HealthModel
             member_monitors.push(member_monitor)
         }
 
-	filtered = member_monitors.select{|monitor| monitor.state != MonitorState::NONE}
+        filtered = member_monitors.keep_if{|monitor| monitor.state != MonitorState::NONE}
         sorted = filtered.sort_by{ |monitor| [@@sort_key_order[monitor.state]] }
 
         return sorted
