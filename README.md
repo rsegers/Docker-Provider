@@ -11,8 +11,8 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
-### 12/03/2019 -
-##### Version microsoft/oms:ciprod12032019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12032019
+### 12/04/2019 -
+##### Version microsoft/oms:ciprod12042019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12042019
 - Fix scheduler for all input plugins
 - Fix liveness probe
 - Reduce chunk sizes for all fluentD buffers to support larger clusters (nodes & pods)
@@ -23,7 +23,7 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
 - Use stream based yajl for JSON parsing
 - Health - Query only kube-system pods
 - Health - Use keep_if instead of select
-- Container log enrichment (turned OFF by default for TimeOfCommand, ContainerName & ContainerImage)
+- Container log enrichment (turned OFF by default for ContainerName & ContainerImage)
 - Application Insights Telemetry - Async
 - Fix metricTime to be batch time for all metric input plugins
 - Close socket connections properly for DockerAPIClient
