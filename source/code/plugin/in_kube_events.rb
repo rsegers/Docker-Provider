@@ -9,15 +9,20 @@ module Fluent
 
     def initialize
       super
-      require "json"
+      require "yajl/json_gem"
+      require "yajl"
+      require "time"
 
       require_relative "KubernetesApiClient"
       require_relative "oms_common"
       require_relative "omslog"
       require_relative "ApplicationInsightsUtility"
+      
+      # 30000 events account to approximately 5MB
+      @EVENTS_CHUNK_SIZE = 30000
     end
 
-    config_param :run_interval, :time, :default => "1m"
+    config_param :run_interval, :time, :default => 60
     config_param :tag, :string, :default => "oms.containerinsights.KubeEvents"
 
     def configure(conf)
@@ -43,79 +48,114 @@ module Fluent
       end
     end
 
-    def enumerate(eventList = nil)
+    def enumerate
+      begin
+        eventList = nil
+        currentTime = Time.now
+        batchTime = currentTime.utc.iso8601
+        eventQueryState = getEventQueryState
+        newEventQueryState = []
+
+        # Initializing continuation token to nil
+        continuationToken = nil
+        $log.info("in_kube_events::enumerate : Getting events from Kube API @ #{Time.now.utc.iso8601}")
+        continuationToken, eventList = KubernetesApiClient.getResourcesAndContinuationToken("events?fieldSelector=type!=Normal&limit=#{@EVENTS_CHUNK_SIZE}")
+        $log.info("in_kube_events::enumerate : Done getting events from Kube API @ #{Time.now.utc.iso8601}")
+        if (!eventList.nil? && !eventList.empty? && eventList.key?("items") && !eventList["items"].nil? && !eventList["items"].empty?)
+          newEventQueryState = parse_and_emit_records(eventList, eventQueryState, newEventQueryState, batchTime)
+        else
+          $log.warn "in_kube_events::enumerate:Received empty eventList"
+        end
+
+        #If we receive a continuation token, make calls, process and flush data until we have processed all data
+        while (!continuationToken.nil? && !continuationToken.empty?)
+          continuationToken, eventList = KubernetesApiClient.getResourcesAndContinuationToken("events?fieldSelector=type!=Normal&limit=#{@EVENTS_CHUNK_SIZE}&continue=#{continuationToken}")
+          if (!eventList.nil? && !eventList.empty? && eventList.key?("items") && !eventList["items"].nil? && !eventList["items"].empty?)
+            newEventQueryState = parse_and_emit_records(eventList, eventQueryState, newEventQueryState, batchTime)
+          else
+            $log.warn "in_kube_events::enumerate:Received empty eventList"
+          end
+        end
+
+        # Setting this to nil so that we dont hold memory until GC kicks in
+        eventList = nil
+        writeEventQueryState(newEventQueryState)
+      rescue => errorStr
+        $log.warn "in_kube_events::enumerate:Failed in enumerate: #{errorStr}"
+        $log.debug_backtrace(errorStr.backtrace)
+        ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+      end
+    end # end enumerate
+
+    def parse_and_emit_records(events, eventQueryState, newEventQueryState, batchTime = Time.utc.iso8601)
       currentTime = Time.now
       emitTime = currentTime.to_f
-      batchTime = currentTime.utc.iso8601
-
-      events = eventList
-      $log.info("in_kube_events::enumerate : Getting events from Kube API @ #{Time.now.utc.iso8601}")
-      eventInfo = KubernetesApiClient.getKubeResourceInfo("events")
-      $log.info("in_kube_events::enumerate : Done getting events from Kube API @ #{Time.now.utc.iso8601}")
-
-      if !eventInfo.nil?
-        events = JSON.parse(eventInfo.body)
-      end
-
-      eventQueryState = getEventQueryState
-      newEventQueryState = []
       begin
-        if (!events.nil? && !events.empty? && !events["items"].nil?)
-          eventStream = MultiEventStream.new
-          events["items"].each do |items|
-            record = {}
-            #<BUGBUG> - Not sure if ingestion has the below mapping for this custom type. Fix it as part of fixed type conversion
-            record["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
-            eventId = items["metadata"]["uid"] + "/" + items["count"].to_s
-            newEventQueryState.push(eventId)
-            if !eventQueryState.empty? && eventQueryState.include?(eventId)
-              next
-                end
-            record["ObjectKind"] = items["involvedObject"]["kind"]
-            record["Namespace"] = items["involvedObject"]["namespace"]
-            record["Name"] = items["involvedObject"]["name"]
-            record["Reason"] = items["reason"]
-            record["Message"] = items["message"]
-            record["Type"] = items["type"]
-            record["TimeGenerated"] = items["metadata"]["creationTimestamp"]
-            record["SourceComponent"] = items["source"]["component"]
-            record["FirstSeen"] = items["firstTimestamp"]
-            record["LastSeen"] = items["lastTimestamp"]
-            record["Count"] = items["count"]
-            if items["source"].key?("host")
-              record["Computer"] = items["source"]["host"]
-            else
-              record["Computer"] = (OMS::Common.get_hostname)
-            end
-                record['ClusterName'] = KubernetesApiClient.getClusterName
-            record["ClusterId"] = KubernetesApiClient.getClusterId
-            wrapper = {
-              "DataType" => "KUBE_EVENTS_BLOB",
-              "IPName" => "ContainerInsights",
-              "DataItems" => [record.each { |k, v| record[k] = v }],
-            }
-            eventStream.add(emitTime, wrapper) if wrapper
+        eventStream = MultiEventStream.new
+        events["items"].each do |items|
+          record = {}
+          #<BUGBUG> - Not sure if ingestion has the below mapping for this custom type. Fix it as part of fixed type conversion
+          record["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
+          eventId = items["metadata"]["uid"] + "/" + items["count"].to_s
+          newEventQueryState.push(eventId)
+          if !eventQueryState.empty? && eventQueryState.include?(eventId)
+            next
           end
-          router.emit_stream(@tag, eventStream) if eventStream
-            end
-        writeEventQueryState(newEventQueryState)
+          record["ObjectKind"] = items["involvedObject"]["kind"]
+          record["Namespace"] = items["involvedObject"]["namespace"]
+          record["Name"] = items["involvedObject"]["name"]
+          record["Reason"] = items["reason"]
+          record["Message"] = items["message"]
+          record["Type"] = items["type"]
+          record["TimeGenerated"] = items["metadata"]["creationTimestamp"]
+          record["SourceComponent"] = items["source"]["component"]
+          record["FirstSeen"] = items["firstTimestamp"]
+          record["LastSeen"] = items["lastTimestamp"]
+          record["Count"] = items["count"]
+          if items["source"].key?("host")
+            record["Computer"] = items["source"]["host"]
+          else
+            record["Computer"] = (OMS::Common.get_hostname)
+          end
+          record["ClusterName"] = KubernetesApiClient.getClusterName
+          record["ClusterId"] = KubernetesApiClient.getClusterId
+          wrapper = {
+            "DataType" => "KUBE_EVENTS_BLOB",
+            "IPName" => "ContainerInsights",
+            "DataItems" => [record.each { |k, v| record[k] = v }],
+          }
+          eventStream.add(emitTime, wrapper) if wrapper
+        end
+        router.emit_stream(@tag, eventStream) if eventStream
       rescue => errorStr
         $log.debug_backtrace(errorStr.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
-          end
+      end
+      return newEventQueryState
     end
 
     def run_periodic
       @mutex.lock
       done = @finished
+      @nextTimeToRun = Time.now
+      @waitTimeout = @run_interval
       until done
-        @condition.wait(@mutex, @run_interval)
+        @nextTimeToRun = @nextTimeToRun + @run_interval
+        @now = Time.now
+        if @nextTimeToRun <= @now
+          @waitTimeout = 1
+          @nextTimeToRun = @now
+        else
+          @waitTimeout = @nextTimeToRun - @now
+        end
+        @condition.wait(@mutex, @waitTimeout)
         done = @finished
         @mutex.unlock
         if !done
           begin
-            $log.info("in_kube_events::run_periodic @ #{Time.now.utc.iso8601}")
+            $log.info("in_kube_events::run_periodic.enumerate.start @ #{Time.now.utc.iso8601}")
             enumerate
+            $log.info("in_kube_events::run_periodic.enumerate.end @ #{Time.now.utc.iso8601}")
           rescue => errorStr
             $log.warn "in_kube_events::run_periodic: enumerate Failed to retrieve kube events: #{errorStr}"
             ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)

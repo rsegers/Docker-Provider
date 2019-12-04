@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 require_relative 'health_model_constants'
+require 'yajl/json_gem'
 
 module HealthModel
     class HealthMonitorProvider

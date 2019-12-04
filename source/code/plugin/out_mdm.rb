@@ -12,7 +12,7 @@ module Fluent
       require "net/http"
       require "net/https"
       require "uri"
-      require "json"
+      require 'yajl/json_gem'
       require_relative "KubernetesApiClient"
       require_relative "ApplicationInsightsUtility"
 

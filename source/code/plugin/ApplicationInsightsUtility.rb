@@ -6,7 +6,7 @@ class ApplicationInsightsUtility
   require_relative "omslog"
   require_relative "DockerApiClient"
   require_relative "oms_common"
-  require "json"
+  require 'yajl/json_gem'
   require "base64"
 
   @@HeartBeat = "HeartBeatEvent"
@@ -73,16 +73,37 @@ class ApplicationInsightsUtility
           @@Tc = ApplicationInsights::TelemetryClient.new
         elsif !encodedAppInsightsKey.nil?
           decodedAppInsightsKey = Base64.decode64(encodedAppInsightsKey)
+          
           #override ai endpoint if its available otherwise use default.
           if appInsightsEndpoint && !appInsightsEndpoint.nil? && !appInsightsEndpoint.empty?
             $log.info("AppInsightsUtility: Telemetry client uses overrided endpoint url : #{appInsightsEndpoint}")
-            telemetrySynchronousSender = ApplicationInsights::Channel::SynchronousSender.new appInsightsEndpoint
-            telemetrySynchronousQueue = ApplicationInsights::Channel::SynchronousQueue.new(telemetrySynchronousSender)
-            telemetryChannel = ApplicationInsights::Channel::TelemetryChannel.new nil, telemetrySynchronousQueue
+            #telemetrySynchronousSender = ApplicationInsights::Channel::SynchronousSender.new appInsightsEndpoint
+            #telemetrySynchronousQueue = ApplicationInsights::Channel::SynchronousQueue.new(telemetrySynchronousSender)
+            #telemetryChannel = ApplicationInsights::Channel::TelemetryChannel.new nil, telemetrySynchronousQueue
+            sender = ApplicationInsights::Channel::AsynchronousSender.new appInsightsEndpoint
+            queue = ApplicationInsights::Channel::AsynchronousQueue.new sender
+            channel = ApplicationInsights::Channel::TelemetryChannel.new nil, queue
             @@Tc = ApplicationInsights::TelemetryClient.new decodedAppInsightsKey, telemetryChannel
           else
-            @@Tc = ApplicationInsights::TelemetryClient.new decodedAppInsightsKey
+            sender = ApplicationInsights::Channel::AsynchronousSender.new
+            queue = ApplicationInsights::Channel::AsynchronousQueue.new sender
+            channel = ApplicationInsights::Channel::TelemetryChannel.new nil, queue
+            @@Tc = ApplicationInsights::TelemetryClient.new decodedAppInsightsKey, channel
           end
+          # The below are default recommended values. If you change these, ensure you test telemetry flow fully
+
+          # flush telemetry if we have 10 or more telemetry items in our queue
+          #@@Tc.channel.queue.max_queue_length = 10
+
+          # send telemetry to the service in batches of 5
+          #@@Tc.channel.sender.send_buffer_size = 5
+
+          # the background worker thread will be active for 5 seconds before it shuts down. if
+          # during this time items are picked up from the queue, the timer is reset.
+          #@@Tc.channel.sender.send_time = 5
+
+          # the background worker thread will poll the queue every 0.5 seconds for new items
+          #@@Tc.channel.sender.send_interval = 0.5
         end
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: initilizeUtility - error: #{errorStr}")
@@ -102,8 +123,7 @@ class ApplicationInsightsUtility
         eventName = pluginName + @@HeartBeat
         if !(@@Tc.nil?)
           @@Tc.track_event eventName, :properties => @@CustomProperties
-          @@Tc.flush
-          $log.info("AppInsights Heartbeat Telemetry sent successfully")
+          $log.info("AppInsights Heartbeat Telemetry put successfully into the queue")
         end
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: sendHeartBeatEvent - error: #{errorStr}")
@@ -116,8 +136,7 @@ class ApplicationInsightsUtility
           @@Tc.track_metric "LastProcessedContainerInventoryCount", properties["ContainerCount"],
                             :kind => ApplicationInsights::Channel::Contracts::DataPointType::MEASUREMENT,
                             :properties => @@CustomProperties
-          @@Tc.flush
-          $log.info("AppInsights Container Count Telemetry sent successfully")
+          $log.info("AppInsights Container Count Telemetry sput successfully into the queue")
         end
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: sendCustomMetric - error: #{errorStr}")
@@ -138,7 +157,6 @@ class ApplicationInsightsUtility
         end
         if !(@@Tc.nil?)
           @@Tc.track_event eventName, :properties => telemetryProps
-          @@Tc.flush
           $log.info("AppInsights Custom Event #{eventName} sent successfully")
         end
       rescue => errorStr
@@ -162,8 +180,7 @@ class ApplicationInsightsUtility
         end
         if !(@@Tc.nil?)
           @@Tc.track_exception errorStr, :properties => telemetryProps
-          @@Tc.flush
-          $log.info("AppInsights Exception Telemetry sent successfully")
+          $log.info("AppInsights Exception Telemetry put successfully into the queue")
         end
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: sendExceptionTelemetry - error: #{errorStr}")
@@ -209,8 +226,7 @@ class ApplicationInsightsUtility
           @@Tc.track_metric metricName, metricValue,
                             :kind => ApplicationInsights::Channel::Contracts::DataPointType::MEASUREMENT,
                             :properties => telemetryProps
-          @@Tc.flush
-          $log.info("AppInsights metric Telemetry #{metricName} sent successfully")
+          $log.info("AppInsights metric Telemetry #{metricName} put successfully into the queue")
         end
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: sendMetricTelemetry - error: #{errorStr}")

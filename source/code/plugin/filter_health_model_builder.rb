@@ -4,7 +4,7 @@
 
 module Fluent
     require 'logger'
-    require 'json'
+    require 'yajl/json_gem'
     Dir[File.join(__dir__, './health', '*.rb')].each { |file| require file }
 
 

@@ -3,7 +3,7 @@
 
 module Fluent
     require 'logger'
-    require 'json'
+    require 'yajl/json_gem'
     require_relative 'oms_common'
     require_relative "ApplicationInsightsUtility"
     require_relative "KubernetesApiClient"

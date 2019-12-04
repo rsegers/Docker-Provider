@@ -1,4 +1,4 @@
-require 'json'
+require 'yajl/json_gem'
 require 'net/http'
 require 'openssl'
 require 'stringio'

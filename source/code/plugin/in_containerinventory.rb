@@ -13,14 +13,15 @@ module Fluent
 
     def initialize
       super
-      require "json"
+      require 'yajl/json_gem'
+      require "time"
       require_relative "DockerApiClient"
       require_relative "ContainerInventoryState"
       require_relative "ApplicationInsightsUtility"
       require_relative "omslog"
     end
 
-    config_param :run_interval, :time, :default => "1m"
+    config_param :run_interval, :time, :default => 60
     config_param :tag, :string, :default => "oms.containerinsights.containerinventory"
 
     def configure(conf)
@@ -259,14 +260,25 @@ module Fluent
     def run_periodic
       @mutex.lock
       done = @finished
+      @nextTimeToRun = Time.now
+      @waitTimeout = @run_interval
       until done
-        @condition.wait(@mutex, @run_interval)
+        @nextTimeToRun = @nextTimeToRun + @run_interval
+        @now = Time.now
+        if @nextTimeToRun <= @now
+          @waitTimeout = 1
+          @nextTimeToRun = @now
+        else
+          @waitTimeout = @nextTimeToRun - @now
+        end
+        @condition.wait(@mutex, @waitTimeout)
         done = @finished
         @mutex.unlock
         if !done
           begin
-            $log.info("in_container_inventory::run_periodic @ #{Time.now.utc.iso8601}")
+            $log.info("in_container_inventory::run_periodic.enumerate.start @ #{Time.now.utc.iso8601}")
             enumerate
+            $log.info("in_container_inventory::run_periodic.enumerate.end @ #{Time.now.utc.iso8601}")
           rescue => errorStr
             $log.warn "in_container_inventory::run_periodic: Failed in enumerate container inventory: #{errorStr}"
           end

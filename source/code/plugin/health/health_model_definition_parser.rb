@@ -3,7 +3,7 @@
     Class to parse the health model definition. The definition expresses the relationship between monitors, how to roll up to an aggregate monitor,
     and what labels to "pass on" to the parent monitor
 =end
-require 'json'
+require 'yajl/json_gem'
 
 module HealthModel
     class HealthModelDefinitionParser

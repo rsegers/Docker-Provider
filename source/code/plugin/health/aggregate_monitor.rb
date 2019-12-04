@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require_relative 'health_model_constants'
-require 'json'
+require 'yajl/json_gem'
 
 # Require only when running inside container.
 # otherwise unit tests will fail due to ApplicationInsightsUtility dependency on base omsagent ruby files. If you have your dev machine starting with omsagent-rs, then GOOD LUCK!
@@ -218,7 +218,7 @@ module HealthModel
             member_monitors.push(member_monitor)
         }
 
-	filtered = member_monitors.select{|monitor| monitor.state != MonitorState::NONE}
+        filtered = member_monitors.keep_if{|monitor| monitor.state != MonitorState::NONE}
         sorted = filtered.sort_by{ |monitor| [@@sort_key_order[monitor.state]] }
 
         return sorted

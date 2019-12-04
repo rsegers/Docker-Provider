@@ -5,6 +5,7 @@
 module Fluent
 	require 'logger'
 	require 'socket'
+	require 'yajl/json_gem'
 
 	class DockerLogFilter < Filter
 		Plugin.register_filter('filter_docker_log', self)

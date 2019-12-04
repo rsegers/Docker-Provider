@@ -1,4 +1,5 @@
 # frozen_string_literal: true
+require 'yajl/json_gem'
 module HealthModel
     class HealthMonitorOptimizer
         #ctor

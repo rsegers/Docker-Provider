@@ -2,6 +2,7 @@
 require 'logger'
 require 'digest'
 require_relative 'health_model_constants'
+require 'yajl/json_gem'
 
 module HealthModel
     # static class that provides a bunch of utility methods
