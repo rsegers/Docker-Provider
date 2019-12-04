@@ -761,12 +761,13 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				Image:                 stringMap["Image"],
 				Name:                  stringMap["Name"],
 			}
-		} else { // dont collect timeofcommand field as its part of container log enrivhment
+		} else { // dont collect timeofcommand field as its part of container log enrichment [But currently we dont know the ux behavior , so waiting for ux fix (LA ux)]
 			dataItem = DataItem{
 				ID:                    stringMap["Id"],
 				LogEntry:              stringMap["LogEntry"],
 				LogEntrySource:        stringMap["LogEntrySource"],
 				LogEntryTimeStamp:     stringMap["LogEntryTimeStamp"],
+				LogEntryTimeOfCommand: start.Format(time.RFC3339),
 				SourceSystem:          stringMap["SourceSystem"],
 				Computer:              Computer,
 				Image:                 stringMap["Image"],
