@@ -31,7 +31,7 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
 - Fix retries, wait between retries, chunk size, thread counts to be consistent for all FluentD workflows
 - Back-off for containerlog enrichment K8S API calls
 - Add new regions (3) for Azure Monitor Custom metrics
-- Increase the cpu & memory limits for replica-set to support larger clusters (nodes & pods)
+- Increase the cpu(1 core) & memory(750Mi) limits for replica-set to support larger clusters (nodes & pods)
 - Move to Ubuntu 18.04 LTS
 - Support for Kubernetes 1.16
 - Use ifconfig for detecting network connectivity issues
