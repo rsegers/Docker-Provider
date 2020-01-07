@@ -13,9 +13,10 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
 
 ### 01/07/2020 -
 ##### Version microsoft/oms:ciprod01072020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01072020
-## Code change log
+##### Code change log
 - Switch between 10255(old) and 10250(new) ports for cadvisor for older and newer versions of kubernetes
-## Customer Impact
+
+##### Customer Impact
 - Node cpu, node memory, container cpu and container memory metrics were obtained earlier by querying kubelet readonly port(http://$NODE_IP:10255). Agent now supports getting these metrics from kubelet port(https://$NODE_IP:10250) as well. During the agent startup, it checks for connectivity to kubelet port(https://$NODE_IP:10250), and if it fails the metrics source is defaulted to readonly port(http://$NODE_IP:10255).
 
 ### 12/04/2019 -
