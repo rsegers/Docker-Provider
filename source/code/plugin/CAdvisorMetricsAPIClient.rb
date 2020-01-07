@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 class CAdvisorMetricsAPIClient
-  require 'yajl/json_gem'
+  require "yajl/json_gem"
   require "logger"
   require "net/http"
   require "net/https"
@@ -28,6 +28,8 @@ class CAdvisorMetricsAPIClient
   @dsPromFieldPassCount = ENV["TELEMETRY_DS_PROM_FIELDPASS_LENGTH"]
   @dsPromFieldDropCount = ENV["TELEMETRY_DS_PROM_FIELDDROP_LENGTH"]
   @dsPromUrlCount = ENV["TELEMETRY_DS_PROM_URLS_LENGTH"]
+
+  @cAdvisorMetricsSecurePort = ENV["IS_SECURE_CADVISOR_PORT"]
 
   @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_perf_log.txt"
   @Log = Logger.new(@LogPath, 2, 10 * 1048576) #keep last 2 files, max log file size = 10M
@@ -63,13 +65,34 @@ class CAdvisorMetricsAPIClient
       response = nil
       @Log.info "Getting CAdvisor Uri"
       begin
-        cAdvisorUri = getCAdvisorUri(winNode)
+        cAdvisorSecurePort = false
+        # Check to see if omsagent needs to use 10255(insecure) port or 10250(secure) port
+        if !@cAdvisorMetricsSecurePort.nil? && @cAdvisorMetricsSecurePort == "true"
+          cAdvisorSecurePort = true
+        end
+
+        cAdvisorUri = getCAdvisorUri(winNode, cAdvisorSecurePort)
+        bearerToken = File.read("/var/run/secrets/kubernetes.io/serviceaccount/token")
+        @Log.info "cAdvisorUri: #{cAdvisorUri}"
+
         if !cAdvisorUri.nil?
           uri = URI.parse(cAdvisorUri)
-          Net::HTTP.start(uri.host, uri.port, :use_ssl => false, :open_timeout => 20, :read_timeout => 40 ) do |http|
-            cAdvisorApiRequest = Net::HTTP::Get.new(uri.request_uri)
-            response = http.request(cAdvisorApiRequest)
-            @Log.info "Got response code #{response.code} from #{uri.request_uri}"
+          if !!cAdvisorSecurePort == true
+            Net::HTTP.start(uri.host, uri.port,
+                            :use_ssl => true, :open_timeout => 20, :read_timeout => 40,
+                            :ca_file => "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+                            :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
+              cAdvisorApiRequest = Net::HTTP::Get.new(uri.request_uri)
+              cAdvisorApiRequest["Authorization"] = "Bearer #{bearerToken}"
+              response = http.request(cAdvisorApiRequest)
+              @Log.info "Got response code #{response.code} from #{uri.request_uri}"
+            end
+          else
+            Net::HTTP.start(uri.host, uri.port, :use_ssl => false, :open_timeout => 20, :read_timeout => 40) do |http|
+              cAdvisorApiRequest = Net::HTTP::Get.new(uri.request_uri)
+              response = http.request(cAdvisorApiRequest)
+              @Log.info "Got response code #{response.code} from #{uri.request_uri}"
+            end
           end
         end
       rescue => error
@@ -81,9 +104,14 @@ class CAdvisorMetricsAPIClient
       return response
     end
 
-    def getCAdvisorUri(winNode)
+    def getCAdvisorUri(winNode, cAdvisorSecurePort)
       begin
-        defaultHost = "http://localhost:10255"
+        if !!cAdvisorSecurePort == true
+          defaultHost = "https://localhost:10250"
+        else
+          defaultHost = "http://localhost:10255"
+        end
+
         relativeUri = "/stats/summary"
         if !winNode.nil?
           nodeIP = winNode["InternalIP"]
@@ -92,7 +120,11 @@ class CAdvisorMetricsAPIClient
         end
         if !nodeIP.nil?
           @Log.info("Using #{nodeIP + relativeUri} for CAdvisor Uri")
-          return "http://#{nodeIP}:10255" + relativeUri
+          if !!cAdvisorSecurePort == true
+            return "https://#{nodeIP}:10250" + relativeUri
+          else
+            return "http://#{nodeIP}:10255" + relativeUri
+          end
         else
           @Log.warn ("NODE_IP environment variable not set. Using default as : #{defaultHost + relativeUri} ")
           if !winNode.nil?
@@ -104,7 +136,7 @@ class CAdvisorMetricsAPIClient
       end
     end
 
-    def getMetrics(winNode: nil, metricTime: Time.now.utc.iso8601 )
+    def getMetrics(winNode: nil, metricTime: Time.now.utc.iso8601)
       metricDataItems = []
       begin
         cAdvisorStats = getSummaryStatsFromCAdvisor(winNode)
@@ -211,6 +243,7 @@ class CAdvisorMetricsAPIClient
                     telemetryProps["PodName"] = podName
                     telemetryProps["ContainerName"] = containerName
                     telemetryProps["Computer"] = hostName
+                    telemetryProps["CAdvisorIsSecure"] = @cAdvisorMetricsSecurePort
                     #telemetry about log collections settings
                     if (File.file?(@configMapMountPath))
                       telemetryProps["clustercustomsettings"] = true

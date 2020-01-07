@@ -11,6 +11,13 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 01/07/2020 -
+##### Version microsoft/oms:ciprod01072020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01072020
+## Code change log
+- Switch between 10255(old) and 10250(new) ports for cadvisor for older and newer versions of kubernetes
+## Customer Impact
+- Node cpu, node memory, container cpu and container memory metrics were obtained earlier by querying kubelet readonly port(http://$NODE_IP:10255). Agent now supports getting these metrics from kubelet port(https://$NODE_IP:10250) as well. During the agent startup, it checks for connectivity to kubelet port(https://$NODE_IP:10250), and if it fails the metrics source is defaulted to readonly port(http://$NODE_IP:10255).
+
 ### 12/04/2019 -
 ##### Version microsoft/oms:ciprod12042019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12042019
 - Fix scheduler for all input plugins
@@ -31,7 +38,7 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
 - Fix retries, wait between retries, chunk size, thread counts to be consistent for all FluentD workflows
 - Back-off for containerlog enrichment K8S API calls
 - Add new regions (3) for Azure Monitor Custom metrics
-- Increase the cpu & memory limits for replica-set to support larger clusters (nodes & pods)
+- Increase the cpu(1 core) & memory(750Mi) limits for replica-set to support larger clusters (nodes & pods)
 - Move to Ubuntu 18.04 LTS
 - Support for Kubernetes 1.16
 - Use ifconfig for detecting network connectivity issues
