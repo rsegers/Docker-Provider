@@ -43,6 +43,7 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
 - Move to Ubuntu 18.04 LTS
 - Support for Kubernetes 1.16
 - Use ifconfig for detecting network connectivity issues
+- Collect eventType != Normal
 
 ### 10/11/2019 -
 ##### Version microsoft/oms:ciprod10112019 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10112019
