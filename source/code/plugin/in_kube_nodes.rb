@@ -69,7 +69,9 @@ module Fluent
         # Initializing continuation token to nil
         continuationToken = nil
         $log.info("in_kube_nodes::enumerate : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
-        continuationToken, nodeInventory = KubernetesApiClient.getResourcesAndContinuationToken("nodes?limit=#{@NODES_CHUNK_SIZE}")
+        resourceUri = KubernetesApiClient.getNodesResourceUri("nodes?limit=#{@NODES_CHUNK_SIZE}")
+        continuationToken, nodeInventory = KubernetesApiClient.getResourcesAndContinuationToken(resourceUri)
+
         $log.info("in_kube_nodes::enumerate : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
         if (!nodeInventory.nil? && !nodeInventory.empty? && nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
           parse_and_emit_records(nodeInventory, batchTime)
@@ -79,7 +81,7 @@ module Fluent
 
         #If we receive a continuation token, make calls, process and flush data until we have processed all data
         while (!continuationToken.nil? && !continuationToken.empty?)
-          continuationToken, nodeInventory = KubernetesApiClient.getResourcesAndContinuationToken("nodes?limit=#{@NODES_CHUNK_SIZE}&continue=#{continuationToken}")
+          continuationToken, nodeInventory = KubernetesApiClient.getResourcesAndContinuationToken(resourceUri + "&continue=#{continuationToken}")
           if (!nodeInventory.nil? && !nodeInventory.empty? && nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
             parse_and_emit_records(nodeInventory, batchTime)
           else

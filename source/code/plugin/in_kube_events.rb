@@ -17,7 +17,7 @@ module Fluent
       require_relative "oms_common"
       require_relative "omslog"
       require_relative "ApplicationInsightsUtility"
-      
+
       # 30000 events account to approximately 5MB
       @EVENTS_CHUNK_SIZE = 30000
     end
@@ -101,6 +101,14 @@ module Fluent
           if !eventQueryState.empty? && eventQueryState.include?(eventId)
             next
           end
+
+          nodeName = items["source"].key?("host") ? items["source"]["host"] : (OMS::Common.get_hostname)
+          # For ARO v3 cluster, drop the master and infra node sourced events to ingest
+          if KubernetesApiClient.isAROV3Cluster && !nodeName.nil? && !nodeName.empty? &&
+             ( nodeName.downcase.start_with?("infra-") || nodeName.downcase.start_with?("master-") )
+            next
+          end
+
           record["ObjectKind"] = items["involvedObject"]["kind"]
           record["Namespace"] = items["involvedObject"]["namespace"]
           record["Name"] = items["involvedObject"]["name"]
@@ -112,11 +120,7 @@ module Fluent
           record["FirstSeen"] = items["firstTimestamp"]
           record["LastSeen"] = items["lastTimestamp"]
           record["Count"] = items["count"]
-          if items["source"].key?("host")
-            record["Computer"] = items["source"]["host"]
-          else
-            record["Computer"] = (OMS::Common.get_hostname)
-          end
+          record["Computer"] = nodeName
           record["ClusterName"] = KubernetesApiClient.getClusterName
           record["ClusterId"] = KubernetesApiClient.getClusterId
           wrapper = {

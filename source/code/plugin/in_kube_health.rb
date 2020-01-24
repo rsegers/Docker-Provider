@@ -85,7 +85,8 @@ module Fluent
 
         #HealthMonitorUtils.refresh_kubernetes_api_data(@@hmlog, nil)
         # we do this so that if the call fails, we get a response code/header etc.
-        node_inventory_response = KubernetesApiClient.getKubeResourceInfo("nodes")
+        resourceUri = KubernetesApiClient.getNodesResourceUri("nodes")
+        node_inventory_response = KubernetesApiClient.getKubeResourceInfo(resourceUri)
         node_inventory = Yajl::Parser.parse(StringIO.new(node_inventory_response.body))
         pod_inventory_response = KubernetesApiClient.getKubeResourceInfo("pods?fieldSelector=metadata.namespace%3D#{@@KubeInfraNamespace}")
         pod_inventory = Yajl::Parser.parse(StringIO.new(pod_inventory_response.body))
@@ -299,7 +300,8 @@ module Fluent
 
     def initialize_inventory
         #this is required because there are other components, like the container cpu memory aggregator, that depends on the mapping being initialized
-        node_inventory_response = KubernetesApiClient.getKubeResourceInfo("nodes")
+        resourceUri = KubernetesApiClient.getNodesResourceUri("nodes")
+        node_inventory_response = KubernetesApiClient.getKubeResourceInfo(resourceUri)
         node_inventory = Yajl::Parser.parse(StringIO.new(node_inventory_response.body))
         pod_inventory_response = KubernetesApiClient.getKubeResourceInfo("pods?fieldSelector=metadata.namespace%3D#{@@KubeInfraNamespace}")
         pod_inventory = Yajl::Parser.parse(StringIO.new(pod_inventory_response.body))

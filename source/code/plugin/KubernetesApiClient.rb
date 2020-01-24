@@ -18,6 +18,7 @@ class KubernetesApiClient
   @@ClusterName = nil
   @@ClusterId = nil
   @@IsNodeMaster = nil
+  @@IsAROV3Cluster = nil
   #@@IsValidRunningNode = nil
   #@@IsLinuxCluster = nil
   @@KubeSystemNamespace = "kube-system"
@@ -152,6 +153,20 @@ class KubernetesApiClient
       return @@ClusterId
     end
 
+    def isAROV3Cluster
+      return @@IsAROV3Cluster if !@@IsAROV3Cluster.nil?
+      @@IsAROV3Cluster = false
+      begin
+        cluster = getClusterId
+        if !cluster.nil? && !cluster.empty? && cluster.downcase.include?("/microsoft.containerservice/openshiftmanagedclusters")
+          @@IsAROV3Cluster = true
+        end
+      rescue => error
+        @Log.warn("KubernetesApiClient::IsAROV3Cluster : IsAROV3Cluster failed #{error}")
+      end
+      return @@IsAROV3Cluster
+    end
+
     def isNodeMaster
       return @@IsNodeMaster if !@@IsNodeMaster.nil?
       @@IsNodeMaster = false
@@ -175,6 +190,22 @@ class KubernetesApiClient
       end
 
       return @@IsNodeMaster
+    end
+
+    def getNodesResourceUri(nodesResourceUri)
+      begin
+        # For ARO v3 cluster, filter out all other node roles other than compute
+        if IsAROV3Cluster
+          if !nodesResourceUri.nil? && !nodesResourceUri.index("?").nil?
+            nodesResourceUri = nodesResourceUri + "&labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
+          else
+            nodesResourceUri = nodesResourceUri + "labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
+          end
+        end
+      rescue => error
+        @Log.warn("getNodesResourceUri failed: #{error}")
+      end
+      return nodesResourceUri
     end
 
     #def isValidRunningNode
@@ -240,7 +271,8 @@ class KubernetesApiClient
     def getWindowsNodes
       winNodes = []
       begin
-        nodeInventory = JSON.parse(getKubeResourceInfo("nodes").body)
+        resourceUri =  getNodesResourceUri("nodes")
+        nodeInventory = JSON.parse(getKubeResourceInfo(resourceUri).body)
         @Log.info "KubernetesAPIClient::getWindowsNodes : Got nodes from kube api"
         # Resetting the windows node cache
         @@WinNodeArray.clear
@@ -356,6 +388,14 @@ class KubernetesApiClient
           else
             podUid = pod["metadata"]["uid"]
           end
+
+          # For ARO, skip the pods scheduled on to master or infra nodes to ingest
+          if IsAROV3Cluster && !pod["spec"].nil? && !pod["spec"]["nodeName"].nil? &&
+            ( pod["spec"]["nodeName"].downcase.start_with?("infra-") ||
+            pod["spec"]["nodeName"].downcase.start_with?("master-") )
+            next
+          end
+
 
           podContainers = []
           if !pod["spec"]["containers"].nil? && !pod["spec"]["containers"].empty?
