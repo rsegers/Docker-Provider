@@ -22,6 +22,7 @@ module Fluent
       @@post_request_url_template = "https://%{aks_region}.monitoring.azure.com%{aks_resource_id}/metrics"
       @@token_url_template = "https://login.microsoftonline.com/%{tenant_id}/oauth2/token"
       @@plugin_name = "AKSCustomMetricsMDM"
+      @@record_batch_size = 2600
 
       @data_hash = {}
       @token_url = nil
@@ -136,7 +137,14 @@ module Fluent
           chunk.msgpack_each { |(tag, record)|
             post_body.push(record.to_json)
           }
-          send_to_mdm post_body
+          # the limit of the payload is 1MB. Each record is ~300 bytes. using a batch size of 2600, so that
+          # the pay load size becomes approximately 800 Kb.
+          count = post_body.size
+          while count > 0
+            current_batch = post_body.first(@@record_batch_size)
+            count -= current_batch.size
+            send_to_mdm current_batch
+          end
         else
           if !@can_send_data_to_mdm
             @log.info "Cannot send data to MDM since all required conditions were not met"
@@ -157,7 +165,9 @@ module Fluent
         request = Net::HTTP::Post.new(@post_request_uri.request_uri)
         request["Content-Type"] = "application/x-ndjson"
         request["Authorization"] = "Bearer #{access_token}"
+
         request.body = post_body.join("\n")
+        @log.info "REQUEST BODY SIZE #{request.body.bytesize/1024}"
         response = @http_client.request(request)
         response.value # this throws for non 200 HTTP response code
         @log.info "HTTP Post Response Code : #{response.code}"

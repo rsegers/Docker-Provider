@@ -2,6 +2,9 @@
 # frozen_string_literal: true
 
 module Fluent
+
+  require_relative "podinventory_to_mdm"
+
   class Kube_PodInventory_Input < Input
     Plugin.register_input("kubepodinventory", self)
 
@@ -32,9 +35,12 @@ module Fluent
 
     config_param :run_interval, :time, :default => 60
     config_param :tag, :string, :default => "oms.containerinsights.KubePodInventory"
+    config_param :custom_metrics_azure_regions, :string
+
 
     def configure(conf)
       super
+      @inventoryToMdmConvertor = Inventory2MdmConvertor.new(@custom_metrics_azure_regions)
     end
 
     def start
@@ -87,7 +93,7 @@ module Fluent
         continuationToken, podInventory = KubernetesApiClient.getResourcesAndContinuationToken("pods?limit=#{@PODS_CHUNK_SIZE}")
         $log.info("in_kube_podinventory::enumerate : Done getting pods from Kube API @ #{Time.now.utc.iso8601}")
         if (!podInventory.nil? && !podInventory.empty? && podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
-          parse_and_emit_records(podInventory, serviceList, batchTime)
+          parse_and_emit_records(podInventory, serviceList, continuationToken, batchTime)
         else
           $log.warn "in_kube_podinventory::enumerate:Received empty podInventory"
         end
@@ -96,7 +102,7 @@ module Fluent
         while (!continuationToken.nil? && !continuationToken.empty?)
           continuationToken, podInventory = KubernetesApiClient.getResourcesAndContinuationToken("pods?limit=#{@PODS_CHUNK_SIZE}&continue=#{continuationToken}")
           if (!podInventory.nil? && !podInventory.empty? && podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
-            parse_and_emit_records(podInventory, serviceList, batchTime)
+            parse_and_emit_records(podInventory, serviceList, continuationToken, batchTime)
           else
             $log.warn "in_kube_podinventory::enumerate:Received empty podInventory"
           end
@@ -246,7 +252,7 @@ module Fluent
       end
     end
 
-    def parse_and_emit_records(podInventory, serviceList, batchTime = Time.utc.iso8601)
+    def parse_and_emit_records(podInventory, serviceList, continuationToken, batchTime = Time.utc.iso8601)
       currentTime = Time.now
       emitTime = currentTime.to_f
       #batchTime = currentTime.utc.iso8601
@@ -466,6 +472,7 @@ module Fluent
                           "DataItems" => [record.each { |k, v| record[k] = v }],
                         }
               eventStream.add(emitTime, wrapper) if wrapper
+              @inventoryToMdmConvertor.process_pod_inventory_record(wrapper)
             end
           end
           # Send container inventory records for containers on windows nodes
@@ -483,7 +490,18 @@ module Fluent
         end  #podInventory block end
 
         router.emit_stream(@tag, eventStream) if eventStream
-        router.emit_stream(@@MDMKubePodInventoryTag, eventStream) if eventStream
+
+        if continuationToken.nil?  #no more chunks in this batch to be sent, get all pod inventory records to send
+            @log.info "Sending pod inventory mdm records to out_mdm"
+            pod_inventory_mdm_records = @inventoryToMdmConvertor.get_pod_inventory_mdm_records(batchTime)
+            @log.info "pod_inventory_mdm_records.size #{pod_inventory_mdm_records.size}"
+            mdm_pod_inventory_es = MultiEventStream.new
+            pod_inventory_mdm_records.each {|pod_inventory_mdm_record|
+                mdm_pod_inventory_es.add(batchTime, pod_inventory_mdm_record) if pod_inventory_mdm_record
+            } if pod_inventory_mdm_records
+            router.emit_stream(@@MDMKubePodInventoryTag, mdm_pod_inventory_es) if mdm_pod_inventory_es
+        end
+
         #:optimize:kubeperf merge
         begin
           #if(!podInventory.empty?)

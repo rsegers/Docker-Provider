@@ -3,6 +3,7 @@ require 'logger'
 require 'digest'
 require_relative 'health_model_constants'
 require 'yajl/json_gem'
+require_relative '../kubelet_utils'
 
 module HealthModel
     # static class that provides a bunch of utility methods
@@ -265,50 +266,13 @@ module HealthModel
             end
 
             def ensure_cpu_memory_capacity_set(log, cpu_capacity, memory_capacity, hostname)
-
                 log.info "ensure_cpu_memory_capacity_set cpu_capacity #{cpu_capacity} memory_capacity #{memory_capacity}"
                 if cpu_capacity != 1.0 && memory_capacity != 1.0
                     log.info "CPU And Memory Capacity are already set"
                     return [cpu_capacity, memory_capacity]
                 end
-
                 log.info "CPU and Memory Capacity Not set"
-                begin
-                    resourceUri = KubernetesApiClient.getNodesResourceUri("nodes")
-                    @@nodeInventory = JSON.parse(KubernetesApiClient.getKubeResourceInfo(resourceUri).body)
-                rescue Exception => e
-                    log.info "Error when getting nodeInventory from kube API. Exception: #{e.class} Message: #{e.message} "
-                    ApplicationInsightsUtility.sendExceptionTelemetry(e.backtrace)
-                end
-                if !@@nodeInventory.nil?
-                    cpu_capacity_json = KubernetesApiClient.parseNodeLimits(@@nodeInventory, "capacity", "cpu", "cpuCapacityNanoCores")
-                    if !cpu_capacity_json.nil?
-                        cpu_capacity_json.each do |cpu_info_node|
-                            if !cpu_info_node['DataItems'][0]['Host'].nil? && cpu_info_node['DataItems'][0]['Host'] == hostname
-                                if !cpu_info_node['DataItems'][0]['Collections'][0]['Value'].nil?
-                                    cpu_capacity = cpu_info_node['DataItems'][0]['Collections'][0]['Value']
-                                end
-                            end
-                        end
-                        log.info "CPU Limit #{cpu_capacity}"
-                    else
-                        log.info "Error getting cpu_capacity"
-                    end
-                    memory_capacity_json = KubernetesApiClient.parseNodeLimits(@@nodeInventory, "capacity", "memory", "memoryCapacityBytes")
-                    if !memory_capacity_json.nil?
-                        memory_capacity_json.each do |memory_info_node|
-                            if !memory_info_node['DataItems'][0]['Host'].nil? && memory_info_node['DataItems'][0]['Host'] == hostname
-                                if !memory_info_node['DataItems'][0]['Collections'][0]['Value'].nil?
-                                    memory_capacity = memory_info_node['DataItems'][0]['Collections'][0]['Value']
-                                end
-                            end
-                        end
-                        log.info "memory Limit #{memory_capacity}"
-                    else
-                        log.info "Error getting memory_capacity"
-                    end
-                    return [cpu_capacity, memory_capacity]
-                end
+                return KubeletUtils.get_node_capacity
             end
 
             def build_metrics_hash(metrics_to_collect)
