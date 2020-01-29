@@ -87,16 +87,24 @@ module Fluent
         # we do this so that if the call fails, we get a response code/header etc.
         resourceUri = KubernetesApiClient.getNodesResourceUri("nodes")
         node_inventory_response = KubernetesApiClient.getKubeResourceInfo(resourceUri)
-        node_inventory = Yajl::Parser.parse(StringIO.new(node_inventory_response.body))
-        pod_inventory_response = KubernetesApiClient.getKubeResourceInfo("pods?fieldSelector=metadata.namespace%3D#{@@KubeInfraNamespace}")
-        pod_inventory = Yajl::Parser.parse(StringIO.new(pod_inventory_response.body))
-        replicaset_inventory_response = KubernetesApiClient.getKubeResourceInfo("replicasets?fieldSelector=metadata.namespace%3D#{@@KubeInfraNamespace}", api_group: @@ApiGroupApps)
-        replicaset_inventory = Yajl::Parser.parse(StringIO.new(replicaset_inventory_response.body))
+        if !node_inventory_response.nil? && !node_inventory_response.body.nil?
+            node_inventory = Yajl::Parser.parse(StringIO.new(node_inventory_response.body))
+            @resources.node_inventory = node_inventory
+        end
 
-        @resources.node_inventory = node_inventory
-        @resources.pod_inventory = pod_inventory
-        @resources.set_replicaset_inventory(replicaset_inventory)
-        @resources.build_pod_uid_lookup
+        pod_inventory_response = KubernetesApiClient.getKubeResourceInfo("pods?fieldSelector=metadata.namespace%3D#{@@KubeInfraNamespace}")
+        if !pod_inventory_response.nil? && !pod_inventory_response.body.nil?
+            pod_inventory = Yajl::Parser.parse(StringIO.new(pod_inventory_response.body))
+            @resources.pod_inventory = pod_inventory
+            @resources.build_pod_uid_lookup
+        end
+
+        replicaset_inventory_response = KubernetesApiClient.getKubeResourceInfo("replicasets?fieldSelector=metadata.namespace%3D#{@@KubeInfraNamespace}", api_group: @@ApiGroupApps)
+        if !replicaset_inventory_response.nil? && !replicaset_inventory_response.body.nil?
+            replicaset_inventory = Yajl::Parser.parse(StringIO.new(replicaset_inventory_response.body))
+            @resources.set_replicaset_inventory(replicaset_inventory)
+        end
+
 
         if node_inventory_response.code.to_i != 200
           record = process_kube_api_up_monitor("fail", node_inventory_response)
