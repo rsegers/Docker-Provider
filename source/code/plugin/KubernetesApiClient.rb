@@ -195,7 +195,7 @@ class KubernetesApiClient
     def getNodesResourceUri(nodesResourceUri)
       begin
         # For ARO v3 cluster, filter out all other node roles other than compute
-        if IsAROV3Cluster
+        if isAROV3Cluster()
           if !nodesResourceUri.nil? && !nodesResourceUri.index("?").nil?
             nodesResourceUri = nodesResourceUri + "&labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
           else
@@ -390,7 +390,7 @@ class KubernetesApiClient
           end
 
           # For ARO, skip the pods scheduled on to master or infra nodes to ingest
-          if IsAROV3Cluster && !pod["spec"].nil? && !pod["spec"]["nodeName"].nil? &&
+          if isAROV3Cluster() && !pod["spec"].nil? && !pod["spec"]["nodeName"].nil? &&
             ( pod["spec"]["nodeName"].downcase.start_with?("infra-") ||
             pod["spec"]["nodeName"].downcase.start_with?("master-") )
             next
