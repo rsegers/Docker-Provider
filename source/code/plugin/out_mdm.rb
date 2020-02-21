@@ -12,7 +12,7 @@ module Fluent
       require "net/http"
       require "net/https"
       require "uri"
-      require 'yajl/json_gem'
+      require "yajl/json_gem"
       require_relative "KubernetesApiClient"
       require_relative "ApplicationInsightsUtility"
 
@@ -20,12 +20,19 @@ module Fluent
       @@grant_type = "client_credentials"
       @@azure_json_path = "/etc/kubernetes/host/azure.json"
       @@post_request_url_template = "https://%{aks_region}.monitoring.azure.com%{aks_resource_id}/metrics"
-      @@token_url_template = "https://login.microsoftonline.com/%{tenant_id}/oauth2/token"
+      @@aad_token_url_template = "https://login.microsoftonline.com/%{tenant_id}/oauth2/token"
+
+      # msiEndpoint is the well known endpoint for getting MSI authentications tokens
+      @@msi_endpoint_template = "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&client_id=%{user_assigned_client_id}&resource=%{resource}"
+      @@userAssignedClientId = ENV["USER_ASSIGNED_IDENTITY_CLIENT_ID"]
+
       @@plugin_name = "AKSCustomMetricsMDM"
       @@record_batch_size = 2600
 
+      @@tokenRefreshBackoffInterval = 30
+
       @data_hash = {}
-      @token_url = nil
+      @parsed_token_uri = nil
       @http_client = nil
       @token_expiry_time = Time.now
       @cached_access_token = String.new
@@ -33,6 +40,10 @@ module Fluent
       @first_post_attempt_made = false
       @can_send_data_to_mdm = true
       @last_telemetry_sent_time = nil
+      # Setting useMsi to false by default
+      @useMsi = false
+
+      @get_access_token_backoff_expiry = Time.now
     end
 
     def configure(conf)
@@ -57,51 +68,102 @@ module Fluent
           @log.info "Environment Variable AKS_REGION is not set.. "
           @can_send_data_to_mdm = false
         else
-          aks_region = aks_region.gsub(" ","")
+          aks_region = aks_region.gsub(" ", "")
         end
 
         if @can_send_data_to_mdm
           @log.info "MDM Metrics supported in #{aks_region} region"
-          @token_url = @@token_url_template % {tenant_id: @data_hash["tenantId"]}
-          @cached_access_token = get_access_token
+
           @@post_request_url = @@post_request_url_template % {aks_region: aks_region, aks_resource_id: aks_resource_id}
           @post_request_uri = URI.parse(@@post_request_url)
           @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
           @http_client.use_ssl = true
           @log.info "POST Request url: #{@@post_request_url}"
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMPluginStart", {})
+
+          # Check to see if SP exists, if it does use SP. Else, use msi
+          sp_client_id = @data_hash["aadClientId"]
+          sp_client_secret = @data_hash["aadClientSecret"]
+
+          if (!sp_client_id.nil? && !sp_client_id.empty? && sp_client_id != "msi")
+            @useMsi = false
+            aad_token_url = @@aad_token_url_template % {tenant_id: @data_hash["tenantId"]}
+            @parsed_token_uri = URI.parse(aad_token_url)
+          else
+            @useMsi = true
+            msi_endpoint = @@msi_endpoint_template % {user_assigned_client_id: @@userAssignedClientId, resource: @@token_resource_url}
+            @parsed_token_uri = URI.parse(msi_endpoint)
+          end
+
+          @cached_access_token = get_access_token
         end
       rescue => e
         @log.info "exception when initializing out_mdm #{e}"
         ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "MDM"})
-        @can_send_data_to_mdm = false
         return
       end
-
     end
 
-    # get the access token only if the time to expiry is less than 5 minutes
+    # get the access token only if the time to expiry is less than 5 minutes and get_access_token_backoff has expired
     def get_access_token
-      if @cached_access_token.to_s.empty? || (Time.now + 5 * 60 > @token_expiry_time) # token is valid for 60 minutes. Refresh token 5 minutes from expiration
-        @log.info "Refreshing access token for out_mdm plugin.."
-        token_uri = URI.parse(@token_url)
-        http_access_token = Net::HTTP.new(token_uri.host, token_uri.port)
-        http_access_token.use_ssl = true
-        token_request = Net::HTTP::Post.new(token_uri.request_uri)
-        token_request.set_form_data(
-          {
-            "grant_type" => @@grant_type,
-            "client_id" => @data_hash["aadClientId"],
-            "client_secret" => @data_hash["aadClientSecret"],
-            "resource" => @@token_resource_url,
-          }
-        )
+      if (Time.now > @get_access_token_backoff_expiry)
+        http_access_token = nil
+        retries = 0
+        begin
+          if @cached_access_token.to_s.empty? || (Time.now + 5 * 60 > @token_expiry_time) # Refresh token 5 minutes from expiration
+            @log.info "Refreshing access token for out_mdm plugin.."
 
-        token_response = http_access_token.request(token_request)
-        # Handle the case where the response is not 200
-        parsed_json = JSON.parse(token_response.body)
-        @token_expiry_time = Time.now + 59 * 60 # set the expiry time to be ~one hour from current time
-        @cached_access_token = parsed_json["access_token"]
+            if (!!@useMsi)
+              @log.info "Using msi to get the token to post MDM data"
+              ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMToken-MSI", {})
+              @log.info "Opening TCP connection"
+              http_access_token = Net::HTTP.start(@parsed_token_uri.host, @parsed_token_uri.port, :use_ssl => false)
+              # http_access_token.use_ssl = false
+              token_request = Net::HTTP::Get.new(@parsed_token_uri.request_uri)
+              token_request["Metadata"] = true
+            else
+              @log.info "Using SP to get the token to post MDM data"
+              ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMToken-SP", {})
+              @log.info "Opening TCP connection"
+              http_access_token = Net::HTTP.start(@parsed_token_uri.host, @parsed_token_uri.port, :use_ssl => true)
+              # http_access_token.use_ssl = true
+              token_request = Net::HTTP::Post.new(@parsed_token_uri.request_uri)
+              token_request.set_form_data(
+                {
+                  "grant_type" => @@grant_type,
+                  "client_id" => @data_hash["aadClientId"],
+                  "client_secret" => @data_hash["aadClientSecret"],
+                  "resource" => @@token_resource_url,
+                }
+              )
+            end
+
+            @log.info "making request to get token.."
+            token_response = http_access_token.request(token_request)
+            # Handle the case where the response is not 200
+            parsed_json = JSON.parse(token_response.body)
+            @token_expiry_time = Time.now + @@tokenRefreshBackoffInterval * 60 # set the expiry time to be ~thirty minutes from current time
+            @cached_access_token = parsed_json["access_token"]
+          @log.info "Successfully got access token"
+          end
+        rescue => err
+          @log.info "Exception in get_access_token: #{err}"
+          if (retries < 2)
+            retries += 1
+            @log.info "Retrying request to get token - retry number: #{retries}"
+            sleep(retries)
+            retry
+          else
+          @get_access_token_backoff_expiry = Time.now + @@tokenRefreshBackoffInterval * 60
+          @log.info "@get_access_token_backoff_expiry set to #{@get_access_token_backoff_expiry}"
+          ApplicationInsightsUtility.sendExceptionTelemetry(err, {"FeatureArea" => "MDM"})
+          end
+        ensure
+          if http_access_token
+            @log.info "Closing http connection"
+            http_access_token.finish
+          end
+        end
       end
       @cached_access_token
     end
@@ -172,10 +234,9 @@ module Fluent
         response.value # this throws for non 200 HTTP response code
         @log.info "HTTP Post Response Code : #{response.code}"
         if @last_telemetry_sent_time.nil? || @last_telemetry_sent_time + 60 * 60 < Time.now
-            ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMSendSuccessful", {})
-            @last_telemetry_sent_time = Time.now
+          ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMSendSuccessful", {})
+          @last_telemetry_sent_time = Time.now
         end
-
       rescue Net::HTTPServerException => e
         @log.info "Failed to Post Metrics to MDM : #{e} Response: #{response}"
         @log.debug_backtrace(e.backtrace)

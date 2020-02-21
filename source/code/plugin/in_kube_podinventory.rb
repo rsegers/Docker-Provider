@@ -2,7 +2,6 @@
 # frozen_string_literal: true
 
 module Fluent
-
   require_relative "podinventory_to_mdm"
 
   class Kube_PodInventory_Input < Input
@@ -36,7 +35,6 @@ module Fluent
     config_param :run_interval, :time, :default => 60
     config_param :tag, :string, :default => "oms.containerinsights.KubePodInventory"
     config_param :custom_metrics_azure_regions, :string
-
 
     def configure(conf)
       super
@@ -149,18 +147,25 @@ module Fluent
         containerInventoryRecord["Computer"] = record["Computer"]
         containerInventoryRecord["ContainerHostname"] = record["Computer"]
         containerInventoryRecord["ElementName"] = containerName
-        image = container["image"]
-        repoInfo = image.split("/")
-        if !repoInfo.nil?
-          containerInventoryRecord["Repository"] = repoInfo[0]
-          if !repoInfo[1].nil?
-            imageInfo = repoInfo[1].split(":")
-            if !imageInfo.nil?
-              containerInventoryRecord["Image"] = imageInfo[0]
-              containerInventoryRecord["ImageTag"] = imageInfo[1]
+
+        # Find delimiters in the string of format repository/image:imagetag
+        imageValue = container["image"]
+        if !imageValue.empty?
+          slashLocation = imageValue.index("/")
+          colonLocation = imageValue.index(":")
+          if !colonLocation.nil?
+            if slashLocation.nil?
+              # image:imagetag
+              containerInventoryRecord["Image"] = imageValue[0..(colonLocation - 1)]
+            else
+              # repository/image:imagetag
+              containerInventoryRecord["Repository"] = imageValue[0..(slashLocation - 1)]
+              containerInventoryRecord["Image"] = imageValue[(slashLocation + 1)..(colonLocation - 1)]
             end
+            containerInventoryRecord["ImageTag"] = imageValue[(colonLocation + 1)..-1]
           end
         end
+
         imageIdInfo = container["imageID"]
         imageIdSplitInfo = imageIdInfo.split("@")
         if !imageIdSplitInfo.nil?
@@ -273,8 +278,8 @@ module Fluent
 
           # For ARO v3 cluster, skip the pods scheduled on to master or infra nodes
           if KubernetesApiClient.isAROV3Cluster && !items["spec"].nil? && !items["spec"]["nodeName"].nil? &&
-             ( items["spec"]["nodeName"].downcase.start_with?("infra-") ||
-              items["spec"]["nodeName"].downcase.start_with?("master-") )
+             (items["spec"]["nodeName"].downcase.start_with?("infra-") ||
+              items["spec"]["nodeName"].downcase.start_with?("master-"))
             next
           end
 
@@ -491,15 +496,15 @@ module Fluent
 
         router.emit_stream(@tag, eventStream) if eventStream
 
-        if continuationToken.nil?  #no more chunks in this batch to be sent, get all pod inventory records to send
-            @log.info "Sending pod inventory mdm records to out_mdm"
-            pod_inventory_mdm_records = @inventoryToMdmConvertor.get_pod_inventory_mdm_records(batchTime)
-            @log.info "pod_inventory_mdm_records.size #{pod_inventory_mdm_records.size}"
-            mdm_pod_inventory_es = MultiEventStream.new
-            pod_inventory_mdm_records.each {|pod_inventory_mdm_record|
-                mdm_pod_inventory_es.add(batchTime, pod_inventory_mdm_record) if pod_inventory_mdm_record
-            } if pod_inventory_mdm_records
-            router.emit_stream(@@MDMKubePodInventoryTag, mdm_pod_inventory_es) if mdm_pod_inventory_es
+        if continuationToken.nil? #no more chunks in this batch to be sent, get all pod inventory records to send
+          @log.info "Sending pod inventory mdm records to out_mdm"
+          pod_inventory_mdm_records = @inventoryToMdmConvertor.get_pod_inventory_mdm_records(batchTime)
+          @log.info "pod_inventory_mdm_records.size #{pod_inventory_mdm_records.size}"
+          mdm_pod_inventory_es = MultiEventStream.new
+          pod_inventory_mdm_records.each { |pod_inventory_mdm_record|
+            mdm_pod_inventory_es.add(batchTime, pod_inventory_mdm_record) if pod_inventory_mdm_record
+          } if pod_inventory_mdm_records
+          router.emit_stream(@@MDMKubePodInventoryTag, mdm_pod_inventory_es) if mdm_pod_inventory_es
         end
 
         #:optimize:kubeperf merge
