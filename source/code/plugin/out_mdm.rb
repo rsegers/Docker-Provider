@@ -85,7 +85,7 @@ module Fluent
           sp_client_id = @data_hash["aadClientId"]
           sp_client_secret = @data_hash["aadClientSecret"]
 
-          if (!sp_client_id.nil? && !sp_client_id.empty? && sp_client_id != "msi")
+          if (!sp_client_id.nil? && !sp_client_id.empty? && sp_client_id.downcase != "msi")
             @useMsi = false
             aad_token_url = @@aad_token_url_template % {tenant_id: @data_hash["tenantId"]}
             @parsed_token_uri = URI.parse(aad_token_url)
