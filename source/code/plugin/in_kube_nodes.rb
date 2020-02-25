@@ -31,6 +31,7 @@ module Fluent
       require_relative "oms_common"
       require_relative "omslog"
       @NODES_CHUNK_SIZE = "400"
+      require_relative "constants"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -105,6 +106,8 @@ module Fluent
         telemetrySent = false
         eventStream = MultiEventStream.new
         containerNodeInventoryEventStream = MultiEventStream.new
+        insightsMetricsEventStream = MultiEventStream.new
+        @@istestvar = ENV["ISTEST"]
         #get node inventory
         nodeInventory["items"].each do |items|
           record = {}
@@ -193,6 +196,20 @@ module Fluent
             capacityInfo = items["status"]["capacity"]
             ApplicationInsightsUtility.sendMetricTelemetry("NodeMemory", capacityInfo["memory"], properties)
 
+            begin
+              if (!capacityInfo["nvidia.com/gpu"].nil?) && (!capacityInfo["nvidia.com/gpu"].empty?)
+                properties["nvigpus"] = capacityInfo["nvidia.com/gpu"]
+              end
+
+              if (!capacityInfo["amd.com/gpu"].nil?) && (!capacityInfo["amd.com/gpu"].empty?)
+                properties["amdgpus"] = capacityInfo["amd.com/gpu"]
+              end
+            rescue => errorStr
+              $log.warn "Failed in getting GPU telemetry in_kube_nodes : #{errorStr}"
+              $log.debug_backtrace(errorStr.backtrace)
+              ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+            end
+
             #telemetry about prometheus metric collections settings for replicaset
             if (File.file?(@@promConfigMountPath))
               properties["rsPromInt"] = @@rsPromInterval
@@ -213,7 +230,7 @@ module Fluent
         if telemetrySent == true
           @@nodeTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
-        @@istestvar = ENV["ISTEST"]
+        
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
           $log.info("kubeNodeInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
         end
@@ -237,6 +254,35 @@ module Fluent
           end
           #end
           router.emit_stream(@@kubeperfTag, kubePerfEventStream) if kubePerfEventStream
+
+          #start GPU InsightsMetrics items
+          begin
+            nodeGPUInsightsMetricsDataItems = []
+            nodeGPUInsightsMetricsDataItems.concat(KubernetesApiClient.parseNodeLimitsAsInsightsMetrics(nodeInventory, "allocatable", "nvidia.com/gpu", "nodeGpuAllocatable", batchTime))
+            nodeGPUInsightsMetricsDataItems.concat(KubernetesApiClient.parseNodeLimitsAsInsightsMetrics(nodeInventory, "capacity", "nvidia.com/gpu", "nodeGpuCapacity", batchTime))
+
+            nodeGPUInsightsMetricsDataItems.concat(KubernetesApiClient.parseNodeLimitsAsInsightsMetrics(nodeInventory, "allocatable", "amd.com/gpu", "nodeGpuAllocatable", batchTime))
+            nodeGPUInsightsMetricsDataItems.concat(KubernetesApiClient.parseNodeLimitsAsInsightsMetrics(nodeInventory, "capacity", "amd.com/gpu", "nodeGpuCapacity", batchTime))
+
+            nodeGPUInsightsMetricsDataItems.each do |insightsMetricsRecord|
+              wrapper = {
+                "DataType" => "INSIGHTS_METRICS_BLOB",
+                "IPName" => "ContainerInsights",
+                "DataItems" => [insightsMetricsRecord.each { |k, v| insightsMetricsRecord[k] = v }],
+              }
+              insightsMetricsEventStream.add(emitTime, wrapper) if wrapper
+            end
+
+            router.emit_stream(Constants::INSIGHTSMETRICS_FLUENT_TAG, insightsMetricsEventStream) if insightsMetricsEventStream
+            if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)
+              $log.info("kubeNodeInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+            end
+          rescue => errorStr
+            $log.warn "Failed when processing GPU metrics in_kube_nodes : #{errorStr}"
+            $log.debug_backtrace(errorStr.backtrace)
+            ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+          end 
+          #end GPU InsightsMetrics items
         rescue => errorStr
           $log.warn "Failed in enumerate for KubePerf from in_kube_nodes : #{errorStr}"
           $log.debug_backtrace(errorStr.backtrace)

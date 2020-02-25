@@ -13,6 +13,7 @@ class CAdvisorMetricsAPIClient
   require_relative "oms_common"
   require_relative "KubernetesApiClient"
   require_relative "ApplicationInsightsUtility"
+  require_relative "constants"
 
   @configMapMountPath = "/etc/config/settings/log-data-collection-settings"
   @promConfigMountPath = "/etc/config/settings/prometheus-data-collection-settings"
@@ -250,6 +251,101 @@ class CAdvisorMetricsAPIClient
         end
       rescue => error
         @Log.warn("getcontainerCpuMetricItems failed: #{error} for metric #{cpuMetricNameToCollect}")
+        return metricItems
+      end
+      return metricItems
+    end
+
+    def getInsightsMetrics(winNode: nil, metricTime: Time.now.utc.iso8601)
+      metricDataItems = []
+      begin
+        cAdvisorStats = getSummaryStatsFromCAdvisor(winNode)
+        if !cAdvisorStats.nil?
+          metricInfo = JSON.parse(cAdvisorStats.body)
+        end
+        if !winNode.nil?
+          hostName = winNode["Hostname"]
+          operatingSystem = "Windows"
+        else
+          if !metricInfo.nil? && !metricInfo["node"].nil? && !metricInfo["node"]["nodeName"].nil?
+            hostName = metricInfo["node"]["nodeName"]
+          else
+            hostName = (OMS::Common.get_hostname)
+          end
+          operatingSystem = "Linux"
+        end
+        if !metricInfo.nil?
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryTotal", "containerGpumemoryTotalBytes", metricTime))
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryUsed","containerGpumemoryUsedBytes", metricTime))
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "dutyCycle","containerGpuDutyCycle", metricTime))
+        else
+          @Log.warn("Couldn't get Insights metrics information for host: #{hostName} os:#{operatingSystem}")
+        end
+      rescue => error
+        @Log.warn("CAdvisorMetricsAPIClient::getInsightsMetrics failed: #{error}")
+        return metricDataItems
+      end
+      return metricDataItems
+    end
+
+    def getContainerGpuMetricsAsInsightsMetrics(metricJSON, hostName, metricNameToCollect, metricNametoReturn, metricPollTime)
+      metricItems = []
+      clusterId = KubernetesApiClient.getClusterId
+      clusterName = KubernetesApiClient.getClusterName
+      begin
+        metricInfo = metricJSON
+        metricInfo["pods"].each do |pod|
+          podUid = pod["podRef"]["uid"]
+          podName = pod["podRef"]["name"]
+          podNamespace = pod["podRef"]["namespace"]
+
+          if (!pod["containers"].nil?)
+            pod["containers"].each do |container|
+              #gpu metrics
+              if (!container["accelerators"].nil?)
+                container["accelerators"].each do |accelerator|
+                  if (!accelerator[metricNameToCollect].nil?) #empty check is invalid for non-strings
+                    containerName = container["name"]
+                    metricValue = accelerator[metricNameToCollect]
+                    
+
+                    metricItem = {}
+                    metricItem["CollectionTime"] = metricPollTime
+                    metricItem["Computer"] = hostName
+                    metricItem["Name"] = metricNametoReturn
+                    metricItem["Value"] = metricValue
+                    metricItem["Origin"] = Constants::INSIGHTSMETRICS_TAGS_ORIGIN 
+                    metricItem["Namespace"] = Constants::INSIGHTSMETRICS_TAGS_GPU_NAMESPACE
+                    
+                    metricTags = {}
+                    metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERID ] = clusterId
+                    metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERNAME] = clusterName
+                    metricTags[Constants::INSIGHTSMETRICS_TAGS_CONTAINER_NAME] = podUid + "/" + containerName
+                    #metricTags[Constants::INSIGHTSMETRICS_TAGS_K8SNAMESPACE] = podNameSpace
+
+                    if (!accelerator["make"].nil? && !accelerator["make"].empty?)
+                      metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_VENDOR] = accelerator["make"]
+                    end
+
+                    if (!accelerator["model"].nil? && !accelerator["model"].empty?)
+                      metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_MODEL] = accelerator["model"]
+                    end
+
+                    if (!accelerator["id"].nil? && !accelerator["id"].empty?)
+                      metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_ID] = accelerator["id"]
+                    end
+                  
+                    metricItem["Tags"] = metricTags
+                    
+                    metricItems.push(metricItem)
+                  end
+                end
+              end
+            end
+          end
+        end
+      rescue => errorStr
+        @Log.warn("getContainerGpuMetricsAsInsightsMetrics failed: #{errorStr} for metric #{metricNameToCollect}")
         return metricItems
       end
       return metricItems
