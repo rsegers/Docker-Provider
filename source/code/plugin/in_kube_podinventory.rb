@@ -2,6 +2,8 @@
 # frozen_string_literal: true
 
 module Fluent
+  require_relative "podinventory_to_mdm"
+
   class Kube_PodInventory_Input < Input
     Plugin.register_input("kubepodinventory", self)
 
@@ -22,6 +24,7 @@ module Fluent
       require_relative "ApplicationInsightsUtility"
       require_relative "oms_common"
       require_relative "omslog"
+      require_relative "constants"
 
       @PODS_CHUNK_SIZE = "1500"
       @podCount = 0
@@ -32,9 +35,11 @@ module Fluent
 
     config_param :run_interval, :time, :default => 60
     config_param :tag, :string, :default => "oms.containerinsights.KubePodInventory"
+    config_param :custom_metrics_azure_regions, :string
 
     def configure(conf)
       super
+      @inventoryToMdmConvertor = Inventory2MdmConvertor.new(@custom_metrics_azure_regions)
     end
 
     def start
@@ -87,7 +92,7 @@ module Fluent
         continuationToken, podInventory = KubernetesApiClient.getResourcesAndContinuationToken("pods?limit=#{@PODS_CHUNK_SIZE}")
         $log.info("in_kube_podinventory::enumerate : Done getting pods from Kube API @ #{Time.now.utc.iso8601}")
         if (!podInventory.nil? && !podInventory.empty? && podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
-          parse_and_emit_records(podInventory, serviceList, batchTime)
+          parse_and_emit_records(podInventory, serviceList, continuationToken, batchTime)
         else
           $log.warn "in_kube_podinventory::enumerate:Received empty podInventory"
         end
@@ -96,7 +101,7 @@ module Fluent
         while (!continuationToken.nil? && !continuationToken.empty?)
           continuationToken, podInventory = KubernetesApiClient.getResourcesAndContinuationToken("pods?limit=#{@PODS_CHUNK_SIZE}&continue=#{continuationToken}")
           if (!podInventory.nil? && !podInventory.empty? && podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
-            parse_and_emit_records(podInventory, serviceList, batchTime)
+            parse_and_emit_records(podInventory, serviceList, continuationToken, batchTime)
           else
             $log.warn "in_kube_podinventory::enumerate:Received empty podInventory"
           end
@@ -143,18 +148,25 @@ module Fluent
         containerInventoryRecord["Computer"] = record["Computer"]
         containerInventoryRecord["ContainerHostname"] = record["Computer"]
         containerInventoryRecord["ElementName"] = containerName
-        image = container["image"]
-        repoInfo = image.split("/")
-        if !repoInfo.nil?
-          containerInventoryRecord["Repository"] = repoInfo[0]
-          if !repoInfo[1].nil?
-            imageInfo = repoInfo[1].split(":")
-            if !imageInfo.nil?
-              containerInventoryRecord["Image"] = imageInfo[0]
-              containerInventoryRecord["ImageTag"] = imageInfo[1]
+
+        # Find delimiters in the string of format repository/image:imagetag
+        imageValue = container["image"]
+        if !imageValue.empty?
+          slashLocation = imageValue.index("/")
+          colonLocation = imageValue.index(":")
+          if !colonLocation.nil?
+            if slashLocation.nil?
+              # image:imagetag
+              containerInventoryRecord["Image"] = imageValue[0..(colonLocation - 1)]
+            else
+              # repository/image:imagetag
+              containerInventoryRecord["Repository"] = imageValue[0..(slashLocation - 1)]
+              containerInventoryRecord["Image"] = imageValue[(slashLocation + 1)..(colonLocation - 1)]
             end
+            containerInventoryRecord["ImageTag"] = imageValue[(colonLocation + 1)..-1]
           end
         end
+
         imageIdInfo = container["imageID"]
         imageIdSplitInfo = imageIdInfo.split("@")
         if !imageIdSplitInfo.nil?
@@ -246,11 +258,12 @@ module Fluent
       end
     end
 
-    def parse_and_emit_records(podInventory, serviceList, batchTime = Time.utc.iso8601)
+    def parse_and_emit_records(podInventory, serviceList, continuationToken, batchTime = Time.utc.iso8601)
       currentTime = Time.now
       emitTime = currentTime.to_f
       #batchTime = currentTime.utc.iso8601
       eventStream = MultiEventStream.new
+      @@istestvar = ENV["ISTEST"]
 
       begin #begin block start
         # Getting windows nodes from kubeapi
@@ -264,6 +277,13 @@ module Fluent
           record["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
           record["Name"] = items["metadata"]["name"]
           podNameSpace = items["metadata"]["namespace"]
+
+          # For ARO v3 cluster, skip the pods scheduled on to master or infra nodes
+          if KubernetesApiClient.isAROV3Cluster && !items["spec"].nil? && !items["spec"]["nodeName"].nil? &&
+             (items["spec"]["nodeName"].downcase.start_with?("infra-") ||
+              items["spec"]["nodeName"].downcase.start_with?("master-"))
+            next
+          end
 
           if podNameSpace.eql?("kube-system") && !items["metadata"].key?("ownerReferences")
             # The above case seems to be the only case where you have horizontal scaling of pods
@@ -459,6 +479,7 @@ module Fluent
                           "DataItems" => [record.each { |k, v| record[k] = v }],
                         }
               eventStream.add(emitTime, wrapper) if wrapper
+              @inventoryToMdmConvertor.process_pod_inventory_record(wrapper)
             end
           end
           # Send container inventory records for containers on windows nodes
@@ -476,7 +497,18 @@ module Fluent
         end  #podInventory block end
 
         router.emit_stream(@tag, eventStream) if eventStream
-        router.emit_stream(@@MDMKubePodInventoryTag, eventStream) if eventStream
+
+        if continuationToken.nil? #no more chunks in this batch to be sent, get all pod inventory records to send
+          @log.info "Sending pod inventory mdm records to out_mdm"
+          pod_inventory_mdm_records = @inventoryToMdmConvertor.get_pod_inventory_mdm_records(batchTime)
+          @log.info "pod_inventory_mdm_records.size #{pod_inventory_mdm_records.size}"
+          mdm_pod_inventory_es = MultiEventStream.new
+          pod_inventory_mdm_records.each { |pod_inventory_mdm_record|
+            mdm_pod_inventory_es.add(batchTime, pod_inventory_mdm_record) if pod_inventory_mdm_record
+          } if pod_inventory_mdm_records
+          router.emit_stream(@@MDMKubePodInventoryTag, mdm_pod_inventory_es) if mdm_pod_inventory_es
+        end
+
         #:optimize:kubeperf merge
         begin
           #if(!podInventory.empty?)
@@ -488,6 +520,7 @@ module Fluent
           containerMetricDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimits(podInventory, "limits", "memory", "memoryLimitBytes", batchTime))
 
           kubePerfEventStream = MultiEventStream.new
+          insightsMetricsEventStream = MultiEventStream.new
 
           containerMetricDataItems.each do |record|
             record["DataType"] = "LINUX_PERF_BLOB"
@@ -496,6 +529,38 @@ module Fluent
           end
           #end
           router.emit_stream(@@kubeperfTag, kubePerfEventStream) if kubePerfEventStream
+
+          begin 
+            #start GPU InsightsMetrics items
+            
+            containerGPUInsightsMetricsDataItems = []
+            containerGPUInsightsMetricsDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimitsAsInsightsMetrics(podInventory, "requests", "nvidia.com/gpu", "containerGpuRequests", batchTime))
+            containerGPUInsightsMetricsDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimitsAsInsightsMetrics(podInventory, "limits", "nvidia.com/gpu", "containerGpuLimits", batchTime))
+
+            containerGPUInsightsMetricsDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimitsAsInsightsMetrics(podInventory, "requests", "amd.com/gpu", "containerGpuRequests", batchTime))
+            containerGPUInsightsMetricsDataItems.concat(KubernetesApiClient.getContainerResourceRequestsAndLimitsAsInsightsMetrics(podInventory, "limits", "amd.com/gpu", "containerGpuLimits", batchTime))
+
+            containerGPUInsightsMetricsDataItems.each do |insightsMetricsRecord|
+              wrapper = {
+                "DataType" => "INSIGHTS_METRICS_BLOB",
+                "IPName" => "ContainerInsights",
+                "DataItems" => [insightsMetricsRecord.each { |k, v| insightsMetricsRecord[k] = v }],
+              }
+              insightsMetricsEventStream.add(emitTime, wrapper) if wrapper
+              
+              if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)
+                $log.info("kubePodInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+              end
+
+            end
+
+            router.emit_stream(Constants::INSIGHTSMETRICS_FLUENT_TAG, insightsMetricsEventStream) if insightsMetricsEventStream
+            #end GPU InsightsMetrics items
+          rescue => errorStr
+            $log.warn "Failed when processing GPU metrics in_kube_podinventory : #{errorStr}"
+            $log.debug_backtrace(errorStr.backtrace)
+            ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+          end
         rescue => errorStr
           $log.warn "Failed in parse_and_emit_record for KubePerf from in_kube_podinventory : #{errorStr}"
           $log.debug_backtrace(errorStr.backtrace)
@@ -537,7 +602,7 @@ module Fluent
         #Updating value for AppInsights telemetry
         @podCount += podInventory["items"].length
 
-        @@istestvar = ENV["ISTEST"]
+        
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
           $log.info("kubePodInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
         end

@@ -16,6 +16,7 @@ require_relative "ConfigParseErrorLogger"
 @logExclusionRegexPattern = "(^((?!stdout|stderr).)*$)"
 @excludePath = "*.csv2" #some invalid path
 @enrichContainerLogs = false
+@collectAllKubeEvents = false
 
 # Use parser to parse the configmap toml file to a ruby structure
 def parseConfigMap
@@ -128,6 +129,16 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     rescue => errorStr
       ConfigParseErrorLogger.logError("Exception while reading config map settings for cluster level container log enrichment - #{errorStr}, using defaults, please check config map for errors")
     end
+
+    #Get kube events enrichment setting
+    begin
+      if !parsedConfig[:log_collection_settings][:collect_all_kube_events].nil? && !parsedConfig[:log_collection_settings][:collect_all_kube_events][:enabled].nil?
+        @collectAllKubeEvents = parsedConfig[:log_collection_settings][:collect_all_kube_events][:enabled]
+        puts "config::Using config map setting for kube event collection"
+      end
+    rescue => errorStr
+      ConfigParseErrorLogger.logError("Exception while reading config map settings for kube event collection - #{errorStr}, using defaults, please check config map for errors")
+    end
   end
 end
 
@@ -168,6 +179,7 @@ if !file.nil?
   file.write("export AZMON_CLUSTER_COLLECT_ENV_VAR=#{@collectClusterEnvVariables}\n")
   file.write("export AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH=#{@excludePath}\n")
   file.write("export AZMON_CLUSTER_CONTAINER_LOG_ENRICH=#{@enrichContainerLogs}\n")
+  file.write("export AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS=#{@collectAllKubeEvents}\n")
   # Close file after writing all environment variables
   file.close
   puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "

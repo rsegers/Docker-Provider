@@ -131,13 +131,13 @@ module Fluent
             else
                 instance_name = record['DataItems'][0]['InstanceName']
                 #@log.info "CPU capacity #{@cpu_capacity}"
-
+                metric_value /= 1000000
                 percent = (metric_value.to_f/@cpu_capacity*100).round(2)
                 #@log.debug "Percentage of CPU limit: #{percent}"
                 state = HealthMonitorUtils.compute_percentage_state(percent, @provider.get_config(MonitorId::NODE_CPU_MONITOR_ID))
                 #@log.debug "Computed State : #{state}"
                 timestamp = record['DataItems'][0]['Timestamp']
-                health_monitor_record = {"timestamp" => timestamp, "state" => state, "details" => {"cpuUsageMillicores" => metric_value/1000000.to_f, "cpuUtilizationPercentage" => percent}}
+                health_monitor_record = {"timestamp" => timestamp, "state" => state, "details" => {"cpuUsageMillicores" => metric_value, "cpuUtilizationPercentage" => percent}}
 
                 monitor_instance_id = HealthMonitorUtils.get_monitor_instance_id(monitor_id, [@@clusterId, @@hostName])
                 # temp = record.nil? ? "Nil" : record["MonitorInstanceId"]

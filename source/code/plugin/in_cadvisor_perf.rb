@@ -15,6 +15,7 @@ module Fluent
       require_relative "CAdvisorMetricsAPIClient"
       require_relative "oms_common"
       require_relative "omslog"
+      require_relative "constants"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -50,8 +51,10 @@ module Fluent
       currentTime = Time.now
       time = currentTime.to_f
       batchTime = currentTime.utc.iso8601
+      @@istestvar = ENV["ISTEST"]
       begin
         eventStream = MultiEventStream.new
+        insightsMetricsEventStream = MultiEventStream.new
         metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, metricTime: batchTime )
         metricData.each do |record|
           record["DataType"] = "LINUX_PERF_BLOB"
@@ -64,10 +67,38 @@ module Fluent
         router.emit_stream(@containerhealthtag, eventStream) if eventStream
         router.emit_stream(@nodehealthtag, eventStream) if eventStream
 
-        @@istestvar = ENV["ISTEST"]
+        
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
           $log.info("cAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
         end
+
+        #start GPU InsightsMetrics items
+        begin
+          containerGPUusageInsightsMetricsDataItems = []
+          containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: nil, metricTime: batchTime))
+          
+
+          containerGPUusageInsightsMetricsDataItems.each do |insightsMetricsRecord|
+            wrapper = {
+              "DataType" => "INSIGHTS_METRICS_BLOB",
+              "IPName" => "ContainerInsights",
+              "DataItems" => [insightsMetricsRecord.each { |k, v| insightsMetricsRecord[k] = v }],
+            }
+            insightsMetricsEventStream.add(time, wrapper) if wrapper
+          end
+
+          router.emit_stream(Constants::INSIGHTSMETRICS_FLUENT_TAG, insightsMetricsEventStream) if insightsMetricsEventStream
+          
+          if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)
+            $log.info("cAdvisorInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+          end
+        rescue => errorStr
+          $log.warn "Failed when processing GPU Usage metrics in_cadvisor_perf : #{errorStr}"
+          $log.debug_backtrace(errorStr.backtrace)
+          ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+        end 
+        #end GPU InsightsMetrics items
+
       rescue => errorStr
         $log.warn "Failed to retrieve cadvisor metric data: #{errorStr}"
         $log.debug_backtrace(errorStr.backtrace)

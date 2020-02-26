@@ -13,6 +13,7 @@ class CAdvisorMetricsAPIClient
   require_relative "oms_common"
   require_relative "KubernetesApiClient"
   require_relative "ApplicationInsightsUtility"
+  require_relative "constants"
 
   @configMapMountPath = "/etc/config/settings/log-data-collection-settings"
   @promConfigMountPath = "/etc/config/settings/prometheus-data-collection-settings"
@@ -55,85 +56,58 @@ class CAdvisorMetricsAPIClient
   # Keeping track of containers so that can delete the container from the container cpu cache when the container is deleted
   # as a part of the cleanup routine
   @@winContainerIdCache = []
-
+  #cadvisor ports
+  @@CADVISOR_SECURE_PORT = "10250"
+  @@CADVISOR_NON_SECURE_PORT = "10255"
   def initialize
   end
 
   class << self
     def getSummaryStatsFromCAdvisor(winNode)
-      headers = {}
-      response = nil
-      @Log.info "Getting CAdvisor Uri"
-      begin
-        cAdvisorSecurePort = false
-        # Check to see if omsagent needs to use 10255(insecure) port or 10250(secure) port
-        if !@cAdvisorMetricsSecurePort.nil? && @cAdvisorMetricsSecurePort == "true"
-          cAdvisorSecurePort = true
-        end
-
-        cAdvisorUri = getCAdvisorUri(winNode, cAdvisorSecurePort)
-        bearerToken = File.read("/var/run/secrets/kubernetes.io/serviceaccount/token")
-        @Log.info "cAdvisorUri: #{cAdvisorUri}"
-
-        if !cAdvisorUri.nil?
-          uri = URI.parse(cAdvisorUri)
-          if !!cAdvisorSecurePort == true
-            Net::HTTP.start(uri.host, uri.port,
-                            :use_ssl => true, :open_timeout => 20, :read_timeout => 40,
-                            :ca_file => "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
-                            :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
-              cAdvisorApiRequest = Net::HTTP::Get.new(uri.request_uri)
-              cAdvisorApiRequest["Authorization"] = "Bearer #{bearerToken}"
-              response = http.request(cAdvisorApiRequest)
-              @Log.info "Got response code #{response.code} from #{uri.request_uri}"
-            end
-          else
-            Net::HTTP.start(uri.host, uri.port, :use_ssl => false, :open_timeout => 20, :read_timeout => 40) do |http|
-              cAdvisorApiRequest = Net::HTTP::Get.new(uri.request_uri)
-              response = http.request(cAdvisorApiRequest)
-              @Log.info "Got response code #{response.code} from #{uri.request_uri}"
-            end
-          end
-        end
-      rescue => error
-        @Log.warn("CAdvisor api request failed: #{error}")
-        telemetryProps = {}
-        telemetryProps["Computer"] = winNode["Hostname"]
-        ApplicationInsightsUtility.sendExceptionTelemetry(error, telemetryProps)
-      end
-      return response
+      relativeUri = "/stats/summary"
+      return getResponse(winNode, relativeUri)
     end
 
-    def getCAdvisorUri(winNode, cAdvisorSecurePort)
-      begin
+    def getNodeCapacityFromCAdvisor(winNode: nil)
+      relativeUri = "/spec/"
+      return getResponse(winNode, relativeUri)
+    end
+
+    def getBaseCAdvisorUri(winNode)
+        cAdvisorSecurePort = isCAdvisorOnSecurePort()
+
         if !!cAdvisorSecurePort == true
-          defaultHost = "https://localhost:10250"
+            defaultHost = "https://localhost:#{@@CADVISOR_SECURE_PORT}"
         else
-          defaultHost = "http://localhost:10255"
+            defaultHost = "http://localhost:#{@@CADVISOR_NON_SECURE_PORT}"
         end
 
-        relativeUri = "/stats/summary"
         if !winNode.nil?
-          nodeIP = winNode["InternalIP"]
+            nodeIP = winNode["InternalIP"]
         else
-          nodeIP = ENV["NODE_IP"]
+            nodeIP = ENV["NODE_IP"]
         end
+
         if !nodeIP.nil?
-          @Log.info("Using #{nodeIP + relativeUri} for CAdvisor Uri")
-          if !!cAdvisorSecurePort == true
-            return "https://#{nodeIP}:10250" + relativeUri
-          else
-            return "http://#{nodeIP}:10255" + relativeUri
-          end
+            @Log.info("Using #{nodeIP} for CAdvisor Host")
+            if !!cAdvisorSecurePort == true
+                return "https://#{nodeIP}:#{@@CADVISOR_SECURE_PORT}"
+            else
+                return "http://#{nodeIP}:#{@@CADVISOR_NON_SECURE_PORT}"
+            end
         else
-          @Log.warn ("NODE_IP environment variable not set. Using default as : #{defaultHost + relativeUri} ")
-          if !winNode.nil?
-            return nil
-          else
-            return defaultHost + relativeUri
-          end
+            @Log.warn ("NODE_IP environment variable not set. Using default as : #{defaultHost}")
+            if !winNode.nil?
+                return nil
+            else
+                return defaultHost
+            end
         end
-      end
+    end
+
+    def getCAdvisorUri(winNode, relativeUri)
+        baseUri = getBaseCAdvisorUri(winNode)
+        return baseUri + relativeUri
     end
 
     def getMetrics(winNode: nil, metricTime: Time.now.utc.iso8601)
@@ -277,6 +251,101 @@ class CAdvisorMetricsAPIClient
         end
       rescue => error
         @Log.warn("getcontainerCpuMetricItems failed: #{error} for metric #{cpuMetricNameToCollect}")
+        return metricItems
+      end
+      return metricItems
+    end
+
+    def getInsightsMetrics(winNode: nil, metricTime: Time.now.utc.iso8601)
+      metricDataItems = []
+      begin
+        cAdvisorStats = getSummaryStatsFromCAdvisor(winNode)
+        if !cAdvisorStats.nil?
+          metricInfo = JSON.parse(cAdvisorStats.body)
+        end
+        if !winNode.nil?
+          hostName = winNode["Hostname"]
+          operatingSystem = "Windows"
+        else
+          if !metricInfo.nil? && !metricInfo["node"].nil? && !metricInfo["node"]["nodeName"].nil?
+            hostName = metricInfo["node"]["nodeName"]
+          else
+            hostName = (OMS::Common.get_hostname)
+          end
+          operatingSystem = "Linux"
+        end
+        if !metricInfo.nil?
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryTotal", "containerGpumemoryTotalBytes", metricTime))
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryUsed","containerGpumemoryUsedBytes", metricTime))
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "dutyCycle","containerGpuDutyCycle", metricTime))
+        else
+          @Log.warn("Couldn't get Insights metrics information for host: #{hostName} os:#{operatingSystem}")
+        end
+      rescue => error
+        @Log.warn("CAdvisorMetricsAPIClient::getInsightsMetrics failed: #{error}")
+        return metricDataItems
+      end
+      return metricDataItems
+    end
+
+    def getContainerGpuMetricsAsInsightsMetrics(metricJSON, hostName, metricNameToCollect, metricNametoReturn, metricPollTime)
+      metricItems = []
+      clusterId = KubernetesApiClient.getClusterId
+      clusterName = KubernetesApiClient.getClusterName
+      begin
+        metricInfo = metricJSON
+        metricInfo["pods"].each do |pod|
+          podUid = pod["podRef"]["uid"]
+          podName = pod["podRef"]["name"]
+          podNamespace = pod["podRef"]["namespace"]
+
+          if (!pod["containers"].nil?)
+            pod["containers"].each do |container|
+              #gpu metrics
+              if (!container["accelerators"].nil?)
+                container["accelerators"].each do |accelerator|
+                  if (!accelerator[metricNameToCollect].nil?) #empty check is invalid for non-strings
+                    containerName = container["name"]
+                    metricValue = accelerator[metricNameToCollect]
+                    
+
+                    metricItem = {}
+                    metricItem["CollectionTime"] = metricPollTime
+                    metricItem["Computer"] = hostName
+                    metricItem["Name"] = metricNametoReturn
+                    metricItem["Value"] = metricValue
+                    metricItem["Origin"] = Constants::INSIGHTSMETRICS_TAGS_ORIGIN 
+                    metricItem["Namespace"] = Constants::INSIGHTSMETRICS_TAGS_GPU_NAMESPACE
+                    
+                    metricTags = {}
+                    metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERID ] = clusterId
+                    metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERNAME] = clusterName
+                    metricTags[Constants::INSIGHTSMETRICS_TAGS_CONTAINER_NAME] = podUid + "/" + containerName
+                    #metricTags[Constants::INSIGHTSMETRICS_TAGS_K8SNAMESPACE] = podNameSpace
+
+                    if (!accelerator["make"].nil? && !accelerator["make"].empty?)
+                      metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_VENDOR] = accelerator["make"]
+                    end
+
+                    if (!accelerator["model"].nil? && !accelerator["model"].empty?)
+                      metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_MODEL] = accelerator["model"]
+                    end
+
+                    if (!accelerator["id"].nil? && !accelerator["id"].empty?)
+                      metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_ID] = accelerator["id"]
+                    end
+                  
+                    metricItem["Tags"] = metricTags
+                    
+                    metricItems.push(metricItem)
+                  end
+                end
+              end
+            end
+          end
+        end
+      rescue => errorStr
+        @Log.warn("getContainerGpuMetricsAsInsightsMetrics failed: #{errorStr} for metric #{metricNameToCollect}")
         return metricItems
       end
       return metricItems
@@ -695,6 +764,52 @@ class CAdvisorMetricsAPIClient
         return metricItems
       end
       return metricItems
+    end
+
+    def getResponse(winNode, relativeUri)
+      response = nil
+      @Log.info "Getting CAdvisor Uri Response"
+      bearerToken = File.read("/var/run/secrets/kubernetes.io/serviceaccount/token")
+      begin
+        cAdvisorUri = getCAdvisorUri(winNode, relativeUri)
+        @Log.info "cAdvisorUri: #{cAdvisorUri}"
+
+        if !cAdvisorUri.nil?
+          uri = URI.parse(cAdvisorUri)
+          if isCAdvisorOnSecurePort()
+            Net::HTTP.start(uri.host, uri.port,
+              :use_ssl => true, :open_timeout => 20, :read_timeout => 40,
+              :ca_file => "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+              :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
+            cAdvisorApiRequest = Net::HTTP::Get.new(uri.request_uri)
+            cAdvisorApiRequest["Authorization"] = "Bearer #{bearerToken}"
+            response = http.request(cAdvisorApiRequest)
+            @Log.info "Got response code #{response.code} from #{uri.request_uri}"
+            end
+          else
+            Net::HTTP.start(uri.host, uri.port, :use_ssl => false, :open_timeout => 20, :read_timeout => 40) do |http|
+              cAdvisorApiRequest = Net::HTTP::Get.new(uri.request_uri)
+              response = http.request(cAdvisorApiRequest)
+              @Log.info "Got response code #{response.code} from #{uri.request_uri}"
+            end
+          end
+        end
+      rescue => error
+        @Log.warn("CAdvisor api request for #{cAdvisorUri} failed: #{error}")
+        telemetryProps = {}
+        telemetryProps["Computer"] = winNode["Hostname"]
+        ApplicationInsightsUtility.sendExceptionTelemetry(error, telemetryProps)
+      end
+      return response
+    end
+
+    def isCAdvisorOnSecurePort
+        cAdvisorSecurePort = false
+        # Check to see whether omsagent needs to use 10255(insecure) port or 10250(secure) port
+        if !@cAdvisorMetricsSecurePort.nil? && @cAdvisorMetricsSecurePort == "true"
+          cAdvisorSecurePort = true
+        end
+        return cAdvisorSecurePort
     end
   end
 end

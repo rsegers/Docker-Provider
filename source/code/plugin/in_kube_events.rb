@@ -4,7 +4,6 @@
 module Fluent
   class Kube_Event_Input < Input
     Plugin.register_input("kubeevents", self)
-
     @@KubeEventsStateFile = "/var/opt/microsoft/docker-cimprov/state/KubeEventQueryState.yaml"
 
     def initialize
@@ -17,9 +16,15 @@ module Fluent
       require_relative "oms_common"
       require_relative "omslog"
       require_relative "ApplicationInsightsUtility"
-      
+
       # 30000 events account to approximately 5MB
       @EVENTS_CHUNK_SIZE = 30000
+
+      # Initializing events count for telemetry
+      @eventsCount = 0
+
+      # Initilize enable/disable normal event collection
+      @collectAllKubeEvents = false
     end
 
     config_param :run_interval, :time, :default => 60
@@ -35,6 +40,16 @@ module Fluent
         @condition = ConditionVariable.new
         @mutex = Mutex.new
         @thread = Thread.new(&method(:run_periodic))
+        collectAllKubeEventsSetting = ENV["AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS"]
+        if !collectAllKubeEventsSetting.nil? && !collectAllKubeEventsSetting.empty?
+          if collectAllKubeEventsSetting.casecmp("false") == 0
+            @collectAllKubeEvents = false
+            $log.warn("Normal kube events collection disabled for cluster")
+          else
+            @collectAllKubeEvents = true
+            $log.warn("Normal kube events collection enabled for cluster")
+          end
+        end
       end
     end
 
@@ -55,11 +70,16 @@ module Fluent
         batchTime = currentTime.utc.iso8601
         eventQueryState = getEventQueryState
         newEventQueryState = []
+        @eventsCount = 0
 
         # Initializing continuation token to nil
         continuationToken = nil
         $log.info("in_kube_events::enumerate : Getting events from Kube API @ #{Time.now.utc.iso8601}")
-        continuationToken, eventList = KubernetesApiClient.getResourcesAndContinuationToken("events?fieldSelector=type!=Normal&limit=#{@EVENTS_CHUNK_SIZE}")
+        if @collectAllKubeEvents
+          continuationToken, eventList = KubernetesApiClient.getResourcesAndContinuationToken("events?limit=#{@EVENTS_CHUNK_SIZE}")
+        else
+          continuationToken, eventList = KubernetesApiClient.getResourcesAndContinuationToken("events?fieldSelector=type!=Normal&limit=#{@EVENTS_CHUNK_SIZE}")
+        end
         $log.info("in_kube_events::enumerate : Done getting events from Kube API @ #{Time.now.utc.iso8601}")
         if (!eventList.nil? && !eventList.empty? && eventList.key?("items") && !eventList["items"].nil? && !eventList["items"].empty?)
           newEventQueryState = parse_and_emit_records(eventList, eventQueryState, newEventQueryState, batchTime)
@@ -80,6 +100,13 @@ module Fluent
         # Setting this to nil so that we dont hold memory until GC kicks in
         eventList = nil
         writeEventQueryState(newEventQueryState)
+
+        # Flush AppInsights telemetry once all the processing is done, only if the number of events flushed is greater than 0
+        if (@eventsCount > 0)
+          telemetryProperties = {}
+          telemetryProperties["CollectAllKubeEvents"] = @collectAllKubeEvents
+          ApplicationInsightsUtility.sendMetricTelemetry("EventCount", @eventsCount, {})
+        end
       rescue => errorStr
         $log.warn "in_kube_events::enumerate:Failed in enumerate: #{errorStr}"
         $log.debug_backtrace(errorStr.backtrace)
@@ -101,6 +128,14 @@ module Fluent
           if !eventQueryState.empty? && eventQueryState.include?(eventId)
             next
           end
+
+          nodeName = items["source"].key?("host") ? items["source"]["host"] : (OMS::Common.get_hostname)
+          # For ARO v3 cluster, drop the master and infra node sourced events to ingest
+          if KubernetesApiClient.isAROV3Cluster && !nodeName.nil? && !nodeName.empty? &&
+             (nodeName.downcase.start_with?("infra-") || nodeName.downcase.start_with?("master-"))
+            next
+          end
+
           record["ObjectKind"] = items["involvedObject"]["kind"]
           record["Namespace"] = items["involvedObject"]["namespace"]
           record["Name"] = items["involvedObject"]["name"]
@@ -112,11 +147,7 @@ module Fluent
           record["FirstSeen"] = items["firstTimestamp"]
           record["LastSeen"] = items["lastTimestamp"]
           record["Count"] = items["count"]
-          if items["source"].key?("host")
-            record["Computer"] = items["source"]["host"]
-          else
-            record["Computer"] = (OMS::Common.get_hostname)
-          end
+          record["Computer"] = nodeName
           record["ClusterName"] = KubernetesApiClient.getClusterName
           record["ClusterId"] = KubernetesApiClient.getClusterId
           wrapper = {
@@ -125,6 +156,7 @@ module Fluent
             "DataItems" => [record.each { |k, v| record[k] = v }],
           }
           eventStream.add(emitTime, wrapper) if wrapper
+          @eventsCount += 1
         end
         router.emit_stream(@tag, eventStream) if eventStream
       rescue => errorStr

@@ -156,7 +156,7 @@ module Fluent
             no_phase_dim_values_hash = Hash.new
             total_pod_count = 0
             pod_count_by_phase = {}
-	    podUids = {}
+	        podUids = {}
             record_count = 0
             begin
                 records = []
@@ -165,7 +165,7 @@ module Fluent
                     timestamp = record['DataItems'][0]['CollectionTime']
                     podUid = record['DataItems'][0]['PodUid']
 
-		    if podUids.key?(podUid)
+		            if podUids.key?(podUid)
                         #@log.info "pod with #{podUid} already counted"
                         next
                     end
