@@ -11,8 +11,8 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
-### 02/25/2020 -
-##### Version microsoft/oms:ciprod02252020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod02252020
+### 03/02/2020 -
+##### Version microsoft/oms:ciprod03022020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03022020
 ##### Code change log
 - Collection of GPU metrics as InsightsMetrics
 - Enable config map settings to enable collection of 'Normal' kube events
@@ -23,6 +23,7 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
 - Telemetry for kube events flushed
 - Changes to support msi for mdm if service principal doesnt exist
 - Changes for AKS telemetry to ping ods endpoint first and then network check
+- KubeEvents bug fix for KubeEvent type
 
 ##### Customer Impact
 - Providing capability for customers to collect 'Normal' kube events using config map
