@@ -103,8 +103,6 @@ module Fluent
 
         # Flush AppInsights telemetry once all the processing is done, only if the number of events flushed is greater than 0
         if (@eventsCount > 0)
-          telemetryProperties = {}
-          telemetryProperties["CollectAllKubeEvents"] = @collectAllKubeEvents
           ApplicationInsightsUtility.sendMetricTelemetry("EventCount", @eventsCount, {})
         end
       rescue => errorStr
@@ -141,7 +139,7 @@ module Fluent
           record["Name"] = items["involvedObject"]["name"]
           record["Reason"] = items["reason"]
           record["Message"] = items["message"]
-          record["Type"] = items["type"]
+          record["KubeEventType"] = items["type"]
           record["TimeGenerated"] = items["metadata"]["creationTimestamp"]
           record["SourceComponent"] = items["source"]["component"]
           record["FirstSeen"] = items["firstTimestamp"]
