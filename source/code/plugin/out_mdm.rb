@@ -204,6 +204,7 @@ module Fluent
           count = post_body.size
           while count > 0
             current_batch = post_body.first(@@record_batch_size)
+            post_body = post_body.drop(current_batch.size)
             count -= current_batch.size
             send_to_mdm current_batch
           end

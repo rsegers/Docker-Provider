@@ -11,6 +11,25 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 03/02/2020 -
+##### Version microsoft/oms:ciprod03022020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03022020
+##### Code change log
+- Collection of GPU metrics as InsightsMetrics
+- Enable config map settings to enable collection of 'Normal' kube events
+- Fix kubehealth exceptions to handle empty/nil kube api responses
+- Get resource limits for health and MDM from kubelet instead of kube api
+- Bug fix for windows node image collection where image name contains multiple slashes
+- Exclude ARO master node for data collection
+- Telemetry for kube events flushed
+- Changes to support msi for mdm if service principal doesnt exist
+- Changes for AKS telemetry to ping ods endpoint first and then network check
+- KubeEvents bug fix for KubeEvent type
+
+##### Customer Impact
+- Providing capability for customers to collect 'Normal' kube events using config map
+- Metrics for GPU are collected and ingested to customers workspace if they have GPU enabled nodes 
+- Bug fix for windows container image collection allows customers to get the right data in the ContainerInventory table for windows       containers.
+
 ### 01/07/2020 -
 ##### Version microsoft/oms:ciprod01072020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01072020
 ##### Code change log

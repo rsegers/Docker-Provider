@@ -7,6 +7,7 @@ module Fluent
 
     @@ContainerNodeInventoryTag = "oms.containerinsights.ContainerNodeInventory"
     @@MDMKubeNodeInventoryTag = "mdm.kubenodeinventory"
+    @@configMapMountPath = "/etc/config/settings/log-data-collection-settings"
     @@promConfigMountPath = "/etc/config/settings/prometheus-data-collection-settings"
     @@AzStackCloudFileName = "/etc/kubernetes/host/azurestackcloud.json"
     @@kubeperfTag = "oms.api.KubePerf"
@@ -18,6 +19,7 @@ module Fluent
     @@rsPromUrlCount = ENV["TELEMETRY_RS_PROM_URLS_LENGTH"]
     @@rsPromMonitorPods = ENV["TELEMETRY_RS_PROM_MONITOR_PODS"]
     @@rsPromMonitorPodsNamespaceLength = ENV["TELEMETRY_RS_PROM_MONITOR_PODS_NS_LENGTH"]
+    @@collectAllKubeEvents = ENV["AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS"]
 
     def initialize
       super
@@ -208,6 +210,11 @@ module Fluent
               $log.warn "Failed in getting GPU telemetry in_kube_nodes : #{errorStr}"
               $log.debug_backtrace(errorStr.backtrace)
               ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+            end
+
+            # Telemetry for data collection config for replicaset
+            if (File.file?(@@configMapMountPath))
+              properties["collectAllKubeEvents"] = @@collectAllKubeEvents
             end
 
             #telemetry about prometheus metric collections settings for replicaset
