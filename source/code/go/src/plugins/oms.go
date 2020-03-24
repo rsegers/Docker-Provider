@@ -38,6 +38,9 @@ const ResourceIdEnv = "AKS_RESOURCE_ID"
 //env variable which has ResourceName for NON-AKS
 const ResourceNameEnv = "ACS_RESOURCE_NAME"
 
+//env variable which has container run time name
+const ContainerRuntimeEnv = "CONTAINER_RUNTIME"
+
 // Origin prefix for telegraf Metrics (used as prefix for origin field & prefix for azure monitor specific tags and also for custom-metrics telemetry )
 const TelegrafMetricOriginPrefix = "container.azm.ms"
 
@@ -94,7 +97,9 @@ var (
 	//KubeMonAgentEvents skip first flush
 	skipKubeMonEventsFlush bool
 	// enrich container logs (when true this will add the fields - timeofcommand, containername & containerimage)
-	enrichContainerLogs bool
+	enrichContainerLogs bool		
+	// container runtime engine configured on the kubelet
+	containerRuntime string
 )
 
 var (
@@ -750,9 +755,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		stringMap := make(map[string]string)
 
-		stringMap["LogEntry"] = ToString(record["log"])
+		logEntry := ToString(record["log"])
+		logEntryTimeStamp := ToString(record["time"])			
+		stringMap["LogEntry"] = logEntry
 		stringMap["LogEntrySource"] = logEntrySource
-		stringMap["LogEntryTimeStamp"] = ToString(record["time"])
+		stringMap["LogEntryTimeStamp"] = logEntryTimeStamp
 		stringMap["SourceSystem"] = "Containers"
 		stringMap["Id"] = containerID
 
@@ -797,7 +804,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		if dataItem.LogEntryTimeStamp != "" {
 			loggedTime, e := time.Parse(time.RFC3339, dataItem.LogEntryTimeStamp)
 			if e != nil {
-				message := fmt.Sprintf("Error while converting LogEntryTimeStamp for telemetry purposes: %s", e.Error())
+				message := fmt.Sprintf("containerId: %s Error while converting LogEntryTimeStamp for telemetry purposes: %s", dataItem.ID, e.Error())
 				Log(message)
 				SendException(message)
 			} else {
@@ -977,6 +984,11 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("ResourceID=%s", ResourceID)
 		Log("ResourceName=%s", ResourceName)
 	}
+	
+	// log runtime info for debug purpose
+	containerRuntime = os.Getenv(ContainerRuntimeEnv)		
+	Log("Container Runtime engine %s", containerRuntime)	
+	
 
 	//set useragent to be used by ingestion 
 	docker_cimprov_version := strings.TrimSpace(os.Getenv("DOCKER_CIMPROV_VERSION"))

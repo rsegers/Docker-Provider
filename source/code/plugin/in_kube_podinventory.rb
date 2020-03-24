@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 module Fluent
-  require_relative "podinventory_to_mdm"
+  require_relative "podinventory_to_mdm"      
 
   class Kube_PodInventory_Input < Input
     Plugin.register_input("kubepodinventory", self)
@@ -19,7 +19,8 @@ module Fluent
       require "yajl"
       require "set"
       require "time"
-
+      
+      require_relative "kubernetes_container_inventory"
       require_relative "KubernetesApiClient"
       require_relative "ApplicationInsightsUtility"
       require_relative "oms_common"
@@ -137,126 +138,7 @@ module Fluent
         $log.debug_backtrace(errorStr.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
       end
-    end
-
-    def populateWindowsContainerInventoryRecord(container, record, containerEnvVariableHash, batchTime)
-      begin
-        containerInventoryRecord = {}
-        containerName = container["name"]
-        containerInventoryRecord["InstanceID"] = record["ContainerID"]
-        containerInventoryRecord["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
-        containerInventoryRecord["Computer"] = record["Computer"]
-        containerInventoryRecord["ContainerHostname"] = record["Computer"]
-        containerInventoryRecord["ElementName"] = containerName
-
-        # Find delimiters in the string of format repository/image:imagetag
-        imageValue = container["image"]
-        if !imageValue.empty?
-          slashLocation = imageValue.index("/")
-          colonLocation = imageValue.index(":")
-          if !colonLocation.nil?
-            if slashLocation.nil?
-              # image:imagetag
-              containerInventoryRecord["Image"] = imageValue[0..(colonLocation - 1)]
-            else
-              # repository/image:imagetag
-              containerInventoryRecord["Repository"] = imageValue[0..(slashLocation - 1)]
-              containerInventoryRecord["Image"] = imageValue[(slashLocation + 1)..(colonLocation - 1)]
-            end
-            containerInventoryRecord["ImageTag"] = imageValue[(colonLocation + 1)..-1]
-          end
-        end
-
-        imageIdInfo = container["imageID"]
-        imageIdSplitInfo = imageIdInfo.split("@")
-        if !imageIdSplitInfo.nil?
-          containerInventoryRecord["ImageId"] = imageIdSplitInfo[1]
-        end
-        # Get container state
-        containerStatus = container["state"]
-        if containerStatus.keys[0] == "running"
-          containerInventoryRecord["State"] = "Running"
-          containerInventoryRecord["StartedTime"] = container["state"]["running"]["startedAt"]
-        elsif containerStatus.keys[0] == "terminated"
-          containerExitCode = container["state"]["terminated"]["exitCode"]
-          containerStartTime = container["state"]["terminated"]["startedAt"]
-          containerFinishTime = container["state"]["terminated"]["finishedAt"]
-          if containerExitCode < 0
-            # Exit codes less than 0 are not supported by the engine
-            containerExitCode = 128
-          end
-          if containerExitCode > 0
-            containerInventoryRecord["State"] = "Failed"
-          else
-            containerInventoryRecord["State"] = "Stopped"
-          end
-          containerInventoryRecord["ExitCode"] = containerExitCode
-          containerInventoryRecord["StartedTime"] = containerStartTime
-          containerInventoryRecord["FinishedTime"] = containerFinishTime
-        elsif containerStatus.keys[0] == "waiting"
-          containerInventoryRecord["State"] = "Waiting"
-        end
-        if !containerEnvVariableHash.nil? && !containerEnvVariableHash.empty?
-          containerInventoryRecord["EnvironmentVar"] = containerEnvVariableHash[containerName]
-        end
-        return containerInventoryRecord
-      rescue => errorStr
-        $log.warn "Failed in populateWindowsContainerInventoryRecord: #{errorStr}"
-        $log.debug_backtrace(errorStr.backtrace)
-        ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
-      end
-    end
-
-    def getContainerEnvironmentVariables(pod, clusterCollectEnvironmentVar)
-      begin
-        podSpec = pod["spec"]
-        containerEnvHash = {}
-        podContainersEnv = []
-        if !podSpec["containers"].nil? && !podSpec["containers"].empty?
-          podContainersEnv = podContainersEnv + podSpec["containers"]
-        end
-        # Adding init containers to the record list as well.
-        if !podSpec["initContainers"].nil? && !podSpec["initContainers"].empty?
-          podContainersEnv = podContainersEnv + podSpec["initContainers"]
-        end
-        if !podContainersEnv.nil? && !podContainersEnv.empty?
-          podContainersEnv.each do |container|
-            if !clusterCollectEnvironmentVar.nil? && !clusterCollectEnvironmentVar.empty? && clusterCollectEnvironmentVar.casecmp("false") == 0
-              containerEnvHash[container["name"]] = ["AZMON_CLUSTER_COLLECT_ENV_VAR=FALSE"]
-            else
-              envVarsArray = []
-              containerEnvArray = container["env"]
-              # Parsing the environment variable array of hashes to a string value
-              # since that is format being sent by container inventory workflow in daemonset
-              # Keeping it in the same format because the workflow expects it in this format
-              # and the UX expects an array of string for environment variables
-              if !containerEnvArray.nil? && !containerEnvArray.empty?
-                containerEnvArray.each do |envVarHash|
-                  envName = envVarHash["name"]
-                  envValue = envVarHash["value"]
-                  if !envName.nil? && !envValue.nil?
-                    envArrayElement = envName + "=" + envValue
-                    envVarsArray.push(envArrayElement)
-                  end
-                end
-              end
-              # Skip environment variable processing if it contains the flag AZMON_COLLECT_ENV=FALSE
-              envValueString = envVarsArray.to_s
-              if /AZMON_COLLECT_ENV=FALSE/i.match(envValueString)
-                envValueString = ["AZMON_COLLECT_ENV=FALSE"]
-                $log.warn("Environment Variable collection for container: #{container["name"]} skipped because AZMON_COLLECT_ENV is set to false")
-              end
-              containerEnvHash[container["name"]] = envValueString
-            end
-          end
-        end
-        return containerEnvHash
-      rescue => errorStr
-        $log.warn "Failed in getContainerEnvironmentVariables: #{errorStr}"
-        $log.debug_backtrace(errorStr.backtrace)
-        ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
-      end
-    end
+    end    
 
     def parse_and_emit_records(podInventory, serviceList, continuationToken, batchTime = Time.utc.iso8601)
       currentTime = Time.now
@@ -269,8 +151,7 @@ module Fluent
         # Getting windows nodes from kubeapi
         winNodes = KubernetesApiClient.getWindowsNodesArray
 
-        podInventory["items"].each do |items| #podInventory block start
-          sendWindowsContainerInventoryRecord = false
+        podInventory["items"].each do |items| #podInventory block start          
           containerInventoryRecords = []
           records = []
           record = {}
@@ -343,11 +224,11 @@ module Fluent
           if winNodes.length > 0
             if (!record["Computer"].empty? && (winNodes.include? record["Computer"]))
               clusterCollectEnvironmentVar = ENV["AZMON_CLUSTER_COLLECT_ENV_VAR"]
-              if !clusterCollectEnvironmentVar.nil? && !clusterCollectEnvironmentVar.empty? && clusterCollectEnvironmentVar.casecmp("false") == 0
-                $log.warn("WindowsContainerInventory: Environment Variable collection disabled for cluster")
-              end
-              sendWindowsContainerInventoryRecord = true
-              containerEnvVariableHash = getContainerEnvironmentVariables(items, clusterCollectEnvironmentVar)
+              #Generate ContainerInventory records for windows nodes so that we can get image and image tag in property panel
+              containerInventoryRecordsInPodItem = KubernetesContainerInventory.getContainerInventoryRecords(items, batchTime, clusterCollectEnvironmentVar, true)  
+              containerInventoryRecordsInPodItem.each do |containerRecord|
+                containerInventoryRecords.push(containerRecord)          
+              end              
             end
           end
 
@@ -459,13 +340,7 @@ module Fluent
               end
 
               podRestartCount += containerRestartCount
-              records.push(record.dup)
-
-              #Generate ContainerInventory records for windows nodes so that we can get image and image tag in property panel
-              if sendWindowsContainerInventoryRecord == true
-                containerInventoryRecord = populateWindowsContainerInventoryRecord(container, record, containerEnvVariableHash, batchTime)
-                containerInventoryRecords.push(containerInventoryRecord)
-              end
+              records.push(record.dup)            
             end
           else # for unscheduled pods there are no status.containerStatuses, in this case we still want the pod
             records.push(record)

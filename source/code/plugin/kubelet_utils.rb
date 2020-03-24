@@ -7,7 +7,7 @@ require_relative 'CAdvisorMetricsAPIClient'
 class KubeletUtils
     class << self
         def get_node_capacity
-            
+
             cpu_capacity = 1.0
             memory_capacity = 1.0
 

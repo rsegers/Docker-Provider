@@ -6,7 +6,7 @@ class ApplicationInsightsUtility
   require_relative "omslog"
   require_relative "DockerApiClient"
   require_relative "oms_common"
-  require 'yajl/json_gem'
+  require "yajl/json_gem"
   require "base64"
 
   @@HeartBeat = "HeartBeatEvent"
@@ -20,6 +20,7 @@ class ApplicationInsightsUtility
   @@EnvApplicationInsightsKey = "APPLICATIONINSIGHTS_AUTH"
   @@EnvApplicationInsightsEndpoint = "APPLICATIONINSIGHTS_ENDPOINT"
   @@EnvControllerType = "CONTROLLER_TYPE"
+  @@EnvContainerRuntime = "CONTAINER_RUNTIME"
 
   @@CustomProperties = {}
   @@Tc = nil
@@ -73,7 +74,7 @@ class ApplicationInsightsUtility
           @@Tc = ApplicationInsights::TelemetryClient.new
         elsif !encodedAppInsightsKey.nil?
           decodedAppInsightsKey = Base64.decode64(encodedAppInsightsKey)
-          
+
           #override ai endpoint if its available otherwise use default.
           if appInsightsEndpoint && !appInsightsEndpoint.nil? && !appInsightsEndpoint.empty?
             $log.info("AppInsightsUtility: Telemetry client uses overrided endpoint url : #{appInsightsEndpoint}")
@@ -110,11 +111,17 @@ class ApplicationInsightsUtility
       end
     end
 
-    def getDockerInfo()
-      dockerInfo = DockerApiClient.dockerInfo
-      if (!dockerInfo.nil? && !dockerInfo.empty?)
-        @@CustomProperties["DockerVersion"] = dockerInfo["Version"]
-        #@@CustomProperties["DockerApiVersion"] = dockerInfo["ApiVersion"]
+    def getContainerRuntimeInfo()
+      containerRuntime = ENV[@@EnvContainerRuntime]
+      if !containerRuntime.nil? && !containerRuntime.empty?
+        # DockerVersion field holds either containerRuntime for non-docker or Dockerversion if its docker
+        @@CustomProperties["DockerVersion"] = containerRuntime
+        if containerRuntime.casecmp("docker") == 0
+          dockerInfo = DockerApiClient.dockerInfo
+          if (!dockerInfo.nil? && !dockerInfo.empty?)
+            @@CustomProperties["DockerVersion"] = dockerInfo["Version"]          
+          end
+        end
       end
     end
 
@@ -169,7 +176,7 @@ class ApplicationInsightsUtility
         if @@CustomProperties.empty? || @@CustomProperties.nil?
           initializeUtility()
         elsif @@CustomProperties["DockerVersion"].nil?
-          getDockerInfo()
+          getContainerRuntimeInfo()
         end
         telemetryProps = {}
         # add common dimensions
@@ -193,7 +200,7 @@ class ApplicationInsightsUtility
         if @@CustomProperties.empty? || @@CustomProperties.nil?
           initializeUtility()
         elsif @@CustomProperties["DockerVersion"].nil?
-          getDockerInfo()
+          getContainerRuntimeInfo()
         end
         @@CustomProperties["Computer"] = properties["Computer"]
         sendHeartBeatEvent(pluginName)
@@ -213,7 +220,7 @@ class ApplicationInsightsUtility
         if @@CustomProperties.empty? || @@CustomProperties.nil?
           initializeUtility()
         elsif @@CustomProperties["DockerVersion"].nil?
-          getDockerInfo()
+          getContainerRuntimeInfo()
         end
         telemetryProps = {}
         # add common dimensions

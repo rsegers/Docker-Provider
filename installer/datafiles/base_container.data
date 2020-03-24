@@ -45,6 +45,8 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/microsoft/omsagent/plugin/DockerApiClient.rb;												source/code/plugin/DockerApiClient.rb;				644; root; root
 /opt/microsoft/omsagent/plugin/DockerApiRestHelper.rb;											source/code/plugin/DockerApiRestHelper.rb;			644; root; root
 /opt/microsoft/omsagent/plugin/in_containerinventory.rb;										source/code/plugin/in_containerinventory.rb;		644; root; root
+/opt/microsoft/omsagent/plugin/kubernetes_container_inventory.rb;							source/code/plugin/kubernetes_container_inventory.rb;		644; root; root
+
 
 /opt/microsoft/omsagent/plugin/out_mdm.rb;                                                  source/code/plugin/out_mdm.rb; 644; root; root
 /opt/microsoft/omsagent/plugin/filter_cadvisor2mdm.rb;                                      source/code/plugin/filter_cadvisor2mdm.rb; 644; root; root
@@ -106,6 +108,7 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/td-agent-bit/bin/out_oms.so;                                intermediate/${{BUILD_CONFIGURATION}}/out_oms.so;  	755; root; root
 /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf;			    installer/conf/td-agent-bit.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/td-agent-bit-rs.conf;			    installer/conf/td-agent-bit-rs.conf;                    644; root; root
+/etc/opt/microsoft/docker-cimprov/azm-containers-parser.conf;	    installer/conf/azm-containers-parser.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/out_oms.conf;			            installer/conf/out_oms.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/telegraf.conf;			        installer/conf/telegraf.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/telegraf-rs.conf;			        installer/conf/telegraf-rs.conf;                    644; root; root
