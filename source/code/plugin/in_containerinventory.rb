@@ -83,8 +83,8 @@ module Fluent
             container = ContainerInventoryState.readContainerState(deletedContainer)
             if !container.nil?
               container.each { |k, v| container[k] = v }
-              container["State"] = "Deleted"
-              @@containerCGroupCache.delete(container["InstanceID"])
+              container["State"] = "Deleted"   
+              KubernetesContainerInventory.deleteCGroupCacheEntryForDeletedContainer(container["InstanceID"])
               containerInventory.push container
              end
            end
