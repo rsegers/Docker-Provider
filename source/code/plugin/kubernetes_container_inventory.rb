@@ -117,7 +117,7 @@ class KubernetesContainerInventory
           end
         end
       rescue => error
-        @log.warn("KubernetesContainerInventory::getContainerInventoryRecords : Get Container Inventory Records failed: #{error}")
+        $log.warn("KubernetesContainerInventory::getContainerInventoryRecords : Get Container Inventory Records failed: #{error}")
         $log.debug_backtrace(error.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(error)
       end
@@ -160,7 +160,7 @@ class KubernetesContainerInventory
           end
         end
       rescue => error
-        @log.warn("KubernetesContainerInventory::getContainersInfoMap : Get Container Info Maps failed: #{error}")
+        $log.warn("KubernetesContainerInventory::getContainersInfoMap : Get Container Info Maps failed: #{error}")
         $log.debug_backtrace(error.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(error)
       end
@@ -199,8 +199,8 @@ class KubernetesContainerInventory
               envValueString = ["AZMON_COLLECT_ENV=FALSE"]
               $log.warn("Environment Variable collection for container: #{containerId} skipped because AZMON_COLLECT_ENV is set to false")
             else
-              # Restricting the ENV string value to 200kb since the size of this string can go very high
-              envVars = File.read(environFilePath, 200000)
+              # Restricting the ENV string value to 200kb since the size of this string can go very high             
+              envVars = File.read(environFilePath, 200000)             
               if !envVars.nil? && !envVars.empty?
                 envVars = envVars.split("\0")
                 envValueString = envVars.to_s
@@ -217,10 +217,10 @@ class KubernetesContainerInventory
             end
           end
         else
-          @log.warn("KubernetesContainerInventory::obtainContainerEnvironmentVars: cGroupPid is NIL or empty for containerId: #{containerId}")  
+          $log.warn("KubernetesContainerInventory::obtainContainerEnvironmentVars: cGroupPid is NIL or empty for containerId: #{containerId}")  
         end
       rescue => error
-        @log.warn("KubernetesContainerInventory::obtainContainerEnvironmentVars: obtain Container Environment vars failed: #{error} for containerId: #{containerId}")
+        $log.warn("KubernetesContainerInventory::obtainContainerEnvironmentVars: obtain Container Environment vars failed: #{error} for containerId: #{containerId}")
         $log.debug_backtrace(error.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(error)
       end
@@ -299,7 +299,7 @@ class KubernetesContainerInventory
           end
         end
       rescue => error
-        @log.warn("KubernetesContainerInventory::obtainWindowsContainerEnvironmentVars: parsing of EnvVars failed: #{error}")
+        $log.warn("KubernetesContainerInventory::obtainWindowsContainerEnvironmentVars: parsing of EnvVars failed: #{error}")
         $log.debug_backtrace(error.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(error)
       end
@@ -312,7 +312,7 @@ class KubernetesContainerInventory
           @@containerCGroupCache.delete(containerId)
         end      
       rescue => error
-        @log.warn("KubernetesContainerInventory::deleteCGroupCacheEntryForDeletedContainer: deleting of cache entry failed: #{error}")
+        $log.warn("KubernetesContainerInventory::deleteCGroupCacheEntryForDeletedContainer: deleting of cache entry failed: #{error}")
         $log.debug_backtrace(error.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(error)
       end 
