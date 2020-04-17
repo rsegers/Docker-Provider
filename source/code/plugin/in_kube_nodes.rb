@@ -165,9 +165,13 @@ module Fluent
           record["KubeletVersion"] = nodeInfo["kubeletVersion"]
           record["KubeProxyVersion"] = nodeInfo["kubeProxyVersion"]
           containerNodeInventoryRecord["OperatingSystem"] = nodeInfo["osImage"]
-          dockerVersion = nodeInfo["containerRuntimeVersion"]
-          dockerVersion.slice! "docker://"
-          containerNodeInventoryRecord["DockerVersion"] = dockerVersion
+          containerRuntimeVersion = nodeInfo["containerRuntimeVersion"]
+          if containerRuntimeVersion.downcase.start_with?("docker://")
+            containerNodeInventoryRecord["DockerVersion"] = containerRuntimeVersion.split("//")[1]
+          else
+            # using containerRuntimeVersion as DockerVersion as is for non docker runtimes
+            containerNodeInventoryRecord["DockerVersion"] = containerRuntimeVersion
+          end
           # ContainerNodeInventory data for docker version and operating system.
           containerNodeInventoryWrapper = {
             "DataType" => "CONTAINER_NODE_INVENTORY_BLOB",
@@ -190,7 +194,12 @@ module Fluent
             properties["Computer"] = record["Computer"]
             properties["KubeletVersion"] = record["KubeletVersion"]
             properties["OperatingSystem"] = nodeInfo["operatingSystem"]
-            properties["DockerVersion"] = dockerVersion
+            # DockerVersion field holds docker version if runtime is docker/moby else <runtime>://<version>
+            if containerRuntimeVersion.downcase.start_with?("docker://")
+              properties["DockerVersion"] = containerRuntimeVersion.split("//")[1]
+            else
+              properties["DockerVersion"] = containerRuntimeVersion
+            end
             properties["KubernetesProviderID"] = record["KubernetesProviderID"]
             properties["KernelVersion"] = nodeInfo["kernelVersion"]
             properties["OSImage"] = nodeInfo["osImage"]
@@ -237,7 +246,7 @@ module Fluent
         if telemetrySent == true
           @@nodeTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
-        
+
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
           $log.info("kubeNodeInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
         end
@@ -288,7 +297,7 @@ module Fluent
             $log.warn "Failed when processing GPU metrics in_kube_nodes : #{errorStr}"
             $log.debug_backtrace(errorStr.backtrace)
             ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
-          end 
+          end
           #end GPU InsightsMetrics items
         rescue => errorStr
           $log.warn "Failed in enumerate for KubePerf from in_kube_nodes : #{errorStr}"

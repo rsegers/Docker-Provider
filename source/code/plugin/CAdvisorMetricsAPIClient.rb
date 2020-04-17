@@ -73,6 +73,11 @@ class CAdvisorMetricsAPIClient
       return getResponse(winNode, relativeUri)
     end
 
+    def getPodsFromCAdvisor(winNode: nil)
+      relativeUri = "/pods"
+      return getResponse(winNode, relativeUri)
+    end
+
     def getBaseCAdvisorUri(winNode)
         cAdvisorSecurePort = isCAdvisorOnSecurePort()
 

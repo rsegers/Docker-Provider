@@ -34,6 +34,8 @@ var (
 	TelegrafMetricsSentCount float64
 	//Tracks the number of send errors between telemetry ticker periods (uses ContainerLogTelemetryTicker)
 	TelegrafMetricsSendErrorCount float64
+    //Tracks the number of 429 (throttle) errors between telemetry ticker periods (uses ContainerLogTelemetryTicker)
+	TelegrafMetricsSend429ErrorCount float64
 )
 
 const (
@@ -49,6 +51,7 @@ const (
 	metricNameAgentLogProcessingMaxLatencyMs          = "ContainerLogsAgentSideLatencyMs"
 	metricNameNumberofTelegrafMetricsSentSuccessfully = "TelegrafMetricsSentCount"
 	metricNameNumberofSendErrorsTelegrafMetrics       = "TelegrafMetricsSendErrorCount"
+	metricNameNumberofSend429ErrorsTelegrafMetrics    = "TelegrafMetricsSend429ErrorCount"
 
 	defaultTelemetryPushIntervalSeconds = 300
 
@@ -78,8 +81,10 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		logSizeRate := FlushedRecordsSize / float64(elapsed/time.Second)
 		telegrafMetricsSentCount := TelegrafMetricsSentCount
 		telegrafMetricsSendErrorCount := TelegrafMetricsSendErrorCount
+		telegrafMetricsSend429ErrorCount := TelegrafMetricsSend429ErrorCount
 		TelegrafMetricsSentCount = 0.0
 		TelegrafMetricsSendErrorCount = 0.0
+		TelegrafMetricsSend429ErrorCount = 0.0
 		FlushedRecordsCount = 0.0
 		FlushedRecordsSize = 0.0
 		FlushedRecordsTimeTaken = 0.0
@@ -103,7 +108,12 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 			TelemetryClient.Track(logLatencyMetric)
 		}
 		TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount))
-		TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSendErrorsTelegrafMetrics, telegrafMetricsSendErrorCount))
+		if telegrafMetricsSendErrorCount > 0.0 {
+			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSendErrorsTelegrafMetrics, telegrafMetricsSendErrorCount))
+		}
+		if telegrafMetricsSend429ErrorCount > 0.0 {
+			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSend429ErrorsTelegrafMetrics, telegrafMetricsSend429ErrorCount))
+		}
 		start = time.Now()
 	}
 }

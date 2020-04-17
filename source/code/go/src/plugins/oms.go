@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/fluent/fluent-bit-go/output"
+	"github.com/google/uuid"
 
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
@@ -36,6 +37,9 @@ const ResourceIdEnv = "AKS_RESOURCE_ID"
 
 //env variable which has ResourceName for NON-AKS
 const ResourceNameEnv = "ACS_RESOURCE_NAME"
+
+//env variable which has container run time name
+const ContainerRuntimeEnv = "CONTAINER_RUNTIME"
 
 // Origin prefix for telegraf Metrics (used as prefix for origin field & prefix for azure monitor specific tags and also for custom-metrics telemetry )
 const TelegrafMetricOriginPrefix = "container.azm.ms"
@@ -93,7 +97,9 @@ var (
 	//KubeMonAgentEvents skip first flush
 	skipKubeMonEventsFlush bool
 	// enrich container logs (when true this will add the fields - timeofcommand, containername & containerimage)
-	enrichContainerLogs bool
+	enrichContainerLogs bool		
+	// container runtime engine configured on the kubelet
+	containerRuntime string
 )
 
 var (
@@ -131,6 +137,12 @@ var (
 	FLBLogger = createLogger()
 	// Log wrapper function
 	Log = FLBLogger.Printf
+)
+
+var (
+	dockerCimprovVersion = "9.0.0.0"
+	agentName = "ContainerAgent"
+	userAgent = ""
 )
 
 // DataItem represents the object corresponding to the json that is sent by fluentbit tail plugin
@@ -513,6 +525,9 @@ func flushKubeMonAgentEventRecords() {
 				} else {
 					req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(marshalled))
 					req.Header.Set("Content-Type", "application/json")
+					req.Header.Set("User-Agent", userAgent )
+					reqId := uuid.New().String()
+					req.Header.Set("X-Request-ID", reqId)
 					//expensive to do string len for every request, so use a flag
 					if ResourceCentric == true {
 						req.Header.Set("x-ms-AzureResourceId", ResourceID)
@@ -527,7 +542,7 @@ func flushKubeMonAgentEventRecords() {
 						Log("Failed to flush %d records after %s", len(laKubeMonAgentEventsRecords), elapsed)
 					} else if resp == nil || resp.StatusCode != 200 {
 						if resp != nil {
-							Log("Status %s Status Code %d", resp.Status, resp.StatusCode)
+							Log(" RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
 						}
 						Log("Failed to flush %d records after %s", len(laKubeMonAgentEventsRecords), elapsed)
 					} else {
@@ -656,6 +671,9 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 
 	//set headers
 	req.Header.Set("x-ms-date", time.Now().Format(time.RFC3339))
+	req.Header.Set("User-Agent", userAgent )
+	reqId := uuid.New().String()
+	req.Header.Set("X-Request-ID", reqId)
 
 	//expensive to do string len for every request, so use a flag
 	if ResourceCentric == true {
@@ -669,31 +687,34 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 	if err != nil {
 		message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:(retriable) when sending %v metrics. duration:%v err:%q \n", len(laMetrics), elapsed, err.Error())
 		Log(message)
-		UpdateNumTelegrafMetricsSentTelemetry(0, 1)
+		UpdateNumTelegrafMetricsSentTelemetry(0, 1, 0)
 		return output.FLB_RETRY
 	}
 
 	if resp == nil || resp.StatusCode != 200 {
 		if resp != nil {
-			Log("PostTelegrafMetricsToLA::Error:(retriable) Response Status %v Status Code %v", resp.Status, resp.StatusCode)
+			Log("PostTelegrafMetricsToLA::Error:(retriable) RequestID %s Response Status %v Status Code %v", reqId, resp.Status, resp.StatusCode)
 		}
-		UpdateNumTelegrafMetricsSentTelemetry(0, 1)
+		if resp != nil && resp.StatusCode == 429 {
+			UpdateNumTelegrafMetricsSentTelemetry(0, 1, 1)
+		}
 		return output.FLB_RETRY
 	}
 
 	defer resp.Body.Close()
 
 	numMetrics := len(laMetrics)
-	UpdateNumTelegrafMetricsSentTelemetry(numMetrics, 0)
+	UpdateNumTelegrafMetricsSentTelemetry(numMetrics, 0, 0)
 	Log("PostTelegrafMetricsToLA::Info:Successfully flushed %v records in %v", numMetrics, elapsed)
 
 	return output.FLB_OK
 }
 
-func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int) {
+func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int, numSend429Errors int) {
 	ContainerLogTelemetryMutex.Lock()
 	TelegrafMetricsSentCount += float64(numMetricsSent)
 	TelegrafMetricsSendErrorCount += float64(numSendErrors)
+	TelegrafMetricsSend429ErrorCount += float64(numSend429Errors)
 	ContainerLogTelemetryMutex.Unlock()
 }
 
@@ -734,9 +755,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		stringMap := make(map[string]string)
 
-		stringMap["LogEntry"] = ToString(record["log"])
+		logEntry := ToString(record["log"])
+		logEntryTimeStamp := ToString(record["time"])			
+		stringMap["LogEntry"] = logEntry
 		stringMap["LogEntrySource"] = logEntrySource
-		stringMap["LogEntryTimeStamp"] = ToString(record["time"])
+		stringMap["LogEntryTimeStamp"] = logEntryTimeStamp
 		stringMap["SourceSystem"] = "Containers"
 		stringMap["Id"] = containerID
 
@@ -781,7 +804,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		if dataItem.LogEntryTimeStamp != "" {
 			loggedTime, e := time.Parse(time.RFC3339, dataItem.LogEntryTimeStamp)
 			if e != nil {
-				message := fmt.Sprintf("Error while converting LogEntryTimeStamp for telemetry purposes: %s", e.Error())
+				message := fmt.Sprintf("containerId: %s Error while converting LogEntryTimeStamp for telemetry purposes: %s", dataItem.ID, e.Error())
 				Log(message)
 				SendException(message)
 			} else {
@@ -810,6 +833,9 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(marshalled))
 		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("User-Agent", userAgent )
+		reqId := uuid.New().String()
+		req.Header.Set("X-Request-ID", reqId)
 		//expensive to do string len for every request, so use a flag
 		if ResourceCentric == true {
 			req.Header.Set("x-ms-AzureResourceId", ResourceID)
@@ -830,7 +856,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		if resp == nil || resp.StatusCode != 200 {
 			if resp != nil {
-				Log("Status %s Status Code %d", resp.Status, resp.StatusCode)
+				Log("RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
 			}
 			return output.FLB_RETRY
 		}
@@ -958,6 +984,21 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("ResourceID=%s", ResourceID)
 		Log("ResourceName=%s", ResourceName)
 	}
+	
+	// log runtime info for debug purpose
+	containerRuntime = os.Getenv(ContainerRuntimeEnv)		
+	Log("Container Runtime engine %s", containerRuntime)	
+	
+
+	//set useragent to be used by ingestion 
+	docker_cimprov_version := strings.TrimSpace(os.Getenv("DOCKER_CIMPROV_VERSION"))
+	if len(docker_cimprov_version) > 0 {
+		dockerCimprovVersion = docker_cimprov_version
+	}
+
+	userAgent = fmt.Sprintf("%s/%s", agentName, dockerCimprovVersion)
+
+	Log("Usage-Agent = %s \n", userAgent)
 
 	// Initialize image,name map refresh ticker
 	containerInventoryRefreshInterval, err := strconv.Atoi(pluginConfig["container_inventory_refresh_interval"])
