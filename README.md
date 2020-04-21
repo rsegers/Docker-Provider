@@ -11,6 +11,20 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 04/16/2020 -
+> Note: This agent release targetted for non-AKS clusters via Azure Monitor for containers HELM chart update
+##### Version microsoft/oms:ciprod04162020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod04162020
+##### Code change log
+- Add support for rate limiting 
+- Add support for Container Runtime Interface compatible container runtime(s) like CRI-O and ContainerD
+     - cAdvisor APIs are used to collect the container inventory for Docker/Moby and CRI runtime K8s environments
+     - Based on the container runtime, corresponding container log FluentBit parser(docker/cri) selected
+
+##### Customer Impact
+- Ingestion will throttle the workspaces if the agent on the cluster sending the beyond Log Analytics Workspace throttling  limits i.e. 500 MB/s
+- On Docker runtime environments, Inventory of the containers obtained  earlier via Docker REST API. 
+  Agent now uses the cAdvisor APIs to get the inventory of the containers for Docker and non-Docker container runtime environments.
+
 ### 03/02/2020 -
 ##### Version microsoft/oms:ciprod03022020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03022020
 ##### Code change log
