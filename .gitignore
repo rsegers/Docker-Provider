@@ -5,9 +5,14 @@
 /build/config.mak
 
 # Unit test files
-
-/test/code/providers/TestScriptPath.h
-/test/code/providers/providertestutils.cpp
-source/code/go/src/plugins/profiling
+source/plugins/go/src/profiling
 .vscode/launch.json
-source/code/go/src/plugins/vendor/
+source/plugins/go/src/vendor/
+# go shared object files
+*.so
+*.zip
+# .net code build artificats
+build/windows/installer/certificategenerator/bin
+build/windows/installer/certificategenerator/obj
+# files under omsagentwindows dir since this temp directory to build the docker image
+kubernetes/windows/omsagentwindows
