@@ -105,7 +105,7 @@ Compress-Archive -Path  $certreleasebinpath -DestinationPath $certreleasepublish
 Write-Host("Successfully copied compressed certificate generator release binaries") -ForegroundColor Green
 
 # build  the shared object (.so) for out oms go plugin code
-$outomsgoplugindir = Join-Path -Path $rootdir -ChildPath "source\code\go\src\plugins"
+$outomsgoplugindir = Join-Path -Path $rootdir -ChildPath "source\plugins\go\src"
 Write-Host("Building Out_OMS go plugin code...")
 if ($false -eq (Test-Path -Path $outomsgoplugindir)) {
     Write-Host("Invalid Out oms go plugin code dir : " + $outomsgoplugindir + " ") -ForegroundColor Red

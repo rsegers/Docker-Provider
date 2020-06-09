@@ -120,6 +120,13 @@ bash ~/Docker-Provider/scripts/build/install-build-pre-requisites.sh
    export PATH=$PATH:/usr/local/go/bin
    export GOBIN=/usr/local/go/bin
    ```
+3. If you want to use Docker on the WSL/2, verify following configuration settings configured
+   ```
+   echo $DOCKER_HOST
+   # if either DOCKER_HOST not set already or doesnt have tcp://localhost:2375 value, set DOCKER_HOST value via this command
+   echo "export DOCKER_HOST=tcp://localhost:2375" >> ~/.bashrc && source ~/.bashrc
+   # on Docker Desktop for Windows make sure docker running linux mode and enabled Expose daemon on tcp://localhost:2375 without TLS
+   ```
 
 ### Build Docker Provider Shell Bundle
 
@@ -179,7 +186,7 @@ If build successful, you should see docker-cimprov-x.x.x-x.universal.x86_64.sh u
  cd ~/Docker-Provider/kubernetes/linux/
  ```
 4. Update AGENT_VERSION environment variable with your imagetag in ~/Docker-Provider/kubernetes/linux/Dockerfile
- > Note: format of the imagetag will be ci<release>MMDDYYYY. possible values for release are test, preview, dogfood, prod etc.
+ > Note: format of the imagetag will be ci<release>MMDDYYYY. possible values for release are test, dev, preview, dogfood, prod etc.
 5. Build the Docker image via below command
 ```
    docker build -t  <repo>/<imagename>:<imagetag> .
@@ -221,13 +228,16 @@ powershell -executionpolicy bypass -File .\Makefile.ps1 # trigger build and publ
 ```
 ### Build Docker Image
 
-1.  Navigate to below directory to build the docker image
+1. Update AGENT_VERSION environment variable with your intended imagetag in  %userprofile%\Docker-Provider\kubernetes\windows\Dockerfile
+ > Note: format of the imagetag will be win-ci<release>MMDDYYYY. possible values for release are test, dev, preview, dogfood, prod etc.
+
+2.  Navigate to below directory to build the docker image
 ```
   cd %userprofile%\Docker-Provider\kubernetes\windows # based on your repo path
   docker build -t  <repo>/<imagename>:win-<imagetag> .
 
 ```
-2. Push the Docker image to docker repo. For testing, you will be pushing to Docker hub
+3. Push the Docker image to docker repo. For testing, you will be pushing to Docker hub
 ```
   cd %userprofile%\Docker-Provider\kubernetes\windows # based on your repo path
   docker push  <repo>/<imagename>:<imagetag>
