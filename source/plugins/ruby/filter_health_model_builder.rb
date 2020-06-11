@@ -9,6 +9,7 @@ module Fluent
 
 
     class FilterHealthModelBuilder < Filter
+        include HealthModel
         Fluent::Plugin.register_filter('filter_health_model_builder', self)
 
         config_param :enable_log, :integer, :default => 0
@@ -17,12 +18,13 @@ module Fluent
         config_param :health_monitor_config_path, :default => '/etc/opt/microsoft/docker-cimprov/health/healthmonitorconfig.json'
         config_param :health_state_serialized_path, :default => '/mnt/azure/health_model_state.json'
         attr_reader :buffer, :model_builder, :health_model_definition, :monitor_factory, :state_finalizers, :monitor_set, :model_builder, :hierarchy_builder, :resources, :kube_api_down_handler, :provider, :reducer, :state, :generator, :telemetry
-        include HealthModel
+
 
         @@rewrite_tag = 'kubehealth.Signals'
         @@cluster_id = KubernetesApiClient.getClusterId
         @@token_file_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
         @@cert_file_path = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+        @@cluster_health_model_enabled = HealthMonitorUtils.is_cluster_health_model_enabled
 
         def initialize
             begin
@@ -47,8 +49,10 @@ module Fluent
                 @telemetry = HealthMonitorTelemetry.new
                 @state = HealthMonitorState.new
                 # move network calls to the end. This will ensure all the instance variables get initialized
-                deserialized_state_info = @cluster_health_state.get_state
-                @state.initialize_state(deserialized_state_info)
+                if @@cluster_health_model_enabled
+                    deserialized_state_info = @cluster_health_state.get_state
+                    @state.initialize_state(deserialized_state_info)
+                end
             rescue => e
                 ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "Health"})
             end
@@ -76,6 +80,10 @@ module Fluent
         end
 
         def filter_stream(tag, es)
+            if !@@cluster_health_model_enabled
+                @log.info "Cluster Health Model disabled in filter_health_model_builder"
+                return MultiEventStream.new
+            end
             begin
                 new_es = MultiEventStream.new
                 time = Time.now

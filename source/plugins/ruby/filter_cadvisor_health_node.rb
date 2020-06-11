@@ -30,6 +30,7 @@ module Fluent
         @@clusterName = KubernetesApiClient.getClusterName
         @@clusterId = KubernetesApiClient.getClusterId
         @@clusterRegion = KubernetesApiClient.getClusterRegion
+        @@cluster_health_model_enabled = HealthMonitorUtils.is_cluster_health_model_enabled
 
         def initialize
             begin
@@ -72,6 +73,10 @@ module Fluent
         end
 
         def filter_stream(tag, es)
+            if !@@cluster_health_model_enabled
+                @log.info "Cluster Health Model disabled in filter_cadvisor_health_node"
+                return MultiEventStream.new
+            end
             begin
                 node_capacity = HealthMonitorUtils.ensure_cpu_memory_capacity_set(@@hm_log, @cpu_capacity, @memory_capacity, @@hostName)
                 @cpu_capacity = node_capacity[0]

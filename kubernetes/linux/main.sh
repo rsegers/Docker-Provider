@@ -159,6 +159,16 @@ cat config_env_var | while read line; do
 done
 source config_env_var
 
+
+#Parse the configmap to set the right environment variables.
+/opt/microsoft/omsagent/ruby/bin/ruby tomlparser-health-config.rb
+
+cat health_config_env_var | while read line; do
+    #echo $line
+    echo $line >> ~/.bashrc
+done
+source health_config_env_var
+
 #Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ]; then
       /opt/microsoft/omsagent/ruby/bin/ruby td-agent-bit-conf-customizer.rb

@@ -20,6 +20,7 @@ module Fluent
         @@object_name_k8s_container = 'K8SContainer'
         @@counter_name_cpu = 'cpuusagenanocores'
         @@counter_name_memory_rss = 'memoryrssbytes'
+        @@cluster_health_model_enabled = HealthMonitorUtils.is_cluster_health_model_enabled
 
         def initialize
             begin
@@ -55,6 +56,10 @@ module Fluent
         end
 
         def filter_stream(tag, es)
+            if !@@cluster_health_model_enabled
+                @log.info "Cluster Health Model disabled in filter_cadvisor_health_container"
+                return MultiEventStream.new
+            end
             new_es = MultiEventStream.new
             records_count = 0
             es.each { |time, record|
