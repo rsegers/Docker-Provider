@@ -4,7 +4,17 @@
 BASE_DIR := $(subst /build/linux,,$(PWD))
 
 PF_POSIX := 1
-include $(BASE_DIR)/build/linux/config.mak
+
+# parameters required for the build
+ENABLE_DEBUG=0
+BUILD_TYPE=Release
+PF=Linux
+PF_MAJOR=1
+PF_MINOR=0
+PF_ARCH=x64
+PF_WIDTH=64
+PF_DISTRO=ULINUX
+BUILD_CONFIGURATION=Linux_ULINUX_1.0_x64_64_Release
 
 # RM - Remove a file
 # RMDIR - Remove a directory
@@ -54,7 +64,7 @@ endif
 include $(BASE_DIR)/build/version
 
 ifndef CONTAINER_BUILDVERSION_STATUS
-$(error "Is version missing?  Please re-run configure")
+$(error "version file is missing")
 endif
 
 
@@ -79,14 +89,10 @@ endif
 
 STAGING_DIR := $(INTERMEDIATE_DIR)/staging
 
-ifeq ($(ULINUX),1)
-  # For consistency, the architecture should be i686 (for x86) and x86_64 (for x64)
-  DOCKER_ARCH := $(shell echo $(PF_ARCH) | sed -e 's/x86$$/i686/' -e 's/x64$$/x86_64/')
-  OUTPUT_PACKAGE_PREFIX=docker-cimprov-$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH)-$(CONTAINER_BUILDVERSION_BUILDNR).universal.$(DOCKER_ARCH)
-else
-  PF_DISTRO_LC := $(shell echo $(PF_DISTRO) | tr A-Z a-z)
-  OUTPUT_PACKAGE_PREFIX=docker-cimprov-$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH)-$(CONTAINER_BUILDVERSION_BUILDNR).$(PF_DISTRO_LC).$(PF_MAJOR).$(PF_ARCH)
-endif
+# For consistency, the architecture should be i686 (for x86) and x86_64 (for x64)
+DOCKER_ARCH := $(shell echo $(PF_ARCH) | sed -e 's/x86$$/i686/' -e 's/x64$$/x86_64/')
+OUTPUT_PACKAGE_PREFIX=docker-cimprov-$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH)-$(CONTAINER_BUILDVERSION_BUILDNR).universal.$(DOCKER_ARCH)
+
 
 ifeq ("$(wildcard /usr/bin/dpkg-deb)","")
 	DPKG_LOCATION="--DPKG_LOCATION=$(BASE_DIR)/build/linux/installer/InstallBuilder/tools/bin/dpkg-deb-$(PF_ARCH)"
@@ -96,12 +102,7 @@ endif
 
 #--------------------------------------------------------------------------------
 # Build targets
-
-ifeq ($(ULINUX),1)
 all : PROVIDER_STATUS KIT_STATUS kit fluentbitplugin rubypluginstests
-else
-all : PROVIDER_STATUS fluentbitplugin rubypluginstests
-endif
 
 clean :
 	$(RMDIR) $(BASE_DIR)/build/cppunit_result.* $(BASE_DIR)/installer/intermediate $(BASE_DIR)/intermediate $(BASE_DIR)/target
@@ -146,7 +147,6 @@ rubypluginstests :
 kit : CONTAINERLIB_FILENAME = libcontainer.so
 kit : fluentbitplugin
 
-ifeq ($(ULINUX),1)
 
 	@echo "========================= Performing Building RPM and DPKG packages"
 	$(MKPATH) $(INSTALLER_TMPDIR)
@@ -201,29 +201,3 @@ ifeq ($(ULINUX),1)
 	# Copy the shell bundle to the target directory
 	$(MKPATH) $(TARGET_DIR)
 	cd $(INTERMEDIATE_DIR); $(COPY) `cat $(INTERMEDIATE_DIR)/package_filename`.sh $(TARGET_DIR)
-
-else
-
-	@echo "========================= Performing Building RPM and DPKG packages"
-	sudo $(RMDIR) $(STAGING_DIR)
-	$(MKPATH) $(INTERMEDIATE_DIR)
-	python $(BASE_DIR)/build/linux/installer/InstallBuilder/installbuilder.py \
-		--BASE_DIR=$(BASE_DIR) \
-		--TARGET_DIR=$(INTERMEDIATE_DIR) \
-		--INTERMEDIATE_DIR=$(INSTALLER_TMPDIR) \
-		--STAGING_DIR=$(STAGING_DIR) \
-		--BUILD_TYPE=$(BUILD_TYPE) \
-		--BUILD_CONFIGURATION=$(BUILD_CONFIGURATION) \
-		--PFARCH=$(PF_ARCH) \
-		--PFDISTRO=$(PF_DISTRO) \
-		--PFMAJOR=$(PF_MAJOR) \
-		--PFMINOR=$(PF_MINOR) \
-		--VERSION=$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH) \
-		--RELEASE=$(CONTAINER_BUILDVERSION_BUILDNR) \
-		--CONTAINER_BUILD_LIBRARY=$(CONTAINERLIB_FILENAME) \
-		$(DPKG_LOCATION) \
-		--OUTPUTFILE=$(OUTPUT_PACKAGE_PREFIX) \
-		--DATAFILE_PATH=$(BASE_DIR)/build/linux/installer/datafiles \
-		base_container.data linux.data linux_dpkg.data
-
-endif

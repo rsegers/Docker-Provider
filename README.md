@@ -14,7 +14,8 @@ Feel free to contact engineering team owners in case you have any questions abou
 3. [Azure CLI](https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest) for Azure related operations
 
 ## Linux
-4. Ubuntu 14.04 or higher to build Linux Agent. you can also use [WSL](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+4. Ubuntu 14.04 or higher to build Linux Agent. you can also use [WSL2](https://docs.microsoft.com/en-us/windows/wsl/install-win10).
+  > Note: If you are using WSL2, make sure you have cloned the code into ubuntu not on to windows
 5. [Docker](https://docs.docker.com/engine/install/ubuntu/) to build the docker image for Linux Agent
 
 ## Windows
@@ -130,16 +131,9 @@ bash ~/Docker-Provider/scripts/build/install-build-pre-requisites.sh
 
 ### Build Docker Provider Shell Bundle
 
-1. Set GOPATH Environment variable and get the go dependencies
-```
-export GOPATH=~/Docker-Provider/source/plugins/go #Set this based on your repo path
-cd ~/Docker-Provider/source/plugins/go/src
-go get
-```
-2. Build the code  with below commands
+1. Build the code  with below commands
 ```
 cd ~/Docker-Provider/build/linux
-bash ./configure --enable-ulinux
 make
 ```
 If build successful, you should see docker-cimprov-x.x.x-x.universal.x86_64.sh under ~/Docker-Provider/target/Linux_ULINUX_1.0_x64_64_Release/

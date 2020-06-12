@@ -7,6 +7,9 @@ fbplugin:
 	BUILDDATE=$(CONTAINER_BUILDVERSION_DATE)
 	@echo $(BUILDVERSION)
 	@echo $(BUILD_DATE)
+	@echo "========================= go get  ========================="
+	go get
+	@echo "========================= go build  ========================="
 	go build -ldflags "-X 'main.revision=$(BUILDVERSION)' -X 'main.builddate=$(BUILDDATE)'" -buildmode=c-shared -o out_oms.so .
 
 test:
