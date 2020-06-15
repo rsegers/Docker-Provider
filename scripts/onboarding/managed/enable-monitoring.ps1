@@ -9,7 +9,7 @@
 
     .PARAMETER clusterResourceId
         Id of the Azure Managed Cluster such as Azure ARC K8s, ARO v4 etc.
-    .PARAMETER kubeContext
+    .PARAMETER kubeContext (optional)
         kube-context of the k8 cluster to install Azure Monitor for containers HELM chart
     .PARAMETER workspaceResourceId (optional)
         Provide the azure resource id of the existing  Azure Log Analytics Workspace if you want to use existing one
@@ -27,12 +27,13 @@
       -  Helm v3.0.0 or higher  https://github.com/helm/helm/releases
       -  kube-context of the K8s cluster
  Note: 1. Please make sure you have all the pre-requisistes before running this script.
-
+# download script
+# curl -o enable-monitoring.ps1 -L https://aka.ms/enable-monitoring-powershell-script
 #>
 param(
     [Parameter(mandatory = $true)]
     [string]$clusterResourceId,
-    [Parameter(mandatory = $true)]
+    [Parameter(mandatory = $false)]
     [string]$kubeContext,
     [Parameter(mandatory = $false)]
     [string]$workspaceResourceId,
@@ -44,8 +45,7 @@ param(
     [string]$helmRepoUrl
 )
 
-# this needs to be updated once code moved to ci_dev or ci_prod branch completly
-$solutionTemplateUri= "https://raw.githubusercontent.com/Microsoft/OMS-docker/ci_feature/docs/templates/azuremonitor-containerSolution.json"
+$solutionTemplateUri= "https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_dev/scripts/onboarding/templates/azuremonitor-containerSolution.json"
 $helmChartReleaseName = "azmon-containers-release-1"
 $helmChartName = "azuremonitor-containers"
 $helmChartRepoName = "incubator"
@@ -192,8 +192,7 @@ if ([string]::IsNullOrEmpty($clusterResourceId)) {
 }
 
 if ([string]::IsNullOrEmpty($kubeContext)) {
-    Write-Host("Specified kube config context should not be NULL or empty") -ForegroundColor Red
-    exit
+    Write-Host("Since kubeContext parameter not passed in so using current kube config context") -ForegroundColor Yellow
 }
 
 
@@ -414,7 +413,7 @@ else {
     }
 
     if (($workspaceResourceId.ToLower().Contains("microsoft.operationalinsights/workspaces") -ne $true) -or ($workspaceResourceId.Split("/").Length -ne 9)) {
-        Write-Host("Provided cluster resource id should be in this format /subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName>") -ForegroundColor Red
+        Write-Host("Provided workspace resource id should be in this format /subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName>") -ForegroundColor Red
         exit
     }
 
@@ -504,7 +503,12 @@ try {
         Write-Host("using proxy endpoint since its provided")
         $helmParameters = $helmParameters + ",omsagent.proxy=$proxyEndpoint"
     }
-    helm upgrade --install $helmChartReleaseName --set $helmParameters $helmChartRepoName/$helmChartName --kube-context $kubeContext
+    if ([string]::IsNullOrEmpty($kubeContext)) {
+        helm upgrade --install $helmChartReleaseName --set $helmParameters $helmChartRepoName/$helmChartName
+    } else {
+      Write-Host("using provided kube-context: $kubeContext")
+      helm upgrade --install $helmChartReleaseName --set $helmParameters $helmChartRepoName/$helmChartName --kube-context $kubeContext
+    }
 }
 catch {
     Write-Host ("Failed to Install Azure Monitor for containers HELM chart : '" + $Error[0] + "' ") -ForegroundColor Red

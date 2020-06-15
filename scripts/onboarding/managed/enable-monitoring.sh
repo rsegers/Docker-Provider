@@ -11,23 +11,27 @@
 # Prerequisites :
 #     Azure CLI:  https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
 #     Helm3 : https://helm.sh/docs/intro/install/
-#
-#
+#     OC: https://docs.microsoft.com/en-us/azure/openshift/tutorial-connect-cluster#install-the-openshift-cli # Applicable for only ARO v4
 # Note > 1. Format of the proxy endpoint should be http(s)://<user>:<pwd>@proxyhost:proxyport
 #        2. cluster and workspace resource should be in valid azure resoure id format
 
-# 1. Using Default Azure Log Analytics and no-proxy
-# bash <script> --resource-id <clusterResourceId> --kube-context <kube-context>
+# download script
+# curl -o enable-monitoring.sh -L https://aka.ms/enable-monitoring-bash-script
+# 1. Using Default Azure Log Analytics and no-proxy with current kube config context
+# bash enable-monitoring.sh --resource-id <clusterResourceId>
 
-# 2. Using Default Azure Log Analytics and with proxy endpoint configuration
-# bash <script> --resource-id <clusterResourceId> --kube-context <kube-context> --proxy <proxy-endpoint>
+# 2. Using Default Azure Log Analytics and no-proxy
+# bash enable-monitoring.sh  --resource-id <clusterResourceId> --kube-context <kube-context>
+
+# 3. Using Default Azure Log Analytics and with proxy endpoint configuration
+# bash enable-monitoring.sh  --resource-id <clusterResourceId> --kube-context <kube-context> --proxy <proxy-endpoint>
 
 
-# 3. Using Existing Azure Log Analytics and no-proxy
-# bash <script> --resource-id <clusterResourceId> --kube-context <kube-context> --workspace-id <workspace-resource-id>
+# 4. Using Existing Azure Log Analytics and no-proxy
+# bash enable-monitoring.sh  --resource-id <clusterResourceId> --kube-context <kube-context> --workspace-id <workspace-resource-id>
 
-# 4. Using Existing Azure Log Analytics and proxy
-# bash <script> --resource-id <clusterResourceId> --kube-context <kube-context> --workspace-id <workspace-resource-id> --proxy <proxy-endpoint>
+# 5. Using Existing Azure Log Analytics and proxy
+# bash enable-monitoring.sh  --resource-id <clusterResourceId> --kube-context <kube-context> --workspace-id <workspace-resource-id> --proxy <proxy-endpoint>
 
 set -e
 set -o pipefail
@@ -59,6 +63,11 @@ resourceProvider="Microsoft.Kubernetes/connectedClusters"
 # resource type for azure log analytics workspace
 workspaceResourceProvider="Microsoft.OperationalInsights/workspaces"
 
+# openshift project name for aro v4 cluster
+openshiftProjectName="azure-monitor-for-containers"
+# arc k8s cluster resource
+isAroV4Cluster=false
+
 # arc k8s cluster resource
 isArcK8sCluster=false
 
@@ -68,8 +77,7 @@ isAksCluster=false
 # workspace and cluster is same azure subscription
 isClusterAndWorkspaceInSameSubscription=true
 
-# this needs to be updated once code moved to ci_dev or ci_prod branch completly
-solutionTemplateUri="https://raw.githubusercontent.com/microsoft/OMS-docker/ci_feature/docs/templates/azuremonitor-containerSolution.json"
+solutionTemplateUri="https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_dev/scripts/onboarding/templates/azuremonitor-containerSolution.json"
 
 # default global params
 clusterResourceId=""
@@ -92,13 +100,13 @@ usage()
     local basename=`basename $0`
     echo
     echo "Enable Azure Monitor for containers:"
-    echo "$basename --resource-id <cluster resource id> --kube-context <name of the kube context > [--workspace-id <resource id of existing workspace>] [--proxy <proxy endpoint>]"
+    echo "$basename --resource-id <cluster resource id> [--kube-context <name of the kube context >] [--workspace-id <resource id of existing workspace>] [--proxy <proxy endpoint>]"
 }
 
 parse_args()
 {
 
- if [ $# -le 2 ]
+ if [ $# -le 1 ]
   then
     usage
     exit 1
@@ -208,6 +216,7 @@ while getopts 'hk:r:w:p:n:u:' opt; do
  elif [ $providerName = "microsoft.redhatopenshift/openshiftclusters" ]; then
     echo "provider cluster resource is of AROv4 cluster type"
     resourceProvider=$aroV4ResourceProvider
+    isAroV4Cluster=true
  elif [ $providerName = "microsoft.containerservice/managedclusters" ]; then
     echo "provider cluster resource is of AKS cluster type"
     isAksCluster=true
@@ -218,8 +227,7 @@ while getopts 'hk:r:w:p:n:u:' opt; do
  fi
 
  if [ -z "$kubeconfigContext" ]; then
-    echo "-e kubeconfig context is empty. Please try with valid kube-context of the cluster"
-    exit 1
+    echo "using or getting current kube config context since --kube-context parameter not set "
  fi
 
 if [ ! -z "$workspaceResourceId" ]; then
@@ -435,7 +443,26 @@ get_workspace_guid_and_key()
 install_helm_chart()
 {
 
- echo "installing Azure Monitor for containers HELM chart on to the cluster with kubecontext:${kubeconfigContext} ..."
+ # get the config-context for ARO v4 cluster
+ if [ "$isAroV4Cluster" = true ] ; then
+    echo "getting config-context of ARO v4 cluster "
+    echo "getting admin user creds for aro v4 cluster"
+    adminUserName=$(az aro list-credentials -g $clusterResourceGroup -n $clusterName --query 'kubeadminUsername' -o tsv)
+    adminPassword=$(az aro list-credentials -g $clusterResourceGroup -n $clusterName --query 'kubeadminPassword' -o tsv)
+    apiServer=$(az aro show -g $clusterResourceGroup -n $clusterName --query apiserverProfile.url -o tsv)
+    echo "login to the cluster via oc login"
+    oc login $apiServer -u $adminUserName -p $adminPassword
+    echo "creating project azure-monitor-for-containers"
+    oc new-project $openshiftProjectName
+    echo "getting config-context of aro v4 cluster"
+    kubeconfigContext=$(oc config current-context)
+ fi
+
+ if [ -z "$kubeconfigContext" ]; then
+     echo "installing Azure Monitor for containers HELM chart on to the cluster and using current kube context ..."
+ else
+  echo "installing Azure Monitor for containers HELM chart on to the cluster with kubecontext:${kubeconfigContext} ..."
+ fi
 
  echo "adding helm repo:" $helmRepoName
  helm repo add $helmRepoName $helmRepoUrl
@@ -445,9 +472,21 @@ install_helm_chart()
 
  if [ ! -z "$proxyEndpoint" ]; then
    echo "using proxy endpoint since proxy configuration passed in"
-   helm upgrade --install azmon-containers-release-1 --set omsagent.proxy=$proxyEndpoint,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId $helmRepoName/$helmChartName --kube-context ${kubeconfigContext}
+   if [ -z "$kubeconfigContext" ]; then
+     echo "using current kube-context since --kube-context/-k parameter not passed in"
+     helm upgrade --install azmon-containers-release-1 --set omsagent.proxy=$proxyEndpoint,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId $helmRepoName/$helmChartName
+   else
+     echo "using --kube-context:${kubeconfigContext} since passed in"
+     helm upgrade --install azmon-containers-release-1 --set omsagent.proxy=$proxyEndpoint,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId $helmRepoName/$helmChartName --kube-context ${kubeconfigContext}
+   fi
  else
-   helm upgrade --install azmon-containers-release-1 --set omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId $helmRepoName/$helmChartName --kube-context ${kubeconfigContext}
+   if [ -z "$kubeconfigContext" ]; then
+     echo "using current kube-context since --kube-context/-k parameter not passed in"
+     helm upgrade --install azmon-containers-release-1 --set omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId $helmRepoName/$helmChartName
+   else
+     echo "using --kube-context:${kubeconfigContext} since passed in"
+     helm upgrade --install azmon-containers-release-1 --set omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId $helmRepoName/$helmChartName --kube-context ${kubeconfigContext}
+   fi
  fi
 
  echo "chart installation completed."

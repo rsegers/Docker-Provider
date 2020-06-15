@@ -14,11 +14,10 @@ install_go_lang()
   echo "set file permission for go bin"
   sudo chmod 777 /usr/local/go/bin
   echo "setting PATH and GOBIN environment variables"
-  # add quotes path variables since whitespaces are allowed in windows paths
-  export PATH="$PATH:/usr/local/go/bin"
+  export PATH='$PATH:/usr/local/go/bin'
   export GOBIN=/usr/local/go/bin
-  echo "export PATH="$PATH:/usr/local/go/bin"" >> ~/.bashrc
-  echo "export GOBIN=/usr/local/go/bin" >> ~/.bashrc
+  echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
+  echo 'export GOBIN=/usr/local/go/bin' >> ~/.bashrc
   source ~/.bashrc
   echo "installation of go 1.14.1 and setting of PATH and GOBIN environment variables completed."
 }

@@ -7,7 +7,7 @@
 
     .PARAMETER clusterResourceId
         Id of the Azure Managed Cluster such as Azure ARC K8s, ARO v4 etc.
-    .PARAMETER kubeContext
+    .PARAMETER kubeContext (optional)
         kube-context of the k8 cluster to install Azure Monitor for containers HELM chart
 
     Pre-requisites:
@@ -16,12 +16,13 @@
       -  Helm v3.0.0 or higher  https://github.com/helm/helm/releases
       -  kube-context of the K8s cluster
  Note: 1. Please make sure you have all the pre-requisistes before running this script.
-
+# download script
+# curl -o disable-monitoring.ps1 -L https://aka.ms/disable-monitoring-powershell-script
 #>
 param(
     [Parameter(mandatory = $true)]
     [string]$clusterResourceId,
-    [Parameter(mandatory = $true)]
+    [Parameter(mandatory = $false)]
     [string]$kubeContext
 )
 
@@ -31,6 +32,7 @@ $helmChartName = "azuremonitor-containers"
 # flags to indicate the cluster types
 $isArcK8sCluster = $false
 $isAksCluster =  $false
+$isAroV4Cluster = $false
 
 # checks the required Powershell modules exist and if not exists, request the user permission to install
 $azAccountModule = Get-Module -ListAvailable -Name Az.Accounts
@@ -162,8 +164,7 @@ if ([string]::IsNullOrEmpty($clusterResourceId)) {
 }
 
 if ([string]::IsNullOrEmpty($kubeContext)) {
-    Write-Host("Specified kube config context should not be NULL or empty") -ForegroundColor Red
-    exit
+    Write-Host("Since kubeContext parameter not passed in so using current kube config context") -ForegroundColor Yellow
 }
 
 $clusterResourceId = $clusterResourceId.Trim()
@@ -194,6 +195,8 @@ if ($clusterResourceId.ToLower().Contains("microsoft.kubernetes/connectedcluster
    $isArcK8sCluster = $true
 } elseif ($clusterResourceId.ToLower().Contains("microsoft.containerservice/managedclusters") -eq $true) {
    $isAksCluster =  $true
+} elseif ($clusterResourceId.ToLower().Contains("microsoft.redhatopenshift/openshiftclusters") -eq $true) {
+   $isAroV4Cluster = $true
 }
 
 $resourceParts = $clusterResourceId.Split("/")
@@ -282,18 +285,34 @@ Write-Host "Helm version" : $helmVersion
 
 Write-Host("Deleting helm chart release : $helmChartReleaseName if exists, Azure Monitor for containers HELM chart ...")
 try {
+    if ([string]::IsNullOrEmpty($kubeContext)) {
+        $releases = helm list --filter $helmChartReleaseName
+        if ($releases.Count -lt 2) {
+            Write-Host("There is no existing release with name : $helmChartReleaseName") -ForegroundColor Yellow
+            exit
+        }
 
-    $releases = helm list --filter $helmChartReleaseName --kube-context $kubeContext
-    if ($releases.Count -lt 2) {
-        Write-Host("There is no existing release with name : $helmChartReleaseName") -ForegroundColor Yellow
-        exit
-    }
+        for($index =0 ; $index -lt $releases.Count ; $index ++ ) {
+            $release = $releases[$index]
+            if ($release.contains($helmChartReleaseName) -eq $true) {
+            Write-Host("release found $helmChartReleaseName hence deleting it") -ForegroundColor Yellow
+            helm del $helmChartReleaseName
+            }
+        }
+    } else {
+        Write-Host("using provided kube-context: $kubeContext")
+        $releases = helm list --filter $helmChartReleaseName --kube-context $kubeContext
+        if ($releases.Count -lt 2) {
+            Write-Host("There is no existing release with name : $helmChartReleaseName") -ForegroundColor Yellow
+            exit
+        }
 
-    for($index =0 ; $index -lt $releases.Count ; $index ++ ) {
-        $release = $releases[$index]
-        if ($release.contains($helmChartReleaseName) -eq $true) {
-           Write-Host("release found $helmChartReleaseName hence deleting it") -ForegroundColor Yellow
-           helm del $helmChartReleaseName --kube-context $kubeContext
+        for($index =0 ; $index -lt $releases.Count ; $index ++ ) {
+            $release = $releases[$index]
+            if ($release.contains($helmChartReleaseName) -eq $true) {
+            Write-Host("release found $helmChartReleaseName hence deleting it") -ForegroundColor Yellow
+            helm del $helmChartReleaseName --kube-context $kubeContext
+            }
         }
     }
 }

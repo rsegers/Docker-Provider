@@ -37,7 +37,6 @@ The general directory structure is:
 |   |   |   |── scripts/                      - script files related to configmap parsing
 │   ├── linux/                                - Makefile and installer files for the Docker Provider
 │   │   ├── Makefile                          - Makefile to build the docker provider
-│   │   ├── configure                         - configure file to enable ulinux configuration
 │   │   ├── installer                         - files related to installer
 |   |   |   |── bundle/                       - shell scripts to create shell bundle
 |   |   |   |── conf/                         - plugin configuration files

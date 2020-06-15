@@ -9,13 +9,16 @@
 # Prerequisites :
 #     Azure CLI:  https://docs.microsoft.com/en-us/cli/azure/install-azure-cli?view=azure-cli-latest
 #     Helm3 : https://helm.sh/docs/intro/install/
-#
-# bash <script> --resource-id/-r <clusterResourceId> --kube-context/-k <kube-context>
-# For example to disables azure monitor for containers on monitoring enabled Azure Arc K8s cluster
-# bash disable_monitoring.sh -r /subscriptions/57ac26cf-a9f0-4908-b300-9a4e9a0fb205/resourceGroups/AzureArcTest/providers/Microsoft.Kubernetes/connectedClusters/AzureArcTest1 -k MyK8sTestCluster
+# download script
+# curl -o disable-monitoring.sh -L https://aka.ms/disable-monitoring-bash-script
+# 1. disable monitoring using current kube-context
+# bash disable_monitoring.sh --resource-id/-r <clusterResourceId>
+
+# 2. disable monitoring using specific kube-context
+# bash disable_monitoring.sh --resource-id/-r <clusterResourceId> --kube-context/-k <kube-context>
+
 
 set -e
-set -u
 set -o pipefail
 
 # default release name used during onboarding
@@ -36,47 +39,81 @@ isArcK8sCluster=false
 # aks cluster resource
 isAksCluster=false
 
+# openshift project name for aro v4 cluster
+openshiftProjectName="azure-monitor-for-containers"
+# arc k8s cluster resource
+isAroV4Cluster=false
+
+# default global params
+clusterResourceId=""
+kubeconfigContext=""
 
 usage()
 {
     local basename=`basename $0`
     echo
     echo "Disable Azure Monitor for containers:"
-    echo "$basename --resource-id/-r <cluster resource id> --kube-context/-k <name of the kube context >"
+    echo "$basename --resource-id/-r <cluster resource id> [--kube-context/-k <name of the kube context >]"
 }
 
 delete_helm_release()
 {
   echo "deleting chart release:" $releaseName
-  kubeconfigContext="$(echo ${1})"
-  releases=$(helm list --filter $releaseName --kube-context $kubeconfigContext)
-  echo $releases
-  if [[ "$releases" == *"$releaseName"* ]]; then
-    helm del $releaseName --kube-context $kubeconfigContext
+  if [ -z "$kubeconfigContext" ]; then
+    releases=$(helm list --filter $releaseName)
+    echo $releases
+    if [[ "$releases" == *"$releaseName"* ]]; then
+      helm del $releaseName
+    else
+      echo "there is no existing release of azure monitor for containers"
+    fi
   else
-    echo "there is no existing release of azure monitor for containers"
+    releases=$(helm list --filter $releaseName --kube-context $kubeconfigContext)
+    echo $releases
+    if [[ "$releases" == *"$releaseName"* ]]; then
+      helm del $releaseName --kube-context $kubeconfigContext
+    else
+      echo "there is no existing release of azure monitor for containers"
+    fi
   fi
   echo "deletion of chart release done."
+}
+
+delete_azure-monitor-for-containers_project()
+{
+  echo "deleting project:$openshiftProjectName"
+  echo "getting config-context of ARO v4 cluster "
+  echo "getting admin user creds for aro v4 cluster"
+  adminUserName=$(az aro list-credentials -g $clusterResourceGroup -n $clusterName --query 'kubeadminUsername' -o tsv)
+  adminPassword=$(az aro list-credentials -g $clusterResourceGroup -n $clusterName --query 'kubeadminPassword' -o tsv)
+  apiServer=$(az aro show -g $clusterResourceGroup -n $clusterName --query apiserverProfile.url -o tsv)
+  echo "login to the cluster via oc login"
+  oc login $apiServer -u $adminUserName -p $adminPassword
+  project=$(oc get project $openshiftProjectName)
+  if [ -z "$project" ]; then
+    echo "project:$openshiftProjectName not found "
+  else
+    echo "deleting helm release"
+    delete_helm_release
+    echo "deleting: $openshiftProjectName "
+    oc delete project $openshiftProjectName
+  fi
+  echo "deleting project:$openshiftProjectName done."
 }
 
 remove_monitoring_tags()
 {
   echo "deleting monitoring tags ..."
 
-  subscriptionId="$(echo ${1} | cut -d'/' -f3)"
-  resourceGroup="$(echo ${1} | cut -d'/' -f5)"
-  providerName="$(echo ${1} | cut -d'/' -f7)"
-  clusterName="$(echo ${1} | cut -d'/' -f9)"
-
   echo "login to the azure interactively"
   az login --use-device-code
 
-  echo "set the cluster subscription id: ${subscriptionId}"
-  az account set -s ${subscriptionId}
+  echo "set the cluster subscription id: ${clusterSubscriptionId}"
+  az account set -s ${clusterSubscriptionId}
 
   # validate cluster identity for ARC k8s cluster
   if [ "$isArcK8sCluster" = true ] ; then
-   identitytype=$(az resource show -g ${resourceGroup} -n ${clusterName} --resource-type $resourceProvider --query identity.type)
+   identitytype=$(az resource show -g ${clusterResourceGroup} -n ${clusterName} --resource-type $resourceProvider --query identity.type)
    identitytype=$(echo $identitytype | tr "[:upper:]" "[:lower:]" | tr -d '"')
    echo "cluster identity type:" $identitytype
     if [[ "$identitytype" != "systemassigned" ]]; then
@@ -86,7 +123,7 @@ remove_monitoring_tags()
   fi
 
   echo "remove the value of loganalyticsworkspaceResourceId tag on to cluster resource"
-  status=$(az resource update --set tags.logAnalyticsWorkspaceResourceId='' -g $resourceGroup -n $clusterName --resource-type $resourceProvider)
+  status=$(az resource update --set tags.logAnalyticsWorkspaceResourceId='' -g $clusterResourceGroup -n $clusterName --resource-type $resourceProvider)
 
   echo "deleting of monitoring tags completed.."
 }
@@ -95,18 +132,13 @@ disable_aks_monitoring_addon()
 {
   echo "disabling aks monitoring addon ..."
 
-  subscriptionId="$(echo ${1} | cut -d'/' -f3)"
-  resourceGroup="$(echo ${1} | cut -d'/' -f5)"
-  providerName="$(echo ${1} | cut -d'/' -f7)"
-  clusterName="$(echo ${1} | cut -d'/' -f9)"
-
   echo "login to the azure interactively"
   az login --use-device-code
 
-  echo "set the cluster subscription id: ${subscriptionId}"
-  az account set -s ${subscriptionId}
+  echo "set the cluster subscription id: ${clusterSubscriptionId}"
+  az account set -s ${clusterSubscriptionId}
 
-  status=$(az aks disable-addons -a monitoring -g $resourceGroup -n $clusterName)
+  status=$(az aks disable-addons -a monitoring -g $clusterResourceGroup -n $clusterName)
   echo "status after disabling addon : $status"
 
   echo "deleting of monitoring tags completed.."
@@ -115,7 +147,7 @@ disable_aks_monitoring_addon()
 parse_args()
 {
 
- if [ $# -le 2 ]
+ if [ $# -le 1 ]
   then
     usage
     exit 1
@@ -188,8 +220,7 @@ done
  fi
 
  if [ -z "$kubeconfigContext" ]; then
-    echo "-e kubeconfig context is empty. Please try with valid kube-context of the cluster"
-    exit 1
+    echo "using current kube config context since --kube-context parameter not set "
  fi
 
  # detect the resource provider from the provider name in the cluster resource id
@@ -200,6 +231,7 @@ done
  elif [ $providerName = "microsoft.redhatopenshift/openshiftclusters" ]; then
     echo "provider cluster resource is of AROv4 cluster type"
     resourceProvider=$aroV4ResourceProvider
+    isAroV4Cluster=true
  elif [ $providerName = "microsoft.containerservice/managedclusters" ]; then
     echo "provider cluster resource is of AKS cluster type"
     isAksCluster=true
@@ -215,8 +247,20 @@ done
 # parse args
 parse_args $@
 
-# delete helm release
-delete_helm_release $kubeconfigContext
+# parse cluster resource id
+clusterSubscriptionId="$(echo $clusterResourceId | cut -d'/' -f3 | tr "[:upper:]" "[:lower:]")"
+clusterResourceGroup="$(echo $clusterResourceId | cut -d'/' -f5)"
+providerName="$(echo $clusterResourceId | cut -d'/' -f7)"
+clusterName="$(echo $clusterResourceId | cut -d'/' -f9)"
+
+# delete openshift project or helm chart release
+if [ "$isAroV4Cluster" = true ] ; then
+  # delete project and helm release
+  delete_azure-monitor-for-containers_project
+else
+  # delete helm release
+  delete_helm_release
+fi
 
 # remove monitoring tags on the cluster resource to make fully off boarded
 if [ "$isAksCluster" = true ] ; then
