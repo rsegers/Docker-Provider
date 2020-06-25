@@ -14,6 +14,7 @@ Write-Host ('Creating folder structure')
     New-Item -Type Directory -Path /etc/omsagentwindows
 
     New-Item -Type Directory -Path /etc/config/settings/
+    New-Item -Type Directory -Path /etc/config/adx/
 
 Write-Host ('Installing Fluent Bit');
 
