@@ -142,4 +142,25 @@ class MdmAlertTemplates
                     }
                 }
             }'
+
+  Generic_metric_template = '
+            {
+                "time": "%{timestamp}",
+                "data": {
+                    "baseData": {
+                        "metric": "%{metricName}",
+                        "namespace": "Insights.Container/%{namespaceSuffix}",
+                        "dimNames": [%{dimNames}],
+                        "series": [
+                        {
+                            "dimValues": [%{dimValues}],
+                            "min": %{metricValue},
+                            "max": %{metricValue},
+                            "sum": %{metricValue},
+                            "count": 1
+                        }
+                        ]
+                    }
+                }
+            }'
 end

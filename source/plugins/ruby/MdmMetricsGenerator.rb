@@ -291,6 +291,64 @@ class MdmMetricsGenerator
       return records
     end
 
+    def getMetricRecords(record)
+      records = []
+      begin
+        dimNames = String.new "" #mutable string
+        dimValues = String.new ""
+        noDimVal ="-"
+        metricValue = 0
+        if !record["tags"].nil?
+            dimCount = 0
+            record["tags"].each { |k, v| 
+            dimCount = dimCount+1
+              if (dimCount <= 10) #MDM = 10 dims
+                dimNames.concat("\"#{k}\"")
+                dimNames.concat(",")
+                if !v.nil? && v.length >0
+                  dimValues.concat("\"#{v}\"")
+                else
+                  dimValues.concat("\"#{noDimVal}\"")
+                end
+                dimValues.concat(",")
+              end
+          }
+          if (dimNames.end_with?(","))
+            dimNames.chomp!(",")
+          end
+          if (dimValues.end_with?(","))
+            dimValues.chomp!(",")
+          end
+        end
+        timestamp = record["timestamp"]
+        convertedTimestamp = Time.at(timestamp.to_i).utc.iso8601
+        if !record["fields"].nil?
+          record["fields"].each { |k, v|
+          if is_numeric(v)
+            metricRecord = MdmAlertTemplates::Generic_metric_template % {
+              timestamp: convertedTimestamp,
+              metricName: k,
+              namespaceSuffix: record["name"],
+              dimNames: dimNames,
+              dimValues: dimValues,
+              metricValue: v,
+            }
+            records.push(Yajl::Parser.parse(StringIO.new(metricRecord)))
+            #@log.info "pushed mdmgenericmetric: #{k},#{v}"
+          end
+            }
+        end
+      rescue => errorStr
+        @log.info "getMetricRecords:Error: #{errorStr} for record #{record}"
+        ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+      end
+      return records
+    end
+
+    def is_numeric(o)
+        true if Float(o) rescue false
+    end
+
     def getContainerResourceUtilizationThresholds
       begin
         metric_threshold_hash = {}

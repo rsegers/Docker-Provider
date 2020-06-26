@@ -24,6 +24,7 @@ require_relative "ConfigParseErrorLogger"
 @excludePath = "*.csv2" #some invalid path
 @enrichContainerLogs = false
 @collectAllKubeEvents = false
+@containerLogsRoute = ""
 
 # Use parser to parse the configmap toml file to a ruby structure
 def parseConfigMap
@@ -146,6 +147,17 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     rescue => errorStr
       ConfigParseErrorLogger.logError("Exception while reading config map settings for kube event collection - #{errorStr}, using defaults, please check config map for errors")
     end
+
+    #Get container logs route setting
+    begin
+      if !parsedConfig[:log_collection_settings][:route_container_logs].nil? && !parsedConfig[:log_collection_settings][:route_container_logs][:version].nil?
+        @containerLogsRoute = parsedConfig[:log_collection_settings][:route_container_logs][:version]
+        puts "config::Using config map setting for container logs route"
+      end
+    rescue => errorStr
+      ConfigParseErrorLogger.logError("Exception while reading config map settings for container logs route - #{errorStr}, using defaults, please check config map for errors")
+    end
+
   end
 end
 
@@ -187,6 +199,7 @@ if !file.nil?
   file.write("export AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH=#{@excludePath}\n")
   file.write("export AZMON_CLUSTER_CONTAINER_LOG_ENRICH=#{@enrichContainerLogs}\n")
   file.write("export AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS=#{@collectAllKubeEvents}\n")
+  file.write("export AZMON_CONTAINER_LOGS_ROUTE=#{@containerLogsRoute}\n")
   # Close file after writing all environment variables
   file.close
   puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "
@@ -230,6 +243,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows('AZMON_CLUSTER_CONTAINER_LOG_ENRICH', @enrichContainerLogs)
     file.write(commands)
     commands = get_command_windows('AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS', @collectAllKubeEvents)
+    file.write(commands)
+    commands = get_command_windows('AZMON_CONTAINER_LOGS_ROUTE', @containerLogsRoute)
     file.write(commands)
 
     # Close file after writing all environment variables

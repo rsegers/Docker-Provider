@@ -7,10 +7,12 @@
 # Unit test files
 source/plugins/go/src/profiling
 .vscode/launch.json
-source/plugins/go/src/vendor/
+source/plugins/go/src/*.h
+source/plugins/go/pkg/
 # go shared object files
 *.so
 *.zip
+*.pyc
 # .net code build artificats
 build/windows/installer/certificategenerator/bin
 build/windows/installer/certificategenerator/obj

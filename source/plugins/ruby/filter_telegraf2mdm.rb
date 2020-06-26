@@ -51,6 +51,8 @@ module Fluent
       begin
         if !record.nil? && !record["name"].nil? && record["name"].downcase == Constants::TELEGRAF_DISK_METRICS
           return MdmMetricsGenerator.getDiskUsageMetricRecords(record)
+        else 
+          return MdmMetricsGenerator.getMetricRecords(record)
         end
         return []
       rescue Exception => errorStr

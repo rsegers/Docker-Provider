@@ -28,7 +28,7 @@ module Fluent
       @@user_assigned_client_id = ENV["USER_ASSIGNED_IDENTITY_CLIENT_ID"]
 
       @@plugin_name = "AKSCustomMetricsMDM"
-      @@record_batch_size = 2600
+      @@record_batch_size = 2000 #2600 at times exceeds 1MB, not safe
 
       @@token_refresh_back_off_interval = 30
 
@@ -242,7 +242,12 @@ module Fluent
           @last_telemetry_sent_time = Time.now
         end
       rescue Net::HTTPServerException => e
-        @log.info "Failed to Post Metrics to MDM : #{e} Response: #{response}"
+        if !response.nil && !response.body.nil? #body will have actual error
+          @log.info "Failed to Post Metrics to MDM : #{e} Response.body: #{response.body}"
+        else
+          @log.info "Failed to Post Metrics to MDM : #{e} Response: #{response}"
+        end
+        #@log.info "MDM request : #{post_body}"
         @log.debug_backtrace(e.backtrace)
         if !response.code.empty? && response.code == 403.to_s
           @log.info "Response Code #{response.code} Updating @last_post_attempt_time"

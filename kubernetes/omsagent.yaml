@@ -374,8 +374,12 @@ spec:
               name: azure-json-path
             - mountPath: /etc/omsagent-secret
               name: omsagent-secret
+              readOnly: true
             - mountPath: /etc/config/settings
               name: settings-vol-config
+              readOnly: true
+            - mountPath: /etc/config/settings/adx
+              name: omsagent-adx-secret
               readOnly: true
           livenessProbe:
             exec:
@@ -432,6 +436,10 @@ spec:
         - name: settings-vol-config
           configMap:
             name: container-azm-ms-agentconfig
+            optional: true
+        - name: omsagent-adx-secret
+          secret:
+            secretName: omsagent-adx-secret
             optional: true
 ---
 apiVersion: apps/v1
@@ -514,6 +522,9 @@ spec:
             - mountPath: /etc/config/settings
               name: settings-vol-config
               readOnly: true
+            - mountPath: /etc/config/settings/adx
+              name: omsagent-adx-secret
+              readOnly: true
           livenessProbe:
             exec:
               command:
@@ -574,6 +585,10 @@ spec:
         - name: settings-vol-config
           configMap:
             name: container-azm-ms-agentconfig
+            optional: true
+        - name: omsagent-adx-secret
+          secret:
+            secretName: omsagent-adx-secret
             optional: true
 ---
   apiVersion: apps/v1
@@ -638,6 +653,9 @@ spec:
           - mountPath: C:\etc\omsagent-secret
             name: omsagent-secret
             readOnly: true
+          - mountPath: C:\etc\config\adx
+            name: omsagent-adx-secret
+            readOnly: true
          livenessProbe:
           exec:
             command:
@@ -678,6 +696,10 @@ spec:
       - name: omsagent-secret
         secret:
          secretName: omsagent-secret
+      - name: omsagent-adx-secret
+        secret:
+          secretName: omsagent-adx-secret
+          optional: true
 ---
 kind: Service
 apiVersion: v1
