@@ -24,12 +24,14 @@ Feel free to contact engineering team owners in case you have any questions abou
 8. [.NET Core SDK](https://dotnet.microsoft.com/download) to build the Windows Agent code
 9. [gcc for windows](https://github.com/jmeubank/tdm-gcc/releases/download/v9.2.0-tdm64-1/tdm64-gcc-9.2.0.exe) to build go code
 
+> Note: recommend to clone the code into Ubuntu app on Windows 10 so that you can work on development of both windows and linux agent.
 
 # Repo structure
 
 The general directory structure is:
 
 ```
+├── .pipelines/                               - files related to azure devops ci and cd pipelines
 ├── build/                                    - files to related to  compile and build the code
 │   ├── version                               - build version used for docker prvider and go shared object(so) files
 │   ├── common/                               - common to both windows and linux installers
@@ -52,6 +54,7 @@ The general directory structure is:
 ├── alerts/                                   - alert queries
 ├── kubernetes/                               - files related to Linux and Windows Agent for Kubernetes
 │   ├── linux/                                - scripts to build the Docker image for Linux Agent
+│   │   ├── dockerbuild                       - script to build docker provider, docker image and publish docker image
 │   │   ├── DockerFile                        - DockerFile for Linux Agent Container Image
 │   │   ├── main.sh                           - Linux Agent container entry point
 │   │   ├── setup.sh                          - setup file for Linux Agent Container Image
@@ -59,6 +62,7 @@ The general directory structure is:
 │   │   ├── defaultpromenvvariables           - default environment variables for Prometheus scraping
 │   │   ├── defaultpromenvvariables-rs        - cluster level default environment variables for Prometheus scraping
 │   ├── windows/                              - scripts to build the Docker image for Windows Agent
+│   │   ├── dockerbuild                       - script to build the code and docker imag, and publish docker image
 │   │   ├── acrworkflows/                     - acr work flows for the Windows Agent container image
 │   │   ├── baseimage/                        - windowsservercore base image for the windows agent container
 │   │   ├── DockerFile                        - DockerFile for Windows Agent Container Image
@@ -101,8 +105,7 @@ Pull request must be approved by at least one engineering team members.
 
 # Authoring code
 
-We recommend using [Visual Studio Code](https://code.visualstudio.com/) for authoring.
-
+We recommend using [Visual Studio Code](https://code.visualstudio.com/) for authoring. Windows 10 with Ubuntu App can be used for both Windows and Linux  Agent development and recommened to clone the code into Ubuntu app so that you dont need to wory about line ending issues LF vs CRLF.
 
 # Building code
 
@@ -112,10 +115,10 @@ We recommend using [Visual Studio Code](https://code.visualstudio.com/) for auth
 
 1. Install go1.14.1, build dependencies and docker if you dont have installed already on your dev machine
 ```
-bash ~/Docker-Provider/scripts/build/install-build-pre-requisites.sh
+bash ~/Docker-Provider/scripts/build/linux/install-build-pre-requisites.sh
 ```
 2. Verify python, docker and golang installed properly and also PATH and GOBIN environment variables set with go path.
-   For some reason go env not set, run the following commands to set them
+   For some reason go env not set by install-build-pre-requisites.sh script, run the following commands to set them
    ```
    export PATH=$PATH:/usr/local/go/bin
    export GOBIN=/usr/local/go/bin
@@ -128,113 +131,88 @@ bash ~/Docker-Provider/scripts/build/install-build-pre-requisites.sh
    # on Docker Desktop for Windows make sure docker running linux mode and enabled Expose daemon on tcp://localhost:2375 without TLS
    ```
 
-### Build Docker Provider Shell Bundle
+### Build Docker Provider Shell Bundle and Docker Image and Publish Docker Image
 
-1. Build the code  with below commands
+```
+cd ~/Docker-Provider/kubernetes/linux/dockerbuild
+sudo docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
+# build provider, docker image and publish to docker image
+bash build-and-publish-docker-image.sh --image <repo>/<imagename>:<imagetag>
+```
+> Note: format of the imagetag will be `ci<release><MMDDYYYY>`. possible values for release are test, dev, preview, dogfood, prod etc.
+
+If you prefe to build docker provider shell bundle and image separately, then you can follow below instructions
+
+##### Build Docker Provider shell bundle
 ```
 cd ~/Docker-Provider/build/linux
 make
 ```
-If build successful, you should see docker-cimprov-x.x.x-x.universal.x86_64.sh under ~/Docker-Provider/target/Linux_ULINUX_1.0_x64_64_Release/
-  > Note: x.x.x-x is the version of the docker provider which is determined from version info in version file
-
-### Build Docker Image
-
-1.  Navigate to below directory to build the docker image
-  ```
-  cd ~/Docker-Provider/kubernetes/linux/
-  ```
-2. Upload docker-cimprov-x.x.x-x.universal.x86_64.sh from ~/Docker-Provider/target/Linux_ULINUX_1.0_x64_64_Release/ to azure blob storage account blob
-
- ```
- AZURE_SUBSCRIPTIONID=<azure-subscription-id> # subscriptionId for the azure storage account (new or exist)
- STORAGE_ACCOUNT_RG=<resource-group>
- STORAGE_ACCOUNT_LOCATION=<location>
- STORAGE_ACCOUNT_NAME=<account-name>
- STORAGE_ACCOUNT_BLOB_NAME=<blob-name> # for example agentshellbundle
-
- # login to azure interactively and set the subscription id
- az login --use-device-code
- az account set -s $AZURE_SUBSCRIPTIONID
-
- # create rg and storage account if this doesnt exist one already
- az group create -n $STORAGE_ACCOUNT_RG -l $STORAGE_ACCOUNT_LOCATION
- az storage account create -n $STORAGE_ACCOUNT_NAME -g $STORAGE_ACCOUNT_RG -l $STORAGE_ACCOUNT_LOCATION
-
- # create blob container
- az storage container create --account-name $STORAGE_ACCOUNT_NAME --name $STORAGE_ACCOUNT_BLOB_NAME --auth-mode login --public-access container
-
- # upload docker-cimprov shell bundle to storage account. please specify the correct version
- az storage blob upload --account-name $STORAGE_ACCOUNT_NAME --container-name $STORAGE_ACCOUNT_BLOB_NAME --name docker-cimprov-10.0.0-0.universal.x86_64.sh --file  ~/Docker-Provider/target/Linux_ULINUX_1.0_x64_64_Release/docker-cimprov-10.0.0-0.universal.x86_64.sh
- # replace the placeholders in this url
- https://$STORAGE_ACCOUNT_NAME.blob.core.windows.net/$STORAGE_ACCOUNT_BLOB_NAME/docker-cimprov-10.0.0-0.universal.x86_64.sh
-
- # verify this url valid and exist by running the curl --head command as below
- curl --head https://mydevomsagentsa.blob.core.windows.net/agentshellbundle/docker-cimprov-10.0.0-0.universal.x86_64.sh
- ```
-  > Note: x.x.x-x is the version of the docker provider which is determined from version info in docker.version file
-3. Update the azure storage blob location of docker-cimprov-x.x.x-x.universal.x86_64.sh in setup.sh
- ```
- # update the setup.sh in this with the url in above step in place of  https://github.com/microsoft/Docker-Provider/releases/download/..
- cd ~/Docker-Provider/kubernetes/linux/
- ```
-4. Update AGENT_VERSION environment variable with your imagetag in ~/Docker-Provider/kubernetes/linux/Dockerfile
- > Note: format of the imagetag will be ci<release>MMDDYYYY. possible values for release are test, dev, preview, dogfood, prod etc.
-5. Build the Docker image via below command
+##### Build and Push Docker Image
 ```
-   docker build -t  <repo>/<imagename>:<imagetag> .
-```
-6. Push the Docker image to docker repo
-```
-   docker push  <repo>/<imagename>:<imagetag>
+cd ~/Docker-Provider/kubernetes/linux/
+docker build -t <repo>/<imagename>:<imagetag> IMAGE_TAG=<imagetag> .
+docker push <repo>/<imagename>:<imagetag>
 ```
 
 ## Windows Agent
-> Note: To build the Windows Agent Image, you will need Windows 10 Pro or higher machine with Docker for Windows
+> Note: Below instructions are assumed you have cloned the code on to WSL/2 machine
 ### Install Pre-requisites
-1. Install .Net Core SDK 2.2 or higher from https://dotnet.microsoft.com/download if you dont have installed already
-2. Install go1.14.1 if you havent installed already
-  ```
-  cd  %userprofile%
-  mkdir go
-  cd  %userprofile%\go
-  curl -LO https://dl.google.com/go/go1.14.1.windows-amd64.msi
-  # install go. default will get installed %SYSTEMDRIVE%\go
-  msiexec /i %userprofile%\go\go1.14.1.windows-amd64.msi
-  ```
-3. Install build dependencies
 ```
-cd  %userprofile%
-mkdir gcctemp && cd gcctemp
-## download gcc for windows
-curl -LO https://github.com/jmeubank/tdm-gcc/releases/download/v9.2.0-tdm64-1/tdm64-gcc-9.2.0.exe
-## install gcc on windows
-%userprofile%\gcctemp\tdm64-gcc-9.2.0.exe
+powershell # launch powershell with elevated admin on your windows machine
+Set-ExecutionPolicy -ExecutionPolicy bypass # set the execution policy
+net use z: \\wsl$\Ubuntu-16.04 # map the network drive of the ubuntu app to windows
+cd z:\home\sshadmin\Docker-Provider\scripts\build\windows # based on your repo path
+.\install-build-pre-requisites.ps1 #
 ```
-4. Install Docker for windows https://docs.docker.com/docker-for-windows/install/
+### Build Cert generator, Out OMS Plugun and Docker Image and Publish Docker Image
 
-### Build Certificate Generator Source code and Out OMS Go plugin code
-1. Build Certificate generator source code in .NET and Out OMS Plugin code in Go lang  by running these commands in CMD shell
+Build Certificate generator source code in .NET and Out OMS Plugin code in Go lang  by running these commands in CMD shell
 ```
-cd %userprofile%\Docker-Provider\build\windows # based on your repo path
+docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
+cd z:\home\sshadmin\Docker-Provider\kubernetes\windows\dockerbuild # based on your repo path
+powershell -ExecutionPolicy bypass  # switch to powershell if you are not on powershell already
+.\build-and-publish-docker-image.ps1 -image <repo>/<imagename>:<imagetag> # trigger build code and image and publish docker hub or acr
+```
+> Note: format of the imagetag will be `ci<release><MMDDYYYY>`. possible values for release are test, dev, preview, dogfood, prod etc.
+
+If you prefe to build Certificate Generator Source code and Out OMS Go plugin code and image separately, then you can follow below instructions
+
+#### Build Certificate Generator Source code and Out OMS Go plugin code
+```
+cd z:\home\sshadmin\Docker-Provider\scripts\build\windows # based on your repo path
 powershell -executionpolicy bypass -File .\Makefile.ps1 # trigger build and publish
 ```
-### Build Docker Image
 
-1. Update AGENT_VERSION environment variable with your intended imagetag in  %userprofile%\Docker-Provider\kubernetes\windows\Dockerfile
- > Note: format of the imagetag will be win-ci<release>MMDDYYYY. possible values for release are test, dev, preview, dogfood, prod etc.
+####  Build and Push Docker Image
+```
+cd z:\home\sshadmin\Docker-Provider\kubernetes\windows # based on your repo path
+docker build -t <repo>/<imagename>:<imagetag> IMAGE_TAG=<imagetag> .
+docker push <repo>/<imagename>:<imagetag>
+```
 
-2.  Navigate to below directory to build the docker image
-```
-  cd %userprofile%\Docker-Provider\kubernetes\windows # based on your repo path
-  docker build -t  <repo>/<imagename>:win-<imagetag> .
+# Azure DevOps Build Pipeline
 
-```
-3. Push the Docker image to docker repo. For testing, you will be pushing to Docker hub
-```
-  cd %userprofile%\Docker-Provider\kubernetes\windows # based on your repo path
-  docker push  <repo>/<imagename>:<imagetag>
-```
+Navigate to https://github-private.visualstudio.com/microsoft/_build?view=pipelines to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for dev and master (TBD).
+
+Docker Images will be pushed to CDPX ACR repos and these needs to retagged and pushed to corresponding ACR or docker hub. Only onboarded Azure AD AppId has permission to pull the images from CDPx ACRs.
+
+Please reach out the agent engineering team if you need access to it.
+
+## Onboarding feature branch
+
+Here are the instructions to onboard the feature branch to Azure Dev Ops pipeline
+
+ 1. Navigate to https://github-private.visualstudio.com/microsoft/_apps/hub/azurecdp.cdpx-onboarding.cdpx-onboarding-tab
+ 2. Select the repository as "docker-provider" from repository drop down
+ 3. click on validate repository
+ 4. select the your feature branch from Branch drop down
+ 5. Select the Operation system as "Linux" and Build type as "buddy"
+ 6. create build definition
+ 7. enable continous integration on trigger on the build definition
+
+ This will create build definition for the Linux agent.
+ Repeat above steps except that this time select Operation system as "Windows" to onboard the pipeline for Windows agent.
 
 # Update Kubernetes yamls
 

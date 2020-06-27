@@ -13,13 +13,17 @@ install_go_lang()
   sudo mv go /usr/local
   echo "set file permission for go bin"
   sudo chmod 777 /usr/local/go/bin
+  echo "installation of go 1.14.1 completed."
+}
+
+install_go_env_vars()
+{
   echo "setting PATH and GOBIN environment variables"
   export PATH='$PATH:/usr/local/go/bin'
   export GOBIN=/usr/local/go/bin
   echo 'export PATH=$PATH:/usr/local/go/bin' >> ~/.bashrc
   echo 'export GOBIN=/usr/local/go/bin' >> ~/.bashrc
   source ~/.bashrc
-  echo "installation of go 1.14.1 and setting of PATH and GOBIN environment variables completed."
 }
 
 install_build_dependencies()
@@ -63,13 +67,16 @@ sudo mkdir $TEMP_DIR && cd $TEMP_DIR
 install_python
 
 # install go
-install_go_lang
+# install_go_lang
 
 # install build dependencies
 install_build_dependencies
 
 # install docker
 install_docker
+
+# install go
+install_go_lang
 
 # if its running on wsl/2, set DOCKER_HOST env to use docker for desktop docker endpoint on the windows host
 if [[ $(uname -r) =~ Microsoft$ ]]; then
@@ -81,4 +88,8 @@ fi
 echo "cleanup temp directory":$TEMP_DIR
 cd ~
 sudo rm -rf $TEMP_DIR
+
+# set go env vars
+install_go_env_vars
+
 echo "installing build pre-requisites python, go 1.14.1, build dependencies and docker completed"

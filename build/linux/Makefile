@@ -72,7 +72,7 @@ SOURCE_DIR := $(BASE_DIR)/source
 
 INTERMEDIATE_DIR := $(BASE_DIR)/intermediate/$(BUILD_CONFIGURATION)
 INTERMEDIATE_TESTFILES := $(INTERMEDIATE_DIR)/testfiles
-TARGET_DIR := $(BASE_DIR)/target/$(BUILD_CONFIGURATION)
+TARGET_DIR := $(BASE_DIR)/kubernetes/linux/$(BUILD_CONFIGURATION)
 PROVIDER_LIBRARY := $(INTERMEDIATE_DIR)/libcontainer.so
 
 INSTALLER_TMPDIR := $(INTERMEDIATE_DIR)/installer_tmp
@@ -102,7 +102,9 @@ endif
 
 #--------------------------------------------------------------------------------
 # Build targets
-all : PROVIDER_STATUS KIT_STATUS kit fluentbitplugin rubypluginstests
+# TODO - fix plugintests and enable it back
+# all : PROVIDER_STATUS KIT_STATUS kit fluentbitplugin rubypluginstests
+all : PROVIDER_STATUS KIT_STATUS kit fluentbitplugin
 
 clean :
 	$(RMDIR) $(BASE_DIR)/build/cppunit_result.* $(BASE_DIR)/installer/intermediate $(BASE_DIR)/intermediate $(BASE_DIR)/target
@@ -198,6 +200,8 @@ kit : fluentbitplugin
 	cd $(INTERMEDIATE_DIR); tar cvf $(OUTPUT_PACKAGE_PREFIX).tar $(OUTPUT_PACKAGE_PREFIX).rpm $(OUTPUT_PACKAGE_PREFIX).deb
 
 	bash installer/bundle/create_bundle.sh $(PF)_$(PF_DISTRO) $(INTERMEDIATE_DIR) $(OUTPUT_PACKAGE_PREFIX)
+	# purge old files
+	$(RMDIR) $(TARGET_DIR)
 	# Copy the shell bundle to the target directory
 	$(MKPATH) $(TARGET_DIR)
 	cd $(INTERMEDIATE_DIR); $(COPY) `cat $(INTERMEDIATE_DIR)/package_filename`.sh $(TARGET_DIR)

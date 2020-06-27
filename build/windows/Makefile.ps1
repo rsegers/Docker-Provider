@@ -4,22 +4,26 @@
 #  2. Builds the out_oms plugin code in go lang  into the shared object(.so) file and copy the out_oms.so file  to ..\..\kubernetes\windows\omsagentwindows
 #  3. copy the files under installer directory to ..\..\kubernetes\windows\omsagentwindows
 
-$dotnetcoreframework = "netcoreapp2.2"
+$dotnetcoreframework = "netcoreapp3.1"
 
 Write-Host("Building Certificate generator code...")
-$currentdir =  $PWD
+$currentdir =  $PSScriptRoot
+Write-Host("current script dir : " + $currentdir + " ")
+
 if ($false -eq (Test-Path -Path $currentdir)) {
     Write-Host("Invalid current dir : " + $currentdir + " ") -ForegroundColor Red
     exit
 }
 
 $builddir = Split-Path -Path $currentdir
+Write-Host("builddir dir : " + $builddir + " ")
 if ($false -eq (Test-Path -Path $builddir)) {
     Write-Host("Invalid build dir : " + $builddir + " ") -ForegroundColor Red
     exit
 }
 
 $versionFilePath = Join-Path -Path $builddir -child "version"
+Write-Host("versionFilePath  : " + $versionFilePath + " ")
 if ($false -eq (Test-Path -Path $versionFilePath)) {
     Write-Host("Version file path incorrect or doesnt exist : " + $versionFilePath + " ") -ForegroundColor Red
     exit
@@ -60,11 +64,12 @@ $buildVersionDate = $BuildVersionDate
 
 
 $certsrcdir = Join-Path -Path $builddir -ChildPath "windows\installer\certificategenerator"
+Write-Host("certsrc dir : " + $certsrcdir + " ")
 if ($false -eq (Test-Path -Path $certsrcdir)) {
     Write-Host("Invalid certificate generator source dir : " + $certsrcdir + " ") -ForegroundColor Red
     exit
 }
-Write-Host("set the cerificate generator source code director : " + $certsrcdir + " ...")
+Write-Host("set the cerificate generator source code directory : " + $certsrcdir + " ...")
 Set-Location -Path $certsrcdir
 
 Write-Host("Adding dotnet packages Newtonsoft.json and BouncyCastle ...")
@@ -75,7 +80,15 @@ dotnet build  -f $dotnetcoreframework
 Write-Host("Building Certificate generator code and ...") -ForegroundColor Green
 
 Write-Host("Publish release and win10-x64 binaries of certificate generator code  ...")
-dotnet publish -c Release -r win10-x64
+if (![string]::IsNullOrEmpty([System.Environment]::GetEnvironmentVariable("IsCDPXBuildMachine", "PROCESS")) -or
+![string]::IsNullOrEmpty([System.Environment]::GetEnvironmentVariable("IsCDPXBuildMachine", "USER")) -or
+![string]::IsNullOrEmpty([System.Environment]::GetEnvironmentVariable("IsCDPXBuildMachine", "Machine") )) {
+    Write-Host("running on CDPX build machine so setting --no-restore since there is no n/w connectivity during build")
+    dotnet publish -c Release -r win10-x64 --no-restore
+} else {
+   dotnet publish -c Release -r win10-x64
+}
+
 Write-Host("Successfully published certificate generator code binaries") -ForegroundColor Green
 
 $certreleasebinpath =  Join-Path -PATH $certsrcdir -ChildPath "bin\Release\$dotnetcoreframework\win10-x64\publish\*.*"
@@ -113,7 +126,7 @@ if ($false -eq (Test-Path -Path $outomsgoplugindir)) {
 }
 Set-Location -Path $outomsgoplugindir
 Write-Host("getting latest go modules ...")
-go get
+go  get
 Write-Host("successfyullt got latest go modules") -ForegroundColor Green
 
 go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o out_oms.so .
