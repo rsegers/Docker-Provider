@@ -141,7 +141,7 @@ bash build-and-publish-docker-image.sh --image <repo>/<imagename>:<imagetag>
 ```
 > Note: format of the imagetag will be `ci<release><MMDDYYYY>`. possible values for release are test, dev, preview, dogfood, prod etc.
 
-If you prefe to build docker provider shell bundle and image separately, then you can follow below instructions
+If you prefer to build docker provider shell bundle and image separately, then you can follow below instructions
 
 ##### Build Docker Provider shell bundle
 ```
