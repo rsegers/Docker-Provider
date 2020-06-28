@@ -111,7 +111,7 @@ build_docker_image()
 publish_docker_image()
 {
   echo "publishing docker image: $image"
-  docker push  $image
+  sudo docker push  $image
   echo "publishing docker image: $image done."
 }
 
