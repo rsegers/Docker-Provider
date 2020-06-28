@@ -125,6 +125,13 @@ if ($false -eq (Test-Path -Path $outomsgoplugindir)) {
     exit
 }
 Set-Location -Path $outomsgoplugindir
+
+Write-Host("cleanup existing .so and .h file ...")
+Remove-Item -Path $outomsgoplugindir\* -Include *.so,*.h -Force -ErrorAction Stop
+Write-Host("cleanup existing .so and .h file")
+
+Write-Host("successfyullt got latest go modules") -ForegroundColor Green
+
 Write-Host("getting latest go modules ...")
 go  get
 Write-Host("successfyullt got latest go modules") -ForegroundColor Green

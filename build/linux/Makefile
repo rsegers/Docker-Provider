@@ -109,9 +109,9 @@ all : PROVIDER_STATUS KIT_STATUS kit fluentbitplugin
 clean :
 	$(RMDIR) $(BASE_DIR)/build/cppunit_result.* $(BASE_DIR)/installer/intermediate $(BASE_DIR)/intermediate $(BASE_DIR)/target
 	-find $(BASE_DIR) -name \*~ -exec rm {} \;
+	make -C $(GO_SOURCE_DIR) clean
 
 distclean : clean
-	$(RM) $(BASE_DIR)/build/config.mak
 
 PROVIDER_STATUS:
 	@echo "========================= Performing Building provider"
