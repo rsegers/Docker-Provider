@@ -3,7 +3,7 @@ MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
-ARG IMAGE_TAG=ciprod05262020-2
+ARG IMAGE_TAG=win-ciprod05262020-2
 
 SHELL ["powershell"]
 
@@ -35,8 +35,7 @@ COPY ./omsagentwindows/installer/conf/out_oms.conf /etc/omsagentwindows
 # copy keepcert alive ruby scripts
 COPY ./omsagentwindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluent/plugin/
 
-# add win prefix for the windows image
-ENV AGENT_VERSION win-${IMAGE_TAG}
+ENV AGENT_VERSION ${IMAGE_TAG}
 ENV OS_TYPE "windows"
 ENV APPLICATIONINSIGHTS_AUTH "NzAwZGM5OGYtYTdhZC00NThkLWI5NWMtMjA3ZjM3NmM3YmRi"
 ENV AZMON_COLLECT_ENV False

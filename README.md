@@ -117,7 +117,7 @@ We recommend using [Visual Studio Code](https://code.visualstudio.com/) for auth
 
 ### Install Pre-requisites
 
-1. Install go1.14.1, build dependencies and docker if you dont have installed already on your dev machine
+1. Install go1.14.1, dotnet, powershell, docker and build dependencies to build go code for both Linux and Windows platforms
 ```
 bash ~/Docker-Provider/scripts/build/linux/install-build-pre-requisites.sh
 ```
@@ -136,7 +136,9 @@ bash ~/Docker-Provider/scripts/build/linux/install-build-pre-requisites.sh
    ```
 
 ### Build Docker Provider Shell Bundle and Docker Image and Publish Docker Image
+
 > Note: If you are using WSL2, ensure Docker for windows running Linux containers mode to build Linux agent image successfully
+
 ```
 cd ~/Docker-Provider/kubernetes/linux/dockerbuild
 sudo docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
@@ -148,20 +150,24 @@ bash build-and-publish-docker-image.sh --image <repo>/<imagename>:<imagetag>
 If you prefer to build docker provider shell bundle and image separately, then you can follow below instructions
 
 ##### Build Docker Provider shell bundle
+
 ```
 cd ~/Docker-Provider/build/linux
 make
 ```
 ##### Build and Push Docker Image
+
 ```
 cd ~/Docker-Provider/kubernetes/linux/
 docker build -t <repo>/<imagename>:<imagetag> --build-arg IMAGE_TAG=<imagetag> .
 docker push <repo>/<imagename>:<imagetag>
 ```
-
 ## Windows Agent
-> Note: Below instructions are assumed you have cloned the code on to WSL/2 machine
+
 ### Install Pre-requisites
+
+If you are planning to build the .net and go code for windows agent on Linux machine and you have already have Docker for Windows on Windows machine, then you may skip this.
+
 ```
 powershell # launch powershell with elevated admin on your windows machine
 Set-ExecutionPolicy -ExecutionPolicy bypass # set the execution policy
@@ -169,32 +175,37 @@ net use z: \\wsl$\Ubuntu-16.04 # map the network drive of the ubuntu app to wind
 cd z:\home\sshadmin\Docker-Provider\scripts\build\windows # based on your repo path
 .\install-build-pre-requisites.ps1 #
 ```
-### Build Cert generator, Out OMS Plugun and Docker Image and Publish Docker Image
-> Note: If you are using WSL2, ensure Docker for windows running Windows containers mode to build Windows agent image successfully
-
-Build Certificate generator source code in .NET and Out OMS Plugin code in Go lang  by running these commands in CMD shell
-```
-docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
-net use z: \\wsl$\Ubuntu-16.04 # map the network drive of the ubuntu app to windows if you havent't mapped already
-cd z:\home\sshadmin\Docker-Provider\kubernetes\windows\dockerbuild # based on your repo path
-powershell -ExecutionPolicy bypass  # switch to powershell if you are not on powershell already
-.\build-and-publish-docker-image.ps1 -image <repo>/<imagename>:<imagetag> # trigger build code and image and publish docker hub or acr
-```
-> Note: format of the imagetag will be `ci<release><MMDDYYYY>`. possible values for release are test, dev, preview, dogfood, prod etc.
-
-If you prefe to build Certificate Generator Source code and Out OMS Go plugin code and image separately, then you can follow below instructions
-
 #### Build Certificate Generator Source code and Out OMS Go plugin code
+
+> Note: .net and go code for windows agent can built on Ubuntu
+
 ```
-cd z:\home\sshadmin\Docker-Provider\build\windows # based on your repo path
-powershell -executionpolicy bypass -File .\Makefile.ps1 # trigger build and publish
+cd ~/Docker-Provider/build/windows # based on your repo path on ubuntu or WSL2
+pwsh #switch to powershell
+.\Makefile.ps1 # trigger build and publish of .net and go code
 ```
+> Note: format of the imagetag will be `win-ci<release><MMDDYYYY>`. possible values for release are test, dev, preview, dogfood, prod etc.
 
 ####  Build and Push Docker Image
+
+> Note: windows container can only built on windows hence you will have to execute below commands on windows via accessing network share or copying published bits omsagentwindows under kubernetes directory on to windows machine
+
 ```
+net use z: \\wsl$\Ubuntu-16.04 # map the network drive of the ubuntu app to windows
 cd z:\home\sshadmin\Docker-Provider\kubernetes\windows # based on your repo path
 docker build -t <repo>/<imagename>:<imagetag> --build-arg IMAGE_TAG=<imagetag> .
 docker push <repo>/<imagename>:<imagetag>
+```
+
+### Build Cert generator, Out OMS Plugun and Docker Image and Publish Docker Image
+
+If you have code cloned on to windows, you can built everything for windows agent on windows machine via below instructions
+
+```
+cd %userprofile%\Docker-Provider\kubernetes\windows\dockerbuild # based on your repo path
+docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
+powershell -ExecutionPolicy bypass  # switch to powershell if you are not on powershell already
+.\build-and-publish-docker-image.ps1 -image <repo>/<imagename>:<imagetag> # trigger build code and image and publish docker hub or acr
 ```
 
 # Azure DevOps Build Pipeline

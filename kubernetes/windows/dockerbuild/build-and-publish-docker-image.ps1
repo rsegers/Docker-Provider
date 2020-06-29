@@ -29,8 +29,16 @@ if (($imageparts.Length -ne 2)){
     exit
 }
 
-$imagetag = $imageparts[1]
-Write-Host "image tag is :$imagetag"
+$imagetag = $imageparts[1].ToLower()
+$imagerepo = $imageparts[0]
+
+if ($imagetag.StartsWith("win-") -eq $false)
+{
+    Write-Host "adding win- prefix image tag since its not provided"
+    $imagetag = "win"-$imagetag
+}
+
+Write-Host "image tag used is :$imagetag"
 
 Write-Host "start:Building the cert generator and out oms code via Makefile.ps1"
 ..\..\..\build\windows\Makefile.ps1
@@ -46,10 +54,11 @@ if ($false -eq (Test-Path -Path $dockerFileDir)) {
 Write-Host "changing directory to DockerFile dir: $dockerFileDir"
 Set-Location -Path $dockerFileDir
 
+$updateImage = ${imagerepo} + ":" + ${imageTag}
 Write-Host "STAT:Triggering docker image build: $image"
-docker build -t $image --build-arg IMAGE_TAG=$imageTag  .
-Write-Host "END:Triggering docker image build: $image"
+docker build -t $updateImage  --build-arg IMAGE_TAG=$imageTag  .
+Write-Host "END:Triggering docker image build: $updateImage"
 
-Write-Host "STAT:pushing docker image : $image"
-docker push  $image
-Write-Host "EnD:pushing docker image : $image"
+Write-Host "STAT:pushing docker image : $updateImage"
+docker push  $updateImage
+Write-Host "EnD:pushing docker image : $updateImage"

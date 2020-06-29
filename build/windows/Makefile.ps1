@@ -80,13 +80,18 @@ dotnet build  -f $dotnetcoreframework
 Write-Host("Building Certificate generator code and ...") -ForegroundColor Green
 
 Write-Host("Publish release and win10-x64 binaries of certificate generator code  ...")
+$isCDPxEnvironment = $false
 if (![string]::IsNullOrEmpty([System.Environment]::GetEnvironmentVariable("IsCDPXBuildMachine", "PROCESS")) -or
 ![string]::IsNullOrEmpty([System.Environment]::GetEnvironmentVariable("IsCDPXBuildMachine", "USER")) -or
 ![string]::IsNullOrEmpty([System.Environment]::GetEnvironmentVariable("IsCDPXBuildMachine", "Machine") )) {
+    $isCDPxEnvironment = $true
+
+}
+if ($isCDPxEnvironment) {
     Write-Host("running on CDPX build machine so setting --no-restore since there is no n/w connectivity during build")
     dotnet publish -c Release -r win10-x64 --no-restore
 } else {
-   dotnet publish -c Release -r win10-x64
+  dotnet publish -c Release -r win10-x64
 }
 
 Write-Host("Successfully published certificate generator code binaries") -ForegroundColor Green
@@ -130,14 +135,30 @@ Write-Host("cleanup existing .so and .h file ...")
 Remove-Item -Path $outomsgoplugindir\* -Include *.so,*.h -Force -ErrorAction Stop
 Write-Host("cleanup existing .so and .h file")
 
-Write-Host("successfyullt got latest go modules") -ForegroundColor Green
+if ($isCDPxEnvironment) {
+     go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o out_oms.so .
+}  else {
+   $platform = $PSVersionTable.Platform.ToLower()
+   Write-Host("Running non CDPX environment, Platform:$platform")
+   if ($platform -eq "unix") {
+    Write-Host("Using cross-platform compiler since detected running on UNIX style platform")
+    Write-Host("Setting Windows Platform specific go envs at process level")
+    [System.Environment]::SetEnvironmentVariable("GOOS",  "windows", [System.EnvironmentVariableTarget]::PROCESS)
+    [System.Environment]::SetEnvironmentVariable("GOARCH", "amd64", [System.EnvironmentVariableTarget]::PROCESS)
+    [System.Environment]::SetEnvironmentVariable("CGO_ENABLED", "1", [System.EnvironmentVariableTarget]::PROCESS)
+    [System.Environment]::SetEnvironmentVariable("CC", "x86_64-w64-mingw32-gcc", [System.EnvironmentVariableTarget]::PROCESS)
+    [System.Environment]::SetEnvironmentVariable("CXX", "x86_64-w64-mingw32-g++", [System.EnvironmentVariableTarget]::PROCESS)
+    # unset GOBIN env var for cross platform build just process level not impact the linux go build
+    [System.Environment]::SetEnvironmentVariable("GOBIN", "", [System.EnvironmentVariableTarget]::PROCESS)
+  }
 
-Write-Host("getting latest go modules ...")
-go  get
-Write-Host("successfyullt got latest go modules") -ForegroundColor Green
+  Write-Host("getting latest go modules ...")
+  go  get
+  Write-Host("successfyullt got latest go modules") -ForegroundColor Green
 
-go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o out_oms.so .
-Write-Host("Successfully build Out_OMS go plugin code") -ForegroundColor Green
+  go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o out_oms.so .
+}
+
 
 Write-Host("copying out_oms.so file to : $publishdir")
 Copy-Item -Path (Join-path -Path $outomsgoplugindir -ChildPath "out_oms.so")  -Destination $publishdir -Force

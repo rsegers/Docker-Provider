@@ -7,13 +7,20 @@ set -e
 TEMP_DIR=temp-$RANDOM
 install_go_lang()
 {
-  echo "installing go 1.14.1 version ..."
-  sudo curl -O https://dl.google.com/go/go1.14.1.linux-amd64.tar.gz
-  sudo tar -xvf go1.14.1.linux-amd64.tar.gz
-  sudo mv go /usr/local
-  echo "set file permission for go bin"
-  sudo chmod 777 /usr/local/go/bin
-  echo "installation of go 1.14.1 completed."
+  export goVersion="$(echo $(go version))"
+  if [[ $goVersion == *go1.14.1* ]] ; then
+    echo "found existing installation of go version 1.14.1 so skipping the installation of go"
+  else
+    echo "installing go 1.14.1 version ..."
+    sudo curl -O https://dl.google.com/go/go1.14.1.linux-amd64.tar.gz
+    sudo tar -xvf go1.14.1.linux-amd64.tar.gz
+    sudo mv -f go /usr/local
+    echo "set file permission for go bin"
+    sudo chmod 777 /usr/local/go/bin
+    echo "installation of go 1.14.1 completed."
+    echo "installation of go 1.14.1 completed."
+  fi
+
 }
 
 install_go_env_vars()
@@ -37,17 +44,22 @@ install_build_dependencies()
 
 install_docker()
 {
- echo "installing docker"
- sudo apt-get update -y
- sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common -y
- curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
- sudo apt-key fingerprint 0EBFCD88
- sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
- sudo apt-get update -y
- sudo apt-get install docker-ce docker-ce-cli containerd.io -y
- # Allow your user to access the Docker CLI without needing root access.
- sudo usermod -aG docker $USER
- echo "installing docker completed"
+ export dockerVersion="$(echo $(sudo docker version --format '{{.Server.Version}}'))"
+ if [ ! -z "$dockerVersion" ]; then
+    echo "found existing installation of docker so skipping the installation"
+  else
+    echo "installing docker"
+    sudo apt-get update -y
+    sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common -y
+    curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+    sudo apt-key fingerprint 0EBFCD88
+    sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+    sudo apt-get update -y
+    sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+    # Allow your user to access the Docker CLI without needing root access.
+    sudo usermod -aG docker $USER
+    echo "installing docker completed"
+  fi
 }
 
 install_python()
@@ -56,6 +68,44 @@ install_python()
   sudo apt-get update -y
   sudo apt-get install python -y
   echo "installation of python completed."
+}
+
+register_microsoft_gpg_keys()
+{
+  echo "download and register microsoft GPG keys ..."
+  export ubuntuVersion="$(echo $(lsb_release -rs))"
+  sudo curl -LO https://packages.microsoft.com/config/ubuntu/${ubuntuVersion}/packages-microsoft-prod.deb
+  sudo dpkg -i packages-microsoft-prod.deb
+  echo "completed registration of microsoft GPG keys"
+}
+
+install_dotnet_sdk()
+{
+  echo "installing dotnet sdk 3.1 ..."
+  sudo apt-get update -y
+  sudo apt-get install -y apt-transport-https
+  sudo apt-get update -y
+  sudo apt-get install -y dotnet-sdk-3.1
+  echo "installation of dotnet sdk 3.1 completed."
+}
+
+install_gcc_for_windows_platform()
+{
+  echo "installing cross platform gcc build dependencies for windows ..."
+  sudo apt-get update -y
+  sudo apt-get install binutils-mingw-w64 -y
+  sudo apt-get install gcc-mingw-w64-x86-64 -y
+  echo "installing cross platform gcc build dependencies for windows completed."
+}
+
+install_powershell_core()
+{
+  echo "installing powershell core ..."
+  # Update the list of products
+  sudo apt-get update -y
+  # Install PowerShell
+  sudo apt-get install -y powershell
+  echo "installing powershell core completed"
 }
 
 echo "installing build pre-requisites python, go 1.14.1, build dependencies and docker for the Linux Agent ..."
@@ -78,6 +128,18 @@ install_docker
 # install go
 install_go_lang
 
+# register microsoft GPG keys
+register_microsoft_gpg_keys
+
+# install cross platform gcc to build the go code for windows platform
+install_gcc_for_windows_platform
+
+# dotnet core sdk 3.1
+install_dotnet_sdk
+
+# powershell core
+install_powershell_core
+
 # if its running on wsl/2, set DOCKER_HOST env to use docker for desktop docker endpoint on the windows host
 if [[ $(uname -r) =~ Microsoft$ ]]; then
     echo "****detected running on WSL/2 hence configuring remote docker daemon****"
@@ -92,4 +154,4 @@ sudo rm -rf $TEMP_DIR
 # set go env vars
 install_go_env_vars
 
-echo "installing build pre-requisites python, go 1.14.1, build dependencies and docker completed"
+echo "installing build pre-requisites python, go 1.14.1, dotnet, powershell, build dependencies and docker completed"
