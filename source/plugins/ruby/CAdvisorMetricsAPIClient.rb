@@ -69,8 +69,8 @@ class CAdvisorMetricsAPIClient
       return getResponse(winNode, relativeUri)
     end
 
-    def getNodeCapacityFromCAdvisor(winNode: nil)
-      relativeUri = "/spec/"
+    def getAllMetricsCAdvisor(winNode: nil)
+      relativeUri = "/metrics/cadvisor"
       return getResponse(winNode, relativeUri)
     end
 

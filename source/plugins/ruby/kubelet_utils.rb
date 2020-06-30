@@ -6,6 +6,7 @@ require "logger"
 require "yajl/json_gem"
 require_relative "CAdvisorMetricsAPIClient"
 require_relative "KubernetesApiClient"
+require "bigdecimal"
 
 class KubeletUtils
   @log_path = "/var/opt/microsoft/docker-cimprov/log/filter_cadvisor2mdm.log"
@@ -17,11 +18,14 @@ class KubeletUtils
         cpu_capacity = 1.0
         memory_capacity = 1.0
 
-        response = CAdvisorMetricsAPIClient.getNodeCapacityFromCAdvisor(winNode: nil)
+        response = CAdvisorMetricsAPIClient.getAllMetricsCAdvisor(winNode: nil)
         if !response.nil? && !response.body.nil?
-          cpu_capacity = JSON.parse(response.body)["num_cores"].nil? ? 1.0 : (JSON.parse(response.body)["num_cores"] * 1000.0)
-          memory_capacity = JSON.parse(response.body)["memory_capacity"].nil? ? 1.0 : JSON.parse(response.body)["memory_capacity"].to_f
-          @log.info "CPU = #{cpu_capacity}mc Memory = #{memory_capacity / 1024 / 1024}MB"
+          all_metrics = response.body.split("\n")
+          cpu_capacity = all_metrics.select{|m| m.start_with?('machine_cpu_cores') && m.split.first.strip == 'machine_cpu_cores' }.first.split.last.to_f * 1000
+          @log.info "CPU Capacity #{cpu_capacity}"
+          memory_capacity_e = all_metrics.select{|m| m.start_with?('machine_memory_bytes') && m.split.first.strip == 'machine_memory_bytes' }.first.split.last
+          memory_capacity = BigDecimal(memory_capacity_e).to_f
+          @log.info "Memory Capacity #{memory_capacity}"
           return [cpu_capacity, memory_capacity]
         end
       rescue => errorStr
