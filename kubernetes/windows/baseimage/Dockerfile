@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/windows/servercore:1809
+FROM mcr.microsoft.com/windows/servercore:ltsc2019
 
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
@@ -6,7 +6,7 @@ RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iex (
 
 # Fluentd depends on cool.io whose fat gem is only available for Ruby < 2.5, so need to specify --platform ruby when install Ruby > 2.5 and install msys2 to get dev tools
 RUN choco install -y ruby --version 2.6.5.1 --params "'/InstallDir:C:\ruby26'" \
-&& choco install -y msys2 --params "'/NoPath /NoUpdate /InstallDir:C:\ruby26\msys64'" \
+&& choco install -y msys2 --version 20190524.0.0.20191030 --params "'/NoPath /NoUpdate /InstallDir:C:\ruby26\msys64'" \
 && choco install -y vim
 RUN refreshenv \
 && ridk install 2 3 \

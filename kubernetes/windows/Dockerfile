@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/azuremonitor/containerinsights/ciprod:winakslogbase-04212020
+FROM mcr.microsoft.com/azuremonitor/containerinsights/ciprod:winakslogbase-07022020
 MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
