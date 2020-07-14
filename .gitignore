@@ -18,8 +18,16 @@ build/windows/installer/certificategenerator/obj
 kubernetes/windows/omsagentwindows
 # ignore everything under intermediate directory
 intermediate
-# ignore all these files
-*[.pyc, .so, .zip, .exe, .jar, .dll, .obj]
+# ignore files which are having these extensions
+*.pyc
+*.so
+*.zip
+*.tar
+*.exe
+*.jar
+*.dll
+*.obj
+
 # ignore docker provider shell bundle
 kubernetes/linux/Linux_ULINUX_1.0_x64_64_Release
 # ignore intermediate .h files under go src

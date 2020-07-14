@@ -96,6 +96,7 @@ The general directory structure is:
 ├── .gitignore                                - git config file with include/exclude file rules
 ├── LICENSE                                   - License file
 ├── Rakefile                                  - Rake file to trigger ruby plugin tests
+└── ReleaseProcess.md                         - Release process instructions
 └── ReleaseNotes.md                           - Release notes for the release of the Azure Monitor for containers agent
 ```
 
@@ -210,7 +211,7 @@ powershell -ExecutionPolicy bypass  # switch to powershell if you are not on pow
 
 # Azure DevOps Build Pipeline
 
-Navigate to https://github-private.visualstudio.com/microsoft/_build?view=pipelines to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for dev and master (TBD).
+Navigate to https://github-private.visualstudio.com/microsoft/_build?view=pipelines to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_dev and ci_prod (TBD).
 
 Docker Images will be pushed to CDPX ACR repos and these needs to retagged and pushed to corresponding ACR or docker hub. Only onboarded Azure AD AppId has permission to pull the images from CDPx ACRs.
 
@@ -231,13 +232,22 @@ Here are the instructions to onboard the feature branch to Azure Dev Ops pipelin
  This will create build definition for the Linux agent.
  Repeat above steps except that this time select Operation system as "Windows" to onboard the pipeline for Windows agent.
 
+# Azure DevOps Release Pipeline
+
+Integrated to Azure DevOps release pipeline for the ci_dev and ci_prod (TBD).With this, for every commit to ci_dev branch, latest bits automatically deployded to DEV AKS clusters in Build subscription and similarly for for every commit to ci_prod branch, latest bits automatically deployed to PROD AKS clusters in Build subscription.
+
+For dev, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:cidev<git-commit-id>.
+For prod, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod`<MM><DD><YYYY>`.
+
+Navigate to https://github-private.visualstudio.com/microsoft/_release?_a=releases&view=all to see the release pipelines.
+
 # Update Kubernetes yamls
 
 Navigate to Kubernetes directory and update the yamls with latest docker image of Linux and Windows Agent and other relevant updates.
 
 #  Deployment and Validation
 
-Deploy the Kubernetes yamls on to your Kubernetes cluster with Linux and Windows nodes and make sure all the scenarios works.
+For DEV and PROD branches, automatically deployed latest yaml with latest agent image (which automatically built by the azure devops pipeline) onto CIDEV and CIPROD AKS clusters in build subscription.  So, you can use CIDEV and CIPROD AKS cluster to validate E2E. Similarly, you can set up build and release pipelines for your feature branch.
 
 # E2E Tests
 

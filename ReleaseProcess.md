@@ -1,0 +1,46 @@
+# Release Instructions
+
+# 1. Production agent image and automatic deployment to CIPROD cluster
+
+Here are the high-level instructions to get the CIPROD`<MM><DD><YYYY>` image for the production release
+1. create feature branch from ci_dev and make the following updates
+      > Note: This required since Azure Dev Ops pipeline doesnt support --build-arg yet to automate this.
+   -  Ensure IMAGE_TAG updated with release candiate image tag in the DockerFile under kubernetes/linux and kubernetes/windows directory
+   - Update omsagent.yaml if there are any changes to the yaml
+   - Release notes
+2. Make PR to ci_dev branch and once the PR approved, merge the changes to ci_dev
+3. Latest bits of ci_dev automatically deployed to CIDEV cluster in build subscription so just validated E2E to make sure everthing works
+4. If everything validated in DEV, make merge PR from ci_dev and ci_prod and merge once this reviewed by dev team
+5. Merge ci_dev and ci_prod branch which will trigger automatic deployment of latest bits to CIPROD cluster with CIPROD`<MM><DD><YYYY>` image (TBD)
+   > Note: production image automatically pushed to CIPROD Public cloud ACR which will inturn replicated to Public cloud MCR.
+6. Validate all the scenarios against CIPROD cluster in Build subscription
+
+# 2. Perf and scale testing
+
+Deploy latest omsagent yaml with release candidate agent image in to supported k8s versions and validate all the critical scenarios. In perticular, throughly validate the updates going as part of this release and also make sure no regressions. If  this passes, deploy onto scale cluster and  validate perf and scale aspects. Scale cluster in AME cloud and co-ordinate with agent team who has access to this cluster to deploy  the release candiate onto this cluster.
+
+# 3. Production Image to MCR CN for Azure China Cloud
+
+Image automatically synched to MCR CN from Public cloud MCR.
+
+# 4. Release of the agent
+
+## AKS
+
+Make PR against [AKS-RP](https://msazure.visualstudio.com/CloudNativeCompute/_git/aks-rp?version=GBmaster) repo with chart update(s)
+
+## ARO v3
+
+This needs to be co-ordinated with Red hat  and ARO-RP team for the release and Red hat team will pick up the changes for the release.
+
+## AKS-Engine
+
+Make PR against [AKS-Engine](https://github.com/Azure/aks-engine). Refer PR https://github.com/Azure/aks-engine/pull/2318
+
+## ARO v4, On-prem K8s, Azure Arc K8s and OpenShift v4 clusters
+
+Make PR against [HELM-charts](https://github.com/helm/charts) with Azure Monitor for containers chart update.
+
+# 4. Monitor agent roll-out status
+
+In Container Insights Agent (AKS) telemetry dashboard, update the agent roll status by  region chart with released agent image and track rollout status. If you see any issues with agent rollout, reach out AKS on-call team for the help on investigation and understanding whats going on.
