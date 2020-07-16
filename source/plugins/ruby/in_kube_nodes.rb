@@ -130,7 +130,14 @@ module Fluent
             if File.file?(@@AzStackCloudFileName) # existence of this file indicates agent running on azstack
               record["KubernetesProviderID"] = "azurestack"
             else
-              record["KubernetesProviderID"] = items["spec"]["providerID"]
+              #Multicluster kusto query is filtering after splitting by ":" to the left, so do the same here
+              #https://msazure.visualstudio.com/One/_git/AzureUX-Monitoring?path=%2Fsrc%2FMonitoringExtension%2FClient%2FInfraInsights%2FData%2FQueryTemplates%2FMultiClusterKustoQueryTemplate.ts&_a=contents&version=GBdev
+              provider = items["spec"]["providerID"].split(":")[0]
+              if !provider.nil? && !provider.empty?
+                record["KubernetesProviderID"] = provider
+              else
+                record["KubernetesProviderID"] = items["spec"]["providerID"]
+              end
             end
           else
             record["KubernetesProviderID"] = "onprem"
@@ -311,7 +318,7 @@ module Fluent
         $log.debug_backtrace(errorStr.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
       end
-      $log.warn "in_kube_nodes::parse_and_emit_records:End #{Time.now.utc.iso8601}"
+      $log.info "in_kube_nodes::parse_and_emit_records:End #{Time.now.utc.iso8601}"
     end
 
     def run_periodic

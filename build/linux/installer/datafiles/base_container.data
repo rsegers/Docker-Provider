@@ -31,6 +31,8 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/microsoft/omsagent/plugin/in_cadvisor_perf.rb;			        source/plugins/ruby/in_cadvisor_perf.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/in_win_cadvisor_perf.rb;			    source/plugins/ruby/in_win_cadvisor_perf.rb;			    644; root; root
 /opt/microsoft/omsagent/plugin/in_kube_nodes.rb;			        source/plugins/ruby/in_kube_nodes.rb;			    	644; root; root
+/opt/microsoft/omsagent/plugin/in_kubestate_deployments.rb;			        source/plugins/ruby/in_kubestate_deployments.rb;			    	644; root; root
+/opt/microsoft/omsagent/plugin/in_kubestate_hpa.rb;			        source/plugins/ruby/in_kubestate_hpa.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/filter_inventory2mdm.rb;			     source/plugins/ruby/filter_inventory2mdm.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/podinventory_to_mdm.rb;			     source/plugins/ruby/podinventory_to_mdm.rb;			    	644; root; root
 /opt/microsoft/omsagent/plugin/kubelet_utils.rb;			         source/plugins/ruby/kubelet_utils.rb;			    	644; root; root

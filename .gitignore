@@ -3,14 +3,9 @@
 /intermediate/
 /target/
 /build/config.mak
-
-# Unit test files
-source/plugins/go/src/profiling
 .vscode/launch.json
-source/plugins/go/src/vendor/
 # ignore go packages
 source/plugins/go/pkg/
-source/plugins/go/src/*.h
 # .net code build artificats
 build/windows/installer/certificategenerator/bin
 build/windows/installer/certificategenerator/obj
@@ -27,8 +22,7 @@ intermediate
 *.jar
 *.dll
 *.obj
-
 # ignore docker provider shell bundle
 kubernetes/linux/Linux_ULINUX_1.0_x64_64_Release
-# ignore intermediate .h files under go src
+# ignore generated .h files for go
 source/plugins/go/src/*.h

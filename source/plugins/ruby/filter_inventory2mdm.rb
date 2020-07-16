@@ -118,7 +118,7 @@ module Fluent
                     begin
                         timestamp = record['DataItems'][0]['CollectionTime']
                         node_status = record['DataItems'][0]['Status']
-                        if node_status.downcase == @@node_status_ready.downcase
+                        if node_status.downcase.split(",").include? @@node_status_ready.downcase
                             node_ready_count = node_ready_count+1
                         else
                             node_not_ready_count = node_not_ready_count + 1

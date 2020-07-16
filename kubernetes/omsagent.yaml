@@ -23,8 +23,8 @@ rules:
         "services",
       ]
     verbs: ["list", "get", "watch"]
-  - apiGroups: ["apps", "extensions"]
-    resources: ["replicasets"]
+  - apiGroups: ["apps", "extensions", "autoscaling"]
+    resources: ["replicasets", "deployments", "horizontalpodautoscalers"]
     verbs: ["list"]
   - apiGroups: ["azmon.container.insights"]
     resources: ["healthstates"]
@@ -95,6 +95,22 @@ data:
      <source>
       type wincadvisorperf
       tag oms.api.wincadvisorperf
+      run_interval 60
+      log_level debug
+     </source>
+
+     #Kubernetes object state - deployments
+     <source>
+      type kubestatedeployments
+      tag oms.containerinsights.KubeStateDeployments
+      run_interval 60
+      log_level debug
+     </source>
+
+     #Kubernetes object state - HPA
+     <source>
+      type kubestatehpa
+      tag oms.containerinsights.KubeStateHpa
       run_interval 60
       log_level debug
      </source>
