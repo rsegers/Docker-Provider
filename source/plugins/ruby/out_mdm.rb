@@ -45,7 +45,6 @@ module Fluent
       @useMsi = false
       @metrics_flushed_count = 0
 
-
       @get_access_token_backoff_expiry = Time.now
     end
 
@@ -77,7 +76,7 @@ module Fluent
         if @can_send_data_to_mdm
           @log.info "MDM Metrics supported in #{aks_region} region"
 
-          @@post_request_url = @@post_request_url_template % {aks_region: aks_region, aks_resource_id: aks_resource_id}
+          @@post_request_url = @@post_request_url_template % { aks_region: aks_region, aks_resource_id: aks_resource_id }
           @post_request_uri = URI.parse(@@post_request_url)
           @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
           @http_client.use_ssl = true
@@ -90,11 +89,11 @@ module Fluent
 
           if (!sp_client_id.nil? && !sp_client_id.empty? && sp_client_id.downcase != "msi")
             @useMsi = false
-            aad_token_url = @@aad_token_url_template % {tenant_id: @data_hash["tenantId"]}
+            aad_token_url = @@aad_token_url_template % { tenant_id: @data_hash["tenantId"] }
             @parsed_token_uri = URI.parse(aad_token_url)
           else
             @useMsi = true
-            msi_endpoint = @@msi_endpoint_template % {user_assigned_client_id: @@user_assigned_client_id, resource: @@token_resource_url}
+            msi_endpoint = @@msi_endpoint_template % { user_assigned_client_id: @@user_assigned_client_id, resource: @@token_resource_url }
             @parsed_token_uri = URI.parse(msi_endpoint)
           end
 
@@ -102,7 +101,7 @@ module Fluent
         end
       rescue => e
         @log.info "exception when initializing out_mdm #{e}"
-        ApplicationInsightsUtility.sendExceptionTelemetry(e, {"FeatureArea" => "MDM"})
+        ApplicationInsightsUtility.sendExceptionTelemetry(e, { "FeatureArea" => "MDM" })
         return
       end
     end
@@ -145,7 +144,7 @@ module Fluent
             token_response = http_access_token.request(token_request)
             # Handle the case where the response is not 200
             parsed_json = JSON.parse(token_response.body)
-            @token_expiry_time = Time.now + @@token_refresh_back_off_interval * 60 # set the expiry time to be ~thirty minutes from current time
+            @token_expiry_time = Time.now + @@token_refresh_back_off_interval * 60 # set the expiry time to be ~ thirty minutes from current time
             @cached_access_token = parsed_json["access_token"]
             @log.info "Successfully got access token"
           end
@@ -159,7 +158,7 @@ module Fluent
           else
             @get_access_token_backoff_expiry = Time.now + @@token_refresh_back_off_interval * 60
             @log.info "@get_access_token_backoff_expiry set to #{@get_access_token_backoff_expiry}"
-            ApplicationInsightsUtility.sendExceptionTelemetry(err, {"FeatureArea" => "MDM"})
+            ApplicationInsightsUtility.sendExceptionTelemetry(err, { "FeatureArea" => "MDM" })
           end
         ensure
           if http_access_token
