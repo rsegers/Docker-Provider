@@ -168,7 +168,12 @@ namespace certificategenerator
             return Convert.ToBase64String(hKey.ComputeHash(Encoding.UTF8.GetBytes(rawsignature)));
         }
 
-        public static void RegisterWithOms(X509Certificate2 cert, string AgentGuid, string logAnalyticsWorkspaceId, string logAnalyticsWorkspaceKey, string logAnalyticsWorkspaceDomain)
+        public static void RegisterWithOms(X509Certificate2 cert,
+        string AgentGuid,
+        string logAnalyticsWorkspaceId,
+        string logAnalyticsWorkspaceKey,
+        string logAnalyticsWorkspaceDomain,
+        string proxyEndpoint)
         {
 
             string rawCert = Convert.ToBase64String(cert.GetRawCertData()); //base64 binary
@@ -195,10 +200,56 @@ namespace certificategenerator
 
             string authKey = string.Format("{0}; {1}", logAnalyticsWorkspaceId, Sign(date, contentHash, logAnalyticsWorkspaceKey));
 
-
             HttpClientHandler clientHandler = new HttpClientHandler();
 
             clientHandler.ClientCertificates.Add(cert);
+
+            if (!string.IsNullOrEmpty(proxyEndpoint))
+            {
+                var parts = proxyEndpoint.Split("@");
+                if (parts.Length != 2)
+                {
+                    Console.WriteLine("Invalid proxy endpoint configured hence ignoring the proxy configuration. Supported format should be http(s)://<user>:<pwd>@<hostOrIP>:<port>");
+                }
+                else
+                {
+                    var protocol = "";
+                    if (!string.IsNullOrWhiteSpace(parts[0]))
+                    {
+                        var tempProtocolPrefix = parts[0].Split("//");
+                        if (tempProtocolPrefix.Length == 2)
+                        {
+                            protocol = tempProtocolPrefix[0].Split(":")[0];
+                            protocol = protocol.ToLower();
+                        }
+                    }
+
+                    if (protocol != "http" && protocol != "https")
+                    {
+                        Console.WriteLine("Unsupported protocol in the proxy endpoint hence ignoring the proxy configuration. Supported protocol for the Proxy endpoint is http or https");
+                    }
+                    else
+                    {
+
+                        string proxyhostAndPort = parts[1];
+                        var proxyURI = new Uri(string.Format("{0}://{1}", protocol, proxyhostAndPort));
+                        var tempParts = parts[0].Split("//");
+                        if (tempParts.Length != 2)
+                        {
+                            Console.WriteLine("Invalid proxy endpoint hence ignoring the proxy configuration. Supported format should be http(s)://<user>:<pwd>@<hostOrIP>:<port>");
+                        }
+                        else
+                        {
+                            var userNameAndPassword = tempParts[1].Split(":");
+                            var username = userNameAndPassword[0];
+                            var password = userNameAndPassword[1];
+                            var credentials = new NetworkCredential(username, password);
+                            //set proxy
+                            clientHandler.Proxy = new WebProxy(proxyURI, true, null, credentials);
+                        }
+                    }
+                }
+            }
 
             var client = new HttpClient(clientHandler);
 
@@ -245,7 +296,12 @@ namespace certificategenerator
             }
         }
 
-        public static void RegisterWithOmsWithBasicRetryAsync(X509Certificate2 cert, string AgentGuid, string logAnalyticsWorkspaceId, string logAnalyticsWorkspaceKey, string logAnalyticsWorkspaceDomain)
+        public static void RegisterWithOmsWithBasicRetryAsync(X509Certificate2 cert,
+        string AgentGuid,
+        string logAnalyticsWorkspaceId,
+        string logAnalyticsWorkspaceKey,
+        string logAnalyticsWorkspaceDomain,
+        string proxyEndpoint)
         {
             int currentRetry = 0;
 
@@ -253,8 +309,12 @@ namespace certificategenerator
             {
                 try
                 {
-                    RegisterWithOms(
-                       cert, AgentGuid, logAnalyticsWorkspaceId, logAnalyticsWorkspaceKey, logAnalyticsWorkspaceDomain);
+                    RegisterWithOms(cert,
+                       AgentGuid,
+                       logAnalyticsWorkspaceId,
+                       logAnalyticsWorkspaceKey,
+                       logAnalyticsWorkspaceDomain,
+                       proxyEndpoint);
 
                     // Return or break.
                     break;
@@ -285,7 +345,9 @@ namespace certificategenerator
         }
 
         public static X509Certificate2 RegisterAgentWithOMS(string logAnalyticsWorkspaceId,
-            string logAnalyticsWorkspaceKey, string logAnalyticsWorkspaceDomain)
+            string logAnalyticsWorkspaceKey,
+            string logAnalyticsWorkspaceDomain,
+            string proxyEndpoint)
         {
             X509Certificate2 agentCert = null;
 
@@ -311,11 +373,13 @@ namespace certificategenerator
 
                 Console.WriteLine($"Successfully created self-signed certificate  for agentGuid : {agentGuid} and workspace: {logAnalyticsWorkspaceId}");
 
-                RegisterWithOmsWithBasicRetryAsync(agentCert, agentGuid,
+                RegisterWithOmsWithBasicRetryAsync(agentCert,
+                    agentGuid,
                     logAnalyticsWorkspaceId,
                     logAnalyticsWorkspaceKey,
-                    logAnalyticsWorkspaceDomain);
-
+                    logAnalyticsWorkspaceDomain,
+                    proxyEndpoint
+                    );
 
             }
             catch (Exception ex)
@@ -334,6 +398,7 @@ namespace certificategenerator
             string logAnalyticsWorkspaceID = "";
             string logAnalyticsWorkspaceSharedKey = "";
             string logAnayticsDomain = Constants.DEFAULT_LOG_ANALYTICS_WORKSPACE_DOMAIN;
+            string proxyEndpoint = "";
 
             try
             {
@@ -371,7 +436,33 @@ namespace certificategenerator
                 Console.WriteLine("Failed to read env variables (DOMAIN)" + ex.Message);
             }
 
-            X509Certificate2 clientCertificate = RegisterAgentWithOMS(logAnalyticsWorkspaceID, logAnalyticsWorkspaceSharedKey, logAnayticsDomain);
+            try
+            {
+                if (!String.IsNullOrEmpty(Environment.GetEnvironmentVariable("DOMAIN")))
+                {
+                    logAnayticsDomain = Environment.GetEnvironmentVariable("DOMAIN");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to read env variables (DOMAIN)" + ex.Message);
+            }
+
+            try
+            {
+                if (!String.IsNullOrEmpty(Environment.GetEnvironmentVariable("PROXY")))
+                {
+                    Console.WriteLine("Proxy configured");
+                    proxyEndpoint = Environment.GetEnvironmentVariable("PROXY");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Failed to read env variables (PROXY)" + ex.Message);
+            }
+
+
+            X509Certificate2 clientCertificate = RegisterAgentWithOMS(logAnalyticsWorkspaceID, logAnalyticsWorkspaceSharedKey, logAnayticsDomain, proxyEndpoint);
         }
     }
 }
