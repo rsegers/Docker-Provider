@@ -15,7 +15,7 @@ class KubernetesApiClient
   @@ApiVersion = "v1"
   @@ApiVersionApps = "v1"
   @@ApiGroupApps = "apps"
-  @@APiGroupHPA = "autoscaling"
+  @@ApiGroupHPA = "autoscaling"
   @@ApiVersionHPA = "v1"
   @@CaFile = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
   @@ClusterName = nil
@@ -96,8 +96,8 @@ class KubernetesApiClient
             return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/api/" + @@ApiVersion + "/" + resource
           elsif api_group == @@ApiGroupApps
             return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/apis/apps/" + @@ApiVersionApps + "/" + resource
-          elsif api_group == @@APiGroupHPA
-            return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/apis/" + @@APiGroupHPA + "/" + @@ApiVersionHPA + "/" + resource
+          elsif api_group == @@ApiGroupHPA
+            return "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}/apis/" + @@ApiGroupHPA + "/" + @@ApiVersionHPA + "/" + resource
           end
           
         else

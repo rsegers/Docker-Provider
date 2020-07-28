@@ -31,8 +31,8 @@ mv $TMPDIR/omsbundle* $TMPDIR/omsbundle
 /usr/bin/dpkg -i $TMPDIR/omsbundle/110/omsagent*.deb
 #/usr/bin/dpkg -i $TMPDIR/omsbundle/100/omsconfig*.deb
 
-#install oneagent
-wget https://dockerprovider.blob.core.windows.net/mdsdagent/azure-mdsd_1.5.122-build.develop.1087_x86_64.deb
+#install oneagent - Latest dev bits (7/17)
+wget https://github.com/microsoft/Docker-Provider/releases/download/7172020-oneagent/azure-mdsd_1.5.124-build.develop.1294_x86_64.deb
 /usr/bin/dpkg -i $TMPDIR/azure-mdsd*.deb
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d

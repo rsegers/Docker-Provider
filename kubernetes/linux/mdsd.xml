@@ -98,7 +98,7 @@
     -->
     <MdsdEvents>
 	  <MdsdEventSource source="ContainerLogSource">
-        <RouteEvent eventName="ContainerLogEvent" duration="PT10S" priority="High" storeType="Local">          
+        <RouteEvent eventName="ContainerLogEvent" duration="PT10S" priority="High" storeType="Local" disabled="true">          
         </RouteEvent> 
 		    <!-- 
         <RouteEvent eventName="ContainerLogEvent2File" duration="PT1S" priority="High" storeType="File">          
