@@ -1323,7 +1323,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		ContainerLogsRouteV2 = true
 		Log("Routing container logs thru %s route...", ContainerLogsV2Route)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsV2Route)
-	} else if strings.Compare(ContainerLogsRoute, ContainerLogsADXRoute) == 0 {
+	//} else if strings.Compare(ContainerLogsRoute, ContainerLogsADXRoute) == 0 {
+	//making dormant with below comparison for now --
+	} else if strings.Compare("willnot", "match") == 0 {
 		//check if adx clusteruri, clientid & secret are set
 		var err error
 		AdxClusterUri, err = ReadFileContents(PluginConfiguration["adx_cluster_uri_path"])
