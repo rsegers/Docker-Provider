@@ -76,6 +76,7 @@ class KubernetesContainerInventory
             end
             containerInventoryRecord["ExitCode"] = 0
             isContainerTerminated = false
+            isContainerWaiting = false
             if !containerStatus["state"].nil? && !containerStatus["state"].empty?
               containerState = containerStatus["state"]
               if containerState.key?("running")
@@ -85,10 +86,18 @@ class KubernetesContainerInventory
                 containerInventoryRecord["State"] = "Terminated"
                 containerInventoryRecord["StartedTime"] = containerState["terminated"]["startedAt"]
                 containerInventoryRecord["FinishedTime"] = containerState["terminated"]["finishedAt"]
-                containerInventoryRecord["ExitCode"] = containerState["terminated"]["exitCode"]
+                exitCodeValue = containerState["terminated"]["exitCode"]
+                if exitCodeValue < 0
+                  exitCodeValue = 128
+                end
+                containerInventoryRecord["ExitCode"] = exitCodeValue
+                if exitCodeValue > 0
+                  containerInventoryRecord["State"] = "Failed"
+                end
                 isContainerTerminated = true
               elsif containerState.key?("waiting")
                 containerInventoryRecord["State"] = "Waiting"
+                isContainerWaiting = true
               end
             end
 
@@ -111,10 +120,11 @@ class KubernetesContainerInventory
             containerInventoryRecord["Command"] = containerInfoMap["Command"]
             if !clusterCollectEnvironmentVar.nil? && !clusterCollectEnvironmentVar.empty? && clusterCollectEnvironmentVar.casecmp("false") == 0
               containerInventoryRecord["EnvironmentVar"] = ["AZMON_CLUSTER_COLLECT_ENV_VAR=FALSE"]
-            elsif isWindows
+            elsif isWindows || isContainerTerminated || isContainerWaiting
+              # for terminated and waiting containers, since the cproc doesnt exist we lost the env and we can only get this
               containerInventoryRecord["EnvironmentVar"] = containerInfoMap["EnvironmentVar"]
             else
-              if containerId.nil? || containerId.empty? || isContainerTerminated || containerRuntime.nil? || containerRuntime.empty?
+              if containerId.nil? || containerId.empty? || containerRuntime.nil? || containerRuntime.empty?
                 containerInventoryRecord["EnvironmentVar"] = ""
               else
                 if containerRuntime.casecmp("cri-o") == 0
@@ -166,10 +176,7 @@ class KubernetesContainerInventory
               cmdValue = container["command"]
               cmdValueString = (cmdValue.nil?) ? "" : cmdValue.to_s
               containerInfoMap["Command"] = cmdValueString
-              containerInfoMap["EnvironmentVar"] = ""
-              if isWindows
-                containerInfoMap["EnvironmentVar"] = obtainWindowsContainerEnvironmentVars(podItem, container)
-              end
+              containerInfoMap["EnvironmentVar"] = obtainContainerEnvironmentVarsFromPodsResponse(podItem, container)
               containersInfoMap[containerName] = containerInfoMap
             end
           end
@@ -244,7 +251,7 @@ class KubernetesContainerInventory
       return envValueString
     end
 
-    def obtainWindowsContainerEnvironmentVars(pod, container)
+    def obtainContainerEnvironmentVarsFromPodsResponse(pod, container)
       envValueString = ""
       begin
         envVars = []
@@ -316,7 +323,7 @@ class KubernetesContainerInventory
           end
         end
       rescue => error
-        $log.warn("KubernetesContainerInventory::obtainWindowsContainerEnvironmentVars: parsing of EnvVars failed: #{error}")
+        $log.warn("KubernetesContainerInventory::obtainContainerEnvironmentVarsFromPodsResponse: parsing of EnvVars failed: #{error}")
         $log.debug_backtrace(error.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(error)
       end
