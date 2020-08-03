@@ -21,8 +21,8 @@ do
 done
 
 echo "start: read appid and appsecret"
-ACR_APP_ID=$(cat ./acrappid )
-ACR_APP_SECRET=$(cat ./acrappsecret)
+ACR_APP_ID=$(cat ~/acrappid )
+ACR_APP_SECRET=$(cat ~/acrappsecret)
 echo "end: read appid and appsecret"
 
 echo "login to cdpxwindows acr:${CDPX_ACR}"

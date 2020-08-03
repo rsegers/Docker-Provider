@@ -25,7 +25,7 @@ Feel free to contact engineering team owners in case you have any questions abou
 
 ## Windows
 - Windows 10 Professional machine to build  Windows Agent
-- [Dokcer for Windows](https://docs.docker.com/docker-for-windows/) to build docker image for Windows Agent
+- [Docker for Windows](https://docs.docker.com/docker-for-windows/) to build docker image for Windows Agent
 - [.NET Core SDK](https://dotnet.microsoft.com/download) to build the Windows Agent code
 - [gcc for windows](https://github.com/jmeubank/tdm-gcc/releases/download/v9.2.0-tdm64-1/tdm64-gcc-9.2.0.exe) to build go code
 
@@ -55,6 +55,8 @@ The general directory structure is:
 |   |   |   |── conf/                         - fluent, fluentbit and out_oms plugin configuration files
 |   |   |   |── scripts/                      - script files related to livenessproble, filesystemwatcher, keepCertificateAlive etc..
 |   |   |   |── certificategenerator/         - .NET code for the generation self-signed certificate of the windows agent
+├── charts/                                   - helm charts
+│   ├── azuremonitor-containers/              - azure monitor for containers helm chart used for non-AKS clusters
 ├── alerts/                                   - alert queries
 ├── kubernetes/                               - files related to Linux and Windows Agent for Kubernetes
 │   ├── linux/                                - scripts to build the Docker image for Linux Agent
@@ -251,7 +253,8 @@ For DEV and PROD branches, automatically deployed latest yaml with latest agent 
 
 # E2E Tests
 
-TBD
+Clusters are used in release pipeline already has the yamls under test\scenario deployed. Make sure to validate these scenarios.
+If you have new interesting scenarios, please add/update them.
 
 # Code of Conduct
 
