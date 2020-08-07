@@ -213,7 +213,7 @@ powershell -ExecutionPolicy bypass  # switch to powershell if you are not on pow
 
 # Azure DevOps Build Pipeline
 
-Navigate to https://github-private.visualstudio.com/microsoft/_build?view=pipelines to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_dev and ci_prod (TBD).
+Navigate to https://github-private.visualstudio.com/microsoft/_build?view=pipelines to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_dev and ci_prod.
 
 Docker Images will be pushed to CDPX ACR repos and these needs to retagged and pushed to corresponding ACR or docker hub. Only onboarded Azure AD AppId has permission to pull the images from CDPx ACRs.
 
@@ -236,7 +236,7 @@ Here are the instructions to onboard the feature branch to Azure Dev Ops pipelin
 
 # Azure DevOps Release Pipeline
 
-Integrated to Azure DevOps release pipeline for the ci_dev and ci_prod (TBD).With this, for every commit to ci_dev branch, latest bits automatically deployded to DEV AKS clusters in Build subscription and similarly for for every commit to ci_prod branch, latest bits automatically deployed to PROD AKS clusters in Build subscription.
+Integrated to Azure DevOps release pipeline for the ci_dev and ci_prod.With this, for every commit to ci_dev branch, latest bits automatically deployded to DEV AKS clusters in Build subscription and similarly for for every commit to ci_prod branch, latest bits automatically deployed to PROD AKS clusters in Build subscription.
 
 For dev, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:cidev<git-commit-id>.
 For prod, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod`<MM><DD><YYYY>`.

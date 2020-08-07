@@ -5,15 +5,21 @@
 Here are the high-level instructions to get the CIPROD`<MM><DD><YYYY>` image for the production release
 1. create feature branch from ci_dev and make the following updates
       > Note: This required since Azure Dev Ops pipeline doesnt support --build-arg yet to automate this.
-   -  Ensure IMAGE_TAG updated with release candiate image tag in the DockerFile under kubernetes/linux and kubernetes/windows directory
-   - Update omsagent.yaml if there are any changes to the yaml
+   - Ensure IMAGE_TAG updated with release candiate image tag in the DockerFile under kubernetes/linux and kubernetes/windows directory
+   - Update the version file under build directory with build version and date
+   - Update omsagent.yaml for the image tag and dockerProviderVersion, and any other changes
+   - Update the chart version and image tags in values.yaml under charts/azuremonitor-containers
    - Release notes
 2. Make PR to ci_dev branch and once the PR approved, merge the changes to ci_dev
 3. Latest bits of ci_dev automatically deployed to CIDEV cluster in build subscription so just validated E2E to make sure everthing works
 4. If everything validated in DEV, make merge PR from ci_dev and ci_prod and merge once this reviewed by dev team
-5. Merge ci_dev and ci_prod branch which will trigger automatic deployment of latest bits to CIPROD cluster with CIPROD`<MM><DD><YYYY>` image (TBD)
+6. Update following pipeline variables under ReleaseCandiate with version of chart and image tag
+    - CIHELMCHARTVERSION <VersionValue> # For example, 2.7.4
+    - CIImageTagSuffix <ImageTag> # ciprod08072020 or ciprod08072020-1 etc.
+7. Merge ci_dev and ci_prod branch which will trigger automatic deployment of latest bits to CIPROD cluster with CIPROD`<MM><DD><YYYY>` image to test and scale cluters, AKS, AKS-Engine
    > Note: production image automatically pushed to CIPROD Public cloud ACR which will inturn replicated to Public cloud MCR.
-6. Validate all the scenarios against CIPROD cluster in Build subscription
+8. Validate all the scenarios against clusters in build subscription and scale clusters
+
 
 # 2. Perf and scale testing
 
@@ -27,7 +33,7 @@ Image automatically synched to MCR CN from Public cloud MCR.
 
 ## AKS
 
-Make PR against [AKS-RP](https://msazure.visualstudio.com/CloudNativeCompute/_git/aks-rp?version=GBmaster) repo with chart update(s)
+- Refer to internal docs for the release process and instructions.
 
 ## ARO v3
 

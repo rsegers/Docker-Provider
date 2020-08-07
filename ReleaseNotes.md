@@ -11,6 +11,22 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 08/07/2020 -
+##### Version microsoft/oms:ciprod08072020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08072020 (linux)
+##### Version microsoft/oms:win-ciprod08072020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod08072020 (windows)
+##### Code change log
+- Collection of KubeState metrics for deployments and HPA
+- Add the Proxy support for Windows agent
+- Fix for ContainerState in ContainerInventory to handle Failed state and collection of environment variables for terminated and failed containers
+- Change /spec to /metrics/cadvisor endpoint to collect node capacity metrics
+- Disable Health Plugin by default and can enabled via configmap
+- Pin version of jq to 1.5+dfsg-2
+- Bug fix for showing node as 'not ready' when there is disk pressure
+- oneagent integration (disabled by default)
+- Add region check before sending alertable metrics to MDM
+- Telemetry fix for agent telemetry for sov. clouds
+
+
 ### 07/15/2020 -
 ##### Version microsoft/oms:ciprod07152020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod07152020 (linux)
 ##### Version microsoft/oms:win-ciprod05262020-2 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod05262020-2 (windows)
