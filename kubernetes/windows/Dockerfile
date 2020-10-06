@@ -3,7 +3,7 @@ MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
-ARG IMAGE_TAG=win-ciprod08072020
+ARG IMAGE_TAG=win-ciprod10052020
 
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
@@ -56,6 +56,9 @@ COPY ./omsagentwindows/out_oms.so /opt/omsagentwindows/out_oms.so
 
 # copy fluent, fluent-bit and out_oms conf files
 COPY ./omsagentwindows/installer/conf/fluent.conf /etc/fluent/
+# copy fluent docker and cri parser conf files
+COPY ./omsagentwindows/installer/conf/fluent-cri-parser.conf /etc/fluent/
+COPY ./omsagentwindows/installer/conf/fluent-docker-parser.conf /etc/fluent/
 COPY ./omsagentwindows/installer/conf/fluent-bit.conf /etc/fluent-bit
 COPY ./omsagentwindows/installer/conf/out_oms.conf /etc/omsagentwindows
 

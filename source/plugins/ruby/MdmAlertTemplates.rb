@@ -90,6 +90,40 @@ class MdmAlertTemplates
         }
     }'
 
+  PV_resource_utilization_template = '
+    {
+        "time": "%{timestamp}",
+        "data": {
+            "baseData": {
+                "metric": "%{metricName}",
+                "namespace": "insights.container/persistentvolumes",
+                "dimNames": [
+                    "podName",
+                    "node",
+                    "kubernetesNamespace",
+                    "volumeName",
+                    "thresholdPercentage"
+                ],
+                "series": [
+                {
+                    "dimValues": [
+                        "%{podNameDimValue}",
+                        "%{computerNameDimValue}",
+                        "%{namespaceDimValue}",
+                        "%{volumeNameDimValue}",
+                        "%{thresholdPercentageDimValue}"
+                    ],
+                    "min": %{pvResourceUtilizationPercentage},
+                    "max": %{pvResourceUtilizationPercentage},
+                    "sum": %{pvResourceUtilizationPercentage},
+                    "count": 1
+                }
+                ]
+            }
+        }
+    }'
+
+
   Node_resource_metrics_template = '
             {
                 "time": "%{timestamp}",

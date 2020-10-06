@@ -1,14 +1,20 @@
 <#
     .DESCRIPTION
 
-     Onboards Azure Monitor for containers to Azure Managed Kuberenetes such as Azure Arc K8s, ARO v4 and AKS etc.
+     Onboards Azure Monitor for containers to Azure Managed Kuberenetes such as Azure Arc enabled Kubernetes, ARO v4 and AKS etc.
        1. Creates the Default Azure log analytics workspace if doesn't exist one in specified subscription
        2. Adds the ContainerInsights solution to the Azure log analytics workspace
        3. Adds the workspaceResourceId tag or enable addon (if the cluster is AKS) on the provided Managed cluster resource id
        4. Installs Azure Monitor for containers HELM chart to the K8s cluster in provided via --kube-context
 
     .PARAMETER clusterResourceId
-        Id of the Azure Managed Cluster such as Azure ARC K8s, ARO v4 etc.
+        Id of the Azure Managed Cluster such as Azure Arc enabled Kubernetes, ARO v4 etc.
+    .PARAMETER servicePrincipalClientId
+        Client Id of the service principal which will be used for the azure login
+    .PARAMETER servicePrincipalClientSecret
+        Client secret of the service principal which will be used for the azure login
+    .PARAMETER tenantId
+        Azure TenantId of the service principal which will be used for the azure login
     .PARAMETER kubeContext (optional)
         kube-context of the k8 cluster to install Azure Monitor for containers HELM chart
     .PARAMETER workspaceResourceId (optional)
@@ -16,10 +22,6 @@
     .PARAMETER proxyEndpoint (optional)
         Provide Proxy endpoint if you have K8s cluster behind the proxy and would like to route Azure Monitor for containers outbound traffic via proxy.
         Format of the proxy endpoint should be http(s://<user>:<password>@<proxyhost>:<port>
-    .PARAMETER helmRepoName (optional)
-        helm repo name. should be used only for the private preview features
-    .PARAMETER helmRepoUrl (optional)
-        helm repo url. should be used only for the private preview features
 
      Pre-requisites:
       -  Azure Managed cluster Resource Id
@@ -34,33 +36,33 @@ param(
     [Parameter(mandatory = $true)]
     [string]$clusterResourceId,
     [Parameter(mandatory = $false)]
+    [string]$servicePrincipalClientId,
+    [Parameter(mandatory = $false)]
+    [string]$servicePrincipalClientSecret,
+    [Parameter(mandatory = $false)]
+    [string]$tenantId,
+    [Parameter(mandatory = $false)]
     [string]$kubeContext,
     [Parameter(mandatory = $false)]
     [string]$workspaceResourceId,
     [Parameter(mandatory = $false)]
-    [string]$proxyEndpoint,
-    [Parameter(mandatory = $false)]
-    [string]$helmRepoName,
-    [Parameter(mandatory = $false)]
-    [string]$helmRepoUrl
+    [string]$proxyEndpoint
 )
 
-$solutionTemplateUri= "https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_dev/scripts/onboarding/templates/azuremonitor-containerSolution.json"
+$solutionTemplateUri = "https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_dev/scripts/onboarding/templates/azuremonitor-containerSolution.json"
 $helmChartReleaseName = "azmon-containers-release-1"
 $helmChartName = "azuremonitor-containers"
-$helmChartRepoName = "incubator"
-$helmChartRepoUrl = "https://kubernetes-charts-incubator.storage.googleapis.com/"
+
 # flags to indicate the cluster types
 $isArcK8sCluster = $false
-$isAksCluster =  $false
+$isAksCluster = $false
+$isUsingServicePrincipal = $false
 
-if([string]::IsNullOrEmpty($helmRepoName) -eq $false){
-    $helmChartRepoName = $helmRepoName
-}
-
-if([string]::IsNullOrEmpty($helmRepoUrl) -eq $false){
-    $helmChartRepoUrl = $helmRepoUrl
-}
+# released chart version in mcr
+$mcr = "mcr.microsoft.com"
+$mcrChartVersion = "2.7.6"
+$mcrChartRepoPath = "azuremonitor/containerinsights/preview/azuremonitor-containers"
+$helmLocalRepoName = "."
 
 # checks the required Powershell modules exist and if not exists, request the user permission to install
 $azAccountModule = Get-Module -ListAvailable -Name Az.Accounts
@@ -187,7 +189,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
 }
 
 if ([string]::IsNullOrEmpty($clusterResourceId)) {
-    Write-Host("Specified Azure Arc ClusterResourceId should not be NULL or empty") -ForegroundColor Red
+    Write-Host("Specified Azure Arc enabled Kubernetes ClusterResourceId should not be NULL or empty") -ForegroundColor Red
     exit
 }
 
@@ -207,29 +209,43 @@ if ($clusterResourceId.StartsWith("/") -eq $false) {
     $clusterResourceId = "/" + $clusterResourceId
 }
 
-if ($clusterResourceId.Split("/").Length -ne 9){
-     Write-Host("Provided Cluster Resource Id is not in expected format") -ForegroundColor Red
+if ($clusterResourceId.Split("/").Length -ne 9) {
+    Write-Host("Provided Cluster Resource Id is not in expected format") -ForegroundColor Red
     exit
 }
 
 if (($clusterResourceId.ToLower().Contains("microsoft.kubernetes/connectedclusters") -ne $true) -and
     ($clusterResourceId.ToLower().Contains("microsoft.redhatopenshift/openshiftclusters") -ne $true) -and
     ($clusterResourceId.ToLower().Contains("microsoft.containerservice/managedclusters") -ne $true)
-  ) {
+) {
     Write-Host("Provided cluster ResourceId is not supported cluster type: $clusterResourceId") -ForegroundColor Red
     exit
 }
 
+if (([string]::IsNullOrEmpty($servicePrincipalClientId) -eq $false) -and
+    ([string]::IsNullOrEmpty($servicePrincipalClientSecret) -eq $false) -and
+    ([string]::IsNullOrEmpty($tenantId) -eq $false)) {
+    Write-Host("Using service principal creds for the azure login since these provided.")
+    $isUsingServicePrincipal = $true
+}
+
 if ($clusterResourceId.ToLower().Contains("microsoft.kubernetes/connectedclusters") -eq $true) {
-   $isArcK8sCluster = $true
-} elseif ($clusterResourceId.ToLower().Contains("microsoft.containerservice/managedclusters") -eq $true) {
-   $isAksCluster =  $true
+    $isArcK8sCluster = $true
+}
+elseif ($clusterResourceId.ToLower().Contains("microsoft.containerservice/managedclusters") -eq $true) {
+    $isAksCluster = $true
 }
 
 $resourceParts = $clusterResourceId.Split("/")
 $clusterSubscriptionId = $resourceParts[2]
 
 Write-Host("Cluster SubscriptionId : '" + $clusterSubscriptionId + "' ") -ForegroundColor Green
+
+if ($isUsingServicePrincipal) {
+    $spSecret = ConvertTo-SecureString -String $servicePrincipalClientSecret -AsPlainText -Force
+    $spCreds = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList $servicePrincipalClientId, $spSecret
+    Connect-AzAccount -ServicePrincipal -Credential $spCreds -Tenant $tenantId -Subscription $clusterSubscriptionId
+}
 
 try {
     Write-Host("")
@@ -247,8 +263,15 @@ catch {
 
 if ($null -eq $account.Account) {
     try {
-        Write-Host("Please login...")
-        Connect-AzAccount -subscriptionid $clusterSubscriptionId
+        if ($isUsingServicePrincipal) {
+            $spSecret = ConvertTo-SecureString -String $servicePrincipalClientSecret -AsPlainText -Force
+            $spCreds = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList $servicePrincipalClientId, $spSecret
+            Connect-AzAccount -ServicePrincipal -Credential $spCreds -Tenant $tenantId -Subscription $clusterSubscriptionId
+        }
+        else {
+            Write-Host("Please login...")
+            Connect-AzAccount -subscriptionid $clusterSubscriptionId
+        }
     }
     catch {
         Write-Host("")
@@ -290,12 +313,12 @@ if ($null -eq $clusterResource) {
 $clusterRegion = $clusterResource.Location.ToLower()
 
 if ($isArcK8sCluster -eq $true) {
-   # validate identity
-   $clusterIdentity = $clusterResource.identity.type.ToString().ToLower()
-   if ($clusterIdentity.contains("systemassigned") -eq $false) {
-     Write-Host("Identity of Azure Arc K8s cluster should be systemassigned but it has identity: $clusterIdentity") -ForegroundColor Red
-     exit
-   }
+    # validate identity
+    $clusterIdentity = $clusterResource.identity.type.ToString().ToLower()
+    if ($clusterIdentity.contains("systemassigned") -eq $false) {
+        Write-Host("Identity of Azure Arc enabled Kubernetes cluster should be systemassigned but it has identity: $clusterIdentity") -ForegroundColor Red
+        exit
+    }
 }
 
 if ([string]::IsNullOrEmpty($workspaceResourceId)) {
@@ -482,7 +505,8 @@ if ($account.Subscription.Id -eq $clusterSubscriptionId) {
 if ($isAksCluster -eq $true) {
     Write-Host ("Enabling AKS Monitoring Addon ..")
     # TBD
-} else {
+}
+else {
     Write-Host("Attaching workspaceResourceId tag on the cluster ResourceId")
     $clusterResource.Tags["logAnalyticsWorkspaceResourceId"] = $WorkspaceInformation.ResourceId
     Set-AzResource -Tag $clusterResource.Tags -ResourceId $clusterResource.ResourceId -Force
@@ -494,20 +518,30 @@ Write-Host "Helm version" : $helmVersion
 Write-Host("Installing or upgrading if exists, Azure Monitor for containers HELM chart ...")
 try {
 
-    Write-Host("Adding $helmChartRepoName repo to helm: $helmChartRepoUrl")
-    helm repo add $helmChartRepoName $helmChartRepoUrl
-    Write-Host("updating helm repo to get latest version of charts")
-    helm repo update
-    $helmParameters = "omsagent.secret.wsid=$workspaceGUID,omsagent.secret.key=$workspacePrimarySharedKey,omsagent.env.clusterId=$clusterResourceId"
-    if([string]::IsNullOrEmpty($proxyEndpoint) -eq $false) {
+     Write-Host("pull the chart from mcr.microsoft.com")
+    [System.Environment]::SetEnvironmentVariable("HELM_EXPERIMENTAL_OCI", 1, "Process")
+
+    Write-Host("pull the chart from mcr.microsoft.com")
+    helm chart pull ${mcr}/${mcrChartRepoPath}:${mcrChartVersion}
+
+    Write-Host("export the chart from local cache to current directory")
+    helm chart export ${mcr}/${mcrChartRepoPath}:${mcrChartVersion} --destination .
+
+    $helmChartRepoPath = "${helmLocalRepoName}" + "/" + "${helmChartName}"
+
+    Write-Host("helmChartRepoPath is : ${helmChartRepoPath}")
+
+    $helmParameters = "omsagent.secret.wsid=$workspaceGUID,omsagent.secret.key=$workspacePrimarySharedKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion"
+    if ([string]::IsNullOrEmpty($proxyEndpoint) -eq $false) {
         Write-Host("using proxy endpoint since its provided")
         $helmParameters = $helmParameters + ",omsagent.proxy=$proxyEndpoint"
     }
     if ([string]::IsNullOrEmpty($kubeContext)) {
-        helm upgrade --install $helmChartReleaseName --set $helmParameters $helmChartRepoName/$helmChartName
-    } else {
-      Write-Host("using provided kube-context: $kubeContext")
-      helm upgrade --install $helmChartReleaseName --set $helmParameters $helmChartRepoName/$helmChartName --kube-context $kubeContext
+        helm upgrade --install $helmChartReleaseName --set $helmParameters $helmChartRepoPath
+    }
+    else {
+        Write-Host("using provided kube-context: $kubeContext")
+        helm upgrade --install $helmChartReleaseName --set $helmParameters $helmChartRepoPath --kube-context $kubeContext
     }
 }
 catch {
@@ -516,7 +550,3 @@ catch {
 
 Write-Host("Successfully enabled Azure Monitor for containers for cluster: $clusterResourceId") -ForegroundColor Green
 Write-Host("Proceed to https://aka.ms/azmon-containers to view your newly onboarded Azure Managed cluster") -ForegroundColor Green
-
-
-
-

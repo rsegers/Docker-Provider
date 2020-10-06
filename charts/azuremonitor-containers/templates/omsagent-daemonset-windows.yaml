@@ -24,7 +24,16 @@ spec:
     agentVersion: {{ .Values.omsagent.image.tagWindows }}
     dockerProviderVersion: {{ .Values.omsagent.image.dockerProviderVersion }}
     schema-versions: "v1"
+    checksum/secret: {{ include (print $.Template.BasePath "/omsagent-secret.yaml") . | sha256sum }}
+    checksum/config: {{ toYaml .Values.omsagent.resources | sha256sum }}
   spec:
+{{- if semverCompare ">=1.14-0" .Capabilities.KubeVersion.GitVersion }}
+   nodeSelector:
+      kubernetes.io/os: windows
+{{- else }}
+   nodeSelector:
+      beta.kubernetes.io/os: windows
+{{- end }}
    {{- if .Values.omsagent.rbac }}
    serviceAccountName: omsagent
    {{- end }}
@@ -46,6 +55,13 @@ spec:
        - name: AKS_REGION
          value: {{ .Values.omsagent.env.clusterRegion | quote }}
        {{- end }}
+       {{- else if ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>" }}
+       - name: AKS_RESOURCE_ID
+         value: {{ .Values.Azure.Cluster.ResourceId | quote }}
+       {{- if ne .Values.Azure.Cluster.Region "<your_cluster_region>" }}
+       - name: AKS_REGION
+         value: {{ .Values.Azure.Cluster.Region | quote }}
+       {{- end }}
        {{- else }}
        - name: ACS_RESOURCE_NAME
          value: {{ .Values.omsagent.env.clusterName | quote }}
@@ -53,6 +69,13 @@ spec:
        - name: CONTROLLER_TYPE
          value: "DaemonSet"
        - name: HOSTNAME
+         valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+       - name: NODE_IP
+         valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
        volumeMounts:
         - mountPath: C:\ProgramData\docker\containers
           name: docker-windows-containers
@@ -73,9 +96,6 @@ spec:
               - C:\opt\omsagentwindows\scripts\cmd\livenessProbe.cmd
           periodSeconds: 60
           initialDelaySeconds: 180
-   {{- with .Values.omsagent.daemonsetwindows.affinity }}
-   affinity: {{- toYaml . | nindent 8 }}
-   {{- end }}
    {{- with .Values.omsagent.tolerations }}
    tolerations: {{- toYaml . | nindent 8 }}
    {{- end }}

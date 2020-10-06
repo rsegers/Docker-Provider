@@ -14,7 +14,10 @@
 # 1. disable monitoring using current kube-context
 # bash disable_monitoring.sh --resource-id/-r <clusterResourceId>
 
-# 2. disable monitoring using specific kube-context
+# 2. disable monitoring using specific kube-context using service principal creds for the azure login
+# bash disable_monitoring.sh --resource-id <clusterResourceId> --client-id <sp client id> --client-secret <sp client secret> --tenant-id <tenant id of the service principal>
+
+# 3. disable monitoring using specific kube-context
 # bash disable_monitoring.sh --resource-id/-r <clusterResourceId> --kube-context/-k <kube-context>
 
 
@@ -23,10 +26,10 @@ set -o pipefail
 
 # default release name used during onboarding
 releaseName="azmon-containers-release-1"
-# resource type for azure arc clusters
+# resource type for Azure Arc enabled Kubernetes clusters
 resourceProvider="Microsoft.Kubernetes/connectedClusters"
 
-# resource provider for azure arc connected cluster
+# resource provider for Azure Arc enabled Kubernetes cluster
 arcK8sResourceProvider="Microsoft.Kubernetes/connectedClusters"
 # resource provider for azure redhat openshift v4 cluster
 aroV4ResourceProvider="Microsoft.RedHatOpenShift/OpenShiftClusters"
@@ -48,12 +51,18 @@ isAroV4Cluster=false
 clusterResourceId=""
 kubeconfigContext=""
 
+# sp details for the login if provided
+servicePrincipalClientId=""
+servicePrincipalClientSecret=""
+servicePrincipalTenantId=""
+isUsingServicePrincipal=false
+
 usage()
 {
     local basename=`basename $0`
     echo
     echo "Disable Azure Monitor for containers:"
-    echo "$basename --resource-id/-r <cluster resource id> [--kube-context/-k <name of the kube context >]"
+    echo "$basename --resource-id/-r <cluster resource id> [--client-id <clientId of service principal>] [--client-secret <client secret of service principal>] [--tenant-id <tenant id of the service principal>] [--kube-context/-k <name of the kube context >]"
 }
 
 delete_helm_release()
@@ -105,19 +114,24 @@ remove_monitoring_tags()
 {
   echo "deleting monitoring tags ..."
 
-  echo "login to the azure interactively"
-  az login --use-device-code
+  if [ "$isUsingServicePrincipal" = true ] ; then
+     echo "login to the azure using provided service principal creds"
+     az login --service-principal --username $servicePrincipalClientId --password $servicePrincipalClientSecret --tenant $servicePrincipalTenantId
+  else
+     echo "login to the azure interactively"
+     az login --use-device-code
+  fi
 
   echo "set the cluster subscription id: ${clusterSubscriptionId}"
   az account set -s ${clusterSubscriptionId}
 
-  # validate cluster identity for ARC k8s cluster
+  # validate cluster identity for Azure Arc enabled Kubernetes cluster
   if [ "$isArcK8sCluster" = true ] ; then
    identitytype=$(az resource show -g ${clusterResourceGroup} -n ${clusterName} --resource-type $resourceProvider --query identity.type)
    identitytype=$(echo $identitytype | tr "[:upper:]" "[:lower:]" | tr -d '"')
    echo "cluster identity type:" $identitytype
     if [[ "$identitytype" != "systemassigned" ]]; then
-      echo "-e only supported cluster identity is systemassigned for Azure ARC K8s cluster type"
+      echo "-e only supported cluster identity is systemassigned for Azure Arc enabled Kubernetes cluster type"
       exit 1
     fi
   fi
@@ -159,6 +173,9 @@ for arg in "$@"; do
   case "$arg" in
     "--resource-id") set -- "$@" "-r" ;;
     "--kube-context") set -- "$@" "-k" ;;
+    "--client-id") set -- "$@" "-c" ;;
+    "--client-secret") set -- "$@" "-s" ;;
+    "--tenant-id") set -- "$@" "-t" ;;
     "--help")   set -- "$@" "-h" ;;
     "--"*)   usage ;;
     *)        set -- "$@" "$arg"
@@ -167,7 +184,7 @@ done
 
  local OPTIND opt
 
- while getopts 'hk:r:' opt; do
+ while getopts 'hk:c:s:t:r:' opt; do
     case "$opt" in
       h)
       usage
@@ -181,6 +198,21 @@ done
       r)
         clusterResourceId="$OPTARG"
         echo "clusterResourceId is $OPTARG"
+        ;;
+
+      c)
+        servicePrincipalClientId="$OPTARG"
+        echo "servicePrincipalClientId is $OPTARG"
+        ;;
+
+      s)
+        servicePrincipalClientSecret="$OPTARG"
+        echo "clientSecret is *****"
+        ;;
+
+      t)
+        servicePrincipalTenantId="$OPTARG"
+        echo "service principal tenantId is $OPTARG"
         ;;
 
       ?)
@@ -225,7 +257,7 @@ done
 
  # detect the resource provider from the provider name in the cluster resource id
  if [ $providerName = "microsoft.kubernetes/connectedclusters" ]; then
-    echo "provider cluster resource is of Azure ARC K8s cluster type"
+    echo "provider cluster resource is of Azure Arc enabled Kubernetes cluster type"
     isArcK8sCluster=true
     resourceProvider=$arcK8sResourceProvider
  elif [ $providerName = "microsoft.redhatopenshift/openshiftclusters" ]; then
@@ -239,6 +271,11 @@ done
  else
    echo "-e unsupported azure managed cluster type"
    exit 1
+ fi
+
+ if [ ! -z "$servicePrincipalClientId" -a  ! -z "$servicePrincipalClientSecret"  -a  ! -z "$servicePrincipalTenantId" ]; then
+   echo "using service principal creds (clientId, secret and tenantId) for azure login since provided"
+   isUsingServicePrincipal=true
  fi
 
 }

@@ -11,6 +11,35 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 10/05/2020 -
+##### Version microsoft/oms:ciprod10052020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10052020 (linux)
+##### Version microsoft/oms:win-ciprod10052020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10052020 (windows)
+##### Code change log
+- Health CRD to version v1 (from v1beta1) for k8s versions >= 1.19.0
+- Collection of PV usage metrics for PVs mounted by pods (kube-system pods excluded by default)(doc-link-needed)
+- Zero fill few custom metrics under a timer, also add zero filling for new PV usage metrics
+- Collection of additional Kubelet metrics ('kubelet_running_pod_count','volume_manager_total_volumes','kubelet_node_config_error','process_resident_memory_bytes','process_cpu_seconds_total','kubelet_runtime_operations_total','kubelet_runtime_operations_errors_total'). This also includes updates to 'kubelet' workbook to include these new metrics
+- Collection of Azure NPM (Network Policy Manager) metrics (basic & advanced. By default, NPM metrics collection is turned OFF)(doc-link-needed)
+- Support log collection when docker root is changed with knode. Tracked by [this](https://github.com/Azure/AKS/issues/1373) issue
+- Support for Pods in 'Terminating' state for nodelost scenarios
+- Fix for reduction in telemetry for custom metrics ingestion failures
+- Fix CPU capacity/limits metrics being 0 for Virtual nodes (VK)
+- Add new custom metric regions (eastus2,westus,australiasoutheast,brazilsouth,germanywestcentral,northcentralus,switzerlandnorth)
+- Enable strict SSL validation for AppInsights Ruby SDK
+- Turn off custom metrics upload for unsupported cluster types
+- Install CA certs from wire server for windows (in certain clouds)
+
+### 09/16/2020 -
+> Note: This agent release targetted ONLY for non-AKS clusters via Azure Monitor for containers HELM chart update
+##### Version microsoft/oms:ciprod09162020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod09162020 (linux)
+##### Version microsoft/oms:win-ciprod09162020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod09162020 (windows)
+##### Code change log
+- Collection of Azure Network Policy Manager Basic and Advanced metrics
+- Add support in Windows Agent for Container log collection of CRI runtimes such as ContainerD
+- Alertable metrics support Arc K8s cluster to parity with AKS
+- Support for multiple container log mount paths when docker is updated through knode
+- Bug fix related to MDM telemetry
+
 ### 08/07/2020 -
 ##### Version microsoft/oms:ciprod08072020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08072020 (linux)
 ##### Version microsoft/oms:win-ciprod08072020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod08072020 (windows)

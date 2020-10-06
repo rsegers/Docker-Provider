@@ -160,7 +160,7 @@ done
 source config_env_var
 
 
-#Parse the configmap to set the right environment variables.
+#Parse the configmap to set the right environment variables for health feature.
 /opt/microsoft/omsagent/ruby/bin/ruby tomlparser-health-config.rb
 
 cat health_config_env_var | while read line; do
@@ -168,6 +168,15 @@ cat health_config_env_var | while read line; do
     echo $line >> ~/.bashrc
 done
 source health_config_env_var
+
+#Parse the configmap to set the right environment variables for network policy manager (npm) integration.
+/opt/microsoft/omsagent/ruby/bin/ruby tomlparser-npm-config.rb
+
+cat integration_npm_config_env_var | while read line; do
+    #echo $line
+    echo $line >> ~/.bashrc
+done
+source integration_npm_config_env_var
 
 #Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ]; then
@@ -227,6 +236,14 @@ cat config_mdm_metrics_env_var | while read line; do
 done
 source config_mdm_metrics_env_var
 
+#Parse the configmap to set the right environment variables for metric collection settings
+/opt/microsoft/omsagent/ruby/bin/ruby tomlparser-metric-collection-config.rb
+
+cat config_metric_collection_env_var | while read line; do
+    echo $line >> ~/.bashrc
+done
+source config_metric_collection_env_var
+
 #Setting environment variable for CAdvisor metrics to use port 10255/10250 based on curl request
 echo "Making wget request to cadvisor endpoint with port 10250"
 #Defaults to use port 10255
@@ -283,11 +300,10 @@ fi
 echo "configured container runtime on kubelet is : "$CONTAINER_RUNTIME
 echo "export CONTAINER_RUNTIME="$CONTAINER_RUNTIME >> ~/.bashrc
 
-# enable these metrics in next agent release
-# export KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC="kubelet_runtime_operations_total"
-# echo "export KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC="$KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC >> ~/.bashrc
-# export KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC="kubelet_runtime_operations_errors_total"
-# echo "export KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC="$KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC >> ~/.bashrc
+export KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC="kubelet_runtime_operations_total"
+echo "export KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC="$KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC >> ~/.bashrc
+export KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC="kubelet_runtime_operations_errors_total"
+echo "export KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC="$KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC >> ~/.bashrc
 
 # default to docker metrics
 export KUBELET_RUNTIME_OPERATIONS_METRIC="kubelet_docker_operations"
