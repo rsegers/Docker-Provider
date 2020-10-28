@@ -116,12 +116,16 @@ omsagent:
   ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
   ##
   resources:
-    daemonset:
+    daemonset-linux:
       requests:
         cpu: 75m
         memory: 225Mi
       limits:
         cpu: 150m
+        memory: 600Mi
+    daemonset-windows:
+      limits:
+        cpu: 200m
         memory: 600Mi
     deployment:
       requests:

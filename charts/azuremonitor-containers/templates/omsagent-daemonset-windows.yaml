@@ -46,7 +46,7 @@ spec:
        {{- end }}
        imagePullPolicy: IfNotPresent
        resources:
-{{ toYaml .Values.omsagent.resources.daemonset | indent 9 }}
+{{ toYaml .Values.omsagent.resources.daemonset-windows | indent 9 }}
        env:
        {{- if ne .Values.omsagent.env.clusterId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
@@ -96,6 +96,7 @@ spec:
               - C:\opt\omsagentwindows\scripts\cmd\livenessProbe.cmd
           periodSeconds: 60
           initialDelaySeconds: 180
+          timeoutSeconds: 15
    {{- with .Values.omsagent.tolerations }}
    tolerations: {{- toYaml . | nindent 8 }}
    {{- end }}

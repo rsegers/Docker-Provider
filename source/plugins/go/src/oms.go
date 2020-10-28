@@ -194,15 +194,15 @@ type DataItem struct {
 }
 
 type DataItemADX struct {
-	LogEntry              string `json:"LogEntry"`
-	LogEntrySource        string `json:"LogEntrySource"`
-	LogEntryTimeStamp     string `json:"LogEntryTimeStamp"`
-	LogEntryTimeOfCommand string `json:"TimeOfCommand"`
-	ID                    string `json:"Id"`
-	Image                 string `json:"Image"`
-	Name                  string `json:"Name"`
-	SourceSystem          string `json:"SourceSystem"`
+	TimeGenerated         string `json:"TimeGenerated"`
 	Computer              string `json:"Computer"`
+	ContainerID           string `json:"ContainerID"`
+	ContainerName         string `json:"ContainerName"`
+	PodName				  string `json:"PodName"`
+	PodNamespace          string `json:"PodNamespace"`
+	LogMessage            string `json:"LogMessage"`
+	LogSource             string `json:"LogSource"`
+	//PodLabels			  string `json:"PodLabels"`
 	AzureResourceId       string `json:"AzureResourceId"`
 }
 
@@ -422,7 +422,7 @@ func convert(in interface{}) (float64, bool) {
 func populateKubeMonAgentEventHash(record map[interface{}]interface{}, errType KubeMonAgentEventType) {
 	var logRecordString = ToString(record["log"])
 	var eventTimeStamp = ToString(record["time"])
-	containerID, _, podName := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
+	containerID, _, podName, _ := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
 
 	Log("Locked EventHashUpdateMutex for updating hash \n ")
 	EventHashUpdateMutex.Lock()
@@ -816,7 +816,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	DataUpdateMutex.Unlock()
 
 	for _, record := range tailPluginRecords {
-		containerID, k8sNamespace, _ := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
+		containerID, k8sNamespace, k8sPodName, containerName := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
 		logEntrySource := ToString(record["stream"])
 
 		if strings.EqualFold(logEntrySource, "stdout") {
@@ -867,16 +867,18 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			if ResourceCentric == true {
 				stringMap["AzureResourceId"] = ResourceID
 			}
+			stringMap["PodName"] = k8sPodName
+			stringMap["PodNamespace"] = k8sNamespace
+			stringMap["ContainerName"] = containerName
 			dataItemADX = DataItemADX{
-				ID:                    stringMap["Id"],
-				LogEntry:              stringMap["LogEntry"],
-				LogEntrySource:        stringMap["LogEntrySource"],
-				LogEntryTimeStamp:     stringMap["LogEntryTimeStamp"],
-				LogEntryTimeOfCommand: stringMap["TimeOfCommand"],
-				SourceSystem:          stringMap["SourceSystem"],
+				TimeGenerated:         stringMap["LogEntryTimeStamp"],
 				Computer:              stringMap["Computer"],
-				Image:                 stringMap["Image"],
-				Name:                  stringMap["Name"],
+				ContainerID:           stringMap["Id"],
+				ContainerName:         stringMap["ContainerName"],
+				PodName:               stringMap["PodName"],
+				PodNamespace:          stringMap["PodNamespace"],
+				LogMessage:            stringMap["LogEntry"],
+				LogSource:             stringMap["LogEntrySource"],
 				AzureResourceId:       stringMap["AzureResourceId"],
 			}
 			//ADX
@@ -1018,7 +1020,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		//ADXFlushMutex.Lock()
 		//defer ADXFlushMutex.Unlock()
 		//MultiJSON support is not there yet
-		if ingestionErr := ADXIngestor.FromReader(ctx, r, ingest.IngestionMappingRef("ContainerLogMapping", ingest.JSON), ingest.FileFormat(ingest.JSON), ingest.FlushImmediately()); ingestionErr != nil {
+		if ingestionErr := ADXIngestor.FromReader(ctx, r, ingest.IngestionMappingRef("ContainerLogv2Mapping", ingest.JSON), ingest.FileFormat(ingest.JSON)); ingestionErr != nil {
 			Log("Error when streaming to ADX Ingestion: %s", ingestionErr.Error())
 			//ADXIngestor = nil  //not required as per ADX team. Will keep it to indicate that we tried this approach
 
@@ -1107,12 +1109,13 @@ func containsKey(currentMap map[string]bool, key string) bool {
 	return c
 }
 
-// GetContainerIDK8sNamespacePodNameFromFileName Gets the container ID, k8s namespace and pod name From the file Name
+// GetContainerIDK8sNamespacePodNameFromFileName Gets the container ID, k8s namespace, pod name and containername From the file Name
 // sample filename kube-proxy-dgcx7_kube-system_kube-proxy-8df7e49e9028b60b5b0d0547f409c455a9567946cf763267b7e6fa053ab8c182.log
-func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, string, string) {
+func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, string, string, string) {
 	id := ""
 	ns := ""
 	podName := ""
+	containerName := ""
 
 	start := strings.LastIndex(filename, "-")
 	end := strings.LastIndex(filename, ".")
@@ -1132,6 +1135,15 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 		ns = filename[start+1 : end]
 	}
 
+	start = strings.LastIndex(filename, "_")
+	end = strings.LastIndex(filename, "-")
+
+	if start >= end || start == -1 || end == -1 {
+		containerName = ""
+	} else {
+		containerName = filename[start+1 : end]
+	}
+
 	start = strings.Index(filename, "/containers/")
 	end = strings.Index(filename, "_")
 
@@ -1141,7 +1153,7 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 		podName = filename[(start + len("/containers/")):end]
 	}
 
-	return id, ns, podName
+	return id, ns, podName, containerName
 }
 
 // InitializePlugin reads and populates plugin configuration
@@ -1313,8 +1325,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	CreateHTTPClient()
 
-	ContainerLogsRoute := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOGS_ROUTE")))
-	Log("AZMON_CONTAINER_LOGS_ROUTE:%s", ContainerLogsRoute)
+	ContainerLogsRoute := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE")))
+	Log("AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE:%s", ContainerLogsRoute)
 
 	ContainerLogsRouteV2 = false  //default is ODS
 	ContainerLogsRouteADX = false //default is LA
@@ -1365,7 +1377,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		populateExcludedStdoutNamespaces()
 		populateExcludedStderrNamespaces()
-		if enrichContainerLogs == true {
+		if enrichContainerLogs == true && ContainerLogsRouteADX != true {
 			Log("ContainerLogEnrichment=true; starting goroutine to update containerimagenamemaps \n")
 			go updateContainerImageNameMaps()
 		} else {

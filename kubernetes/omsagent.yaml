@@ -347,7 +347,7 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             limits:
-              cpu: 150m
+              cpu: 250m
               memory: 600Mi
             requests:
               cpu: 75m
@@ -370,6 +370,8 @@ spec:
             # Update this with the user assigned msi client id for omsagent
             - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
               value: ""
+            - name: AZMON_CONTAINERLOGS_ONEAGENT_REGIONS
+              value: "koreacentral,norwayeast"
           securityContext:
             privileged: true
           ports:
@@ -650,11 +652,8 @@ spec:
          imagePullPolicy: IfNotPresent
          resources:
           limits:
-           cpu: 150m
+           cpu: 200m
            memory: 600Mi
-          requests:
-           cpu: 75m
-           memory: 225Mi
          env:
           # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
           - name: AKS_RESOURCE_ID
@@ -696,6 +695,7 @@ spec:
               - C:\opt\omsagentwindows\scripts\cmd\livenessProbe.cmd
           periodSeconds: 60
           initialDelaySeconds: 180
+          timeoutSeconds: 15
      affinity:
        nodeAffinity:
          requiredDuringSchedulingIgnoredDuringExecution:

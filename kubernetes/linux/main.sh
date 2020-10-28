@@ -416,6 +416,97 @@ echo "DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION"
 export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION
 echo "export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION" >> ~/.bashrc
 
+#region check to auto-activate oneagent, to route container logs,
+#Intent is to activate one agent routing for all managed clusters with region in the regionllist, unless overridden by configmap
+# AZMON_CONTAINER_LOGS_ROUTE  will have route (if any) specified in the config map 
+# AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE will have the final route that we compute & set, based on our region list logic
+echo "************start oneagent log routing checks************"
+# by default, use configmap route for safer side
+AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE=$AZMON_CONTAINER_LOGS_ROUTE
+
+#trim region list
+oneagentregions="$(echo $AZMON_CONTAINERLOGS_ONEAGENT_REGIONS | xargs)"
+#lowercase region list
+typeset -l oneagentregions=$oneagentregions
+echo "oneagent regions: $oneagentregions"
+#trim current region
+currentregion="$(echo $AKS_REGION | xargs)"
+#lowercase current region
+typeset -l currentregion=$currentregion
+echo "current region: $currentregion"
+
+#initilze isoneagentregion as false
+isoneagentregion=false
+
+#set isoneagentregion as true if matching region is found
+if [ ! -z $oneagentregions ] && [ ! -z $currentregion ]; then
+  for rgn in $(echo $oneagentregions | sed "s/,/ /g"); do
+    if [ "$rgn" == "$currentregion" ]; then
+          isoneagentregion=true
+          echo "current region is in oneagent regions..."
+          break
+    fi
+  done
+else
+  echo "current region is not in oneagent regions..."
+fi
+
+if [ "$isoneagentregion" = true ]; then 
+   #if configmap has a routing for logs, but current region is in the oneagent region list, take the configmap route
+   if [ ! -z $AZMON_CONTAINER_LOGS_ROUTE ]; then   
+      AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE=$AZMON_CONTAINER_LOGS_ROUTE
+      echo "oneagent region is true for current region:$currentregion and config map logs route is not empty. so using config map logs route as effective route:$AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE"
+   else #there is no configmap route, so route thru oneagent
+      AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE="v2"
+      echo "oneagent region is true for current region:$currentregion and config map logs route is empty. so using oneagent as effective route:$AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE"
+   fi
+else
+   echo "oneagent region is false for current region:$currentregion"
+fi
+
+
+#start oneagent
+if [ ! -e "/etc/config/kube.conf" ]; then
+   if [ ! -z $AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE ]; then
+      echo "container logs configmap route is $AZMON_CONTAINER_LOGS_ROUTE"
+      echo "container logs effective route is $AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE"
+      #trim
+      containerlogsroute="$(echo $AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE | xargs)"
+      # convert to lowercase
+      typeset -l containerlogsroute=$containerlogsroute
+
+      echo "setting AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE as :$containerlogsroute"
+      export AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE=$containerlogsroute
+      echo "export AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE=$containerlogsroute" >> ~/.bashrc
+      source ~/.bashrc
+
+      if [ "$containerlogsroute" == "v2" ]; then
+            echo "activating oneagent..."
+            echo "configuring mdsd..."
+            cat /etc/mdsd.d/envmdsd | while read line; do
+                  echo $line >> ~/.bashrc
+            done
+            source /etc/mdsd.d/envmdsd
+
+            echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
+            export CIWORKSPACE_id=$CIWORKSPACE_id
+            echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc
+            export CIWORKSPACE_key=$CIWORKSPACE_key
+            echo "export CIWORKSPACE_key=$CIWORKSPACE_key" >> ~/.bashrc
+
+            source ~/.bashrc
+
+            dpkg -l | grep mdsd | awk '{print $2 " " $3}'
+
+            echo "starting mdsd ..."
+            mdsd -l -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+            
+            touch /opt/AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE_V2
+      fi
+   fi
+fi
+echo "************end oneagent log routing checks************"
+
 #telegraf & fluentbit requirements
 if [ ! -e "/etc/config/kube.conf" ]; then
       if [ "$CONTAINER_RUNTIME" == "docker" ]; then
@@ -491,37 +582,13 @@ dpkg -l | grep td-agent-bit | awk '{print $2 " " $3}'
 
 #dpkg -l | grep telegraf | awk '{print $2 " " $3}'
 
-#start oneagent
-if [ ! -e "/etc/config/kube.conf" ]; then
-   if [ ! -z $AZMON_CONTAINER_LOGS_ROUTE ]; then
-      echo "container logs route is defined as $AZMON_CONTAINER_LOGS_ROUTE"
-      #trim
-      containerlogsroute="$(echo $AZMON_CONTAINER_LOGS_ROUTE | xargs)"
-      # convert to lowercase
-      typeset -l containerlogsroute=$containerlogsroute
-      if [ "$containerlogsroute" == "v2" ]; then
-            echo "containerlogsroute $containerlogsroute"
-            echo "configuring mdsd..."
-            cat /etc/mdsd.d/envmdsd | while read line; do
-                  echo $line >> ~/.bashrc
-            done
-            source /etc/mdsd.d/envmdsd
 
-            echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
-            export CIWORKSPACE_id=$CIWORKSPACE_id
-            echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc
-            export CIWORKSPACE_key=$CIWORKSPACE_key
-            echo "export CIWORKSPACE_key=$CIWORKSPACE_key" >> ~/.bashrc
 
-            source ~/.bashrc
+echo "stopping rsyslog..."
+service rsyslog stop
 
-            dpkg -l | grep mdsd | awk '{print $2 " " $3}'
-
-            echo "starting mdsd ..."
-            mdsd -l -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
-      fi
-   fi
-fi
+echo "getting rsyslog status..."
+service rsyslog status
 
 shutdown() {
 	/opt/microsoft/omsagent/bin/service_control stop
