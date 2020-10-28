@@ -11,6 +11,16 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 10/27/2020 -
+##### Version microsoft/oms:ciprod10272020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10272020 (linux)
+##### Version microsoft/oms:win-ciprod10272020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10052020 (windows)
+##### Code change log
+- Activate oneagent in few AKS regions (koreacentral,norwayeast)
+- Disable syslog
+- Fix timeout for Windows daemonset liveness probe
+- Make request == limit for Windows daemonset resources (cpu & memory)
+- Schema v2 for container log (ADX only - applicable only for select customers for piloting)
+
 ### 10/05/2020 -
 ##### Version microsoft/oms:ciprod10052020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10052020 (linux)
 ##### Version microsoft/oms:win-ciprod10052020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10052020 (windows)

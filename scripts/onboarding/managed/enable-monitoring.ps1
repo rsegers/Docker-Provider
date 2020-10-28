@@ -60,7 +60,7 @@ $isUsingServicePrincipal = $false
 
 # released chart version in mcr
 $mcr = "mcr.microsoft.com"
-$mcrChartVersion = "2.7.7"
+$mcrChartVersion = "2.7.8"
 $mcrChartRepoPath = "azuremonitor/containerinsights/preview/azuremonitor-containers"
 $helmLocalRepoName = "."
 
