@@ -46,7 +46,7 @@ spec:
        {{- end }}
        imagePullPolicy: IfNotPresent
        resources:
-{{ toYaml .Values.omsagent.resources.daemonset-windows | indent 9 }}
+{{ toYaml .Values.omsagent.resources.daemonsetwindows | indent 9 }}
        env:
        {{- if ne .Values.omsagent.env.clusterId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
