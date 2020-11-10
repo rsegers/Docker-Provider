@@ -29,6 +29,8 @@ Monitoring your Kubernetes cluster and containers is critical, especially when r
 
 ## Installing the Chart
 
+> Note: If you want to customize the chart, fork the chart code in https://github.com/microsoft/Docker-Provider/tree/ci_prod/charts/azuremonitor-containers
+
 > Note: `--name` flag not required in Helm3 since this flag is deprecated
 
 > Note: use `omsagent.proxy` parameter to set the proxy endpoint if your K8s cluster configured behind the proxy. Refer to [configure proxy](#Configuring-Proxy-Endpoint) for more details about  proxy.
@@ -36,25 +38,25 @@ Monitoring your Kubernetes cluster and containers is critical, especially when r
 ### To Use Azure Log Analytics Workspace in Public Cloud
 
 ```bash
-$ helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
+$ helm repo add microsoft https://microsoft.github.io/charts/repo
 $ helm install --name azmon-containers-release-1 \
---set omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<my_prod_cluster>  incubator/azuremonitor-containers
+--set omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<my_prod_cluster>  microsoft/azuremonitor-containers
 ```
 
 ### To Use Azure Log Analytics Workspace in Azure China Cloud
 
 ```bash
-$ helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
+$ helm repo add microsoft https://microsoft.github.io/charts/repo
 $ helm install --name azmon-containers-release-1 \
---set omsagent.domain=opinsights.azure.cn,omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<your_cluster_name>  incubator/azuremonitor-containers
+--set omsagent.domain=opinsights.azure.cn,omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<your_cluster_name>  microsoft/azuremonitor-containers
 ```
 
 ### To Use Azure Log Analytics Workspace in Azure US Government Cloud
 
 ```bash
-$ helm repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com/
+$ helm repo add microsoft https://microsoft.github.io/charts/repo
 $ helm install --name azmon-containers-release-1 \
---set omsagent.domain=opinsights.azure.us,omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<your_cluster_name>  incubator/azuremonitor-containers
+--set omsagent.domain=opinsights.azure.us,omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<your_cluster_name>  microsoft/azuremonitor-containers
 ```
 
 ## Upgrading an existing Release to a new version
@@ -112,13 +114,13 @@ Specify each parameter using the `--set key=value[,key=value]` argument to `helm
 
 $ helm install --name myrelease-1 \
 --set omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<your_cluster_name>
-  incubator/azuremonitor-containers
+  microsoft/azuremonitor-containers
 ```
 Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example,
 
 ```bash
 
-$ helm install --name myrelease-1 -f values.yaml incubator/azuremonitor-containers
+$ helm install --name myrelease-1 -f values.yaml microsoft/azuremonitor-containers
 
 ```
 

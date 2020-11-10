@@ -11,6 +11,12 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 11/09/2020 -
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod11092020 (linux)
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod11092020 (windows)
+##### Code change log
+- Fix for duplicate windows metrics
+
 ### 10/27/2020 -
 ##### Version microsoft/oms:ciprod10272020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10272020 (linux)
 ##### Version microsoft/oms:win-ciprod10272020 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10052020 (windows)

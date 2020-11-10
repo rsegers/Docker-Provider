@@ -29,7 +29,7 @@ This deployment will not complete. To proceed, run
    --set omsagent.secret.wsid=<your_workspace_id> \
    --set omsagent.secret.key=<your_workspace_key> \
    --set omsagent.env.clusterName=<your_cluster_name> \
-   incubator/azuremonitor-containers
+   microsoft/azuremonitor-containers
 
 {{- else -}}
 
