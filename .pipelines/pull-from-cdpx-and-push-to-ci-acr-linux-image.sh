@@ -25,12 +25,21 @@ ACR_APP_ID=$(cat ~/acrappid)
 ACR_APP_SECRET=$(cat ~/acrappsecret)
 echo "end: read appid and appsecret"
 
+echo "start: read appid and appsecret for cdpx"
+CDPX_ACR_APP_ID=$(cat ~/cdpxacrappid)
+CDPX_ACR_APP_SECRET=$(cat ~/cdpxacrappsecret)
+echo "end: read appid and appsecret which has read access on cdpx acr"
+
+
+# Name of CDPX_ACR should be in this format :Naming convention: 'cdpx' + service tree id without '-' + two digit suffix like'00'/'01
+# suffix 00 primary and 01 secondary, and we only use primary
+# This configured via pipeline variable
 echo "login to cdpxlinux acr:${CDPX_ACR}"
-docker login $CDPX_ACR  --username $ACR_APP_ID --password $ACR_APP_SECRET
+docker login $CDPX_ACR  --username $CDPX_ACR_APP_ID --password $CDPX_ACR_APP_SECRET
 echo "login to cdpxlinux acr completed: ${CDPX_ACR}"
 
 echo "pull agent image from cdpxlinux acr: ${CDPX_ACR}"
-docker pull ${CDPX_ACR}/artifact/3170cdd2-19f0-4027-912b-1027311691a2/official/${CDPX_REPO_NAME}:${CDPX_AGENT_IMAGE_TAG}
+docker pull ${CDPX_ACR}/official/${CDPX_REPO_NAME}:${CDPX_AGENT_IMAGE_TAG}
 echo "pull image from cdpxlinux acr completed: ${CDPX_ACR}"
 
 echo "CI Release name is:"$CI_RELEASE
@@ -41,7 +50,7 @@ echo "CI ACR : ${CI_ACR}"
 echo "CI AGENT REPOSITORY NAME : ${CI_AGENT_REPO}"
 
 echo "tag linux agent image"
-docker tag ${CDPX_ACR}/artifact/3170cdd2-19f0-4027-912b-1027311691a2/official/${CDPX_REPO_NAME}:${CDPX_AGENT_IMAGE_TAG} ${CI_ACR}/public/azuremonitor/containerinsights/${CI_AGENT_REPO}:${imagetag}
+docker tag ${CDPX_ACR}/official/${CDPX_REPO_NAME}:${CDPX_AGENT_IMAGE_TAG} ${CI_ACR}/public/azuremonitor/containerinsights/${CI_AGENT_REPO}:${imagetag}
 
 echo "login ciprod acr":$CI_ACR
 docker login $CI_ACR --username $ACR_APP_ID --password $ACR_APP_SECRET

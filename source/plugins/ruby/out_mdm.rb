@@ -50,6 +50,10 @@ module Fluent
       @cluster_identity = nil
       @isArcK8sCluster = false
       @get_access_token_backoff_expiry = Time.now
+
+      @mdm_exceptions_hash = {}
+      @mdm_exceptions_count = 0
+      @mdm_exception_telemetry_time_tracker = DateTime.now.to_time.to_i
     end
 
     def configure(conf)
@@ -221,10 +225,49 @@ module Fluent
       end
     end
 
+    def exception_aggregator(error)
+      begin
+        errorStr = error.to_s
+        if (@mdm_exceptions_hash[errorStr].nil?)
+          @mdm_exceptions_hash[errorStr] = 1
+        else
+          @mdm_exceptions_hash[errorStr] += 1
+        end
+        #Keeping track of all exceptions to send the total in the last flush interval as a metric
+        @mdm_exceptions_count += 1
+      rescue => error
+        @log.info "Error in MDM exception_aggregator method: #{error}"
+        ApplicationInsightsUtility.sendExceptionTelemetry(error)
+      end
+    end
+
+    def flush_mdm_exception_telemetry
+      begin
+        #Flush out exception telemetry as a metric for the last 30 minutes
+        timeDifference = (DateTime.now.to_time.to_i - @mdm_exception_telemetry_time_tracker).abs
+        timeDifferenceInMinutes = timeDifference / 60
+        if (timeDifferenceInMinutes >= Constants::MDM_EXCEPTIONS_METRIC_FLUSH_INTERVAL)
+          telemetryProperties = {}
+          telemetryProperties["ExceptionsHashForFlushInterval"] = @mdm_exceptions_hash.to_json
+          telemetryProperties["FlushInterval"] = Constants::MDM_EXCEPTIONS_METRIC_FLUSH_INTERVAL
+          ApplicationInsightsUtility.sendMetricTelemetry(Constants::MDM_EXCEPTION_TELEMETRY_METRIC, @mdm_exceptions_count, telemetryProperties)
+          # Resetting values after flushing
+          @mdm_exceptions_count = 0
+          @mdm_exceptions_hash = {}
+          @mdm_exception_telemetry_time_tracker = DateTime.now.to_time.to_i
+        end
+      rescue => error
+        @log.info "Error in flush_mdm_exception_telemetry method: #{error}"
+        ApplicationInsightsUtility.sendExceptionTelemetry(error)
+      end
+    end
+
     # This method is called every flush interval. Send the buffer chunk to MDM.
     # 'chunk' is a buffer chunk that includes multiple formatted records
     def write(chunk)
       begin
+        # Adding this before trying to flush out metrics, since adding after can lead to metrics never being sent
+        flush_mdm_exception_telemetry
         if (!@first_post_attempt_made || (Time.now > @last_post_attempt_time + retry_mdm_post_wait_minutes * 60)) && @can_send_data_to_mdm
           post_body = []
           chunk.msgpack_each { |(tag, record)|
@@ -247,7 +290,8 @@ module Fluent
           end
         end
       rescue Exception => e
-        ApplicationInsightsUtility.sendExceptionTelemetry(e)
+        # Adding exceptions to hash to aggregate and send telemetry for all write errors
+        exception_aggregator(e)
         @log.info "Exception when writing to MDM: #{e}"
         raise e
       end
@@ -282,7 +326,6 @@ module Fluent
         else
           @log.info "Failed to Post Metrics to MDM : #{e} Response: #{response}"
         end
-        #@log.info "MDM request : #{post_body}"
         @log.debug_backtrace(e.backtrace)
         if !response.code.empty? && response.code == 403.to_s
           @log.info "Response Code #{response.code} Updating @last_post_attempt_time"
@@ -297,15 +340,15 @@ module Fluent
           @log.info "HTTPServerException when POSTing Metrics to MDM #{e} Response: #{response}"
           raise e
         end
+        # Adding exceptions to hash to aggregate and send telemetry for all 400 error codes
+        exception_aggregator(e)
       rescue Errno::ETIMEDOUT => e
         @log.info "Timed out when POSTing Metrics to MDM : #{e} Response: #{response}"
         @log.debug_backtrace(e.backtrace)
-        ApplicationInsightsUtility.sendExceptionTelemetry(e)
         raise e
       rescue Exception => e
         @log.info "Exception POSTing Metrics to MDM : #{e} Response: #{response}"
         @log.debug_backtrace(e.backtrace)
-        ApplicationInsightsUtility.sendExceptionTelemetry(e)
         raise e
       end
     end

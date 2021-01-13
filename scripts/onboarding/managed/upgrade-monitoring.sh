@@ -20,7 +20,7 @@ set -e
 set -o pipefail
 
 # released chart version for Azure Arc enabled Kubernetes public preview
-mcrChartVersion="2.7.9"
+mcrChartVersion="2.8.0"
 mcr="mcr.microsoft.com"
 mcrChartRepoPath="azuremonitor/containerinsights/preview/azuremonitor-containers"
 
@@ -281,11 +281,26 @@ set_azure_subscription() {
   echo "successfully configured subscription id: ${subscriptionId} as current subscription for the azure cli"
 }
 
+validate_and_configure_supported_cloud() {
+  echo "get active azure cloud name configured to azure cli"
+  azureCloudName=$(az cloud show --query name -o tsv | tr "[:upper:]" "[:lower:]")
+  echo "active azure cloud name configured to azure cli: ${azureCloudName}"
+  if [ "$isArcK8sCluster" = true ]; then
+    if [ "$azureCloudName" != "azurecloud" -a  "$azureCloudName" != "azureusgovernment" ]; then
+      echo "-e only supported clouds are AzureCloud and AzureUSGovernment for Azure Arc enabled Kubernetes cluster type"
+      exit 1
+    fi
+  else
+    # For ARO v4, only supported cloud is public so just configure to public to keep the existing behavior
+    configure_to_public_cloud
+  fi
+}
+
 # parse and validate args
 parse_args $@
 
-# configure azure cli for public cloud
-configure_to_public_cloud
+# configure azure cli for cloud
+validate_and_configure_supported_cloud
 
 # parse cluster resource id
 clusterSubscriptionId="$(echo $clusterResourceId | cut -d'/' -f3 | tr "[:upper:]" "[:lower:]")"

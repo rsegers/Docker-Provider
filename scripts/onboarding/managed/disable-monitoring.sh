@@ -280,9 +280,26 @@ done
 
 }
 
+validate_and_configure_supported_cloud() {
+  echo "get active azure cloud name configured to azure cli"
+  azureCloudName=$(az cloud show --query name -o tsv | tr "[:upper:]" "[:lower:]")
+  echo "active azure cloud name configured to azure cli: ${azureCloudName}"
+  if [ "$isArcK8sCluster" = true ]; then
+    if [ "$azureCloudName" != "azurecloud" -a  "$azureCloudName" != "azureusgovernment" ]; then
+      echo "-e only supported clouds are AzureCloud and AzureUSGovernment for Azure Arc enabled Kubernetes cluster type"
+      exit 1
+    fi
+  else
+    # For ARO v4, only supported cloud is public so just configure to public to keep the existing behavior
+    configure_to_public_cloud
+  fi
+}
 
 # parse args
 parse_args $@
+
+# validate and configure azure cloud
+validate_and_configure_supported_cloud
 
 # parse cluster resource id
 clusterSubscriptionId="$(echo $clusterResourceId | cut -d'/' -f3 | tr "[:upper:]" "[:lower:]")"

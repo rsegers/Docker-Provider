@@ -21,6 +21,7 @@ rules:
         "nodes/proxy",
         "namespaces",
         "services",
+        "persistentvolumes"
       ]
     verbs: ["list", "get", "watch"]
   - apiGroups: ["apps", "extensions", "autoscaling"]
@@ -64,7 +65,14 @@ data:
       tag oms.containerinsights.KubePodInventory
       run_interval 60
       log_level debug
-      custom_metrics_azure_regions eastus,southcentralus,westcentralus,westus2,southeastasia,northeurope,westeurope,southafricanorth,centralus,northcentralus,eastus2,koreacentral,eastasia,centralindia,uksouth,canadacentral,francecentral,japaneast,australiaeast,eastus2,westus,australiasoutheast,brazilsouth,germanywestcentral,northcentralus,switzerlandnorth
+     </source>
+
+     #Kubernetes Persistent Volume inventory
+     <source>
+      type kubepvinventory
+      tag oms.containerinsights.KubePVInventory
+      run_interval 60
+      log_level debug
      </source>
 
      #Kubernetes events
@@ -117,14 +125,12 @@ data:
 
      <filter mdm.kubenodeinventory**>
       type filter_inventory2mdm
-      custom_metrics_azure_regions eastus,southcentralus,westcentralus,westus2,southeastasia,northeurope,westeurope,southafricanorth,centralus,northcentralus,eastus2,koreacentral,eastasia,centralindia,uksouth,canadacentral,francecentral,japaneast,australiaeast,eastus2,westus,australiasoutheast,brazilsouth,germanywestcentral,northcentralus,switzerlandnorth
       log_level info
      </filter>
 
      #custom_metrics_mdm filter plugin for perf data from windows nodes
      <filter mdm.cadvisorperf**>
       type filter_cadvisor2mdm
-      custom_metrics_azure_regions eastus,southcentralus,westcentralus,westus2,southeastasia,northeurope,westeurope,southafricanorth,centralus,northcentralus,eastus2,koreacentral,eastasia,centralindia,uksouth,canadacentral,francecentral,japaneast,australiaeast,eastus2,westus,australiasoutheast,brazilsouth,germanywestcentral,northcentralus,switzerlandnorth
       metrics_to_collect cpuUsageNanoCores,memoryWorkingSetBytes,pvUsedBytes
       log_level info
      </filter>
@@ -137,7 +143,7 @@ data:
      <match oms.containerinsights.KubePodInventory**>
       type out_oms
       log_level debug
-      num_threads 5
+      num_threads 2
       buffer_chunk_limit 4m
       buffer_type file
       buffer_path %STATE_DIR_WS%/out_oms_kubepods*.buffer
@@ -149,10 +155,25 @@ data:
       max_retry_wait 5m
      </match>
 
+     <match oms.containerinsights.KubePVInventory**>
+     type out_oms
+     log_level debug
+     num_threads 5
+     buffer_chunk_limit 4m
+     buffer_type file
+     buffer_path %STATE_DIR_WS%/state/out_oms_kubepv*.buffer
+     buffer_queue_limit 20
+     buffer_queue_full_action drop_oldest_chunk
+     flush_interval 20s
+     retry_limit 10
+     retry_wait 5s
+     max_retry_wait 5m
+    </match>
+
      <match oms.containerinsights.KubeEvents**>
       type out_oms
       log_level debug
-      num_threads 5
+      num_threads 2
       buffer_chunk_limit 4m
       buffer_type file
       buffer_path %STATE_DIR_WS%/out_oms_kubeevents*.buffer
@@ -182,7 +203,7 @@ data:
      <match oms.containerinsights.KubeNodeInventory**>
       type out_oms
       log_level debug
-      num_threads 5
+      num_threads 2
       buffer_chunk_limit 4m
       buffer_type file
       buffer_path %STATE_DIR_WS%/state/out_oms_kubenodes*.buffer
@@ -211,7 +232,7 @@ data:
      <match oms.api.KubePerf**>
       type out_oms
       log_level debug
-      num_threads 5
+      num_threads 2
       buffer_chunk_limit 4m
       buffer_type file
       buffer_path %STATE_DIR_WS%/out_oms_kubeperf*.buffer
@@ -337,17 +358,21 @@ spec:
         tier: node
       annotations:
         agentVersion: "1.10.0.1"
-        dockerProviderVersion: "11.0.0-1"
+        dockerProviderVersion: "12.0.0-0"
         schema-versions: "v1"
     spec:
       serviceAccountName: omsagent
+      dnsConfig:    
+        options:
+          - name: ndots
+            value: "3"       
       containers:
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod11092020"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01112021"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
-              cpu: 250m
+              cpu: 500m
               memory: 600Mi
             requests:
               cpu: 75m
@@ -496,23 +521,22 @@ spec:
         rsName: "omsagent-rs"
       annotations:
         agentVersion: "1.10.0.1"
-        dockerProviderVersion: "11.0.0-1"
+        dockerProviderVersion: "12.0.0-0"
         schema-versions: "v1"
     spec:
       serviceAccountName: omsagent
       containers:
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod11092020"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01112021"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
               cpu: 1
-              memory: 750Mi
+              memory: 1Gi
             requests:
               cpu: 150m
               memory: 250Mi
           env:
-            # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
             - name: AKS_RESOURCE_ID
               value: "VALUE_AKS_RESOURCE_ID_VALUE"
             - name: AKS_REGION
@@ -567,6 +591,15 @@ spec:
             periodSeconds: 60
       affinity:
         nodeAffinity:
+          # affinity to schedule on to ephemeral os node if its available
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            preference:
+              matchExpressions:
+              - key: storageprofile
+                operator: NotIn
+                values:
+                - managed
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
               - labelSelector:
@@ -642,13 +675,17 @@ spec:
         tier: node-win
       annotations:
         agentVersion: "1.10.0.1"
-        dockerProviderVersion: "11.0.0-1"
+        dockerProviderVersion: "12.0.0-0"
         schema-versions: "v1"
     spec:
      serviceAccountName: omsagent
+     dnsConfig:    
+        options:
+          - name: ndots
+            value: "3"     
      containers:
        - name: omsagent-win
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod11092020"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod01112021"
          imagePullPolicy: IfNotPresent
          resources:
           limits:

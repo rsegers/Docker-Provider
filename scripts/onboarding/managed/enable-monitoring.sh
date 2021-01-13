@@ -38,11 +38,13 @@
 set -e
 set -o pipefail
 
-# default to public cloud since only supported cloud is azure public clod
+# default to public cloud since only supported cloud is azure public cloud
 defaultAzureCloud="AzureCloud"
+# default domain will be for public cloud
+omsAgentDomainName="opinsights.azure.com"
 
 # released chart version in mcr
-mcrChartVersion="2.7.9"
+mcrChartVersion="2.8.0"
 mcr="mcr.microsoft.com"
 mcrChartRepoPath="azuremonitor/containerinsights/preview/azuremonitor-containers"
 helmLocalRepoName="."
@@ -307,6 +309,25 @@ parse_args() {
 
 }
 
+validate_and_configure_supported_cloud() {
+  echo "get active azure cloud name configured to azure cli"
+  azureCloudName=$(az cloud show --query name -o tsv | tr "[:upper:]" "[:lower:]")
+  echo "active azure cloud name configured to azure cli: ${azureCloudName}"
+  if [ "$isArcK8sCluster" = true ]; then
+    if [ "$azureCloudName" != "azurecloud" -a  "$azureCloudName" != "azureusgovernment" ]; then
+      echo "-e only supported clouds are AzureCloud and AzureUSGovernment for Azure Arc enabled Kubernetes cluster type"
+      exit 1
+    fi
+    if [ "$azureCloudName" = "azureusgovernment" ]; then
+      echo "setting omsagent domain as opinsights.azure.us since the azure cloud is azureusgovernment "
+      omsAgentDomainName="opinsights.azure.us"
+    fi
+  else
+    # For ARO v4, only supported cloud is public so just configure to public to keep the existing behavior
+    configure_to_public_cloud
+  fi
+}
+
 configure_to_public_cloud() {
   echo "Set AzureCloud as active cloud for az cli"
   az cloud set -n $defaultAzureCloud
@@ -398,8 +419,10 @@ create_default_log_analytics_workspace() {
     [westindia]=centralindia
     [westus]=westus
     [westus2]=westus2
+    [usgovvirginia]=usgovvirginia
   )
 
+  echo "cluster Region:"$clusterRegion
   if [ -n "${AzureCloudRegionToOmsRegionMap[$clusterRegion]}" ]; then
     workspaceRegion=${AzureCloudRegionToOmsRegionMap[$clusterRegion]}
   fi
@@ -433,6 +456,7 @@ create_default_log_analytics_workspace() {
 
   workspaceResourceId=$(az resource show -g $workspaceResourceGroup -n $workspaceName --resource-type $workspaceResourceProvider --query id)
   workspaceResourceId=$(echo $workspaceResourceId | tr -d '"')
+  echo "workspace resource Id: ${workspaceResourceId}"
 }
 
 add_container_insights_solution() {
@@ -504,18 +528,18 @@ install_helm_chart() {
     echo "using proxy endpoint since proxy configuration passed in"
     if [ -z "$kubeconfigContext" ]; then
       echo "using current kube-context since --kube-context/-k parameter not passed in"
-      helm upgrade --install $releaseName --set omsagent.proxy=$proxyEndpoint,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath
+      helm upgrade --install $releaseName --set omsagent.domain=$omsAgentDomainName,omsagent.proxy=$proxyEndpoint,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath
     else
       echo "using --kube-context:${kubeconfigContext} since passed in"
-      helm upgrade --install $releaseName --set omsagent.proxy=$proxyEndpoint,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
+      helm upgrade --install $releaseName --set omsagent.domain=$omsAgentDomainName,omsagent.proxy=$proxyEndpoint,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
     fi
   else
     if [ -z "$kubeconfigContext" ]; then
       echo "using current kube-context since --kube-context/-k parameter not passed in"
-      helm upgrade --install $releaseName --set omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath
+      helm upgrade --install $releaseName --set omsagent.domain=$omsAgentDomainName,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath
     else
       echo "using --kube-context:${kubeconfigContext} since passed in"
-      helm upgrade --install $releaseName --set omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
+      helm upgrade --install $releaseName --set omsagent.domain=$omsAgentDomainName,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
     fi
   fi
 
@@ -560,8 +584,8 @@ enable_aks_monitoring_addon() {
 # parse and validate args
 parse_args $@
 
-# configure azure cli for public cloud
-configure_to_public_cloud
+# validate and configure azure cli for cloud
+validate_and_configure_supported_cloud
 
 # parse cluster resource id
 clusterSubscriptionId="$(echo $clusterResourceId | cut -d'/' -f3 | tr "[:upper:]" "[:lower:]")"

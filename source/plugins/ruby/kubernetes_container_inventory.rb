@@ -189,34 +189,47 @@ class KubernetesContainerInventory
       return containersInfoMap
     end
 
-    def obtainContainerEnvironmentVars(containerId)
-      $log.info("KubernetesContainerInventory::obtainContainerEnvironmentVars @ #{Time.now.utc.iso8601}")
+    def obtainContainerEnvironmentVars(containerId)    
       envValueString = ""
       begin
-        unless @@containerCGroupCache.has_key?(containerId)
-          $log.info("KubernetesContainerInventory::obtainContainerEnvironmentVars fetching cGroup parent pid @ #{Time.now.utc.iso8601} for containerId: #{containerId}")
+        isCGroupPidFetchRequired = false 
+        if !@@containerCGroupCache.has_key?(containerId)
+          isCGroupPidFetchRequired = true 
+        else
+          cGroupPid = @@containerCGroupCache[containerId]
+          if cGroupPid.nil? || cGroupPid.empty?            
+            isCGroupPidFetchRequired = true
+            @@containerCGroupCache.delete(containerId)
+          elsif !File.exist?("/hostfs/proc/#{cGroupPid}/environ")              
+            isCGroupPidFetchRequired = true
+            @@containerCGroupCache.delete(containerId)                       
+          end        
+        end
+
+        if isCGroupPidFetchRequired         
           Dir["/hostfs/proc/*/cgroup"].each do |filename|
             begin
-              if File.file?(filename) && File.foreach(filename).grep(/#{containerId}/).any?
+              if File.file?(filename) && File.exist?(filename) && File.foreach(filename).grep(/#{containerId}/).any?
                 # file full path is /hostfs/proc/<cGroupPid>/cgroup
-                cGroupPid = filename.split("/")[3]
-                if @@containerCGroupCache.has_key?(containerId)
-                  tempCGroupPid = @@containerCGroupCache[containerId]
-                  if tempCGroupPid > cGroupPid
+                cGroupPid = filename.split("/")[3]  
+                if is_number?(cGroupPid)                              
+                  if @@containerCGroupCache.has_key?(containerId)
+                    tempCGroupPid = @@containerCGroupCache[containerId]                  
+                    if tempCGroupPid.to_i > cGroupPid.to_i
+                      @@containerCGroupCache[containerId] = cGroupPid
+                    end
+                  else
                     @@containerCGroupCache[containerId] = cGroupPid
-                  end
-                else
-                  @@containerCGroupCache[containerId] = cGroupPid
+                  end                        
                 end
               end
-            rescue SystemCallError # ignore Error::ENOENT,Errno::ESRCH which is expected if any of the container gone while we read
-            end
-          end
+            rescue SystemCallError # ignore Error::ENOENT,Errno::ESRCH which is expected if any of the container gone while we read              
+            end          
+          end        
         end
         cGroupPid = @@containerCGroupCache[containerId]
         if !cGroupPid.nil? && !cGroupPid.empty?
-          environFilePath = "/hostfs/proc/#{cGroupPid}/environ"
-          $log.info("KubernetesContainerInventory::obtainContainerEnvironmentVars cGroupPid: #{cGroupPid} environFilePath: #{environFilePath} for containerId: #{containerId}")
+          environFilePath = "/hostfs/proc/#{cGroupPid}/environ"       
           if File.exist?(environFilePath)
             # Skip environment variable processing if it contains the flag AZMON_COLLECT_ENV=FALSE
             # Check to see if the environment variable collection is disabled for this container.
@@ -229,8 +242,7 @@ class KubernetesContainerInventory
               if !envVars.nil? && !envVars.empty?
                 envVars = envVars.split("\0")
                 envValueString = envVars.to_json
-                envValueStringLength = envValueString.length
-                $log.info("KubernetesContainerInventory::environment vars filename @ #{environFilePath} envVars size @ #{envValueStringLength}")
+                envValueStringLength = envValueString.length              
                 if envValueStringLength >= 200000
                   lastIndex = envValueString.rindex("\",")
                   if !lastIndex.nil?
@@ -340,6 +352,9 @@ class KubernetesContainerInventory
         $log.debug_backtrace(error.backtrace)
         ApplicationInsightsUtility.sendExceptionTelemetry(error)
       end
+    end
+    def is_number?(value)
+      true if Integer(value) rescue false
     end
   end
 end

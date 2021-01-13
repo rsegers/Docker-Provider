@@ -172,6 +172,10 @@ class KubernetesApiClient
       return @@IsAROV3Cluster
     end
 
+    def isAROv3MasterOrInfraPod(nodeName)
+      return isAROV3Cluster() && (!nodeName.nil? && (nodeName.downcase.start_with?("infra-") || nodeName.downcase.start_with?("master-")))
+    end
+
     def isNodeMaster
       return @@IsNodeMaster if !@@IsNodeMaster.nil?
       @@IsNodeMaster = false
@@ -276,7 +280,8 @@ class KubernetesApiClient
     def getWindowsNodes
       winNodes = []
       begin
-        resourceUri = getNodesResourceUri("nodes")
+        # get only windows nodes
+        resourceUri = getNodesResourceUri("nodes?labelSelector=kubernetes.io%2Fos%3Dwindows")
         nodeInventory = JSON.parse(getKubeResourceInfo(resourceUri).body)
         @Log.info "KubernetesAPIClient::getWindowsNodes : Got nodes from kube api"
         # Resetting the windows node cache
@@ -396,42 +401,67 @@ class KubernetesApiClient
       return podUid
     end
 
-    def getContainerResourceRequestsAndLimits(metricJSON, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
+    def getContainerResourceRequestsAndLimits(pod, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
       metricItems = []
       begin
         clusterId = getClusterId
-        metricInfo = metricJSON
-        metricInfo["items"].each do |pod|
-          podNameSpace = pod["metadata"]["namespace"]
-          podUid = getPodUid(podNameSpace, pod["metadata"])
-          if podUid.nil?
-            next
-          end
+        podNameSpace = pod["metadata"]["namespace"]
+        podUid = getPodUid(podNameSpace, pod["metadata"])
+        if podUid.nil?
+          return metricItems
+        end
 
-          # For ARO, skip the pods scheduled on to master or infra nodes to ingest
-          if isAROV3Cluster() && !pod["spec"].nil? && !pod["spec"]["nodeName"].nil? &&
-             (pod["spec"]["nodeName"].downcase.start_with?("infra-") ||
-              pod["spec"]["nodeName"].downcase.start_with?("master-"))
-            next
-          end
+        nodeName = ""
+        #for unscheduled (non-started) pods nodeName does NOT exist
+        if !pod["spec"]["nodeName"].nil?
+          nodeName = pod["spec"]["nodeName"]
+        end
+        # For ARO, skip the pods scheduled on to master or infra nodes to ingest
+        if isAROv3MasterOrInfraPod(nodeName)
+          return metricItems
+        end
 
-          podContainers = []
-          if !pod["spec"]["containers"].nil? && !pod["spec"]["containers"].empty?
-            podContainers = podContainers + pod["spec"]["containers"]
-          end
-          # Adding init containers to the record list as well.
-          if !pod["spec"]["initContainers"].nil? && !pod["spec"]["initContainers"].empty?
-            podContainers = podContainers + pod["spec"]["initContainers"]
-          end
+        podContainers = []
+        if !pod["spec"]["containers"].nil? && !pod["spec"]["containers"].empty?
+          podContainers = podContainers + pod["spec"]["containers"]
+        end
+        # Adding init containers to the record list as well.
+        if !pod["spec"]["initContainers"].nil? && !pod["spec"]["initContainers"].empty?
+          podContainers = podContainers + pod["spec"]["initContainers"]
+        end
 
-          if (!podContainers.nil? && !podContainers.empty? && !pod["spec"]["nodeName"].nil?)
-            nodeName = pod["spec"]["nodeName"]
-            podContainers.each do |container|
-              containerName = container["name"]
-              #metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
-              if (!container["resources"].nil? && !container["resources"].empty? && !container["resources"][metricCategory].nil? && !container["resources"][metricCategory][metricNameToCollect].nil?)
-                metricValue = getMetricNumericValue(metricNameToCollect, container["resources"][metricCategory][metricNameToCollect])
+        if (!podContainers.nil? && !podContainers.empty? && !pod["spec"]["nodeName"].nil?)
+          podContainers.each do |container|
+            containerName = container["name"]
+            #metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
+            if (!container["resources"].nil? && !container["resources"].empty? && !container["resources"][metricCategory].nil? && !container["resources"][metricCategory][metricNameToCollect].nil?)
+              metricValue = getMetricNumericValue(metricNameToCollect, container["resources"][metricCategory][metricNameToCollect])
 
+              metricItem = {}
+              metricItem["DataItems"] = []
+
+              metricProps = {}
+              metricProps["Timestamp"] = metricTime
+              metricProps["Host"] = nodeName
+              # Adding this so that it is not set by base omsagent since it was not set earlier and being set by base omsagent
+              metricProps["Computer"] = nodeName
+              metricProps["ObjectName"] = "K8SContainer"
+              metricProps["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
+
+              metricProps["Collections"] = []
+              metricCollections = {}
+              metricCollections["CounterName"] = metricNametoReturn
+              metricCollections["Value"] = metricValue
+
+              metricProps["Collections"].push(metricCollections)
+              metricItem["DataItems"].push(metricProps)
+              metricItems.push(metricItem)
+              #No container level limit for the given metric, so default to node level limit
+            else
+              nodeMetricsHashKey = clusterId + "/" + nodeName + "_" + "allocatable" + "_" + metricNameToCollect
+              if (metricCategory == "limits" && @@NodeMetrics.has_key?(nodeMetricsHashKey))
+                metricValue = @@NodeMetrics[nodeMetricsHashKey]
+                #@Log.info("Limits not set for container #{clusterId + "/" + podUid + "/" + containerName} using node level limits: #{nodeMetricsHashKey}=#{metricValue} ")
                 metricItem = {}
                 metricItem["DataItems"] = []
 
@@ -451,32 +481,6 @@ class KubernetesApiClient
                 metricProps["Collections"].push(metricCollections)
                 metricItem["DataItems"].push(metricProps)
                 metricItems.push(metricItem)
-                #No container level limit for the given metric, so default to node level limit
-              else
-                nodeMetricsHashKey = clusterId + "/" + nodeName + "_" + "allocatable" + "_" + metricNameToCollect
-                if (metricCategory == "limits" && @@NodeMetrics.has_key?(nodeMetricsHashKey))
-                  metricValue = @@NodeMetrics[nodeMetricsHashKey]
-                  #@Log.info("Limits not set for container #{clusterId + "/" + podUid + "/" + containerName} using node level limits: #{nodeMetricsHashKey}=#{metricValue} ")
-                  metricItem = {}
-                  metricItem["DataItems"] = []
-
-                  metricProps = {}
-                  metricProps["Timestamp"] = metricTime
-                  metricProps["Host"] = nodeName
-                  # Adding this so that it is not set by base omsagent since it was not set earlier and being set by base omsagent
-                  metricProps["Computer"] = nodeName
-                  metricProps["ObjectName"] = "K8SContainer"
-                  metricProps["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
-
-                  metricProps["Collections"] = []
-                  metricCollections = {}
-                  metricCollections["CounterName"] = metricNametoReturn
-                  metricCollections["Value"] = metricValue
-
-                  metricProps["Collections"].push(metricCollections)
-                  metricItem["DataItems"].push(metricProps)
-                  metricItems.push(metricItem)
-                end
               end
             end
           end
@@ -488,77 +492,73 @@ class KubernetesApiClient
       return metricItems
     end #getContainerResourceRequestAndLimits
 
-    def getContainerResourceRequestsAndLimitsAsInsightsMetrics(metricJSON, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
+    def getContainerResourceRequestsAndLimitsAsInsightsMetrics(pod, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
       metricItems = []
       begin
         clusterId = getClusterId
         clusterName = getClusterName
-
-        metricInfo = metricJSON
-        metricInfo["items"].each do |pod|
-          podNameSpace = pod["metadata"]["namespace"]
-          if podNameSpace.eql?("kube-system") && !pod["metadata"].key?("ownerReferences")
-            # The above case seems to be the only case where you have horizontal scaling of pods
-            # but no controller, in which case cAdvisor picks up kubernetes.io/config.hash
-            # instead of the actual poduid. Since this uid is not being surface into the UX
-            # its ok to use this.
-            # Use kubernetes.io/config.hash to be able to correlate with cadvisor data
-            if pod["metadata"]["annotations"].nil?
-              next
-            else
-              podUid = pod["metadata"]["annotations"]["kubernetes.io/config.hash"]
-            end
+        podNameSpace = pod["metadata"]["namespace"]
+        if podNameSpace.eql?("kube-system") && !pod["metadata"].key?("ownerReferences")
+          # The above case seems to be the only case where you have horizontal scaling of pods
+          # but no controller, in which case cAdvisor picks up kubernetes.io/config.hash
+          # instead of the actual poduid. Since this uid is not being surface into the UX
+          # its ok to use this.
+          # Use kubernetes.io/config.hash to be able to correlate with cadvisor data
+          if pod["metadata"]["annotations"].nil?
+            return metricItems
           else
-            podUid = pod["metadata"]["uid"]
+            podUid = pod["metadata"]["annotations"]["kubernetes.io/config.hash"]
           end
+        else
+          podUid = pod["metadata"]["uid"]
+        end
 
-          podContainers = []
-          if !pod["spec"]["containers"].nil? && !pod["spec"]["containers"].empty?
-            podContainers = podContainers + pod["spec"]["containers"]
-          end
-          # Adding init containers to the record list as well.
-          if !pod["spec"]["initContainers"].nil? && !pod["spec"]["initContainers"].empty?
-            podContainers = podContainers + pod["spec"]["initContainers"]
-          end
+        podContainers = []
+        if !pod["spec"]["containers"].nil? && !pod["spec"]["containers"].empty?
+          podContainers = podContainers + pod["spec"]["containers"]
+        end
+        # Adding init containers to the record list as well.
+        if !pod["spec"]["initContainers"].nil? && !pod["spec"]["initContainers"].empty?
+          podContainers = podContainers + pod["spec"]["initContainers"]
+        end
 
-          if (!podContainers.nil? && !podContainers.empty?)
-            if (!pod["spec"]["nodeName"].nil?)
-              nodeName = pod["spec"]["nodeName"]
+        if (!podContainers.nil? && !podContainers.empty?)
+          if (!pod["spec"]["nodeName"].nil?)
+            nodeName = pod["spec"]["nodeName"]
+          else
+            nodeName = "" #unscheduled pod. We still want to collect limits & requests for GPU
+          end
+          podContainers.each do |container|
+            metricValue = nil
+            containerName = container["name"]
+            #metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
+            if (!container["resources"].nil? && !container["resources"].empty? && !container["resources"][metricCategory].nil? && !container["resources"][metricCategory][metricNameToCollect].nil?)
+              metricValue = getMetricNumericValue(metricNameToCollect, container["resources"][metricCategory][metricNameToCollect])
             else
-              nodeName = "" #unscheduled pod. We still want to collect limits & requests for GPU
+              #No container level limit for the given metric, so default to node level limit for non-gpu metrics
+              if (metricNameToCollect.downcase != "nvidia.com/gpu") && (metricNameToCollect.downcase != "amd.com/gpu")
+                nodeMetricsHashKey = clusterId + "/" + nodeName + "_" + "allocatable" + "_" + metricNameToCollect
+                metricValue = @@NodeMetrics[nodeMetricsHashKey]
+              end
             end
-            podContainers.each do |container|
-              metricValue = nil
-              containerName = container["name"]
-              #metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
-              if (!container["resources"].nil? && !container["resources"].empty? && !container["resources"][metricCategory].nil? && !container["resources"][metricCategory][metricNameToCollect].nil?)
-                metricValue = getMetricNumericValue(metricNameToCollect, container["resources"][metricCategory][metricNameToCollect])
-              else
-                #No container level limit for the given metric, so default to node level limit for non-gpu metrics
-                if (metricNameToCollect.downcase != "nvidia.com/gpu") && (metricNameToCollect.downcase != "amd.com/gpu")
-                  nodeMetricsHashKey = clusterId + "/" + nodeName + "_" + "allocatable" + "_" + metricNameToCollect
-                  metricValue = @@NodeMetrics[nodeMetricsHashKey]
-                end
-              end
-              if (!metricValue.nil?)
-                metricItem = {}
-                metricItem["CollectionTime"] = metricTime
-                metricItem["Computer"] = nodeName
-                metricItem["Name"] = metricNametoReturn
-                metricItem["Value"] = metricValue
-                metricItem["Origin"] = Constants::INSIGHTSMETRICS_TAGS_ORIGIN
-                metricItem["Namespace"] = Constants::INSIGHTSMETRICS_TAGS_GPU_NAMESPACE
+            if (!metricValue.nil?)
+              metricItem = {}
+              metricItem["CollectionTime"] = metricTime
+              metricItem["Computer"] = nodeName
+              metricItem["Name"] = metricNametoReturn
+              metricItem["Value"] = metricValue
+              metricItem["Origin"] = Constants::INSIGHTSMETRICS_TAGS_ORIGIN
+              metricItem["Namespace"] = Constants::INSIGHTSMETRICS_TAGS_GPU_NAMESPACE
 
-                metricTags = {}
-                metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERID] = clusterId
-                metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERNAME] = clusterName
-                metricTags[Constants::INSIGHTSMETRICS_TAGS_CONTAINER_NAME] = podUid + "/" + containerName
-                #metricTags[Constants::INSIGHTSMETRICS_TAGS_K8SNAMESPACE] = podNameSpace
+              metricTags = {}
+              metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERID] = clusterId
+              metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERNAME] = clusterName
+              metricTags[Constants::INSIGHTSMETRICS_TAGS_CONTAINER_NAME] = podUid + "/" + containerName
+              #metricTags[Constants::INSIGHTSMETRICS_TAGS_K8SNAMESPACE] = podNameSpace
 
-                metricItem["Tags"] = metricTags
+              metricItem["Tags"] = metricTags
 
-                metricItems.push(metricItem)
-              end
+              metricItems.push(metricItem)
             end
           end
         end
@@ -578,32 +578,9 @@ class KubernetesApiClient
         #if we are coming up with the time it should be same for all nodes
         #metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
         metricInfo["items"].each do |node|
-          if (!node["status"][metricCategory].nil?)
-
-            # metricCategory can be "capacity" or "allocatable" and metricNameToCollect can be "cpu" or "memory"
-            metricValue = getMetricNumericValue(metricNameToCollect, node["status"][metricCategory][metricNameToCollect])
-
-            metricItem = {}
-            metricItem["DataItems"] = []
-            metricProps = {}
-            metricProps["Timestamp"] = metricTime
-            metricProps["Host"] = node["metadata"]["name"]
-            # Adding this so that it is not set by base omsagent since it was not set earlier and being set by base omsagent
-            metricProps["Computer"] = node["metadata"]["name"]
-            metricProps["ObjectName"] = "K8SNode"
-            metricProps["InstanceName"] = clusterId + "/" + node["metadata"]["name"]
-            metricProps["Collections"] = []
-            metricCollections = {}
-            metricCollections["CounterName"] = metricNametoReturn
-            metricCollections["Value"] = metricValue
-
-            metricProps["Collections"].push(metricCollections)
-            metricItem["DataItems"].push(metricProps)
+          metricItem = parseNodeLimitsFromNodeItem(node, metricCategory, metricNameToCollect, metricNametoReturn, metricTime)
+          if !metricItem.nil? && !metricItem.empty?
             metricItems.push(metricItem)
-            #push node level metrics to a inmem hash so that we can use it looking up at container level.
-            #Currently if container level cpu & memory limits are not defined we default to node level limits
-            @@NodeMetrics[clusterId + "/" + node["metadata"]["name"] + "_" + metricCategory + "_" + metricNameToCollect] = metricValue
-            #@Log.info ("Node metric hash: #{@@NodeMetrics}")
           end
         end
       rescue => error
@@ -612,49 +589,82 @@ class KubernetesApiClient
       return metricItems
     end #parseNodeLimits
 
-    def parseNodeLimitsAsInsightsMetrics(metricJSON, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
-      metricItems = []
+    def parseNodeLimitsFromNodeItem(node, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
+      metricItem = {}
       begin
-        metricInfo = metricJSON
         clusterId = getClusterId
-        clusterName = getClusterName
         #Since we are getting all node data at the same time and kubernetes doesnt specify a timestamp for the capacity and allocation metrics,
         #if we are coming up with the time it should be same for all nodes
         #metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
-        metricInfo["items"].each do |node|
-          if (!node["status"][metricCategory].nil?) && (!node["status"][metricCategory][metricNameToCollect].nil?)
+        if (!node["status"][metricCategory].nil?) && (!node["status"][metricCategory][metricNameToCollect].nil?)
+          # metricCategory can be "capacity" or "allocatable" and metricNameToCollect can be "cpu" or "memory"
+          metricValue = getMetricNumericValue(metricNameToCollect, node["status"][metricCategory][metricNameToCollect])
 
-            # metricCategory can be "capacity" or "allocatable" and metricNameToCollect can be "cpu" or "memory" or "amd.com/gpu" or "nvidia.com/gpu"
-            metricValue = getMetricNumericValue(metricNameToCollect, node["status"][metricCategory][metricNameToCollect])
+          metricItem["DataItems"] = []
+          metricProps = {}
+          metricProps["Timestamp"] = metricTime
+          metricProps["Host"] = node["metadata"]["name"]
+          # Adding this so that it is not set by base omsagent since it was not set earlier and being set by base omsagent
+          metricProps["Computer"] = node["metadata"]["name"]
+          metricProps["ObjectName"] = "K8SNode"
+          metricProps["InstanceName"] = clusterId + "/" + node["metadata"]["name"]
+          metricProps["Collections"] = []
+          metricCollections = {}
+          metricCollections["CounterName"] = metricNametoReturn
+          metricCollections["Value"] = metricValue
 
-            metricItem = {}
-            metricItem["CollectionTime"] = metricTime
-            metricItem["Computer"] = node["metadata"]["name"]
-            metricItem["Name"] = metricNametoReturn
-            metricItem["Value"] = metricValue
-            metricItem["Origin"] = Constants::INSIGHTSMETRICS_TAGS_ORIGIN
-            metricItem["Namespace"] = Constants::INSIGHTSMETRICS_TAGS_GPU_NAMESPACE
+          metricProps["Collections"].push(metricCollections)
+          metricItem["DataItems"].push(metricProps)
 
-            metricTags = {}
-            metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERID] = clusterId
-            metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERNAME] = clusterName
-            metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_VENDOR] = metricNameToCollect
+          #push node level metrics to a inmem hash so that we can use it looking up at container level.
+          #Currently if container level cpu & memory limits are not defined we default to node level limits
+          @@NodeMetrics[clusterId + "/" + node["metadata"]["name"] + "_" + metricCategory + "_" + metricNameToCollect] = metricValue
+          #@Log.info ("Node metric hash: #{@@NodeMetrics}")
+        end
+      rescue => error
+        @Log.warn("parseNodeLimitsFromNodeItem failed: #{error} for metric #{metricCategory} #{metricNameToCollect}")
+      end
+      return metricItem
+    end #parseNodeLimitsFromNodeItem
 
-            metricItem["Tags"] = metricTags
+    def parseNodeLimitsAsInsightsMetrics(node, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
+      metricItem = {}
+      begin
+        #Since we are getting all node data at the same time and kubernetes doesnt specify a timestamp for the capacity and allocation metrics,
+        #if we are coming up with the time it should be same for all nodes
+        #metricTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
+        if (!node["status"][metricCategory].nil?) && (!node["status"][metricCategory][metricNameToCollect].nil?)
+          clusterId = getClusterId
+          clusterName = getClusterName
 
-            metricItems.push(metricItem)
-            #push node level metrics (except gpu ones) to a inmem hash so that we can use it looking up at container level.
-            #Currently if container level cpu & memory limits are not defined we default to node level limits
-            if (metricNameToCollect.downcase != "nvidia.com/gpu") && (metricNameToCollect.downcase != "amd.com/gpu")
-              @@NodeMetrics[clusterId + "/" + node["metadata"]["name"] + "_" + metricCategory + "_" + metricNameToCollect] = metricValue
-              #@Log.info ("Node metric hash: #{@@NodeMetrics}")
-            end
+          # metricCategory can be "capacity" or "allocatable" and metricNameToCollect can be "cpu" or "memory" or "amd.com/gpu" or "nvidia.com/gpu"
+          metricValue = getMetricNumericValue(metricNameToCollect, node["status"][metricCategory][metricNameToCollect])
+
+          metricItem["CollectionTime"] = metricTime
+          metricItem["Computer"] = node["metadata"]["name"]
+          metricItem["Name"] = metricNametoReturn
+          metricItem["Value"] = metricValue
+          metricItem["Origin"] = Constants::INSIGHTSMETRICS_TAGS_ORIGIN
+          metricItem["Namespace"] = Constants::INSIGHTSMETRICS_TAGS_GPU_NAMESPACE
+
+          metricTags = {}
+          metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERID] = clusterId
+          metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERNAME] = clusterName
+          metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_VENDOR] = metricNameToCollect
+
+          metricItem["Tags"] = metricTags
+
+          #push node level metrics (except gpu ones) to a inmem hash so that we can use it looking up at container level.
+          #Currently if container level cpu & memory limits are not defined we default to node level limits
+          if (metricNameToCollect.downcase != "nvidia.com/gpu") && (metricNameToCollect.downcase != "amd.com/gpu")
+            @@NodeMetrics[clusterId + "/" + node["metadata"]["name"] + "_" + metricCategory + "_" + metricNameToCollect] = metricValue
+            #@Log.info ("Node metric hash: #{@@NodeMetrics}")
           end
         end
       rescue => error
         @Log.warn("parseNodeLimitsAsInsightsMetrics failed: #{error} for metric #{metricCategory} #{metricNameToCollect}")
       end
-      return metricItems
+      return metricItem
     end
 
     def getMetricNumericValue(metricName, metricVal)
@@ -776,6 +786,33 @@ class KubernetesApiClient
         @Log.warn "KubernetesApiClient::getKubeAPIServerUrl:Failed  #{errorStr}"
       end
       return apiServerUrl
+    end
+
+    def getKubeServicesInventoryRecords(serviceList, batchTime = Time.utc.iso8601)
+      kubeServiceRecords = []
+      begin
+        if (!serviceList.nil? && !serviceList.empty?)
+          servicesCount = serviceList["items"].length
+          @Log.info("KubernetesApiClient::getKubeServicesInventoryRecords : number of services in serviceList  #{servicesCount} @ #{Time.now.utc.iso8601}")
+          serviceList["items"].each do |item|
+            kubeServiceRecord = {}
+            kubeServiceRecord["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
+            kubeServiceRecord["ServiceName"] = item["metadata"]["name"]
+            kubeServiceRecord["Namespace"] = item["metadata"]["namespace"]
+            kubeServiceRecord["SelectorLabels"] = [item["spec"]["selector"]]
+            # added these before emit to avoid memory foot print
+            # kubeServiceRecord["ClusterId"] = KubernetesApiClient.getClusterId
+            # kubeServiceRecord["ClusterName"] = KubernetesApiClient.getClusterName
+            kubeServiceRecord["ClusterIP"] = item["spec"]["clusterIP"]
+            kubeServiceRecord["ServiceType"] = item["spec"]["type"]
+            kubeServiceRecords.push(kubeServiceRecord.dup)
+          end
+        end
+      rescue => errorStr
+        @Log.warn "KubernetesApiClient::getKubeServicesInventoryRecords:Failed with an error : #{errorStr}"
+        ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+      end
+      return kubeServiceRecords
     end
   end
 end

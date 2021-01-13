@@ -15,7 +15,6 @@ module Fluent
 
     config_param :enable_log, :integer, :default => 0
     config_param :log_path, :string, :default => "/var/opt/microsoft/docker-cimprov/log/filter_telegraf2mdm.log"
-    config_param :custom_metrics_azure_regions, :string
 
     @process_incoming_stream = true
 
@@ -36,7 +35,7 @@ module Fluent
     def start
       super
       begin
-        @process_incoming_stream = CustomMetricsUtils.check_custom_metrics_availability(@custom_metrics_azure_regions)
+        @process_incoming_stream = CustomMetricsUtils.check_custom_metrics_availability
         @log.debug "After check_custom_metrics_availability process_incoming_stream #{@process_incoming_stream}"
       rescue => errorStr
         @log.info "Error initializing plugin #{errorStr}"

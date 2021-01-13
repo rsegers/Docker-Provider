@@ -15,6 +15,8 @@
         tenantId of the service principal which will be used for the azure login
     .PARAMETER kubeContext (optional)
         kube-context of the k8 cluster to install Azure Monitor for containers HELM chart
+    .PARAMETER azureCloudName (optional)
+        Name of the Azure cloud name. Supported Azure cloud Name is AzureCloud or AzureUSGovernment
 
     Pre-requisites:
       -  Azure Managed cluster Resource Id
@@ -34,7 +36,9 @@ param(
     [Parameter(mandatory = $false)]
     [string]$tenantId,
     [Parameter(mandatory = $false)]
-    [string]$kubeContext
+    [string]$kubeContext,
+    [Parameter(mandatory = $false)]
+    [string]$azureCloudName
 )
 
 $helmChartReleaseName = "azmon-containers-release-1"
@@ -45,6 +49,21 @@ $isArcK8sCluster = $false
 $isAksCluster =  $false
 $isAroV4Cluster = $false
 $isUsingServicePrincipal = $false
+
+if ([string]::IsNullOrEmpty($azureCloudName) -eq $true) {
+    Write-Host("Azure cloud name parameter not passed in so using default cloud as AzureCloud")
+    $azureCloudName = "AzureCloud"
+} else {
+    if(($azureCloudName.ToLower() -eq "azurecloud" ) -eq $true) {
+        Write-Host("Specified Azure Cloud name is : $azureCloudName")
+    } elseif (($azureCloudName.ToLower() -eq "azureusgovernment" ) -eq $true) {
+        Write-Host("Specified Azure Cloud name is : $azureCloudName")
+    } else {
+        Write-Host("Specified Azure Cloud name is : $azureCloudName")
+        Write-Host("Only supported Azure clouds are : AzureCloud and AzureUSGovernment")
+        exit
+    }
+}
 
 # checks the required Powershell modules exist and if not exists, request the user permission to install
 $azAccountModule = Get-Module -ListAvailable -Name Az.Accounts
@@ -226,14 +245,19 @@ Write-Host("Cluster SubscriptionId : '" + $clusterSubscriptionId + "' ") -Foregr
 if ($isUsingServicePrincipal) {
     $spSecret = ConvertTo-SecureString -String $servicePrincipalClientSecret -AsPlainText -Force
     $spCreds = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList $servicePrincipalClientId,$spSecret
-    Connect-AzAccount -ServicePrincipal -Credential $spCreds -Tenant $tenantId -Subscription $clusterSubscriptionId
+    Connect-AzAccount -ServicePrincipal -Credential $spCreds -Tenant $tenantId -Subscription $clusterSubscriptionId -Environment $azureCloudName
 }
 
 try {
     Write-Host("")
     Write-Host("Trying to get the current Az login context...")
     $account = Get-AzContext -ErrorAction Stop
-    Write-Host("Successfully fetched current AzContext context...") -ForegroundColor Green
+    $ctxCloud = $account.Environment.Name
+    if(($azureCloudName.ToLower() -eq $ctxCloud.ToLower() ) -eq $false) {
+        Write-Host("Specified azure cloud name is not same as current context cloud hence setting account to null to retrigger the login" ) -ForegroundColor Green
+        $account = $null
+    }
+    Write-Host("Successfully fetched current AzContext context and azure cloud name: $azureCloudName" ) -ForegroundColor Green
     Write-Host("")
 }
 catch {
@@ -249,10 +273,10 @@ if ($null -eq $account.Account) {
         if ($isUsingServicePrincipal) {
             $spSecret = ConvertTo-SecureString -String $servicePrincipalClientSecret -AsPlainText -Force
             $spCreds = New-Object -TypeName "System.Management.Automation.PSCredential" -ArgumentList $servicePrincipalClientId,$spSecret
-            Connect-AzAccount -ServicePrincipal -Credential $spCreds -Tenant $tenantId -Subscription $clusterSubscriptionId
+            Connect-AzAccount -ServicePrincipal -Credential $spCreds -Tenant $tenantId -Subscription $clusterSubscriptionId -Environment $azureCloudName
         } else {
            Write-Host("Please login...")
-          Connect-AzAccount -subscriptionid $clusterSubscriptionId
+          Connect-AzAccount -subscriptionid $clusterSubscriptionId -Environment $azureCloudName
         }
     }
     catch {

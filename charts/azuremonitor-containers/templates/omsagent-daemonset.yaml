@@ -28,6 +28,10 @@ spec:
     checksum/config: {{ toYaml .Values.omsagent.resources | sha256sum }}
     checksum/logsettings: {{ toYaml .Values.omsagent.logsettings | sha256sum }}
   spec:
+   dnsConfig:    
+     options:
+       - name: ndots
+         value: "3"     
    {{- if .Values.omsagent.rbac }}
    serviceAccountName: omsagent
    {{- end }}

@@ -15,7 +15,6 @@ module Fluent
 
     config_param :enable_log, :integer, :default => 0
     config_param :log_path, :string, :default => "/var/opt/microsoft/docker-cimprov/log/filter_cadvisor2mdm.log"
-    config_param :custom_metrics_azure_regions, :string
     config_param :metrics_to_collect, :string, :default => "Constants::CPU_USAGE_NANO_CORES,Constants::MEMORY_WORKING_SET_BYTES,Constants::MEMORY_RSS_BYTES,Constants::PV_USED_BYTES"
 
     @@hostName = (OMS::Common.get_hostname)
@@ -42,7 +41,7 @@ module Fluent
     def start
       super
       begin
-        @process_incoming_stream = CustomMetricsUtils.check_custom_metrics_availability(@custom_metrics_azure_regions)
+        @process_incoming_stream = CustomMetricsUtils.check_custom_metrics_availability
         @metrics_to_collect_hash = build_metrics_hash
         @log.debug "After check_custom_metrics_availability process_incoming_stream #{@process_incoming_stream}"
         @@containerResourceUtilTelemetryTimeTracker = DateTime.now.to_time.to_i
@@ -309,8 +308,16 @@ module Fluent
         end
       elsif controller_type.downcase == "daemonset"
         capacity_from_kubelet = KubeletUtils.get_node_capacity
-        @cpu_capacity = capacity_from_kubelet[0]
-        @memory_capacity = capacity_from_kubelet[1]
+
+        # Error handling in case /metrics/cadvsior endpoint fails
+        if !capacity_from_kubelet.nil? && capacity_from_kubelet.length > 1
+          @cpu_capacity = capacity_from_kubelet[0]
+          @memory_capacity = capacity_from_kubelet[1]
+        else
+          # cpu_capacity and memory_capacity keep initialized value of 0.0
+          @log.error "Error getting capacity_from_kubelet: cpu_capacity and memory_capacity"
+        end
+
       end
     end
 
