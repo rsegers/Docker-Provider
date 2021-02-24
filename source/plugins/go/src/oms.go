@@ -32,13 +32,16 @@ import (
 // DataType for Container Log
 const ContainerLogDataType = "CONTAINER_LOG_BLOB"
 
+//DataType for Container Log v2
+const ContainerLogV2DataType = "CONTAINERINSIGHTS_CONTAINERLOGV2"
+
 // DataType for Insights metric
 const InsightsMetricsDataType = "INSIGHTS_METRICS_BLOB"
 
 // DataType for KubeMonAgentEvent
 const KubeMonAgentEventDataType = "KUBE_MON_AGENT_EVENTS_BLOB"
 
-//env varibale which has ResourceId for LA
+//env variable which has ResourceId for LA
 const ResourceIdEnv = "AKS_RESOURCE_ID"
 
 //env variable which has ResourceName for NON-AKS
@@ -78,19 +81,25 @@ const DaemonSetContainerLogPluginConfFilePath = "/etc/opt/microsoft/docker-cimpr
 const ReplicaSetContainerLogPluginConfFilePath = "/etc/opt/microsoft/docker-cimprov/out_oms.conf"
 const WindowsContainerLogPluginConfFilePath = "/etc/omsagentwindows/out_oms.conf"
 
-// IPName for Container Log
-const IPName = "Containers"
+// IPName
+const IPName = "ContainerInsights"
+
+
 const defaultContainerInventoryRefreshInterval = 60
 
 const kubeMonAgentConfigEventFlushInterval = 60
 
 //Eventsource name in mdsd
-const MdsdSourceName = "ContainerLogSource"
+const MdsdContainerLogSourceName = "ContainerLogSource"
+const MdsdContainerLogV2SourceName = "ContainerLogV2Source"
 
-//container logs route - v2 (v2=flush to oneagent, adx= flush to adx ingestion, anything else flush to ODS[default])
+//container logs route (v2=flush to oneagent, adx= flush to adx ingestion, anything else flush to ODS[default])
 const ContainerLogsV2Route = "v2"
 
 const ContainerLogsADXRoute = "adx"
+
+//container logs schema (v2=ContainerLogsV2 table in LA, anything else ContainerLogs table in LA. This is applicable only if Container logs route is NOT ADX)
+const ContainerLogV2SchemaVersion = "v2"
 
 var (
 	// PluginConfiguration the plugins configuration
@@ -125,6 +134,8 @@ var (
 	ContainerLogsRouteV2 bool
 	// container log route for routing thru ADX
 	ContainerLogsRouteADX bool
+	// container log schema (applicable only for non-ADX route)
+	ContainerLogSchemaV2 bool
 	//ADX Cluster URI
 	AdxClusterUri string
 	// ADX clientID
@@ -180,8 +191,8 @@ var (
 	userAgent            = ""
 )
 
-// DataItem represents the object corresponding to the json that is sent by fluentbit tail plugin
-type DataItem struct {
+// DataItemLAv1 == ContainerLog table in LA
+type DataItemLAv1 struct {
 	LogEntry              string `json:"LogEntry"`
 	LogEntrySource        string `json:"LogEntrySource"`
 	LogEntryTimeStamp     string `json:"LogEntryTimeStamp"`
@@ -193,10 +204,25 @@ type DataItem struct {
 	Computer              string `json:"Computer"`
 }
 
+// DataItemLAv2 == ContainerLogV2 table in LA
+// Please keep the names same as destination column names, to avoid transforming one to another in the pipeline
+type DataItemLAv2 struct {
+	TimeGenerated         string `json:"TimeGenerated"`
+	Computer              string `json:"Computer"`
+	ContainerId           string `json:"ContainerId"`
+	ContainerName         string `json:"ContainerName"`
+	PodName				  string `json:"PodName"`
+	PodNamespace          string `json:"PodNamespace"`
+	LogMessage            string `json:"LogMessage"`
+	LogSource             string `json:"LogSource"`
+	//PodLabels			  string `json:"PodLabels"`
+}
+
+// DataItemADX == ContainerLogV2 table in ADX
 type DataItemADX struct {
 	TimeGenerated         string `json:"TimeGenerated"`
 	Computer              string `json:"Computer"`
-	ContainerID           string `json:"ContainerID"`
+	ContainerId           string `json:"ContainerId"`
 	ContainerName         string `json:"ContainerName"`
 	PodName				  string `json:"PodName"`
 	PodNamespace          string `json:"PodNamespace"`
@@ -227,10 +253,17 @@ type InsightsMetricsBlob struct {
 }
 
 // ContainerLogBlob represents the object corresponding to the payload that is sent to the ODS end point
-type ContainerLogBlob struct {
+type ContainerLogBlobLAv1 struct {
 	DataType  string     `json:"DataType"`
 	IPName    string     `json:"IPName"`
-	DataItems []DataItem `json:"DataItems"`
+	DataItems []DataItemLAv1 `json:"DataItems"`
+}
+
+// ContainerLogBlob represents the object corresponding to the payload that is sent to the ODS end point
+type ContainerLogBlobLAv2 struct {
+	DataType  string     `json:"DataType"`
+	IPName    string     `json:"IPName"`
+	DataItems []DataItemLAv2 `json:"DataItems"`
 }
 
 // MsgPackEntry represents the object corresponding to a single messagepack event in the messagepack stream
@@ -792,7 +825,8 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
 func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	start := time.Now()
-	var dataItems []DataItem
+	var dataItemsLAv1 []DataItemLAv1
+	var dataItemsLAv2 []DataItemLAv2
 	var dataItemsADX []DataItemADX
 
 	var msgPackEntries []MsgPackEntry
@@ -830,26 +864,42 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		stringMap = make(map[string]string)
+		//below id & name are used by latency telemetry in both v1 & v2 LA schemas
+		id := ""
+	    name := ""
 
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
-		stringMap["LogEntry"] = logEntry
-		stringMap["LogEntrySource"] = logEntrySource
-		stringMap["LogEntryTimeStamp"] = logEntryTimeStamp
-		stringMap["SourceSystem"] = "Containers"
-		stringMap["Id"] = containerID
+		//ADX Schema & LAv2 schema are almost the same (except resourceId)
+		if (ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true) {
+			stringMap["Computer"] = Computer
+			stringMap["ContainerId"] = containerID
+			stringMap["ContainerName"] = containerName
+			stringMap["PodName"] = k8sPodName
+			stringMap["PodNamespace"] = k8sNamespace
+			stringMap["LogMessage"] = logEntry
+			stringMap["LogSource"] = logEntrySource
+			stringMap["TimeGenerated"] = logEntryTimeStamp
+		} else {
+			stringMap["LogEntry"] = logEntry
+			stringMap["LogEntrySource"] = logEntrySource
+			stringMap["LogEntryTimeStamp"] = logEntryTimeStamp
+			stringMap["SourceSystem"] = "Containers"
+			stringMap["Id"] = containerID
 
-		if val, ok := imageIDMap[containerID]; ok {
-			stringMap["Image"] = val
+			if val, ok := imageIDMap[containerID]; ok {
+				stringMap["Image"] = val
+			}
+
+			if val, ok := nameIDMap[containerID]; ok {
+				stringMap["Name"] = val
+			}
+
+			stringMap["TimeOfCommand"] = start.Format(time.RFC3339)
+			stringMap["Computer"] = Computer
 		}
-
-		if val, ok := nameIDMap[containerID]; ok {
-			stringMap["Name"] = val
-		}
-
-		stringMap["TimeOfCommand"] = start.Format(time.RFC3339)
-		stringMap["Computer"] = Computer
-		var dataItem DataItem
+		var dataItemLAv1 DataItemLAv1
+		var dataItemLAv2 DataItemLAv2
 		var dataItemADX DataItemADX
 		var msgPackEntry MsgPackEntry
 
@@ -866,50 +916,71 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		} else if ContainerLogsRouteADX == true {
 			if ResourceCentric == true {
 				stringMap["AzureResourceId"] = ResourceID
+			} else {
+				stringMap["AzureResourceId"] = ""
 			}
 			stringMap["PodName"] = k8sPodName
 			stringMap["PodNamespace"] = k8sNamespace
 			stringMap["ContainerName"] = containerName
 			dataItemADX = DataItemADX{
-				TimeGenerated:         stringMap["LogEntryTimeStamp"],
+				TimeGenerated:         stringMap["TimeGenerated"],
 				Computer:              stringMap["Computer"],
-				ContainerID:           stringMap["Id"],
+				ContainerId:           stringMap["ContainerId"],
 				ContainerName:         stringMap["ContainerName"],
 				PodName:               stringMap["PodName"],
 				PodNamespace:          stringMap["PodNamespace"],
-				LogMessage:            stringMap["LogEntry"],
-				LogSource:             stringMap["LogEntrySource"],
+				LogMessage:            stringMap["LogMessage"],
+				LogSource:             stringMap["LogSource"],
 				AzureResourceId:       stringMap["AzureResourceId"],
 			}
 			//ADX
 			dataItemsADX = append(dataItemsADX, dataItemADX)
 		} else {
-			dataItem = DataItem{
-				ID:                    stringMap["Id"],
-				LogEntry:              stringMap["LogEntry"],
-				LogEntrySource:        stringMap["LogEntrySource"],
-				LogEntryTimeStamp:     stringMap["LogEntryTimeStamp"],
-				LogEntryTimeOfCommand: stringMap["TimeOfCommand"],
-				SourceSystem:          stringMap["SourceSystem"],
-				Computer:              stringMap["Computer"],
-				Image:                 stringMap["Image"],
-				Name:                  stringMap["Name"],
+			if (ContainerLogSchemaV2 == true) {
+				dataItemLAv2 = DataItemLAv2{
+					TimeGenerated:         stringMap["TimeGenerated"],
+					Computer:              stringMap["Computer"],
+					ContainerId:           stringMap["ContainerId"],
+					ContainerName:         stringMap["ContainerName"],
+					PodName:               stringMap["PodName"],
+					PodNamespace:          stringMap["PodNamespace"],
+					LogMessage:            stringMap["LogMessage"],
+					LogSource:             stringMap["LogSource"],
+				}
+				//ODS-v2 schema
+				dataItemsLAv2 = append(dataItemsLAv2, dataItemLAv2)
+				name = stringMap["ContainerName"]
+				id = stringMap["ContainerId"]
+			} else {
+				dataItemLAv1 = DataItemLAv1{
+					ID:                    stringMap["Id"],
+					LogEntry:              stringMap["LogEntry"],
+					LogEntrySource:        stringMap["LogEntrySource"],
+					LogEntryTimeStamp:     stringMap["LogEntryTimeStamp"],
+					LogEntryTimeOfCommand: stringMap["TimeOfCommand"],
+					SourceSystem:          stringMap["SourceSystem"],
+					Computer:              stringMap["Computer"],
+					Image:                 stringMap["Image"],
+					Name:                  stringMap["Name"],
+				}
+			//ODS-v1 schema
+			dataItemsLAv1 = append(dataItemsLAv1, dataItemLAv1)
+			name = stringMap["Name"]
+			id = stringMap["Id"]
 			}
-			//ODS
-			dataItems = append(dataItems, dataItem)
 		}
 
-		if stringMap["LogEntryTimeStamp"] != "" {
-			loggedTime, e := time.Parse(time.RFC3339, stringMap["LogEntryTimeStamp"])
+		if logEntryTimeStamp != "" {
+			loggedTime, e := time.Parse(time.RFC3339, logEntryTimeStamp)
 			if e != nil {
-				message := fmt.Sprintf("Error while converting LogEntryTimeStamp for telemetry purposes: %s", e.Error())
+				message := fmt.Sprintf("Error while converting logEntryTimeStamp for telemetry purposes: %s", e.Error())
 				Log(message)
 				SendException(message)
 			} else {
 				ltncy := float64(start.Sub(loggedTime) / time.Millisecond)
 				if ltncy >= maxLatency {
 					maxLatency = ltncy
-					maxLatencyContainer = dataItem.Name + "=" + dataItem.ID
+					maxLatencyContainer = name + "=" + id
 				}
 			}
 		}
@@ -919,8 +990,12 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
+		mdsdSourceName := MdsdContainerLogSourceName
+		if (ContainerLogSchemaV2 == true) {
+			mdsdSourceName = MdsdContainerLogV2SourceName
+		}
 		fluentForward := MsgPackForward{
-			Tag:     MdsdSourceName,
+			Tag:     mdsdSourceName,
 			Entries: msgPackEntries,
 		}
 
@@ -967,7 +1042,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		elapsed = time.Since(start)
 
 		if er != nil {
-			Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(dataItems), elapsed, er.Error())
+			Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
 			if MdsdMsgpUnixSocketClient != nil {
 				MdsdMsgpUnixSocketClient.Close()
 				MdsdMsgpUnixSocketClient = nil
@@ -1013,14 +1088,14 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 		}
 
-		// Setup a maximum time for completion to be 15 Seconds.
+		// Setup a maximum time for completion to be 30 Seconds.
 		ctx, cancel := context.WithTimeout(ParentContext, 30*time.Second)
 		defer cancel()
 
 		//ADXFlushMutex.Lock()
 		//defer ADXFlushMutex.Unlock()
 		//MultiJSON support is not there yet
-		if ingestionErr := ADXIngestor.FromReader(ctx, r, ingest.IngestionMappingRef("ContainerLogv2Mapping", ingest.JSON), ingest.FileFormat(ingest.JSON)); ingestionErr != nil {
+		if ingestionErr := ADXIngestor.FromReader(ctx, r, ingest.IngestionMappingRef("ContainerLogV2Mapping", ingest.JSON), ingest.FileFormat(ingest.JSON)); ingestionErr != nil {
 			Log("Error when streaming to ADX Ingestion: %s", ingestionErr.Error())
 			//ADXIngestor = nil  //not required as per ADX team. Will keep it to indicate that we tried this approach
 
@@ -1035,58 +1110,75 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		numContainerLogRecords = len(dataItemsADX)
 		Log("Success::ADX::Successfully wrote %d container log records to ADX in %s", numContainerLogRecords, elapsed)
 
-	} else {
-		//flush to ODS
-		if len(dataItems) > 0 {
-			logEntry := ContainerLogBlob{
-				DataType:  ContainerLogDataType,
+	} else { //ODS
+		var logEntry interface{}
+		recordType := ""
+		loglinesCount := 0
+		//schema v2
+		if (len(dataItemsLAv2) > 0 && ContainerLogSchemaV2 == true) {
+			logEntry = ContainerLogBlobLAv2{
+				DataType:  ContainerLogV2DataType,
 				IPName:    IPName,
-				DataItems: dataItems}
-
-			marshalled, err := json.Marshal(logEntry)
-			if err != nil {
-				message := fmt.Sprintf("Error while Marshalling log Entry: %s", err.Error())
-				Log(message)
-				SendException(message)
-				return output.FLB_OK
+				DataItems: dataItemsLAv2}
+				loglinesCount = len(dataItemsLAv2)
+				recordType = "ContainerLogV2"
+		} else {
+			//schema v1
+			if len(dataItemsLAv1) > 0 {
+				logEntry = ContainerLogBlobLAv1{
+					DataType:  ContainerLogDataType,
+					IPName:    IPName,
+					DataItems: dataItemsLAv1}
+					loglinesCount = len(dataItemsLAv1)
+					recordType = "ContainerLog"
 			}
+		}
 
-			req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(marshalled))
-			req.Header.Set("Content-Type", "application/json")
-			req.Header.Set("User-Agent", userAgent)
-			reqId := uuid.New().String()
-			req.Header.Set("X-Request-ID", reqId)
-			//expensive to do string len for every request, so use a flag
-			if ResourceCentric == true {
-				req.Header.Set("x-ms-AzureResourceId", ResourceID)
+		marshalled, err := json.Marshal(logEntry)
+		//Log("LogEntry::e %s", marshalled)
+		if err != nil {
+			message := fmt.Sprintf("Error while Marshalling log Entry: %s", err.Error())
+			Log(message)
+			SendException(message)
+			return output.FLB_OK
+		}
+
+		req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(marshalled))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("User-Agent", userAgent)
+		reqId := uuid.New().String()
+		req.Header.Set("X-Request-ID", reqId)
+		//expensive to do string len for every request, so use a flag
+		if ResourceCentric == true {
+			req.Header.Set("x-ms-AzureResourceId", ResourceID)
+		}
+		
+		resp, err := HTTPClient.Do(req)
+		elapsed = time.Since(start)
+
+		if err != nil {
+			message := fmt.Sprintf("Error when sending request %s \n", err.Error())
+			Log(message)
+			// Commenting this out for now. TODO - Add better telemetry for ods errors using aggregation
+			//SendException(message)
+			
+			Log("Failed to flush %d records after %s", loglinesCount, elapsed)
+
+			return output.FLB_RETRY
+		}
+
+		if resp == nil || resp.StatusCode != 200 {
+			if resp != nil {
+				Log("RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
 			}
+			return output.FLB_RETRY
+		}
 
-			resp, err := HTTPClient.Do(req)
-			elapsed = time.Since(start)
-
-			if err != nil {
-				message := fmt.Sprintf("Error when sending request %s \n", err.Error())
-				Log(message)
-				// Commenting this out for now. TODO - Add better telemetry for ods errors using aggregation
-				//SendException(message)
-				Log("Failed to flush %d records after %s", len(dataItems), elapsed)
-
-				return output.FLB_RETRY
-			}
-
-			if resp == nil || resp.StatusCode != 200 {
-				if resp != nil {
-					Log("RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
-				}
-				return output.FLB_RETRY
-			}
-
-			defer resp.Body.Close()
-			numContainerLogRecords = len(dataItems)
-			Log("PostDataHelper::Info::Successfully flushed %d container log records to ODS in %s", numContainerLogRecords, elapsed)
+		defer resp.Body.Close()
+		numContainerLogRecords = loglinesCount
+		Log("PostDataHelper::Info::Successfully flushed %d %s records to ODS in %s", numContainerLogRecords, recordType, elapsed)
 
 		}
-	}
 
 	ContainerLogTelemetryMutex.Lock()
 	defer ContainerLogTelemetryMutex.Unlock()
@@ -1374,10 +1466,22 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		CreateADXClient()
 	}
 
+	ContainerLogSchemaVersion := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOG_SCHEMA_VERSION")))
+	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", ContainerLogSchemaVersion)
+
+	ContainerLogSchemaV2 = false  //default is v1 schema
+
+	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0  && ContainerLogsRouteADX != true {
+		ContainerLogSchemaV2 = true
+		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
+		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
+	}
+
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		populateExcludedStdoutNamespaces()
 		populateExcludedStderrNamespaces()
-		if enrichContainerLogs == true && ContainerLogsRouteADX != true {
+		//enrichment not applicable for ADX and v2 schema
+		if enrichContainerLogs == true && ContainerLogsRouteADX != true && ContainerLogSchemaV2 != true {
 			Log("ContainerLogEnrichment=true; starting goroutine to update containerimagenamemaps \n")
 			go updateContainerImageNameMaps()
 		} else {
