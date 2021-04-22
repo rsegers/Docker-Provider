@@ -699,6 +699,10 @@ dpkg -l | grep td-agent-bit | awk '{print $2 " " $3}'
 
 
 
+# Write messages from the liveness probe to stdout (so telemetry picks it up)
+touch /dev/write-to-traces
+
+
 echo "stopping rsyslog..."
 service rsyslog stop
 

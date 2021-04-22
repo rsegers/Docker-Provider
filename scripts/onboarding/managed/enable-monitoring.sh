@@ -44,7 +44,7 @@ defaultAzureCloud="AzureCloud"
 omsAgentDomainName="opinsights.azure.com"
 
 # released chart version in mcr
-mcrChartVersion="2.8.2"
+mcrChartVersion="2.8.3"
 mcr="mcr.microsoft.com"
 mcrChartRepoPath="azuremonitor/containerinsights/preview/azuremonitor-containers"
 helmLocalRepoName="."

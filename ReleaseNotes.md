@@ -11,6 +11,23 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 04/22/2021 -
+##### Version microsoft/oms:ciprod04222021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod04222021 (linux)
+##### Version microsoft/oms:win-ciprod04222021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod04222021 (windows)
+##### Code change log
+- Bug fixes for metrics cpuUsagePercentage and memoryWorkingSetPercentage for windows nodes
+- Added metrics for threshold violation
+- Made Job completion metric configurable
+- Udated default buffer sizes in fluent-bit
+- Updated recommended alerts
+- Fixed bug where logs written before agent starts up were not collected
+- Fixed bug which kept agent logs from being rotated
+- Bug fix for Windows Containerd container log collection
+- Bug fixes
+- Doc updates
+- Minor telemetry changes
+
+
 ### 03/26/2021 -
 ##### Version microsoft/oms:ciprod03262021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03262021 (linux)
 ##### Version microsoft/oms:win-ciprod03262021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod03262021 (windows)

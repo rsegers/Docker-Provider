@@ -31,6 +31,8 @@ class KubernetesApiClient
   @@TokenStr = nil
   @@NodeMetrics = Hash.new
   @@WinNodeArray = []
+  @@telemetryTimeTracker = DateTime.now.to_time.to_i
+  @@resourceLimitsTelemetryHash = {}
 
   def initialize
   end
@@ -403,9 +405,12 @@ class KubernetesApiClient
 
     def getContainerResourceRequestsAndLimits(pod, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
       metricItems = []
+      timeDifference = (DateTime.now.to_time.to_i - @@telemetryTimeTracker).abs
+      timeDifferenceInMinutes = timeDifference / 60
       begin
         clusterId = getClusterId
         podNameSpace = pod["metadata"]["namespace"]
+        podName = pod["metadata"]["name"]
         podUid = getPodUid(podNameSpace, pod["metadata"])
         if podUid.nil?
           return metricItems
@@ -456,6 +461,33 @@ class KubernetesApiClient
               metricProps["Collections"].push(metricCollections)
               metricItem["DataItems"].push(metricProps)
               metricItems.push(metricItem)
+              #Telemetry about omsagent requests and limits
+              begin
+                if (podName.downcase.start_with?("omsagent-") && podNameSpace.eql?("kube-system") && containerName.downcase.start_with?("omsagent"))
+                  nodePodContainerKey = [nodeName, podName, containerName, metricNametoReturn].join("~~")
+                  @@resourceLimitsTelemetryHash[nodePodContainerKey] = metricValue
+                end
+                if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+                  @@resourceLimitsTelemetryHash.each { |key, value|
+                    keyElements = key.split("~~")
+                    if keyElements.length != 4
+                      next
+                    end
+
+                    # get dimension values by key
+                    telemetryProps = {}
+                    telemetryProps["Computer"] = keyElements[0]
+                    telemetryProps["PodName"] = keyElements[1]
+                    telemetryProps["ContainerName"] = keyElements[2]
+                    metricNameFromKey = keyElements[3]
+                    ApplicationInsightsUtility.sendMetricTelemetry(metricNameFromKey, value, telemetryProps)
+                  }
+                  @@telemetryTimeTracker = DateTime.now.to_time.to_i
+                  @@resourceLimitsTelemetryHash = {}
+                end
+              rescue => errorStr
+                $log.warn("Exception while generating Telemetry from getContainerResourceRequestsAndLimits failed: #{errorStr} for metric #{metricNameToCollect}")
+              end
               #No container level limit for the given metric, so default to node level limit
             else
               nodeMetricsHashKey = clusterId + "/" + nodeName + "_" + "allocatable" + "_" + metricNameToCollect
@@ -791,7 +823,7 @@ class KubernetesApiClient
     def getKubeServicesInventoryRecords(serviceList, batchTime = Time.utc.iso8601)
       kubeServiceRecords = []
       begin
-        if (!serviceList.nil? && !serviceList.empty? && serviceList.key?("items") && !serviceList["items"].nil? && !serviceList["items"].empty? )
+        if (!serviceList.nil? && !serviceList.empty? && serviceList.key?("items") && !serviceList["items"].nil? && !serviceList["items"].empty?)
           servicesCount = serviceList["items"].length
           @Log.info("KubernetesApiClient::getKubeServicesInventoryRecords : number of services in serviceList  #{servicesCount} @ #{Time.now.utc.iso8601}")
           serviceList["items"].each do |item|

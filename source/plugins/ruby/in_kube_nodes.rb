@@ -9,6 +9,7 @@ module Fluent
     @@MDMKubeNodeInventoryTag = "mdm.kubenodeinventory"
     @@configMapMountPath = "/etc/config/settings/log-data-collection-settings"
     @@promConfigMountPath = "/etc/config/settings/prometheus-data-collection-settings"
+    @@osmConfigMountPath = "/etc/config/osm-settings/osm-metric-collection-configuration"
     @@AzStackCloudFileName = "/etc/kubernetes/host/azurestackcloud.json"
     @@kubeperfTag = "oms.api.KubePerf"
 
@@ -42,6 +43,8 @@ module Fluent
       @nodeInventoryE2EProcessingLatencyMs = 0
       @nodesAPIE2ELatencyMs = 0
       require_relative "constants"
+
+      @NodeCache = NodeStatsCache.new()
     end
 
     config_param :run_interval, :time, :default => 60
@@ -196,6 +199,15 @@ module Fluent
             end
           end
 
+          # Only CPU and Memory capacity for windows nodes get added to the cache (at end of file)
+          is_windows_node = false
+          if !item["status"].nil? && !item["status"]["nodeInfo"].nil? && !item["status"]["nodeInfo"]["operatingSystem"].nil?
+            operatingSystem = item["status"]["nodeInfo"]["operatingSystem"]
+            if (operatingSystem.is_a?(String) && operatingSystem.casecmp("windows") == 0)
+              is_windows_node = true
+            end
+          end
+
           # node metrics records
           nodeMetricRecords = []
           nodeMetricRecord = KubernetesApiClient.parseNodeLimitsFromNodeItem(item, "allocatable", "cpu", "cpuAllocatableNanoCores", batchTime)
@@ -209,10 +221,18 @@ module Fluent
           nodeMetricRecord = KubernetesApiClient.parseNodeLimitsFromNodeItem(item, "capacity", "cpu", "cpuCapacityNanoCores", batchTime)
           if !nodeMetricRecord.nil? && !nodeMetricRecord.empty?
             nodeMetricRecords.push(nodeMetricRecord)
+            # add data to the cache so filter_cadvisor2mdm.rb can use it
+            if is_windows_node
+              @NodeCache.cpu.set_capacity(nodeMetricRecord["DataItems"][0]["Host"], nodeMetricRecord["DataItems"][0]["Collections"][0]["Value"])
+            end
           end
           nodeMetricRecord = KubernetesApiClient.parseNodeLimitsFromNodeItem(item, "capacity", "memory", "memoryCapacityBytes", batchTime)
           if !nodeMetricRecord.nil? && !nodeMetricRecord.empty?
             nodeMetricRecords.push(nodeMetricRecord)
+            # add data to the cache so filter_cadvisor2mdm.rb can use it
+            if is_windows_node
+              @NodeCache.mem.set_capacity(nodeMetricRecord["DataItems"][0]["Host"], nodeMetricRecord["DataItems"][0]["Collections"][0]["Value"])
+            end
           end
           nodeMetricRecords.each do |metricRecord|
             metricRecord["DataType"] = "LINUX_PERF_BLOB"
@@ -301,6 +321,9 @@ module Fluent
               properties["rsPromMonPodsNs"] = @@rsPromMonitorPodsNamespaceLength
               properties["rsPromMonPodsLabelSelectorLength"] = @@rsPromMonitorPodsLabelSelectorLength
               properties["rsPromMonPodsFieldSelectorLength"] = @@rsPromMonitorPodsFieldSelectorLength
+            end
+            # telemetry about osm metric settings for replicaset
+            if (File.file?(@@osmConfigMountPath))
               properties["osmNamespaceCount"] = @@osmNamespaceCount
             end
             ApplicationInsightsUtility.sendMetricTelemetry("NodeCoreCapacity", capacityInfo["cpu"], properties)
@@ -492,4 +515,77 @@ module Fluent
       return properties
     end
   end # Kube_Node_Input
+
+
+  class NodeStatsCache
+    # inner class for caching implementation (CPU and memory caching is handled the exact same way, so logic to do so is moved to a private inner class)
+    # (to reduce code duplication)
+    class NodeCache
+
+      @@RECORD_TIME_TO_LIVE = 60*20  # units are seconds, so clear the cache every 20 minutes.
+
+      def initialize
+        @cacheHash = {}
+        @timeAdded = {}  # records when an entry was last added
+        @lock = Mutex.new
+        @lastCacheClearTime = 0
+
+        @cacheHash.default = 0.0
+        @lastCacheClearTime = DateTime.now.to_time.to_i
+      end
+
+      def get_capacity(node_name)
+        @lock.synchronize do
+          retval = @cacheHash[node_name]
+          return retval
+        end
+      end
+
+      def set_capacity(host, val)
+        # check here if the cache has not been cleaned in a while. This way calling code doesn't have to remember to clean the cache
+        current_time = DateTime.now.to_time.to_i
+        if current_time - @lastCacheClearTime > @@RECORD_TIME_TO_LIVE
+          clean_cache
+          @lastCacheClearTime = current_time
+        end
+
+        @lock.synchronize do
+          @cacheHash[host] = val
+          @timeAdded[host] = current_time
+        end
+      end
+
+      def clean_cache()
+        $log.info "in_kube_nodes::clean_cache: cleaning node cpu/mem cache"
+        cacheClearTime = DateTime.now.to_time.to_i
+        @lock.synchronize do
+          nodes_to_remove = []  # first make a list of nodes to remove, then remove them. This intermediate
+          # list is used so that we aren't modifying a hash while iterating through it.
+          @cacheHash.each do |key, val|
+            if cacheClearTime - @timeAdded[key] > @@RECORD_TIME_TO_LIVE
+              nodes_to_remove.append(key)
+            end
+          end
+
+          nodes_to_remove.each do node_name
+            @cacheHash.delete(node_name)
+            @timeAdded.delete(node_name)
+          end
+        end
+      end
+    end  # NodeCache
+
+
+    @@cpuCache = NodeCache.new
+    @@memCache = NodeCache.new
+
+    def cpu()
+      return @@cpuCache
+    end
+
+    def mem()
+      return @@memCache
+    end
+  end
+
 end # module

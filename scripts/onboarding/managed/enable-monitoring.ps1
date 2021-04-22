@@ -46,9 +46,9 @@ param(
     [Parameter(mandatory = $false)]
     [string]$kubeContext,
     [Parameter(mandatory = $false)]
-    [string]$servicePrincipalClientSecret,
-    [Parameter(mandatory = $false)]
     [string]$tenantId,
+    [Parameter(mandatory = $false)]
+    [string]$kubeContext,
     [Parameter(mandatory = $false)]
     [string]$azureCloudName
 )
@@ -64,7 +64,7 @@ $isUsingServicePrincipal = $false
 
 # released chart version in mcr
 $mcr = "mcr.microsoft.com"
-$mcrChartVersion = "2.8.2"
+$mcrChartVersion = "2.8.3"
 $mcrChartRepoPath = "azuremonitor/containerinsights/preview/azuremonitor-containers"
 $helmLocalRepoName = "."
 $omsAgentDomainName="opinsights.azure.com"

@@ -35,20 +35,21 @@ Image automatically synched to MCR CN from Public cloud MCR.
 
 - Refer to internal docs for the release process and instructions.
 
-## ARO v3
-
-This needs to be co-ordinated with Red hat  and ARO-RP team for the release and Red hat team will pick up the changes for the release.
-
 ## AKS-Engine
 
 Make PR against [AKS-Engine](https://github.com/Azure/aks-engine). Refer PR https://github.com/Azure/aks-engine/pull/2318
 
-## ARO v4, Azure Arc K8s and OpenShift v4 clusters
+## Arc for Kubernetes 
 
-Make sure azuremonitor-containers chart yamls updates with all changes going with the release and also make sure to bump the chart version, imagetag and docker provider version etc. Similar to agent container image, build pipeline automatically push the chart to container insights prod acr for canary and prod repos accordingly.
-Both the agent and helm chart will be replicated to `mcr.microsoft.com`.
-
-The way, customers will be onboard the monitoring to these clusters using onboarding scripts under `onboarding\managed` directory so please bump chart version for prod release. Once we move to Arc K8s Monitoring extension Public preview, these will be taken care so at that point of time no manual changes like this required.
+Ev2 pipeline used to deploy the chart of the Arc K8s Container Insights Extension as per Safe Deployment Process. 
+Here is the high level process
+```
+ 1. Specify chart version of the release candidate and trigger [container-insights-arc-k8s-extension-ci_prod-release](https://github-private.visualstudio.com/microsoft/_release?_a=releases&view=all)
+ 2. Get the approval from one of team member for the release
+ 3. Once the approved, release should be triggered automatically 
+ 4. use `cimon-arck8s-eastus2euap` for validating latest release in canary region
+ 5. TBD - Notify vendor team for the validation on all Arc K8s supported platforms
+```
 
 ## Microsoft Charts Repo release for On-prem K8s
 

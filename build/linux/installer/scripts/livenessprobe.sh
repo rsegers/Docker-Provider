@@ -26,6 +26,15 @@ then
  exit 1
 fi
 
+#test to exit non zero value if telegraf is not running
+(ps -ef | grep telegraf | grep -v "grep")
+if [ $? -ne 0 ]
+then
+ echo "Telegraf is not running" > /dev/termination-log
+ echo "Telegraf is not running (controller: ${CONTROLLER_TYPE}, container type: ${CONTAINER_TYPE})" > /dev/write-to-traces  # this file is tailed and sent to traces
+ exit 1
+fi
+
 if [ -s "inotifyoutput.txt" ]
 then
   # inotifyoutput file has data(config map was applied)
