@@ -919,9 +919,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			} else {
 				stringMap["AzureResourceId"] = ""
 			}
-			stringMap["PodName"] = k8sPodName
-			stringMap["PodNamespace"] = k8sNamespace
-			stringMap["ContainerName"] = containerName
 			dataItemADX = DataItemADX{
 				TimeGenerated:         stringMap["TimeGenerated"],
 				Computer:              stringMap["Computer"],

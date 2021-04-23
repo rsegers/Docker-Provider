@@ -244,20 +244,6 @@ class MdmMetricsGenerator
             end
           }
         end
-
-        pvZeroFillDims = {}
-        pvZeroFillDims[Constants::INSIGHTSMETRICS_TAGS_PVC_NAMESPACE] = Constants::KUBESYSTEM_NAMESPACE_ZERO_FILL
-        pvZeroFillDims[Constants::INSIGHTSMETRICS_TAGS_POD_NAME] = Constants::OMSAGENT_ZERO_FILL
-        pvZeroFillDims[Constants::INSIGHTSMETRICS_TAGS_VOLUME_NAME] = Constants::VOLUME_NAME_ZERO_FILL
-        pvResourceUtilMetricRecord = getPVResourceUtilMetricRecords(batch_time,
-                                                                    Constants::PV_USED_BYTES,
-                                                                    @@hostName,
-                                                                    0,
-                                                                    pvZeroFillDims,
-                                                                    metric_threshold_hash[Constants::PV_USED_BYTES])
-        if !pvResourceUtilMetricRecord.nil? && !pvResourceUtilMetricRecord.empty? && !pvResourceUtilMetricRecord[0].nil? && !pvResourceUtilMetricRecord[0].empty?
-          records.push(pvResourceUtilMetricRecord[0])
-        end
       rescue => errorStr
         @log.info "Error in zeroFillMetricRecords: #{errorStr}"
         ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)

@@ -46,9 +46,9 @@ param(
     [Parameter(mandatory = $false)]
     [string]$kubeContext,
     [Parameter(mandatory = $false)]
-    [string]$tenantId,
+    [string]$workspaceResourceId,
     [Parameter(mandatory = $false)]
-    [string]$kubeContext,
+    [string]$proxyEndpoint,
     [Parameter(mandatory = $false)]
     [string]$azureCloudName
 )
