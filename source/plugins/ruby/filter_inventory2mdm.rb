@@ -2,14 +2,16 @@
 
 # frozen_string_literal: true
 
-module Fluent
+require 'fluent/plugin/filter'
+
+module Fluent::Plugin
     require 'logger'
     require 'yajl/json_gem'
     require_relative 'oms_common'
     require_relative 'CustomMetricsUtils'
 
 	class Inventory2MdmFilter < Filter
-		Fluent::Plugin.register_filter('filter_inventory2mdm', self)
+		Fluent::Plugin.register_filter('inventory2mdm', self)
 
 		config_param :enable_log, :integer, :default => 0
         config_param :log_path, :string, :default => '/var/opt/microsoft/docker-cimprov/log/filter_inventory2mdm.log'
@@ -115,8 +117,8 @@ module Fluent
 
                 es.each{|time,record|
                     begin
-                        timestamp = record['DataItems'][0]['CollectionTime']
-                        node_status = record['DataItems'][0]['Status']
+                        timestamp = record['CollectionTime']
+                        node_status = record['Status']
                         if node_status.downcase.split(",").include? @@node_status_ready.downcase
                             node_ready_count = node_ready_count+1
                         else
@@ -161,8 +163,8 @@ module Fluent
                 records = []
                 es.each{|time,record|
                     record_count += 1
-                    timestamp = record['DataItems'][0]['CollectionTime']
-                    podUid = record['DataItems'][0]['PodUid']
+                    timestamp = record['CollectionTime']
+                    podUid = record['PodUid']
 
 		            if podUids.key?(podUid)
                         #@log.info "pod with #{podUid} already counted"
@@ -170,10 +172,10 @@ module Fluent
                     end
 
                     podUids[podUid] = true
-                    podPhaseDimValue = record['DataItems'][0]['PodStatus']
-                    podNamespaceDimValue = record['DataItems'][0]['Namespace']
-                    podControllerNameDimValue = record['DataItems'][0]['ControllerName']
-                    podNodeDimValue = record['DataItems'][0]['Computer']
+                    podPhaseDimValue = record['PodStatus']
+                    podNamespaceDimValue = record['Namespace']
+                    podControllerNameDimValue = record['ControllerName']
+                    podNodeDimValue = record['Computer']
 
                     if podControllerNameDimValue.nil? || podControllerNameDimValue.empty?
                         podControllerNameDimValue = 'No Controller'
@@ -263,7 +265,7 @@ module Fluent
         end
 
         def filter_stream(tag, es)
-            new_es = MultiEventStream.new
+            new_es = Fluent::MultiEventStream.new
             filtered_records = []
             time = DateTime.now
             begin

@@ -1,17 +1,19 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
+require 'fluent/plugin/input'
+
 require_relative "KubernetesApiClient"
 require_relative "oms_common"
 require_relative "omslog"
 require_relative "ApplicationInsightsUtility"
 
-module Fluent
+module Fluent::Plugin
   Dir[File.join(__dir__, "./health", "*.rb")].each { |file| require file }
 
   class KubeHealthInput < Input
     include HealthModel
-    Plugin.register_input("kubehealth", self)
+    Fluent::Plugin.register_input("kube_health", self)
 
     config_param :health_monitor_config_path, :default => "/etc/opt/microsoft/docker-cimprov/health/healthmonitorconfig.json"
 
@@ -46,6 +48,7 @@ module Fluent
 
     def start
       begin
+        super 
         if @run_interval
           @finished = false
           @condition = ConditionVariable.new
@@ -76,20 +79,21 @@ module Fluent
           @condition.signal
         }
         @thread.join
+        super # This super must be at the end of shutdown method
       end
     end
 
     def enumerate
       if !@@cluster_health_model_enabled
         @@hmlog.info "Cluster Health Model disabled in in_kube_health"
-        return MultiEventStream.new
+        return Fluent::MultiEventStream.new
     end
       begin
-        currentTime = Time.now
-        emitTime = currentTime.to_f
+        currentTime = Time.now   
+        emitTime = Fluent::Engine.now     
         batchTime = currentTime.utc.iso8601
         health_monitor_records = []
-        eventStream = MultiEventStream.new
+        eventStream = Fluent::MultiEventStream.new
 
         #HealthMonitorUtils.refresh_kubernetes_api_data(@@hmlog, nil)
         # we do this so that if the call fails, we get a response code/header etc.

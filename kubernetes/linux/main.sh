@@ -38,40 +38,8 @@ waitforlisteneronTCPport() {
       fi
 }
 
-if [ -e "/etc/config/kube.conf" ]; then
-    cat /etc/config/kube.conf > /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
-elif [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
-    echo "setting omsagent conf file for prometheus sidecar"
-    cat /etc/opt/microsoft/docker-cimprov/prometheus-side-car.conf > /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
-    # omsadmin.sh replaces %MONITOR_AGENT_PORT% and %SYSLOG_PORT% in the monitor.conf and syslog.conf with default ports 25324 and 25224. 
-    # Since we are running 2 omsagents in the same pod, we need to use a different port for the sidecar, 
-    # else we will see the  Address already in use - bind(2) for 0.0.0.0:253(2)24 error.
-    # Look into omsadmin.sh scripts's configure_monitor_agent()/configure_syslog() and find_available_port() methods for more info.
-    sed -i -e 's/port %MONITOR_AGENT_PORT%/port 25326/g' /etc/opt/microsoft/omsagent/sysconf/omsagent.d/monitor.conf
-    sed -i -e 's/port %SYSLOG_PORT%/port 25226/g' /etc/opt/microsoft/omsagent/sysconf/omsagent.d/syslog.conf
-else
-    echo "setting omsagent conf file for daemonset"
-    sed -i -e 's/bind 127.0.0.1/bind 0.0.0.0/g' /etc/opt/microsoft/omsagent/sysconf/omsagent.d/container.conf
-fi
-sed -i -e 's/bind 127.0.0.1/bind 0.0.0.0/g' /etc/opt/microsoft/omsagent/sysconf/omsagent.d/syslog.conf
-sed -i -e 's/^exit 101$/exit 0/g' /usr/sbin/policy-rc.d
-
-#Using the get_hostname for hostname instead of the host field in syslog messages
-sed -i.bak "s/record\[\"Host\"\] = hostname/record\[\"Host\"\] = OMS::Common.get_hostname/" /opt/microsoft/omsagent/plugin/filter_syslog.rb
-
 #using /var/opt/microsoft/docker-cimprov/state instead of /var/opt/microsoft/omsagent/state since the latter gets deleted during onboarding
 mkdir -p /var/opt/microsoft/docker-cimprov/state
-
-#if [ ! -e "/etc/config/kube.conf" ]; then
-  # add permissions for omsagent user to access docker.sock
-  #sudo setfacl -m user:omsagent:rw /var/run/host/docker.sock
-#fi
-
-# add permissions for omsagent user to access azure.json.
-sudo setfacl -m user:omsagent:r /etc/kubernetes/host/azure.json
-
-# add permission for omsagent user to log folder. We also need 'x', else log rotation is failing. TODO: Investigate why.
-sudo setfacl -m user:omsagent:rwx /var/opt/microsoft/docker-cimprov/log
 
 #Run inotify as a daemon to track changes to the mounted configmap.
 inotifywait /etc/config/settings --daemon --recursive --outfile "/opt/inotifyoutput.txt" --event create,delete --format '%e : %T' --timefmt '+%s'
@@ -89,7 +57,7 @@ else
       export customResourceId=$AKS_RESOURCE_ID
       echo "export customResourceId=$AKS_RESOURCE_ID" >> ~/.bashrc
       source ~/.bashrc
-      echo "customResourceId:$customResourceId"
+      echo "customResourceId:$customResourceId"     
 fi
 
 #set agent config schema version
@@ -141,7 +109,6 @@ if [[ ( ( ! -e "/etc/config/kube.conf" ) && ( "${CONTAINER_TYPE}" == "Prometheus
 fi
 
 export PROXY_ENDPOINT=""
-
 # Check for internet connectivity or workspace deletion
 if [ -e "/etc/omsagent-secret/WSID" ]; then
       workspaceId=$(cat /etc/omsagent-secret/WSID)
@@ -222,6 +189,7 @@ else
       echo "LA Onboarding:Workspace Id not mounted, skipping the telemetry check"
 fi
 
+
 # Set environment variable for if public cloud by checking the workspace domain.
 if [ -z $domain ]; then
   ClOUD_ENVIRONMENT="unknown"
@@ -232,6 +200,12 @@ else
 fi
 export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT
 echo "export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT" >> ~/.bashrc
+
+#consisten naming conventions with the windows
+export DOMAIN=$domain
+echo "export DOMAIN=$DOMAIN" >> ~/.bashrc
+export WSID=$workspaceId
+echo "export WSID=$WSID" >> ~/.bashrc
 
 # Check if the instrumentation key needs to be fetched from a storage account (as in airgapped clouds)
 if [ ${#APPLICATIONINSIGHTS_AUTH_URL} -ge 1 ]; then  # (check if APPLICATIONINSIGHTS_AUTH_URL has length >=1)
@@ -267,7 +241,7 @@ source ~/.bashrc
 
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       #Parse the configmap to set the right environment variables.
-      /opt/microsoft/omsagent/ruby/bin/ruby tomlparser.rb
+      /usr/bin/ruby2.6 tomlparser.rb
 
       cat config_env_var | while read line; do
             echo $line >> ~/.bashrc
@@ -278,7 +252,7 @@ fi
 #Parse the configmap to set the right environment variables for agent config.
 #Note > tomlparser-agent-config.rb has to be parsed first before td-agent-bit-conf-customizer.rb for fbit agent settings
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      /opt/microsoft/omsagent/ruby/bin/ruby tomlparser-agent-config.rb
+      /usr/bin/ruby2.6 tomlparser-agent-config.rb
 
       cat agent_config_env_var | while read line; do
             #echo $line
@@ -287,7 +261,7 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       source agent_config_env_var
 
       #Parse the configmap to set the right environment variables for network policy manager (npm) integration.
-      /opt/microsoft/omsagent/ruby/bin/ruby tomlparser-npm-config.rb
+      /usr/bin/ruby2.6 tomlparser-npm-config.rb
 
       cat integration_npm_config_env_var | while read line; do
             #echo $line
@@ -298,11 +272,11 @@ fi
 
 #Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      /opt/microsoft/omsagent/ruby/bin/ruby td-agent-bit-conf-customizer.rb
+      /usr/bin/ruby2.6 td-agent-bit-conf-customizer.rb
 fi
 
 #Parse the prometheus configmap to create a file with new custom settings.
-/opt/microsoft/omsagent/ruby/bin/ruby tomlparser-prom-customconfig.rb
+/usr/bin/ruby2.6 tomlparser-prom-customconfig.rb
 
 #Setting default environment variables to be used in any case of failure in the above steps
 if [ ! -e "/etc/config/kube.conf" ]; then
@@ -335,7 +309,7 @@ fi
 
 #Parse the configmap to set the right environment variables for MDM metrics configuration for Alerting.
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      /opt/microsoft/omsagent/ruby/bin/ruby tomlparser-mdm-metrics-config.rb
+      /usr/bin/ruby2.6 tomlparser-mdm-metrics-config.rb
 
       cat config_mdm_metrics_env_var | while read line; do
             echo $line >> ~/.bashrc
@@ -343,7 +317,7 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       source config_mdm_metrics_env_var
 
       #Parse the configmap to set the right environment variables for metric collection settings
-      /opt/microsoft/omsagent/ruby/bin/ruby tomlparser-metric-collection-config.rb
+      /usr/bin/ruby2.6 tomlparser-metric-collection-config.rb
 
       cat config_metric_collection_env_var | while read line; do
             echo $line >> ~/.bashrc
@@ -354,7 +328,7 @@ fi
 # OSM scraping to be done in replicaset if sidecar car scraping is disabled and always do the scraping from the sidecar (It will always be either one of the two)
 if [[ ( ( ! -e "/etc/config/kube.conf" ) && ( "${CONTAINER_TYPE}" == "PrometheusSidecar" ) ) ||
       ( ( -e "/etc/config/kube.conf" ) && ( "${SIDECAR_SCRAPING_ENABLED}" == "false" ) ) ]]; then
-      /opt/microsoft/omsagent/ruby/bin/ruby tomlparser-osm-config.rb
+      /usr/bin/ruby2.6 tomlparser-osm-config.rb
 
       if [ -e "integration_osm_config_env_var" ]; then
             cat integration_osm_config_env_var | while read line; do
@@ -432,26 +406,11 @@ export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="kubelet_docker_operations_error
 if [ "$CONTAINER_RUNTIME" != "docker" ]; then
    # these metrics are avialble only on k8s versions <1.18 and will get deprecated from 1.18
    export KUBELET_RUNTIME_OPERATIONS_METRIC="kubelet_runtime_operations"
-   export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="kubelet_runtime_operations_errors"
-else
-   #if container run time is docker then add omsagent user to local docker group to get access to docker.sock
-   # docker.sock only use for the telemetry to get the docker version
-   DOCKER_SOCKET=/var/run/host/docker.sock
-   DOCKER_GROUP=docker
-   REGULAR_USER=omsagent
-   if [ -S ${DOCKER_SOCKET} ]; then
-      echo "getting gid for docker.sock"
-      DOCKER_GID=$(stat -c '%g' ${DOCKER_SOCKET})
-      echo "creating a local docker group"
-      groupadd -for -g ${DOCKER_GID} ${DOCKER_GROUP}
-      echo "adding omsagent user to local docker group"
-      usermod -aG ${DOCKER_GROUP} ${REGULAR_USER}
-   fi
+   export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="kubelet_runtime_operations_errors"  
 fi
 
 echo "set caps for ruby process to read container env from proc"
-sudo setcap cap_sys_ptrace,cap_dac_read_search+ep /opt/microsoft/omsagent/ruby/bin/ruby
-
+sudo setcap cap_sys_ptrace,cap_dac_read_search+ep /usr/bin/ruby2.6
 echo "export KUBELET_RUNTIME_OPERATIONS_METRIC="$KUBELET_RUNTIME_OPERATIONS_METRIC >> ~/.bashrc
 echo "export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="$KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC >> ~/.bashrc
 
@@ -461,171 +420,70 @@ echo $NODE_NAME > /var/opt/microsoft/docker-cimprov/state/containerhostname
 #check if file was written successfully.
 cat /var/opt/microsoft/docker-cimprov/state/containerhostname
 
-
-#Commenting it for test. We do this in the installer now
-#Setup sudo permission for containerlogtailfilereader
-#chmod +w /etc/sudoers.d/omsagent
-#echo "#run containerlogtailfilereader.rb for docker-provider" >> /etc/sudoers.d/omsagent
-#echo "omsagent ALL=(ALL) NOPASSWD: /opt/microsoft/omsagent/ruby/bin/ruby /opt/microsoft/omsagent/plugin/containerlogtailfilereader.rb *" >> /etc/sudoers.d/omsagent
-#chmod 440 /etc/sudoers.d/omsagent
-
-#Disable dsc
-#/opt/microsoft/omsconfig/Scripts/OMS_MetaConfigHelper.py --disable
-rm -f /etc/opt/microsoft/omsagent/conf/omsagent.d/omsconfig.consistencyinvoker.conf
-
-CIWORKSPACE_id=""
-CIWORKSPACE_key=""
-
-if [ -z $INT ]; then
-  if [ -a /etc/omsagent-secret/PROXY ]; then
-     if [ -a /etc/omsagent-secret/DOMAIN ]; then
-        /opt/microsoft/omsagent/bin/omsadmin.sh -w `cat /etc/omsagent-secret/WSID` -s `cat /etc/omsagent-secret/KEY` -d `cat /etc/omsagent-secret/DOMAIN` -p `cat /etc/omsagent-secret/PROXY`
-     else
-        /opt/microsoft/omsagent/bin/omsadmin.sh -w `cat /etc/omsagent-secret/WSID` -s `cat /etc/omsagent-secret/KEY` -p `cat /etc/omsagent-secret/PROXY`
-     fi
-     CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"
-     CIWORKSPACE_key="$(cat /etc/omsagent-secret/KEY)"
-  elif [ -a /etc/omsagent-secret/DOMAIN ]; then
-     /opt/microsoft/omsagent/bin/omsadmin.sh -w `cat /etc/omsagent-secret/WSID` -s `cat /etc/omsagent-secret/KEY` -d `cat /etc/omsagent-secret/DOMAIN`
-     CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"
-     CIWORKSPACE_key="$(cat /etc/omsagent-secret/KEY)"
-  elif [ -a /etc/omsagent-secret/WSID ]; then
-     /opt/microsoft/omsagent/bin/omsadmin.sh -w `cat /etc/omsagent-secret/WSID` -s `cat /etc/omsagent-secret/KEY`
-     CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"
-     CIWORKSPACE_key="$(cat /etc/omsagent-secret/KEY)"
-  elif [ -a /run/secrets/DOMAIN ]; then
-     /opt/microsoft/omsagent/bin/omsadmin.sh -w `cat /run/secrets/WSID` -s `cat /run/secrets/KEY` -d `cat /run/secrets/DOMAIN`
-     CIWORKSPACE_id="$(cat /run/secrets/WSID)"
-     CIWORKSPACE_key="$(cat /run/secrets/KEY)"
-  elif [ -a /run/secrets/WSID ]; then
-     /opt/microsoft/omsagent/bin/omsadmin.sh -w `cat /run/secrets/WSID` -s `cat /run/secrets/KEY`
-     CIWORKSPACE_id="$(cat /run/secrets/WSID)"
-     CIWORKSPACE_key="$(cat /run/secrets/KEY)"
-  elif [ -z $DOMAIN ]; then
-     /opt/microsoft/omsagent/bin/omsadmin.sh -w $WSID -s $KEY
-     CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"
-     CIWORKSPACE_key="$(cat /etc/omsagent-secret/KEY)"
-  else
-     /opt/microsoft/omsagent/bin/omsadmin.sh -w $WSID -s $KEY -d $DOMAIN
-     CIWORKSPACE_id="$WSID"
-     CIWORKSPACE_key="$KEY"
-  fi
-else
-#To onboard to INT workspace - workspace-id (WSID-not base64 encoded), workspace-key (KEY-not base64 encoded), Domain(DOMAIN-int2.microsoftatlanta-int.com)
-#need to be added to omsagent.yaml.
-	echo WORKSPACE_ID=$WSID > /etc/omsagent-onboard.conf
-	echo SHARED_KEY=$KEY >> /etc/omsagent-onboard.conf
-      echo URL_TLD=$DOMAIN >> /etc/omsagent-onboard.conf
-	/opt/microsoft/omsagent/bin/omsadmin.sh
-      CIWORKSPACE_id="$WSID"
-      CIWORKSPACE_key="$KEY"
-fi
-
 #start cron daemon for logrotate
 service cron start
+#get  docker-provider versions
 
-#check if agent onboarded successfully
-/opt/microsoft/omsagent/bin/omsadmin.sh -l
-
-#get omsagent and docker-provider versions
-dpkg -l | grep omsagent | awk '{print $2 " " $3}'
 dpkg -l | grep docker-cimprov | awk '{print $2 " " $3}'
 
 DOCKER_CIMPROV_VERSION=$(dpkg -l | grep docker-cimprov | awk '{print $3}')
 echo "DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION"
 export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION
 echo "export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION" >> ~/.bashrc
+echo "*** activating oneagent in legacy auth mode ***"
+CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"     
+#use the file path as its secure than env
+CIWORKSPACE_keyFile="/etc/omsagent-secret/KEY"   
+cat /etc/mdsd.d/envmdsd | while read line; do
+     echo $line >> ~/.bashrc
+done
+source /etc/mdsd.d/envmdsd
+echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
+export CIWORKSPACE_id=$CIWORKSPACE_id
+echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc      
+export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile
+echo "export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile" >> ~/.bashrc
+export OMS_TLD=$domain
+echo "export OMS_TLD=$OMS_TLD" >> ~/.bashrc      
+export MDSD_FLUENT_SOCKET_PORT="29230"
+echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
 
-#region check to auto-activate oneagent, to route container logs,
-#Intent is to activate one agent routing for all managed clusters with region in the regionllist, unless overridden by configmap
-# AZMON_CONTAINER_LOGS_ROUTE  will have route (if any) specified in the config map
-# AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE will have the final route that we compute & set, based on our region list logic
-echo "************start oneagent log routing checks************"
-# by default, use configmap route for safer side
-AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE=$AZMON_CONTAINER_LOGS_ROUTE
+#skip imds lookup since not used in legacy auth path  
+export SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH="true"
+echo "export SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH=$SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH" >> ~/.bashrc
 
-#trim region list
-oneagentregions="$(echo $AZMON_CONTAINERLOGS_ONEAGENT_REGIONS | xargs)"
-#lowercase region list
-typeset -l oneagentregions=$oneagentregions
-echo "oneagent regions: $oneagentregions"
-#trim current region
-currentregion="$(echo $AKS_REGION | xargs)"
-#lowercase current region
-typeset -l currentregion=$currentregion
-echo "current region: $currentregion"
+source ~/.bashrc
 
-#initilze isoneagentregion as false
-isoneagentregion=false
+dpkg -l | grep mdsd | awk '{print $2 " " $3}'
 
-#set isoneagentregion as true if matching region is found
-if [ ! -z $oneagentregions ] && [ ! -z $currentregion ]; then
-  for rgn in $(echo $oneagentregions | sed "s/,/ /g"); do
-    if [ "$rgn" == "$currentregion" ]; then
-          isoneagentregion=true
-          echo "current region is in oneagent regions..."
-          break
-    fi
-  done
-else
-  echo "current region is not in oneagent regions..."
+if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then   
+    echo "starting mdsd with mdsd-port=26130, fluentport=26230 and influxport=26330 in legacy auth mode in sidecar container..."                 
+    #use tenant name to avoid unix socket conflict and different ports for port conflict
+    #roleprefix to use container specific mdsd socket
+    export TENANT_NAME="${CONTAINER_TYPE}"
+    echo "export TENANT_NAME=$TENANT_NAME" >> ~/.bashrc
+    export MDSD_ROLE_PREFIX=/var/run/mdsd-${CONTAINER_TYPE}/default
+    echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
+    source ~/.bashrc
+    mkdir /var/run/mdsd-${CONTAINER_TYPE}
+    # add -T 0xFFFF for full traces
+    mdsd -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+else          
+   echo "starting mdsd in legacy auth mode in main container..."
+   # add -T 0xFFFF for full traces
+   mdsd -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &  
 fi
 
-if [ "$isoneagentregion" = true ]; then
-   #if configmap has a routing for logs, but current region is in the oneagent region list, take the configmap route
-   if [ ! -z $AZMON_CONTAINER_LOGS_ROUTE ]; then
-      AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE=$AZMON_CONTAINER_LOGS_ROUTE
-      echo "oneagent region is true for current region:$currentregion and config map logs route is not empty. so using config map logs route as effective route:$AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE"
-   else #there is no configmap route, so route thru oneagent
-      AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE="v2"
-      echo "oneagent region is true for current region:$currentregion and config map logs route is empty. so using oneagent as effective route:$AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE"
-   fi
-else
-   echo "oneagent region is false for current region:$currentregion"
-fi
-
-
-#start oneagent
-if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-   if [ ! -z $AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE ]; then
-      echo "container logs configmap route is $AZMON_CONTAINER_LOGS_ROUTE"
-      echo "container logs effective route is $AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE"
-      #trim
-      containerlogsroute="$(echo $AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE | xargs)"
-      # convert to lowercase
-      typeset -l containerlogsroute=$containerlogsroute
-
-      echo "setting AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE as :$containerlogsroute"
-      export AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE=$containerlogsroute
-      echo "export AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE=$containerlogsroute" >> ~/.bashrc
-      source ~/.bashrc
-
-      if [ "$containerlogsroute" == "v2" ]; then
-            echo "activating oneagent..."
-            echo "configuring mdsd..."
-            cat /etc/mdsd.d/envmdsd | while read line; do
-                  echo $line >> ~/.bashrc
-            done
-            source /etc/mdsd.d/envmdsd
-
-            echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
-            export CIWORKSPACE_id=$CIWORKSPACE_id
-            echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc
-            export CIWORKSPACE_key=$CIWORKSPACE_key
-            echo "export CIWORKSPACE_key=$CIWORKSPACE_key" >> ~/.bashrc
-
-            source ~/.bashrc
-
-            dpkg -l | grep mdsd | awk '{print $2 " " $3}'
-
-            echo "starting mdsd ..."
-            mdsd -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
-
-            touch /opt/AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE_V2
-      fi
-   fi
-fi
-echo "************end oneagent log routing checks************"
+# no dependency on fluentd for prometheus side car container  
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then     
+      if [ ! -e "/etc/config/kube.conf" ]; then
+         echo "*** starting fluentd v1 in daemonset"
+         fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+      else
+        echo "*** starting fluentd v1 in replicaset"
+        fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+      fi      
+fi   
 
 #If config parsing was successful, a copy of the conf file with replaced custom settings file is created
 if [ ! -e "/etc/config/kube.conf" ]; then
@@ -749,11 +607,8 @@ dpkg -l | grep td-agent-bit | awk '{print $2 " " $3}'
 
 #dpkg -l | grep telegraf | awk '{print $2 " " $3}'
 
-
-
 # Write messages from the liveness probe to stdout (so telemetry picks it up)
 touch /dev/write-to-traces
-
 
 echo "stopping rsyslog..."
 service rsyslog stop
@@ -762,7 +617,7 @@ echo "getting rsyslog status..."
 service rsyslog status
 
 shutdown() {
-	/opt/microsoft/omsagent/bin/service_control stop
+	 pkill -f mdsd 
 	}
 
 trap "shutdown" SIGTERM

@@ -1,9 +1,11 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-module Fluent
+require 'fluent/plugin/input'
+
+module Fluent::Plugin
   class Kube_Kubestate_HPA_Input < Input
-    Plugin.register_input("kubestatehpa", self)
+    Fluent::Plugin.register_input("kubestate_hpa", self)
     @@istestvar = ENV["ISTEST"]
 
     def initialize
@@ -16,7 +18,7 @@ module Fluent
       require_relative "oms_common"
       require_relative "omslog"
       require_relative "ApplicationInsightsUtility"
-      require_relative "constants"
+      require_relative "constants"      
 
       # refer tomlparser-agent-config for defaults
       # this configurable via configmap
@@ -33,14 +35,15 @@ module Fluent
     end
 
     config_param :run_interval, :time, :default => 60
-    config_param :tag, :string, :default => Constants::INSIGHTSMETRICS_FLUENT_TAG
+    config_param :tag, :string, :default => "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
 
     def configure(conf)
       super
     end
 
-    def start
+    def start      
       if @run_interval
+        super
         if !ENV["HPA_CHUNK_SIZE"].nil? && !ENV["HPA_CHUNK_SIZE"].empty? && ENV["HPA_CHUNK_SIZE"].to_i > 0
           @HPA_CHUNK_SIZE = ENV["HPA_CHUNK_SIZE"].to_i
         else
@@ -64,6 +67,7 @@ module Fluent
           @condition.signal
         }
         @thread.join
+        super
       end
     end
 
@@ -74,7 +78,7 @@ module Fluent
         batchTime = currentTime.utc.iso8601
 
         @hpaCount = 0
-
+       
         # Initializing continuation token to nil
         continuationToken = nil
         $log.info("in_kubestate_hpa::enumerate : Getting HPAs from Kube API @ #{Time.now.utc.iso8601}")
@@ -113,7 +117,7 @@ module Fluent
 
     def parse_and_emit_records(hpas, batchTime = Time.utc.iso8601)
       metricItems = []
-      insightsMetricsEventStream = MultiEventStream.new
+      insightsMetricsEventStream = Fluent::MultiEventStream.new
       begin
         metricInfo = hpas
         metricInfo["items"].each do |hpa|
@@ -181,17 +185,12 @@ module Fluent
           metricItems.push(metricItem)
         end
 
-        time = Time.now.to_f
-        metricItems.each do |insightsMetricsRecord|
-          wrapper = {
-            "DataType" => "INSIGHTS_METRICS_BLOB",
-            "IPName" => "ContainerInsights",
-            "DataItems" => [insightsMetricsRecord.each { |k, v| insightsMetricsRecord[k] = v }],
-          }
-          insightsMetricsEventStream.add(time, wrapper) if wrapper
+        time = Fluent::Engine.now
+        metricItems.each do |insightsMetricsRecord|         
+          insightsMetricsEventStream.add(time, insightsMetricsRecord) if insightsMetricsRecord
         end
 
-        router.emit_stream(Constants::INSIGHTSMETRICS_FLUENT_TAG, insightsMetricsEventStream) if insightsMetricsEventStream
+        router.emit_stream(@tag, insightsMetricsEventStream) if insightsMetricsEventStream
         $log.info("successfully emitted #{metricItems.length()} kube_state_hpa metrics")
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)
           $log.info("kubestatehpaInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -232,6 +231,6 @@ module Fluent
         @mutex.lock
       end
       @mutex.unlock
-    end
+    end    
   end
 end

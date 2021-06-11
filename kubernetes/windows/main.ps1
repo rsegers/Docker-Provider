@@ -119,6 +119,22 @@ function Set-EnvironmentVariables {
         $env:AZMON_AGENT_CFG_SCHEMA_VERSION
     }
 
+    # Need to do this before the SA fetch for AI key for airgapped clouds so that it is not overwritten with defaults.
+    $appInsightsAuth = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", "process")
+    if (![string]::IsNullOrEmpty($appInsightsAuth)) {
+        [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $appInsightsAuth, "machine")
+        Write-Host "Successfully set environment variable APPLICATIONINSIGHTS_AUTH - $($appInsightsAuth) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable APPLICATIONINSIGHTS_AUTH for target 'machine' since it is either null or empty"
+    }
+
+    $appInsightsEndpoint = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", "process")
+    if (![string]::IsNullOrEmpty($appInsightsEndpoint)) {
+        [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", $appInsightsEndpoint, "machine")
+        Write-Host "Successfully set environment variable APPLICATIONINSIGHTS_ENDPOINT - $($appInsightsEndpoint) for target 'machine'..."
+    }
+
     # Check if the instrumentation key needs to be fetched from a storage account (as in airgapped clouds)
     $aiKeyURl = [System.Environment]::GetEnvironmentVariable('APPLICATIONINSIGHTS_AUTH_URL')
     if ($aiKeyURl) {
@@ -161,15 +177,71 @@ function Set-EnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("TELEMETRY_APPLICATIONINSIGHTS_KEY", $aiKeyDecoded, "Process")
     [System.Environment]::SetEnvironmentVariable("TELEMETRY_APPLICATIONINSIGHTS_KEY", $aiKeyDecoded, "Machine")
 
+    # Setting environment variables required by the fluentd plugins
+    $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
+    if (![string]::IsNullOrEmpty($aksResourceId)) {
+        [System.Environment]::SetEnvironmentVariable("AKS_RESOURCE_ID", $aksResourceId, "machine")
+        Write-Host "Successfully set environment variable AKS_RESOURCE_ID - $($aksResourceId) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable AKS_RESOURCE_ID for target 'machine' since it is either null or empty"
+    }
+
+    $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
+    if (![string]::IsNullOrEmpty($aksRegion)) {
+        [System.Environment]::SetEnvironmentVariable("AKS_REGION", $aksRegion, "machine")
+        Write-Host "Successfully set environment variable AKS_REGION - $($aksRegion) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable AKS_REGION for target 'machine' since it is either null or empty"
+    }
+
+    $controllerType = [System.Environment]::GetEnvironmentVariable("CONTROLLER_TYPE", "process")
+    if (![string]::IsNullOrEmpty($controllerType)) {
+        [System.Environment]::SetEnvironmentVariable("CONTROLLER_TYPE", $controllerType, "machine")
+        Write-Host "Successfully set environment variable CONTROLLER_TYPE - $($controllerType) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable CONTROLLER_TYPE for target 'machine' since it is either null or empty"
+    }
+
+    $osType = [System.Environment]::GetEnvironmentVariable("OS_TYPE", "process")
+    if (![string]::IsNullOrEmpty($osType)) {
+        [System.Environment]::SetEnvironmentVariable("OS_TYPE", $osType, "machine")
+        Write-Host "Successfully set environment variable OS_TYPE - $($osType) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable OS_TYPE for target 'machine' since it is either null or empty"
+    }
+
+    $userMsi = [System.Environment]::GetEnvironmentVariable("USER_ASSIGNED_IDENTITY_CLIENT_ID", "process")
+    if (![string]::IsNullOrEmpty($userMsi)) {
+        [System.Environment]::SetEnvironmentVariable("USER_ASSIGNED_IDENTITY_CLIENT_ID", $userMsi, "machine")
+        Write-Host "Successfully set environment variable USER_ASSIGNED_IDENTITY_CLIENT_ID - $($userMsi) for target 'machine'..."
+    }
+
+    $hostName = [System.Environment]::GetEnvironmentVariable("HOSTNAME", "process")
+    if (![string]::IsNullOrEmpty($hostName)) {
+        [System.Environment]::SetEnvironmentVariable("HOSTNAME", $hostName, "machine")
+        Write-Host "Successfully set environment variable HOSTNAME - $($hostName) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable HOSTNAME for target 'machine' since it is either null or empty"
+    }
 
     # run config parser
     ruby /opt/omsagentwindows/scripts/ruby/tomlparser.rb
     .\setenv.ps1
+
+    # run mdm config parser
+    ruby /opt/omsagentwindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
+    .\setmdmenv.ps1
 }
 
 function Get-ContainerRuntime {
     # default container runtime and make default as containerd when containerd becomes default in AKS
     $containerRuntime = "docker"
+    $cAdvisorIsSecure = "false"
     $response = ""
     $NODE_IP = ""
     try {
@@ -209,12 +281,18 @@ function Get-ContainerRuntime {
                     if (![string]::IsNullOrEmpty($response) -and $response.StatusCode -eq 200) {
                         Write-Host "API call to https://$($NODE_IP):10250/pods succeeded"
                         $isPodsAPISuccess = $true
+                        $cAdvisorIsSecure = "true"
                     }
                 }
                 catch {
                     Write-Host "API call to https://$($NODE_IP):10250/pods failed"
                 }
             }
+
+            # set IS_SECURE_CADVISOR_PORT env for debug and telemetry purpose
+            Write-Host "Setting IS_SECURE_CADVISOR_PORT environment variable as $($cAdvisorIsSecure)"
+            [System.Environment]::SetEnvironmentVariable("IS_SECURE_CADVISOR_PORT", $cAdvisorIsSecure, "Process")
+            [System.Environment]::SetEnvironmentVariable("IS_SECURE_CADVISOR_PORT", $cAdvisorIsSecure, "Machine")
 
             if ($isPodsAPISuccess) {
                 if (![string]::IsNullOrEmpty($response.Content)) {
@@ -404,11 +482,40 @@ function Test-CertificatePath {
     }
 }
 
+function Bootstrap-CACertificates {
+    try {
+        # This is required when the root CA certs are different for some clouds.
+        $certMountPath = "C:\ca"
+        Get-ChildItem $certMountPath |
+        Foreach-Object {
+            $absolutePath=$_.FullName
+            Write-Host "cert path: $($absolutePath)"
+            Import-Certificate -FilePath $absolutePath -CertStoreLocation 'Cert:\LocalMachine\Root' -Verbose
+        }
+    }
+    catch {
+        $e = $_.Exception
+        Write-Host $e
+        Write-Host "exception occured in Bootstrap-CACertificates..."
+    }
+}
+
 Start-Transcript -Path main.txt
 
 Remove-WindowsServiceIfItExists "fluentdwinaks"
 Set-EnvironmentVariables
 Start-FileSystemWatcher
+
+#Bootstrapping CA certs for non public clouds and AKS clusters
+$aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID")
+$requiresCertBootstrap = [System.Environment]::GetEnvironmentVariable("REQUIRES_CERT_BOOTSTRAP")
+if (![string]::IsNullOrEmpty($requiresCertBootstrap) -and `
+    $requiresCertBootstrap.ToLower() -eq 'true' -and `
+    ![string]::IsNullOrEmpty($aksResourceId) -and `
+    $aksResourceId.ToLower().Contains("/microsoft.containerservice/managedclusters/"))
+{
+    Bootstrap-CACertificates
+}
 
 Generate-Certificates
 Test-CertificatePath

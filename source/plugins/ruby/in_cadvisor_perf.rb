@@ -1,28 +1,34 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
+require "fluent/plugin/input"
 
-module Fluent
-
+module Fluent::Plugin
   class CAdvisor_Perf_Input < Input
-    Plugin.register_input("cadvisorperf", self)
+    Fluent::Plugin.register_input("cadvisor_perf", self)
+    @@isWindows = false
+    @@os_type = ENV["OS_TYPE"]
+    if !@@os_type.nil? && !@@os_type.empty? && @@os_type.strip.casecmp("windows") == 0
+      @@isWindows = true
+    end
 
     def initialize
       super
       require "yaml"
-      require 'yajl/json_gem'
+      require "yajl/json_gem"
       require "time"
 
       require_relative "CAdvisorMetricsAPIClient"
       require_relative "oms_common"
       require_relative "omslog"
-      require_relative "constants"
+      require_relative "constants"      
     end
 
     config_param :run_interval, :time, :default => 60
-    config_param :tag, :string, :default => "oms.api.cadvisorperf"
+    config_param :tag, :string, :default => "oneagent.containerInsights.LINUX_PERF_BLOB"
     config_param :mdmtag, :string, :default => "mdm.cadvisorperf"
     config_param :nodehealthtag, :string, :default => "kubehealth.DaemonSet.Node"
     config_param :containerhealthtag, :string, :default => "kubehealth.DaemonSet.Container"
+    config_param :insightsmetricstag, :string, :default => "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
 
     def configure(conf)
       super
@@ -30,6 +36,7 @@ module Fluent
 
     def start
       if @run_interval
+        super
         @finished = false
         @condition = ConditionVariable.new
         @mutex = Mutex.new
@@ -44,60 +51,54 @@ module Fluent
           @condition.signal
         }
         @thread.join
+        super # This super must be at the end of shutdown method
       end
     end
 
     def enumerate()
       currentTime = Time.now
-      time = currentTime.to_f
+      time = Fluent::Engine.now
       batchTime = currentTime.utc.iso8601
       @@istestvar = ENV["ISTEST"]
       begin
-        eventStream = MultiEventStream.new
-        insightsMetricsEventStream = MultiEventStream.new
+        eventStream = Fluent::MultiEventStream.new      
+        insightsMetricsEventStream = Fluent::MultiEventStream.new
         metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, metricTime: batchTime )
-        metricData.each do |record|
-          record["DataType"] = "LINUX_PERF_BLOB"
-          record["IPName"] = "LogManagement"
-          eventStream.add(time, record) if record
-        end
-
+        metricData.each do |record|          
+          eventStream.add(time, record) if record                  
+        end       
+        
         router.emit_stream(@tag, eventStream) if eventStream
         router.emit_stream(@mdmtag, eventStream) if eventStream
         router.emit_stream(@containerhealthtag, eventStream) if eventStream
         router.emit_stream(@nodehealthtag, eventStream) if eventStream
 
-        
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
           $log.info("cAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
         end
 
         #start GPU InsightsMetrics items
         begin
-          containerGPUusageInsightsMetricsDataItems = []
-          containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: nil, metricTime: batchTime))
-          
+          if !@@isWindows.nil? && @@isWindows == false
+            containerGPUusageInsightsMetricsDataItems = []
+            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: nil, metricTime: batchTime))
 
           containerGPUusageInsightsMetricsDataItems.each do |insightsMetricsRecord|
-            wrapper = {
-              "DataType" => "INSIGHTS_METRICS_BLOB",
-              "IPName" => "ContainerInsights",
-              "DataItems" => [insightsMetricsRecord.each { |k, v| insightsMetricsRecord[k] = v }],
-            }
-            insightsMetricsEventStream.add(time, wrapper) if wrapper
+            insightsMetricsEventStream.add(time, insightsMetricsRecord) if insightsMetricsRecord
           end
 
-          router.emit_stream(Constants::INSIGHTSMETRICS_FLUENT_TAG, insightsMetricsEventStream) if insightsMetricsEventStream
-          router.emit_stream(@mdmtag, insightsMetricsEventStream) if insightsMetricsEventStream
-          
-          if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)
-            $log.info("cAdvisorInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+            router.emit_stream(@insightsmetricstag, insightsMetricsEventStream) if insightsMetricsEventStream
+            router.emit_stream(@mdmtag, insightsMetricsEventStream) if insightsMetricsEventStream
+
+            if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)
+              $log.info("cAdvisorInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+            end
           end
         rescue => errorStr
           $log.warn "Failed when processing GPU Usage metrics in_cadvisor_perf : #{errorStr}"
           $log.debug_backtrace(errorStr.backtrace)
           ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
-        end 
+        end
         #end GPU InsightsMetrics items
 
       rescue => errorStr
@@ -135,6 +136,6 @@ module Fluent
         @mutex.lock
       end
       @mutex.unlock
-    end
+    end      
   end # CAdvisor_Perf_Input
 end # module

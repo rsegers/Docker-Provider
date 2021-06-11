@@ -279,16 +279,16 @@ class Inventory2MdmConvertor
       begin
         records = []
 
-        podUid = record["DataItems"][0]["PodUid"]
+        podUid = record["PodUid"]
         if @pod_uids.key?(podUid)
           return
         end
 
         @pod_uids[podUid] = true
-        podPhaseDimValue = record["DataItems"][0]["PodStatus"]
-        podNamespaceDimValue = record["DataItems"][0]["Namespace"]
-        podControllerNameDimValue = record["DataItems"][0]["ControllerName"]
-        podNodeDimValue = record["DataItems"][0]["Computer"]
+        podPhaseDimValue = record["PodStatus"]
+        podNamespaceDimValue = record["Namespace"]
+        podControllerNameDimValue = record["ControllerName"]
+        podNodeDimValue = record["Computer"]
 
         if podControllerNameDimValue.nil? || podControllerNameDimValue.empty?
           podControllerNameDimValue = "No Controller"

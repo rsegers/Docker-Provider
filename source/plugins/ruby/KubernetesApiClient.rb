@@ -25,7 +25,12 @@ class KubernetesApiClient
   #@@IsValidRunningNode = nil
   #@@IsLinuxCluster = nil
   @@KubeSystemNamespace = "kube-system"
-  @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt"
+  @os_type = ENV["OS_TYPE"]
+  if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+    @LogPath = "/etc/omsagentwindows/kubernetes_client_log.txt"
+  else
+    @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_client_log.txt"
+  end
   @Log = Logger.new(@LogPath, 2, 10 * 1048576) #keep last 2 files, max log file size = 10M
   @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
   @@TokenStr = nil
@@ -405,12 +410,9 @@ class KubernetesApiClient
 
     def getContainerResourceRequestsAndLimits(pod, metricCategory, metricNameToCollect, metricNametoReturn, metricTime = Time.now.utc.iso8601)
       metricItems = []
-      timeDifference = (DateTime.now.to_time.to_i - @@telemetryTimeTracker).abs
-      timeDifferenceInMinutes = timeDifference / 60
       begin
         clusterId = getClusterId
         podNameSpace = pod["metadata"]["namespace"]
-        podName = pod["metadata"]["name"]
         podUid = getPodUid(podNameSpace, pod["metadata"])
         if podUid.nil?
           return metricItems
@@ -442,9 +444,6 @@ class KubernetesApiClient
             if (!container["resources"].nil? && !container["resources"].empty? && !container["resources"][metricCategory].nil? && !container["resources"][metricCategory][metricNameToCollect].nil?)
               metricValue = getMetricNumericValue(metricNameToCollect, container["resources"][metricCategory][metricNameToCollect])
 
-              metricItem = {}
-              metricItem["DataItems"] = []
-
               metricProps = {}
               metricProps["Timestamp"] = metricTime
               metricProps["Host"] = nodeName
@@ -453,50 +452,22 @@ class KubernetesApiClient
               metricProps["ObjectName"] = "K8SContainer"
               metricProps["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
 
-              metricProps["Collections"] = []
-              metricCollections = {}
-              metricCollections["CounterName"] = metricNametoReturn
-              metricCollections["Value"] = metricValue
-
-              metricProps["Collections"].push(metricCollections)
-              metricItem["DataItems"].push(metricProps)
-              metricItems.push(metricItem)
-              #Telemetry about omsagent requests and limits
-              begin
-                if (podName.downcase.start_with?("omsagent-") && podNameSpace.eql?("kube-system") && containerName.downcase.start_with?("omsagent"))
-                  nodePodContainerKey = [nodeName, podName, containerName, metricNametoReturn].join("~~")
-                  @@resourceLimitsTelemetryHash[nodePodContainerKey] = metricValue
-                end
-                if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
-                  @@resourceLimitsTelemetryHash.each { |key, value|
-                    keyElements = key.split("~~")
-                    if keyElements.length != 4
-                      next
-                    end
-
-                    # get dimension values by key
-                    telemetryProps = {}
-                    telemetryProps["Computer"] = keyElements[0]
-                    telemetryProps["PodName"] = keyElements[1]
-                    telemetryProps["ContainerName"] = keyElements[2]
-                    metricNameFromKey = keyElements[3]
-                    ApplicationInsightsUtility.sendMetricTelemetry(metricNameFromKey, value, telemetryProps)
-                  }
-                  @@telemetryTimeTracker = DateTime.now.to_time.to_i
-                  @@resourceLimitsTelemetryHash = {}
-                end
-              rescue => errorStr
-                $log.warn("Exception while generating Telemetry from getContainerResourceRequestsAndLimits failed: #{errorStr} for metric #{metricNameToCollect}")
-              end
+              metricCollection = {}
+              metricCollection["CounterName"] = metricNametoReturn
+              metricCollection["Value"] = metricValue
+              
+              metricProps["json_Collections"] = []
+              metricCollections = []               
+              metricCollections.push(metricCollection)        
+              metricProps["json_Collections"] = metricCollections.to_json
+              metricItems.push(metricProps)             
               #No container level limit for the given metric, so default to node level limit
             else
               nodeMetricsHashKey = clusterId + "/" + nodeName + "_" + "allocatable" + "_" + metricNameToCollect
               if (metricCategory == "limits" && @@NodeMetrics.has_key?(nodeMetricsHashKey))
                 metricValue = @@NodeMetrics[nodeMetricsHashKey]
                 #@Log.info("Limits not set for container #{clusterId + "/" + podUid + "/" + containerName} using node level limits: #{nodeMetricsHashKey}=#{metricValue} ")
-                metricItem = {}
-                metricItem["DataItems"] = []
-
+                               
                 metricProps = {}
                 metricProps["Timestamp"] = metricTime
                 metricProps["Host"] = nodeName
@@ -505,14 +476,14 @@ class KubernetesApiClient
                 metricProps["ObjectName"] = "K8SContainer"
                 metricProps["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
 
-                metricProps["Collections"] = []
-                metricCollections = {}
-                metricCollections["CounterName"] = metricNametoReturn
-                metricCollections["Value"] = metricValue
-
-                metricProps["Collections"].push(metricCollections)
-                metricItem["DataItems"].push(metricProps)
-                metricItems.push(metricItem)
+                metricCollection = {}
+                metricCollection["CounterName"] = metricNametoReturn
+                metricCollection["Value"] = metricValue
+                metricProps["json_Collections"] = []
+                metricCollections = []                  
+                metricCollections.push(metricCollection)        
+                metricProps["json_Collections"] = metricCollections.to_json
+                metricItems.push(metricProps)              
               end
             end
           end
@@ -632,22 +603,22 @@ class KubernetesApiClient
           # metricCategory can be "capacity" or "allocatable" and metricNameToCollect can be "cpu" or "memory"
           metricValue = getMetricNumericValue(metricNameToCollect, node["status"][metricCategory][metricNameToCollect])
 
-          metricItem["DataItems"] = []
-          metricProps = {}
-          metricProps["Timestamp"] = metricTime
-          metricProps["Host"] = node["metadata"]["name"]
+          metricItem["Timestamp"] = metricTime
+          metricItem["Host"] = node["metadata"]["name"]
           # Adding this so that it is not set by base omsagent since it was not set earlier and being set by base omsagent
-          metricProps["Computer"] = node["metadata"]["name"]
-          metricProps["ObjectName"] = "K8SNode"
-          metricProps["InstanceName"] = clusterId + "/" + node["metadata"]["name"]
-          metricProps["Collections"] = []
-          metricCollections = {}
-          metricCollections["CounterName"] = metricNametoReturn
-          metricCollections["Value"] = metricValue
+          metricItem["Computer"] = node["metadata"]["name"]
+          metricItem["ObjectName"] = "K8SNode"
+          metricItem["InstanceName"] = clusterId + "/" + node["metadata"]["name"]
 
-          metricProps["Collections"].push(metricCollections)
-          metricItem["DataItems"].push(metricProps)
-
+          metricCollection = {}
+          metricCollection["CounterName"] = metricNametoReturn
+          metricCollection["Value"] = metricValue
+          metricCollections = []
+          metricCollections.push(metricCollection) 
+         
+          metricItem["json_Collections"] = []
+          metricItem["json_Collections"] = metricCollections.to_json
+         
           #push node level metrics to a inmem hash so that we can use it looking up at container level.
           #Currently if container level cpu & memory limits are not defined we default to node level limits
           @@NodeMetrics[clusterId + "/" + node["metadata"]["name"] + "_" + metricCategory + "_" + metricNameToCollect] = metricValue

@@ -171,8 +171,9 @@ module HealthModel
                         cpu_capacity_json = KubernetesApiClient.parseNodeLimits(node_inventory, "capacity", "cpu", "cpuCapacityNanoCores")
                         if !cpu_capacity_json.nil?
                             cpu_capacity_json.each do |cpu_capacity_node|
-                                if !cpu_capacity_node['DataItems'][0]['Collections'][0]['Value'].to_s.nil?
-                                    cluster_cpu_capacity += cpu_capacity_node['DataItems'][0]['Collections'][0]['Value']
+                                metricVal = JSON.parse(cpu_capacity_node['json_Collections'])[0]['Value']
+                                if !metricVal.to_s.nil?
+                                    cluster_cpu_capacity += metricVal
                                 end
                             end
                         else
@@ -181,8 +182,9 @@ module HealthModel
                         memory_capacity_json = KubernetesApiClient.parseNodeLimits(node_inventory, "capacity", "memory", "memoryCapacityBytes")
                         if !memory_capacity_json.nil?
                             memory_capacity_json.each do |memory_capacity_node|
-                                if !memory_capacity_node['DataItems'][0]['Collections'][0]['Value'].to_s.nil?
-                                    cluster_memory_capacity += memory_capacity_node['DataItems'][0]['Collections'][0]['Value']
+                                metricVal = JSON.parse(memory_capacity_node['json_Collections'])[0]['Value']
+                                if !metricVal.to_s.nil?
+                                    cluster_memory_capacity += metricVal
                                 end
                             end
                         else
@@ -284,7 +286,7 @@ module HealthModel
             def get_health_monitor_config
                 health_monitor_config = {}
                 begin
-                    file = File.open('/opt/microsoft/omsagent/plugin/healthmonitorconfig.json', "r")
+                    file = File.open('/etc/opt/microsoft/docker-cimprov/health/healthmonitorconfig.json', "r")
                     if !file.nil?
                         fileContents = file.read
                         health_monitor_config = JSON.parse(fileContents)

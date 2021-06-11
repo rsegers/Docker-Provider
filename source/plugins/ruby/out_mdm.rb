@@ -1,11 +1,12 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-module Fluent
-  class OutputMDM < BufferedOutput
-    config_param :retry_mdm_post_wait_minutes, :integer
+require 'fluent/plugin/output'
 
-    Plugin.register_output("out_mdm", self)
+module Fluent::Plugin
+  class OutputMDM < Output
+    config_param :retry_mdm_post_wait_minutes, :integer
+    Fluent::Plugin.register_output("mdm", self)
 
     def initialize
       super
@@ -57,8 +58,6 @@ module Fluent
     end
 
     def configure(conf)
-      s = conf.add_element("secondary")
-      s["type"] = ChunkErrorHandler::SecondaryName
       super
     end
 
@@ -204,7 +203,7 @@ module Fluent
     end
 
     def write_status_file(success, message)
-      fn = "/var/opt/microsoft/omsagent/log/MDMIngestion.status"
+      fn = "/var/opt/microsoft/docker-cimprov/log/MDMIngestion.status"
       status = '{ "operation": "MDMIngestion", "success": "%s", "message": "%s" }' % [success, message]
       begin
         File.open(fn, "w") { |file| file.write(status) }
@@ -270,6 +269,7 @@ module Fluent
         flush_mdm_exception_telemetry
         if (!@first_post_attempt_made || (Time.now > @last_post_attempt_time + retry_mdm_post_wait_minutes * 60)) && @can_send_data_to_mdm
           post_body = []
+          chunk.extend Fluent::ChunkMessagePackEventStreamer
           chunk.msgpack_each { |(tag, record)|
             post_body.push(record.to_json)
           }
@@ -320,7 +320,7 @@ module Fluent
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMSendSuccessful", {})
           @last_telemetry_sent_time = Time.now
         end
-      rescue Net::HTTPServerException => e
+      rescue Net::HTTPClientException  => e # see https://docs.ruby-lang.org/en/2.6.0/NEWS.html about deprecating HTTPServerException and adding HTTPClientException 
         if !response.nil? && !response.body.nil? #body will have actual error
           @log.info "Failed to Post Metrics to MDM : #{e} Response.body: #{response.body}"
         else
@@ -334,7 +334,7 @@ module Fluent
           # Not raising exception, as that will cause retries to happen
         elsif !response.code.empty? && response.code.start_with?("4")
           # Log 400 errors and continue
-          @log.info "Non-retryable HTTPServerException when POSTing Metrics to MDM #{e} Response: #{response}"
+          @log.info "Non-retryable HTTPClientException when POSTing Metrics to MDM #{e} Response: #{response}"
         else
           # raise if the response code is non-400
           @log.info "HTTPServerException when POSTing Metrics to MDM #{e} Response: #{response}"
@@ -350,73 +350,6 @@ module Fluent
         @log.info "Exception POSTing Metrics to MDM : #{e} Response: #{response}"
         @log.debug_backtrace(e.backtrace)
         raise e
-      end
-    end
-
-    private
-
-    class ChunkErrorHandler
-      include Configurable
-      include PluginId
-      include PluginLoggerMixin
-
-      SecondaryName = "__ChunkErrorHandler__"
-
-      Plugin.register_output(SecondaryName, self)
-
-      def initialize
-        @router = nil
-      end
-
-      def secondary_init(primary)
-        @error_handlers = create_error_handlers @router
-      end
-
-      def start
-        # NOP
-      end
-
-      def shutdown
-        # NOP
-      end
-
-      def router=(r)
-        @router = r
-      end
-
-      def write(chunk)
-        chunk.msgpack_each { |(tag, record)|
-          @error_handlers[tag].emit(record)
-        }
-      end
-
-      private
-
-      def create_error_handlers(router)
-        nop_handler = NopErrorHandler.new
-        Hash.new() { |hash, tag|
-          etag = OMS::Common.create_error_tag tag
-          hash[tag] = router.match?(etag) ?
-            ErrorHandler.new(router, etag) :
-            nop_handler
-        }
-      end
-
-      class ErrorHandler
-        def initialize(router, etag)
-          @router = router
-          @etag = etag
-        end
-
-        def emit(record)
-          @router.emit(@etag, Fluent::Engine.now, record)
-        end
-      end
-
-      class NopErrorHandler
-        def emit(record)
-          # NOP
-        end
       end
     end
   end # class OutputMDM

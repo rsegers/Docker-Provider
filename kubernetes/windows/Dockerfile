@@ -3,7 +3,7 @@ MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
-ARG IMAGE_TAG=win-ciprod04222021
+ARG IMAGE_TAG=win-ciprod06112021
 
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
@@ -20,7 +20,7 @@ RUN refreshenv \
 && gem install cool.io -v 1.5.4 --platform ruby \
 && gem install oj -v 3.3.10 \
 && gem install json -v 2.2.0 \
-&& gem install fluentd -v 1.10.2 \
+&& gem install fluentd -v 1.12.2 \
 && gem install win32-service -v 1.0.1 \
 && gem install win32-ipc -v 0.7.0 \
 && gem install win32-event -v 0.6.3 \
@@ -68,6 +68,10 @@ COPY ./omsagentwindows/installer/conf/telegraf.conf /etc/telegraf/
 
 # copy keepcert alive ruby scripts
 COPY ./omsagentwindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluent/plugin/
+
+#Copy fluentd ruby plugins
+COPY ./omsagentwindows/ruby/ /etc/fluent/plugin/
+COPY ./omsagentwindows/utils/*.rb /etc/fluent/plugin/
 
 ENV AGENT_VERSION ${IMAGE_TAG}
 ENV OS_TYPE "windows"

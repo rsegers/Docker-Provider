@@ -1,16 +1,11 @@
 %Variables
 PF:           'Linux'
-OMI_SERVICE:  '/opt/omi/bin/service_control'
-OMS_SERVICE:  '/opt/microsoft/omsagent/bin/service_control'
+
 
 %Postinstall_2000
-# Reload the OMI server
-${{OMI_SERVICE}} reload
-${{OMS_SERVICE}} reload
 
-if ${{PERFORMING_UPGRADE_NOT}}; then
-	/opt/omi/bin/omicli ei root/cimv2 Container_HostInventory
-fi
+
+
 
 %Postuninstall_1000
 # Calling sequence for RPM pre/post scripts, during upgrade, is as follows:
@@ -35,10 +30,5 @@ if ${{PERFORMING_UPGRADE_NOT}}; then
 fi
 
 %Postuninstall_1100
-# If we're called for upgrade, don't do anything
-if ${{PERFORMING_UPGRADE_NOT}}; then
-    # Reload the OMI server
-    ${{OMI_SERVICE}} reload
-    ${{OMS_SERVICE}} reload
-fi
+
 

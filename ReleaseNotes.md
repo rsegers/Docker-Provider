@@ -11,6 +11,24 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 06/11/2021 -
+##### Version microsoft/oms:ciprod06112021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06112021 (linux)
+##### Version microsoft/oms:win-ciprod06112021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06112021 (windows)
+ - Linux Agent
+   - Removal of base omsagent dependency 
+   - Using MDSD version 1.10.1  as base agent for all the supported LA data types
+   - Ruby version upgrade to 2.6 i.e. same version as windows agent
+   - Upgrade FluentD gem version to 1.12.2 
+   - All the Ruby Fluentd Plugins upgraded to v1 as per Fluentd guidance
+   - Fluent-bit tail plugin Mem_Buf_limit is configurable via ConfigMap
+ - Windows Agent
+   - CA cert changes for airgapped clouds
+   - Send perf metrics to MDM from windows daemonset
+   - FluentD gem version upgrade from 1.10.2 to 1.12.2 to make same version as Linux Agent
+  - Doc updates 
+   - README updates related to OSM preview release for Arc K8s
+   - README updates related to recommended alerts
+
 ### 05/20/2021 -
 ##### Version microsoft/oms:ciprod05202021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod05202021 (linux)
 ##### No Windows changes with this release, win-ciprod04222021 still current.

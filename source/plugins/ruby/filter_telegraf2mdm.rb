@@ -2,7 +2,9 @@
 
 # frozen_string_literal: true
 
-module Fluent
+require 'fluent/plugin/filter'
+
+module Fluent::Plugin
   require "logger"
   require "yajl/json_gem"
   require_relative "oms_common"
@@ -11,7 +13,7 @@ module Fluent
   require_relative "constants"
 
   class Telegraf2MdmFilter < Filter
-    Fluent::Plugin.register_filter("filter_telegraf2mdm", self)
+    Fluent::Plugin.register_filter("telegraf2mdm", self)
 
     config_param :enable_log, :integer, :default => 0
     config_param :log_path, :string, :default => "/var/opt/microsoft/docker-cimprov/log/filter_telegraf2mdm.log"
@@ -64,7 +66,7 @@ module Fluent
     end
 
     def filter_stream(tag, es)
-      new_es = MultiEventStream.new
+      new_es = Fluent::MultiEventStream.new
       begin
         es.each { |time, record|
           filtered_records = filter(tag, time, record)

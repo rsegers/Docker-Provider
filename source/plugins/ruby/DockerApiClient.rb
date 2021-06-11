@@ -29,7 +29,7 @@ class DockerApiClient
         loop do
           begin
             responseChunk = ""
-            timeout(@@TimeoutInSeconds) do
+            Timeout.timeout(@@TimeoutInSeconds) do
               responseChunk = socket.recv(@@ChunkSize)
             end
             dockerResponse += responseChunk

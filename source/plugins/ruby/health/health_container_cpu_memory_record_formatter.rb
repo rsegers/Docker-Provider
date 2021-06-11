@@ -17,10 +17,10 @@ module HealthModel
 
         def get_record_from_cadvisor_record(cadvisor_record)
             begin
-                instance_name = cadvisor_record['DataItems'][0]['InstanceName']
-                counter_name = cadvisor_record['DataItems'][0]['Collections'][0]['CounterName']
-                metric_value = cadvisor_record['DataItems'][0]['Collections'][0]['Value']
-                timestamp = cadvisor_record['DataItems'][0]['Timestamp']
+                instance_name = cadvisor_record['InstanceName']
+                counter_name =  JSON.parse(cadvisor_record['json_Collections'])[0]['CounterName']
+                metric_value = JSON.parse(cadvisor_record['json_Collections'])[0]['Value']
+                timestamp = cadvisor_record['Timestamp']
 
                 health_container_cpu_memory_record = @@health_container_cpu_memory_record_template % {
                     instance_name: instance_name,

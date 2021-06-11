@@ -14,7 +14,6 @@ class ApplicationInsightsUtility
   @@Exception = "ExceptionEvent"
   @@AcsClusterType = "ACS"
   @@AksClusterType = "AKS"
-  @OmsAdminFilePath = "/etc/opt/microsoft/omsagent/conf/omsadmin.conf"
   @@EnvAcsResourceName = "ACS_RESOURCE_NAME"
   @@EnvAksRegion = "AKS_REGION"
   @@EnvAgentVersion = "AGENT_VERSION"
@@ -22,10 +21,15 @@ class ApplicationInsightsUtility
   @@EnvApplicationInsightsEndpoint = "APPLICATIONINSIGHTS_ENDPOINT"
   @@EnvControllerType = "CONTROLLER_TYPE"
   @@EnvContainerRuntime = "CONTAINER_RUNTIME"
-
+  @@isWindows = false
+  @@hostName = (OMS::Common.get_hostname)
+  @@os_type = ENV["OS_TYPE"]
+  if !@@os_type.nil? && !@@os_type.empty? && @@os_type.strip.casecmp("windows") == 0
+    @@isWindows = true
+    @@hostName = ENV["HOSTNAME"]
+  end
   @@CustomProperties = {}
   @@Tc = nil
-  @@hostName = (OMS::Common.get_hostname)
   @@proxy = (ProxyUtils.getProxyConfiguration)
 
   def initialize
@@ -134,16 +138,23 @@ class ApplicationInsightsUtility
     end
 
     def getContainerRuntimeInfo()
-      containerRuntime = ENV[@@EnvContainerRuntime]
-      if !containerRuntime.nil? && !containerRuntime.empty?
-        # DockerVersion field holds either containerRuntime for non-docker or Dockerversion if its docker
-        @@CustomProperties["DockerVersion"] = containerRuntime
-        if containerRuntime.casecmp("docker") == 0
-          dockerInfo = DockerApiClient.dockerInfo
-          if (!dockerInfo.nil? && !dockerInfo.empty?)
-            @@CustomProperties["DockerVersion"] = dockerInfo["Version"]
+      begin
+        containerRuntime = ENV[@@EnvContainerRuntime]
+        if !containerRuntime.nil? && !containerRuntime.empty?
+          # DockerVersion field holds either containerRuntime for non-docker or Dockerversion if its docker
+          @@CustomProperties["DockerVersion"] = containerRuntime
+          # Not doing this for windows since docker is being deprecated soon and we dont want to bring in the socket dependency.
+          if !@@isWindows.nil? && @@isWindows == false
+            if containerRuntime.casecmp("docker") == 0
+              dockerInfo = DockerApiClient.dockerInfo
+              if (!dockerInfo.nil? && !dockerInfo.empty?)
+                @@CustomProperties["DockerVersion"] = dockerInfo["Version"]
+              end
+            end
           end
         end
+      rescue => errorStr
+        $log.warn("Exception in AppInsightsUtility: getContainerRuntimeInfo - error: #{errorStr}")
       end
     end
 
@@ -264,13 +275,10 @@ class ApplicationInsightsUtility
 
     def getWorkspaceId()
       begin
-        adminConf = {}
-        confFile = File.open(@OmsAdminFilePath, "r")
-        confFile.each_line do |line|
-          splitStrings = line.split("=")
-          adminConf[splitStrings[0]] = splitStrings[1]
+        workspaceId = ENV["WSID"]
+        if workspaceId.nil? || workspaceId.empty?
+          $log.warn("Exception in AppInsightsUtility: getWorkspaceId - WorkspaceID either nil or empty")
         end
-        workspaceId = adminConf["WORKSPACE_ID"]
         return workspaceId
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: getWorkspaceId - error: #{errorStr}")
@@ -279,13 +287,7 @@ class ApplicationInsightsUtility
 
     def getWorkspaceCloud()
       begin
-        adminConf = {}
-        confFile = File.open(@OmsAdminFilePath, "r")
-        confFile.each_line do |line|
-          splitStrings = line.split("=")
-          adminConf[splitStrings[0]] = splitStrings[1]
-        end
-        workspaceDomain = adminConf["URL_TLD"].strip
+        workspaceDomain = ENV["DOMAIN"]
         workspaceCloud = "AzureCloud"
         if workspaceDomain.casecmp("opinsights.azure.com") == 0
           workspaceCloud = "AzureCloud"

@@ -38,7 +38,12 @@ class CAdvisorMetricsAPIClient
   @npmIntegrationBasic = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_BASIC"]
   @npmIntegrationAdvanced = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_ADVANCED"]
 
-  @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_perf_log.txt"
+  @os_type = ENV["OS_TYPE"]
+  if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+    @LogPath = "/etc/omsagentwindows/kubernetes_perf_log.txt"
+  else
+    @LogPath = "/var/opt/microsoft/docker-cimprov/log/kubernetes_perf_log.txt"
+  end
   @Log = Logger.new(@LogPath, 2, 10 * 1048576) #keep last 2 files, max log file size = 10M
   #   @@rxBytesLast = nil
   #   @@rxBytesTimeLast = nil
@@ -142,39 +147,54 @@ class CAdvisorMetricsAPIClient
           operatingSystem = "Linux"
         end
         if !metricInfo.nil?
-          metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem))
-          metricDataItems.concat(getContainerStartTimeMetricItems(metricInfo, hostName, "restartTimeEpoch", metricTime))
-
-          if operatingSystem == "Linux"
-            metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores", Constants::CPU_USAGE_NANO_CORES, metricTime))
-            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime, operatingSystem))
-            metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime))
-          elsif operatingSystem == "Windows"
+          # Checking if we are in windows daemonset and sending only few metrics that are needed for MDM
+          if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+            # Container metrics
+            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem))
             containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime)
             if containerCpuUsageNanoSecondsRate && !containerCpuUsageNanoSecondsRate.empty? && !containerCpuUsageNanoSecondsRate.nil?
               metricDataItems.concat(containerCpuUsageNanoSecondsRate)
             end
+            # Node metrics
+            cpuUsageNanoSecondsRate = getNodeMetricItemRate(metricInfo, hostName, "cpu", "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, operatingSystem, metricTime)
+            if cpuUsageNanoSecondsRate && !cpuUsageNanoSecondsRate.empty? && !cpuUsageNanoSecondsRate.nil?
+              metricDataItems.push(cpuUsageNanoSecondsRate)
+            end
+            metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime))
+          else
+            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem))
+            metricDataItems.concat(getContainerStartTimeMetricItems(metricInfo, hostName, "restartTimeEpoch", metricTime))
+
+            if operatingSystem == "Linux"
+              metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores", Constants::CPU_USAGE_NANO_CORES, metricTime))
+              metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime, operatingSystem))
+              metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime))
+            elsif operatingSystem == "Windows"
+              containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime)
+              if containerCpuUsageNanoSecondsRate && !containerCpuUsageNanoSecondsRate.empty? && !containerCpuUsageNanoSecondsRate.nil?
+                metricDataItems.concat(containerCpuUsageNanoSecondsRate)
+              end
+            end
+
+            cpuUsageNanoSecondsRate = getNodeMetricItemRate(metricInfo, hostName, "cpu", "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, operatingSystem, metricTime)
+            if cpuUsageNanoSecondsRate && !cpuUsageNanoSecondsRate.empty? && !cpuUsageNanoSecondsRate.nil?
+              metricDataItems.push(cpuUsageNanoSecondsRate)
+            end
+            metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime))
+
+            metricDataItems.push(getNodeLastRebootTimeMetric(metricInfo, hostName, "restartTimeEpoch", metricTime))
+            # Disabling networkRxRate and networkTxRate since we dont use it as of now.
+            #metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "rxBytes", "networkRxBytes"))
+            #metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "txBytes", "networkTxBytes"))
+            #   networkRxRate = getNodeMetricItemRate(metricInfo, hostName, "network", "rxBytes", "networkRxBytesPerSec")
+            #   if networkRxRate && !networkRxRate.empty? && !networkRxRate.nil?
+            #     metricDataItems.push(networkRxRate)
+            #   end
+            #   networkTxRate = getNodeMetricItemRate(metricInfo, hostName, "network", "txBytes", "networkTxBytesPerSec")
+            #   if networkTxRate && !networkTxRate.empty? && !networkTxRate.nil?
+            #     metricDataItems.push(networkTxRate)
+            #   end
           end
-
-          cpuUsageNanoSecondsRate = getNodeMetricItemRate(metricInfo, hostName, "cpu", "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, operatingSystem, metricTime)
-          if cpuUsageNanoSecondsRate && !cpuUsageNanoSecondsRate.empty? && !cpuUsageNanoSecondsRate.nil?
-            metricDataItems.push(cpuUsageNanoSecondsRate)
-          end
-          metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime))
-
-          metricDataItems.push(getNodeLastRebootTimeMetric(metricInfo, hostName, "restartTimeEpoch", metricTime))
-
-          # Disabling networkRxRate and networkTxRate since we dont use it as of now.
-          #metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "rxBytes", "networkRxBytes"))
-          #metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "network", "txBytes", "networkTxBytes"))
-          #   networkRxRate = getNodeMetricItemRate(metricInfo, hostName, "network", "rxBytes", "networkRxBytesPerSec")
-          #   if networkRxRate && !networkRxRate.empty? && !networkRxRate.nil?
-          #     metricDataItems.push(networkRxRate)
-          #   end
-          #   networkTxRate = getNodeMetricItemRate(metricInfo, hostName, "network", "txBytes", "networkTxBytesPerSec")
-          #   if networkTxRate && !networkTxRate.empty? && !networkTxRate.nil?
-          #     metricDataItems.push(networkTxRate)
-          #   end
         else
           @Log.warn("Couldn't get metric information for host: #{hostName}")
         end
@@ -203,23 +223,24 @@ class CAdvisorMetricsAPIClient
               containerName = container["name"]
               metricValue = container["cpu"][cpuMetricNameToCollect]
               metricTime = metricPollTime #container["cpu"]["time"]
+
               metricItem = {}
-              metricItem["DataItems"] = []
+              metricItem["Timestamp"] = metricTime
+              metricItem["Host"] = hostName
+              metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
+              metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
 
-              metricProps = {}
-              metricProps["Timestamp"] = metricTime
-              metricProps["Host"] = hostName
-              metricProps["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
-              metricProps["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
+              
+              metricCollection = {}
+              metricCollection["CounterName"] = metricNametoReturn
+              metricCollection["Value"] = metricValue
 
-              metricProps["Collections"] = []
-              metricCollections = {}
-              metricCollections["CounterName"] = metricNametoReturn
-              metricCollections["Value"] = metricValue
-
-              metricProps["Collections"].push(metricCollections)
-              metricItem["DataItems"].push(metricProps)
-              metricItems.push(metricItem)
+              metricItem["json_Collections"] = []
+              metricCollections = []               
+              metricCollections.push(metricCollection)        
+              metricItem["json_Collections"] = metricCollections.to_json
+              metricItems.push(metricItem)      
+              
               #Telemetry about agent performance
               begin
                 # we can only do this much now. Ideally would like to use the docker image repository to find our pods/containers
@@ -250,11 +271,8 @@ class CAdvisorMetricsAPIClient
                       telemetryProps["dsPromUrl"] = @dsPromUrlCount
                     end
                     #telemetry about containerlog Routing for daemonset
-                    if File.exist?(Constants::AZMON_CONTAINER_LOGS_EFFECTIVE_ROUTE_V2_FILENAME)
-                      telemetryProps["containerLogsRoute"] = "v2"
-                    elsif (!@containerLogsRoute.nil? && !@containerLogsRoute.empty?)
-                      telemetryProps["containerLogsRoute"] = @containerLogsRoute
-                    end
+                    telemetryProps["containerLogsRoute"] = @containerLogsRoute
+                   
                     #telemetry about health model
                     if (!@hmEnabled.nil? && !@hmEnabled.empty?)
                       telemetryProps["hmEnabled"] = @hmEnabled
@@ -503,18 +521,16 @@ class CAdvisorMetricsAPIClient
               containerName = container["name"]
               metricValue = container["cpu"][cpuMetricNameToCollect]
               metricTime = metricPollTime #container["cpu"]["time"]
+            
               metricItem = {}
-              metricItem["DataItems"] = []
-
-              metricProps = {}
-              metricProps["Timestamp"] = metricTime
-              metricProps["Host"] = hostName
-              metricProps["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
-              metricProps["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
-
-              metricProps["Collections"] = []
-              metricCollections = {}
-              metricCollections["CounterName"] = metricNametoReturn
+              metricItem["Timestamp"] = metricTime
+              metricItem["Host"] = hostName
+              metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
+              metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
+              
+              metricItem["json_Collections"] = []
+              metricCollection = {}
+              metricCollection["CounterName"] = metricNametoReturn
 
               containerId = podUid + "/" + containerName
               # Adding the containers to the winContainerIdCache so that it can be used by the cleanup routine
@@ -545,9 +561,11 @@ class CAdvisorMetricsAPIClient
                 @@winContainerPrevMetricRate[containerId] = metricRateValue
               end
 
-              metricCollections["Value"] = metricValue
-              metricProps["Collections"].push(metricCollections)
-              metricItem["DataItems"].push(metricProps)
+              metricCollection["Value"] = metricValue
+              
+              metricCollections = []               
+              metricCollections.push(metricCollection)        
+              metricItem["json_Collections"] = metricCollections.to_json
               metricItems.push(metricItem)
               #Telemetry about agent performance
               begin
@@ -629,22 +647,21 @@ class CAdvisorMetricsAPIClient
               metricTime = metricPollTime #container["memory"]["time"]
 
               metricItem = {}
-              metricItem["DataItems"] = []
+              metricItem["Timestamp"] = metricTime
+              metricItem["Host"] = hostName
+              metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
+              metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
+           
+              metricCollection = {}
+              metricCollection["CounterName"] = metricNametoReturn
+              metricCollection["Value"] = metricValue
 
-              metricProps = {}
-              metricProps["Timestamp"] = metricTime
-              metricProps["Host"] = hostName
-              metricProps["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
-              metricProps["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
+              metricItem["json_Collections"] = []
+              metricCollections = []  
+              metricCollections.push(metricCollection)        
+              metricItem["json_Collections"] = metricCollections.to_json
+              metricItems.push(metricItem) 
 
-              metricProps["Collections"] = []
-              metricCollections = {}
-              metricCollections["CounterName"] = metricNametoReturn
-              metricCollections["Value"] = metricValue
-
-              metricProps["Collections"].push(metricCollections)
-              metricItem["DataItems"].push(metricProps)
-              metricItems.push(metricItem)
               #Telemetry about agent performance
               begin
                 # we can only do this much now. Ideally would like to use the docker image repository to find our pods/containers
@@ -687,22 +704,21 @@ class CAdvisorMetricsAPIClient
         if !node[metricCategory].nil?
           metricValue = node[metricCategory][metricNameToCollect]
           metricTime = metricPollTime #node[metricCategory]["time"]
+                 
+          metricItem["Timestamp"] = metricTime
+          metricItem["Host"] = hostName
+          metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
+          metricItem["InstanceName"] = clusterId + "/" + nodeName
 
-          metricItem["DataItems"] = []
+         
+          metricCollection = {}
+          metricCollection["CounterName"] = metricNametoReturn
+          metricCollection["Value"] = metricValue
 
-          metricProps = {}
-          metricProps["Timestamp"] = metricTime
-          metricProps["Host"] = hostName
-          metricProps["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
-          metricProps["InstanceName"] = clusterId + "/" + nodeName
-
-          metricProps["Collections"] = []
-          metricCollections = {}
-          metricCollections["CounterName"] = metricNametoReturn
-          metricCollections["Value"] = metricValue
-
-          metricProps["Collections"].push(metricCollections)
-          metricItem["DataItems"].push(metricProps)
+          metricItem["json_Collections"] = []
+          metricCollections = []               
+          metricCollections.push(metricCollection)   
+          metricItem["json_Collections"] = metricCollections.to_json               
         end
       rescue => error
         @Log.warn("getNodeMetricItem failed: #{error} for metric #{metricNameToCollect}")
@@ -805,21 +821,20 @@ class CAdvisorMetricsAPIClient
               end
             end
           end
-          metricItem["DataItems"] = []
+                  
+          metricItem["Timestamp"] = metricTime
+          metricItem["Host"] = hostName
+          metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
+          metricItem["InstanceName"] = clusterId + "/" + nodeName
+     
+          metricCollection = {}
+          metricCollection["CounterName"] = metricNametoReturn
+          metricCollection["Value"] = metricValue
 
-          metricProps = {}
-          metricProps["Timestamp"] = metricTime
-          metricProps["Host"] = hostName
-          metricProps["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
-          metricProps["InstanceName"] = clusterId + "/" + nodeName
-
-          metricProps["Collections"] = []
-          metricCollections = {}
-          metricCollections["CounterName"] = metricNametoReturn
-          metricCollections["Value"] = metricValue
-
-          metricProps["Collections"].push(metricCollections)
-          metricItem["DataItems"].push(metricProps)
+          metricItem["json_Collections"] = []
+          metricCollections = []               
+          metricCollections.push(metricCollection)        
+          metricItem["json_Collections"] = metricCollections.to_json
         end
       rescue => error
         @Log.warn("getNodeMetricItemRate failed: #{error} for metric #{metricNameToCollect}")
@@ -841,22 +856,22 @@ class CAdvisorMetricsAPIClient
         metricValue = node["startTime"]
         metricTime = metricPollTime #Time.now.utc.iso8601 #2018-01-30T19:36:14Z
 
-        metricItem["DataItems"] = []
+       
+        metricItem["Timestamp"] = metricTime
+        metricItem["Host"] = hostName
+        metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
+        metricItem["InstanceName"] = clusterId + "/" + nodeName
 
-        metricProps = {}
-        metricProps["Timestamp"] = metricTime
-        metricProps["Host"] = hostName
-        metricProps["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
-        metricProps["InstanceName"] = clusterId + "/" + nodeName
-
-        metricProps["Collections"] = []
-        metricCollections = {}
-        metricCollections["CounterName"] = metricNametoReturn
+       
+        metricCollection = {}
+        metricCollection["CounterName"] = metricNametoReturn
         #Read it from /proc/uptime
-        metricCollections["Value"] = DateTime.parse(metricTime).to_time.to_i - IO.read("/proc/uptime").split[0].to_f
+        metricCollection["Value"] = DateTime.parse(metricTime).to_time.to_i - IO.read("/proc/uptime").split[0].to_f
 
-        metricProps["Collections"].push(metricCollections)
-        metricItem["DataItems"].push(metricProps)
+        metricItem["json_Collections"] = []
+        metricCollections = []               
+        metricCollections.push(metricCollection)        
+        metricItem["json_Collections"] = metricCollections.to_json
       rescue => error
         @Log.warn("getNodeLastRebootTimeMetric failed: #{error} ")
         @Log.warn metricJSON
@@ -880,21 +895,19 @@ class CAdvisorMetricsAPIClient
               metricTime = metricPollTime #currentTime
 
               metricItem = {}
-              metricItem["DataItems"] = []
+              metricItem["Timestamp"] = metricTime
+              metricItem["Host"] = hostName
+              metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
+              metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
+            
+              metricCollection = {}
+              metricCollection["CounterName"] = metricNametoReturn
+              metricCollection["Value"] = DateTime.parse(metricValue).to_time.to_i
 
-              metricProps = {}
-              metricProps["Timestamp"] = metricTime
-              metricProps["Host"] = hostName
-              metricProps["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
-              metricProps["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
-
-              metricProps["Collections"] = []
-              metricCollections = {}
-              metricCollections["CounterName"] = metricNametoReturn
-              metricCollections["Value"] = DateTime.parse(metricValue).to_time.to_i
-
-              metricProps["Collections"].push(metricCollections)
-              metricItem["DataItems"].push(metricProps)
+              metricItem["json_Collections"] = []
+              metricCollections = []               
+              metricCollections.push(metricCollection)        
+              metricItem["json_Collections"] = metricCollections.to_json
               metricItems.push(metricItem)
             end
           end

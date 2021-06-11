@@ -12,11 +12,12 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"time"
-
+	"time"	
+	
 	"github.com/Azure/azure-kusto-go/kusto"
 	"github.com/Azure/azure-kusto-go/kusto/ingest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/tinylib/msgp/msgp"
 )
 
 // ReadConfiguration reads a property file
@@ -62,7 +63,13 @@ func ReadConfiguration(filename string) (map[string]string, error) {
 
 // CreateHTTPClient used to create the client for sending post requests to OMSEndpoint
 func CreateHTTPClient() {
-	cert, err := tls.LoadX509KeyPair(PluginConfiguration["cert_file_path"], PluginConfiguration["key_file_path"])
+	certFilePath := PluginConfiguration["cert_file_path"]
+	keyFilePath := PluginConfiguration["key_file_path"]
+	if IsWindows == false {
+		certFilePath = fmt.Sprintf(certFilePath, WorkspaceID)
+		keyFilePath = fmt.Sprintf(keyFilePath, WorkspaceID)
+	}
+	cert, err := tls.LoadX509KeyPair(certFilePath, keyFilePath)
 	if err != nil {
 		message := fmt.Sprintf("Error when loading cert %s", err.Error())
 		SendException(message)
@@ -93,7 +100,7 @@ func CreateHTTPClient() {
 	HTTPClient = http.Client{
 		Transport: transport,
 		Timeout:   30 * time.Second,
-	}
+	} 
 
 	Log("Successfully created HTTP Client")
 }
@@ -110,23 +117,58 @@ func ToString(s interface{}) string {
 }
 
 //mdsdSocketClient to write msgp messages
-func CreateMDSDClient() {
-	if MdsdMsgpUnixSocketClient != nil {
-		MdsdMsgpUnixSocketClient.Close()
-		MdsdMsgpUnixSocketClient = nil
-	}
-	/*conn, err := fluent.New(fluent.Config{FluentNetwork:"unix",
-	  FluentSocketPath:"/var/run/mdsd/default_fluent.socket",
-	  WriteTimeout: 5 * time.Second,
-	  RequestAck: true}) */
-	conn, err := net.DialTimeout("unix",
-		"/var/run/mdsd/default_fluent.socket", 10*time.Second)
-	if err != nil {
-		Log("Error::mdsd::Unable to open MDSD msgp socket connection %s", err.Error())
-		//log.Fatalf("Unable to open MDSD msgp socket connection %s", err.Error())
-	} else {
-		Log("Successfully created MDSD msgp socket connection")
-		MdsdMsgpUnixSocketClient = conn
+func CreateMDSDClient(dataType DataType, containerType string) {
+	mdsdfluentSocket := "/var/run/mdsd/default_fluent.socket"	
+	if containerType != "" && strings.Compare(strings.ToLower(containerType), "prometheussidecar") == 0 {
+	   mdsdfluentSocket = fmt.Sprintf("/var/run/mdsd-%s/default_fluent.socket", containerType)
+	} 
+	switch dataType {
+		case ContainerLogV2:
+			if MdsdMsgpUnixSocketClient != nil {
+				MdsdMsgpUnixSocketClient.Close()
+				MdsdMsgpUnixSocketClient = nil
+			}
+			/*conn, err := fluent.New(fluent.Config{FluentNetwork:"unix",
+			FluentSocketPath:"/var/run/mdsd/default_fluent.socket",
+			WriteTimeout: 5 * time.Second,
+			RequestAck: true}) */
+			conn, err := net.DialTimeout("unix",
+				mdsdfluentSocket, 10*time.Second)
+			if err != nil {
+				Log("Error::mdsd::Unable to open MDSD msgp socket connection for ContainerLogV2 %s", err.Error())
+				//log.Fatalf("Unable to open MDSD msgp socket connection %s", err.Error())
+			} else {
+				Log("Successfully created MDSD msgp socket connection for ContainerLogV2: %s", mdsdfluentSocket)
+				MdsdMsgpUnixSocketClient = conn
+			}
+		case KubeMonAgentEvents:
+			if MdsdKubeMonMsgpUnixSocketClient != nil {
+				MdsdKubeMonMsgpUnixSocketClient.Close()
+				MdsdKubeMonMsgpUnixSocketClient = nil
+			}
+			conn, err := net.DialTimeout("unix",
+				mdsdfluentSocket, 10*time.Second)
+			if err != nil {
+				Log("Error::mdsd::Unable to open MDSD msgp socket connection for KubeMon events %s",  err.Error())
+				//log.Fatalf("Unable to open MDSD msgp socket connection %s", err.Error())
+			} else {
+				Log("Successfully created MDSD msgp socket connection for KubeMon events:%s", mdsdfluentSocket)
+				MdsdKubeMonMsgpUnixSocketClient = conn
+			}
+	    case InsightsMetrics:
+			if MdsdInsightsMetricsMsgpUnixSocketClient != nil {
+				MdsdInsightsMetricsMsgpUnixSocketClient.Close()
+				MdsdInsightsMetricsMsgpUnixSocketClient = nil
+			}
+			conn, err := net.DialTimeout("unix",
+				mdsdfluentSocket, 10*time.Second)
+			if err != nil {
+				Log("Error::mdsd::Unable to open MDSD msgp socket connection for insights metrics %s", err.Error())
+				//log.Fatalf("Unable to open MDSD msgp socket connection %s", err.Error())
+			} else {
+				Log("Successfully created MDSD msgp socket connection for Insights metrics %s", mdsdfluentSocket)
+				MdsdInsightsMetricsMsgpUnixSocketClient = conn
+			}
 	}
 }
 
@@ -177,4 +219,34 @@ func isValidUrl(uri string) bool {
 		return false
 	}
 	return true
+}
+
+func convertMsgPackEntriesToMsgpBytes(fluentForwardTag string, msgPackEntries []MsgPackEntry) []byte {
+	var msgpBytes []byte
+	
+	fluentForward := MsgPackForward{
+		Tag:     fluentForwardTag,
+		Entries: msgPackEntries,
+	}
+	//determine the size of msgp message
+	msgpSize := 1 + msgp.StringPrefixSize + len(fluentForward.Tag) + msgp.ArrayHeaderSize
+	for i := range fluentForward.Entries {
+		msgpSize += 1 + msgp.Int64Size + msgp.GuessSize(fluentForward.Entries[i].Record)
+	}
+
+	//allocate buffer for msgp message		
+	msgpBytes = msgp.Require(nil, msgpSize)
+
+	//construct the stream
+	msgpBytes = append(msgpBytes, 0x92)
+	msgpBytes = msgp.AppendString(msgpBytes, fluentForward.Tag)
+	msgpBytes = msgp.AppendArrayHeader(msgpBytes, uint32(len(fluentForward.Entries)))
+	batchTime := time.Now().Unix()
+	for entry := range fluentForward.Entries {
+		msgpBytes = append(msgpBytes, 0x92)
+		msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
+		msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
+	}
+    
+    return msgpBytes
 }

@@ -10,7 +10,12 @@ class MdmMetricsGenerator
   require_relative "constants"
   require_relative "oms_common"
 
-  @log_path = "/var/opt/microsoft/docker-cimprov/log/mdm_metrics_generator.log"
+  @os_type = ENV["OS_TYPE"]
+  if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+    @log_path = "/etc/omsagentwindows/mdm_metrics_generator.log"
+  else
+    @log_path = "/var/opt/microsoft/docker-cimprov/log/mdm_metrics_generator.log"
+  end
   @log = Logger.new(@log_path, 1, 5000000)
   @@hostName = (OMS::Common.get_hostname)
 
@@ -525,11 +530,11 @@ class MdmMetricsGenerator
       records = []
       begin
         custommetricrecord = MdmAlertTemplates::Node_resource_metrics_template % {
-          timestamp: record["DataItems"][0]["Timestamp"],
+          timestamp: record["Timestamp"],
           metricName: metric_name,
-          hostvalue: record["DataItems"][0]["Host"],
-          objectnamevalue: record["DataItems"][0]["ObjectName"],
-          instancenamevalue: record["DataItems"][0]["InstanceName"],
+          hostvalue: record["Host"],
+          objectnamevalue: record["ObjectName"],
+          instancenamevalue: record["InstanceName"],
           metricminvalue: metric_value,
           metricmaxvalue: metric_value,
           metricsumvalue: metric_value,
@@ -538,11 +543,11 @@ class MdmMetricsGenerator
 
         if !percentage_metric_value.nil?
           additional_record = MdmAlertTemplates::Node_resource_metrics_template % {
-            timestamp: record["DataItems"][0]["Timestamp"],
+            timestamp: record["Timestamp"],
             metricName: @@node_metric_name_metric_percentage_name_hash[metric_name],
-            hostvalue: record["DataItems"][0]["Host"],
-            objectnamevalue: record["DataItems"][0]["ObjectName"],
-            instancenamevalue: record["DataItems"][0]["InstanceName"],
+            hostvalue: record["Host"],
+            objectnamevalue: record["ObjectName"],
+            instancenamevalue: record["InstanceName"],
             metricminvalue: percentage_metric_value,
             metricmaxvalue: percentage_metric_value,
             metricsumvalue: percentage_metric_value,

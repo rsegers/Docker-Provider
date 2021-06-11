@@ -1,9 +1,11 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-module Fluent
+require 'fluent/plugin/input'
+
+module Fluent::Plugin
   class Container_Inventory_Input < Input
-    Plugin.register_input("containerinventory", self)
+    Fluent::Plugin.register_input("containerinventory", self)
 
     @@PluginName = "ContainerInventory"   
 
@@ -19,7 +21,7 @@ module Fluent
     end
 
     config_param :run_interval, :time, :default => 60
-    config_param :tag, :string, :default => "oms.containerinsights.containerinventory"
+    config_param :tag, :string, :default => "oneagent.containerInsights.CONTAINER_INVENTORY_BLOB"
 
     def configure(conf)
       super
@@ -27,6 +29,7 @@ module Fluent
 
     def start
       if @run_interval
+        super
         @finished = false
         @condition = ConditionVariable.new
         @mutex = Mutex.new
@@ -42,17 +45,18 @@ module Fluent
           @condition.signal
         }
         @thread.join
+        super # This super must be at the end of shutdown method
       end
     end   
   
     def enumerate
-      currentTime = Time.now
-      emitTime = currentTime.to_f
+      currentTime = Time.now      
       batchTime = currentTime.utc.iso8601
+      emitTime = Fluent::Engine.now
       containerInventory = Array.new
-      eventStream = MultiEventStream.new
+      eventStream = Fluent::MultiEventStream.new
       hostName = ""
-      $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
+      $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")                         
       begin
         containerRuntimeEnv = ENV["CONTAINER_RUNTIME"]
         $log.info("in_container_inventory::enumerate : container runtime : #{containerRuntimeEnv}")
@@ -89,13 +93,8 @@ module Fluent
              end
            end
         end        
-        containerInventory.each do |record|
-          wrapper = {
-            "DataType" => "CONTAINER_INVENTORY_BLOB",
-            "IPName" => "ContainerInsights",
-            "DataItems" => [record.each { |k, v| record[k] = v }],
-          }
-          eventStream.add(emitTime, wrapper) if wrapper
+        containerInventory.each do |record|         
+          eventStream.add(emitTime, record) if record
         end
         router.emit_stream(@tag, eventStream) if eventStream
         @@istestvar = ENV["ISTEST"]
@@ -149,6 +148,6 @@ module Fluent
         @mutex.lock
       end
       @mutex.unlock
-    end
+    end     
   end # Container_Inventory_Input
 end # module
