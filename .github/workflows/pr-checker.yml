@@ -5,8 +5,6 @@ on:
     branches:
       - ci_dev
       - ci_prod
-    paths-ignore:
-      - '**.md'
 jobs:
   LINUX-build-and-scan:
     runs-on: ubuntu-latest

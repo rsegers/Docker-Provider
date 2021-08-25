@@ -29,6 +29,13 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
 ##### Code change log
 - Hotfix for fixing NODE_IP environment variable not set issue for non sidecar mode
 
+### 07/02/2021 -
+##### Version microsoft/oms:ciprod06112021-1 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06112021-1 (linux)
+##### Version microsoft/oms:win-ciprod06112021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06112021 (windows)
+##### Code change log
+- Hotfix for crash (which triggered when scaling down of windows nodes) in clean_cache method in in_kube_node_inventory plugin
+- We didn't rebuild windows container, so the image version for windows container stays the same as last release (ciprod:win-ciprod06112021) before this hotfix
+
 ### 06/11/2021 -
 ##### Version microsoft/oms:ciprod06112021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06112021 (linux)
 ##### Version microsoft/oms:win-ciprod06112021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06112021 (windows)
