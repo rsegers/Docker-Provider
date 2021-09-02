@@ -11,6 +11,11 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 09/02/2021 -
+##### Version microsoft/oms:ciprod08052021-1 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08052021-1 (linux)
+##### Code change log
+- Bumping image tag for some tooling (no code changes except the IMAGE_TAG environment variable)
+
 ### 08/05/2021 -
 ##### Version microsoft/oms:ciprod08052021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08052021 (linux)
 ##### Code change log
@@ -22,7 +27,6 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
      - Increase Timeout for OMS Homing service API calls from 30s to 60s
    - Fix for https://github.com/Azure/AKS/issues/2457
    - In replicaset, tailing of the mdsd.err log file to agent telemetry
-
 
 ### 07/13/2021 -
 ##### Version microsoft/oms:win-ciprod06112021-2 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06112021-2 (windows)
