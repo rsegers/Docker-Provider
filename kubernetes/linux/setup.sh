@@ -9,12 +9,15 @@ sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
     update-locale LANG=en_US.UTF-8
 
-#install oneagent - Official bits (08/04/2021)
-wget https://github.com/microsoft/Docker-Provider/releases/download/08042021-oneagent/azure-mdsd_1.10.1-build.master.251_x86_64.deb
+#install oneagent - Official bits (10/7/2021)
+wget https://github.com/microsoft/Docker-Provider/releases/download/1.14/azure-mdsd_1.14.0-build.master.279_x86_64.deb
 
 /usr/bin/dpkg -i $TMPDIR/azure-mdsd*.deb
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d
+
+#log rotate conf for mdsd and can be extended for other log files as well
+cp -f $TMPDIR/logrotate.conf /etc/logrotate.d/ci-agent
 
 #download inotify tools for watching configmap changes
 sudo apt-get update

@@ -3,6 +3,7 @@
 #  1. Builds the certificate generator code in .NET and copy the binaries in zip file to ..\..\kubernetes\windows\omsagentwindows
 #  2. Builds the out_oms plugin code in go lang  into the shared object(.so) file and copy the out_oms.so file  to ..\..\kubernetes\windows\omsagentwindows
 #  3. copy the files under installer directory to ..\..\kubernetes\windows\omsagentwindows
+#  4. Builds the livenessprobe cpp and copy the executable to the under directory ..\..\kubernetes\windows\omsagentwindows
 
 $dotnetcoreframework = "netcoreapp3.1"
 
@@ -157,7 +158,7 @@ if ($isCDPxEnvironment) {
 
   Write-Host("getting latest go modules ...")
   go  get
-  Write-Host("successfyullt got latest go modules") -ForegroundColor Green
+  Write-Host("successfully got latest go modules") -ForegroundColor Green
 
   go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o out_oms.so .
 }
@@ -167,27 +168,35 @@ Write-Host("copying out_oms.so file to : $publishdir")
 Copy-Item -Path (Join-path -Path $outomsgoplugindir -ChildPath "out_oms.so")  -Destination $publishdir -Force
 Write-Host("successfully copied out_oms.so file to : $publishdir") -ForegroundColor Green
 
+# compile and build the liveness probe cpp code
+Write-Host("Start:build livenessprobe cpp code")
+$livenessprobesrcpath = Join-Path -Path $builddir  -ChildPath "windows\installer\livenessprobe\livenessprobe.cpp"
+$livenessprobeexepath = Join-Path -Path $builddir  -ChildPath "windows\installer\livenessprobe\livenessprobe.exe"
+g++ $livenessprobesrcpath -o $livenessprobeexepath -municode
+Write-Host("End:build livenessprobe cpp code")
+if (Test-Path -Path $livenessprobeexepath){
+    Write-Host("livenessprobe.exe exists which indicates cpp build step succeeded") -ForegroundColor Green
+} else {
+    Write-Host("livenessprobe.exe doesnt exist which indicates cpp build step failed") -ForegroundColor Red
+    exit
+}
 
 $installerdir = Join-Path -Path $builddir -ChildPath "common\installer"
 Write-Host("copying common installer files conf and scripts from :" + $installerdir + "  to  :" + $publishdir + " ...")
-$exclude = @('*.cs','*.csproj')
+$exclude = @('*.cs','*.csproj', '*.cpp')
 Copy-Item  -Path $installerdir  -Destination $publishdir -Recurse -Force -Exclude $exclude
 Write-Host("successfully copied installer files conf and scripts from :" + $installerdir + "  to  :" + $publishdir + " ") -ForegroundColor Green
 
 $installerdir = Join-Path -Path $builddir -ChildPath "windows\installer"
 Write-Host("copying installer files conf and scripts from :" + $installerdir + "  to  :" + $publishdir + " ...")
-$exclude = @('*.cs','*.csproj')
+$exclude = @('*.cs','*.csproj', '*.cpp')
 Copy-Item  -Path $installerdir  -Destination $publishdir -Recurse -Force -Exclude $exclude
 Write-Host("successfully copied installer files conf and scripts from :" + $installerdir + "  to  :" + $publishdir + " ") -ForegroundColor Green
 
 $rubyplugindir = Join-Path -Path $rootdir -ChildPath "source\plugins\ruby"
 Write-Host("copying ruby source files from :" + $rubyplugindir + "  to  :" + $publishdir + " ...")
 Copy-Item -Path $rubyplugindir -Destination $publishdir -Recurse -Force
+Get-ChildItem $Path | Where{$_.Name -Match ".*_test\.rb"} | Remove-Item
 Write-Host("successfully copied ruby source files from :" + $rubyplugindir + "  to  :" + $publishdir + " ") -ForegroundColor Green
-
-$utilsplugindir = Join-Path -Path $rootdir -ChildPath "source\plugins\utils"
-Write-Host("copying ruby util files from :" + $utilsplugindir + "  to  :" + $publishdir + " ...")
-Copy-Item -Path $utilsplugindir -Destination $publishdir -Recurse -Force
-Write-Host("successfully copied ruby util files from :" + $utilsplugindir + "  to  :" + $publishdir + " ") -ForegroundColor Green
 
 Set-Location $currentdir

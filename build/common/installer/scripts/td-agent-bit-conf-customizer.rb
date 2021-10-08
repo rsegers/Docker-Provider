@@ -3,9 +3,7 @@ require_relative "ConfigParseErrorLogger"
 
 @td_agent_bit_conf_path = "/etc/opt/microsoft/docker-cimprov/td-agent-bit.conf"
 
-@default_service_interval = "1"
-@default_buffer_chunk_size = "1"
-@default_buffer_max_size = "1"
+@default_service_interval = "15"
 @default_mem_buf_limit = "10"
 
 def is_number?(value)
@@ -25,9 +23,9 @@ def substituteFluentBitPlaceHolders
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0 ) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
 
-    tailBufferChunkSize = (!bufferChunkSize.nil? && is_number?(bufferChunkSize) && bufferChunkSize.to_i > 0) ? bufferChunkSize : @default_buffer_chunk_size
+    tailBufferChunkSize = (!bufferChunkSize.nil? && is_number?(bufferChunkSize) && bufferChunkSize.to_i > 0) ? bufferChunkSize : nil
 
-    tailBufferMaxSize = (!bufferMaxSize.nil? && is_number?(bufferMaxSize) && bufferMaxSize.to_i > 0) ? bufferMaxSize : @default_buffer_max_size = "1"
+    tailBufferMaxSize = (!bufferMaxSize.nil? && is_number?(bufferMaxSize) && bufferMaxSize.to_i > 0) ? bufferMaxSize : nil
 
     if ((!tailBufferChunkSize.nil? && tailBufferMaxSize.nil?) ||  (!tailBufferChunkSize.nil? && !tailBufferMaxSize.nil? && tailBufferChunkSize.to_i > tailBufferMaxSize.to_i))
       puts "config:warn buffer max size must be greater or equal to chunk size"

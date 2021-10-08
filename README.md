@@ -210,6 +210,32 @@ powershell -ExecutionPolicy bypass  # switch to powershell if you are not on pow
 .\build-and-publish-docker-image.ps1 -image <repo>/<imagename>:<imagetag> # trigger build code and image and publish docker hub or acr
 ```
 
+##### Developer Build optimizations
+If you do not want to build the image from scratch every time you make changes during development,you can choose to build the docker images that are separated out by
+* Base image and dependencies including agent bootstrap(setup.ps1)
+* Agent conf and plugin changes
+
+To do this, the very first time you start developing you would need to execute below instructions in elevated command prompt of powershell.
+This builds the base image(omsagent-win-base) with all the package dependencies
+```
+cd %userprofile%\Docker-Provider\kubernetes\windows\dockerbuild # based on your repo path
+docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
+powershell -ExecutionPolicy bypass  # switch to powershell if you are not on powershell already
+.\build-dev-base-image.ps1  # builds base image and dependencies
+```
+
+And then run the script to build the image consisting of code and conf changes.
+```
+.\build-and-publish-dev-docker-image.ps1 -image <repo>/<imagename>:<imagetag> # trigger build code and image and publish docker hub or acr
+```
+
+For the subsequent builds, you can just run -
+
+```
+.\build-and-publish-dev-docker-image.ps1 -image <repo>/<imagename>:<imagetag> # trigger build code and image and publish docker hub or acr
+```
+###### Note - If you have changes in setup.ps1 and want to test those changes, uncomment the section consisting of setup.ps1 in the Dockerfile-dev-image file.
+
 #### Option 2 - Using WSL2 to Build the Windows agent
 
 ##### On WSL2, Build Certificate Generator Source code and Out OMS Go plugin code
@@ -233,7 +259,7 @@ docker push <repo>/<imagename>:<imagetag>
 
 # Azure DevOps Build Pipeline
 
-Navigate to https://github-private.visualstudio.com/microsoft/_build?view=pipelines to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_dev and ci_prod.
+Navigate to https://github-private.visualstudio.com/microsoft/_build?definitionScope=%5CCDPX%5Cdocker-provider to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_dev and ci_prod.
 
 Docker Images will be pushed to CDPX ACR repos and these needs to retagged and pushed to corresponding ACR or docker hub. Only onboarded Azure AD AppId has permission to pull the images from CDPx ACRs.
 
@@ -276,13 +302,13 @@ For DEV and PROD branches, automatically deployed latest yaml with latest agent 
 ## For executing tests
 
 1. Deploy the omsagent.yaml with your agent image. In the yaml, make sure `ISTEST` environment variable set to `true` if its not set already
-2. Update the Service Principal CLIENT_ID, CLIENT_SECRET and TENANT_ID placeholder values and apply e2e-tests.yaml to execute the tests 
+2. Update the Service Principal CLIENT_ID, CLIENT_SECRET and TENANT_ID placeholder values and apply e2e-tests.yaml to execute the tests
     > Note: Service Principal requires reader role on log analytics workspace and cluster resource to query LA and metrics
    ```
-   cd ~/Docker-Provider/test/e2e # based on your repo path    
-   kubectl apply -f e2e-tests.yaml # this will trigger job to run the tests in sonobuoy namespace 
-   kubectl get po -n sonobuoy # to check the pods and jobs associated to tests   
-   ``` 
+   cd ~/Docker-Provider/test/e2e # based on your repo path
+   kubectl apply -f e2e-tests.yaml # this will trigger job to run the tests in sonobuoy namespace
+   kubectl get po -n sonobuoy # to check the pods and jobs associated to tests
+   ```
 3. Download (sonobuoy)[https://github.com/vmware-tanzu/sonobuoy/releases] on your dev box to view the results of the tests
    ```
    results=$(sonobuoy retrieve) # downloads tar file which has logs and test results
@@ -293,14 +319,14 @@ For DEV and PROD branches, automatically deployed latest yaml with latest agent 
 ## For adding new tests
 
 1. Add the test python file with your test code under `tests` directory
-2. Build the docker image, recommended to use ACR & MCR 
+2. Build the docker image, recommended to use ACR & MCR
   ```
-   cd ~/Docker-Provider/test/e2e/src # based on your repo path 
+   cd ~/Docker-Provider/test/e2e/src # based on your repo path
    docker login <acr> -u <user> -p <pwd> # login to acr
    docker build -f ./core/Dockerfile -t <repo>/<imagename>:<imagetag> .
    docker push <repo>/<imagename>:<imagetag>
   ```
-3. update existing agentest image tag in e2e-tests.yaml with newly built image tag with MCR repo
+3. update existing agentest image tag in e2e-tests.yaml & conformance.yaml with newly built image tag with MCR repo
 
 # Scenario Tests
 Clusters are used in release pipeline already has the yamls under test\scenario deployed. Make sure to validate these scenarios.

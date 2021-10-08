@@ -6,27 +6,14 @@ require 'fluent/plugin/input'
 module Fluent::Plugin
   class Kube_nodeInventory_Input < Input
     Fluent::Plugin.register_input("kube_nodes", self)
-     
-    @@configMapMountPath = "/etc/config/settings/log-data-collection-settings"
-    @@promConfigMountPath = "/etc/config/settings/prometheus-data-collection-settings"
-    @@osmConfigMountPath = "/etc/config/osm-settings/osm-metric-collection-configuration"
-    @@AzStackCloudFileName = "/etc/kubernetes/host/azurestackcloud.json"
-   
 
-    @@rsPromInterval = ENV["TELEMETRY_RS_PROM_INTERVAL"]
-    @@rsPromFieldPassCount = ENV["TELEMETRY_RS_PROM_FIELDPASS_LENGTH"]
-    @@rsPromFieldDropCount = ENV["TELEMETRY_RS_PROM_FIELDDROP_LENGTH"]
-    @@rsPromK8sServiceCount = ENV["TELEMETRY_RS_PROM_K8S_SERVICES_LENGTH"]
-    @@rsPromUrlCount = ENV["TELEMETRY_RS_PROM_URLS_LENGTH"]
-    @@rsPromMonitorPods = ENV["TELEMETRY_RS_PROM_MONITOR_PODS"]
-    @@rsPromMonitorPodsNamespaceLength = ENV["TELEMETRY_RS_PROM_MONITOR_PODS_NS_LENGTH"]
-    @@rsPromMonitorPodsLabelSelectorLength = ENV["TELEMETRY_RS_PROM_LABEL_SELECTOR_LENGTH"]
-    @@rsPromMonitorPodsFieldSelectorLength = ENV["TELEMETRY_RS_PROM_FIELD_SELECTOR_LENGTH"]
-    @@collectAllKubeEvents = ENV["AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS"]
-    @@osmNamespaceCount = ENV["TELEMETRY_OSM_CONFIGURATION_NAMESPACES_COUNT"]
+    def initialize (kubernetesApiClient=nil,
+                    applicationInsightsUtility=nil,
+                    extensionUtils=nil,
+                    env=nil,
+                    telemetry_flush_interval=nil)
+      super()
 
-    def initialize
-      super
       require "yaml"
       require "yajl/json_gem"
       require "yajl"
@@ -35,11 +22,37 @@ module Fluent::Plugin
       require_relative "KubernetesApiClient"
       require_relative "ApplicationInsightsUtility"
       require_relative "oms_common"
-      require_relative "omslog"      
+      require_relative "omslog"
+      require_relative "extension_utils"
 
-      @ContainerNodeInventoryTag = "oneagent.containerInsights.CONTAINER_NODE_INVENTORY_BLOB" 
-      @insightsMetricsTag = "oneagent.containerInsights.INSIGHTS_METRICS_BLOB" 
-      @MDMKubeNodeInventoryTag = "mdm.kubenodeinventory"  
+      @kubernetesApiClient = kubernetesApiClient == nil ? KubernetesApiClient : kubernetesApiClient
+      @applicationInsightsUtility = applicationInsightsUtility == nil ? ApplicationInsightsUtility : applicationInsightsUtility
+      @extensionUtils = extensionUtils == nil ? ExtensionUtils : extensionUtils
+      @env = env == nil ? ENV : env
+      @TELEMETRY_FLUSH_INTERVAL_IN_MINUTES = telemetry_flush_interval == nil ? Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES : telemetry_flush_interval
+
+      # these defines were previously at class scope Moving them into the constructor so that they can be set by unit tests
+      @@configMapMountPath = "/etc/config/settings/log-data-collection-settings"
+      @@promConfigMountPath = "/etc/config/settings/prometheus-data-collection-settings"
+      @@osmConfigMountPath = "/etc/config/osm-settings/osm-metric-collection-configuration"
+      @@AzStackCloudFileName = "/etc/kubernetes/host/azurestackcloud.json"
+
+
+      @@rsPromInterval = @env["TELEMETRY_RS_PROM_INTERVAL"]
+      @@rsPromFieldPassCount = @env["TELEMETRY_RS_PROM_FIELDPASS_LENGTH"]
+      @@rsPromFieldDropCount = @env["TELEMETRY_RS_PROM_FIELDDROP_LENGTH"]
+      @@rsPromK8sServiceCount = @env["TELEMETRY_RS_PROM_K8S_SERVICES_LENGTH"]
+      @@rsPromUrlCount = @env["TELEMETRY_RS_PROM_URLS_LENGTH"]
+      @@rsPromMonitorPods = @env["TELEMETRY_RS_PROM_MONITOR_PODS"]
+      @@rsPromMonitorPodsNamespaceLength = @env["TELEMETRY_RS_PROM_MONITOR_PODS_NS_LENGTH"]
+      @@rsPromMonitorPodsLabelSelectorLength = @env["TELEMETRY_RS_PROM_LABEL_SELECTOR_LENGTH"]
+      @@rsPromMonitorPodsFieldSelectorLength = @env["TELEMETRY_RS_PROM_FIELD_SELECTOR_LENGTH"]
+      @@collectAllKubeEvents = @env["AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS"]
+      @@osmNamespaceCount = @env["TELEMETRY_OSM_CONFIGURATION_NAMESPACES_COUNT"]
+
+      @ContainerNodeInventoryTag = "oneagent.containerInsights.CONTAINER_NODE_INVENTORY_BLOB"
+      @insightsMetricsTag = "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
+      @MDMKubeNodeInventoryTag = "mdm.kubenodeinventory"
       @kubeperfTag = "oneagent.containerInsights.LINUX_PERF_BLOB"
 
       # refer tomlparser-agent-config for the defaults
@@ -60,11 +73,11 @@ module Fluent::Plugin
       super
     end
 
-    def start      
+    def start
       if @run_interval
         super
-        if !ENV["NODES_CHUNK_SIZE"].nil? && !ENV["NODES_CHUNK_SIZE"].empty? && ENV["NODES_CHUNK_SIZE"].to_i > 0
-          @NODES_CHUNK_SIZE = ENV["NODES_CHUNK_SIZE"].to_i
+        if !@env["NODES_CHUNK_SIZE"].nil? && !@env["NODES_CHUNK_SIZE"].empty? && @env["NODES_CHUNK_SIZE"].to_i > 0
+          @NODES_CHUNK_SIZE = @env["NODES_CHUNK_SIZE"].to_i
         else
           # this shouldnt happen just setting default here as safe guard
           $log.warn("in_kube_nodes::start: setting to default value since got NODES_CHUNK_SIZE nil or empty")
@@ -72,8 +85,8 @@ module Fluent::Plugin
         end
         $log.info("in_kube_nodes::start : NODES_CHUNK_SIZE  @ #{@NODES_CHUNK_SIZE}")
 
-        if !ENV["NODES_EMIT_STREAM_BATCH_SIZE"].nil? && !ENV["NODES_EMIT_STREAM_BATCH_SIZE"].empty? && ENV["NODES_EMIT_STREAM_BATCH_SIZE"].to_i > 0
-          @NODES_EMIT_STREAM_BATCH_SIZE = ENV["NODES_EMIT_STREAM_BATCH_SIZE"].to_i
+        if !@env["NODES_EMIT_STREAM_BATCH_SIZE"].nil? && !@env["NODES_EMIT_STREAM_BATCH_SIZE"].empty? && @env["NODES_EMIT_STREAM_BATCH_SIZE"].to_i > 0
+          @NODES_EMIT_STREAM_BATCH_SIZE = @env["NODES_EMIT_STREAM_BATCH_SIZE"].to_i
         else
           # this shouldnt happen just setting default here as safe guard
           $log.warn("in_kube_nodes::start: setting to default value since got NODES_EMIT_STREAM_BATCH_SIZE nil or empty")
@@ -109,15 +122,35 @@ module Fluent::Plugin
 
         @nodesAPIE2ELatencyMs = 0
         @nodeInventoryE2EProcessingLatencyMs = 0
-        nodeInventoryStartTime = (Time.now.to_f * 1000).to_i                     
-      
+        nodeInventoryStartTime = (Time.now.to_f * 1000).to_i
+
+        if @extensionUtils.isAADMSIAuthMode()
+          $log.info("in_kube_nodes::enumerate: AAD AUTH MSI MODE")
+          if @kubeperfTag.nil? || !@kubeperfTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+            @kubeperfTag = @extensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
+          end
+          if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+            @insightsMetricsTag = @extensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+          end
+          if @ContainerNodeInventoryTag.nil? || !@ContainerNodeInventoryTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+            @ContainerNodeInventoryTag = @extensionUtils.getOutputStreamId(Constants::CONTAINER_NODE_INVENTORY_DATA_TYPE)
+          end
+          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+            @tag = @extensionUtils.getOutputStreamId(Constants::KUBE_NODE_INVENTORY_DATA_TYPE)
+          end
+	        $log.info("in_kube_nodes::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_nodes::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_nodes::enumerate: using containernodeinventory tag -#{@ContainerNodeInventoryTag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_nodes::enumerate: using kubenodeinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
+        end
         nodesAPIChunkStartTime = (Time.now.to_f * 1000).to_i
 
         # Initializing continuation token to nil
         continuationToken = nil
         $log.info("in_kube_nodes::enumerate : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
+        # KubernetesApiClient.getNodesResourceUri is a pure function, so call it from the actual module instead of from the mock
         resourceUri = KubernetesApiClient.getNodesResourceUri("nodes?limit=#{@NODES_CHUNK_SIZE}")
-        continuationToken, nodeInventory = KubernetesApiClient.getResourcesAndContinuationToken(resourceUri)
+        continuationToken, nodeInventory = @kubernetesApiClient.getResourcesAndContinuationToken(resourceUri)
         $log.info("in_kube_nodes::enumerate : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
         nodesAPIChunkEndTime = (Time.now.to_f * 1000).to_i
         @nodesAPIE2ELatencyMs = (nodesAPIChunkEndTime - nodesAPIChunkStartTime)
@@ -131,7 +164,7 @@ module Fluent::Plugin
         #If we receive a continuation token, make calls, process and flush data until we have processed all data
         while (!continuationToken.nil? && !continuationToken.empty?)
           nodesAPIChunkStartTime = (Time.now.to_f * 1000).to_i
-          continuationToken, nodeInventory = KubernetesApiClient.getResourcesAndContinuationToken(resourceUri + "&continue=#{continuationToken}")
+          continuationToken, nodeInventory = @kubernetesApiClient.getResourcesAndContinuationToken(resourceUri + "&continue=#{continuationToken}")
           nodesAPIChunkEndTime = (Time.now.to_f * 1000).to_i
           @nodesAPIE2ELatencyMs = @nodesAPIE2ELatencyMs + (nodesAPIChunkEndTime - nodesAPIChunkStartTime)
           if (!nodeInventory.nil? && !nodeInventory.empty? && nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
@@ -145,9 +178,9 @@ module Fluent::Plugin
         @nodeInventoryE2EProcessingLatencyMs = ((Time.now.to_f * 1000).to_i - nodeInventoryStartTime)
         timeDifference = (DateTime.now.to_time.to_i - @@nodeInventoryLatencyTelemetryTimeTracker).abs
         timeDifferenceInMinutes = timeDifference / 60
-        if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
-          ApplicationInsightsUtility.sendMetricTelemetry("NodeInventoryE2EProcessingLatencyMs", @nodeInventoryE2EProcessingLatencyMs, {})
-          ApplicationInsightsUtility.sendMetricTelemetry("NodesAPIE2ELatencyMs", @nodesAPIE2ELatencyMs, {})
+        if (timeDifferenceInMinutes >= @TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+          @applicationInsightsUtility.sendMetricTelemetry("NodeInventoryE2EProcessingLatencyMs", @nodeInventoryE2EProcessingLatencyMs, {})
+          @applicationInsightsUtility.sendMetricTelemetry("NodesAPIE2ELatencyMs", @nodesAPIE2ELatencyMs, {})
           @@nodeInventoryLatencyTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
         # Setting this to nil so that we dont hold memory until GC kicks in
@@ -155,25 +188,25 @@ module Fluent::Plugin
       rescue => errorStr
         $log.warn "in_kube_nodes::enumerate:Failed in enumerate: #{errorStr}"
         $log.debug_backtrace(errorStr.backtrace)
-        ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+        @applicationInsightsUtility.sendExceptionTelemetry(errorStr)
       end
     end # end enumerate
 
     def parse_and_emit_records(nodeInventory, batchTime = Time.utc.iso8601)
       begin
-        currentTime = Time.now    
-        emitTime = Fluent::Engine.now    
+        currentTime = Time.now
+        emitTime = Fluent::Engine.now
         telemetrySent = false
         eventStream = Fluent::MultiEventStream.new
         containerNodeInventoryEventStream = Fluent::MultiEventStream.new
         insightsMetricsEventStream = Fluent::MultiEventStream.new
-        kubePerfEventStream = Fluent::MultiEventStream.new      
-        @@istestvar = ENV["ISTEST"]
+        kubePerfEventStream = Fluent::MultiEventStream.new
+        @@istestvar = @env["ISTEST"]
         #get node inventory
         nodeInventory["items"].each do |item|
           # node inventory
           nodeInventoryRecord = getNodeInventoryRecord(item, batchTime)
-          eventStream.add(emitTime, nodeInventoryRecord) if nodeInventoryRecord         
+          eventStream.add(emitTime, nodeInventoryRecord) if nodeInventoryRecord
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && eventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
             $log.info("in_kube_node::parse_and_emit_records: number of node inventory records emitted #{@NODES_EMIT_STREAM_BATCH_SIZE} @ #{Time.now.utc.iso8601}")
             router.emit_stream(@tag, eventStream) if eventStream
@@ -186,7 +219,7 @@ module Fluent::Plugin
           end
 
           # container node inventory
-          containerNodeInventoryRecord = getContainerNodeInventoryRecord(item, batchTime)         
+          containerNodeInventoryRecord = getContainerNodeInventoryRecord(item, batchTime)
           containerNodeInventoryEventStream.add(emitTime, containerNodeInventoryRecord) if containerNodeInventoryRecord
 
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && containerNodeInventoryEventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
@@ -235,7 +268,7 @@ module Fluent::Plugin
               @NodeCache.mem.set_capacity(nodeMetricRecord["Host"], metricVal)
             end
           end
-          nodeMetricRecords.each do |metricRecord|          
+          nodeMetricRecords.each do |metricRecord|
             kubePerfEventStream.add(emitTime, metricRecord) if metricRecord
           end
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && kubePerfEventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
@@ -265,7 +298,7 @@ module Fluent::Plugin
           if !insightsMetricsRecord.nil? && !insightsMetricsRecord.empty?
             nodeGPUInsightsMetricsRecords.push(insightsMetricsRecord)
           end
-          nodeGPUInsightsMetricsRecords.each do |insightsMetricsRecord|            
+          nodeGPUInsightsMetricsRecords.each do |insightsMetricsRecord|
             insightsMetricsEventStream.add(emitTime, insightsMetricsRecord) if insightsMetricsRecord
           end
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && insightsMetricsEventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
@@ -279,49 +312,79 @@ module Fluent::Plugin
           # Adding telemetry to send node telemetry every 10 minutes
           timeDifference = (DateTime.now.to_time.to_i - @@nodeTelemetryTimeTracker).abs
           timeDifferenceInMinutes = timeDifference / 60
-          if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
-            properties = getNodeTelemetryProps(item)
-            properties["KubernetesProviderID"] = nodeInventoryRecord["KubernetesProviderID"]
-            capacityInfo = item["status"]["capacity"]
-
-            ApplicationInsightsUtility.sendMetricTelemetry("NodeMemory", capacityInfo["memory"], properties)
+          if (timeDifferenceInMinutes >= @TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
             begin
-              if (!capacityInfo["nvidia.com/gpu"].nil?) && (!capacityInfo["nvidia.com/gpu"].empty?)
-                properties["nvigpus"] = capacityInfo["nvidia.com/gpu"]
+              properties = getNodeTelemetryProps(item)
+              properties["KubernetesProviderID"] = nodeInventoryRecord["KubernetesProviderID"]
+              capacityInfo = item["status"]["capacity"]
+
+              ApplicationInsightsUtility.sendMetricTelemetry("NodeMemory", capacityInfo["memory"], properties)
+              begin
+                if (!capacityInfo["nvidia.com/gpu"].nil?) && (!capacityInfo["nvidia.com/gpu"].empty?)
+                  properties["nvigpus"] = capacityInfo["nvidia.com/gpu"]
+                end
+
+                if (!capacityInfo["amd.com/gpu"].nil?) && (!capacityInfo["amd.com/gpu"].empty?)
+                  properties["amdgpus"] = capacityInfo["amd.com/gpu"]
+                end
+              rescue => errorStr
+                $log.warn "Failed in getting GPU telemetry in_kube_nodes : #{errorStr}"
+                $log.debug_backtrace(errorStr.backtrace)
+                ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
               end
 
-              if (!capacityInfo["amd.com/gpu"].nil?) && (!capacityInfo["amd.com/gpu"].empty?)
-                properties["amdgpus"] = capacityInfo["amd.com/gpu"]
+              # Telemetry for data collection config for replicaset
+              if (File.file?(@@configMapMountPath))
+                properties["collectAllKubeEvents"] = @@collectAllKubeEvents
               end
+
+              #telemetry about prometheus metric collections settings for replicaset
+              if (File.file?(@@promConfigMountPath))
+                properties["rsPromInt"] = @@rsPromInterval
+                properties["rsPromFPC"] = @@rsPromFieldPassCount
+                properties["rsPromFDC"] = @@rsPromFieldDropCount
+                properties["rsPromServ"] = @@rsPromK8sServiceCount
+                properties["rsPromUrl"] = @@rsPromUrlCount
+                properties["rsPromMonPods"] = @@rsPromMonitorPods
+                properties["rsPromMonPodsNs"] = @@rsPromMonitorPodsNamespaceLength
+                properties["rsPromMonPodsLabelSelectorLength"] = @@rsPromMonitorPodsLabelSelectorLength
+                properties["rsPromMonPodsFieldSelectorLength"] = @@rsPromMonitorPodsFieldSelectorLength
+              end
+              # telemetry about osm metric settings for replicaset
+              if (File.file?(@@osmConfigMountPath))
+                properties["osmNamespaceCount"] = @@osmNamespaceCount
+              end
+              ApplicationInsightsUtility.sendMetricTelemetry("NodeCoreCapacity", capacityInfo["cpu"], properties)
+              telemetrySent = true
+
+              # Telemetry for data collection config for replicaset
+              if (File.file?(@@configMapMountPath))
+                properties["collectAllKubeEvents"] = @@collectAllKubeEvents
+              end
+
+              #telemetry about prometheus metric collections settings for replicaset
+              if (File.file?(@@promConfigMountPath))
+                properties["rsPromInt"] = @@rsPromInterval
+                properties["rsPromFPC"] = @@rsPromFieldPassCount
+                properties["rsPromFDC"] = @@rsPromFieldDropCount
+                properties["rsPromServ"] = @@rsPromK8sServiceCount
+                properties["rsPromUrl"] = @@rsPromUrlCount
+                properties["rsPromMonPods"] = @@rsPromMonitorPods
+                properties["rsPromMonPodsNs"] = @@rsPromMonitorPodsNamespaceLength
+                properties["rsPromMonPodsLabelSelectorLength"] = @@rsPromMonitorPodsLabelSelectorLength
+                properties["rsPromMonPodsFieldSelectorLength"] = @@rsPromMonitorPodsFieldSelectorLength
+              end
+              # telemetry about osm metric settings for replicaset
+              if (File.file?(@@osmConfigMountPath))
+                properties["osmNamespaceCount"] = @@osmNamespaceCount
+              end
+              @applicationInsightsUtility.sendMetricTelemetry("NodeCoreCapacity", capacityInfo["cpu"], properties)
+              telemetrySent = true
             rescue => errorStr
-              $log.warn "Failed in getting GPU telemetry in_kube_nodes : #{errorStr}"
+              $log.warn "Failed in getting telemetry in_kube_nodes : #{errorStr}"
               $log.debug_backtrace(errorStr.backtrace)
-              ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+              @applicationInsightsUtility.sendExceptionTelemetry(errorStr)
             end
-
-            # Telemetry for data collection config for replicaset
-            if (File.file?(@@configMapMountPath))
-              properties["collectAllKubeEvents"] = @@collectAllKubeEvents
-            end
-
-            #telemetry about prometheus metric collections settings for replicaset
-            if (File.file?(@@promConfigMountPath))
-              properties["rsPromInt"] = @@rsPromInterval
-              properties["rsPromFPC"] = @@rsPromFieldPassCount
-              properties["rsPromFDC"] = @@rsPromFieldDropCount
-              properties["rsPromServ"] = @@rsPromK8sServiceCount
-              properties["rsPromUrl"] = @@rsPromUrlCount
-              properties["rsPromMonPods"] = @@rsPromMonitorPods
-              properties["rsPromMonPodsNs"] = @@rsPromMonitorPodsNamespaceLength
-              properties["rsPromMonPodsLabelSelectorLength"] = @@rsPromMonitorPodsLabelSelectorLength
-              properties["rsPromMonPodsFieldSelectorLength"] = @@rsPromMonitorPodsFieldSelectorLength
-            end
-            # telemetry about osm metric settings for replicaset
-            if (File.file?(@@osmConfigMountPath))
-              properties["osmNamespaceCount"] = @@osmNamespaceCount
-            end
-            ApplicationInsightsUtility.sendMetricTelemetry("NodeCoreCapacity", capacityInfo["cpu"], properties)
-            telemetrySent = true
           end
         end
         if telemetrySent == true
@@ -335,7 +398,7 @@ module Fluent::Plugin
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
             $log.info("kubeNodeInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
           end
-          eventStream = nil       
+          eventStream = nil
         end
         if containerNodeInventoryEventStream.count > 0
           $log.info("in_kube_node::parse_and_emit_records: number of container node inventory records emitted #{containerNodeInventoryEventStream.count} @ #{Time.now.utc.iso8601}")
@@ -365,7 +428,7 @@ module Fluent::Plugin
       rescue => errorStr
         $log.warn "Failed to retrieve node inventory: #{errorStr}"
         $log.debug_backtrace(errorStr.backtrace)
-        ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+        @applicationInsightsUtility.sendExceptionTelemetry(errorStr)
       end
       $log.info "in_kube_nodes::parse_and_emit_records:End #{Time.now.utc.iso8601}"
     end
@@ -394,7 +457,7 @@ module Fluent::Plugin
             $log.info("in_kube_nodes::run_periodic.enumerate.end #{Time.now.utc.iso8601}")
           rescue => errorStr
             $log.warn "in_kube_nodes::run_periodic: enumerate Failed to retrieve node inventory: #{errorStr}"
-            ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+            @applicationInsightsUtility.sendExceptionTelemetry(errorStr)
           end
         end
         @mutex.lock
@@ -408,8 +471,8 @@ module Fluent::Plugin
       begin
         record["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
         record["Computer"] = item["metadata"]["name"]
-        record["ClusterName"] = KubernetesApiClient.getClusterName
-        record["ClusterId"] = KubernetesApiClient.getClusterId
+        record["ClusterName"] = @kubernetesApiClient.getClusterName
+        record["ClusterId"] = @kubernetesApiClient.getClusterId
         record["CreationTimeStamp"] = item["metadata"]["creationTimestamp"]
         record["Labels"] = [item["metadata"]["labels"]]
         record["Status"] = ""
@@ -507,7 +570,7 @@ module Fluent::Plugin
         $log.warn "in_kube_nodes::getContainerNodeIngetNodeTelemetryPropsventoryRecord:Failed: #{errorStr}"
       end
       return properties
-    end    
+    end
   end # Kube_Node_Input
   class NodeStatsCache
     # inner class for caching implementation (CPU and memory caching is handled the exact same way, so logic to do so is moved to a private inner class)
@@ -578,5 +641,5 @@ module Fluent::Plugin
     def mem()
       return @@memCache
     end
-  end 
+  end
 end # module

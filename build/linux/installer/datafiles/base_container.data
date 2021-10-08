@@ -36,13 +36,15 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/opt/microsoft/docker-cimprov/td-agent-bit-rs.conf;			         build/linux/installer/conf/td-agent-bit-rs.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/azm-containers-parser.conf;	         build/linux/installer/conf/azm-containers-parser.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/out_oms.conf;			                  build/linux/installer/conf/out_oms.conf;                    644; root; root
+/etc/opt/microsoft/docker-cimprov/test.json;			                     build/linux/installer/conf/test.json;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/telegraf.conf;			               build/linux/installer/conf/telegraf.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf;			   build/linux/installer/conf/telegraf-prom-side-car.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/telegraf-rs.conf;			            build/linux/installer/conf/telegraf-rs.conf;                    644; root; root
 /opt/microsoft/docker-cimprov/bin/TelegrafTCPErrorTelemetry.sh;         build/linux/installer/scripts/TelegrafTCPErrorTelemetry.sh;      755; root; root
 /opt/livenessprobe.sh;                                                  build/linux/installer/scripts/livenessprobe.sh;      755; root; root
 /opt/tomlparser-prom-customconfig.rb;                                   build/common/installer/scripts/tomlparser-prom-customconfig.rb;     755; root; root
-/opt/tomlparser-mdm-metrics-config.rb;                                  build/common/installer/scripts/tomlparser-mdm-metrics-config.rb; 755; root; root
+/opt/tomlparser-prom-agent-config.rb;                                   build/common/installer/scripts/tomlparser-prom-agent-config.rb;     755; root; root
+/opt/tomlparser-mdm-metrics-config.rb;                                  build/common/installer/scripts/tomlparser-mdm-metrics-config.rb;     755; root; root
 /opt/tomlparser-metric-collection-config.rb;                            build/linux/installer/scripts/tomlparser-metric-collection-config.rb;     755; root; root
 
 
@@ -52,6 +54,8 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/ConfigParseErrorLogger.rb;                                 build/common/installer/scripts/ConfigParseErrorLogger.rb;           755; root; root
 /opt/tomlparser-npm-config.rb;                                  build/linux/installer/scripts/tomlparser-npm-config.rb;     755; root; root
 /opt/tomlparser-osm-config.rb;                                  build/linux/installer/scripts/tomlparser-osm-config.rb;     755; root; root
+/opt/test.json;			                                        build/linux/installer/conf/test.json;                    644; root; root
+
 
 
 /etc/opt/microsoft/docker-cimprov/health/healthmonitorconfig.json;					                   build/linux/installer/conf/healthmonitorconfig.json; 644; root; root
@@ -144,8 +148,11 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/fluent/plugin/MdmMetricsGenerator.rb;                                             source/plugins/ruby/MdmMetricsGenerator.rb;            644; root; root
 /etc/fluent/plugin/MdmAlertTemplates.rb;                                               source/plugins/ruby/MdmAlertTemplates.rb;                644; root; root
 
-/etc/fluent/plugin/omslog.rb;                                                           source/plugins/utils/omslog.rb; 644; root; root
-/etc/fluent/plugin/oms_common.rb;                                                       source/plugins/utils/oms_common.rb; 644; root; root
+/etc/fluent/plugin/omslog.rb;                                                           source/plugins/ruby/omslog.rb; 644; root; root
+/etc/fluent/plugin/oms_common.rb;                                                       source/plugins/ruby/oms_common.rb; 644; root; root
+/etc/fluent/plugin/extension.rb;                                                        source/plugins/ruby/extension.rb; 644; root; root
+/etc/fluent/plugin/extension_utils.rb;                                                  source/plugins/ruby/extension_utils.rb; 644; root; root
+
 
 /etc/fluent/kube.conf;			                                                          build/linux/installer/conf/kube.conf;                  644; root; root
 /etc/fluent/container.conf;			                                                    build/linux/installer/conf/container.conf;                  644; root; root
@@ -302,7 +309,7 @@ if ${{PERFORMING_UPGRADE_NOT}}; then
    rmdir /etc/opt/microsoft/docker-cimprov/conf 2> /dev/null
    rmdir /etc/opt/microsoft/docker-cimprov 2> /dev/null
    rmdir /etc/opt/microsoft 2> /dev/null
-   rmdir /etc/opt 2> /dev/null  
+   rmdir /etc/opt 2> /dev/null
 fi
 
 %Preinstall_0

@@ -7,17 +7,19 @@ module Fluent::Plugin
   class Container_Inventory_Input < Input
     Fluent::Plugin.register_input("containerinventory", self)
 
-    @@PluginName = "ContainerInventory"   
+    @@PluginName = "ContainerInventory"
 
     def initialize
       super
       require "yajl/json_gem"
-      require "time"      
+      require "time"
       require_relative "ContainerInventoryState"
       require_relative "ApplicationInsightsUtility"
       require_relative "omslog"
       require_relative "CAdvisorMetricsAPIClient"
-      require_relative "kubernetes_container_inventory"      
+      require_relative "kubernetes_container_inventory"
+      require_relative "extension_utils"
+      @addonTokenAdapterImageTag = ""
     end
 
     config_param :run_interval, :time, :default => 60
@@ -47,21 +49,28 @@ module Fluent::Plugin
         @thread.join
         super # This super must be at the end of shutdown method
       end
-    end   
-  
+    end
+
     def enumerate
-      currentTime = Time.now      
+      currentTime = Time.now
       batchTime = currentTime.utc.iso8601
       emitTime = Fluent::Engine.now
       containerInventory = Array.new
       eventStream = Fluent::MultiEventStream.new
       hostName = ""
-      $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")                         
+      $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
+      if ExtensionUtils.isAADMSIAuthMode()
+        $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
+        if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+          @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
+        end
+        $log.info("in_container_inventory::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
+      end
       begin
         containerRuntimeEnv = ENV["CONTAINER_RUNTIME"]
         $log.info("in_container_inventory::enumerate : container runtime : #{containerRuntimeEnv}")
         clusterCollectEnvironmentVar = ENV["AZMON_CLUSTER_COLLECT_ENV_VAR"]
-        $log.info("in_container_inventory::enumerate : using cadvisor apis")                    
+        $log.info("in_container_inventory::enumerate : using cadvisor apis")
         containerIds = Array.new
         response = CAdvisorMetricsAPIClient.getPodsFromCAdvisor(winNode: nil)
         if !response.nil? && !response.body.nil?
@@ -74,12 +83,21 @@ module Fluent::Plugin
                   if hostName.empty? && !containerRecord["Computer"].empty?
                     hostName = containerRecord["Computer"]
                   end
+                  if @addonTokenAdapterImageTag.empty? && ExtensionUtils.isAADMSIAuthMode()
+                     if !containerRecord["ElementName"].nil? && !containerRecord["ElementName"].empty? &&
+                      containerRecord["ElementName"].include?("_kube-system_") &&
+                      containerRecord["ElementName"].include?("addon-token-adapter_omsagent")
+                      if !containerRecord["ImageTag"].nil? && !containerRecord["ImageTag"].empty?
+                        @addonTokenAdapterImageTag = containerRecord["ImageTag"]
+                      end
+                     end
+                  end
                   containerIds.push containerRecord["InstanceID"]
                   containerInventory.push containerRecord
-                end           
+                end
               end
-            end  
-        end                          
+            end
+        end
         # Update the state for deleted containers
         deletedContainers = ContainerInventoryState.getDeletedContainers(containerIds)
         if !deletedContainers.nil? && !deletedContainers.empty?
@@ -87,13 +105,13 @@ module Fluent::Plugin
             container = ContainerInventoryState.readContainerState(deletedContainer)
             if !container.nil?
               container.each { |k, v| container[k] = v }
-              container["State"] = "Deleted"   
+              container["State"] = "Deleted"
               KubernetesContainerInventory.deleteCGroupCacheEntryForDeletedContainer(container["InstanceID"])
               containerInventory.push container
              end
            end
-        end        
-        containerInventory.each do |record|         
+        end
+        containerInventory.each do |record|
           eventStream.add(emitTime, record) if record
         end
         router.emit_stream(@tag, eventStream) if eventStream
@@ -109,6 +127,9 @@ module Fluent::Plugin
           telemetryProperties = {}
           telemetryProperties["Computer"] = hostName
           telemetryProperties["ContainerCount"] = containerInventory.length
+          if !@addonTokenAdapterImageTag.empty?
+            telemetryProperties["addonTokenAdapterImageTag"] = @addonTokenAdapterImageTag
+          end
           ApplicationInsightsUtility.sendTelemetry(@@PluginName, telemetryProperties)
         end
       rescue => errorStr
@@ -148,6 +169,6 @@ module Fluent::Plugin
         @mutex.lock
       end
       @mutex.unlock
-    end     
+    end
   end # Container_Inventory_Input
 end # module

@@ -37,6 +37,12 @@ class MdmMetricsGenerator
     Constants::MEMORY_WORKING_SET_BYTES => Constants::MDM_NODE_MEMORY_WORKING_SET_PERCENTAGE,
   }
 
+  @@node_metric_name_metric_allocatable_percentage_name_hash = {
+    Constants::CPU_USAGE_MILLI_CORES => Constants::MDM_NODE_CPU_USAGE_ALLOCATABLE_PERCENTAGE,
+    Constants::MEMORY_RSS_BYTES => Constants::MDM_NODE_MEMORY_RSS_ALLOCATABLE_PERCENTAGE,
+    Constants::MEMORY_WORKING_SET_BYTES => Constants::MDM_NODE_MEMORY_WORKING_SET_ALLOCATABLE_PERCENTAGE,
+  }
+
   @@container_metric_name_metric_percentage_name_hash = {
     Constants::CPU_USAGE_MILLI_CORES => Constants::MDM_CONTAINER_CPU_UTILIZATION_METRIC,
     Constants::CPU_USAGE_NANO_CORES => Constants::MDM_CONTAINER_CPU_UTILIZATION_METRIC,
@@ -526,7 +532,7 @@ class MdmMetricsGenerator
       return metric_threshold_hash
     end
 
-    def getNodeResourceMetricRecords(record, metric_name, metric_value, percentage_metric_value)
+    def getNodeResourceMetricRecords(record, metric_name, metric_value, percentage_metric_value, allocatable_percentage_metric_value)
       records = []
       begin
         custommetricrecord = MdmAlertTemplates::Node_resource_metrics_template % {
@@ -551,6 +557,20 @@ class MdmMetricsGenerator
             metricminvalue: percentage_metric_value,
             metricmaxvalue: percentage_metric_value,
             metricsumvalue: percentage_metric_value,
+          }
+          records.push(Yajl::Parser.parse(StringIO.new(additional_record)))
+        end
+
+        if !allocatable_percentage_metric_value.nil?
+          additional_record = MdmAlertTemplates::Node_resource_metrics_template % {
+            timestamp: record["Timestamp"],
+            metricName: @@node_metric_name_metric_allocatable_percentage_name_hash[metric_name],
+            hostvalue: record["Host"],
+            objectnamevalue: record["ObjectName"],
+            instancenamevalue: record["InstanceName"],
+            metricminvalue: allocatable_percentage_metric_value,
+            metricmaxvalue: allocatable_percentage_metric_value,
+            metricsumvalue: allocatable_percentage_metric_value,
           }
           records.push(Yajl::Parser.parse(StringIO.new(additional_record)))
         end

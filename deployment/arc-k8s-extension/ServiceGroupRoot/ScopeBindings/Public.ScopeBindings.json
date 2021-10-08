@@ -1,22 +1,26 @@
 {
     "$schema": "https://ev2schema.azure.net/schemas/2020-01-01/scopeBindings.json",
     "contentVersion": "0.0.0.1",
-    "scopeBindings": [       
+    "scopeBindings": [
         {
             "scopeTagName": "Canary",
             "bindings": [
                 {
                     "find": "__RELEASE_STAGE__",
                     "replaceWith": "Canary"
-                },               
+                },
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },            
+                },
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
-                }               
+                },
+                {
+                    "find": "__MANAGED_IDENTITY__",
+                    "replaceWith": "$(ManagedIdentity)"
+                }
             ]
         },
         {
@@ -25,15 +29,19 @@
                 {
                     "find": "__RELEASE_STAGE__",
                     "replaceWith": "Pilot"
-                },                
+                },
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
-                }       
+                },
+                {
+                    "find": "__MANAGED_IDENTITY__",
+                    "replaceWith": "$(ManagedIdentity)"
+                }
             ]
         },
         {
@@ -42,15 +50,19 @@
                 {
                     "find": "__RELEASE_STAGE__",
                     "replaceWith": "MediumLow"
-                },               
+                },
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
-                }                           
+                },
+                {
+                    "find": "__MANAGED_IDENTITY__",
+                    "replaceWith": "$(ManagedIdentity)"
+                }
             ]
         },
         {
@@ -59,15 +71,19 @@
                 {
                     "find": "__RELEASE_STAGE__",
                     "replaceWith": "MediumHigh"
-                },                
+                },
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
-                }                     
+                },
+                {
+                    "find": "__MANAGED_IDENTITY__",
+                    "replaceWith": "$(ManagedIdentity)"
+                }
             ]
         },
         {
@@ -76,15 +92,19 @@
                 {
                     "find": "__RELEASE_STAGE__",
                     "replaceWith": "HighLoad"
-                },               
+                },
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
-                }                                 
+                },
+                {
+                    "find": "__MANAGED_IDENTITY__",
+                    "replaceWith": "$(ManagedIdentity)"
+                }
             ]
         },
         {
@@ -93,15 +113,19 @@
                 {
                     "find": "__RELEASE_STAGE__",
                     "replaceWith": "FF"
-                },              
+                },
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
-                }                          
+                },
+                {
+                    "find": "__MANAGED_IDENTITY__",
+                    "replaceWith": "$(ManagedIdentity)"
+                }
             ]
         },
         {
@@ -110,16 +134,20 @@
                 {
                     "find": "__RELEASE_STAGE__",
                     "replaceWith": "MC"
-                },              
+                },
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
-                }                
+                },
+                {
+                    "find": "__MANAGED_IDENTITY__",
+                    "replaceWith": "$(ManagedIdentity)"
+                }
             ]
-        }                                                                                                                                                   
+        }
     ]
 }

@@ -11,6 +11,32 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 10/08/2021 -
+##### Version microsoft/oms:ciprod10082021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10082021 (linux)
+##### Version microsoft/oms:win-ciprod10082021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10082021 (windows)
+##### Code change log
+- Linux Agent
+  - MDSD Proxy support for non-AKS
+  - log rotation for mdsd log files {err,warn, info & qos}
+  - Onboarding status
+  - AAD Auth MSI changes  (not usable externally yet)
+  - Upgrade k8s and adx go packages to fix vulnerabilities
+  - Fix missing telegraf metrics (TelegrafMetricsSentCount & TelegrafMetricsSendErrorCount) in mdsd route
+  - Improve fluentd liveness probe checks to handle both supervisor and worker process
+  - Fix telegraf startup issue when endpoint is unreachable
+- Windows Agent
+  - Windows liveness probe optimization
+- Common
+    - Add new metrics to MDM for allocatable % calculation of cpu and memory usage
+- Other changes
+   - Helm chart updates for removal of rbac api version and deprecation of.Capabilities.KubeVersion.GitVersion to .Capabilities.KubeVersion.Version
+   - Updates to build and release ev2
+   - Scripts to collect troubleshooting logs
+   - Unit test tooling
+   - Yaml updates in parity with aks rp yaml
+   - upgrade golang version for windows in pipelines
+   - Conformance test updates
+
 ### 09/02/2021 -
 ##### Version microsoft/oms:ciprod08052021-1 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08052021-1 (linux)
 ##### Code change log
@@ -37,7 +63,7 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
 ##### Version microsoft/oms:ciprod06112021-1 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06112021-1 (linux)
 ##### Version microsoft/oms:win-ciprod06112021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06112021 (windows)
 ##### Code change log
-- Hotfix for crash (which triggered when scaling down of windows nodes) in clean_cache method in in_kube_node_inventory plugin
+- Hotfix for crash in clean_cache in in_kube_node_inventory plugin
 - We didn't rebuild windows container, so the image version for windows container stays the same as last release (ciprod:win-ciprod06112021) before this hotfix
 
 ### 06/11/2021 -
