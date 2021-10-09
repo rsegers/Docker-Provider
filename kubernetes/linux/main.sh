@@ -206,7 +206,7 @@ if [ -e "/etc/omsagent-secret/WSID" ]; then
             echo "export MDSD_PROXY_USERNAME=$MDSD_PROXY_USERNAME" >> ~/.bashrc
             export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
             echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
-
+            
             #TODO: Compression + proxy creates a deserialization error in ODS. This needs a fix in MDSD
             export MDSD_ODS_COMPRESSION_LEVEL=0
             echo "export MDSD_ODS_COMPRESSION_LEVEL=$MDSD_ODS_COMPRESSION_LEVEL" >> ~/.bashrc
@@ -515,90 +515,6 @@ DOCKER_CIMPROV_VERSION=$(dpkg -l | grep docker-cimprov | awk '{print $3}')
 echo "DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION"
 export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION
 echo "export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION" >> ~/.bashrc
-echo "*** activating oneagent in legacy auth mode ***"
-CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"
-#use the file path as its secure than env
-CIWORKSPACE_keyFile="/etc/omsagent-secret/KEY"
-cat /etc/mdsd.d/envmdsd | while read line; do
-     echo $line >> ~/.bashrc
-done
-source /etc/mdsd.d/envmdsd
-echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
-export CIWORKSPACE_id=$CIWORKSPACE_id
-echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc
-export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile
-echo "export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile" >> ~/.bashrc
-export OMS_TLD=$domain
-echo "export OMS_TLD=$OMS_TLD" >> ~/.bashrc
-export MDSD_FLUENT_SOCKET_PORT="29230"
-echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
-
-#skip imds lookup since not used in legacy auth path
-export SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH="true"
-echo "export SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH=$SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH" >> ~/.bashrc
-
-source ~/.bashrc
-
-dpkg -l | grep mdsd | awk '{print $2 " " $3}'
-
-if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
-    echo "starting mdsd with mdsd-port=26130, fluentport=26230 and influxport=26330 in legacy auth mode in sidecar container..."
-    #use tenant name to avoid unix socket conflict and different ports for port conflict
-    #roleprefix to use container specific mdsd socket
-    export TENANT_NAME="${CONTAINER_TYPE}"
-    echo "export TENANT_NAME=$TENANT_NAME" >> ~/.bashrc
-    export MDSD_ROLE_PREFIX=/var/run/mdsd-${CONTAINER_TYPE}/default
-    echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
-    source ~/.bashrc
-    mkdir /var/run/mdsd-${CONTAINER_TYPE}
-    # add -T 0xFFFF for full traces
-    mdsd -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
-else
-   echo "starting mdsd in legacy auth mode in main container..."
-   # add -T 0xFFFF for full traces
-   mdsd -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
-fi
-
-# no dependency on fluentd for prometheus side car container
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      if [ ! -e "/etc/config/kube.conf" ]; then
-         echo "*** starting fluentd v1 in daemonset"
-         fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
-      else
-        echo "*** starting fluentd v1 in replicaset"
-        fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
-      fi
-fi
-
-#If config parsing was successful, a copy of the conf file with replaced custom settings file is created
-if [ ! -e "/etc/config/kube.conf" ]; then
-      if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ] && [ -e "/opt/telegraf-test-prom-side-car.conf" ]; then
-            echo "****************Start Telegraf in Test Mode**************************"
-            /opt/telegraf --config /opt/telegraf-test-prom-side-car.conf -test
-            if [ $? -eq 0 ]; then
-                  mv "/opt/telegraf-test-prom-side-car.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
-            fi
-            echo "****************End Telegraf Run in Test Mode**************************"
-      else
-            if [ -e "/opt/telegraf-test.conf" ]; then
-                  echo "****************Start Telegraf in Test Mode**************************"
-                  /opt/telegraf --config /opt/telegraf-test.conf -test
-                  if [ $? -eq 0 ]; then
-                        mv "/opt/telegraf-test.conf" "/etc/opt/microsoft/docker-cimprov/telegraf.conf"
-                  fi
-                  echo "****************End Telegraf Run in Test Mode**************************"
-            fi
-      fi
-else
-      if [ -e "/opt/telegraf-test-rs.conf" ]; then
-                  echo "****************Start Telegraf in Test Mode**************************"
-                  /opt/telegraf --config /opt/telegraf-test-rs.conf -test
-                  if [ $? -eq 0 ]; then
-                        mv "/opt/telegraf-test-rs.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf"
-                  fi
-                  echo "****************End Telegraf Run in Test Mode**************************"
-      fi
-fi
 
 #skip imds lookup since not used either legacy or aad msi auth path
 export SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH="true"

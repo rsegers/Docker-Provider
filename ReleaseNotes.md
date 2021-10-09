@@ -12,8 +12,8 @@ additional questions or comments.
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
 ### 10/08/2021 -
-##### Version microsoft/oms:ciprod10082021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10082021 (linux)
-##### Version microsoft/oms:win-ciprod10082021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10082021 (windows)
+##### Version microsoft/oms:ciprod10092021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10092021 (linux)
+##### Version microsoft/oms:win-ciprod10092021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10092021 (windows)
 ##### Code change log
 - Linux Agent
   - MDSD Proxy support for non-AKS

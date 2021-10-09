@@ -368,7 +368,7 @@ spec:
             value: "3"
       containers:
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10082021"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10092021"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -603,7 +603,7 @@ spec:
       serviceAccountName: omsagent
       containers:
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10082021"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10092021"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -776,7 +776,7 @@ spec:
             value: "3"
      containers:
        - name: omsagent-win
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10082021"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10092021"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
