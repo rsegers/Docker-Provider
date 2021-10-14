@@ -17,14 +17,14 @@ Azure:
     httpProxy: ""
     httpsProxy: ""
     noProxy: ""
-    proxyCert: ""   
+    proxyCert: ""
 omsagent:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod04222021"
-    tagWindows: "win-ciprod04222021"
+    tag: "ciprod10132021"
+    tagWindows: "win-ciprod10132021"
     pullPolicy: IfNotPresent
-    dockerProviderVersion: "15.0.0-0"
+    dockerProviderVersion: "16.0.0-0"
     agentVersion: "1.10.0.1"
 
   # The priority used by the omsagent priority class for the daemonset pods
@@ -39,7 +39,7 @@ omsagent:
   # chance to build pod for the node and give it to the scheduler)
   # Should be some number greater than default (0)
   priority: 10
-  
+
   # This used for running agent pods in test mode.
   # if set to true additional agent workflow logs will be emitted which are used for e2e and arc k8s conformance testing
   ISTEST: false
@@ -58,10 +58,11 @@ omsagent:
     clusterId: <your_cluster_id>
     clusterRegion: <your_cluster_region>
   rbac: true
+  sidecarscraping: true
   logsettings:
-    logflushintervalsecs: ""
-    tailbufchunksizemegabytes: ""
-    tailbufmaxsizemegabytes: ""
+    logflushintervalsecs: "15"
+    tailbufchunksizemegabytes: "1"
+    tailbufmaxsizemegabytes: "1"
     ## Applicable for only Azure Stack Edge K8s since it has custom mount path for container logs which will have symlink to /var/log path
     custommountpath: ""
 
@@ -171,10 +172,10 @@ omsagent:
     daemonsetlinux:
       requests:
         cpu: 75m
-        memory: 225Mi
+        memory: 325Mi
       limits:
         cpu: 150m
-        memory: 600Mi
+        memory: 750Mi
     daemonsetwindows:
       limits:
         cpu: 200m
@@ -186,3 +187,11 @@ omsagent:
       limits:
         cpu: 1
         memory: 1Gi
+    daemonsetlinuxsidecar:
+        limits:
+          cpu: 500m
+          memory: 1Gi
+        requests:
+          cpu: 75m
+          memory: 225Mi
+

@@ -10,6 +10,7 @@ do
    case "$KEY" in
            ClusterResourceId) ClusterResourceId=$VALUE ;;
            ClusterRegion) ClusterRegion=$VALUE ;;
+           UserAssignedIdentityClientId) UserAssignedIdentityClientId=$VALUE ;;
            CIRelease) CI_RELEASE=$VALUE ;;
            CIImageTagSuffix) CI_IMAGE_TAG_SUFFIX=$VALUE ;;
            *)
@@ -23,6 +24,10 @@ sed -i "s=VALUE_AKS_RESOURCE_ID_VALUE=$ClusterResourceId=g" omsagent.yaml
 echo "clusterRegion:$ClusterRegion"
 echo "replace cluster region"
 sed -i "s/VALUE_AKS_RESOURCE_REGION_VALUE/$ClusterRegion/g" omsagent.yaml
+
+echo "userAssignedIdentityClientId:$UserAssignedIdentityClientId"
+echo "replace user assigned identity client id"
+sed -i "s=VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE=$UserAssignedIdentityClientId=g" omsagent.yaml
 
 echo "replace linux agent image"
 linuxAgentImageTag=$CI_RELEASE$CI_IMAGE_TAG_SUFFIX

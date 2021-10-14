@@ -132,6 +132,69 @@ spec:
         initialDelaySeconds: 60
         periodSeconds: 60
         timeoutSeconds: 15
+   {{- if .Values.omsagent.sidecarscraping }}
+     - name: omsagent-prometheus
+       {{- if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
+       image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
+       {{- else }}
+       image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
+       {{- end }}
+       imagePullPolicy: IfNotPresent
+       resources:
+{{ toYaml .Values.omsagent.resources.daemonsetlinuxsidecar | indent 9 }}
+       env:
+       {{- if ne .Values.omsagent.env.clusterId "<your_cluster_id>" }}
+       - name: AKS_RESOURCE_ID
+         value: {{ .Values.omsagent.env.clusterId | quote }}
+       {{- if ne .Values.omsagent.env.clusterRegion "<your_cluster_region>" }}
+       - name: AKS_REGION
+         value: {{ .Values.omsagent.env.clusterRegion | quote }}
+       {{- end }}
+       {{- else if ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>" }}
+       - name: AKS_RESOURCE_ID
+         value: {{ .Values.Azure.Cluster.ResourceId | quote }}
+       {{- if ne .Values.Azure.Cluster.Region "<your_cluster_region>" }}
+       - name: AKS_REGION
+         value: {{ .Values.Azure.Cluster.Region | quote }}
+       {{- end }}
+       {{- else }}
+       - name: ACS_RESOURCE_NAME
+         value: {{ .Values.omsagent.env.clusterName | quote }}
+       {{- end }}
+       - name: CONTROLLER_TYPE
+         value: "DaemonSet"
+       - name: CONTAINER_TYPE
+         value: "PrometheusSidecar"
+       - name: NODE_IP
+         valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+       - name: ISTEST
+         value: {{ .Values.omsagent.ISTEST | quote }}
+       securityContext:
+         privileged: true
+       volumeMounts:
+         - mountPath: /etc/kubernetes/host
+           name: azure-json-path
+         - mountPath: /etc/omsagent-secret
+           name: omsagent-secret
+           readOnly: true
+         - mountPath: /etc/config/settings
+           name: settings-vol-config
+           readOnly: true
+         - mountPath: /etc/config/osm-settings
+           name: osm-settings-vol-config
+           readOnly: true
+       livenessProbe:
+         exec:
+           command:
+             - /bin/bash
+             - -c
+             - /opt/livenessprobe.sh
+         initialDelaySeconds: 60
+         periodSeconds: 60
+         timeoutSeconds: 15
+   {{- end }}
    {{- with .Values.omsagent.daemonset.affinity }}
    affinity: {{- toYaml . | nindent 8 }}
    {{- end }}
@@ -173,4 +236,8 @@ spec:
       secret:
        secretName: omsagent-adx-secret
        optional: true
+    - name: osm-settings-vol-config
+      configMap:
+        name: container-azm-ms-osmconfig
+        optional: true
 {{- end }}
