@@ -1,8 +1,3 @@
-#
-################# Dangerous to use appveyor links - the builds are removed after 6 months
-#
-#ARG FLUENTBIT_URL=https://ci.appveyor.com/api/buildjobs/37lho3xf8j5i6crj/artifacts/build%2Ftd-agent-bit-1.4.0-win64.zip
-
 Write-Host ('Creating folder structure')
     New-Item -Type Directory -Path /installation -ErrorAction SilentlyContinue
 
@@ -21,7 +16,7 @@ Write-Host ('Creating folder structure')
 Write-Host ('Installing Fluent Bit');
 
     try {
-        $fluentBitUri='https://github.com/microsoft/OMS-docker/releases/download/winakslogagent/td-agent-bit-1.4.0-win64.zip'
+        $fluentBitUri='https://fluentbit.io/releases/1.7/td-agent-bit-1.7.8-win64.zip'
         Invoke-WebRequest -Uri $fluentBitUri -OutFile /installation/td-agent-bit.zip
         Expand-Archive -Path /installation/td-agent-bit.zip -Destination /installation/fluent-bit
         Move-Item -Path /installation/fluent-bit/*/* -Destination /opt/fluent-bit/ -ErrorAction SilentlyContinue
@@ -36,7 +31,7 @@ Write-Host ('Finished Installing Fluentbit')
 
 Write-Host ('Installing Telegraf');
 try {
-    $telegrafUri='https://dl.influxdata.com/telegraf/releases/telegraf-1.18.0_windows_amd64.zip'
+    $telegrafUri='https://dl.influxdata.com/telegraf/releases/telegraf-1.20.3_windows_amd64.zip'
     Invoke-WebRequest -Uri $telegrafUri -OutFile /installation/telegraf.zip
     Expand-Archive -Path /installation/telegraf.zip -Destination /installation/telegraf
     Move-Item -Path /installation/telegraf/*/* -Destination /opt/telegraf/ -ErrorAction SilentlyContinue

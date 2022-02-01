@@ -64,7 +64,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule)) {
         else {
             Write-Host("Please run the script as an administrator") -ForegroundColor Red
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 
@@ -89,7 +89,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule)) {
             }
             catch {
                 Write-Host("Close other powershell logins and try installing the latest modules for Az.Resources in a new powershell window: eg. 'Install-Module Az.Resources -Repository PSGallery -Force'") -ForegroundColor Red
-                exit
+                exit 1
             }
             try {
                 Write-Host("Installing Az.Accounts...")
@@ -97,7 +97,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule)) {
             }
             catch {
                 Write-Host("Close other powershell logins and try installing the latest modules for Az.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
-                exit
+                exit 1
             }
 
         }
@@ -109,7 +109,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule)) {
                 Write-Host("Could not import Az.Resources ...") -ForegroundColor Red
                 Write-Host("Close other powershell logins and try installing the latest modules for Az.Resources  in a new powershell window: eg. 'Install-Module Az.Resources  -Repository PSGallery -Force'") -ForegroundColor Red
                 Stop-Transcript
-                exit
+                exit 1
             }
             try {
                 Import-Module Az.Accounts
@@ -117,14 +117,14 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule)) {
             catch {
                 Write-Host("Could not import Az.Accounts... Please reinstall this Module") -ForegroundColor Red
                 Stop-Transcript
-                exit
+                exit 1
             }
 
         }
         2 {
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
@@ -138,7 +138,7 @@ if ($NameoftheCloud -like "AzureCloud" -or
 }
 else {
     Write-Host("Error: Monitoring not supported in this cloud: $NameoftheCloud") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 #
@@ -151,7 +151,7 @@ if ($notPresent) {
     Write-Host("Could not find RG. Please make sure that the resource group name: '" + $ResourceGroupName + "'is correct and you have access to the aks-engine cluster") -ForegroundColor Red
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 Write-Host("Successfully checked resource groups details...") -ForegroundColor Green
 
@@ -179,20 +179,20 @@ foreach ($k8MasterVM in $k8sMasterVMsOrVMSSes) {
     }
     else {
         Write-Host("Resource group name: '" + $ResourceGroupName + "'is doesnt have the aks-engine resources") -ForegroundColor Red
-        exit
+        exit 1
     }
 }
 
 if ($isKubernetesCluster -eq $false) {
     Write-Host("Resource group name: '" + $ResourceGroupName + "' doesnt have the aks-engine or acs-engine resources") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 # validate specified logAnalytics workspace exists or not
 $workspaceResource = Get-AzResource -ResourceId $LogAnalyticsWorkspaceResourceId
 if ($null -eq $workspaceResource) {
     Write-Host("Specified Log Analytics workspace ResourceId: '" + $LogAnalyticsWorkspaceResourceId + "' doesnt exist or don't have access to it") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 #
@@ -202,11 +202,11 @@ foreach ($k8MasterVM in $k8sMasterVMsOrVMSSes) {
     $r = Get-AzResource -ResourceGroupName $ResourceGroupName -ResourceName  $k8MasterVM.Name
     if ($null -eq $r) {
         Write-Host("Get-AzResource for Resource Group: " + $ResourceGroupName + "Resource Name :" + $k8MasterVM.Name + " failed" ) -ForegroundColor Red
-        exit
+        exit 1
     }
     if ($null -eq $r.Tags) {
         Write-Host("K8s master VM should have the tags" ) -ForegroundColor Red
-        exit
+        exit 1
     }
     if ($r.Tags.ContainsKey("logAnalyticsWorkspaceResourceId")) {
         $existingLogAnalyticsWorkspaceResourceId = $r.Tags["logAnalyticsWorkspaceResourceId"]
@@ -225,7 +225,7 @@ foreach ($k8MasterVM in $k8sMasterVMsOrVMSSes) {
             $existingclusterName = $r.Tags["clusterName"]
             if ($existingclusterName -eq $ClusterName) {
                 Write-Host("Ignoring attaching clusterName tag to K8s master VM :" + $k8MasterVM.Name + " since it has already with same tag value" ) -ForegroundColor Yellow
-                exit
+                exit 1
             }
             Write-Host("K8s master VM :" + $k8MasterVM.Name + " has the existing tag for clusterName with different from specified one" ) -ForegroundColor Green
             $r.Tags.Remove("clusterName")

@@ -2,7 +2,7 @@ function Install-Go {
     $tempDir =  $env:TEMP
     if ($false -eq (Test-Path -Path $tempDir)) {
         Write-Host("Invalid TEMP dir PATH : " + $tempDir + " ") -ForegroundColor Red
-        exit
+        exit 1
     }
 
     $tempGo = Join-Path -Path $tempDir -ChildPath "gotemp"
@@ -10,7 +10,7 @@ function Install-Go {
     New-Item -Path $tempGo -ItemType "directory" -Force -ErrorAction Stop
     if ($false -eq (Test-Path -Path $tempGo)) {
         Write-Host("Invalid tempGo : " + $tempGo + " ") -ForegroundColor Red
-        exit
+        exit 1
     }
 
    $url = "https://dl.google.com/go/go1.15.14.windows-amd64.msi"
@@ -35,7 +35,7 @@ function Build-Dependencies {
     $tempDir =  $env:TEMP
     if ($false -eq (Test-Path -Path $tempDir)) {
         Write-Host("Invalid TEMP dir PATH : " + $tempDir + " ") -ForegroundColor Red
-        exit
+        exit 1
     }
 
     $tempDependencies = Join-Path -Path $tempDir -ChildPath "gcctemp"
@@ -43,7 +43,7 @@ function Build-Dependencies {
     New-Item -Path $tempDependencies -ItemType "directory" -Force -ErrorAction Stop
     if ($false -eq (Test-Path -Path $tempDependencies)) {
         Write-Host("Invalid temp Dir : " + $tempDependencies + " ") -ForegroundColor Red
-        exit
+        exit 1
     }
 
 
@@ -82,7 +82,7 @@ function Install-DotNetCoreSDK() {
     $tempDir =  $env:TEMP
     if ($false -eq (Test-Path -Path $tempDir)) {
         Write-Host("Invalid TEMP dir : " + $tempDir + " ") -ForegroundColor Red
-        exit
+        exit 1
     }
 
     $dotNetSdkTemp = Join-Path -Path $tempDir -ChildPath "dotNetSdk"
@@ -90,7 +90,7 @@ function Install-DotNetCoreSDK() {
     New-Item -Path $dotNetSdkTemp -ItemType "directory" -Force -ErrorAction Stop
     if ($false -eq (Test-Path -Path $dotNetSdkTemp)) {
         Write-Host("Invalid dotNetSdkTemp : " + $tempDir + " ") -ForegroundColor Red
-        exit
+        exit 1
     }
 
    $url = "https://download.visualstudio.microsoft.com/download/pr/4e88f517-196e-4b17-a40c-2692c689661d/eed3f5fca28262f764d8b650585a7278/dotnet-sdk-3.1.301-win-x64.exe"
@@ -110,7 +110,7 @@ function Install-Docker() {
     $tempDir =  $env:TEMP
     if ($false -eq (Test-Path -Path $tempDir)) {
         Write-Host("Invalid TEMP dir PATH : " + $tempDir + " ") -ForegroundColor Red
-        exit
+        exit 1
     }
 
     $dockerTemp = Join-Path -Path $tempDir -ChildPath "docker"
@@ -118,7 +118,7 @@ function Install-Docker() {
     New-Item -Path $dockerTemp -ItemType "directory" -Force -ErrorAction Stop
     if ($false -eq (Test-Path -Path $dockerTemp)) {
         Write-Host("Invalid dockerTemp : " + $tempDir + " ") -ForegroundColor Red
-        exit
+        exit 1
     }
 
    $url = "https://download.docker.com/win/stable/Docker%20Desktop%20Installer.exe"

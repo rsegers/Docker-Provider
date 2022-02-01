@@ -1,6 +1,6 @@
 <#
     .DESCRIPTION
-     Builds the Docker Image locally for the server core ltsc base and installs dependencies 
+     Builds the Docker Image locally for the server core ltsc base and installs dependencies
 
 #>
 
@@ -9,7 +9,7 @@ Write-Host("current script dir : " + $currentdir + " ")
 
 if ($false -eq (Test-Path -Path $currentdir)) {
     Write-Host("Invalid current dir : " + $currentdir + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 Write-Host "start:Building the cert generator and out oms code via Makefile.ps1"
@@ -20,7 +20,7 @@ $dockerFileDir = Split-Path -Path $currentdir
 Write-Host("builddir dir : " + $dockerFileDir + " ")
 if ($false -eq (Test-Path -Path $dockerFileDir)) {
     Write-Host("Invalid dockerFile Dir : " + $dockerFileDir + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 Write-Host "changing directory to DockerFile dir: $dockerFileDir"

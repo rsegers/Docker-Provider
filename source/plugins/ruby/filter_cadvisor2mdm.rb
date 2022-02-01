@@ -292,7 +292,7 @@ module Fluent::Plugin
       end
     end
 
-   def filterPVInsightsMetrics(record)
+    def filterPVInsightsMetrics(record)
       begin
         mdmMetrics = []
         if record["Name"] == Constants::PV_USED_BYTES && @metrics_to_collect_hash.key?(record["Name"].downcase)
@@ -357,7 +357,7 @@ module Fluent::Plugin
         if !nodeInventory.nil?
           cpu_capacity_json = KubernetesApiClient.parseNodeLimits(nodeInventory, "capacity", "cpu", "cpuCapacityNanoCores")
           if !cpu_capacity_json.nil?
-             metricVal = JSON.parse(cpu_capacity_json[0]["json_Collections"])[0]["Value"]
+            metricVal = JSON.parse(cpu_capacity_json[0]["json_Collections"])[0]["Value"]
             if !metricVal.to_s.nil?
               @cpu_capacity = metricVal
               @log.info "CPU Limit #{@cpu_capacity}"

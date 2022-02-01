@@ -40,6 +40,9 @@ AZURE_CLOUD_DICT = {"AZURE_PUBLIC_CLOUD" : AZURE_PUBLIC_CLOUD_ENDPOINTS, "AZURE_
 
 TIMEOUT = 300
 
+# omsagent main container name
+OMSAGENT_MAIN_CONTAINER_NAME = 'omsagent'
+
 # WAIT TIME BEFORE READING THE AGENT LOGS
 AGENT_WAIT_TIME_SECS = "180"
 # Azure Monitor for Container Extension related

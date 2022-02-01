@@ -30,7 +30,7 @@ if (($null -eq $azAccountModule) -or ( $null -eq $azAksModule ) -or ($null -eq $
     else {
         Write-Host("Please run the script as an administrator") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 
 
@@ -57,7 +57,7 @@ if (($null -eq $azAccountModule) -or ( $null -eq $azAksModule ) -or ($null -eq $
                 }
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules forAz.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
-                    exit
+                    exit 1
                 }
             }
 
@@ -68,7 +68,7 @@ if (($null -eq $azAccountModule) -or ( $null -eq $azAksModule ) -or ($null -eq $
                 }
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules forAz.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
-                    exit
+                    exit 1
                 }
             }
 
@@ -79,7 +79,7 @@ if (($null -eq $azAccountModule) -or ( $null -eq $azAksModule ) -or ($null -eq $
                 }
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Aks in a new powershell window: eg. 'Install-Module Az.Aks -Repository PSGallery -Force'") -ForegroundColor Red
-                    exit
+                    exit 1
                 }
             }
 
@@ -94,7 +94,7 @@ if (($null -eq $azAccountModule) -or ( $null -eq $azAksModule ) -or ($null -eq $
                     Write-Host("Could not import Az.Resources...") -ForegroundColor Red
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Resources in a new powershell window: eg. 'Install-Module Az.Resources -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
             if ($null -eq $azAccountModule)	{
@@ -105,7 +105,7 @@ if (($null -eq $azAccountModule) -or ( $null -eq $azAksModule ) -or ($null -eq $
                     Write-Host("Could not import Az.Accounts...") -ForegroundColor Red
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
             if ($null -eq $azAksModule)	{
@@ -115,7 +115,7 @@ if (($null -eq $azAccountModule) -or ( $null -eq $azAksModule ) -or ($null -eq $
                 catch {
                     Write-Host("Could not import Az.Aks... Please reinstall this Module") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -123,7 +123,7 @@ if (($null -eq $azAccountModule) -or ( $null -eq $azAksModule ) -or ($null -eq $
         2 {
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
@@ -152,7 +152,7 @@ if ($account.Account -eq $null) {
         Write-Host("Could not select subscription with ID : " + $SubscriptionId + ". Please make sure the ID you entered is correct and you have access to the cluster" ) -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 }
 else {
@@ -172,7 +172,7 @@ else {
             Write-Host("Could not select subscription with ID : " + $SubscriptionId + ". Please make sure the ID you entered is correct and you have access to the cluster" ) -ForegroundColor Red
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
@@ -187,7 +187,7 @@ if ($notPresent) {
     Write-Host("Failed to get Aks clusters in specified subscription. Please make sure that you have access to the existing clusters") -ForegroundColor Red
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 Write-Host("Successfully got all aks clusters ...") -ForegroundColor Green
 

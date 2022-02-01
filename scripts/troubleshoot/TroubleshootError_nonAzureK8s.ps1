@@ -47,25 +47,25 @@ Write-Host("LogAnalyticsWorkspaceResourceId: : '" + $azureLogAnalyticsWorkspaceR
 if (($azureLogAnalyticsWorkspaceResourceId.ToLower().Contains("microsoft.operationalinsights/workspaces") -ne $true) -or ($azureLogAnalyticsWorkspaceResourceId.Split("/").Length -ne 9)) {
     Write-Host("Provided Azure Log Analytics resource id should be in this format /subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName>") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 if ([string]::IsNullOrEmpty($kubeConfig)) {
     Write-Host("kubeConfig should not be NULL or empty") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 if ((Test-Path $kubeConfig -PathType Leaf) -ne $true) {
     Write-Host("provided kubeConfig path : '" + $kubeConfig + "' doesnt exist or you dont have read access") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 if ([string]::IsNullOrEmpty($clusterContextInKubeconfig)) {
     Write-Host("provide  clusterContext should be valid context in the provided kubeconfig") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 # checks the all required Powershell modules exist and if not exists, request the user permission to install
@@ -92,7 +92,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
         else {
             Write-Host("Please re-launch the script with elevated administrator") -ForegroundColor Red
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 
@@ -120,7 +120,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules forAz.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -132,7 +132,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules forAz.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -145,7 +145,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.OperationalInsights in a new powershell window: eg. 'Install-Module Az.OperationalInsights -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -160,7 +160,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                     Write-Host("Could not import Az.Resources...") -ForegroundColor Red
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Resources in a new powershell window: eg. 'Install-Module Az.Resources -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
             if ($null -eq $azAccountModule) {
@@ -171,7 +171,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                     Write-Host("Could not import Az.Accounts...") -ForegroundColor Red
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -182,7 +182,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                 catch {
                     Write-Host("Could not import Az.OperationalInsights... Please reinstall this Module") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -190,7 +190,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
         2 {
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
@@ -222,7 +222,7 @@ if ($null -eq $account.Account) {
         Write-Host("Could not select subscription with ID : " + $workspaceSubscriptionId + ". Please make sure the SubscriptionId you entered is correct and you have access to the cluster" ) -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 }
 else {
@@ -242,7 +242,7 @@ else {
             Write-Host("Could not select subscription with ID : " + $workspaceSubscriptionId + ". Please make sure the ID you entered is correct and you have access to the cluster" ) -ForegroundColor Red
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
@@ -253,7 +253,7 @@ $workspaceResource = Get-AzResource -ResourceId $azureLogAnalyticsWorkspaceResou
 if ($null -eq $workspaceResource) {
     Write-Host("specified Azure Log Analytics resource id: " + $azureLogAnalyticsWorkspaceResourceId + ". either you dont have access or doesnt exist") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 #
@@ -272,7 +272,7 @@ catch {
     Write-Host("Opt-in - " + $OptInLink) -ForegroundColor Red
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 
 $WorkspaceLocation = $WorkspaceInformation.Location
@@ -281,7 +281,7 @@ if ($null -eq $WorkspaceLocation) {
     Write-Host("Cannot fetch workspace location. Please try again...") -ForegroundColor Red
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 
 $WorkspacePricingTier = $WorkspaceInformation.sku
@@ -297,7 +297,7 @@ catch {
     Write-Host("Failed to get the list of solutions onboarded to the workspace. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 
 try {
@@ -309,7 +309,7 @@ catch {
     Write-Host("Failed to get ContainerInsights solution details from the workspace") -ForegroundColor Red
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 
 $isSolutionOnboarded = $WorkspaceIPDetails.Enabled[$ContainerInsightsIndex]
@@ -317,7 +317,7 @@ if ($isSolutionOnboarded) {
     if ($WorkspacePricingTier -eq "Free") {
         Write-Host("Pricing tier of the configured LogAnalytics workspace is Free so you may need to upgrade to pricing tier to non-Free") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 }
 else {
@@ -356,13 +356,13 @@ else {
             Write-Host ("Template deployment failed with an error: '" + $Error[0] + "' ") -ForegroundColor Red
             Write-Host($contactUSMessage) -ForegroundColor Red
             Stop-Transcript
-            exit
+            exit 1
         }
     }
     else {
         Write-Host("The container health solution isn't onboarded to your cluster. This required for the monitoring to work.") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 }
 
@@ -382,7 +382,7 @@ try {
     if ($null -eq $rsPod) {
         Write-Host( "omsagent replicaset pod not scheduled or failed to scheduled." + $contactUSMessage) -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
     $rsPodStatus = $rsPod.status
     if ((($rsPodStatus.availableReplicas -eq 1) -and
@@ -393,7 +393,7 @@ try {
         Write-Host($rsPodStatus)
         Write-Host($contactUSMessage)
         Stop-Transcript
-        exit
+        exit 1
     }
 
     Write-Host( "omsagent replicaset pod running OK.") -ForegroundColor Green
@@ -401,7 +401,7 @@ try {
 catch {
     Write-Host ("Failed to get omsagent replicatset pod info using kubectl get rs  : '" + $Error[0] + "' ") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 Write-Host("Checking whether the omsagent daemonset pod running correctly ...")
@@ -410,7 +410,7 @@ try {
     if ($ds.Items.Length -ne 1) {
         Write-Host( "omsagent replicaset pod not scheduled or failed to schedule." + $contactUSMessage) -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 
     $dsStatus = $ds.Items[0].status
@@ -424,7 +424,7 @@ try {
         Write-Host($rsPodStatus)
         Write-Host($contactUSMessage)
         Stop-Transcript
-        exit
+        exit 1
     }
 
     Write-Host( "omsagent daemonset pod running OK.") -ForegroundColor Green
@@ -432,7 +432,7 @@ try {
 catch {
     Write-Host ("Failed to execute the script  : '" + $Error[0] + "' ") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 Write-Host("Checking whether the omsagent heatlhservice  running correctly ...")
@@ -441,7 +441,7 @@ try {
     if ($healthservice.Items.Length -ne 1) {
         Write-Host( "omsagent healthservice  not scheduled or failed to schedule." + $contactUSMessage)
         Stop-Transcript
-        exit
+        exit 1
     }
 
     Write-Host( "omsagent healthservice pod running OK.") -ForegroundColor Green
@@ -449,7 +449,7 @@ try {
 catch {
     Write-Host ("Failed to execute kubectl get services command : '" + $Error[0] + "' ") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 Write-Host("Retrieving WorkspaceGUID and WorkspacePrimaryKey of the workspace : " + $WorkspaceInformation.Name)
@@ -462,7 +462,7 @@ try {
 catch {
     Write-Host ("Failed to workspace details. Please validate whether you have Log Analytics Contributor role on the workspace error: '" + $Error[0] + "' ") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 Write-Host("Checking whether the WorkspaceGuid and key matching with configured log analytics workspace ...")
@@ -473,7 +473,7 @@ try {
     if ((($workspaceGuidConfiguredOnAgent -eq $workspaceGUID) -and ($workspaceKeyConfiguredOnAgent -eq $workspacePrimarySharedKey)) -eq $false) {
         Write-Host ("Error - Log Analytics Workspace Guid and key configured on the agent not matching with details of the Workspace. Please verify and fix with the correct workspace Guid and Key") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 
     Write-Host("Workspace Guid and Key on the agent matching with the Workspace") -ForegroundColor Green
@@ -481,7 +481,7 @@ try {
 catch {
     Write-Host ("Failed to execute the script  : '" + $Error[0] + "' ") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 Write-Host("Checking agent version...")
@@ -497,7 +497,7 @@ try {
 catch {
     Write-Host ("Failed to execute the script  : '" + $Error[0] + "' ") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 Write-Host("resetting cluster context back, what it was before")

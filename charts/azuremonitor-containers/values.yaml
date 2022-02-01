@@ -21,8 +21,8 @@ Azure:
 omsagent:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod10132021"
-    tagWindows: "win-ciprod10132021"
+    tag: "ciprod01312022"
+    tagWindows: "win-ciprod01312022"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "16.0.0-0"
     agentVersion: "1.10.0.1"
@@ -178,7 +178,7 @@ omsagent:
         memory: 750Mi
     daemonsetwindows:
       limits:
-        cpu: 200m
+        cpu: 500m
         memory: 600Mi
     deployment:
       requests:

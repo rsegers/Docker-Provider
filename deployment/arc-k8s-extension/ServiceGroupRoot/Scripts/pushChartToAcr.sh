@@ -35,7 +35,6 @@ pull_chart_from_source_mcr_to_push_to_dest_acr() {
        echo "-e error dest acr path must be provided "
        exit 1
     fi
-
     echo "Pulling chart from MCR:${srcMcrFullPath} ..."
     helm chart pull ${srcMcrFullPath}
     if [ $? -eq 0 ]; then

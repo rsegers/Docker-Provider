@@ -15,18 +15,18 @@ Write-Host("current script dir : " + $currentdir + " ")
 
 if ($false -eq (Test-Path -Path $currentdir)) {
     Write-Host("Invalid current dir : " + $currentdir + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 if ([string]::IsNullOrEmpty($image)) {
     Write-Host "Image parameter shouldnt be null or empty" -ForegroundColor Red
-    exit
+    exit 1
 }
 
 $imageparts = $image.split(":")
 if (($imageparts.Length -ne 2)){
     Write-Host "Image not in valid format. Expected format should be <repo>/<image>:<imagetag>" -ForegroundColor Red
-    exit
+    exit 1
 }
 
 $imagetag = $imageparts[1].ToLower()
@@ -48,7 +48,7 @@ $dockerFileDir = Split-Path -Path $currentdir
 Write-Host("builddir dir : " + $dockerFileDir + " ")
 if ($false -eq (Test-Path -Path $dockerFileDir)) {
     Write-Host("Invalid dockerFile Dir : " + $dockerFileDir + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 Write-Host "changing directory to DockerFile dir: $dockerFileDir"

@@ -13,21 +13,21 @@ Write-Host("current script dir : " + $currentdir + " ")
 
 if ($false -eq (Test-Path -Path $currentdir)) {
     Write-Host("Invalid current dir : " + $currentdir + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 $builddir = Split-Path -Path $currentdir
 Write-Host("builddir dir : " + $builddir + " ")
 if ($false -eq (Test-Path -Path $builddir)) {
     Write-Host("Invalid build dir : " + $builddir + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 $versionFilePath = Join-Path -Path $builddir -child "version"
 Write-Host("versionFilePath  : " + $versionFilePath + " ")
 if ($false -eq (Test-Path -Path $versionFilePath)) {
     Write-Host("Version file path incorrect or doesnt exist : " + $versionFilePath + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 # read the version info
@@ -36,7 +36,7 @@ foreach($line in Get-Content -Path $versionFilePath) {
          $parts =  $line.split("=")
          if ($parts.length -lt 2 ) {
             Write-Host("Invalid content in version file : " + $versionFilePath + " ") -ForegroundColor Red
-            exit
+            exit 1
          }
          switch ($parts[0]) {
             "CONTAINER_BUILDVERSION_MAJOR" { $BuildVersionMajor = $parts[1] }
@@ -57,7 +57,7 @@ if ([string]::IsNullOrEmpty($BuildVersionMajor) -or
     [string]::IsNullOrEmpty($BuildVersionDate) -or
     [string]::IsNullOrEmpty($BuildVersionStatus)) {
     Write-Host("Expected version info doesnt exist in this version file : " + $versionFilePath + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 # build version format will be [major].[minior].[patch]-[revision]
 $buildVersionString = $BuildVersionMajor + "." + $BuildVersionMinor + "." + $BuildVersionPatch + "-" + $BuildVersionBuildNR
@@ -68,7 +68,7 @@ $certsrcdir = Join-Path -Path $builddir -ChildPath "windows\installer\certificat
 Write-Host("certsrc dir : " + $certsrcdir + " ")
 if ($false -eq (Test-Path -Path $certsrcdir)) {
     Write-Host("Invalid certificate generator source dir : " + $certsrcdir + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 Write-Host("set the cerificate generator source code directory : " + $certsrcdir + " ...")
 Set-Location -Path $certsrcdir
@@ -100,13 +100,13 @@ Write-Host("Successfully published certificate generator code binaries") -Foregr
 $certreleasebinpath =  Join-Path -PATH $certsrcdir -ChildPath "bin\Release\$dotnetcoreframework\win10-x64\publish\*.*"
 if ($false -eq (Test-Path -Path $certreleasebinpath)) {
     Write-Host("certificate release bin path doesnt exist : " + $certreleasebinpath + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 $rootdir = Split-Path -Path $builddir
 if ($false -eq (Test-Path -Path $rootdir)) {
     Write-Host("Invalid docker provider root source dir : " + $rootdir + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 $publishdir = Join-Path -Path $rootdir -ChildPath "kubernetes\windows\omsagentwindows"
@@ -128,7 +128,7 @@ $outomsgoplugindir = Join-Path -Path $rootdir -ChildPath "source\plugins\go\src"
 Write-Host("Building Out_OMS go plugin code...")
 if ($false -eq (Test-Path -Path $outomsgoplugindir)) {
     Write-Host("Invalid Out oms go plugin code dir : " + $outomsgoplugindir + " ") -ForegroundColor Red
-    exit
+    exit 1
 }
 Set-Location -Path $outomsgoplugindir
 
@@ -178,7 +178,7 @@ if (Test-Path -Path $livenessprobeexepath){
     Write-Host("livenessprobe.exe exists which indicates cpp build step succeeded") -ForegroundColor Green
 } else {
     Write-Host("livenessprobe.exe doesnt exist which indicates cpp build step failed") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 $installerdir = Join-Path -Path $builddir -ChildPath "common\installer"

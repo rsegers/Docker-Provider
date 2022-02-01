@@ -45,7 +45,7 @@ if (($null -eq $azureRmProfileModule) -or ($null -eq $azureRmResourcesModule) -o
     else {
         Write-Host("Please run the script as an administrator") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 
     $message = "This script will try to install the latest versions of the following Modules : `
@@ -69,7 +69,7 @@ if (($null -eq $azureRmProfileModule) -or ($null -eq $azureRmResourcesModule) -o
             }
             catch {
                 Write-Host("Close other powershell logins and try installing the latest modules for AzureRM.profile in a new powershell window: eg. 'Install-Module AzureRM.profile -Repository PSGallery -Force'") -ForegroundColor Red
-                exit
+                exit 1
             }
             try {
                 Write-Host("Installing AzureRM.Resources...")
@@ -77,7 +77,7 @@ if (($null -eq $azureRmProfileModule) -or ($null -eq $azureRmResourcesModule) -o
             }
             catch {
                 Write-Host("Close other powershell logins and try installing the latest modules for AzureRM.Resoureces in a new powershell window: eg. 'Install-Module AzureRM.Resoureces -Repository PSGallery -Force'") -ForegroundColor Red
-                exit
+                exit 1
             }
 
             try {
@@ -86,7 +86,7 @@ if (($null -eq $azureRmProfileModule) -or ($null -eq $azureRmResourcesModule) -o
             }
             catch {
                 Write-Host("Close other powershell logins and try installing the latest modules for AzureRM.OperationalInsights in a new powershell window: eg. 'Install-Module AzureRM.OperationalInsights -Repository PSGallery -Force'") -ForegroundColor Red
-                exit
+                exit 1
             }
         }
         1 {
@@ -97,7 +97,7 @@ if (($null -eq $azureRmProfileModule) -or ($null -eq $azureRmResourcesModule) -o
                 Write-Host("Could not import AzureRM.profile...") -ForegroundColor Red
                 Write-Host("Close other powershell logins and try installing the latest modules for AzureRM.profile in a new powershell window: eg. 'Install-Module AzureRM.profile -Repository PSGallery -Force'") -ForegroundColor Red
                 Stop-Transcript
-                exit
+                exit 1
             }
             try {
                 Import-Module AzureRM.Resources
@@ -105,7 +105,7 @@ if (($null -eq $azureRmProfileModule) -or ($null -eq $azureRmResourcesModule) -o
             catch {
                 Write-Host("Could not import AzureRM.Resources... Please reinstall this Module") -ForegroundColor Red
                 Stop-Transcript
-                exit
+                exit 1
             }
             try {
                 Import-Module AzureRM.OperationalInsights
@@ -113,7 +113,7 @@ if (($null -eq $azureRmProfileModule) -or ($null -eq $azureRmResourcesModule) -o
             catch {
                 Write-Host("Could not import AzureRM.OperationalInsights... Please reinstall this Module") -ForegroundColor Red
                 Stop-Transcript
-                exit
+                exit 1
             }
             Write-Host("Running troubleshooting script... Please reinstall this Module")
             Write-Host("")
@@ -121,7 +121,7 @@ if (($null -eq $azureRmProfileModule) -or ($null -eq $azureRmResourcesModule) -o
         2 {
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
@@ -151,7 +151,7 @@ if ($null -eq $account.Account) {
         Write-Host("Could not select subscription with ID : " + $SubscriptionId + ". Please make sure the SubscriptionId you entered is correct and you have access to the Subscription" ) -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 }
 else {
@@ -171,7 +171,7 @@ else {
             Write-Host("Could not select subscription with ID : " + $SubscriptionId + ". Please make sure the SubscriptionId you entered is correct and you have access to the Subscription" ) -ForegroundColor Red
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
@@ -187,7 +187,7 @@ if ($notPresent) {
     Write-Host("Could not find RG. Please make sure that the resource group name: '" + $ResourceGroupName + "'is correct and you have access to the Resource Group") -ForegroundColor Red
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 Write-Host("Successfully checked resource groups details...") -ForegroundColor Green
 
@@ -197,13 +197,13 @@ Write-Host("Successfully checked resource groups details...") -ForegroundColor G
 if ([string]::IsNullOrEmpty($KubeConfig)) {
     Write-Host("KubeConfig should not be NULL or empty") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 if ((Test-Path $KubeConfig -PathType Leaf) -ne $true) {
     Write-Host("provided KubeConfig path : '" + $KubeConfig + "' doesnt exist or you dont have read access") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 #
@@ -249,13 +249,13 @@ foreach ($k8MasterVM in $k8sMasterVMsOrVMSSes) {
     }
     else {
         Write-Host("This Resource group : '" + $ResourceGroupName + "'does not have the AKS-engine or ACS-Engine Kubernetes resources") -ForegroundColor Red
-        exit
+        exit 1
     }
 }
 
 if ($isKubernetesCluster -eq $false) {
     Write-Host("Monitoring only supported  for AKS-Engine or ACS-Engine with Kubernetes") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 Write-Host("Successfully checked the AKS-Engine or ACS-Engine Kuberentes cluster resources in specified resource group") -ForegroundColor Green
@@ -270,7 +270,7 @@ foreach ($k8MasterVM in $k8sMasterVMsOrVMSSes) {
 
     if ($null -eq $r) {
         Write-Host("Get-AzureRmResource for Resource Group: " + $ResourceGroupName + "Resource Name :" + $k8MasterVM.Name + " failed" ) -ForegroundColor Red
-        exit
+        exit 1
     }
 
     if ($null -eq $r.Tags) {
@@ -279,7 +279,7 @@ foreach ($k8MasterVM in $k8sMasterVMsOrVMSSes) {
         Write-Host("Please try to opt out of monitoring and opt-in using the following links:") -ForegroundColor Red
         Write-Host("Opt-out - " + $OptOutLink) -ForegroundColor Red
         Write-Host("Opt-in - " + $OptInLink) -ForegroundColor Red
-        exit
+        exit 1
     }
 
     if ($r.Tags.ContainsKey("logAnalyticsWorkspaceResourceId")) {
@@ -300,7 +300,7 @@ if ($null -eq $LogAnalyticsWorkspaceResourceID) {
     Write-Host("There is no existing logAnalyticsWorkspaceResourceId tag on AKS-Engine k8 master nodes or VMSSes so this indicates this cluster not enabled monitoring or tags have been removed" ) -ForegroundColor Red
     Write-Host("Please try to opt-in for monitoring using the following links:") -ForegroundColor Red
     Write-Host("Opt-in - " + $OptInLink) -ForegroundColor Red
-    exit
+    exit 1
 }
 else {
 
@@ -309,7 +309,7 @@ else {
         Write-Host("Please add the clusterName tag with the value of clusterName used during the omsagent agent onboarding. Refer below link for details:") -ForegroundColor Red
         Write-Host("Opt-in - " + $OptInLink) -ForegroundColor Red
 
-        exit
+        exit 1
     }
 
     Write-Host("Configured LogAnalyticsWorkspaceResourceId: : '" + $LogAnalyticsWorkspaceResourceID + "' ")
@@ -328,7 +328,7 @@ else {
         Write-Host("Could not change to Workspace subscriptionId : '" + $workspaceSubscriptionId + "'." ) -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 
 
@@ -347,7 +347,7 @@ else {
         Write-Host("Opt-in - " + $OptInLink) -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
     Write-Host("Successfully fetched workspace subcription details...") -ForegroundColor Green
     Write-Host("")
@@ -364,7 +364,7 @@ else {
         Write-Host("Opt-out - " + $OptOutLink) -ForegroundColor Red
         Write-Host("Opt-in - " + $OptInLink) -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
     Write-Host("Successfully fetched workspace resource group...") -ForegroundColor Green
     Write-Host("")
@@ -386,7 +386,7 @@ else {
         Write-Host("Opt-in - " + $OptInLink) -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 
     $WorkspaceLocation = $WorkspaceInformation.Location
@@ -396,7 +396,7 @@ else {
         Write-Host("Cannot fetch workspace location. Please try again...") -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 
     $WorkspacePricingTier = $WorkspaceInformation.sku
@@ -413,7 +413,7 @@ else {
         Write-Host("Failed to get the list of solutions onboarded to the workspace. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 
     try {
@@ -425,7 +425,7 @@ else {
         Write-Host("Failed to get ContainerInsights solution details from the workspace") -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 
     $isSolutionOnboarded = $WorkspaceIPDetails.Enabled[$ContainerInsightsIndex]
@@ -498,7 +498,7 @@ try {
 } catch {
     Write-Host ("Failed to execute the script  : '" + $Error[0] + "' ") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 Write-Host("")

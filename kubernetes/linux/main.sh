@@ -206,7 +206,6 @@ if [ -e "/etc/omsagent-secret/WSID" ]; then
             echo "export MDSD_PROXY_USERNAME=$MDSD_PROXY_USERNAME" >> ~/.bashrc
             export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
             echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
-            
             #TODO: Compression + proxy creates a deserialization error in ODS. This needs a fix in MDSD
             export MDSD_ODS_COMPRESSION_LEVEL=0
             echo "export MDSD_ODS_COMPRESSION_LEVEL=$MDSD_ODS_COMPRESSION_LEVEL" >> ~/.bashrc
@@ -425,19 +424,24 @@ fi
 
 #Setting environment variable for CAdvisor metrics to use port 10255/10250 based on curl request
 echo "Making wget request to cadvisor endpoint with port 10250"
-#Defaults to use port 10255
-cAdvisorIsSecure=false
-RET_CODE=`wget --server-response https://$NODE_IP:10250/stats/summary --no-check-certificate --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" 2>&1 | awk '/^  HTTP/{print $2}'`
-if [ $RET_CODE -eq 200 ]; then
-      cAdvisorIsSecure=true
+#Defaults to use secure port: 10250
+cAdvisorIsSecure=true
+RET_CODE=$(wget --server-response https://$NODE_IP:10250/stats/summary --no-check-certificate --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" 2>&1 | awk '/^  HTTP/{print $2}')
+if [ -z "$RET_CODE" ] || [ $RET_CODE -ne 200 ]; then
+      echo "Making wget request to cadvisor endpoint with port 10255 since failed with port 10250"
+      RET_CODE=$(wget --server-response http://$NODE_IP:10255/stats/summary 2>&1 | awk '/^  HTTP/{print $2}')
+      if [ ! -z "$RET_CODE" ] && [ $RET_CODE -eq 200 ]; then
+            cAdvisorIsSecure=false
+      fi
 fi
 
-# default to docker since this is default in AKS as of now and change to containerd once this becomes default in AKS
-export CONTAINER_RUNTIME="docker"
+# default to containerd since this is common default in AKS and non-AKS
+export CONTAINER_RUNTIME="containerd"
 export NODE_NAME=""
 
+
 if [ "$cAdvisorIsSecure" = true ]; then
-      echo "Wget request using port 10250 succeeded. Using 10250"
+      echo "Using port 10250"
       export IS_SECURE_CADVISOR_PORT=true
       echo "export IS_SECURE_CADVISOR_PORT=true" >> ~/.bashrc
       export CADVISOR_METRICS_URL="https://$NODE_IP:10250/metrics"
@@ -445,7 +449,7 @@ if [ "$cAdvisorIsSecure" = true ]; then
       echo "Making curl request to cadvisor endpoint /pods with port 10250 to get the configured container runtime on kubelet"
       podWithValidContainerId=$(curl -s -k -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" https://$NODE_IP:10250/pods | jq -R 'fromjson? | [ .items[] | select( any(.status.phase; contains("Running")) ) ] | .[0]')
 else
-      echo "Wget request using port 10250 failed. Using port 10255"
+      echo "Using port 10255"
       export IS_SECURE_CADVISOR_PORT=false
       echo "export IS_SECURE_CADVISOR_PORT=false" >> ~/.bashrc
       export CADVISOR_METRICS_URL="http://$NODE_IP:10255/metrics"
@@ -460,10 +464,10 @@ if [ ! -z "$podWithValidContainerId" ]; then
       # convert to lower case so that everywhere else can be used in lowercase
       containerRuntime=$(echo $containerRuntime | tr "[:upper:]" "[:lower:]")
       nodeName=$(echo $nodeName | tr "[:upper:]" "[:lower:]")
-      # update runtime only if its not empty, not null and not startswith docker
+      # use default container runtime if obtained runtime value is either empty or null
       if [ -z "$containerRuntime" -o "$containerRuntime" == null  ]; then
             echo "using default container runtime as $CONTAINER_RUNTIME since got containeRuntime as empty or null"
-      elif [[ $containerRuntime != docker* ]]; then
+      else
             export CONTAINER_RUNTIME=$containerRuntime
       fi
 

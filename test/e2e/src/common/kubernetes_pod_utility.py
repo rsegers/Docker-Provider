@@ -20,12 +20,12 @@ def get_pod_list(api_instance, namespace, label_selector=""):
         pytest.fail("Error occurred when retrieving pod information: " + str(e))
 
 # get the content of the log file in the container via exec
-def get_log_file_content(api_instance, namespace, podName, logfilePath):
+def get_log_file_content(api_instance, namespace, podName, containerName, logfilePath):
     try:
         exec_command = ['tar','cf', '-', logfilePath]
-        return stream(api_instance.connect_get_namespaced_pod_exec, podName, namespace, command=exec_command, stderr=True, stdin=False, stdout=True, tty=False)
+        return stream(api_instance.connect_get_namespaced_pod_exec, podName, namespace, command=exec_command, container=containerName, stderr=True, stdin=False, stdout=True, tty=False)
     except Exception as e:
-        pytest.fail("Error occurred when retrieving log file content: " + str(e))      
+        pytest.fail("Error occurred when retrieving log file content: " + str(e))
 
 # Function that watches events corresponding to pods in the given namespace and passes the events to a callback function
 def watch_pod_status(api_instance, namespace, timeout, callback=None):

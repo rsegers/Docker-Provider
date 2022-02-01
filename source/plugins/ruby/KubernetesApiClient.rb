@@ -88,7 +88,7 @@ class KubernetesApiClient
       end
     end
 
-    def getClusterRegion(env=ENV)
+    def getClusterRegion(env = ENV)
       if env["AKS_REGION"]
         return env["AKS_REGION"]
       else
@@ -97,7 +97,7 @@ class KubernetesApiClient
       end
     end
 
-    def getResourceUri(resource, api_group, env=ENV)
+    def getResourceUri(resource, api_group, env = ENV)
       begin
         if env["KUBERNETES_SERVICE_HOST"] && env["KUBERNETES_PORT_443_TCP_PORT"]
           if api_group.nil?
@@ -114,7 +114,7 @@ class KubernetesApiClient
       end
     end
 
-    def getClusterName(env=ENV)
+    def getClusterName(env = ENV)
       return @@ClusterName if !@@ClusterName.nil?
       @@ClusterName = "None"
       begin
@@ -148,7 +148,7 @@ class KubernetesApiClient
       return @@ClusterName
     end
 
-    def getClusterId(env=ENV)
+    def getClusterId(env = ENV)
       return @@ClusterId if !@@ClusterId.nil?
       #By default initialize ClusterId to ClusterName.
       #<TODO> In ACS/On-prem, we need to figure out how we can generate ClusterId
@@ -778,7 +778,7 @@ class KubernetesApiClient
       return continuationToken, resourceInventory
     end #getResourcesAndContinuationToken
 
-    def getKubeAPIServerUrl(env=ENV)
+    def getKubeAPIServerUrl(env = ENV)
       apiServerUrl = nil
       begin
         if env["KUBERNETES_SERVICE_HOST"] && env["KUBERNETES_PORT_443_TCP_PORT"]

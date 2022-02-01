@@ -1,5 +1,5 @@
-require_relative 'sender_base'
-require 'thread'
+require_relative "sender_base"
+require "thread"
 
 module ApplicationInsights
   module Channel
@@ -17,12 +17,13 @@ module ApplicationInsights
     # If no queue items are found for {#send_time} seconds,  the worker thread
     # will shut down (and {#start} will need  to be called again).
     class AsynchronousSender < SenderBase
-      SERVICE_ENDPOINT_URI = 'https://dc.services.visualstudio.com/v2/track'
+      SERVICE_ENDPOINT_URI = "https://dc.services.visualstudio.com/v2/track"
       # Initializes a new instance of the class.
       # @param [String] service_endpoint_uri the address of the service to send
+      # @param [Logger] instance of the logger to write the logs (optional)
       # @param [Hash] proxy server configuration to send (optional)
       #   telemetry data to.
-      def initialize(service_endpoint_uri = SERVICE_ENDPOINT_URI, proxy = {})
+      def initialize(service_endpoint_uri = SERVICE_ENDPOINT_URI, logger = nil, proxy = {})
         # callers which requires proxy dont require to maintain service endpoint uri which potentially can change
         if service_endpoint_uri.nil? || service_endpoint_uri.empty?
           service_endpoint_uri = SERVICE_ENDPOINT_URI
@@ -33,7 +34,7 @@ module ApplicationInsights
         @lock_work_thread = Mutex.new
         @work_thread = nil
         @start_notification_processed = true
-        super service_endpoint_uri, proxy
+        super service_endpoint_uri, logger, proxy
       end
 
       # The time span in seconds at which the the worker thread will check the
@@ -130,7 +131,7 @@ module ApplicationInsights
         rescue Exception => e
           # Make sure work_thread sets to nil when it terminates abnormally
           @work_thread = nil
-          @logger.error('application_insights') { "Asynchronous sender work thread terminated abnormally: #{e.to_s}" }
+          @logger.error("application_insights") { "Asynchronous sender work thread terminated abnormally: #{e.to_s}" }
         end
       end
     end

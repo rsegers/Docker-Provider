@@ -81,7 +81,7 @@ if ([string]::IsNullOrEmpty($azureCloudName) -eq $true) {
     } else {
         Write-Host("Specified Azure Cloud name is : $azureCloudName")
         Write-Host("Only supported azure clouds are : AzureCloud and AzureUSGovernment")
-        exit
+        exit 1
     }
 }
 
@@ -109,7 +109,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
         else {
             Write-Host("Please re-launch the script with elevated administrator") -ForegroundColor Red
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 
@@ -136,7 +136,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                 }
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules forAz.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
-                    exit
+                    exit 1
                 }
             }
 
@@ -147,7 +147,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                 }
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules forAz.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
-                    exit
+                    exit 1
                 }
             }
 
@@ -159,7 +159,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                 }
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.OperationalInsights in a new powershell window: eg. 'Install-Module Az.OperationalInsights -Repository PSGallery -Force'") -ForegroundColor Red
-                    exit
+                    exit 1
                 }
             }
 
@@ -174,7 +174,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                     Write-Host("Could not import Az.Resources...") -ForegroundColor Red
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Resources in a new powershell window: eg. 'Install-Module Az.Resources -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
             if ($null -eq $azAccountModule) {
@@ -185,7 +185,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                     Write-Host("Could not import Az.Accounts...") -ForegroundColor Red
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -196,7 +196,7 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
                 catch {
                     Write-Host("Could not import Az.OperationalInsights... Please reinstall this Module") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -204,14 +204,14 @@ if (($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -
         2 {
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
 
 if ([string]::IsNullOrEmpty($clusterResourceId)) {
     Write-Host("Specified Azure Arc enabled Kubernetes ClusterResourceId should not be NULL or empty") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 if ([string]::IsNullOrEmpty($kubeContext)) {
@@ -232,7 +232,7 @@ if ($clusterResourceId.StartsWith("/") -eq $false) {
 
 if ($clusterResourceId.Split("/").Length -ne 9) {
     Write-Host("Provided Cluster Resource Id is not in expected format") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 if (($clusterResourceId.ToLower().Contains("microsoft.kubernetes/connectedclusters") -ne $true) -and
@@ -240,7 +240,14 @@ if (($clusterResourceId.ToLower().Contains("microsoft.kubernetes/connectedcluste
     ($clusterResourceId.ToLower().Contains("microsoft.containerservice/managedclusters") -ne $true)
 ) {
     Write-Host("Provided cluster ResourceId is not supported cluster type: $clusterResourceId") -ForegroundColor Red
-    exit
+    exit 1
+}
+
+if (([string]::IsNullOrEmpty($servicePrincipalClientId) -eq $false) -and
+    ([string]::IsNullOrEmpty($servicePrincipalClientSecret) -eq $false) -and
+    ([string]::IsNullOrEmpty($tenantId) -eq $false)) {
+    Write-Host("Using service principal creds for the azure login since these provided.")
+    $isUsingServicePrincipal = $true
 }
 
 if (([string]::IsNullOrEmpty($servicePrincipalClientId) -eq $false) -and
@@ -305,7 +312,7 @@ if ($null -eq $account.Account) {
         Write-Host("Could not select subscription with ID : " + $clusterSubscriptionId + ". Please make sure the ID you entered is correct and you have access to the cluster" ) -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 }
 else {
@@ -325,7 +332,7 @@ else {
             Write-Host("Could not select subscription with ID : " + $clusterSubscriptionId + ". Please make sure the ID you entered is correct and you have access to the cluster" ) -ForegroundColor Red
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
@@ -335,7 +342,7 @@ Write-Host("Checking specified Azure Managed cluster resource exists and got acc
 $clusterResource = Get-AzResource -ResourceId $clusterResourceId
 if ($null -eq $clusterResource) {
     Write-Host("specified Azure Managed cluster resource id either you dont have access or doesnt exist") -ForegroundColor Red
-    exit
+    exit 1
 }
 $clusterRegion = $clusterResource.Location.ToLower()
 
@@ -344,7 +351,7 @@ if ($isArcK8sCluster -eq $true) {
     $clusterIdentity = $clusterResource.identity.type.ToString().ToLower()
     if ($clusterIdentity.contains("systemassigned") -eq $false) {
         Write-Host("Identity of Azure Arc enabled Kubernetes cluster should be systemassigned but it has identity: $clusterIdentity") -ForegroundColor Red
-        exit
+        exit 1
     }
 }
 
@@ -450,7 +457,7 @@ else {
     Write-Host("using specified Log Analytics Workspace ResourceId: '" + $workspaceResourceId + "' ")
     if ([string]::IsNullOrEmpty($workspaceResourceId)) {
         Write-Host("Specified workspaceResourceId should not be NULL or empty") -ForegroundColor Red
-        exit
+        exit 1
     }
     $workspaceResourceId = $workspaceResourceId.Trim()
     if ($workspaceResourceId.EndsWith("/")) {
@@ -465,7 +472,7 @@ else {
 
     if (($workspaceResourceId.ToLower().Contains("microsoft.operationalinsights/workspaces") -ne $true) -or ($workspaceResourceId.Split("/").Length -ne 9)) {
         Write-Host("Provided workspace resource id should be in this format /subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName>") -ForegroundColor Red
-        exit
+        exit 1
     }
 
     $workspaceResourceParts = $workspaceResourceId.Split("/")
@@ -482,7 +489,7 @@ else {
     $WorkspaceInformation = Get-AzOperationalInsightsWorkspace -ResourceGroupName $workspaceResourceGroup -Name $workspaceName -ErrorAction SilentlyContinue
     if ($null -eq $WorkspaceInformation) {
         Write-Host("Specified Log Analytics Workspace: '" + $workspaceName + "'  in Resource Group: '" + $workspaceResourceGroup + "' in Subscription: '" + $workspaceSubscriptionId + "' does not exist") -ForegroundColor Red
-        exit
+        exit 1
     }
 }
 
@@ -520,7 +527,7 @@ try {
 }
 catch {
     Write-Host ("Failed to workspace details. Please validate whether you have Log Analytics Contributor role on the workspace error: '" + $Error[0] + "' ") -ForegroundColor Red
-    exit
+    exit 1
 }
 
 

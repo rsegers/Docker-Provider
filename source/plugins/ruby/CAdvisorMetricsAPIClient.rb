@@ -235,7 +235,6 @@ class CAdvisorMetricsAPIClient
               metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
               metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
 
-
               metricCollection = {}
               metricCollection["CounterName"] = metricNametoReturn
               metricCollection["Value"] = metricValue
@@ -715,7 +714,6 @@ class CAdvisorMetricsAPIClient
           metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
           metricItem["InstanceName"] = clusterId + "/" + nodeName
 
-
           metricCollection = {}
           metricCollection["CounterName"] = metricNametoReturn
           metricCollection["Value"] = metricValue
@@ -861,12 +859,10 @@ class CAdvisorMetricsAPIClient
         metricValue = node["startTime"]
         metricTime = metricPollTime #Time.now.utc.iso8601 #2018-01-30T19:36:14Z
 
-
         metricItem["Timestamp"] = metricTime
         metricItem["Host"] = hostName
         metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
         metricItem["InstanceName"] = clusterId + "/" + nodeName
-
 
         metricCollection = {}
         metricCollection["CounterName"] = metricNametoReturn

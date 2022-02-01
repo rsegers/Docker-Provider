@@ -51,7 +51,7 @@ def test_ds_workflows(env_dict):
     for podItem in pod_list.items:
         podName = podItem.metadata.name
         logcontent = get_log_file_content(
-            api_instance, constants.AGENT_RESOURCES_NAMESPACE, podName, agentLogPath)
+            api_instance, constants.AGENT_RESOURCES_NAMESPACE, podName, constants.OMSAGENT_MAIN_CONTAINER_NAME, agentLogPath)
         if not logcontent:
             pytest.fail("logcontent should not be null or empty for pod: " + podName)
         loglines = logcontent.split("\n")

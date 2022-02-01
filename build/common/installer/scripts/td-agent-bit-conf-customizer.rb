@@ -3,6 +3,11 @@ require_relative "ConfigParseErrorLogger"
 
 @td_agent_bit_conf_path = "/etc/opt/microsoft/docker-cimprov/td-agent-bit.conf"
 
+@os_type = ENV["OS_TYPE"]
+if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+  @td_agent_bit_conf_path = "/etc/fluent-bit/fluent-bit.conf"
+end
+
 @default_service_interval = "15"
 @default_mem_buf_limit = "10"
 
@@ -20,14 +25,14 @@ def substituteFluentBitPlaceHolders
     bufferMaxSize = ENV["FBIT_TAIL_BUFFER_MAX_SIZE"]
     memBufLimit = ENV["FBIT_TAIL_MEM_BUF_LIMIT"]
 
-    serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0 ) ? interval : @default_service_interval
+    serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
 
     tailBufferChunkSize = (!bufferChunkSize.nil? && is_number?(bufferChunkSize) && bufferChunkSize.to_i > 0) ? bufferChunkSize : nil
 
     tailBufferMaxSize = (!bufferMaxSize.nil? && is_number?(bufferMaxSize) && bufferMaxSize.to_i > 0) ? bufferMaxSize : nil
 
-    if ((!tailBufferChunkSize.nil? && tailBufferMaxSize.nil?) ||  (!tailBufferChunkSize.nil? && !tailBufferMaxSize.nil? && tailBufferChunkSize.to_i > tailBufferMaxSize.to_i))
+    if ((!tailBufferChunkSize.nil? && tailBufferMaxSize.nil?) || (!tailBufferChunkSize.nil? && !tailBufferMaxSize.nil? && tailBufferChunkSize.to_i > tailBufferMaxSize.to_i))
       puts "config:warn buffer max size must be greater or equal to chunk size"
       tailBufferMaxSize = tailBufferChunkSize
     end

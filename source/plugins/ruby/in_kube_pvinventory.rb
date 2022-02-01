@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-require 'fluent/plugin/input'
+require "fluent/plugin/input"
 
 module Fluent::Plugin
   class Kube_PVInventory_Input < Input
@@ -107,7 +107,6 @@ module Fluent::Plugin
           ApplicationInsightsUtility.sendCustomEvent(Constants::PV_INVENTORY_HEART_BEAT_EVENT, telemetryProperties)
           @@pvTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
-
       rescue => errorStr
         $log.warn "in_kube_pvinventory::enumerate:Failed in enumerate: #{errorStr}"
         $log.debug_backtrace(errorStr.backtrace)
@@ -131,7 +130,7 @@ module Fluent::Plugin
           record["ClusterName"] = KubernetesApiClient.getClusterName
           record["PVName"] = item["metadata"]["name"]
           record["PVStatus"] = item["status"]["phase"]
-          record["PVAccessModes"] = item["spec"]["accessModes"].join(', ')
+          record["PVAccessModes"] = item["spec"]["accessModes"].join(", ")
           record["PVStorageClassName"] = item["spec"]["storageClassName"]
           record["PVCapacityBytes"] = KubernetesApiClient.getMetricNumericValue("memory", item["spec"]["capacity"]["storage"])
           record["PVCreationTimeStamp"] = item["metadata"]["creationTimestamp"]
@@ -167,7 +166,6 @@ module Fluent::Plugin
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
           $log.info("kubePVInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
         end
-
       rescue => errorStr
         $log.warn "Failed in parse_and_emit_record for in_kube_pvinventory: #{errorStr}"
         $log.debug_backtrace(errorStr.backtrace)
@@ -212,7 +210,6 @@ module Fluent::Plugin
 
               # Can only have one type: return right away when found
               return pvType, typeInfo
-
             end
           end
         end
@@ -225,7 +222,6 @@ module Fluent::Plugin
       # No matches from list of types or an error
       return nil, {}
     end
-
 
     def run_periodic
       @mutex.lock

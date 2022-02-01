@@ -11,6 +11,41 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 1/31/2022 -
+##### Version microsoft/oms:ciprod01312022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01312022 (linux)
+##### Version microsoft/oms:win-ciprod01312022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod01312022 (windows)
+##### Code change log
+- Linux Agent
+  - Configurable DB name via configmap for ADX (default DB name:containerinsights)
+  - Default to cAdvisor port to 10250 and container runtime to  Containerd
+  - Update AgentVersion annotation in yamls (omsagent and chart) with released MDSD agent version
+  - Incresing windows agent CPU limits from 200m to 500m
+  - Ignore new disk path that comes from containerd starting with k8s version >= 1.19.x, which was adding unnecessary InsightsMetrics logs and increasing cost
+  - Route the AI SDK logs to log file instead of stdout
+  - Telemetry to collect ContainerLog Records with empty Timestamp
+  - FluentBit version upgrade from 1.6.8 to 1.7.8
+- Windows Agent
+  - Update to use FluentBit for container log collection and removed FluentD dependency for container log collection
+  - Telemetry to track if any of the variable fields of windows container inventory records has field size >= 64KB
+  - Add windows os check in in_cadvisor_perf plugin to avoid making call in MDSD in MSI auth mode
+  - Bug fix for placeholder_hostname in telegraf metrics
+  - FluentBit version upgrade from 1.4.0 to 1.7.8
+- Common
+    - Upgrade FluentD gem version from 1.12.2 to 1.14.2
+    - Upgrade Telegraf version from 1.18.0 to 1.20.3
+    - Fix for exception in node allocatable
+    - Telemetry to track nodeCount & containerCount
+- Other changes
+   - Updates to Arc K8s Extension ARM Onboarding templates with GA API version
+   - Added ARM Templates for MSI Based Onboarding for AKS
+   - Conformance test updates relates to sidecar container
+   - Troubelshooting script to detect issues related to Arc K8s Extension onboarding
+   - Remove the dependency SP for CDPX since configured to use MSI
+   - Linux Agent Image build improvements
+   - Update msys2 version to fix windows agent build
+   - Add explicit exit code 1 across all the PS scripts
+
+
 ### 10/13/2021 -
 ##### Version microsoft/oms:ciprod10132021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10132021 (linux)
 ##### Version microsoft/oms:win-ciprod10132021 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10132021 (windows)

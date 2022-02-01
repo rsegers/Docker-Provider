@@ -21,8 +21,9 @@ import (
 	"github.com/google/uuid"
 	"github.com/tinylib/msgp/msgp"
 
-	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 	"Docker-Provider/source/plugins/go/src/extension"
+
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/Azure/azure-kusto-go/kusto/ingest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -85,7 +86,6 @@ const WindowsContainerLogPluginConfFilePath = "/etc/omsagentwindows/out_oms.conf
 // IPName
 const IPName = "ContainerInsights"
 
-
 const defaultContainerInventoryRefreshInterval = 60
 
 const kubeMonAgentConfigEventFlushInterval = 60
@@ -102,9 +102,6 @@ const ContainerLogsV2Route = "v2"
 
 const ContainerLogsADXRoute = "adx"
 
-//fallback option v1 route i.e. ODS direct if required in any case
-const ContainerLogsV1Route = "v1"
-
 //container logs schema (v2=ContainerLogsV2 table in LA, anything else ContainerLogs table in LA. This is applicable only if Container logs route is NOT ADX)
 const ContainerLogV2SchemaVersion = "v2"
 
@@ -116,6 +113,9 @@ const MdsdOutputStreamIdTagPrefix = "dcr-"
 
 //env variable to container type
 const ContainerTypeEnv = "CONTAINER_TYPE"
+
+//Default ADX destination database name, can be overriden through configuration
+const DefaultAdxDatabaseName = "containerinsights"
 
 var (
 	// PluginConfiguration the plugins configuration
@@ -166,6 +166,8 @@ var (
 	AdxTenantID string
 	//ADX client secret
 	AdxClientSecret string
+	//ADX destination database name, default is DefaultAdxDatabaseName, can be overridden in configuration
+	AdxDatabaseName string
 	// container log or container log v2 tag name for oneagent route
 	MdsdContainerLogTagName string
 	// kubemonagent events tag name for oneagent route
@@ -247,29 +249,29 @@ type DataItemLAv1 struct {
 // DataItemLAv2 == ContainerLogV2 table in LA
 // Please keep the names same as destination column names, to avoid transforming one to another in the pipeline
 type DataItemLAv2 struct {
-	TimeGenerated         string `json:"TimeGenerated"`
-	Computer              string `json:"Computer"`
-	ContainerId           string `json:"ContainerId"`
-	ContainerName         string `json:"ContainerName"`
-	PodName				  string `json:"PodName"`
-	PodNamespace          string `json:"PodNamespace"`
-	LogMessage            string `json:"LogMessage"`
-	LogSource             string `json:"LogSource"`
+	TimeGenerated string `json:"TimeGenerated"`
+	Computer      string `json:"Computer"`
+	ContainerId   string `json:"ContainerId"`
+	ContainerName string `json:"ContainerName"`
+	PodName       string `json:"PodName"`
+	PodNamespace  string `json:"PodNamespace"`
+	LogMessage    string `json:"LogMessage"`
+	LogSource     string `json:"LogSource"`
 	//PodLabels			  string `json:"PodLabels"`
 }
 
 // DataItemADX == ContainerLogV2 table in ADX
 type DataItemADX struct {
-	TimeGenerated         string `json:"TimeGenerated"`
-	Computer              string `json:"Computer"`
-	ContainerId           string `json:"ContainerId"`
-	ContainerName         string `json:"ContainerName"`
-	PodName				  string `json:"PodName"`
-	PodNamespace          string `json:"PodNamespace"`
-	LogMessage            string `json:"LogMessage"`
-	LogSource             string `json:"LogSource"`
+	TimeGenerated string `json:"TimeGenerated"`
+	Computer      string `json:"Computer"`
+	ContainerId   string `json:"ContainerId"`
+	ContainerName string `json:"ContainerName"`
+	PodName       string `json:"PodName"`
+	PodNamespace  string `json:"PodNamespace"`
+	LogMessage    string `json:"LogMessage"`
+	LogSource     string `json:"LogSource"`
 	//PodLabels			  string `json:"PodLabels"`
-	AzureResourceId       string `json:"AzureResourceId"`
+	AzureResourceId string `json:"AzureResourceId"`
 }
 
 // telegraf metric DataItem represents the object corresponding to the json that is sent by fluentbit tail plugin
@@ -294,15 +296,15 @@ type InsightsMetricsBlob struct {
 
 // ContainerLogBlob represents the object corresponding to the payload that is sent to the ODS end point
 type ContainerLogBlobLAv1 struct {
-	DataType  string     `json:"DataType"`
-	IPName    string     `json:"IPName"`
+	DataType  string         `json:"DataType"`
+	IPName    string         `json:"IPName"`
 	DataItems []DataItemLAv1 `json:"DataItems"`
 }
 
 // ContainerLogBlob represents the object corresponding to the payload that is sent to the ODS end point
 type ContainerLogBlobLAv2 struct {
-	DataType  string     `json:"DataType"`
-	IPName    string     `json:"IPName"`
+	DataType  string         `json:"DataType"`
+	IPName    string         `json:"IPName"`
 	DataItems []DataItemLAv2 `json:"DataItems"`
 }
 
@@ -356,6 +358,7 @@ const (
 
 // DataType to be used as enum per data type socket client creation
 type DataType int
+
 const (
 	// DataType to be used as enum per data type socket client creation
 	ContainerLogV2 DataType = iota
@@ -623,12 +626,12 @@ func flushKubeMonAgentEventRecords() {
 								Log(message)
 								SendException(message)
 							} else {
-						    	msgPackEntry := MsgPackEntry{
+								msgPackEntry := MsgPackEntry{
 									Record: stringMap,
 								}
-						    msgPackEntries = append(msgPackEntries, msgPackEntry)
-						  }
-					   }
+								msgPackEntries = append(msgPackEntries, msgPackEntry)
+							}
+						}
 					}
 				}
 
@@ -665,8 +668,8 @@ func flushKubeMonAgentEventRecords() {
 								msgPackEntry := MsgPackEntry{
 									Record: stringMap,
 								}
-							msgPackEntries = append(msgPackEntries, msgPackEntry)
-						   }
+								msgPackEntries = append(msgPackEntries, msgPackEntry)
+							}
 						}
 					}
 				}
@@ -708,18 +711,18 @@ func flushKubeMonAgentEventRecords() {
 					} else {
 						if err := json.Unmarshal(jsonBytes, &stringMap); err != nil {
 							message := fmt.Sprintf("Error while UnMarshalling json bytes to stringmap: %s", err.Error())
-						    Log(message)
-						    SendException(message)
+							Log(message)
+							SendException(message)
 						} else {
 							msgPackEntry := MsgPackEntry{
 								Record: stringMap,
-						    }
-						   msgPackEntries = append(msgPackEntries, msgPackEntry)
+							}
+							msgPackEntries = append(msgPackEntries, msgPackEntry)
 						}
 					}
 				}
 			}
-			if (IsWindows == false && len(msgPackEntries) > 0) { //for linux, mdsd route
+			if IsWindows == false && len(msgPackEntries) > 0 { //for linux, mdsd route
 				if IsAADMSIAuthMode == true && strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) == false {
 					Log("Info::mdsd::obtaining output stream id for data type: %s", KubeMonAgentEventDataType)
 					MdsdKubeMonAgentEventsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(KubeMonAgentEventDataType)
@@ -752,7 +755,7 @@ func flushKubeMonAgentEventRecords() {
 					} else {
 						numRecords := len(msgPackEntries)
 						Log("FlushKubeMonAgentEventRecords::Info::Successfully flushed %d records that was %d bytes in %s", numRecords, bts, elapsed)
-					    // Send telemetry to AppInsights resource
+						// Send telemetry to AppInsights resource
 						SendEvent(KubeMonAgentEventsFlushedEvent, telemetryDimensions)
 					}
 				} else {
@@ -783,8 +786,8 @@ func flushKubeMonAgentEventRecords() {
 
 					if IsAADMSIAuthMode == true {
 						IngestionAuthTokenUpdateMutex.Lock()
-			            ingestionAuthToken := ODSIngestionAuthToken
-			            IngestionAuthTokenUpdateMutex.Unlock()
+						ingestionAuthToken := ODSIngestionAuthToken
+						IngestionAuthTokenUpdateMutex.Unlock()
 						if ingestionAuthToken == "" {
 							Log("Error::ODS Ingestion Auth Token is empty. Please check error log.")
 						}
@@ -905,86 +908,90 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		var msgPackEntries []MsgPackEntry
 		var i int
 		start := time.Now()
-        var elapsed time.Duration
+		var elapsed time.Duration
 
 		for i = 0; i < len(laMetrics); i++ {
-				var interfaceMap map[string]interface{}
-				stringMap := make(map[string]string)
-				jsonBytes, err := json.Marshal(*laMetrics[i])
-				if err != nil {
-					message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:when marshalling json %q", err)
+			var interfaceMap map[string]interface{}
+			stringMap := make(map[string]string)
+			jsonBytes, err := json.Marshal(*laMetrics[i])
+			if err != nil {
+				message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:when marshalling json %q", err)
+				Log(message)
+				SendException(message)
+				return output.FLB_OK
+			} else {
+				if err := json.Unmarshal(jsonBytes, &interfaceMap); err != nil {
+					message := fmt.Sprintf("Error while UnMarshalling json bytes to interfaceMap: %s", err.Error())
 					Log(message)
 					SendException(message)
 					return output.FLB_OK
 				} else {
-					if err := json.Unmarshal(jsonBytes, &interfaceMap); err != nil {
-						message := fmt.Sprintf("Error while UnMarshalling json bytes to interfaceMap: %s", err.Error())
-						Log(message)
-						SendException(message)
-						return output.FLB_OK
-					} else {
-						for key, value := range interfaceMap {
-							strKey := fmt.Sprintf("%v", key)
-							strValue := fmt.Sprintf("%v", value)
-							stringMap[strKey] = strValue
-						}
-						msgPackEntry := MsgPackEntry{
-							Record: stringMap,
-						}
-				     	msgPackEntries = append(msgPackEntries, msgPackEntry)
+					for key, value := range interfaceMap {
+						strKey := fmt.Sprintf("%v", key)
+						strValue := fmt.Sprintf("%v", value)
+						stringMap[strKey] = strValue
 					}
+					msgPackEntry := MsgPackEntry{
+						Record: stringMap,
+					}
+					msgPackEntries = append(msgPackEntries, msgPackEntry)
 				}
+			}
 		}
-		if (len(msgPackEntries) > 0) {
-			    if IsAADMSIAuthMode == true && (strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) == false) {
-				  Log("Info::mdsd::obtaining output stream id for InsightsMetricsDataType since Log Analytics AAD MSI Auth Enabled")
-				  MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType)
-			    }
-				msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdInsightsMetricsTagName, msgPackEntries)
+		if len(msgPackEntries) > 0 {
+			if IsAADMSIAuthMode == true && (strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) == false) {
+				Log("Info::mdsd::obtaining output stream id for InsightsMetricsDataType since Log Analytics AAD MSI Auth Enabled")
+				MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType)
+			}
+			msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdInsightsMetricsTagName, msgPackEntries)
+			if MdsdInsightsMetricsMsgpUnixSocketClient == nil {
+				Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
+				CreateMDSDClient(InsightsMetrics, ContainerType)
 				if MdsdInsightsMetricsMsgpUnixSocketClient == nil {
-					Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
-					CreateMDSDClient(InsightsMetrics, ContainerType)
-					if MdsdInsightsMetricsMsgpUnixSocketClient == nil {
-						Log("Error::mdsd::Unable to create mdsd client for insights metrics. Please check error log.")
-						ContainerLogTelemetryMutex.Lock()
-						defer ContainerLogTelemetryMutex.Unlock()
-						InsightsMetricsMDSDClientCreateErrors += 1
-						return output.FLB_RETRY
-					}
-				}
-
-				deadline := 10 * time.Second
-				MdsdInsightsMetricsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-				bts, er := MdsdInsightsMetricsMsgpUnixSocketClient.Write(msgpBytes)
-
-				elapsed = time.Since(start)
-
-				if er != nil {
-					Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
-					UpdateNumTelegrafMetricsSentTelemetry(0, 1, 0)
-					if MdsdInsightsMetricsMsgpUnixSocketClient != nil {
-						MdsdInsightsMetricsMsgpUnixSocketClient.Close()
-						MdsdInsightsMetricsMsgpUnixSocketClient = nil
-					}
-
+					Log("Error::mdsd::Unable to create mdsd client for insights metrics. Please check error log.")
 					ContainerLogTelemetryMutex.Lock()
 					defer ContainerLogTelemetryMutex.Unlock()
 					InsightsMetricsMDSDClientCreateErrors += 1
 					return output.FLB_RETRY
-				} else {
-					numTelegrafMetricsRecords := len(msgPackEntries)
-					UpdateNumTelegrafMetricsSentTelemetry(numTelegrafMetricsRecords, 0, 0)
-					Log("Success::mdsd::Successfully flushed %d telegraf metrics records that was %d bytes to mdsd in %s ", numTelegrafMetricsRecords, bts, elapsed)
 				}
+			}
+
+			deadline := 10 * time.Second
+			MdsdInsightsMetricsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+			bts, er := MdsdInsightsMetricsMsgpUnixSocketClient.Write(msgpBytes)
+
+			elapsed = time.Since(start)
+
+			if er != nil {
+				Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
+				UpdateNumTelegrafMetricsSentTelemetry(0, 1, 0, 0)
+				if MdsdInsightsMetricsMsgpUnixSocketClient != nil {
+					MdsdInsightsMetricsMsgpUnixSocketClient.Close()
+					MdsdInsightsMetricsMsgpUnixSocketClient = nil
+				}
+
+				ContainerLogTelemetryMutex.Lock()
+				defer ContainerLogTelemetryMutex.Unlock()
+				InsightsMetricsMDSDClientCreateErrors += 1
+				return output.FLB_RETRY
+			} else {
+				numTelegrafMetricsRecords := len(msgPackEntries)
+				UpdateNumTelegrafMetricsSentTelemetry(numTelegrafMetricsRecords, 0, 0, 0)
+				Log("Success::mdsd::Successfully flushed %d telegraf metrics records that was %d bytes to mdsd in %s ", numTelegrafMetricsRecords, bts, elapsed)
+			}
 		}
 
 	} else { // for windows, ODS direct
 
 		var metrics []laTelegrafMetric
 		var i int
+		numWinMetricsWithTagsSize64KBorMore := 0
 
 		for i = 0; i < len(laMetrics); i++ {
 			metrics = append(metrics, *laMetrics[i])
+			if len(*&laMetrics[i].Tags) >= (64 * 1024) {
+				numWinMetricsWithTagsSize64KBorMore += 1
+			}
 		}
 
 		laTelegrafMetrics := InsightsMetricsBlob{
@@ -1036,7 +1043,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		if err != nil {
 			message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:(retriable) when sending %v metrics. duration:%v err:%q \n", len(laMetrics), elapsed, err.Error())
 			Log(message)
-			UpdateNumTelegrafMetricsSentTelemetry(0, 1, 0)
+			UpdateNumTelegrafMetricsSentTelemetry(0, 1, 0, 0)
 			return output.FLB_RETRY
 		}
 
@@ -1045,7 +1052,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 				Log("PostTelegrafMetricsToLA::Error:(retriable) RequestID %s Response Status %v Status Code %v", reqID, resp.Status, resp.StatusCode)
 			}
 			if resp != nil && resp.StatusCode == 429 {
-				UpdateNumTelegrafMetricsSentTelemetry(0, 1, 1)
+				UpdateNumTelegrafMetricsSentTelemetry(0, 1, 1, 0)
 			}
 			return output.FLB_RETRY
 		}
@@ -1053,18 +1060,19 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		defer resp.Body.Close()
 
 		numMetrics := len(laMetrics)
-		UpdateNumTelegrafMetricsSentTelemetry(numMetrics, 0, 0)
+		UpdateNumTelegrafMetricsSentTelemetry(numMetrics, 0, 0, numWinMetricsWithTagsSize64KBorMore)
 		Log("PostTelegrafMetricsToLA::Info:Successfully flushed %v records in %v", numMetrics, elapsed)
 	}
 
 	return output.FLB_OK
 }
 
-func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int, numSend429Errors int) {
+func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int, numSend429Errors int, numWinMetricswith64KBorMoreSize int) {
 	ContainerLogTelemetryMutex.Lock()
 	TelegrafMetricsSentCount += float64(numMetricsSent)
 	TelegrafMetricsSendErrorCount += float64(numSendErrors)
 	TelegrafMetricsSend429ErrorCount += float64(numSend429Errors)
+	WinTelegrafMetricsCountWithTagsSize64KBorMore += float64(numWinMetricswith64KBorMoreSize)
 	ContainerLogTelemetryMutex.Unlock()
 }
 
@@ -1112,12 +1120,12 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		stringMap = make(map[string]string)
 		//below id & name are used by latency telemetry in both v1 & v2 LA schemas
 		id := ""
-	    name := ""
+		name := ""
 
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
-		if (ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true) {
+		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
 			stringMap["ContainerId"] = containerID
 			stringMap["ContainerName"] = containerName
@@ -1166,29 +1174,29 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				stringMap["AzureResourceId"] = ""
 			}
 			dataItemADX = DataItemADX{
-				TimeGenerated:         stringMap["TimeGenerated"],
-				Computer:              stringMap["Computer"],
-				ContainerId:           stringMap["ContainerId"],
-				ContainerName:         stringMap["ContainerName"],
-				PodName:               stringMap["PodName"],
-				PodNamespace:          stringMap["PodNamespace"],
-				LogMessage:            stringMap["LogMessage"],
-				LogSource:             stringMap["LogSource"],
-				AzureResourceId:       stringMap["AzureResourceId"],
+				TimeGenerated:   stringMap["TimeGenerated"],
+				Computer:        stringMap["Computer"],
+				ContainerId:     stringMap["ContainerId"],
+				ContainerName:   stringMap["ContainerName"],
+				PodName:         stringMap["PodName"],
+				PodNamespace:    stringMap["PodNamespace"],
+				LogMessage:      stringMap["LogMessage"],
+				LogSource:       stringMap["LogSource"],
+				AzureResourceId: stringMap["AzureResourceId"],
 			}
 			//ADX
 			dataItemsADX = append(dataItemsADX, dataItemADX)
 		} else {
-			if (ContainerLogSchemaV2 == true) {
+			if ContainerLogSchemaV2 == true {
 				dataItemLAv2 = DataItemLAv2{
-					TimeGenerated:         stringMap["TimeGenerated"],
-					Computer:              stringMap["Computer"],
-					ContainerId:           stringMap["ContainerId"],
-					ContainerName:         stringMap["ContainerName"],
-					PodName:               stringMap["PodName"],
-					PodNamespace:          stringMap["PodNamespace"],
-					LogMessage:            stringMap["LogMessage"],
-					LogSource:             stringMap["LogSource"],
+					TimeGenerated: stringMap["TimeGenerated"],
+					Computer:      stringMap["Computer"],
+					ContainerId:   stringMap["ContainerId"],
+					ContainerName: stringMap["ContainerName"],
+					PodName:       stringMap["PodName"],
+					PodNamespace:  stringMap["PodNamespace"],
+					LogMessage:    stringMap["LogMessage"],
+					LogSource:     stringMap["LogSource"],
 				}
 				//ODS-v2 schema
 				dataItemsLAv2 = append(dataItemsLAv2, dataItemLAv2)
@@ -1206,10 +1214,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					Image:                 stringMap["Image"],
 					Name:                  stringMap["Name"],
 				}
-			//ODS-v1 schema
-			dataItemsLAv1 = append(dataItemsLAv1, dataItemLAv1)
-			name = stringMap["Name"]
-			id = stringMap["Id"]
+				//ODS-v1 schema
+				dataItemsLAv1 = append(dataItemsLAv1, dataItemLAv1)
+				name = stringMap["Name"]
+				id = stringMap["Id"]
 			}
 		}
 
@@ -1226,6 +1234,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					maxLatencyContainer = name + "=" + id
 				}
 			}
+		} else {
+			ContainerLogTelemetryMutex.Lock()
+			ContainerLogRecordCountWithEmptyTimeStamp += 1
+			ContainerLogTelemetryMutex.Unlock()
 		}
 	}
 
@@ -1359,18 +1371,18 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		numContainerLogRecords = len(dataItemsADX)
 		Log("Success::ADX::Successfully wrote %d container log records to ADX in %s", numContainerLogRecords, elapsed)
 
-	} else if ((ContainerLogSchemaV2 == true && len(dataItemsLAv2) > 0) || len(dataItemsLAv1) > 0) { //ODS
+	} else if (ContainerLogSchemaV2 == true && len(dataItemsLAv2) > 0) || len(dataItemsLAv1) > 0 { //ODS
 		var logEntry interface{}
 		recordType := ""
 		loglinesCount := 0
 		//schema v2
-		if (len(dataItemsLAv2) > 0 && ContainerLogSchemaV2 == true) {
+		if len(dataItemsLAv2) > 0 && ContainerLogSchemaV2 == true {
 			logEntry = ContainerLogBlobLAv2{
 				DataType:  ContainerLogV2DataType,
 				IPName:    IPName,
 				DataItems: dataItemsLAv2}
-				loglinesCount = len(dataItemsLAv2)
-				recordType = "ContainerLogV2"
+			loglinesCount = len(dataItemsLAv2)
+			recordType = "ContainerLogV2"
 		} else {
 			//schema v1
 			if len(dataItemsLAv1) > 0 {
@@ -1378,8 +1390,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					DataType:  ContainerLogDataType,
 					IPName:    IPName,
 					DataItems: dataItemsLAv1}
-					loglinesCount = len(dataItemsLAv1)
-					recordType = "ContainerLog"
+				loglinesCount = len(dataItemsLAv1)
+				recordType = "ContainerLog"
 			}
 		}
 
@@ -1411,7 +1423,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				return output.FLB_RETRY
 			}
 			// add authorization header to the req
-		    req.Header.Set("Authorization", "Bearer "+ingestionAuthToken)
+			req.Header.Set("Authorization", "Bearer "+ingestionAuthToken)
 		}
 
 		resp, err := HTTPClient.Do(req)
@@ -1439,7 +1451,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		numContainerLogRecords = loglinesCount
 		Log("PostDataHelper::Info::Successfully flushed %d %s records to ODS in %s", numContainerLogRecords, recordType, elapsed)
 
-		}
+	}
 
 	ContainerLogTelemetryMutex.Lock()
 	defer ContainerLogTelemetryMutex.Unlock()
@@ -1553,7 +1565,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("Container Type %s", ContainerType)
 
 	osType := os.Getenv("OS_TYPE")
-    IsWindows = false
+	IsWindows = false
 	// Linux
 	if strings.Compare(strings.ToLower(osType), "windows") != 0 {
 		Log("Reading configuration for Linux from %s", pluginConfPath)
@@ -1698,6 +1710,17 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ContainerLogsRouteADX = false
 
 	if strings.Compare(ContainerLogsRoute, ContainerLogsADXRoute) == 0 {
+		// Try to read the ADX database name from environment variables. Default to DefaultAdsDatabaseName if not set.
+		// This SHOULD be set by tomlparser.rb so it's a highly unexpected event if it isn't.
+		// It should be set by the logic in tomlparser.rb EVEN if ADX logging isn't enabled
+		AdxDatabaseName := strings.TrimSpace(os.Getenv("AZMON_ADX_DATABASE_NAME"))
+
+		// Check the len of the provided name for database and use default if 0, just to be sure
+		if len(AdxDatabaseName) == 0 {
+			Log("Adx database name unexpecedly empty (check config AND implementation, should have been set by tomlparser.rb?) - will default to '%s'", DefaultAdxDatabaseName)
+			AdxDatabaseName = DefaultAdxDatabaseName
+		}
+
 		//check if adx clusteruri, clientid & secret are set
 		var err error
 		AdxClusterUri, err = ReadFileContents(PluginConfiguration["adx_cluster_uri_path"])
@@ -1708,6 +1731,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 			Log("Invalid AdxClusterUri %s", AdxClusterUri)
 			AdxClusterUri = ""
 		}
+
 		AdxClientID, err = ReadFileContents(PluginConfiguration["adx_client_id_path"])
 		if err != nil {
 			Log("Error when reading AdxClientID %s", err)
@@ -1723,16 +1747,14 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 			Log("Error when reading AdxClientSecret %s", err)
 		}
 
-		if len(AdxClusterUri) > 0 && len(AdxClientID) > 0 && len(AdxClientSecret) > 0 && len(AdxTenantID) > 0 {
+		// AdxDatabaseName should never get in a state where its length is 0, but it doesn't hurt to add the check
+		if len(AdxClusterUri) > 0 && len(AdxClientID) > 0 && len(AdxClientSecret) > 0 && len(AdxTenantID) > 0 && len(AdxDatabaseName) > 0 {
 			ContainerLogsRouteADX = true
 			Log("Routing container logs thru %s route...", ContainerLogsADXRoute)
 			fmt.Fprintf(os.Stdout, "Routing container logs thru %s route...\n", ContainerLogsADXRoute)
 		}
 	} else if strings.Compare(strings.ToLower(osType), "windows") != 0 { //for linux, oneagent will be default route
-		ContainerLogsRouteV2 = true  //default is mdsd route
-		if strings.Compare(ContainerLogsRoute, ContainerLogsV1Route) == 0 {
-			ContainerLogsRouteV2 = false  //fallback option when hiddensetting set
-		}
+		ContainerLogsRouteV2 = true //default is mdsd route
 		Log("Routing container logs thru %s route...", ContainerLogsRoute)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsRoute)
 	}
@@ -1750,14 +1772,14 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("Creating MDSD clients for KubeMonAgentEvents & InsightsMetrics")
 		CreateMDSDClient(KubeMonAgentEvents, ContainerType)
 		CreateMDSDClient(InsightsMetrics, ContainerType)
-    }
+	}
 
 	ContainerLogSchemaVersion := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOG_SCHEMA_VERSION")))
 	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", ContainerLogSchemaVersion)
 
-	ContainerLogSchemaV2 = false  //default is v1 schema
+	ContainerLogSchemaV2 = false //default is v1 schema
 
-	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0  && ContainerLogsRouteADX != true {
+	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
@@ -1783,15 +1805,15 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	if ContainerLogSchemaV2 == true {
 		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
 	} else {
-	   MdsdContainerLogTagName = MdsdContainerLogSourceName
-    }
+		MdsdContainerLogTagName = MdsdContainerLogSourceName
+	}
 
 	MdsdInsightsMetricsTagName = MdsdInsightsMetricsSourceName
-    MdsdKubeMonAgentEventsTagName = MdsdKubeMonAgentEventsSourceName
+	MdsdKubeMonAgentEventsTagName = MdsdKubeMonAgentEventsSourceName
 	Log("ContainerLogsRouteADX: %v, IsWindows: %v, IsAADMSIAuthMode = %v \n", ContainerLogsRouteADX, IsWindows, IsAADMSIAuthMode)
 	if !ContainerLogsRouteADX && IsWindows && IsAADMSIAuthMode {
 		Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)
-	    IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
+		IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
 		go refreshIngestionAuthToken()
 	}
 }

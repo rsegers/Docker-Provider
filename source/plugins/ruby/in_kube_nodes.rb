@@ -1,17 +1,17 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-require 'fluent/plugin/input'
+require "fluent/plugin/input"
 
 module Fluent::Plugin
   class Kube_nodeInventory_Input < Input
     Fluent::Plugin.register_input("kube_nodes", self)
 
-    def initialize (kubernetesApiClient=nil,
-                    applicationInsightsUtility=nil,
-                    extensionUtils=nil,
-                    env=nil,
-                    telemetry_flush_interval=nil)
+    def initialize(kubernetesApiClient = nil,
+                   applicationInsightsUtility = nil,
+                   extensionUtils = nil,
+                   env = nil,
+                   telemetry_flush_interval = nil)
       super()
 
       require "yaml"
@@ -36,7 +36,6 @@ module Fluent::Plugin
       @@promConfigMountPath = "/etc/config/settings/prometheus-data-collection-settings"
       @@osmConfigMountPath = "/etc/config/osm-settings/osm-metric-collection-configuration"
       @@AzStackCloudFileName = "/etc/kubernetes/host/azurestackcloud.json"
-
 
       @@rsPromInterval = @env["TELEMETRY_RS_PROM_INTERVAL"]
       @@rsPromFieldPassCount = @env["TELEMETRY_RS_PROM_FIELDPASS_LENGTH"]
@@ -119,6 +118,7 @@ module Fluent::Plugin
         nodeInventory = nil
         currentTime = Time.now
         batchTime = currentTime.utc.iso8601
+        nodeCount = 0
 
         @nodesAPIE2ELatencyMs = 0
         @nodeInventoryE2EProcessingLatencyMs = 0
@@ -138,7 +138,32 @@ module Fluent::Plugin
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
             @tag = @extensionUtils.getOutputStreamId(Constants::KUBE_NODE_INVENTORY_DATA_TYPE)
           end
-	        $log.info("in_kube_nodes::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_nodes::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_nodes::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_nodes::enumerate: using containernodeinventory tag -#{@ContainerNodeInventoryTag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_nodes::enumerate: using kubenodeinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
+        end
+        nodesAPIChunkStartTime = (Time.now.to_f * 1000).to_i
+
+        @nodesAPIE2ELatencyMs = 0
+        @nodeInventoryE2EProcessingLatencyMs = 0
+        nodeInventoryStartTime = (Time.now.to_f * 1000).to_i
+
+        if @extensionUtils.isAADMSIAuthMode()
+          $log.info("in_kube_nodes::enumerate: AAD AUTH MSI MODE")
+          if @kubeperfTag.nil? || !@kubeperfTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+            @kubeperfTag = @extensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
+          end
+          if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+            @insightsMetricsTag = @extensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+          end
+          if @ContainerNodeInventoryTag.nil? || !@ContainerNodeInventoryTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+            @ContainerNodeInventoryTag = @extensionUtils.getOutputStreamId(Constants::CONTAINER_NODE_INVENTORY_DATA_TYPE)
+          end
+          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+            @tag = @extensionUtils.getOutputStreamId(Constants::KUBE_NODE_INVENTORY_DATA_TYPE)
+          end
+          $log.info("in_kube_nodes::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_nodes::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_nodes::enumerate: using containernodeinventory tag -#{@ContainerNodeInventoryTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_nodes::enumerate: using kubenodeinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
@@ -155,6 +180,7 @@ module Fluent::Plugin
         nodesAPIChunkEndTime = (Time.now.to_f * 1000).to_i
         @nodesAPIE2ELatencyMs = (nodesAPIChunkEndTime - nodesAPIChunkStartTime)
         if (!nodeInventory.nil? && !nodeInventory.empty? && nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
+          nodeCount += nodeInventory["items"].length
           $log.info("in_kube_nodes::enumerate : number of node items :#{nodeInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
           parse_and_emit_records(nodeInventory, batchTime)
         else
@@ -168,6 +194,7 @@ module Fluent::Plugin
           nodesAPIChunkEndTime = (Time.now.to_f * 1000).to_i
           @nodesAPIE2ELatencyMs = @nodesAPIE2ELatencyMs + (nodesAPIChunkEndTime - nodesAPIChunkStartTime)
           if (!nodeInventory.nil? && !nodeInventory.empty? && nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
+            nodeCount += nodeInventory["items"].length
             $log.info("in_kube_nodes::enumerate : number of node items :#{nodeInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
             parse_and_emit_records(nodeInventory, batchTime)
           else
@@ -181,6 +208,7 @@ module Fluent::Plugin
         if (timeDifferenceInMinutes >= @TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
           @applicationInsightsUtility.sendMetricTelemetry("NodeInventoryE2EProcessingLatencyMs", @nodeInventoryE2EProcessingLatencyMs, {})
           @applicationInsightsUtility.sendMetricTelemetry("NodesAPIE2ELatencyMs", @nodesAPIE2ELatencyMs, {})
+          @applicationInsightsUtility.sendMetricTelemetry("NodeCount", nodeCount, {})
           @@nodeInventoryLatencyTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
         # Setting this to nil so that we dont hold memory until GC kicks in
@@ -208,9 +236,9 @@ module Fluent::Plugin
           nodeInventoryRecord = getNodeInventoryRecord(item, batchTime)
           eventStream.add(emitTime, nodeInventoryRecord) if nodeInventoryRecord
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && eventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
-            $log.info("in_kube_node::parse_and_emit_records: number of node inventory records emitted #{@NODES_EMIT_STREAM_BATCH_SIZE} @ #{Time.now.utc.iso8601}")
+            $log.info("in_kube_node::parse_and_emit_records: number of node inventory records emitted #{eventStream.count} @ #{Time.now.utc.iso8601}")
             router.emit_stream(@tag, eventStream) if eventStream
-            $log.info("in_kube_node::parse_and_emit_records: number of mdm node inventory records emitted #{@NODES_EMIT_STREAM_BATCH_SIZE} @ #{Time.now.utc.iso8601}")
+            $log.info("in_kube_node::parse_and_emit_records: number of mdm node inventory records emitted #{eventStream.count} @ #{Time.now.utc.iso8601}")
             router.emit_stream(@MDMKubeNodeInventoryTag, eventStream) if eventStream
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
               $log.info("kubeNodeInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -223,7 +251,7 @@ module Fluent::Plugin
           containerNodeInventoryEventStream.add(emitTime, containerNodeInventoryRecord) if containerNodeInventoryRecord
 
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && containerNodeInventoryEventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
-            $log.info("in_kube_node::parse_and_emit_records: number of container node inventory records emitted #{@NODES_EMIT_STREAM_BATCH_SIZE} @ #{Time.now.utc.iso8601}")
+            $log.info("in_kube_node::parse_and_emit_records: number of container node inventory records emitted #{containerNodeInventoryEventStream.count} @ #{Time.now.utc.iso8601}")
             router.emit_stream(@ContainerNodeInventoryTag, containerNodeInventoryEventStream) if containerNodeInventoryEventStream
             containerNodeInventoryEventStream = Fluent::MultiEventStream.new
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
@@ -272,7 +300,7 @@ module Fluent::Plugin
             kubePerfEventStream.add(emitTime, metricRecord) if metricRecord
           end
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && kubePerfEventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
-            $log.info("in_kube_nodes::parse_and_emit_records: number of node perf metric records emitted #{@NODES_EMIT_STREAM_BATCH_SIZE} @ #{Time.now.utc.iso8601}")
+            $log.info("in_kube_nodes::parse_and_emit_records: number of node perf metric records emitted #{kubePerfEventStream.count} @ #{Time.now.utc.iso8601}")
             router.emit_stream(@kubeperfTag, kubePerfEventStream) if kubePerfEventStream
             kubePerfEventStream = Fluent::MultiEventStream.new
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
@@ -302,7 +330,7 @@ module Fluent::Plugin
             insightsMetricsEventStream.add(emitTime, insightsMetricsRecord) if insightsMetricsRecord
           end
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && insightsMetricsEventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
-            $log.info("in_kube_nodes::parse_and_emit_records: number of GPU node perf metric records emitted #{@NODES_EMIT_STREAM_BATCH_SIZE} @ #{Time.now.utc.iso8601}")
+            $log.info("in_kube_nodes::parse_and_emit_records: number of GPU node perf metric records emitted #{insightsMetricsEventStream.count} @ #{Time.now.utc.iso8601}")
             router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream
             insightsMetricsEventStream = Fluent::MultiEventStream.new
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
@@ -572,12 +600,12 @@ module Fluent::Plugin
       return properties
     end
   end # Kube_Node_Input
+
   class NodeStatsCache
     # inner class for caching implementation (CPU and memory caching is handled the exact same way, so logic to do so is moved to a private inner class)
     # (to reduce code duplication)
     class NodeCache
-
-      @@RECORD_TIME_TO_LIVE = 60*20  # units are seconds, so clear the cache every 20 minutes.
+      @@RECORD_TIME_TO_LIVE = 60 * 20  # units are seconds, so clear the cache every 20 minutes.
 
       def initialize
         @cacheHash = {}
@@ -622,14 +650,13 @@ module Fluent::Plugin
             end
           end
 
-          nodes_to_remove.each {|node_name|
+          nodes_to_remove.each { |node_name|
             @cacheHash.delete(node_name)
             @timeAdded.delete(node_name)
           }
         end
       end
     end  # NodeCache
-
 
     @@cpuCache = NodeCache.new
     @@memCache = NodeCache.new

@@ -13,7 +13,7 @@
       "metadata": {
         "description": "Location of the Azure Arc Connected Cluster Resource e.g. \"eastus\""
       }
-    },  
+    },
     "workspaceResourceId": {
       "type": "string",
       "metadata": {
@@ -83,7 +83,7 @@
       "subscriptionId": "[split(parameters('clusterResourceId'),'/')[2]]",
       "resourceGroup": "[split(parameters('clusterResourceId'),'/')[4]]",
       "dependsOn": [
-        "[Concat('ContainerInsights', '-',  uniqueString(parameters('workspaceResourceId')))]"        
+        "[Concat('ContainerInsights', '-',  uniqueString(parameters('workspaceResourceId')))]"
       ],
       "properties": {
         "mode": "Incremental",
@@ -95,7 +95,7 @@
           "resources": [
             {
               "type": "Microsoft.KubernetesConfiguration/extensions",
-              "apiVersion": "2020-07-01-preview",
+              "apiVersion": "2021-09-01",
               "name": "azuremonitor-containers",
               "location": "[parameters('clusterRegion')]",
               "identity": {"type": "systemassigned"},
@@ -107,7 +107,7 @@
                 },
                 "configurationProtectedSettings": {
                   "omsagent.secret.wsid": "[reference(parameters('workspaceResourceId'), '2015-03-20').customerId]",
-                  "omsagent.secret.key": "[listKeys(parameters('workspaceResourceId'), '2015-03-20').primarySharedKey]"              
+                  "omsagent.secret.key": "[listKeys(parameters('workspaceResourceId'), '2015-03-20').primarySharedKey]"
                 },
                 "autoUpgradeMinorVersion": true,
                 "releaseTrain": "Stable",

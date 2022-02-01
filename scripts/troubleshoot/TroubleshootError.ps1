@@ -35,7 +35,7 @@ if (($null -eq $ClusterResourceId) -or ($ClusterResourceId.Split("/").Length -ne
     Write-Host("Resource Id Format for AKS cluster is : /subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.ContainerService/managedClusters/<clusterName>") -ForegroundColor Red
     Write-Host("Resource Id Format for ARO cluster is : /subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.ContainerService/openShiftManagedClusters/<clusterName>") -ForegroundColor Red
     Stop-Transcript
-    exit
+    exit 1
 }
 
 $isClusterAndWorkspaceInDifferentSubs = $false
@@ -70,7 +70,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
         else {
             Write-Host("Please re-launch the script with elevated administrator") -ForegroundColor Red
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 
@@ -97,7 +97,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.ResourceGraph in a new powershell window: eg. 'Install-Module Az.ResourceGraph -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
             if ($null -eq $azAksModule) {
@@ -108,7 +108,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Aks in a new powershell window: eg. 'Install-Module Az.Aks -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -120,7 +120,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules forAz.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -132,7 +132,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules forAz.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -145,7 +145,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                 catch {
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.OperationalInsights in a new powershell window: eg. 'Install-Module Az.OperationalInsights -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -159,7 +159,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                     Write-Host("Could not Import Az.ResourceGraph...") -ForegroundColor Red
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.ResourceGraph in a new powershell window: eg. 'Install-Module Az.ResourceGraph -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -171,7 +171,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                     Write-Host("Could not Import Az.Aks...") -ForegroundColor Red
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Aks in a new powershell window: eg. 'Install-Module Az.Aks -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -183,7 +183,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                     Write-Host("Could not import Az.Resources...") -ForegroundColor Red
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Resources in a new powershell window: eg. 'Install-Module Az.Resources -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
             if ($null -eq $azAccountModule) {
@@ -194,7 +194,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                     Write-Host("Could not import Az.Accounts...") -ForegroundColor Red
                     Write-Host("Close other powershell logins and try installing the latest modules for Az.Accounts in a new powershell window: eg. 'Install-Module Az.Accounts -Repository PSGallery -Force'") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -205,7 +205,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                 catch {
                     Write-Host("Could not import Az.OperationalInsights... Please reinstall this Module") -ForegroundColor Red
                     Stop-Transcript
-                    exit
+                    exit 1
                 }
             }
 
@@ -213,7 +213,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
         2 {
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
@@ -277,7 +277,7 @@ if ($null -eq $account.Account) {
         Write-Host("Could not select subscription with ID : " + $ClusterSubscriptionId + ". Please make sure the SubscriptionId you entered is correct and you have access to the Subscription" ) -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 }
 else {
@@ -297,7 +297,7 @@ else {
             Write-Host("Could not select subscription with ID : " + $ClusterSubscriptionId + ". Please make sure the SubscriptionId you entered is correct and you have access to the Subscription" ) -ForegroundColor Red
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
     }
 }
@@ -313,7 +313,7 @@ if ($notPresent) {
     Write-Host("Could not find RG. Please make sure that the resource group name: '" + $ResourceGroupName + "'is correct and you have access to the Resource Group") -ForegroundColor Red
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 Write-Host("Successfully checked resource groups details...") -ForegroundColor Green
 
@@ -327,7 +327,7 @@ try {
             Write-Host("Could not fetch cluster details: Please make sure that the '" + $ClusterType + "' Cluster name: '" + $ClusterName + "' is correct and you have access to the cluster") -ForegroundColor Red
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
         else {
             Write-Host("Successfully checked '" + $ClusterType + "' Cluster details...") -ForegroundColor Green
@@ -342,7 +342,7 @@ try {
                         Write-Host($AksOptInLink) -ForegroundColor Red;
                         Write-Host("");
                         Stop-Transcript
-                        exit
+                        exit 1
                     }
 
                     $omsagentconfig = $props.addonprofiles.omsagent.config;
@@ -364,7 +364,7 @@ try {
             Write-Host("Could not fetch cluster details: Please make sure that the '" + $ClusterType + "' Cluster name: '" + $ClusterName + "' is correct and you have access to the cluster") -ForegroundColor Red
             Write-Host("")
             Stop-Transcript
-            exit
+            exit 1
         }
 
         $monitorProfile = $ResourceDetail.aroproperties.monitorprofile
@@ -373,7 +373,7 @@ try {
             Write-Host($AksOptInLink) -ForegroundColor Red;
             Write-Host("");
             Stop-Transcript
-            exit
+            exit 1
         }
 
         $LogAnalyticsWorkspaceResourceID = $monitorProfile.workspaceresourceid
@@ -385,7 +385,7 @@ catch {
     Write-Host("Could not fetch cluster details: Please make sure that the '" + $ClusterType + "' Cluster name: '" + $ClusterName + "' is correct and you have access to the cluster") -ForegroundColor Red
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 
 
@@ -511,7 +511,7 @@ if ($null -eq $LogAnalyticsWorkspaceResourceID) {
     }
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 else {
 
@@ -532,7 +532,7 @@ else {
         Write-Host("Could not change to Workspace subscriptionId : '" + $workspaceSubscriptionId + "'." ) -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 
 
@@ -557,7 +557,7 @@ else {
         }
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
     Write-Host("Successfully fetched workspace subcription details...") -ForegroundColor Green
     Write-Host("")
@@ -581,7 +581,7 @@ else {
             Write-Host("Opt-in - " + $AksOptInLink) -ForegroundColor Red
         }
         Stop-Transcript
-        exit
+        exit 1
     }
     Write-Host("Successfully fetched workspace resource group...") -ForegroundColor Green
     Write-Host("")
@@ -610,7 +610,7 @@ else {
         }
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 
     $WorkspaceLocation = $WorkspaceInformation.Location
@@ -619,7 +619,7 @@ else {
         Write-Host("Cannot fetch workspace location. Please try again...") -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 
     $WorkspacePricingTier = $WorkspaceInformation.sku
@@ -635,7 +635,7 @@ else {
         Write-Host("Failed to get the list of solutions onboarded to the workspace. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 
     try {
@@ -647,7 +647,7 @@ else {
         Write-Host("Failed to get ContainerInsights solution details from the workspace") -ForegroundColor Red
         Write-Host("")
         Stop-Transcript
-        exit
+        exit 1
     }
 
     $isSolutionOnboarded = $WorkspaceIPDetails.Enabled[$ContainerInsightsIndex]
@@ -711,7 +711,7 @@ try {
         if ($WorkspaceUsage.CurrentValue -ge $WorkspaceUsage.Limit) {
             Write-Host("Workspace usage has reached or over the configured daily cap. Please increase the daily cap limits or wait for next reset interval") -ForegroundColor Red
             Stop-Transcript
-            exit
+            exit 1
         }
     }
     Write-Host("Workspace doesnt have daily cap configured") -ForegroundColor Green
@@ -720,7 +720,7 @@ catch {
     Write-Host("Failed to get  usage details of the workspace") -ForegroundColor Red
     Write-Host("")
     Stop-Transcript
-    exit
+    exit 1
 }
 
 
@@ -757,7 +757,7 @@ if ("AKS" -eq $ClusterType ) {
             Write-Host($AksOptInLink) -ForegroundColor Red
             Write-Host($contactUSMessage)
             Stop-Transcript
-            exit
+            exit 1
         }
 
         $rsPodStatus = $rsPod.status
@@ -778,7 +778,7 @@ if ("AKS" -eq $ClusterType ) {
             Write-Host($AksOptInLink) -ForegroundColor Red
             Write-Host($contactUSMessage)
             Stop-Transcript
-            exit
+            exit 1
         }
 
         Write-Host( "omsagent replicaset pod running OK.") -ForegroundColor Green
@@ -786,7 +786,7 @@ if ("AKS" -eq $ClusterType ) {
     catch {
         Write-Host ("Failed to get omsagent replicatset pod info using kubectl get rs  : '" + $Error[0] + "' ") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 
     Write-Host("Checking whether the omsagent daemonset pod running correctly ...")
@@ -795,7 +795,7 @@ if ("AKS" -eq $ClusterType ) {
         if (($null -eq $ds) -or ($null -eq $ds.Items) -or ($ds.Items.Length -ne 1)) {
             Write-Host( "omsagent replicaset pod not scheduled or failed to schedule." + $contactUSMessage)
             Stop-Transcript
-            exit
+            exit 1
         }
 
         $dsStatus = $ds.Items[0].status
@@ -809,7 +809,7 @@ if ("AKS" -eq $ClusterType ) {
             Write-Host($dsStatus)
             Write-Host($contactUSMessage)
             Stop-Transcript
-            exit
+            exit 1
         }
 
         Write-Host( "omsagent daemonset pod running OK.") -ForegroundColor Green
@@ -817,7 +817,7 @@ if ("AKS" -eq $ClusterType ) {
     catch {
         Write-Host ("Failed to execute the script  : '" + $Error[0] + "' ") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 
     Write-Host("Checking whether the omsagent heatlhservice  running correctly ...")
@@ -826,7 +826,7 @@ if ("AKS" -eq $ClusterType ) {
         if ($healthservice.Items.Length -ne 1) {
             Write-Host( "omsagent healthservice  not scheduled or failed to schedule." + $contactUSMessage)
             Stop-Transcript
-            exit
+            exit 1
         }
 
         Write-Host( "omsagent healthservice running OK.") -ForegroundColor Green
@@ -834,7 +834,7 @@ if ("AKS" -eq $ClusterType ) {
     catch {
         Write-Host ("Failed to execute kubectl get services command : '" + $Error[0] + "' ") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 
     if ($isClusterAndWorkspaceInDifferentSubs) {
@@ -851,7 +851,7 @@ if ("AKS" -eq $ClusterType ) {
     catch {
         Write-Host ("Failed to get workspace details. Please validate whether you have Log Analytics Contributor role on the workspace error: '" + $Error[0] + "' ") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 
     Write-Host("Checking whether the WorkspaceGuid and key matching with configured log analytics workspace ...")
@@ -862,7 +862,7 @@ if ("AKS" -eq $ClusterType ) {
         if ((($workspaceGuidConfiguredOnAgent -eq $workspaceGUID) -and ($workspaceKeyConfiguredOnAgent -eq $workspacePrimarySharedKey)) -eq $false) {
             Write-Host ("Error - Log Analytics Workspace Guid and key configured on the agent not matching with details of the Workspace. Please verify and fix with the correct workspace Guid and Key") -ForegroundColor Red
             Stop-Transcript
-            exit
+            exit 1
         }
 
         Write-Host("Workspace Guid and Key on the agent matching with the Workspace") -ForegroundColor Green
@@ -870,7 +870,7 @@ if ("AKS" -eq $ClusterType ) {
     catch {
         Write-Host ("Failed to execute the script  : '" + $Error[0] + "' ") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 
     Write-Host("Checking agent version...")
@@ -885,7 +885,7 @@ if ("AKS" -eq $ClusterType ) {
     } catch {
         Write-Host ("Failed to execute the script  : '" + $Error[0] + "' ") -ForegroundColor Red
         Stop-Transcript
-        exit
+        exit 1
     }
 }
 

@@ -1,0 +1,210 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "aksResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "AKS Cluster Resource ID"
+            }
+        },
+        "aksResourceLocation": {
+            "type": "string",
+            "metadata": {
+              "description": "Location of the AKS resource e.g. \"East US\""
+            }
+        },
+        "aksResourceTagValues": {
+            "type": "object",
+            "metadata": {
+              "description": "Existing all tags on AKS Cluster Resource"
+            }
+        },
+        "workspaceLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "Worksapce Location for data collection rule"
+            }
+        },
+        "workspaceResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Full Resource ID of the log analitycs workspace that will be used for data destination. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz"
+            }
+        },
+        "dcrResourceTagValues": {
+            "type": "object",
+            "metadata": {
+              "description": "Existing or new tags on DCR Cluster Resource"
+            }
+        }
+    },
+    "variables": {
+        "clusterSubscriptionId": "[split(parameters('aksResourceId'),'/')[2]]",
+        "clusterResourceGroup": "[split(parameters('aksResourceId'),'/')[4]]",
+        "clusterName": "[split(parameters('aksResourceId'),'/')[8]]",
+        "workspaceSubscriptionId": "[split(parameters('workspaceResourceId'),'/')[2]]",
+        "workspaceResourceGroup": "[split(parameters('workspaceResourceId'),'/')[4]]",
+        "dcrName": "[Concat('MSCI', '-', split(parameters('workspaceResourceId'),'/')[8])]",
+        "associationName":  "ContainerInsightsExtension",
+        "dataCollectionRuleId": "[resourceId(variables('workspaceSubscriptionId'), variables('workspaceResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]"
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[Concat('aks-monitoring-msi-dcr', '-',  uniqueString(variables('dcrName')))]",
+            "apiVersion": "2017-05-10",
+            "subscriptionId": "[variables('workspaceSubscriptionId')]",
+            "resourceGroup": "[variables('workspaceResourceGroup')]",
+            "properties": {
+              "mode": "Incremental",
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {},
+                "variables": {},
+                "resources": [
+                    {
+                        "type": "Microsoft.Insights/dataCollectionRules",
+                        "apiVersion": "2019-11-01-preview",
+                        "name": "[variables('dcrName')]",
+                        "location": "[parameters('workspaceLocation')]",
+                        "tags": "[parameters('dcrResourceTagValues')]",
+                        "kind": "Linux",
+                        "properties": {
+                            "dataSources": {
+                                "extensions": [
+                                    {
+                                        "name": "ContainerInsightsExtension",
+                                        "streams": [
+                                            "Microsoft-Perf",
+                                            "Microsoft-ContainerInventory",
+                                            "Microsoft-ContainerLog",
+                                            "Microsoft-ContainerLogV2",
+                                            "Microsoft-ContainerNodeInventory",
+                                            "Microsoft-KubeEvents",
+                                            "Microsoft-KubeHealth",
+                                            "Microsoft-KubeMonAgentEvents",
+                                            "Microsoft-KubeNodeInventory",
+                                            "Microsoft-KubePodInventory",
+                                            "Microsoft-KubePVInventory",
+                                            "Microsoft-KubeServices",
+                                            "Microsoft-InsightsMetrics"
+                                        ],
+                                        "extensionName": "ContainerInsights"
+                                    }
+                                ]
+                            },
+                            "destinations": {
+                                "logAnalytics": [
+                                    {
+                                        "workspaceResourceId": "[parameters('workspaceResourceId')]",
+                                        "name": "ciworkspace"
+                                    }
+                                ]
+                            },
+                            "dataFlows": [
+                                {
+                                    "streams": [
+                                        "Microsoft-Perf",
+                                        "Microsoft-ContainerInventory",
+                                        "Microsoft-ContainerLog",
+                                        "Microsoft-ContainerLogV2",
+                                        "Microsoft-ContainerNodeInventory",
+                                        "Microsoft-KubeEvents",
+                                        "Microsoft-KubeHealth",
+                                        "Microsoft-KubeMonAgentEvents",
+                                        "Microsoft-KubeNodeInventory",
+                                        "Microsoft-KubePodInventory",
+                                        "Microsoft-KubePVInventory",
+                                        "Microsoft-KubeServices",
+                                        "Microsoft-InsightsMetrics"
+                                    ],
+                                    "destinations": [
+                                        "ciworkspace"
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+              },
+              "parameters": {}
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[Concat('aks-monitoring-msi-dcra', '-',  uniqueString(parameters('aksResourceId')))]",
+            "apiVersion": "2017-05-10",
+            "subscriptionId": "[variables('clusterSubscriptionId')]",
+            "resourceGroup": "[variables('clusterResourceGroup')]",
+            "dependsOn": [
+                "[Concat('aks-monitoring-msi-dcr', '-',  uniqueString(variables('dcrName')))]"
+            ],
+            "properties": {
+              "mode": "Incremental",
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {},
+                "variables": {},
+                "resources": [
+                    {
+                        "type": "Microsoft.ContainerService/managedClusters/providers/dataCollectionRuleAssociations",
+                        "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('associationName'))]",
+                        "apiVersion": "2019-11-01-preview",
+                        "properties": {
+                            "description": "Association of data collection rule. Deleting this association will break the data collection for this AKS Cluster.",
+                            "dataCollectionRuleId": "[variables('dataCollectionRuleId')]"
+                        }
+                    }
+
+                ]
+              },
+              "parameters": {}
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "name": "[Concat('aks-monitoring-msi-addon', '-',  uniqueString(parameters('aksResourceId')))]",
+            "apiVersion": "2017-05-10",
+            "subscriptionId": "[variables('clusterSubscriptionId')]",
+            "resourceGroup": "[variables('clusterResourceGroup')]",
+            "dependsOn": [
+                "[Concat('aks-monitoring-msi-dcra', '-',  uniqueString(parameters('aksResourceId')))]"
+            ],
+            "properties": {
+              "mode": "Incremental",
+              "template": {
+                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                "contentVersion": "1.0.0.0",
+                "parameters": {},
+                "variables": {},
+                "resources": [
+                    {
+                        "name": "[variables('clusterName')]",
+                        "type": "Microsoft.ContainerService/managedClusters",
+                        "location": "[parameters('aksResourceLocation')]",
+                        "tags": "[parameters('aksResourceTagValues')]",
+                        "apiVersion": "2018-03-31",
+                        "properties": {
+                          "mode": "Incremental",
+                          "id": "[parameters('aksResourceId')]",
+                          "addonProfiles": {
+                            "omsagent": {
+                              "enabled": true,
+                              "config": {
+                                "logAnalyticsWorkspaceResourceID": "[parameters('workspaceResourceId')]",
+                                "useAADAuth": "true"
+                              }
+                            }
+                          }
+                        }
+                    }
+                ]
+              },
+              "parameters": {}
+            }
+        }
+    ]
+}
