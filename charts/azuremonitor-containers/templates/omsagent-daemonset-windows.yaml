@@ -21,7 +21,7 @@ spec:
    labels:
     dsName: "omsagent-ds"
    annotations:
-    agentVersion: {{ .Values.omsagent.image.tagWindows }}
+    agentVersion: {{ .Values.omsagent.winAgentVersion }}
     dockerProviderVersion: {{ .Values.omsagent.image.dockerProviderVersion }}
     schema-versions: "v1"
     checksum/secret: {{ include (print $.Template.BasePath "/omsagent-secret.yaml") . | sha256sum }}
@@ -53,6 +53,12 @@ spec:
        resources:
 {{ toYaml .Values.omsagent.resources.daemonsetwindows | indent 9 }}
        env:
+       - name: FBIT_SERVICE_FLUSH_INTERVAL
+         value: "15"
+       - name: FBIT_TAIL_BUFFER_CHUNK_SIZE
+         value: "1"
+       - name: FBIT_TAIL_BUFFER_MAX_SIZE
+         value: "1"
        {{- if ne .Values.omsagent.env.clusterId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.omsagent.env.clusterId | quote }}
