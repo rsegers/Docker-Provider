@@ -21,7 +21,7 @@ spec:
    labels:
     dsName: "omsagent-ds"
    annotations:
-    agentVersion: {{ .Values.omsagent.agentVersion }}
+    agentVersion: {{ .Values.omsagent.image.agentVersion }}
     dockerProviderVersion: {{ .Values.omsagent.image.dockerProviderVersion }}
     schema-versions: "v1"
     checksum/secret: {{ include (print $.Template.BasePath "/omsagent-secret.yaml") . | sha256sum }}
