@@ -9,8 +9,8 @@ require (
 	github.com/dnaeon/go-vcr v1.2.0 // indirect
 	github.com/fluent/fluent-bit-go v0.0.0-20171103221316-c4a158a6e3a7
 	github.com/golang/mock v1.4.1
-	github.com/google/uuid v1.1.2
-	github.com/microsoft/ApplicationInsights-Go v0.4.3
+	github.com/google/uuid v1.3.0
+	github.com/microsoft/ApplicationInsights-Go v0.4.4
 	github.com/philhofer/fwd v1.1.1 // indirect
 	github.com/tinylib/msgp v1.1.2
 	github.com/ugorji/go v1.1.2-0.20180813092308-00b869d2f4a5

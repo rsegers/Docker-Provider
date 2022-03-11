@@ -56,11 +56,12 @@ jobs:
           format: 'table'
           severity: 'CRITICAL,HIGH'
           vuln-type: 'os,library'
-          skip-dirs: '/usr/sbin'
+          skip-files: '/usr/sbin/telegraf,/opt/telegraf,/opt/td-agent-bit/bin/out_oms.so'
           exit-code: '1'
           timeout: '5m0s'
+          ignore-unfixed: true
   WINDOWS-build:
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
       - name: Set-workflow-initiator
         run: echo ("Initiated by -" + $env:GITHUB_ACTOR)

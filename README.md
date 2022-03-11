@@ -10,7 +10,7 @@ Feel free to contact engineering team owners in case you have any questions abou
 
 ## Common
 - [Visual Studio Code](https://code.visualstudio.com/) for authoring
-- [Go lang](https://golang.org/) for building go code. Go lang version 1.14.1.
+- [Go lang](https://golang.org/) for building go code. Go lang version 1.15.14 (both Linux & Windows)
 
 > Note: If you are using WSL2, make sure you have cloned the code onto ubuntu not onto windows
 
@@ -121,7 +121,7 @@ We recommend using [Visual Studio Code](https://code.visualstudio.com/) for auth
 
 ### Install Pre-requisites
 
-1. Install go1.14.1, dotnet, powershell, docker and build dependencies to build go code for both Linux and Windows platforms
+1. Install go1.15.14, dotnet, powershell, docker and build dependencies to build go code for both Linux and Windows platforms
 ```
 bash ~/Docker-Provider/scripts/build/linux/install-build-pre-requisites.sh
 ```

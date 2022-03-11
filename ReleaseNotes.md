@@ -11,6 +11,17 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 3/11/2022 -
+##### Version microsoft/oms:ciprod03112022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03112022 (linux)
+##### Version microsoft/oms:win-ciprod03112022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod03112022 (windows)
+##### Code change log
+- Linux Agent
+  - Vulnerability fixes
+- Windows Agent
+  - Bug fix for FluentBit stdout and stderr log filtering
+- Common
+    - Upgrade Go lang version from 1.14.1 to 1.15.14
+
 ### 1/31/2022 -
 ##### Version microsoft/oms:ciprod01312022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01312022 (linux)
 ##### Version microsoft/oms:win-ciprod01312022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod01312022 (windows)
