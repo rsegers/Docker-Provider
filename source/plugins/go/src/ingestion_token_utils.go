@@ -27,6 +27,7 @@ var ChannelId string
 
 var IngestionAuthToken string
 var IngestionAuthTokenExpiration int64
+var AMCSRedirectedEndpoint string = ""
 
 type IMDSResponse struct {
 	AccessToken  string `json:"access_token"`
@@ -218,11 +219,18 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 	configurationId = ""
 	channelId = ""
 	var amcs_endpoint *url.URL
+	var AmcsEndpoint string
 	osType := os.Getenv("OS_TYPE")
 	resourceId := os.Getenv("AKS_RESOURCE_ID")
 	resourceRegion := os.Getenv("AKS_REGION")
 	mcsEndpoint := os.Getenv("MCS_ENDPOINT")
-	amcs_endpoint_string := fmt.Sprintf("https://%s.handler.control.%s%s/agentConfigurations?platform=%s&api-version=%s", resourceRegion, mcsEndpoint, resourceId, osType, AMCSAgentConfigAPIVersion)
+
+	AmcsEndpoint = fmt.Sprintf("https://global.handler.control.%s", mcsEndpoint)
+	if AMCSRedirectedEndpoint != "" {
+		AmcsEndpoint = AMCSRedirectedEndpoint
+	}
+	amcs_endpoint_string := fmt.Sprintf("%s%s/agentConfigurations?operatingLocation=%s&platform=%s&api-version=%s", AmcsEndpoint, resourceId, resourceRegion, osType, AMCSAgentConfigAPIVersion)
+
 	amcs_endpoint, err = url.Parse(amcs_endpoint_string)
 	if err != nil {
 		Log("getAgentConfiguration: Error creating AMCS endpoint URL: %s", err.Error())
@@ -253,6 +261,25 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 			defer resp.Body.Close()
 	    }
 		Log("getAgentConfiguration Response Status: %d", resp.StatusCode)
+		if resp.StatusCode == 421 { // AMCS returns redirected endpoint incase of private link
+			agentConfigEndpoint := resp.Header.Get("x-ms-agent-config-endpoint")
+			Log("getAgentConfiguration x-ms-agent-config-endpoint: %s", agentConfigEndpoint)
+			if agentConfigEndpoint != "" {
+				AMCSRedirectedEndpoint = agentConfigEndpoint
+				// reconstruct request with redirected endpoint
+				var err error
+				redirected_amcs_endpoint_string := fmt.Sprintf("%s%s/agentConfigurations?operatingLocation=%s&platform=%s&api-version=%s", AMCSRedirectedEndpoint, resourceId, resourceRegion, osType, AMCSAgentConfigAPIVersion)
+				var bearer = "Bearer " + imdsAccessToken
+				req, err = http.NewRequest("GET", redirected_amcs_endpoint_string, nil)
+				if err != nil {
+					message := fmt.Sprintf("getAgentConfiguration: Error creating HTTP request for AMCS endpoint: %s", err.Error())
+					Log(message)
+					return configurationId, channelId, err
+				}
+				req.Header.Set("Authorization", bearer)
+				continue
+			}
+		}
 		if IsRetriableError(resp.StatusCode) {
 			message := fmt.Sprintf("getAgentConfiguration: Request failed with an error code: %d, retryCount: %d", resp.StatusCode, retryCount)
 			Log(message)
@@ -326,11 +353,18 @@ func getIngestionAuthToken(imdsAccessToken string, configurationId string, chann
 	ingestionAuthToken = ""
 	refreshInterval = 0
 	var amcs_endpoint *url.URL
+	var AmcsEndpoint string
 	osType := os.Getenv("OS_TYPE")
 	resourceId := os.Getenv("AKS_RESOURCE_ID")
 	resourceRegion := os.Getenv("AKS_REGION")
 	mcsEndpoint := os.Getenv("MCS_ENDPOINT")
-	amcs_endpoint_string := fmt.Sprintf("https://%s.handler.control.%s%s/agentConfigurations/%s/channels/%s/issueIngestionToken?platform=%s&api-version=%s", resourceRegion, mcsEndpoint, resourceId, configurationId, channelId, osType, AMCSIngestionTokenAPIVersion)
+
+	AmcsEndpoint = fmt.Sprintf("https://global.handler.control.%s", mcsEndpoint)
+	if AMCSRedirectedEndpoint != "" {
+		AmcsEndpoint = AMCSRedirectedEndpoint
+	}
+
+	amcs_endpoint_string := fmt.Sprintf("%s%s/agentConfigurations/%s/channels/%s/issueIngestionToken?operatingLocation=%s&platform=%s&api-version=%s", AmcsEndpoint, resourceId, configurationId, channelId, resourceRegion, osType, AMCSIngestionTokenAPIVersion)
 	amcs_endpoint, err = url.Parse(amcs_endpoint_string)
 	if err != nil {
 		Log("getIngestionAuthToken: Error creating AMCS endpoint URL: %s", err.Error())
@@ -366,6 +400,25 @@ func getIngestionAuthToken(imdsAccessToken string, configurationId string, chann
 	    }
 
 		Log("getIngestionAuthToken Response Status: %d", resp.StatusCode)
+		if resp.StatusCode == 421 { // AMCS returns redirected endpoint incase of private link
+			agentConfigEndpoint := resp.Header.Get("x-ms-agent-config-endpoint")
+			Log("getIngestionAuthToken x-ms-agent-config-endpoint: %s", agentConfigEndpoint)
+			if agentConfigEndpoint != "" {
+				AMCSRedirectedEndpoint = agentConfigEndpoint
+				// reconstruct request with redirected endpoint
+				var err error
+				redirected_amcs_endpoint_string := fmt.Sprintf("%s%s/agentConfigurations/%s/channels/%s/issueIngestionToken?operatingLocation=%s&platform=%s&api-version=%s", AMCSRedirectedEndpoint, resourceId, configurationId, channelId, resourceRegion, osType, AMCSIngestionTokenAPIVersion)
+				var bearer = "Bearer " + imdsAccessToken
+				req, err = http.NewRequest("GET", redirected_amcs_endpoint_string, nil)
+				if err != nil {
+					message := fmt.Sprintf("getIngestionAuthToken: Error creating HTTP request for AMCS endpoint: %s", err.Error())
+					Log(message)
+					return ingestionAuthToken, refreshInterval, err
+				}
+				req.Header.Set("Authorization", bearer)
+				continue
+			}
+		}
 		if IsRetriableError(resp.StatusCode) {
 			message := fmt.Sprintf("getIngestionAuthToken: Request failed with an error code: %d, retryCount: %d", resp.StatusCode, retryCount)
 			Log(message)
