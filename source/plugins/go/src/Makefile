@@ -1,6 +1,16 @@
 BASE_DIR := $(subst /build/linux,,$(PWD))
 include $(BASE_DIR)/build/version
 
+ifeq ($(arch),)
+	PF_ARCH=amd64
+else
+	PF_ARCH=$(arch)
+endif
+
+ifneq ($(PF_ARCH),amd64)
+	OPTIONS=CGO_ENABLED=1 CC=aarch64-linux-gnu-gcc GOOS=linux GOARCH=arm64
+endif
+
 fbplugin:
 	@echo "========================= Building  out_oms plugin go code  ========================="
 	export BUILDVERSION=$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH)-$(CONTAINER_BUILDVERSION_BUILDNR)
@@ -12,7 +22,7 @@ fbplugin:
 	@echo "========================= go get  ========================="
 	go get
 	@echo "========================= go build  ========================="
-	go build -ldflags "-X 'main.revision=$(BUILDVERSION)' -X 'main.builddate=$(BUILDDATE)'" -buildmode=c-shared -o out_oms.so .
+	$(OPTIONS) go build -ldflags "-X 'main.revision=$(BUILDVERSION)' -X 'main.builddate=$(BUILDDATE)'" -buildmode=c-shared -o out_oms.so .
 
 test:
 	go test -cover -race -coverprofile=coverage.txt -covermode=atomic

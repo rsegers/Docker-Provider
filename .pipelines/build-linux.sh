@@ -24,3 +24,4 @@ echo "------------ Bundle Shell Extension Scripts & HELM chart -----------------
 cd $DIR/../deployment/arc-k8s-extension/ServiceGroupRoot/Scripts
 tar -czvf ../artifacts.tar.gz ../../../../charts/azuremonitor-containers/ pushChartToAcr.sh
 
+

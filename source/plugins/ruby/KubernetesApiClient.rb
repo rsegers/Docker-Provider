@@ -88,7 +88,7 @@ class KubernetesApiClient
       end
     end
 
-    def getClusterRegion(env = ENV)
+    def getClusterRegion(env=ENV)
       if env["AKS_REGION"]
         return env["AKS_REGION"]
       else
@@ -97,7 +97,7 @@ class KubernetesApiClient
       end
     end
 
-    def getResourceUri(resource, api_group, env = ENV)
+    def getResourceUri(resource, api_group, env=ENV)
       begin
         if env["KUBERNETES_SERVICE_HOST"] && env["KUBERNETES_PORT_443_TCP_PORT"]
           if api_group.nil?
@@ -114,7 +114,7 @@ class KubernetesApiClient
       end
     end
 
-    def getClusterName(env = ENV)
+    def getClusterName(env=ENV)
       return @@ClusterName if !@@ClusterName.nil?
       @@ClusterName = "None"
       begin
@@ -148,7 +148,7 @@ class KubernetesApiClient
       return @@ClusterName
     end
 
-    def getClusterId(env = ENV)
+    def getClusterId(env=ENV)
       return @@ClusterId if !@@ClusterId.nil?
       #By default initialize ClusterId to ClusterName.
       #<TODO> In ACS/On-prem, we need to figure out how we can generate ClusterId
@@ -456,19 +456,19 @@ class KubernetesApiClient
               metricCollection = {}
               metricCollection["CounterName"] = metricNametoReturn
               metricCollection["Value"] = metricValue
-
+              
               metricProps["json_Collections"] = []
-              metricCollections = []
-              metricCollections.push(metricCollection)
+              metricCollections = []               
+              metricCollections.push(metricCollection)        
               metricProps["json_Collections"] = metricCollections.to_json
-              metricItems.push(metricProps)
+              metricItems.push(metricProps)             
               #No container level limit for the given metric, so default to node level limit
             else
               nodeMetricsHashKey = clusterId + "/" + nodeName + "_" + "allocatable" + "_" + metricNameToCollect
               if (metricCategory == "limits" && @@NodeMetrics.has_key?(nodeMetricsHashKey))
                 metricValue = @@NodeMetrics[nodeMetricsHashKey]
                 #@Log.info("Limits not set for container #{clusterId + "/" + podUid + "/" + containerName} using node level limits: #{nodeMetricsHashKey}=#{metricValue} ")
-
+                               
                 metricProps = {}
                 metricProps["Timestamp"] = metricTime
                 metricProps["Host"] = nodeName
@@ -481,10 +481,10 @@ class KubernetesApiClient
                 metricCollection["CounterName"] = metricNametoReturn
                 metricCollection["Value"] = metricValue
                 metricProps["json_Collections"] = []
-                metricCollections = []
-                metricCollections.push(metricCollection)
+                metricCollections = []                  
+                metricCollections.push(metricCollection)        
                 metricProps["json_Collections"] = metricCollections.to_json
-                metricItems.push(metricProps)
+                metricItems.push(metricProps)              
               end
             end
           end
@@ -615,11 +615,11 @@ class KubernetesApiClient
           metricCollection["CounterName"] = metricNametoReturn
           metricCollection["Value"] = metricValue
           metricCollections = []
-          metricCollections.push(metricCollection)
-
+          metricCollections.push(metricCollection) 
+         
           metricItem["json_Collections"] = []
           metricItem["json_Collections"] = metricCollections.to_json
-
+         
           #push node level metrics to a inmem hash so that we can use it looking up at container level.
           #Currently if container level cpu & memory limits are not defined we default to node level limits
           @@NodeMetrics[clusterId + "/" + node["metadata"]["name"] + "_" + metricCategory + "_" + metricNameToCollect] = metricValue
@@ -778,7 +778,7 @@ class KubernetesApiClient
       return continuationToken, resourceInventory
     end #getResourcesAndContinuationToken
 
-    def getKubeAPIServerUrl(env = ENV)
+    def getKubeAPIServerUrl(env=ENV)
       apiServerUrl = nil
       begin
         if env["KUBERNETES_SERVICE_HOST"] && env["KUBERNETES_PORT_443_TCP_PORT"]

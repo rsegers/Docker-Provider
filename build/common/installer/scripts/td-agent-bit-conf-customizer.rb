@@ -25,14 +25,14 @@ def substituteFluentBitPlaceHolders
     bufferMaxSize = ENV["FBIT_TAIL_BUFFER_MAX_SIZE"]
     memBufLimit = ENV["FBIT_TAIL_MEM_BUF_LIMIT"]
 
-    serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
+    serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0 ) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
 
     tailBufferChunkSize = (!bufferChunkSize.nil? && is_number?(bufferChunkSize) && bufferChunkSize.to_i > 0) ? bufferChunkSize : nil
 
     tailBufferMaxSize = (!bufferMaxSize.nil? && is_number?(bufferMaxSize) && bufferMaxSize.to_i > 0) ? bufferMaxSize : nil
 
-    if ((!tailBufferChunkSize.nil? && tailBufferMaxSize.nil?) || (!tailBufferChunkSize.nil? && !tailBufferMaxSize.nil? && tailBufferChunkSize.to_i > tailBufferMaxSize.to_i))
+    if ((!tailBufferChunkSize.nil? && tailBufferMaxSize.nil?) ||  (!tailBufferChunkSize.nil? && !tailBufferMaxSize.nil? && tailBufferChunkSize.to_i > tailBufferMaxSize.to_i))
       puts "config:warn buffer max size must be greater or equal to chunk size"
       tailBufferMaxSize = tailBufferChunkSize
     end

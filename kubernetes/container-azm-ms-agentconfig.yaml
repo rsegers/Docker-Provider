@@ -129,7 +129,7 @@ data:
 
     # Alertable metrics configuration settings for completed jobs count
     [alertable_metrics_configuration_settings.job_completion_threshold]
-        # Threshold for completed job count , metric will be sent only for those jobs which were completed earlier than the following threshold
+        # Threshold for completed job count , metric will be sent only for those jobs which were completed earlier than the following threshold 
         job_completion_threshold_time_minutes = 360
   integrations: |-
     [integrations.azure_network_policy_manager]
@@ -139,11 +139,12 @@ data:
 # Doc - https://github.com/microsoft/Docker-Provider/blob/ci_prod/Documentation/AgentSettings/ReadMe.md
   agent-settings: |-
     # prometheus scrape fluent bit settings for high scale
-    # buffer size should be greater than or equal to chunk size else we set it to chunk size.
+    # buffer size should be greater than or equal to chunk size else we set it to chunk size. 
     [agent_settings.prometheus_fbit_settings]
       tcp_listener_chunk_size = 10
       tcp_listener_buffer_size = 10
       tcp_listener_mem_buf_limit = 200
+    
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # They increase the maximum stdout/stderr log collection rate but will also cause higher cpu/memory usage.
     # [agent_settings.fbit_config]

@@ -1,0 +1,104 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- ci_prod
+
+pool:
+  name: Azure-Pipelines-CI-Prod-EO
+
+variables:
+  armServiceConnectionName: 'ci-1es-acr-connection-prod'
+  subscription: '30c56c3a-54da-46ea-b004-06eb33432687'
+  containerRegistry: 'containerinsightsbuild'
+  repoImageName: '${{ variables.containerRegistry }}.azurecr.io/official/linux'
+
+steps:
+- bash: |
+    commit=$(git rev-parse --short HEAD)
+    echo "##vso[task.setvariable variable=commit;]$commit"
+
+    datetime=$(date +'%Y%m%d%s')
+    echo "##vso[task.setvariable variable=datetime;]$datetime"
+
+    cd $(Build.SourcesDirectory)/deployment/multiarch-agent-deployment/ServiceGroupRoot/Scripts
+    tar -czvf ../artifacts.tar.gz pushAgentToAcr.sh
+
+    cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension/ServiceGroupRoot/Scripts
+    tar -czvf ../artifacts.tar.gz ../../../../charts/azuremonitor-containers/ pushChartToAcr.sh
+
+- task: CopyFiles@2
+  displayName: "Copy ev2 deployment artifacts"
+  inputs:
+    SourceFolder: "$(Build.SourcesDirectory)/deployment"
+    Contents: |
+      **/*
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+
+- task: CopyFiles@2
+  displayName: "Copy ev2 deployment scripts"
+  inputs:
+    SourceFolder: "$(Build.SourcesDirectory)/.pipelines"
+    Contents: |
+      **/*.sh
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+
+- task: CopyFiles@2
+  displayName: "Copy ev2 deployment scripts"
+  inputs:
+    SourceFolder: "$(Build.SourcesDirectory)/kubernetes"
+    Contents: |
+      *.yaml
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+
+- task: CopyFiles@2
+  displayName: "Copy ev2 deployment scripts"
+  inputs:
+    SourceFolder: "$(Build.SourcesDirectory)/charts"
+    Contents: |
+      **/*
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+
+- task: CopyFiles@2
+  displayName: "Copy ev2 deployment scripts"
+  inputs:
+    SourceFolder: "$(Build.SourcesDirectory)/test/e2e"
+    Contents: |
+      *.yaml
+    TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+
+- task: AzureCLI@2
+  displayName: "Docker multi-arch linux build"
+  inputs:
+    azureSubscription: ${{ variables.armServiceConnectionName }}
+    scriptType: bash
+    scriptLocation: inlineScript
+    inlineScript: |
+
+      sudo apt-get update && sudo apt-get -y install qemu binfmt-support qemu-user-static
+      docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+      docker buildx create --name testbuilder
+      docker buildx use testbuilder
+
+      az --version
+      az account show
+      az account set -s ${{ variables.subscription }}
+      az acr login -n ${{ variables.containerRegistry }}
+
+      docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:ciprod-$(datetime)-$(commit) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/metadata.json --build-arg IMAGE_TAG=ciprod-$(datetime)-$(commit) --push .
+
+      docker pull ${{ variables.repoImageName }}:ciprod-$(datetime)-$(commit)
+
+- task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+  displayName: 'Generation Task'
+  inputs:
+    BuildDropPath: '$(Build.ArtifactStagingDirectory)'
+    DockerImagesToScan: 'golang:1.15.14, ubuntu:18.04, ${{ variables.repoImageName }}:ciprod-$(datetime)-$(commit)'
+
+- task: PublishBuildArtifacts@1
+  inputs:
+    pathToPublish: '$(Build.ArtifactStagingDirectory)'
+    artifactName: drop

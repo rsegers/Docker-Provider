@@ -88,6 +88,7 @@ def test_rs_workflows(env_dict):
 
     if IsKubeContainerPerfInventorySuccessful == False:
         pytest.fail("KubeContainerPerfInventory stream not emitted successfully from pod:" + rspodName)
+
     if IsKubeServicesInventorySuccessful == False:
         pytest.fail("KubeServicesInventory stream not emitted successfully from pod:" + rspodName)
 

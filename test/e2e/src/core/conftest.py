@@ -87,6 +87,7 @@ def env_dict():
                 return
             print('Starting cleanup...')
             append_result_output("Starting Cleanup...\n", env_dict['SETUP_LOG_FILE'])
+
             print("Cleanup Complete.")
             append_result_output("Cleanup Complete.\n", env_dict['SETUP_LOG_FILE'])
             return

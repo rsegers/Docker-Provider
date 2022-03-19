@@ -3,10 +3,8 @@ module Docker-Provider/source/plugins/go/src
 go 1.14
 
 require (
-	github.com/Azure/azure-kusto-go v0.3.2
-	github.com/Azure/go-autorest/autorest/azure/auth v0.4.2
-	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
-	github.com/dnaeon/go-vcr v1.2.0 // indirect
+	github.com/Azure/azure-kusto-go v0.5.2
+	github.com/Azure/go-autorest/autorest/azure/auth v0.5.11
 	github.com/fluent/fluent-bit-go v0.0.0-20171103221316-c4a158a6e3a7
 	github.com/golang/mock v1.4.1
 	github.com/google/uuid v1.3.0

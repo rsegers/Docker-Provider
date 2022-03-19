@@ -357,7 +357,7 @@ spec:
         component: oms-agent
         tier: node
       annotations:
-        agentVersion: "azure-mdsd-1.14.2"
+        agentVersion: "azure-mdsd-1.17.0"
         dockerProviderVersion: "16.0.0-0"
         schema-versions: "v1"
     spec:
@@ -368,7 +368,7 @@ spec:
             value: "3"
       containers:
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03112022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03172022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -453,65 +453,65 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 15
 #Only in sidecar scraping mode
-        # - name: omsagent-prometheus
-        #   image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03112022"
-        #   imagePullPolicy: IfNotPresent
-        #   resources:
-        #     limits:
-        #       cpu: 500m
-        #       memory: 1Gi
-        #     requests:
-        #       cpu: 75m
-        #       memory: 225Mi
-        #   env:
-        #     # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
-        #     - name: AKS_CLUSTER_NAME
-        #       value: "VALUE_AKS_CLUSTER_NAME"
-        #     - name: AKS_RESOURCE_ID
-        #       value: "VALUE_AKS_RESOURCE_ID_VALUE"
-        #     - name: AKS_REGION
-        #       value: "VALUE_AKS_RESOURCE_REGION_VALUE"
-        #     - name: AKS_NODE_RESOURCE_GROUP
-        #       value: "VALUE_AKS_NODE_RESOURCE_GROUP"
-        #     #Uncomment below two lines for ACS clusters and set the cluster names manually. Also comment out the above two lines for ACS clusters
-        #     #- name: ACS_RESOURCE_NAME
-        #     #  value: "my_acs_cluster_name"
-        #     - name: CONTAINER_TYPE
-        #       value: "PrometheusSidecar"
-        #     - name: CONTROLLER_TYPE
-        #       value: "DaemonSet"
-        #     - name: NODE_IP
-        #       valueFrom:
-        #         fieldRef:
-        #           fieldPath: status.hostIP
-        #     # Update this with the user assigned msi client id for omsagent
-        #     - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
-        #       value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"
-        #     - name: USING_AAD_MSI_AUTH
-        #       value: "false"
-        #    securityContext:
-        #     privileged: true
-        #   volumeMounts:
-        #     - mountPath: /etc/kubernetes/host
-        #       name: azure-json-path
-        #     - mountPath: /etc/omsagent-secret
-        #       name: omsagent-secret
-        #       readOnly: true
-        #     - mountPath: /etc/config/settings
-        #       name: settings-vol-config
-        #       readOnly: true
-        #     - mountPath: /etc/config/osm-settings
-        #       name: osm-settings-vol-config
-        #       readOnly: true
-        #   livenessProbe:
-        #     exec:
-        #       command:
-        #         - /bin/bash
-        #         - -c
-        #         - /opt/livenessprobe.sh
-        #     initialDelaySeconds: 60
-        #     periodSeconds: 60
-        #     timeoutSeconds: 15
+        - name: omsagent-prometheus
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03172022"
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 500m
+              memory: 1Gi
+            requests:
+              cpu: 75m
+              memory: 225Mi
+          env:
+            # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
+            - name: AKS_CLUSTER_NAME
+              value: "VALUE_AKS_CLUSTER_NAME"
+            - name: AKS_RESOURCE_ID
+              value: "VALUE_AKS_RESOURCE_ID_VALUE"
+            - name: AKS_REGION
+              value: "VALUE_AKS_RESOURCE_REGION_VALUE"
+            - name: AKS_NODE_RESOURCE_GROUP
+              value: "VALUE_AKS_NODE_RESOURCE_GROUP"
+            #Uncomment below two lines for ACS clusters and set the cluster names manually. Also comment out the above two lines for ACS clusters
+            #- name: ACS_RESOURCE_NAME
+            #  value: "my_acs_cluster_name"
+            - name: CONTAINER_TYPE
+              value: "PrometheusSidecar"
+            - name: CONTROLLER_TYPE
+              value: "DaemonSet"
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            # Update this with the user assigned msi client id for omsagent
+            - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
+              value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"
+            - name: USING_AAD_MSI_AUTH
+              value: "false"
+          securityContext:
+            privileged: true
+          volumeMounts:
+            - mountPath: /etc/kubernetes/host
+              name: azure-json-path
+            - mountPath: /etc/omsagent-secret
+              name: omsagent-secret
+              readOnly: true
+            - mountPath: /etc/config/settings
+              name: settings-vol-config
+              readOnly: true
+            - mountPath: /etc/config/osm-settings
+              name: osm-settings-vol-config
+              readOnly: true
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - /opt/livenessprobe.sh
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 15
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -596,14 +596,14 @@ spec:
       labels:
         rsName: "omsagent-rs"
       annotations:
-        agentVersion: "azure-mdsd-1.14.2"
+        agentVersion: "azure-mdsd-1.17.0"
         dockerProviderVersion: "16.0.0-0"
         schema-versions: "v1"
     spec:
       serviceAccountName: omsagent
       containers:
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03112022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03172022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -634,7 +634,7 @@ spec:
               value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"
             # Add the below environment variable to true only in sidecar enabled regions, else set it to false
             - name: SIDECAR_SCRAPING_ENABLED
-              value: "false"
+              value: "true"
             - name: USING_AAD_MSI_AUTH
               value: "false"
           securityContext:
@@ -776,7 +776,7 @@ spec:
             value: "3"
      containers:
        - name: omsagent-win
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod03112022"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod03172022"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
@@ -811,7 +811,7 @@ spec:
                fieldRef:
                  fieldPath: status.hostIP
           - name: SIDECAR_SCRAPING_ENABLED
-            value: "false"
+            value: "true"
           # Update this with the user assigned msi client id for omsagent
           - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
             value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"

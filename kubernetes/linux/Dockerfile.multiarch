@@ -1,0 +1,39 @@
+FROM --platform=$BUILDPLATFORM golang:1.15.14 AS builder
+ARG TARGETOS TARGETARCH
+RUN /usr/bin/apt-get update && /usr/bin/apt-get install git g++ make pkg-config libssl-dev libpam0g-dev rpm librpm-dev uuid-dev libkrb5-dev python sudo gcc-aarch64-linux-gnu -y
+
+COPY build /src/build
+COPY source /src/source
+RUN cd /src/build/linux && make arch=${TARGETARCH}
+
+
+FROM ubuntu:18.04 AS base_image
+ARG TARGETOS TARGETARCH
+MAINTAINER OMSContainers@microsoft.com
+LABEL vendor=Microsoft\ Corp \
+    com.microsoft.product="Azure Monitor for containers"
+ENV tmpdir /opt
+ENV APPLICATIONINSIGHTS_AUTH NzAwZGM5OGYtYTdhZC00NThkLWI5NWMtMjA3ZjM3NmM3YmRi
+ENV MALLOC_ARENA_MAX 2
+ENV HOST_MOUNT_PREFIX /hostfs
+ENV HOST_PROC /hostfs/proc
+ENV HOST_SYS /hostfs/sys
+ENV HOST_ETC /hostfs/etc
+ENV HOST_VAR /hostfs/var
+ENV AZMON_COLLECT_ENV False
+ENV KUBE_CLIENT_BACKOFF_BASE 1
+ENV KUBE_CLIENT_BACKOFF_DURATION 0
+ENV RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR 0.9
+RUN /usr/bin/apt-get update && /usr/bin/apt-get install -y libc-bin wget openssl curl sudo python python-ctypes init-system-helpers  net-tools rsyslog cron vim dmidecode apt-transport-https gnupg make && rm -rf /var/lib/apt/lists/*
+
+COPY --from=builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-cimprov-*.*.*-*.*.sh $tmpdir/
+COPY kubernetes/linux/setup.sh kubernetes/linux/main.sh kubernetes/linux/defaultpromenvvariables kubernetes/linux/defaultpromenvvariables-rs kubernetes/linux/defaultpromenvvariables-sidecar kubernetes/linux/mdsd.xml kubernetes/linux/envmdsd kubernetes/linux/logrotate.conf $tmpdir/
+
+ARG IMAGE_TAG=ciprod03172022
+ENV AGENT_VERSION ${IMAGE_TAG}
+
+WORKDIR ${tmpdir}
+
+RUN chmod 775 $tmpdir/*.sh; sync; $tmpdir/setup.sh ${TARGETARCH}
+CMD [ "/opt/main.sh" ]
+

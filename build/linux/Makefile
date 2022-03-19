@@ -11,10 +11,16 @@ BUILD_TYPE=Release
 PF=Linux
 PF_MAJOR=1
 PF_MINOR=0
-PF_ARCH=x64
 PF_WIDTH=64
 PF_DISTRO=ULINUX
-BUILD_CONFIGURATION=Linux_ULINUX_1.0_x64_64_Release
+
+ifeq ($(arch),)
+	PF_ARCH=amd64
+else
+	PF_ARCH=$(arch)
+endif
+
+BUILD_CONFIGURATION=Linux_ULINUX_1.0_$(PF_ARCH)_64_Release
 
 # RM - Remove a file
 # RMDIR - Remove a directory
@@ -90,16 +96,7 @@ endif
 
 STAGING_DIR := $(INTERMEDIATE_DIR)/staging
 
-# For consistency, the architecture should be i686 (for x86) and x86_64 (for x64)
-DOCKER_ARCH := $(shell echo $(PF_ARCH) | sed -e 's/x86$$/i686/' -e 's/x64$$/x86_64/')
-OUTPUT_PACKAGE_PREFIX=docker-cimprov-$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH)-$(CONTAINER_BUILDVERSION_BUILDNR).universal.$(DOCKER_ARCH)
-
-
-ifeq ("$(wildcard /usr/bin/dpkg-deb)","")
-	DPKG_LOCATION="--DPKG_LOCATION=$(BASE_DIR)/build/linux/installer/InstallBuilder/tools/bin/dpkg-deb-$(PF_ARCH)"
-else
-	DPKG_LOCATION=
-endif
+OUTPUT_PACKAGE_PREFIX=docker-cimprov-$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH)-$(CONTAINER_BUILDVERSION_BUILDNR).universal.$(PF_ARCH)
 
 
 #--------------------------------------------------------------------------------
@@ -130,7 +127,7 @@ KIT_STATUS:
 fluentbitplugin :
 	@echo "========================= Building fluentbit out_oms go plugin for logs"
 	$(MKPATH) $(INTERMEDIATE_DIR)
-	make -C $(GO_SOURCE_DIR) fbplugin
+	make -C $(GO_SOURCE_DIR) fbplugin arch=$(PF_ARCH)
 	$(COPY) $(GO_SOURCE_DIR)/out_oms.so $(INTERMEDIATE_DIR)
 
 rubypluginstests :
@@ -192,7 +189,6 @@ kit : fluentbitplugin
 		--VERSION=$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER_BUILDVERSION_MINOR).$(CONTAINER_BUILDVERSION_PATCH) \
 		--RELEASE=$(CONTAINER_BUILDVERSION_BUILDNR) \
 		--CONTAINER_BUILD_LIBRARY=$(CONTAINERLIB_FILENAME) \
-		$(DPKG_LOCATION) \
 		--OUTPUTFILE=$(OUTPUT_PACKAGE_PREFIX) \
 		--DATAFILE_PATH=$(BASE_DIR)/build/linux/installer/datafiles \
 		base_container.data linux.data linux_dpkg.data

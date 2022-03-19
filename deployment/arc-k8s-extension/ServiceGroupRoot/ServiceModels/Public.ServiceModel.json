@@ -28,17 +28,17 @@
         ]
       }
     ],
-    "ServiceResourceGroups": [
+    "ServiceResourceGroups": [     
       {
         "AzureResourceGroupName": "ContainerInsightsExtension-Canary-Release",
         "Location": "eastus2",
         "InstanceOf": "ARC-Extension-ServiceResourceGroupDefinition",
-        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",
+        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
         "ScopeTags": [
           {
             "Name": "Canary"
           }
-        ],
+        ],     
         "ServiceResources": [
           {
             "Name": "PushChartToACR-Canary",
@@ -51,12 +51,12 @@
         "AzureResourceGroupName": "ContainerInsightsExtension-Pilot-Release",
         "Location": "eastus2",
         "InstanceOf": "ARC-Extension-ServiceResourceGroupDefinition",
-        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",
+        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
         "ScopeTags": [
           {
             "Name": "Pilot"
           }
-        ],
+        ],     
         "ServiceResources": [
           {
             "Name": "PushChartToACR-Pilot",
@@ -69,12 +69,12 @@
         "AzureResourceGroupName": "ContainerInsightsExtension-LightLoad-Release",
         "Location": "eastus2",
         "InstanceOf": "ARC-Extension-ServiceResourceGroupDefinition",
-        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",
+        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
         "ScopeTags": [
           {
             "Name": "LightLoad"
           }
-        ],
+        ],     
         "ServiceResources": [
           {
             "Name": "PushChartToACR-LightLoad",
@@ -87,12 +87,12 @@
         "AzureResourceGroupName": "ContainerInsightsExtension-MediumLoad-Release",
         "Location": "eastus2",
         "InstanceOf": "ARC-Extension-ServiceResourceGroupDefinition",
-        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",
+        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
         "ScopeTags": [
           {
             "Name": "MediumLoad"
           }
-        ],
+        ],     
         "ServiceResources": [
           {
             "Name": "PushChartToACR-MediumLoad",
@@ -105,12 +105,12 @@
         "AzureResourceGroupName": "ContainerInsightsExtension-HighLoad-Release",
         "Location": "eastus2",
         "InstanceOf": "ARC-Extension-ServiceResourceGroupDefinition",
-        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",
+        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
         "ScopeTags": [
           {
             "Name": "HighLoad"
           }
-        ],
+        ],     
         "ServiceResources": [
           {
             "Name": "PushChartToACR-HighLoad",
@@ -123,12 +123,12 @@
         "AzureResourceGroupName": "ContainerInsightsExtension-FF-Release",
         "Location": "eastus2",
         "InstanceOf": "ARC-Extension-ServiceResourceGroupDefinition",
-        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",
+        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
         "ScopeTags": [
           {
             "Name": "FF"
           }
-        ],
+        ],     
         "ServiceResources": [
           {
             "Name": "PushChartToACR-FF",
@@ -141,12 +141,12 @@
         "AzureResourceGroupName": "ContainerInsightsExtension-MC-Release",
         "Location": "eastus2",
         "InstanceOf": "ARC-Extension-ServiceResourceGroupDefinition",
-        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",
+        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
         "ScopeTags": [
           {
             "Name": "MC"
           }
-        ],
+        ],     
         "ServiceResources": [
           {
             "Name": "PushChartToACR-MC",
@@ -154,6 +154,6 @@
             "RolloutParametersPath": "Parameters\\ContainerInsightsExtension.Parameters.json"
           }
         ]
-      }
+      }                                                                                                  
     ]
   }

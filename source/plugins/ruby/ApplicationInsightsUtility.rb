@@ -79,6 +79,9 @@ class ApplicationInsightsUtility
           $log.info("proxy configured")
           @@CustomProperties["IsProxyConfigured"] = "true"
           isProxyConfigured = true
+          if ProxyUtils.isProxyCACertConfigured()
+            @@CustomProperties["ProxyCACertConfigured"] = "true"
+          end
         else
           @@CustomProperties["IsProxyConfigured"] = "false"
           isProxyConfigured = false

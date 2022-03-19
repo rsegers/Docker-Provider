@@ -99,6 +99,12 @@ spec:
         - mountPath: /etc/omsagent-secret
           name: omsagent-secret
           readOnly: true
+        {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) }}
+        - mountPath: /etc/ssl/certs/proxy-cert.crt
+          subPath: PROXYCERT.crt
+          name: omsagent-secret
+          readOnly: true
+        {{- end }}
         - mountPath : /etc/config
           name: omsagent-rs-config
         - mountPath: /etc/config/settings

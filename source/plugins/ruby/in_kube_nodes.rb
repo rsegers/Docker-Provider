@@ -145,31 +145,6 @@ module Fluent::Plugin
         end
         nodesAPIChunkStartTime = (Time.now.to_f * 1000).to_i
 
-        @nodesAPIE2ELatencyMs = 0
-        @nodeInventoryE2EProcessingLatencyMs = 0
-        nodeInventoryStartTime = (Time.now.to_f * 1000).to_i
-
-        if @extensionUtils.isAADMSIAuthMode()
-          $log.info("in_kube_nodes::enumerate: AAD AUTH MSI MODE")
-          if @kubeperfTag.nil? || !@kubeperfTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @kubeperfTag = @extensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
-          end
-          if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @insightsMetricsTag = @extensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
-          end
-          if @ContainerNodeInventoryTag.nil? || !@ContainerNodeInventoryTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @ContainerNodeInventoryTag = @extensionUtils.getOutputStreamId(Constants::CONTAINER_NODE_INVENTORY_DATA_TYPE)
-          end
-          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @tag = @extensionUtils.getOutputStreamId(Constants::KUBE_NODE_INVENTORY_DATA_TYPE)
-          end
-          $log.info("in_kube_nodes::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_nodes::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_nodes::enumerate: using containernodeinventory tag -#{@ContainerNodeInventoryTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_nodes::enumerate: using kubenodeinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
-        end
-        nodesAPIChunkStartTime = (Time.now.to_f * 1000).to_i
-
         # Initializing continuation token to nil
         continuationToken = nil
         $log.info("in_kube_nodes::enumerate : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
@@ -585,6 +560,9 @@ module Fluent::Plugin
         properties["OperatingSystem"] = nodeInfo["operatingSystem"]
         properties["KernelVersion"] = nodeInfo["kernelVersion"]
         properties["OSImage"] = nodeInfo["osImage"]
+        if nodeInfo["architecture"] == "arm64"
+          properties["Architecture"] = nodeInfo["architecture"]
+        end
         containerRuntimeVersion = nodeInfo["containerRuntimeVersion"]
         if containerRuntimeVersion.downcase.start_with?("docker://")
           properties["DockerVersion"] = containerRuntimeVersion.split("//")[1]

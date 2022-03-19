@@ -133,6 +133,7 @@ def test_pod_metrics_e2e_workflow(env_dict):
                 constants.POD_COUNT_METRIC_NAME, constants.POD_METRICS_NAMESPACE))
         if len(timeseries) <= 0:
             pytest.fail("length of timeseries should be greater than for 0 for metric: {0} in namespace :{1}".format(constants.POD_COUNT_METRIC_NAME, constants.POD_METRICS_NAMESPACE))
+
     append_result_output("test_pod_metrics_e2e_workflow end \n",
                          env_dict['TEST_AGENT_LOG_FILE'])
     print("Successfully completed e2e workflows test.")

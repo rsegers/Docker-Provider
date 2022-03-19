@@ -96,17 +96,14 @@ module Fluent::Plugin
           end
           @@post_request_url = @@post_request_url_template % { aks_region: aks_region, aks_resource_id: aks_resource_id }
           @post_request_uri = URI.parse(@@post_request_url)
-          if (!!@isArcK8sCluster)
-            proxy = (ProxyUtils.getProxyConfiguration)
-            if proxy.nil? || proxy.empty?
-              @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
-            else
-              @log.info "Proxy configured on this cluster: #{aks_resource_id}"
-              @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port, proxy[:addr], proxy[:port], proxy[:user], proxy[:pass])
-            end
-          else
+          proxy = (ProxyUtils.getProxyConfiguration)
+          if proxy.nil? || proxy.empty?
             @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
+          else
+            @log.info "Proxy configured on this cluster: #{aks_resource_id}"
+            @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port, proxy[:addr], proxy[:port], proxy[:user], proxy[:pass])
           end
+
           @http_client.use_ssl = true
           @log.info "POST Request url: #{@@post_request_url}"
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMPluginStart", {})

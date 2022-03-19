@@ -160,17 +160,17 @@ module Fluent::Plugin
       begin
         if @process_incoming_stream
 
-          # Check if insights metrics for PV metrics
+          # Check if insights metrics for PV metrics      
           if record["Name"] == Constants::PV_USED_BYTES
             return filterPVInsightsMetrics(record)
           end
 
           object_name = record["ObjectName"]
           counter_name = JSON.parse(record["json_Collections"])[0]["CounterName"]
-
+         
           percentage_metric_value = 0.0
           allocatable_percentage_metric_value = 0.0
-          metric_value = JSON.parse(record["json_Collections"])[0]["Value"]
+          metric_value = JSON.parse(record["json_Collections"])[0]["Value"]          
 
           if object_name == Constants::OBJECT_NAME_K8S_NODE && @metrics_to_collect_hash.key?(counter_name.downcase)
             # Compute and send % CPU and Memory
@@ -215,7 +215,7 @@ module Fluent::Plugin
               else
                 allocatable_percentage_metric_value = 0.0
               end
-            end
+            end            
             @log.info "percentage_metric_value for metric: #{metric_name} for instance: #{record["Host"]} percentage: #{percentage_metric_value} allocatable_percentage: #{allocatable_percentage_metric_value}"
 
             # do some sanity checking.
@@ -292,7 +292,7 @@ module Fluent::Plugin
       end
     end
 
-    def filterPVInsightsMetrics(record)
+   def filterPVInsightsMetrics(record)
       begin
         mdmMetrics = []
         if record["Name"] == Constants::PV_USED_BYTES && @metrics_to_collect_hash.key?(record["Name"].downcase)
@@ -356,8 +356,8 @@ module Fluent::Plugin
         end
         if !nodeInventory.nil?
           cpu_capacity_json = KubernetesApiClient.parseNodeLimits(nodeInventory, "capacity", "cpu", "cpuCapacityNanoCores")
-          if !cpu_capacity_json.nil?
-            metricVal = JSON.parse(cpu_capacity_json[0]["json_Collections"])[0]["Value"]
+          if !cpu_capacity_json.nil? 
+             metricVal = JSON.parse(cpu_capacity_json[0]["json_Collections"])[0]["Value"]
             if !metricVal.to_s.nil?
               @cpu_capacity = metricVal
               @log.info "CPU Limit #{@cpu_capacity}"
@@ -366,8 +366,8 @@ module Fluent::Plugin
             @log.info "Error getting cpu_capacity"
           end
           memory_capacity_json = KubernetesApiClient.parseNodeLimits(nodeInventory, "capacity", "memory", "memoryCapacityBytes")
-          if !memory_capacity_json.nil?
-            metricVal = JSON.parse(cpu_capacity_json[0]["json_Collections"])[0]["Value"]
+          if !memory_capacity_json.nil? 
+            metricVal = JSON.parse(cpu_capacity_json[0]["json_Collections"])[0]["Value"]          
             if !metricVal.to_s.nil?
               @memory_capacity = metricVal
               @log.info "Memory Limit #{@memory_capacity}"

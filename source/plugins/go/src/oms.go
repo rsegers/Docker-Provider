@@ -1713,7 +1713,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		// Try to read the ADX database name from environment variables. Default to DefaultAdsDatabaseName if not set.
 		// This SHOULD be set by tomlparser.rb so it's a highly unexpected event if it isn't.
 		// It should be set by the logic in tomlparser.rb EVEN if ADX logging isn't enabled
-		AdxDatabaseName := strings.TrimSpace(os.Getenv("AZMON_ADX_DATABASE_NAME"))
+		AdxDatabaseName = strings.TrimSpace(os.Getenv("AZMON_ADX_DATABASE_NAME"))
 
 		// Check the len of the provided name for database and use default if 0, just to be sure
 		if len(AdxDatabaseName) == 0 {

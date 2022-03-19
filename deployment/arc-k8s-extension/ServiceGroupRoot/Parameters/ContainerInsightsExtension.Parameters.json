@@ -39,7 +39,7 @@
             "name": "CHART_VERSION",
             "value": "__CHART_VERSION__"
           }
-        ],
+        ], 
         "identity": {
           "type": "userAssigned",
           "userAssignedIdentities": [

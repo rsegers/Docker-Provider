@@ -134,6 +134,7 @@ def test_node_metrics_e2e_workflow(env_dict):
                 constants.NODE_MEMORY_RSS_METRIC_NAME, constants.NODE_METRICS_NAMESPACE))
         if len(timeseries) <= 0:
             pytest.fail("length of timeseries should be greater than for 0 for metric: {0} in namespace :{1}".format(constants.NODE_MEMORY_RSS_METRIC_NAME, constants.NODE_METRICS_NAMESPACE))
+
     # node metric - memoryRssPercentage
     custommetricsUrl = '{0}{1}/providers/microsoft.Insights/metrics?timespan={2}/{3}&interval=FULL&metricnames={4}&aggregation={5}&metricNamespace={6}&validatedimensions=false&api-version={7}'.format(
         resourceManager.rstrip("/"),
@@ -182,6 +183,7 @@ def test_node_metrics_e2e_workflow(env_dict):
                 constants.NODE_MEMORY_RSS_PERCENTAGE_METRIC_NAME, constants.NODE_METRICS_NAMESPACE))
         if len(timeseries) <= 0:
             pytest.fail("length of timeseries should be greater than for 0 for metric: {0} in namespace :{1}".format(constants.NODE_MEMORY_RSS_PERCENTAGE_METRIC_NAME, constants.NODE_METRICS_NAMESPACE))
+
     # node metric - memoryWorkingSetBytes
     custommetricsUrl = '{0}{1}/providers/microsoft.Insights/metrics?timespan={2}/{3}&interval=FULL&metricnames={4}&aggregation={5}&metricNamespace={6}&validatedimensions=false&api-version={7}'.format(
         resourceManager.rstrip("/"),
@@ -229,6 +231,7 @@ def test_node_metrics_e2e_workflow(env_dict):
                 constants.NODE_MEMORY_WS_METRIC_NAME, constants.NODE_METRICS_NAMESPACE))
         if len(timeseries) <= 0:
             pytest.fail("length of timeseries should be greater than for 0 for metric: {0} in namespace :{1}".format(constants.NODE_MEMORYE_WS_METRIC_NAME, constants.NODE_METRICS_NAMESPACE))
+
     # node metric - memoryWorkingSetPercentage
     custommetricsUrl = '{0}{1}/providers/microsoft.Insights/metrics?timespan={2}/{3}&interval=FULL&metricnames={4}&aggregation={5}&metricNamespace={6}&validatedimensions=false&api-version={7}'.format(
         resourceManager.rstrip("/"),
@@ -276,6 +279,7 @@ def test_node_metrics_e2e_workflow(env_dict):
                 constants.NODE_MEMORY_WS_PERCENTAGE_METRIC_NAME, constants.NODE_METRICS_NAMESPACE))
         if len(timeseries) <= 0:
             pytest.fail("length of timeseries should be greater than for 0 for metric: {0} in namespace :{1}".format(constants.NODE_MEMORY_WS_PERCENTAGE_METRIC_NAME, constants.NODE_METRICS_NAMESPACE))
+
     # node metric - cpuUsageMilliCores
     custommetricsUrl = '{0}{1}/providers/microsoft.Insights/metrics?timespan={2}/{3}&interval=FULL&metricnames={4}&aggregation={5}&metricNamespace={6}&validatedimensions=false&api-version={7}'.format(
         resourceManager.rstrip("/"),
@@ -322,6 +326,7 @@ def test_node_metrics_e2e_workflow(env_dict):
                 constants.NODE_CPU_USAGE_MILLI_CORES_METRIC_NAME, constants.NODE_METRICS_NAMESPACE))
         if len(timeseries) <= 0:
             pytest.fail("length of timeseries should be greater than for 0 for metric: {0} in namespace :{1}".format(constants.NODE_CPU_USAGE_MILLI_CORES_METRIC_NAME, constants.NODE_METRICS_NAMESPACE))
+
     # node metric - cpuUsagePercentage
     custommetricsUrl = '{0}{1}/providers/microsoft.Insights/metrics?timespan={2}/{3}&interval=FULL&metricnames={4}&aggregation={5}&metricNamespace={6}&validatedimensions=false&api-version={7}'.format(
         resourceManager.rstrip("/"),

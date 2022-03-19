@@ -250,13 +250,6 @@ if (([string]::IsNullOrEmpty($servicePrincipalClientId) -eq $false) -and
     $isUsingServicePrincipal = $true
 }
 
-if (([string]::IsNullOrEmpty($servicePrincipalClientId) -eq $false) -and
-    ([string]::IsNullOrEmpty($servicePrincipalClientSecret) -eq $false) -and
-    ([string]::IsNullOrEmpty($tenantId) -eq $false)) {
-    Write-Host("Using service principal creds for the azure login since these provided.")
-    $isUsingServicePrincipal = $true
-}
-
 if ($clusterResourceId.ToLower().Contains("microsoft.kubernetes/connectedclusters") -eq $true) {
     $isArcK8sCluster = $true
 }

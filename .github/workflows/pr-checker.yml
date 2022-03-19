@@ -56,7 +56,8 @@ jobs:
           format: 'table'
           severity: 'CRITICAL,HIGH'
           vuln-type: 'os,library'
-          skip-files: '/usr/sbin/telegraf,/opt/telegraf,/opt/td-agent-bit/bin/out_oms.so'
+          #[vishwa] - Fix telegraf & test all for next release - see work item #https://msazure.visualstudio.com/InfrastructureInsights/_workitems/edit/13322134
+          skip-files: '/usr/sbin/telegraf,/opt/telegraf'
           exit-code: '1'
           timeout: '5m0s'
           ignore-unfixed: true
@@ -95,3 +96,4 @@ jobs:
             cd ./kubernetes/windows/ && docker build . --file Dockerfile -t $env:IMAGETAG --build-arg IMAGE_TAG=$env:IMAGETAG_TELEMETRY
       - name: List-docker-images
         run: docker images --digests --all
+      
