@@ -57,10 +57,6 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/test.json;			                                        build/linux/installer/conf/test.json;                    644; root; root
 
 
-
-/etc/opt/microsoft/docker-cimprov/health/healthmonitorconfig.json;					                   build/linux/installer/conf/healthmonitorconfig.json; 644; root; root
-/etc/opt/microsoft/docker-cimprov/health/health_model_definition.json;					                build/linux/installer/conf/health_model_definition.json; 644; root; root
-
 /etc/fluent/plugin/lib/application_insights/version.rb;								   source/plugins/ruby/lib/application_insights/version.rb; 644; root; root
 /etc/fluent/plugin/lib/application_insights/rack/track_request.rb;					source/plugins/ruby/lib/application_insights/rack/track_request.rb;      644; root; root
 /etc/fluent/plugin/lib/application_insights/unhandled_exception.rb;					source/plugins/ruby/lib/application_insights/unhandled_exception.rb;     644; root; root
@@ -106,32 +102,6 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/fluent/plugin/lib/application_insights/channel/event.rb;						   source/plugins/ruby/lib/application_insights/channel/event.rb;   644; root; root
 /etc/fluent/plugin/lib/application_insights.rb;                                  source/plugins/ruby/lib/application_insights.rb; 644; root; root
 
-/etc/fluent/plugin/health/aggregate_monitor.rb;                                         source/plugins/ruby/health/aggregate_monitor.rb; 644; root; root
-/etc/fluent/plugin/health/agg_monitor_id_labels.rb;                                     source/plugins/ruby/health/agg_monitor_id_labels.rb; 644; root; root
-/etc/fluent/plugin/health/aggregate_monitor_state_finalizer.rb;                         source/plugins/ruby/health/aggregate_monitor_state_finalizer.rb; 644; root; root
-/etc/fluent/plugin/health/cluster_health_state.rb;                                      source/plugins/ruby/health/cluster_health_state.rb; 644; root; root
-/etc/fluent/plugin/health/health_container_cpu_memory_aggregator.rb;                    source/plugins/ruby/health/health_container_cpu_memory_aggregator.rb; 644; root; root
-/etc/fluent/plugin/health/health_container_cpu_memory_record_formatter.rb;              source/plugins/ruby/health/health_container_cpu_memory_record_formatter.rb; 644; root; root
-/etc/fluent/plugin/health/health_hierarchy_builder.rb;                                  source/plugins/ruby/health/health_hierarchy_builder.rb; 644; root; root
-/etc/fluent/plugin/health/health_kubernetes_resources.rb;                               source/plugins/ruby/health/health_kubernetes_resources.rb; 644; root; root
-/etc/fluent/plugin/health/health_kube_api_down_handler.rb;                              source/plugins/ruby/health/health_kube_api_down_handler.rb; 644; root; root
-/etc/fluent/plugin/health/health_missing_signal_generator.rb;                           source/plugins/ruby/health/health_missing_signal_generator.rb; 644; root; root
-/etc/fluent/plugin/health/health_model_buffer.rb;                                       source/plugins/ruby/health/health_model_buffer.rb; 644; root; root
-/etc/fluent/plugin/health/health_model_builder.rb;                                      source/plugins/ruby/health/health_model_builder.rb; 644; root; root
-/etc/fluent/plugin/health/health_model_constants.rb;                                    source/plugins/ruby/health/health_model_constants.rb; 644; root; root
-/etc/fluent/plugin/health/parent_monitor_provider.rb;                                   source/plugins/ruby/health/parent_monitor_provider.rb; 644; root; root
-/etc/fluent/plugin/health/health_model_definition_parser.rb;                            source/plugins/ruby/health/health_model_definition_parser.rb; 644; root; root
-/etc/fluent/plugin/health/health_monitor_helpers.rb;                                    source/plugins/ruby/health/health_monitor_helpers.rb; 644; root; root
-/etc/fluent/plugin/health/health_monitor_optimizer.rb;                                  source/plugins/ruby/health/health_monitor_optimizer.rb; 644; root; root
-/etc/fluent/plugin/health/health_monitor_provider.rb;                                   source/plugins/ruby/health/health_monitor_provider.rb; 644; root; root
-/etc/fluent/plugin/health/health_monitor_record.rb;                                     source/plugins/ruby/health/health_monitor_record.rb; 644; root; root
-/etc/fluent/plugin/health/health_monitor_state.rb;                                      source/plugins/ruby/health/health_monitor_state.rb; 644; root; root
-/etc/fluent/plugin/health/health_monitor_telemetry.rb;                                  source/plugins/ruby/health/health_monitor_telemetry.rb; 644; root; root
-/etc/fluent/plugin/health/health_monitor_utils.rb;                                      source/plugins/ruby/health/health_monitor_utils.rb; 644; root; root
-/etc/fluent/plugin/health/health_signal_reducer.rb;                                     source/plugins/ruby/health/health_signal_reducer.rb; 644; root; root
-/etc/fluent/plugin/health/monitor_factory.rb;                                           source/plugins/ruby/health/monitor_factory.rb; 644; root; root
-/etc/fluent/plugin/health/monitor_set.rb;                                               source/plugins/ruby/health/monitor_set.rb; 644; root; root
-/etc/fluent/plugin/health/unit_monitor.rb;                                              source/plugins/ruby/health/unit_monitor.rb; 644; root; root
 
 /etc/fluent/plugin/ApplicationInsightsUtility.rb;								             	source/plugins/ruby/ApplicationInsightsUtility.rb;	644; root; root
 /etc/fluent/plugin/arc_k8s_cluster_identity.rb;                                        source/plugins/ruby/arc_k8s_cluster_identity.rb; 644; root; root
@@ -164,19 +134,14 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/fluent/plugin/in_kube_podinventory.rb;			                                     source/plugins/ruby/in_kube_podinventory.rb;			644; root; root
 /etc/fluent/plugin/KubernetesApiClient.rb;			                                     source/plugins/ruby/KubernetesApiClient.rb;			644; root; root
 /etc/fluent/plugin/in_kube_events.rb;			                                           source/plugins/ruby/in_kube_events.rb;			      644; root; root
-/etc/fluent/plugin/in_kube_health.rb;			                                           source/plugins/ruby/in_kube_health.rb;			      644; root; root
 /etc/fluent/plugin/in_kube_pvinventory.rb;			                                     source/plugins/ruby/in_kube_pvinventory.rb;			644; root; root
 /etc/fluent/plugin/in_kubestate_deployments.rb;			                                  source/plugins/ruby/in_kubestate_deployments.rb;	644; root; root
 /etc/fluent/plugin/in_kubestate_hpa.rb;			                                        source/plugins/ruby/in_kubestate_hpa.rb;	644; root; root
 
-/etc/fluent/plugin/filter_cadvisor_health_container.rb;			                         source/plugins/ruby/filter_cadvisor_health_container.rb;	644; root; root
-/etc/fluent/plugin/filter_cadvisor_health_node.rb;			                               source/plugins/ruby/filter_cadvisor_health_node.rb;	644; root; root
 /etc/fluent/plugin/filter_cadvisor2mdm.rb;			                                     source/plugins/ruby/filter_cadvisor2mdm.rb;	644; root; root
-/etc/fluent/plugin/filter_health_model_builder.rb;			                               source/plugins/ruby/filter_health_model_builder.rb;	644; root; root
 /etc/fluent/plugin/filter_inventory2mdm.rb;			                                     source/plugins/ruby/filter_inventory2mdm.rb;	644; root; root
 /etc/fluent/plugin/filter_telegraf2mdm.rb;			                                     source/plugins/ruby/filter_telegraf2mdm.rb;	644; root; root
 
-/etc/fluent/plugin/out_health_forward.rb;			                                        source/plugins/ruby/out_health_forward.rb;	644; root; root
 /etc/fluent/plugin/out_mdm.rb;			                                                 source/plugins/ruby/out_mdm.rb;	644; root; root
 
 
@@ -195,7 +160,6 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/opt/microsoft;                                     755; root; root; sysdir
 /etc/opt/microsoft/docker-cimprov;                      755; root; root
 /etc/opt/microsoft/docker-cimprov/conf;                 755; root; root
-/etc/opt/microsoft/docker-cimprov/health;               755; root; root
 
 /opt/microsoft;                                         755; root; root; sysdir
 /opt/microsoft/docker-cimprov;                          755; root; root
@@ -217,7 +181,6 @@ MAINTAINER:              'Microsoft Corporation'
 
 /etc/fluent;                                                         755; root; root; sysdir
 /etc/fluent/plugin;                                                  755; root; root; sysdir
-/etc/fluent/plugin/health;                                           755; root; root; sysdir
 /etc/fluent/plugin/lib;												            755; root; root; sysdir
 /etc/fluent/plugin/lib/application_insights;                         755; root; root; sysdir
 /etc/fluent/plugin/lib/application_insights/channel;                 755; root; root; sysdir
@@ -269,15 +232,6 @@ chmod 666 /var/opt/microsoft/docker-cimprov/log/filter_inventory2mdm.log
 
 touch /var/opt/microsoft/docker-cimprov/log/mdm_metrics_generator.log
 chmod 666 /var/opt/microsoft/docker-cimprov/log/mdm_metrics_generator.log
-
-
-touch /var/opt/microsoft/docker-cimprov/log/health_monitors.log
-chmod 666 /var/opt/microsoft/docker-cimprov/log/health_monitors.log
-
-
-touch /var/opt/microsoft/docker-cimprov/log/filter_health_model_builder.log
-chmod 666 /var/opt/microsoft/docker-cimprov/log/filter_health_model_builder.log
-
 
 touch /var/opt/microsoft/docker-cimprov/log/fluent_forward_failed.log
 chmod 666 /var/opt/microsoft/docker-cimprov/log/fluent_forward_failed.log

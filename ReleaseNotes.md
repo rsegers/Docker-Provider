@@ -11,6 +11,45 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 5/19/2022 -
+##### Version microsoft/oms:ciprod05192022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod05192022 (linux)
+##### Version microsoft/oms:win-ciprod05192022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod05192022 (windows)
+##### Code change log
+- Linux Agent
+  - PodReadyPercentage metric bug fix
+  - add cifs & fuse file systems to ignore list
+  - CA Cert Fix for Mariner Hosts in Air Gap
+  - Disk usage metrics will no longer be collected for the paths "/mnt/containers" and "/mnt/docker" 
+- Windows Agent
+  - Ruby version upgrade from 2.6.5.1 to 2.7.5.1
+  - Added Support for Windows Server 2022
+  - Multi-Arch Image to support both Windows 2019 and Windows 2022
+- Common (Linux & Windows Agent)
+  - Telegraf version update from 1.20.3 to 1.22.2 to fix the vulnerabilitis
+  - Removal of Health feature as part of deprecation plan
+  - AAD Auth MSI feature support for  Arc K8s  (not usable externally yet)
+  - MSI onboarding ARM template updates for both AKS & Arc K8s
+  - Fixed the bug related to windows metrics in MSI mode for AKS
+  - Configmap updates for log collection settings for v2 schema
+- Misc
+  - Improvements related to CI/CD Multi-arc image
+      - Do trivy rootfs checks
+      - Disable push to ACR for PR and PR updates
+      - Enable batch builds
+      - Scope Dev/Prod pipelines to respective branches
+      - Shorten datetime component of image tag
+  - Troubleshooting script updates for MSI onboarding
+  - Instructions for testing of agent in MSI auth mode
+  - Add CI Windows Build to MultiArch Dev pipeline
+  - Updates related to building of Multi-arc image for windows in Build Pipeline and local dev builds
+  - Test yamls to test container logs and prometheus scraping on both WS2019 & WS2022
+  - Arc K8s conformance test updates
+  - Script to collect the Agent logs for troubleshooting
+  - Force run trivy stage for Linux
+  - Fix docker msi download link in windows install-build-pre-requisites.ps1 script
+  - Added Onboarding templates for legacy auth for internal testing
+  - Update the Build pipelines to have separate phase for Windows
+
 ### 3/17/2022 -
 ##### Version microsoft/oms:ciprod03172022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03172022 (linux)
 ##### Version microsoft/oms:win-ciprod03172022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod03172022 (windows)

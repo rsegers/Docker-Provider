@@ -156,21 +156,7 @@ stage: to review
 tags: agent
 ```
 
-# 12 - KubeHealth
-```
-stream-id: Microsoft-KubeHealth
-data-type: KUBE_HEALTH_BLOB
-intelligence-pack: ContainerInsights
-solutions: ContainerInsights
-platform: Any
-la-table-name: KubeHealth
-alias-stream-id: Microsoft-KubeHealth
-contact-alias: OMScontainers@microsoft.com
-stage: to review
-tags: agent
-```
-
-# 13 - Perf
+# 12 - Perf
 ```
 > Note - This stream already exists
 stream-id: Microsoft-Perf

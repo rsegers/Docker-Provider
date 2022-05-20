@@ -38,6 +38,8 @@ if (($null -eq $ClusterResourceId) -or ($ClusterResourceId.Split("/").Length -ne
     exit 1
 }
 
+$UseAADAuth = $false
+$ClusterRegion = ""
 $isClusterAndWorkspaceInDifferentSubs = $false
 $ClusterType = "AKS"
 if ($ClusterResourceId.ToLower().Contains("microsoft.containerservice/openshiftmanagedclusters") -eq $true) {
@@ -50,8 +52,9 @@ $azResourcesModule = Get-Module -ListAvailable -Name Az.Resources
 $azOperationalInsights = Get-Module -ListAvailable -Name Az.OperationalInsights
 $azAksModule = Get-Module -ListAvailable -Name Az.Aks
 $azARGModule = Get-Module -ListAvailable -Name Az.ResourceGraph
+$azMonitorModule = Get-Module -ListAvailable -Name Az.Monitor
 
-if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -eq $azOperationalInsights)) {
+if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAccountModule) -or ($null -eq $azResourcesModule) -or ($null -eq $azOperationalInsights) -or ($null -eq $azMonitorModule)) {
 
     $isWindowsMachine = $true
     if ($PSVersionTable -and $PSVersionTable.PSEdition -contains "core") {
@@ -75,7 +78,7 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
     }
 
     $message = "This script will try to install the latest versions of the following Modules : `
-    Az.Ak,Az.ResourceGraph, Az.Resources, Az.Accounts  and Az.OperationalInsights using the command`
+    Az.Ak,Az.ResourceGraph, Az.Resources, Az.Accounts, Az.OperationalInsights  and Az.Monitor using the command`
 			    `'Install-Module {Insert Module Name} -Repository PSGallery -Force -AllowClobber -ErrorAction Stop -WarningAction Stop'
 			    `If you do not have the latest version of these Modules, this troubleshooting script may not run."
     $question = "Do you want to Install the modules and run the script or just run the script?"
@@ -149,6 +152,18 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                 }
             }
 
+            if ($null -eq $azMonitorModule) {
+                try {
+
+                    Write-Host("Installing Az.Monitor...")
+                    Install-Module Az.Monitor -Repository PSGallery -Force -AllowClobber -ErrorAction Stop
+                }
+                catch {
+                    Write-Host("Close other powershell logins and try installing the latest modules for Az.OperationalInsights in a new powershell window: eg. 'Install-Module Az.Monitor -Repository PSGallery -Force'") -ForegroundColor Red
+                    Stop-Transcript
+                    exit 1
+                }
+            }
         }
         1 {
             if ($null -eq $azARGModule) {
@@ -209,6 +224,16 @@ if (($null -eq $azAksModule) -or ($null -eq $azARGModule) -or ($null -eq $azAcco
                 }
             }
 
+           if ($null -eq $azMonitorModule) {
+                try {
+                    Import-Module Az.Monitor -ErrorAction Stop
+                }
+                catch {
+                    Write-Host("Could not import Az.Monitor... Please reinstall this Module") -ForegroundColor Red
+                    Stop-Transcript
+                    exit 1
+                }
+            }
         }
         2 {
             Write-Host("")
@@ -265,12 +290,16 @@ $ResourceGroupName = $ClusterResourceId.split("/")[4]
 $ClusterName = $ClusterResourceId.split("/")[8]
 
 #
-#   Subscription existance and access check
+#   Subscription existence and access check
 #
 if ($null -eq $account.Account) {
     try {
         Write-Host("Please login...")
-        Login-AzAccount -subscriptionid $ClusterSubscriptionId
+        if ($isWindowsMachine) {
+          Login-AzAccount -subscriptionid $ClusterSubscriptionId
+        } else {
+            Login-AzAccount -subscriptionid $ClusterSubscriptionId -UseDeviceAuthentication
+        }
     }
     catch {
         Write-Host("")
@@ -331,26 +360,29 @@ try {
         }
         else {
             Write-Host("Successfully checked '" + $ClusterType + "' Cluster details...") -ForegroundColor Green
+            $ClusterRegion = $ResourceDetailsArray.Location
             Write-Host("")
             foreach ($ResourceDetail in $ResourceDetailsArray) {
                 if ($ResourceDetail.ResourceType -eq "Microsoft.ContainerService/managedClusters") {
-                    #gangams: profile can be different casing so convert properties to lowecase and extract it
-                    $props = ($ResourceDetail.Properties | ConvertTo-Json).toLower() | ConvertFrom-Json;
+                    $addonProfiles = ($ResourceDetail.Properties.addonProfiles | ConvertTo-Json).toLower() | ConvertFrom-Json
 
-                    if ($null -eq $props.addonprofiles.omsagent.config) {
+                    if (($nul -eq $addonProfiles)  -or  ($null -eq $addonProfiles.omsagent) -or ($null -eq $addonProfiles.omsagent.config)) {
                         Write-Host("Your cluster isn't onboarded to Azure monitor for containers. Please refer to the following documentation to onboard:") -ForegroundColor Red;
+                        $clusterProperies = ($ResourceDetail.Properties  | ConvertTo-Json)
+                        Write-Host("Cluster Properties found: " + $clusterProperies) -ForegroundColor Red;
                         Write-Host($AksOptInLink) -ForegroundColor Red;
                         Write-Host("");
                         Stop-Transcript
                         exit 1
                     }
 
-                    $omsagentconfig = $props.addonprofiles.omsagent.config;
+                    $LogAnalyticsWorkspaceResourceID = $addonProfiles.omsagent.config.loganalyticsworkspaceresourceid
+                    $isAADAuth = $addonProfiles.omsagent.config.useaadauth
+                    if ($true -eq $isAADAuth) {
+                       $UseAADAuth = $true
+                    }
 
-                    #gangams - figure out betterway to do this
-                    $omsagentconfig = $omsagentconfig.Trim("{", "}");
-                    $LogAnalyticsWorkspaceResourceID = $omsagentconfig.split("=")[1];
-                    Write-Host("AKS Cluster ResourceId: '" + $ResourceDetail.ResourceId + "' ");
+                    Write-Host("AKS Cluster ResourceId: '" + $ResourceDetail.ResourceId + "', LogAnalyticsWorkspaceResourceId: '" + $LogAnalyticsWorkspaceResourceID + "', UseAADAuth: '" + $UseAADAuth + "'");
                     break
                 }
             }
@@ -389,15 +421,15 @@ catch {
 }
 
 
-if ("AKS" -eq $ClusterType ) {
+if (("AKS" -eq $ClusterType ) -and ($false -eq $UseAADAuth)) {
     Write-Host("Currently checking if the cluster is onboarded to custom metrics for Azure monitor for containers...");
     #Pre requisite - need cluster spn object Id
     try {
-        $clusterDetails = Get-AzAks -Id $ClusterResourceId -ErrorVariable clusterFetchError -ErrorAction SilentlyContinue
+        $clusterDetails = Get-AzAksCluster -Id $ClusterResourceId -ErrorVariable clusterFetchError -ErrorAction SilentlyContinue
         Write-Host($clusterDetails | Format-List | Out-String)
 
         # Check to see if SP exists, if it does use it. Else use MSI
-        if ($clusterDetails.ServicePrincipalProfile -ne $null -and $clusterDetails.ServicePrincipalProfile.ClientId -ne $null -and $clusterDetails.ServicePrincipalProfile.ClientId -ne "") {
+        if ($clusterDetails.ServicePrincipalProfile -ne $null -and $clusterDetails.ServicePrincipalProfile.ClientId -ne $null -and $clusterDetails.ServicePrincipalProfile.ClientId -ne "msi") {
             Write-Host('Attempting to provide permissions to service principal...') -ForegroundColor Green
             $clusterSpnClientID = $clusterDetails.ServicePrincipalProfile.ClientId
             $isServicePrincipal = $true
@@ -625,77 +657,144 @@ else {
     $WorkspacePricingTier = $WorkspaceInformation.sku
     Write-Host("Pricing tier of the configured LogAnalytics workspace: '" + $WorkspacePricingTier + "' ") -ForegroundColor Green
 
-    try {
-        $WorkspaceIPDetails = Get-AzOperationalInsightsIntelligencePacks -ResourceGroupName $workspaceResourceGroupName -WorkspaceName $workspaceName -ErrorAction Stop -WarningAction silentlyContinue
-        Write-Host("Successfully fetched workspace IP details...") -ForegroundColor Green
-        Write-Host("")
-    }
-    catch {
-        Write-Host("")
-        Write-Host("Failed to get the list of solutions onboarded to the workspace. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
-        Write-Host("")
-        Stop-Transcript
-        exit 1
-    }
+    if ($true -eq $UseAADAuth) {
+        #
+        # Check existence of the ContainerInsightsExtension DCR
+        #
+        try {
+            $dcrRuleName = "MSCI-" + $ClusterName + "-" + $ClusterRegion
+            $dcrRule = Get-AzDataCollectionRule -ResourceGroupName $workspaceResourceGroupName -RuleName $dcrRuleName -ErrorAction Stop -WarningAction silentlyContinue
+            Write-Host("Successfully fetched Data Collection Rule...") -ForegroundColor Green
+            $extensionNameInDCR =  $dcrRule.DataSources.Extensions.ExtensionName
+            if ($extensionNameInDCR -eq "ContainerInsights") {
+                $laDestinations = $dcrRule.Destinations.LogAnalytics
+                if (($null -ne $laDestinations) -and ($laDestinations.Length -gt 0) -and ($LogAnalyticsWorkspaceResourceID -eq $laDestinations[0].WorkspaceResourceId)) {
+                    Write-Host("Successfully validated Data Collection Rule is valid...") -ForegroundColor Green
+                } else {
+                    Write-Host("")
+                    Write-Host("Data Collection Rule: '" + $dcrRuleName + "' found has Log Analytics(LA) workspace which different from the Log Analytics  workspace  in Monitoring addon.") -ForegroundColor Red
+                    $laWorkspaceResIdInDCR = $laDestinations[0].WorkspaceResourceId
+                    Write-Host("LA workspace found in Data Collection Rule: '" + $laWorkspaceResIdInDCR + "' but where as LA workspace in Monitoring Addon: '" + $LogAnalyticsWorkspaceResourceID + "'.") -ForegroundColor Red
+                    Write-Host("")
+                    Stop-Transcript
+                    exit 1
+                }
 
-    try {
-        $ContainerInsightsIndex = $WorkspaceIPDetails.Name.IndexOf("ContainerInsights")
-        Write-Host("Successfully located ContainerInsights solution") -ForegroundColor Green
-        Write-Host("")
-    }
-    catch {
-        Write-Host("Failed to get ContainerInsights solution details from the workspace") -ForegroundColor Red
-        Write-Host("")
-        Stop-Transcript
-        exit 1
-    }
+            } else {
+                Write-Host("")
+                Write-Host("Data Collection Rule: '" + $dcrRuleName + "' found is not valid ContainerInsights extension DCR.") -ForegroundColor Red
+                Write-Host("")
+                Stop-Transcript
+                exit 1
+            }
+        }
+        catch {
+            Write-Host("")
+            Write-Host("Failed to get the data collection Rule: '" + $dcrRuleName + "'. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
+            Write-Host("If  DataCollectionRule :'" + $dcrRuleName + "' has been deleted accidentally, disable and enable Monitoring addon back to get this fixed.") -ForegroundColor Red
+            Write-Host("")
+            Stop-Transcript
+            exit 1
+        }
 
-    $isSolutionOnboarded = $WorkspaceIPDetails.Enabled[$ContainerInsightsIndex]
-    if ($isSolutionOnboarded) {
-        if ($WorkspacePricingTier -eq "Free") {
-            Write-Host("Pricing tier of the configured LogAnalytics workspace is Free so you may need to upgrade to pricing tier to non-Free") -ForegroundColor Yellow
+        #
+        # Check existence of the ContainerInsightsExtension DCR-A on the cluster resource
+        #
+        try {
+            $dcrAssociation = Get-AzDataCollectionRuleAssociation -TargetResourceId $ClusterResourceId -AssociationName "ContainerInsightsExtension" -ErrorAction Stop -WarningAction silentlyContinue
+            Write-Host("Successfully fetched ContainerInsightsExtension Data Collection Rule Association ...") -ForegroundColor Green
+            if ($null -eq $dcrAssociation) {
+                Write-Host("")
+                Write-Host("ContainerInsightsExtension Data Collection Rule Association doenst exist.") -ForegroundColor Red
+                Write-Host("")
+                Stop-Transcript
+                exit 1
+            }
+        }
+        catch {
+            Write-Host("")
+            Write-Host("Failed to get the data collection Rule Association. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
+            Write-Host("If ContainerInsightsExtension DataCollectionRule Association has been deleted accidentally, disable and enable Monitoring addon back to get this fixed.") -ForegroundColor Red
+            Write-Host("")
+            Stop-Transcript
+            exit 1
         }
     }
     else {
-        #
-        # Check contributor access to WS
-        #
-        $message = "Detected that there is a workspace associated with this cluster, but workspace - '" + $workspaceName + "' in subscription '" + $workspaceSubscriptionId + "' IS NOT ONBOARDED with container health solution."
-        Write-Host($message)
-        $question = " Do you want to onboard container health to the workspace?"
 
-        $choices = New-Object Collections.ObjectModel.Collection[Management.Automation.Host.ChoiceDescription]
-        $choices.Add((New-Object Management.Automation.Host.ChoiceDescription -ArgumentList '&Yes'))
-        $choices.Add((New-Object Management.Automation.Host.ChoiceDescription -ArgumentList '&No'))
+        try {
+            $WorkspaceIPDetails = Get-AzOperationalInsightsIntelligencePacks -ResourceGroupName $workspaceResourceGroupName -WorkspaceName $workspaceName -ErrorAction Stop -WarningAction silentlyContinue
+            Write-Host("Successfully fetched workspace IP details...") -ForegroundColor Green
+            Write-Host("")
+        }
+        catch {
+            Write-Host("")
+            Write-Host("Failed to get the list of solutions onboarded to the workspace. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
+            Write-Host("")
+            Stop-Transcript
+            exit 1
+        }
 
-        $decision = $Host.UI.PromptForChoice($message, $question, $choices, 0)
+        try {
+            $ContainerInsightsIndex = $WorkspaceIPDetails.Name.IndexOf("ContainerInsights")
+            Write-Host("Successfully located ContainerInsights solution") -ForegroundColor Green
+            Write-Host("")
+        }
+        catch {
+            Write-Host("Failed to get ContainerInsights solution details from the workspace") -ForegroundColor Red
+            Write-Host("")
+            Stop-Transcript
+            exit 1
+        }
 
-        if ($decision -eq 0) {
-            Write-Host("Deploying template to onboard container health : Please wait...")
 
-            $DeploymentName = "ContainerInsightsSolutionOnboarding-" + ((Get-Date).ToUniversalTime()).ToString('MMdd-HHmm')
-            $Parameters = @{ }
-            $Parameters.Add("workspaceResourceId", $LogAnalyticsWorkspaceResourceID)
-            $Parameters.Add("workspaceRegion", $WorkspaceLocation)
-            $Parameters
-            try {
-                New-AzResourceGroupDeployment -Name $DeploymentName `
-                    -ResourceGroupName $workspaceResourceGroupName `
-                    -TemplateUri  https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_prod/scripts/onboarding/templates/azuremonitor-containerSolution.json `
-                    -TemplateParameterObject $Parameters -ErrorAction Stop`
-
-                Write-Host("")
-                Write-Host("Successfully added Container Insights Solution") -ForegroundColor Green
-
-                Write-Host("")
-            }
-            catch {
-                Write-Host ("Template deployment failed with an error: '" + $Error[0] + "' ") -ForegroundColor Red
-                Write-Host("Please contact us by emailing askcoin@microsoft.com for help") -ForegroundColor Red
+        $isSolutionOnboarded = $WorkspaceIPDetails.Enabled[$ContainerInsightsIndex]
+        if ($isSolutionOnboarded) {
+            if ($WorkspacePricingTier -eq "Free") {
+                Write-Host("Pricing tier of the configured LogAnalytics workspace is Free so you may need to upgrade to pricing tier to non-Free") -ForegroundColor Yellow
             }
         }
         else {
-            Write-Host("The container health solution isn't onboarded to your cluster. This required for the monitoring to work. Please contact us by emailing askcoin@microsoft.com if you need any help on this") -ForegroundColor Red
+            #
+            # Check contributor access to WS
+            #
+            $message = "Detected that there is a workspace associated with this cluster, but workspace - '" + $workspaceName + "' in subscription '" + $workspaceSubscriptionId + "' IS NOT ONBOARDED with container health solution."
+            Write-Host($message)
+            $question = " Do you want to onboard container health to the workspace?"
+
+            $choices = New-Object Collections.ObjectModel.Collection[Management.Automation.Host.ChoiceDescription]
+            $choices.Add((New-Object Management.Automation.Host.ChoiceDescription -ArgumentList '&Yes'))
+            $choices.Add((New-Object Management.Automation.Host.ChoiceDescription -ArgumentList '&No'))
+
+            $decision = $Host.UI.PromptForChoice($message, $question, $choices, 0)
+
+            if ($decision -eq 0) {
+                Write-Host("Deploying template to onboard container health : Please wait...")
+
+                $DeploymentName = "ContainerInsightsSolutionOnboarding-" + ((Get-Date).ToUniversalTime()).ToString('MMdd-HHmm')
+                $Parameters = @{ }
+                $Parameters.Add("workspaceResourceId", $LogAnalyticsWorkspaceResourceID)
+                $Parameters.Add("workspaceRegion", $WorkspaceLocation)
+                $Parameters
+                try {
+                    New-AzResourceGroupDeployment -Name $DeploymentName `
+                        -ResourceGroupName $workspaceResourceGroupName `
+                        -TemplateUri  https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_prod/scripts/onboarding/templates/azuremonitor-containerSolution.json `
+                        -TemplateParameterObject $Parameters -ErrorAction Stop`
+
+                    Write-Host("")
+                    Write-Host("Successfully added Container Insights Solution") -ForegroundColor Green
+
+                    Write-Host("")
+                }
+                catch {
+                    Write-Host ("Template deployment failed with an error: '" + $Error[0] + "' ") -ForegroundColor Red
+                    Write-Host("Please contact us by emailing askcoin@microsoft.com for help") -ForegroundColor Red
+                }
+            }
+            else {
+                Write-Host("The container health solution isn't onboarded to your cluster. This required for the monitoring to work. Please contact us by emailing askcoin@microsoft.com if you need any help on this") -ForegroundColor Red
+            }
         }
     }
 }
@@ -737,17 +836,11 @@ if ("AKS" -eq $ClusterType ) {
 
         Write-Host("Getting Kubeconfig of the cluster...")
         Import-AzAksCredential -Id $ClusterResourceId -Force -ErrorAction Stop
-        Write-Host("Successful got the Kubeconfig of the cluster.")
+        Write-Host("Successfully got the Kubeconfig of the cluster.")
 
-        Write-Host("Get current context of the k8s cluster")
-        $clusterContext = kubectl config current-context
-        Write-Host $clusterContext
-
-        if ($clusterContext -ne $ClusterName) {
-            Write-Host("Switch to cluster context to:", $ClusterName )
-            kubectl config use-context $ClusterName
-            Write-Host("Successfully switche current context of the k8s cluster to:", $ClusterName)
-        }
+        Write-Host("Switch to cluster context to:", $ClusterName )
+        kubectl config use-context $ClusterName
+        Write-Host("Successfully switched current context of the k8s cluster to:", $ClusterName)
 
         Write-Host("Check whether the omsagent replicaset pod running correctly ...")
         $rsPod = kubectl get deployments omsagent-rs -n kube-system -o json | ConvertFrom-Json
@@ -875,11 +968,16 @@ if ("AKS" -eq $ClusterType ) {
 
     Write-Host("Checking agent version...")
     try {
-        Write-Host("KubeConfig: " + $KubeConfig)
 
         $omsagentInfo = kubectl get pods -n kube-system -o json -l  rsName=omsagent-rs | ConvertFrom-Json
-        $omsagentImage = $omsagentInfo.items.spec.containers.image.split(":")[1]
-
+        for ($index = 0; $index -le $omsagentInfo.items.spec.containers.Length; $index++)
+        {
+            $containerName = $omsagentInfo.items.spec.containers[$index].Name
+            if ($containerName -eq "omsagent") {
+                $omsagentImage = $omsagentInfo.items.spec.containers[$index].image.split(":")[1]
+                break
+            }
+        }
         Write-Host('The version of the omsagent running on your cluster is ' + $omsagentImage)
         Write-Host('You can encounter problems with your cluster if your omsagent version isnt on the latest version. Please go to https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-manage-agent and validate that you have the latest omsagent version running.') -ForegroundColor Yellow
     } catch {

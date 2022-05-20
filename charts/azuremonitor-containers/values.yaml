@@ -7,6 +7,7 @@
 ## Values of under Azure are being populated by Azure Arc K8s RP during the installation of the extension
 Azure:
   Cluster:
+    Cloud: <your_cluster_cloud>
     Region: <your_cluster_region>
     ResourceId: <your_cluster_id>
   Extension:
@@ -21,10 +22,10 @@ Azure:
 omsagent:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod03172022"
-    tagWindows: "win-ciprod03172022"
+    tag: "ciprod05192022"
+    tagWindows: "win-ciprod05192022"
     pullPolicy: IfNotPresent
-    dockerProviderVersion: "16.0.0-0"
+    dockerProviderVersion: "17.0.0-0"
     agentVersion: "azure-mdsd-1.17.0"
     winAgentVersion: "0.0.0-0" # there is no base agent version for windows agent
 
@@ -44,6 +45,9 @@ omsagent:
   # This used for running agent pods in test mode.
   # if set to true additional agent workflow logs will be emitted which are used for e2e and arc k8s conformance testing
   ISTEST: false
+
+  # This flag used to determine whether to use AAD MSI auth or not for Arc K8s cluster
+  useAADAuth: false
 
   ## To get your workspace id and key do the following
   ## You can create a Azure Loganalytics workspace from portal.azure.com and get its ID & PRIMARY KEY from 'Advanced Settings' tab in the Ux.

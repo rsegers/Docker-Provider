@@ -13,6 +13,7 @@ require (
 	github.com/tinylib/msgp v1.1.2
 	github.com/ugorji/go v1.1.2-0.20180813092308-00b869d2f4a5
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3
+	k8s.io/api v0.21.0
 	k8s.io/apimachinery v0.21.0
 	k8s.io/client-go v0.21.0
 )

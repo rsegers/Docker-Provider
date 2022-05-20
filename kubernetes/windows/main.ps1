@@ -302,10 +302,18 @@ function Set-EnvironmentVariables {
         Write-Host "Failed to set environment variable AGENT_VERSION for target 'machine' since it is either null or empty"
     }
 
+    $kubernetesPort = [System.Environment]::GetEnvironmentVariable("KUBERNETES_PORT_443_TCP_PORT", "process")
+    if (![string]::IsNullOrEmpty($kubernetesPort)) {
+        [System.Environment]::SetEnvironmentVariable("KUBERNETES_PORT_443_TCP_PORT", $kubernetesPort, "machine")
+        Write-Host "Successfully set environment variable KUBERNETES_PORT_443_TCP_PORT - $($kubernetesPort) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
+    }
+
     # run config parser
     ruby /opt/omsagentwindows/scripts/ruby/tomlparser.rb
     .\setenv.ps1
-    
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/omsagentwindows/scripts/ruby/tomlparser-agent-config.rb
     .\setagentenv.ps1

@@ -84,7 +84,6 @@ else
   if (File.file?(@configMapMountPath))
     ConfigParseErrorLogger.logError("config::unsupported/missing config schema version - '#{@configSchemaVersion}' , using defaults, please use supported schema version")
   end
-  @enable_health_model = false
 end
 
 # Write the settings to file, so that they can be set as environment variables
