@@ -140,19 +140,6 @@
       <Column name="PVType" type="str" mdstype="mt:wstr" />
       <Column name="PVTypeInfo" type="str" mdstype="mt:wstr" />           
     </Schema>
-    <Schema name="KubeHealthSchema">     
-      <Column name="ClusterId" type="str" mdstype="mt:wstr" />           
-      <Column name="CollectionTime" type="str" mdstype="mt:wstr" />
-      <Column name="Details" type="str" mdstype="mt:wstr" />
-      <Column name="MonitorConfig" type="str" mdstype="mt:wstr" />
-      <Column name="MonitorInstanceId" type="str" mdstype="mt:wstr" />      
-      <Column name="MonitorLabels" type="str" mdstype="mt:wstr" />
-      <Column name="MonitorTypeId" type="str" mdstype="mt:wstr" />
-      <Column name="NewState" type="str" mdstype="mt:wstr" />
-      <Column name="OldState" type="str" mdstype="mt:wstr" />
-      <Column name="ParentMonitorInstanceId" type="str" mdstype="mt:wstr" />
-      <Column name="TimeFirstObserved" type="str" mdstype="mt:wstr" />      
-    </Schema>
     <Schema name="InsightsMetricsSchema">     
       <Column name="CollectionTime" type="str" mdstype="mt:wstr" />
       <Column name="Computer" type="str" mdstype="mt:wstr" />
@@ -231,7 +218,6 @@
     <Source name="oneagent.containerInsights.CONTAINER_INVENTORY_BLOB" schema="ContainerInventorySchema" />
     <Source name="oneagent.containerInsights.CONTAINER_NODE_INVENTORY_BLOB" schema="ContainerNodeInventorySchema" />         
     <Source name="oneagent.containerInsights.LINUX_PERF_BLOB" schema="KubePerfSchema" />        
-    <Source name="oneagent.containerInsights.KUBE_HEALTH_BLOB" schema="KubeHealthSchema" />          
     <Source name="ContainerLogSource" schema="ContainerLogSchema" />
     <Source name="ContainerLogV2Source" schema="ContainerLogV2Schema" /> 	
     <Source name="KubeMonAgentEventsSource" schema="KubeMonAgentEventsSchema" />     
@@ -341,11 +327,6 @@
            <RouteEvent eventName="KubePerfEvent" duration="PT10S" priority="High" storeType="Local" disabled="true">
            </RouteEvent>
         </MdsdEventSource>
-
-        <MdsdEventSource source="oneagent.containerInsights.KUBE_HEALTH_BLOB" queryDelay="PT10S">
-           <RouteEvent eventName="KubeHealthEvent" duration="PT10S" priority="High" storeType="Local" disabled="true">
-           </RouteEvent>
-        </MdsdEventSource>
     </MdsdEvents>
   </Events>
   
@@ -443,12 +424,5 @@
          </Content>
        </OMS>
     </EventStreamingAnnotation>  
-    <EventStreamingAnnotation name="KubeHealthEvent">
-       <OMS>
-         <Content>         
-           <![CDATA[<Config workspaceName="CIWORKSPACE" logType="KUBE_HEALTH_BLOB" ipName="ContainerInsights"/>]]>
-         </Content>
-       </OMS>
-    </EventStreamingAnnotation>
 	</EventStreamingAnnotations>
 </MonitoringManagement>

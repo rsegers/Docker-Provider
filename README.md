@@ -151,6 +151,25 @@ bash build-and-publish-docker-image.sh --image <repo>/<imagename>:<imagetag>
 ```
 > Note: format of the imagetag will be `ci<release><MMDDYYYY>`. possible values for release are test, dev, preview, dogfood, prod etc.
 
+You can also build and push images for multiple architectures. This is powered by docker buildx
+```
+cd ~/Docker-Provider/kubernetes/linux/dockerbuild
+sudo docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
+# build and publish using docker buildx
+bash build-and-publish-docker-image.sh --image <repo>/<imagename>:<imagetag> --multiarch
+```
+
+or directly use the docker buildx commands
+```
+# multiple platforms
+cd ~/Docker-Provider
+docker buildx build --platform linux/arm64/v8,linux/amd64 -t <repo>/<imagename>:<imagetag> --build-arg IMAGE_TAG=<imagetag> -f kubernetes/linux/Dockerfile.multiarch --push .
+
+# single platform
+cd ~/Docker-Provider
+docker buildx build --platform linux/amd64 -t <repo>/<imagename>:<imagetag> --build-arg IMAGE_TAG=<imagetag> -f kubernetes/linux/Dockerfile.multiarch --push .
+```
+
 If you prefer to build docker provider shell bundle and image separately, then you can follow below instructions
 
 ##### Build Docker Provider shell bundle
@@ -211,7 +230,7 @@ powershell -ExecutionPolicy bypass  # switch to powershell if you are not on pow
 ```
 
 ##### Developer Build optimizations
-If you do not want to build the image from scratch every time you make changes during development,you can choose to build the docker images that are separated out by 
+If you do not want to build the image from scratch every time you make changes during development,you can choose to build the docker images that are separated out by
 * Base image and dependencies including agent bootstrap(setup.ps1)
 * Agent conf and plugin changes
 
@@ -227,12 +246,28 @@ powershell -ExecutionPolicy bypass  # switch to powershell if you are not on pow
 And then run the script to build the image consisting of code and conf changes.
 ```
 .\build-and-publish-dev-docker-image.ps1 -image <repo>/<imagename>:<imagetag> # trigger build code and image and publish docker hub or acr
+By default, multi-arc docker image will be built, but if you want generate test image either with ltsc2019 or ltsc2022 base image, then you can follow the instructions below
+
+For building image with base image version ltsc2019
+.\build-and-publish-dev-docker-image.ps1 -image <repo>/<imagename>:<imagetag> -windowsBaseImageVersion ltsc2019
+
+For building image with base image version ltsc2022
+.\build-and-publish-dev-docker-image.ps1 -image <repo>/<imagename>:<imagetag> -windowsBaseImageVersion ltsc2022
+
+
 ```
 
-For the subsequent builds, you can just run - 
+For the subsequent builds, you can just run -
 
 ```
 .\build-and-publish-dev-docker-image.ps1 -image <repo>/<imagename>:<imagetag> # trigger build code and image and publish docker hub or acr
+By default, multi-arc docker image will be built, but if you want generate test image either with ltsc2019 or ltsc2022 base image, then you can follow the instructions below
+
+For building image with base image version ltsc2019
+.\build-and-publish-dev-docker-image.ps1 -image <repo>/<imagename>:<imagetag> -windowsBaseImageVersion ltsc2019
+
+For building image with base image version ltsc2022
+.\build-and-publish-dev-docker-image.ps1 -image <repo>/<imagename>:<imagetag> -windowsBaseImageVersion ltsc2022
 ```
 ###### Note - If you have changes in setup.ps1 and want to test those changes, uncomment the section consisting of setup.ps1 in the Dockerfile-dev-image file.
 
@@ -297,18 +332,31 @@ Navigate to Kubernetes directory and update the yamls with latest docker image o
 
 For DEV and PROD branches, automatically deployed latest yaml with latest agent image (which automatically built by the azure devops pipeline) onto CIDEV and CIPROD AKS clusters in build subscription.  So, you can use CIDEV and CIPROD AKS cluster to validate E2E. Similarly, you can set up build and release pipelines for your feature branch.
 
+# Testing MSI Auth Mode Using Yaml
+
+  1. Enable Monitoring addon with Managed Idenity Auth Mode either using Portal or CLI or Template
+  2. Deploy [ARM template](./scripts/onboarding/aks/onboarding-using-msi-auth/) with enabled = false to create DCR, DCR-A and link the workspace to Portal
+   > Note - Make sure to update the parameter values in existingClusterParam.json file and have enabled = false in template file
+    `az deployment group create --resource-group <ResourceGroupName> --template-file ./existingClusterOnboarding.json --parameters @./existingClusterParam.json`
+  3. Get the MSI token (which is valid for 24 hrs.) value via `kubectl get secrets -n kube-system  omsagent-aad-msi-token -o=jsonpath='{.data.token}'`
+  4. Disable Monitoring addon via `az aks disable-addons -a monitoring -g <rgName> -n <clusterName>`
+  5. Uncomment MSI auth related yaml lines, replace all the placeholder values, MSI token value and image tag in the omsagent.yaml
+  6. Deploy the omsagent.yaml via `kubectl apply -f omsagent.yaml`
+    > Note: use the image toggle for release E2E validation
+  7. validate E2E for LA & Metrics data flows, and other scenarios
+
 # E2E Tests
 
 ## For executing tests
 
 1. Deploy the omsagent.yaml with your agent image. In the yaml, make sure `ISTEST` environment variable set to `true` if its not set already
-2. Update the Service Principal CLIENT_ID, CLIENT_SECRET and TENANT_ID placeholder values and apply e2e-tests.yaml to execute the tests 
+2. Update the Service Principal CLIENT_ID, CLIENT_SECRET and TENANT_ID placeholder values and apply e2e-tests.yaml to execute the tests
     > Note: Service Principal requires reader role on log analytics workspace and cluster resource to query LA and metrics
    ```
-   cd ~/Docker-Provider/test/e2e # based on your repo path    
-   kubectl apply -f e2e-tests.yaml # this will trigger job to run the tests in sonobuoy namespace 
-   kubectl get po -n sonobuoy # to check the pods and jobs associated to tests   
-   ``` 
+   cd ~/Docker-Provider/test/e2e # based on your repo path
+   kubectl apply -f e2e-tests.yaml # this will trigger job to run the tests in sonobuoy namespace
+   kubectl get po -n sonobuoy # to check the pods and jobs associated to tests
+   ```
 3. Download (sonobuoy)[https://github.com/vmware-tanzu/sonobuoy/releases] on your dev box to view the results of the tests
    ```
    results=$(sonobuoy retrieve) # downloads tar file which has logs and test results
@@ -319,9 +367,9 @@ For DEV and PROD branches, automatically deployed latest yaml with latest agent 
 ## For adding new tests
 
 1. Add the test python file with your test code under `tests` directory
-2. Build the docker image, recommended to use ACR & MCR 
+2. Build the docker image, recommended to use ACR & MCR
   ```
-   cd ~/Docker-Provider/test/e2e/src # based on your repo path 
+   cd ~/Docker-Provider/test/e2e/src # based on your repo path
    docker login <acr> -u <user> -p <pwd> # login to acr
    docker build -f ./core/Dockerfile -t <repo>/<imagename>:<imagetag> .
    docker push <repo>/<imagename>:<imagetag>

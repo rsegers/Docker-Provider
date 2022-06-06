@@ -50,8 +50,8 @@ You can use the troubleshooting script provided [here](https://raw.githubusercon
 Steps:
 - Open powershell using the [cloudshell](https://docs.microsoft.com/en-us/azure/cloud-shell/overview) in the azure portal.
  > Note: This script supported on any Powershell supported environment: Windows and Non-Windows.
- For Linux, refer [Install-Powershell-On-Linux](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-linux?view=powershell-6) and
- For Mac OS, refer [install-powershell-core-on-mac](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-macos?view=powershell-6) how to install powershell
+ For Linux, refer [Install-Powershell-On-Linux](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-linux?view=powershell-7) and
+ For Mac OS, refer [install-powershell-core-on-mac](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell-core-on-macos?view=powershell-7) how to install powershell
 - Make sure that you're using powershell (selected by default)
 - Run the following command to change home directory - `cd ~`
 - Run the following command to download the script - `curl -LO https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_prod/scripts/troubleshoot/TroubleshootError.ps1`

@@ -37,6 +37,16 @@ spec:
    serviceAccountName: omsagent
    {{- end }}
    containers:
+{{- if and (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") (.Values.omsagent.useAADAuth) }}
+     - name: addon-token-adapter
+       imagePullPolicy: IfNotPresent
+       env:
+       - name: AZMON_COLLECT_ENV
+         value: "false"
+       - name: TOKEN_NAMESPACE
+         value: "azure-arc"
+{{-  .Values.Azure.Identity.MSIAdapterYaml | nindent 7 }}
+{{- end }}
      - name: omsagent
        {{- if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
        image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
@@ -57,6 +67,8 @@ spec:
        {{- else if ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.Azure.Cluster.ResourceId | quote }}
+       - name: USING_AAD_MSI_AUTH
+         value: {{ .Values.omsagent.useAADAuth | quote }}
        {{- if ne .Values.Azure.Cluster.Region "<your_cluster_region>" }}
        - name: AKS_REGION
          value: {{ .Values.Azure.Cluster.Region | quote }}
@@ -113,6 +125,12 @@ spec:
         - mountPath: /etc/omsagent-secret
           name: omsagent-secret
           readOnly: true
+        {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) }}
+        - mountPath: /etc/ssl/certs/proxy-cert.crt
+          subPath: PROXYCERT.crt
+          name: omsagent-secret
+          readOnly: true
+        {{- end }}
         - mountPath: /etc/config/settings
           name: settings-vol-config
           readOnly: true
@@ -153,6 +171,8 @@ spec:
        {{- else if ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.Azure.Cluster.ResourceId | quote }}
+       - name: USING_AAD_MSI_AUTH
+         value: {{ .Values.omsagent.useAADAuth | quote }}
        {{- if ne .Values.Azure.Cluster.Region "<your_cluster_region>" }}
        - name: AKS_REGION
          value: {{ .Values.Azure.Cluster.Region | quote }}
@@ -179,6 +199,12 @@ spec:
          - mountPath: /etc/omsagent-secret
            name: omsagent-secret
            readOnly: true
+         {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) }}
+         - mountPath: /etc/ssl/certs/proxy-cert.crt
+           subPath: PROXYCERT.crt
+           name: omsagent-secret
+           readOnly: true
+         {{- end }}
          - mountPath: /etc/config/settings
            name: settings-vol-config
            readOnly: true

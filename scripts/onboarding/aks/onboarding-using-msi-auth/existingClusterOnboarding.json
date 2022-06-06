@@ -14,10 +14,10 @@
               "description": "Location of the AKS resource e.g. \"East US\""
             }
         },
-        "aksResourceTagValues": {
+        "resourceTagValues": {
             "type": "object",
             "metadata": {
-              "description": "Existing all tags on AKS Cluster Resource"
+              "description": "Existing or new tags to use on AKS, ContainerInsights and DataCollectionRule Resources"
             }
         },
         "workspaceLocation": {
@@ -31,21 +31,16 @@
             "metadata": {
                 "description": "Full Resource ID of the log analitycs workspace that will be used for data destination. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz"
             }
-        },
-        "dcrResourceTagValues": {
-            "type": "object",
-            "metadata": {
-              "description": "Existing or new tags on DCR Cluster Resource"
-            }
         }
     },
     "variables": {
         "clusterSubscriptionId": "[split(parameters('aksResourceId'),'/')[2]]",
         "clusterResourceGroup": "[split(parameters('aksResourceId'),'/')[4]]",
         "clusterName": "[split(parameters('aksResourceId'),'/')[8]]",
+        "clusterLocation": "[replace(parameters('aksResourceLocation'),' ', '')]",
         "workspaceSubscriptionId": "[split(parameters('workspaceResourceId'),'/')[2]]",
         "workspaceResourceGroup": "[split(parameters('workspaceResourceId'),'/')[4]]",
-        "dcrName": "[Concat('MSCI', '-', split(parameters('workspaceResourceId'),'/')[8])]",
+        "dcrName": "[Concat('MSCI', '-', variables('clusterName'), '-', variables('clusterLocation'))]",
         "associationName":  "ContainerInsightsExtension",
         "dataCollectionRuleId": "[resourceId(variables('workspaceSubscriptionId'), variables('workspaceResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]"
     },
@@ -69,7 +64,7 @@
                         "apiVersion": "2019-11-01-preview",
                         "name": "[variables('dcrName')]",
                         "location": "[parameters('workspaceLocation')]",
-                        "tags": "[parameters('dcrResourceTagValues')]",
+                        "tags": "[parameters('resourceTagValues')]",
                         "kind": "Linux",
                         "properties": {
                             "dataSources": {
@@ -83,7 +78,6 @@
                                             "Microsoft-ContainerLogV2",
                                             "Microsoft-ContainerNodeInventory",
                                             "Microsoft-KubeEvents",
-                                            "Microsoft-KubeHealth",
                                             "Microsoft-KubeMonAgentEvents",
                                             "Microsoft-KubeNodeInventory",
                                             "Microsoft-KubePodInventory",
@@ -112,7 +106,6 @@
                                         "Microsoft-ContainerLogV2",
                                         "Microsoft-ContainerNodeInventory",
                                         "Microsoft-KubeEvents",
-                                        "Microsoft-KubeHealth",
                                         "Microsoft-KubeMonAgentEvents",
                                         "Microsoft-KubeNodeInventory",
                                         "Microsoft-KubePodInventory",
@@ -185,7 +178,7 @@
                         "name": "[variables('clusterName')]",
                         "type": "Microsoft.ContainerService/managedClusters",
                         "location": "[parameters('aksResourceLocation')]",
-                        "tags": "[parameters('aksResourceTagValues')]",
+                        "tags": "[parameters('resourceTagValues')]",
                         "apiVersion": "2018-03-31",
                         "properties": {
                           "mode": "Incremental",

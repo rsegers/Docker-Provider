@@ -12,7 +12,6 @@ require_relative "ConfigParseErrorLogger"
 
 @configMapMountPath = "/etc/config/settings/agent-settings"
 @configSchemaVersion = ""
-@enable_health_model = false
 
 # 250 Node items (15KB per node) account to approximately 4MB
 @nodesChunkSize = 250
@@ -89,10 +88,6 @@ end
 def populateSettingValuesFromConfigMap(parsedConfig)
   begin
     if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil?
-      if !parsedConfig[:agent_settings][:health_model].nil? && !parsedConfig[:agent_settings][:health_model][:enabled].nil?
-        @enable_health_model = parsedConfig[:agent_settings][:health_model][:enabled]
-        puts "enable_health_model = #{@enable_health_model}"
-      end
       chunk_config = parsedConfig[:agent_settings][:chunk_config]
       if !chunk_config.nil?
         nodesChunkSize = chunk_config[:NODES_CHUNK_SIZE]
@@ -179,7 +174,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     end
   rescue => errorStr
     puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
-    @enable_health_model = false
   end
 end
 
@@ -194,14 +188,12 @@ else
   if (File.file?(@configMapMountPath))
     ConfigParseErrorLogger.logError("config::unsupported/missing config schema version - '#{@configSchemaVersion}' , using defaults, please use supported schema version")
   end
-  @enable_health_model = false
 end
 
 # Write the settings to file, so that they can be set as environment variables
 file = File.open("agent_config_env_var", "w")
 
 if !file.nil?
-  file.write("export AZMON_CLUSTER_ENABLE_HEALTH_MODEL=#{@enable_health_model}\n")
   file.write("export NODES_CHUNK_SIZE=#{@nodesChunkSize}\n")
   file.write("export PODS_CHUNK_SIZE=#{@podsChunkSize}\n")
   file.write("export EVENTS_CHUNK_SIZE=#{@eventsChunkSize}\n")

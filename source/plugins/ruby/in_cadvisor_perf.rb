@@ -27,8 +27,6 @@ module Fluent::Plugin
     config_param :run_interval, :time, :default => 60
     config_param :tag, :string, :default => "oneagent.containerInsights.LINUX_PERF_BLOB"
     config_param :mdmtag, :string, :default => "mdm.cadvisorperf"
-    config_param :nodehealthtag, :string, :default => "kubehealth.DaemonSet.Node"
-    config_param :containerhealthtag, :string, :default => "kubehealth.DaemonSet.Container"
     config_param :insightsmetricstag, :string, :default => "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
 
     def configure(conf)
@@ -82,8 +80,6 @@ module Fluent::Plugin
         end
         router.emit_stream(@tag, eventStream) if eventStream
         router.emit_stream(@mdmtag, eventStream) if eventStream
-        router.emit_stream(@containerhealthtag, eventStream) if eventStream
-        router.emit_stream(@nodehealthtag, eventStream) if eventStream
 
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
           $log.info("cAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")

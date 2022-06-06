@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-require 'fluent/plugin/output'
+require "fluent/plugin/output"
 
 module Fluent::Plugin
   class OutputMDM < Output
@@ -19,7 +19,7 @@ module Fluent::Plugin
       require_relative "constants"
       require_relative "arc_k8s_cluster_identity"
       require_relative "proxy_utils"
-
+      require_relative "extension_utils"
       @@token_resource_url = "https://monitoring.azure.com/"
       # AAD auth supported only in public cloud and handle other clouds when enabled
       # this is unified new token audience for LA AAD MSI auth & metrics
@@ -52,6 +52,7 @@ module Fluent::Plugin
       # Setting useMsi to false by default
       @useMsi = false
       @isAADMSIAuth = false
+      @isWindows = false
       @metrics_flushed_count = 0
 
       @cluster_identity = nil
@@ -88,6 +89,9 @@ module Fluent::Plugin
           aks_region = aks_region.gsub(" ", "")
         end
 
+        @isWindows = isWindows()
+        @isAADMSIAuth = ExtensionUtils.isAADMSIAuthMode()
+
         if @can_send_data_to_mdm
           @log.info "MDM Metrics supported in #{aks_region} region"
 
@@ -96,26 +100,29 @@ module Fluent::Plugin
           end
           @@post_request_url = @@post_request_url_template % { aks_region: aks_region, aks_resource_id: aks_resource_id }
           @post_request_uri = URI.parse(@@post_request_url)
-          if (!!@isArcK8sCluster)
-            proxy = (ProxyUtils.getProxyConfiguration)
-            if proxy.nil? || proxy.empty?
-              @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
-            else
-              @log.info "Proxy configured on this cluster: #{aks_resource_id}"
-              @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port, proxy[:addr], proxy[:port], proxy[:user], proxy[:pass])
-            end
-          else
+          proxy = (ProxyUtils.getProxyConfiguration)
+          if proxy.nil? || proxy.empty?
             @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
+          else
+            @log.info "Proxy configured on this cluster: #{aks_resource_id}"
+            @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port, proxy[:addr], proxy[:port], proxy[:user], proxy[:pass])
           end
+
           @http_client.use_ssl = true
           @log.info "POST Request url: #{@@post_request_url}"
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMPluginStart", {})
 
-          # arc k8s cluster uses cluster identity
           if (!!@isArcK8sCluster)
-            @log.info "using cluster identity token since cluster is azure arc k8s cluster"
-            @cluster_identity = ArcK8sClusterIdentity.new
-            @cached_access_token = @cluster_identity.get_cluster_identity_token
+            if @isAADMSIAuth && !@isWindows
+              @log.info "using IMDS sidecar endpoint for MSI token since its Arc k8s and Linux node"
+              @useMsi = true
+              msi_endpoint = @@imds_msi_endpoint_template % { resource: @@token_resource_audience }
+              @parsed_token_uri = URI.parse(msi_endpoint)
+            else
+              # switch to IMDS endpoint for the windows once the Arc K8s team supports the IMDS sidecar for windows
+              @log.info "using cluster identity token since cluster is azure arc k8s cluster"
+              @cluster_identity = ArcK8sClusterIdentity.new
+            end
           else
             # azure json file only used for aks and doesnt exist in non-azure envs
             file = File.read(@@azure_json_path)
@@ -135,13 +142,10 @@ module Fluent::Plugin
               else
                 # in case of aad msi auth user_assigned_client_id will be empty
                 @log.info "using aad msi auth"
-                @isAADMSIAuth = true
                 msi_endpoint = @@imds_msi_endpoint_template % { resource: @@token_resource_audience }
               end
               @parsed_token_uri = URI.parse(msi_endpoint)
             end
-
-            @cached_access_token = get_access_token
           end
         end
       rescue => e
@@ -156,48 +160,59 @@ module Fluent::Plugin
       if (Time.now > @get_access_token_backoff_expiry)
         http_access_token = nil
         retries = 0
+        properties = {}
         begin
           if @cached_access_token.to_s.empty? || (Time.now + 5 * 60 > @token_expiry_time) # Refresh token 5 minutes from expiration
             @log.info "Refreshing access token for out_mdm plugin.."
-
-            if (!!@useMsi)
-              properties = {}
-              if (!!@isAADMSIAuth)
-                @log.info "Using aad msi auth to get the token to post MDM data"
-                properties["aadAuthMSIMode"] = "true"
-              else
-                @log.info "Using msi to get the token to post MDM data"
-              end
-              ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMToken-MSI", properties)
-              @log.info "Opening TCP connection"
-              http_access_token = Net::HTTP.start(@parsed_token_uri.host, @parsed_token_uri.port, :use_ssl => false)
-              # http_access_token.use_ssl = false
-              token_request = Net::HTTP::Get.new(@parsed_token_uri.request_uri)
-              token_request["Metadata"] = true
-            else
-              @log.info "Using SP to get the token to post MDM data"
-              ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMToken-SP", {})
-              @log.info "Opening TCP connection"
-              http_access_token = Net::HTTP.start(@parsed_token_uri.host, @parsed_token_uri.port, :use_ssl => true)
-              # http_access_token.use_ssl = true
-              token_request = Net::HTTP::Post.new(@parsed_token_uri.request_uri)
-              token_request.set_form_data(
-                {
-                  "grant_type" => @@grant_type,
-                  "client_id" => @data_hash["aadClientId"],
-                  "client_secret" => @data_hash["aadClientSecret"],
-                  "resource" => @@token_resource_url,
-                }
-              )
+            if (!!@isAADMSIAuth)
+              properties["aadAuthMSIMode"] = "true"
             end
+            if @isAADMSIAuth && @isWindows
+              @log.info "reading the token from IMDS token file since its windows.."
+              if File.exist?(Constants::IMDS_TOKEN_PATH_FOR_WINDOWS) && File.readable?(Constants::IMDS_TOKEN_PATH_FOR_WINDOWS)
+                token_content = File.read(Constants::IMDS_TOKEN_PATH_FOR_WINDOWS).strip
+                parsed_json = JSON.parse(token_content)
+                @token_expiry_time = Time.now + @@token_refresh_back_off_interval * 60 # set the expiry time to be ~ thirty minutes from current time
+                @cached_access_token = parsed_json["access_token"]
+                @log.info "Successfully got access token"
+                ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMToken-MSI", properties)
+              else
+                raise "Either MSI Token file path doesnt exist or not readble"
+              end
+            else
+              if (!!@useMsi)
+                @log.info "Using msi to get the token to post MDM data"
+                ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMToken-MSI", properties)
+                @log.info "Opening TCP connection"
+                http_access_token = Net::HTTP.start(@parsed_token_uri.host, @parsed_token_uri.port, :use_ssl => false)
+                # http_access_token.use_ssl = false
+                token_request = Net::HTTP::Get.new(@parsed_token_uri.request_uri)
+                token_request["Metadata"] = true
+              else
+                @log.info "Using SP to get the token to post MDM data"
+                ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMToken-SP", {})
+                @log.info "Opening TCP connection"
+                http_access_token = Net::HTTP.start(@parsed_token_uri.host, @parsed_token_uri.port, :use_ssl => true)
+                # http_access_token.use_ssl = true
+                token_request = Net::HTTP::Post.new(@parsed_token_uri.request_uri)
+                token_request.set_form_data(
+                  {
+                    "grant_type" => @@grant_type,
+                    "client_id" => @data_hash["aadClientId"],
+                    "client_secret" => @data_hash["aadClientSecret"],
+                    "resource" => @@token_resource_url,
+                  }
+                )
+              end
 
-            @log.info "making request to get token.."
-            token_response = http_access_token.request(token_request)
-            # Handle the case where the response is not 200
-            parsed_json = JSON.parse(token_response.body)
-            @token_expiry_time = Time.now + @@token_refresh_back_off_interval * 60 # set the expiry time to be ~ thirty minutes from current time
-            @cached_access_token = parsed_json["access_token"]
-            @log.info "Successfully got access token"
+              @log.info "making request to get token.."
+              token_response = http_access_token.request(token_request)
+              # Handle the case where the response is not 200
+              parsed_json = JSON.parse(token_response.body)
+              @token_expiry_time = Time.now + @@token_refresh_back_off_interval * 60 # set the expiry time to be ~ thirty minutes from current time
+              @cached_access_token = parsed_json["access_token"]
+              @log.info "Successfully got access token"
+            end
           end
         rescue => err
           @log.info "Exception in get_access_token: #{err}"
@@ -319,10 +334,15 @@ module Fluent::Plugin
     def send_to_mdm(post_body)
       begin
         if (!!@isArcK8sCluster)
-          if @cluster_identity.nil?
-            @cluster_identity = ArcK8sClusterIdentity.new
+          if @isAADMSIAuth && !@isWindows
+            access_token = get_access_token
+          else
+            # switch to IMDS sidecar endpoint for the windows once the Arc K8s team supports
+            if @cluster_identity.nil?
+              @cluster_identity = ArcK8sClusterIdentity.new
+            end
+            access_token = @cluster_identity.get_cluster_identity_token
           end
-          access_token = @cluster_identity.get_cluster_identity_token
         else
           access_token = get_access_token
         end
@@ -339,7 +359,7 @@ module Fluent::Plugin
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMSendSuccessful", {})
           @last_telemetry_sent_time = Time.now
         end
-      rescue Net::HTTPClientException  => e # see https://docs.ruby-lang.org/en/2.6.0/NEWS.html about deprecating HTTPServerException and adding HTTPClientException
+      rescue Net::HTTPClientException => e # see https://docs.ruby-lang.org/en/2.6.0/NEWS.html about deprecating HTTPServerException and adding HTTPClientException
         if !response.nil? && !response.body.nil? #body will have actual error
           @log.info "Failed to Post Metrics to MDM : #{e} Response.body: #{response.body}"
         else
@@ -370,6 +390,19 @@ module Fluent::Plugin
         @log.debug_backtrace(e.backtrace)
         raise e
       end
+    end
+
+    def isWindows()
+      isWindows = false
+      begin
+        os_type = ENV["OS_TYPE"]
+        if !os_type.nil? && !os_type.empty? && os_type.strip.casecmp("windows") == 0
+          isWindows = true
+        end
+      rescue => error
+        @log.warn "Error in MDM isWindows method: #{error}"
+      end
+      return isWindows
     end
   end # class OutputMDM
 end # module Fluent

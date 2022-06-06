@@ -34,7 +34,6 @@ class CAdvisorMetricsAPIClient
 
   @cAdvisorMetricsSecurePort = ENV["IS_SECURE_CADVISOR_PORT"]
   @containerLogsRoute = ENV["AZMON_CONTAINER_LOGS_ROUTE"]
-  @hmEnabled = ENV["AZMON_CLUSTER_ENABLE_HEALTH_MODEL"]
   @npmIntegrationBasic = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_BASIC"]
   @npmIntegrationAdvanced = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_ADVANCED"]
 
@@ -277,11 +276,6 @@ class CAdvisorMetricsAPIClient
                     end
                     #telemetry about containerlog Routing for daemonset
                     telemetryProps["containerLogsRoute"] = @containerLogsRoute
-                   
-                    #telemetry about health model
-                    if (!@hmEnabled.nil? && !@hmEnabled.empty?)
-                      telemetryProps["hmEnabled"] = @hmEnabled
-                    end
                     #telemetry for npm integration
                     if (!@npmIntegrationAdvanced.nil? && !@npmIntegrationAdvanced.empty?)
                       telemetryProps["int-npm-a"] = "1"

@@ -14,6 +14,7 @@ usage()
     echo
     echo "Build and publish docker image:"
     echo "$basename --image <name of docker image> "
+    echo "$basename --image <name of docker image> --multiarch"
 }
 
 parse_args()
@@ -30,6 +31,7 @@ for arg in "$@"; do
   shift
   case "$arg" in
     "--image")  set -- "$@" "-i" ;;
+    "--multiarch")  set -- "$@" "-m" ;;
     "--"*)   usage ;;
     *)        set -- "$@" "$arg"
   esac
@@ -37,7 +39,7 @@ done
 
 local OPTIND opt
 
-while getopts 'hi:' opt; do
+while getopts 'hi:m' opt; do
     case "$opt" in
       h)
       usage
@@ -46,6 +48,11 @@ while getopts 'hi:' opt; do
       i)
         image="$OPTARG"
         echo "image is $OPTARG"
+        ;;
+
+      m)
+        multi=1
+        echo "using multiarch dockerfile"
         ;;
 
       ?)
@@ -130,6 +137,13 @@ dockerFileDir=$baseDir/kubernetes/linux
 echo "source code base directory: $baseDir"
 echo "build directory for docker provider: $buildDir"
 echo "docker file directory: $dockerFileDir"
+
+if [ -n "$multi" ] && [ "$multi" -eq "1" ]; then
+  echo "building multiarch"
+  cd $baseDir
+  docker buildx build --platform linux/arm64/v8,linux/amd64 -t $image --build-arg IMAGE_TAG=$imageTag -f $linuxDir/Dockerfile.multiarch --push .
+  exit 0
+fi
 
 # build docker provider shell bundle
 build_docker_provider

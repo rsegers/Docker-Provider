@@ -38,7 +38,16 @@ def test_e2e_workflows(env_dict):
     if len(pod_list.items) <= 0:
         pytest.fail("number of items in pod list should be greater than 0")
 
+    if len(pod_list.items[0].spec.containers) < 1:
+        pytest.fail("number of containers in pod item should be at least 1")
+
     envVars = pod_list.items[0].spec.containers[0].env
+    if (len(pod_list.items[0].spec.containers) > 1):
+        for container in pod_list.items[0].spec.containers:
+            if (container.name == constants.OMSAGENT_MAIN_CONTAINER_NAME):
+                envVars = container.env
+                break
+
     if not envVars:
         pytest.fail("environment variables should be defined in the replicaset pod")
 

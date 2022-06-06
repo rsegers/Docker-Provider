@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# please use this instead of adding env vars to bashrc directly
+# usage: setGlobalEnvVar ENABLE_SIDECAR_SCRAPING true
+setGlobalEnvVar() {
+      export "$1"="$2"
+      echo "export \"$1\"=\"$2\"" >> /opt/env_vars
+}
+echo "source /opt/env_vars" >> ~/.bashrc
+
 waitforlisteneronTCPport() {
       local sleepdurationsecs=1
       local totalsleptsecs=0
@@ -175,7 +183,7 @@ if [ -e "/etc/omsagent-secret/WSID" ]; then
             # convert the protocol prefix in lowercase for validation
             proxyprotocol=$(echo $proto | tr "[:upper:]" "[:lower:]")
             if [ "$proxyprotocol" != "http://" -a "$proxyprotocol" != "https://" ]; then
-               echo "-e error proxy endpoint should be in this format http(s)://<user>:<pwd>@<hostOrIP>:<port>"
+               echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
             fi
             # remove the protocol
             url="$(echo ${PROXY_ENDPOINT/$proto/})"
@@ -190,8 +198,8 @@ if [ -e "/etc/omsagent-secret/WSID" ]; then
             # extract the port
             port="$(echo $hostport | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
 
-            if [ -z "$user" -o -z "$pwd" -o -z "$host" -o -z "$port" ]; then
-               echo "-e error proxy endpoint should be in this format http(s)://<user>:<pwd>@<hostOrIP>:<port>"
+            if [ -z "$host" -o -z "$port" ]; then
+               echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
             else
                echo "successfully validated provided proxy endpoint is valid and expected format"
             fi
@@ -202,19 +210,26 @@ if [ -e "/etc/omsagent-secret/WSID" ]; then
             echo "export MDSD_PROXY_MODE=$MDSD_PROXY_MODE" >> ~/.bashrc
             export MDSD_PROXY_ADDRESS=$proto$hostport
             echo "export MDSD_PROXY_ADDRESS=$MDSD_PROXY_ADDRESS" >> ~/.bashrc
-            export MDSD_PROXY_USERNAME=$user
-            echo "export MDSD_PROXY_USERNAME=$MDSD_PROXY_USERNAME" >> ~/.bashrc
-            export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
-            echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
-
-            #TODO: Compression + proxy creates a deserialization error in ODS. This needs a fix in MDSD
-            export MDSD_ODS_COMPRESSION_LEVEL=0
-            echo "export MDSD_ODS_COMPRESSION_LEVEL=$MDSD_ODS_COMPRESSION_LEVEL" >> ~/.bashrc
+            if [ ! -z "$user" -a ! -z "$pwd" ]; then
+               export MDSD_PROXY_USERNAME=$user
+               echo "export MDSD_PROXY_USERNAME=$MDSD_PROXY_USERNAME" >> ~/.bashrc
+               export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
+               echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
+            fi
+            if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+               export PROXY_CA_CERT=/etc/omsagent-secret/PROXYCERT.crt
+               echo "export PROXY_CA_CERT=$PROXY_CA_CERT" >> ~/.bashrc
+            fi
       fi
 
       if [ ! -z "$PROXY_ENDPOINT" ]; then
-         echo "Making curl request to oms endpint with domain: $domain and proxy: $PROXY_ENDPOINT"
-         curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
+         if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+           echo "Making curl request to oms endpint with domain: $domain and proxy endpoint, and proxy CA cert"
+           curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt
+         else
+           echo "Making curl request to oms endpint with domain: $domain and proxy endpoint"
+           curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
+         fi
       else
          echo "Making curl request to oms endpint with domain: $domain"
          curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest
@@ -222,8 +237,13 @@ if [ -e "/etc/omsagent-secret/WSID" ]; then
 
       if [ $? -ne 0 ]; then
             if [ ! -z "$PROXY_ENDPOINT" ]; then
-               echo "Making curl request to ifconfig.co with proxy: $PROXY_ENDPOINT"
-               RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT`
+               if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+                  echo "Making curl request to ifconfig.co with proxy and proxy CA cert"
+                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt`
+               else
+                  echo "Making curl request to ifconfig.co with proxy"
+                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT`
+               fi
             else
                echo "Making curl request to ifconfig.co"
                RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co`
@@ -233,8 +253,13 @@ if [ -e "/etc/omsagent-secret/WSID" ]; then
             else
                   # Retrying here to work around network timing issue
                   if [ ! -z "$PROXY_ENDPOINT" ]; then
-                    echo "ifconfig check succeeded, retrying oms endpoint with proxy..."
-                    curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
+                    if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+                        echo "ifconfig check succeeded, retrying oms endpoint with proxy and proxy CA cert..."
+                        curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt
+                    else
+                       echo "ifconfig check succeeded, retrying oms endpoint with proxy..."
+                       curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
+                    fi
                   else
                     echo "ifconfig check succeeded, retrying oms endpoint..."
                     curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest
@@ -270,6 +295,30 @@ elif [ $domain == "opinsights.azure.microsoft.scloud" ]; then
 fi
 export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT
 echo "export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT" >> ~/.bashrc
+
+# Copying over CA certs for airgapped clouds. This is needed for Mariner vs Ubuntu hosts.
+# We are unable to tell if the host is Mariner or Ubuntu,
+# so both /anchors/ubuntu and /anchors/mariner are mounted in the yaml.
+# One will have the certs and the other will be empty.
+# These need to be copied to a different location for Mariner vs Ubuntu containers.
+# OS_ID here is the container distro.
+# Adding Mariner now even though the elif will never currently evaluate. 
+if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
+  OS_ID=$(cat /etc/os-release | grep ^ID= | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+  if [ $OS_ID == "mariner" ]; then
+    cp /anchors/ubuntu/* /etc/pki/ca-trust/source/anchors
+    cp /anchors/mariner/* /etc/pki/ca-trust/source/anchors
+    update-ca-trust
+  else
+    if [ $OS_ID != "ubuntu" ]; then
+      echo "Error: The ID in /etc/os-release is not ubuntu or mariner. Defaulting to ubuntu."
+    fi
+    cp /anchors/ubuntu/* /usr/local/share/ca-certificates/
+    cp /anchors/mariner/* /usr/local/share/ca-certificates/
+    update-ca-certificates
+    cp /etc/ssl/certs/ca-certificates.crt /usr/lib/ssl/cert.pem
+  fi
+fi
 
 #consisten naming conventions with the windows
 export DOMAIN=$domain
@@ -311,7 +360,7 @@ source ~/.bashrc
 
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       #Parse the configmap to set the right environment variables.
-      /usr/bin/ruby2.6 tomlparser.rb
+      /usr/bin/ruby2.7 tomlparser.rb
 
       cat config_env_var | while read line; do
             echo $line >> ~/.bashrc
@@ -322,19 +371,17 @@ fi
 #Parse the configmap to set the right environment variables for agent config.
 #Note > tomlparser-agent-config.rb has to be parsed first before td-agent-bit-conf-customizer.rb for fbit agent settings
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      /usr/bin/ruby2.6 tomlparser-agent-config.rb
+      /usr/bin/ruby2.7 tomlparser-agent-config.rb
 
       cat agent_config_env_var | while read line; do
-            #echo $line
             echo $line >> ~/.bashrc
       done
       source agent_config_env_var
 
       #Parse the configmap to set the right environment variables for network policy manager (npm) integration.
-      /usr/bin/ruby2.6 tomlparser-npm-config.rb
+      /usr/bin/ruby2.7 tomlparser-npm-config.rb
 
       cat integration_npm_config_env_var | while read line; do
-            #echo $line
             echo $line >> ~/.bashrc
       done
       source integration_npm_config_env_var
@@ -342,11 +389,11 @@ fi
 
 #Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      /usr/bin/ruby2.6 td-agent-bit-conf-customizer.rb
+      /usr/bin/ruby2.7 td-agent-bit-conf-customizer.rb
 fi
 
 #Parse the prometheus configmap to create a file with new custom settings.
-/usr/bin/ruby2.6 tomlparser-prom-customconfig.rb
+/usr/bin/ruby2.7 tomlparser-prom-customconfig.rb
 
 #Setting default environment variables to be used in any case of failure in the above steps
 if [ ! -e "/etc/config/kube.conf" ]; then
@@ -368,7 +415,7 @@ else
       source defaultpromenvvariables-rs
 fi
 
-#Sourcing telemetry environment variable file if it exists
+#Sourcing environment variable file if it exists. This file has telemetry and whether kubernetes pods are monitored
 if [ -e "telemetry_prom_config_env_var" ]; then
       cat telemetry_prom_config_env_var | while read line; do
             echo $line >> ~/.bashrc
@@ -380,7 +427,7 @@ fi
 if [ ! -e "/etc/config/kube.conf" ]; then
       if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
             #Parse the agent configmap to create a file with new custom settings.
-            /usr/bin/ruby2.6 tomlparser-prom-agent-config.rb
+            /usr/bin/ruby2.7 tomlparser-prom-agent-config.rb
             #Sourcing config environment variable file if it exists
             if [ -e "side_car_fbit_config_env_var" ]; then
                   cat side_car_fbit_config_env_var | while read line; do
@@ -394,7 +441,7 @@ fi
 
 #Parse the configmap to set the right environment variables for MDM metrics configuration for Alerting.
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      /usr/bin/ruby2.6 tomlparser-mdm-metrics-config.rb
+      /usr/bin/ruby2.7 tomlparser-mdm-metrics-config.rb
 
       cat config_mdm_metrics_env_var | while read line; do
             echo $line >> ~/.bashrc
@@ -402,7 +449,7 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       source config_mdm_metrics_env_var
 
       #Parse the configmap to set the right environment variables for metric collection settings
-      /usr/bin/ruby2.6 tomlparser-metric-collection-config.rb
+      /usr/bin/ruby2.7 tomlparser-metric-collection-config.rb
 
       cat config_metric_collection_env_var | while read line; do
             echo $line >> ~/.bashrc
@@ -413,7 +460,7 @@ fi
 # OSM scraping to be done in replicaset if sidecar car scraping is disabled and always do the scraping from the sidecar (It will always be either one of the two)
 if [[ ( ( ! -e "/etc/config/kube.conf" ) && ( "${CONTAINER_TYPE}" == "PrometheusSidecar" ) ) ||
       ( ( -e "/etc/config/kube.conf" ) && ( "${SIDECAR_SCRAPING_ENABLED}" == "false" ) ) ]]; then
-      /usr/bin/ruby2.6 tomlparser-osm-config.rb
+      /usr/bin/ruby2.7 tomlparser-osm-config.rb
 
       if [ -e "integration_osm_config_env_var" ]; then
             cat integration_osm_config_env_var | while read line; do
@@ -422,6 +469,17 @@ if [[ ( ( ! -e "/etc/config/kube.conf" ) && ( "${CONTAINER_TYPE}" == "Prometheus
             source integration_osm_config_env_var
       fi
 fi
+
+# If the prometheus sidecar isn't doing anything then there's no need to run mdsd and telegraf in it. 
+if [[ ( "${CONTAINER_TYPE}" == "PrometheusSidecar" ) && 
+      ( "${TELEMETRY_CUSTOM_PROM_MONITOR_PODS}" == "false" ) && 
+      ( "${TELEMETRY_OSM_CONFIGURATION_NAMESPACES_COUNT}" -eq 0 ) ]]; then
+      setGlobalEnvVar MUTE_PROM_SIDECAR true
+else
+      setGlobalEnvVar MUTE_PROM_SIDECAR false
+fi
+
+echo "MUTE_PROM_SIDECAR = $MUTE_PROM_SIDECAR"
 
 #Setting environment variable for CAdvisor metrics to use port 10255/10250 based on curl request
 echo "Making wget request to cadvisor endpoint with port 10250"
@@ -500,7 +558,7 @@ if [ "$CONTAINER_RUNTIME" != "docker" ]; then
 fi
 
 echo "set caps for ruby process to read container env from proc"
-sudo setcap cap_sys_ptrace,cap_dac_read_search+ep /usr/bin/ruby2.6
+sudo setcap cap_sys_ptrace,cap_dac_read_search+ep /usr/bin/ruby2.7
 echo "export KUBELET_RUNTIME_OPERATIONS_METRIC="$KUBELET_RUNTIME_OPERATIONS_METRIC >> ~/.bashrc
 echo "export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="$KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC >> ~/.bashrc
 
@@ -535,7 +593,7 @@ MDSD_AAD_MSI_AUTH_ARGS=""
 # check if its AAD Auth MSI mode via USING_AAD_MSI_AUTH
 export AAD_MSI_AUTH_MODE=false
 if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
-   echo "*** activating oneagent in aad auth msi mode ***"
+   echo "*** setting up oneagent in aad auth msi mode ***"
    # msi auth specific args
    MDSD_AAD_MSI_AUTH_ARGS="-a -A"
    export AAD_MSI_AUTH_MODE=true
@@ -552,7 +610,7 @@ if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
    export MDSD_USE_LOCAL_PERSISTENCY="false"
    echo "export MDSD_USE_LOCAL_PERSISTENCY=$MDSD_USE_LOCAL_PERSISTENCY" >> ~/.bashrc
 else
-  echo "*** activating oneagent in legacy auth mode ***"
+  echo "*** setting up oneagent in legacy auth mode ***"
   CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"
   #use the file path as its secure than env
   CIWORKSPACE_keyFile="/etc/omsagent-secret/KEY"
@@ -563,23 +621,34 @@ else
   echo "export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile" >> ~/.bashrc
   export MDSD_FLUENT_SOCKET_PORT="29230"
   echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
+  # set the libcurl specific env and configuration
+  export ENABLE_CURL_UPLOAD=true
+  echo "export ENABLE_CURL_UPLOAD=$ENABLE_CURL_UPLOAD" >> ~/.bashrc
+  export CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+  echo "export CURL_CA_BUNDLE=$CURL_CA_BUNDLE" >> ~/.bashrc
+  mkdir -p /etc/pki/tls/certs
+  cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
 fi
 source ~/.bashrc
 
 dpkg -l | grep mdsd | awk '{print $2 " " $3}'
 
 if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
-    echo "starting mdsd with mdsd-port=26130, fluentport=26230 and influxport=26330 in sidecar container..."
-    #use tenant name to avoid unix socket conflict and different ports for port conflict
-    #roleprefix to use container specific mdsd socket
-    export TENANT_NAME="${CONTAINER_TYPE}"
-    echo "export TENANT_NAME=$TENANT_NAME" >> ~/.bashrc
-    export MDSD_ROLE_PREFIX=/var/run/mdsd-${CONTAINER_TYPE}/default
-    echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
-    source ~/.bashrc
-    mkdir /var/run/mdsd-${CONTAINER_TYPE}
-    # add -T 0xFFFF for full traces
-    mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+    if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+      echo "starting mdsd with mdsd-port=26130, fluentport=26230 and influxport=26330 in sidecar container..."
+      #use tenant name to avoid unix socket conflict and different ports for port conflict
+      #roleprefix to use container specific mdsd socket
+      export TENANT_NAME="${CONTAINER_TYPE}"
+      echo "export TENANT_NAME=$TENANT_NAME" >> ~/.bashrc
+      export MDSD_ROLE_PREFIX=/var/run/mdsd-${CONTAINER_TYPE}/default
+      echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
+      source ~/.bashrc
+      mkdir /var/run/mdsd-${CONTAINER_TYPE}
+      # add -T 0xFFFF for full traces
+      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+    else
+      echo "not starting mdsd (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
+    fi
 else
     echo "starting mdsd mode in main container..."
     # add -T 0xFFFF for full traces
@@ -606,13 +675,17 @@ fi
 #If config parsing was successful, a copy of the conf file with replaced custom settings file is created
 if [ ! -e "/etc/config/kube.conf" ]; then
       if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ] && [ -e "/opt/telegraf-test-prom-side-car.conf" ]; then
-            echo "****************Start Telegraf in Test Mode**************************"
-            /opt/telegraf --config /opt/telegraf-test-prom-side-car.conf --input-filter file -test
-            if [ $? -eq 0 ]; then
-                  mv "/opt/telegraf-test-prom-side-car.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
-                  echo "Moving test conf file to telegraf side-car conf since test run succeeded"
+            if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+                  echo "****************Start Telegraf in Test Mode**************************"
+                  /opt/telegraf --config /opt/telegraf-test-prom-side-car.conf --input-filter file -test
+                  if [ $? -eq 0 ]; then
+                        mv "/opt/telegraf-test-prom-side-car.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
+                        echo "Moving test conf file to telegraf side-car conf since test run succeeded"
+                  fi
+                  echo "****************End Telegraf Run in Test Mode**************************"
+            else
+                  echo "****************Skipping Telegraf Run in Test Mode since MUTE_PROM_SIDECAR is true**************************"
             fi
-            echo "****************End Telegraf Run in Test Mode**************************"
       else
             if [ -e "/opt/telegraf-test.conf" ]; then
                   echo "****************Start Telegraf in Test Mode**************************"
@@ -639,9 +712,13 @@ fi
 #telegraf & fluentbit requirements
 if [ ! -e "/etc/config/kube.conf" ]; then
       if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
-            echo "starting fluent-bit and setting telegraf conf file for prometheus sidecar"
-            /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit-prom-side-car.conf -e /opt/td-agent-bit/bin/out_oms.so &
             telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
+            if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+                  echo "starting fluent-bit and setting telegraf conf file for prometheus sidecar"
+                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit-prom-side-car.conf -e /opt/td-agent-bit/bin/out_oms.so &
+            else
+                  echo "not starting fluent-bit in prometheus sidecar (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
+            fi
       else
             echo "starting fluent-bit and setting telegraf conf file for daemonset"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
@@ -708,8 +785,12 @@ echo "export HOST_VAR=/hostfs/var" >> ~/.bashrc
 
 if [ ! -e "/etc/config/kube.conf" ]; then
       if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
-            echo "checking for listener on tcp #25229 and waiting for 30 secs if not.."
-            waitforlisteneronTCPport 25229 30
+            if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+                  echo "checking for listener on tcp #25229 and waiting for 30 secs if not.."
+                  waitforlisteneronTCPport 25229 30
+            else
+                  echo "no metrics to scrape since MUTE_PROM_SIDECAR is true, not checking for listener on tcp #25229"
+            fi
       else
             echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
             waitforlisteneronTCPport 25226 30
@@ -721,10 +802,15 @@ else
       waitforlisteneronTCPport 25226 30
 fi
 
+
 #start telegraf
-/opt/telegraf --config $telegrafConfFile &
-/opt/telegraf --version
-dpkg -l | grep td-agent-bit | awk '{print $2 " " $3}'
+if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+      /opt/telegraf --config $telegrafConfFile &
+      echo "telegraf version: $(/opt/telegraf --version)"
+      dpkg -l | grep td-agent-bit | awk '{print $2 " " $3}'
+else
+      echo "not starting telegraf (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
+fi
 
 #dpkg -l | grep telegraf | awk '{print $2 " " $3}'
 
@@ -737,7 +823,11 @@ service rsyslog stop
 echo "getting rsyslog status..."
 service rsyslog status
 
-checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
+if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+      checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
+else
+      echo "not checking onboarding status (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
+fi
 
 shutdown() {
 	 pkill -f mdsd

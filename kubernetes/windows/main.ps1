@@ -120,12 +120,12 @@ function Set-EnvironmentVariables {
                 $proxy = [string]$proxy.Trim();
                 $parts = $proxy -split "@"
                 if ($parts.Length -ne 2) {
-                    Write-Host "Invalid ProxyConfiguration $($proxy). EXITING....."
+                    Write-Host "Invalid ProxyConfiguration. EXITING....."
                     exit 1
                 }
                 $subparts1 = $parts[0] -split "//"
                 if ($subparts1.Length -ne 2) {
-                    Write-Host "Invalid ProxyConfiguration $($proxy). EXITING....."
+                    Write-Host "Invalid ProxyConfiguration. EXITING....."
                     exit 1
                 }
                 $protocol = $subparts1[0].ToLower().TrimEnd(":")
@@ -133,14 +133,16 @@ function Set-EnvironmentVariables {
                     Write-Host "Unsupported protocol in ProxyConfiguration $($proxy). EXITING....."
                     exit 1
                 }
-                $subparts2 = $parts[1] -split ":"
-                if ($subparts2.Length -ne 2) {
-                    Write-Host "Invalid ProxyConfiguration $($proxy). EXITING....."
-                    exit 1
-                }
+
             }
         }
+
         Write-Host "Provided Proxy configuration is valid"
+    }
+
+    if (Test-Path /etc/omsagent-secret/PROXYCERT.crt) {
+        Write-Host "Importing Proxy CA cert since Proxy CA cert configured"
+        Import-Certificate -FilePath /etc/omsagent-secret/PROXYCERT.crt -CertStoreLocation 'Cert:\LocalMachine\Root' -Verbose
     }
 
     # Set PROXY
@@ -300,10 +302,19 @@ function Set-EnvironmentVariables {
         Write-Host "Failed to set environment variable AGENT_VERSION for target 'machine' since it is either null or empty"
     }
 
+    $kubernetesPort = [System.Environment]::GetEnvironmentVariable("KUBERNETES_PORT_443_TCP_PORT", "process")
+    if (![string]::IsNullOrEmpty($kubernetesPort)) {
+        [System.Environment]::SetEnvironmentVariable("KUBERNETES_PORT_443_TCP_PORT", $kubernetesPort, "machine")
+        Write-Host "Successfully set environment variable KUBERNETES_PORT_443_TCP_PORT - $($kubernetesPort) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
+    }
+
     # run config parser
     ruby /opt/omsagentwindows/scripts/ruby/tomlparser.rb
     .\setenv.ps1
-    
+
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/omsagentwindows/scripts/ruby/tomlparser-agent-config.rb
     .\setagentenv.ps1

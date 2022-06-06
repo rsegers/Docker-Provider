@@ -111,8 +111,13 @@ addArcConnectedK8sExtension() {
 }
 
 addArcK8sCLIExtension() {
-   echo "adding Arc K8s k8s-extension extension"
-   az extension add --name k8s-extension
+   if [ ! -z "$K8S_EXTENSION_WHL_URL" ]; then
+      echo "adding Arc K8s k8s-extension cli extension from whl file path ${K8S_EXTENSION_WHL_URL}"
+      az extension add --source $K8S_EXTENSION_WHL_URL -y
+   else
+      echo "adding Arc K8s k8s-extension cli extension"
+      az extension add --name k8s-extension
+   fi
 }
 
 createArcCIExtension() {
@@ -125,7 +130,11 @@ createArcCIExtension() {
        basicparameters="$basicparameters  --version $CI_ARC_VERSION"
     fi
 
-   az k8s-extension create $basicparameters --configuration-settings omsagent.ISTEST=true
+   if [ ! -z "$USE_AAD_AUTH" ]; then
+     az k8s-extension create $basicparameters --configuration-settings omsagent.ISTEST=true omsagent.useAADAuth=$USE_AAD_AUTH
+   else
+     az k8s-extension create $basicparameters --configuration-settings omsagent.ISTEST=true
+   fi
 }
 
 showArcCIExtension() {
