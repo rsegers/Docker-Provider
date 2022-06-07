@@ -72,18 +72,7 @@
                                     {
                                         "name": "ContainerInsightsExtension",
                                         "streams": [
-                                            "Microsoft-Perf",
-                                            "Microsoft-ContainerInventory",
-                                            "Microsoft-ContainerLog",
-                                            "Microsoft-ContainerLogV2",
-                                            "Microsoft-ContainerNodeInventory",
-                                            "Microsoft-KubeEvents",
-                                            "Microsoft-KubeMonAgentEvents",
-                                            "Microsoft-KubeNodeInventory",
-                                            "Microsoft-KubePodInventory",
-                                            "Microsoft-KubePVInventory",
-                                            "Microsoft-KubeServices",
-                                            "Microsoft-InsightsMetrics"
+                                           "Microsoft-ContainerInsights-Group-Default"
                                         ],
                                         "extensionName": "ContainerInsights"
                                     }
@@ -100,18 +89,7 @@
                             "dataFlows": [
                                 {
                                     "streams": [
-                                        "Microsoft-Perf",
-                                        "Microsoft-ContainerInventory",
-                                        "Microsoft-ContainerLog",
-                                        "Microsoft-ContainerLogV2",
-                                        "Microsoft-ContainerNodeInventory",
-                                        "Microsoft-KubeEvents",
-                                        "Microsoft-KubeMonAgentEvents",
-                                        "Microsoft-KubeNodeInventory",
-                                        "Microsoft-KubePodInventory",
-                                        "Microsoft-KubePVInventory",
-                                        "Microsoft-KubeServices",
-                                        "Microsoft-InsightsMetrics"
+                                        "Microsoft-ContainerInsights-Group-Default"
                                     ],
                                     "destinations": [
                                         "ciworkspace"
