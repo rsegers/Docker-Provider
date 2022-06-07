@@ -73,7 +73,7 @@ echo $workspaceKey | base64
 # echo "updating helm repo to get latest charts"
 # helm repo update
 
-# helm upgrade azmon-containers-ci-mdm-alert ci-mdm-alert/azuremonitor-containers --install --set omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=${3},omsagent.env.clusterRegion=${4} --kubeconfig ${6}
+# helm upgrade azmon-containers-ci-mdm-alert ci-mdm-alert/azuremonitor-containers --install --set ama-logs.secret.wsid=$workspaceGuid,ama-logs.secret.key=$workspaceKey,ama-logs.env.clusterId=${3},ama-logs.env.clusterRegion=${4} --kubeconfig ${6}
 # echo "chart installation completed."
 
 echo "setting the subscription id of the cluster: ${clusterSubscriptionId}"

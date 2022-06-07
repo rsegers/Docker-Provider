@@ -11,7 +11,7 @@ Write-Host ('Creating folder structure')
 
     New-Item -Type Directory -Path /etc/fluent-bit
     New-Item -Type Directory -Path /etc/fluent
-    New-Item -Type Directory -Path /etc/omsagentwindows
+    New-Item -Type Directory -Path /etc/amalogswindows
     New-Item -Type Directory -Path /etc/telegraf
 
     New-Item -Type Directory -Path /etc/config/settings/
@@ -61,7 +61,7 @@ Write-Host ('Installing Visual C++ Redistributable Package')
 Write-Host ('Finished Installing Visual C++ Redistributable Package')
 
 Write-Host ('Extracting Certificate Generator Package')
-    Expand-Archive -Path /opt/omsagentwindows/certificategenerator.zip -Destination /opt/omsagentwindows/certgenerator/ -Force
+    Expand-Archive -Path /opt/amalogswindows/certificategenerator.zip -Destination /opt/amalogswindows/certgenerator/ -Force
 Write-Host ('Finished Extracting Certificate Generator Package')
 
 Write-Host ("Removing Install folder")

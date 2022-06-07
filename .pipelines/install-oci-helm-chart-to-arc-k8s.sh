@@ -64,5 +64,5 @@ WSKEY=$(cat ~/WSKEY)
 echo "Workspace GUID: ${WSID}"
 
 echo "start: installing the chart release: ${releaseName}"
-helm upgrade --install $RELEASE_NAME --kubeconfig ~/arcK8kubeconfig --set omsagent.secret.wsid=$WSID,omsagent.secret.key=$WSKEY,omsagent.env.clusterId=$ArcK8sClusterResourceId,omsagent.env.clusterRegion=$ArcK8sClusterRegion,omsagent.image.repo=$imageRepo,omsagent.image.tag=$linuxAgentImageTag,omsagent.image.tagWindows=$windowsAgentImageTag  incubator/azuremonitor-containers
+helm upgrade --install $RELEASE_NAME --kubeconfig ~/arcK8kubeconfig --set ama-logs.secret.wsid=$WSID,ama-logs.secret.key=$WSKEY,ama-logs.env.clusterId=$ArcK8sClusterResourceId,ama-logs.env.clusterRegion=$ArcK8sClusterRegion,ama-logs.image.repo=$imageRepo,ama-logs.image.tag=$linuxAgentImageTag,ama-logs.image.tagWindows=$windowsAgentImageTag  incubator/azuremonitor-containers
 echo "end: installing the chart release: ${releaseName}"

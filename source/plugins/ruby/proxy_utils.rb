@@ -5,7 +5,7 @@
 class ProxyUtils
   class << self
     def getProxyConfiguration()
-      omsproxy_secret_path = "/etc/omsagent-secret/PROXY"
+      omsproxy_secret_path = "/etc/ama-logs-secret/PROXY"
       if !File.exist?(omsproxy_secret_path)
         return {}
       end
@@ -52,7 +52,7 @@ class ProxyUtils
     def isProxyCACertConfigured()
       isProxyCACertExist = false
       begin
-        proxy_cert_path = "/etc/omsagent-secret/PROXYCERT.crt"
+        proxy_cert_path = "/etc/ama-logs-secret/PROXYCERT.crt"
         if File.exist?(proxy_cert_path)
           isProxyCACertExist = true
         end

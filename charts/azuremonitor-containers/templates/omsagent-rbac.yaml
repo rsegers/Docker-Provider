@@ -1,8 +1,8 @@
-{{- if .Values.omsagent.rbac }}
+{{- if .Values.ama-logs.rbac }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: omsagent
+  name: ama-logs
   namespace: kube-system
   labels:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
@@ -16,7 +16,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 apiVersion: rbac.authorization.k8s.io/v1beta1
 {{- end }}
 metadata:
-  name: omsagent-reader
+  name: ama-logs-reader
   labels:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
@@ -41,17 +41,17 @@ apiVersion: rbac.authorization.k8s.io/v1
 apiVersion: rbac.authorization.k8s.io/v1beta1
 {{- end }}
 metadata:
-  name: omsagentclusterrolebinding
+  name: amalogsclusterrolebinding
   labels:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
     release: {{ .Release.Name }}
     heritage: {{ .Release.Service }}
 subjects:
   - kind: ServiceAccount
-    name: omsagent
+    name: ama-logs
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: omsagent-reader
+  name: ama-logs-reader
   apiGroup: rbac.authorization.k8s.io
 {{- end }}

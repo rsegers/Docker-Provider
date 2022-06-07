@@ -1,13 +1,13 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: omsagent
+  name: ama-logs
   namespace: kube-system
 ---
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: omsagent-reader
+  name: ama-logs-reader
 rules:
   - apiGroups: [""]
     resources:
@@ -30,7 +30,7 @@ rules:
   # Uncomment below lines for MSI Auth Mode  testing
   # - apiGroups: [""]
   #   resources: ["secrets"]
-  #   resourceNames: [ "omsagent-aad-msi-token" ]
+  #   resourceNames: [ "ama-logs-aad-msi-token" ]
   #   verbs: ["get", "watch"]
   - nonResourceURLs: ["/metrics"]
     verbs: ["get"]
@@ -38,14 +38,14 @@ rules:
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
-  name: omsagentclusterrolebinding
+  name: amalogsclusterrolebinding
 subjects:
   - kind: ServiceAccount
-    name: omsagent
+    name: ama-logs
     namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: omsagent-reader
+  name: ama-logs-reader
   apiGroup: rbac.authorization.k8s.io
 ---
 kind: ConfigMap
@@ -288,13 +288,13 @@ data:
     </match>
 
 metadata:
-  name: omsagent-rs-config
+  name: ama-logs-rs-config
   namespace: kube-system
 ---
 apiVersion: v1
 kind: Secret
 metadata:
-  name: omsagent-secret
+  name: ama-logs-secret
   namespace: kube-system
 type: Opaque
 data:
@@ -306,7 +306,7 @@ data:
 # apiVersion: v1
 # kind: Secret
 # metadata:
-#   name: omsagent-aad-msi-token
+#   name: ama-logs-aad-msi-token
 #   namespace: kube-system
 # type: Opaque
 # data:
@@ -315,29 +315,29 @@ data:
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
-  name: omsagent
+  name: ama-logs
   namespace: kube-system
   labels:
-    component: oms-agent
+    component: ama-logs-agent
     tier: node
 spec:
   updateStrategy:
     type: RollingUpdate
   selector:
     matchLabels:
-      component: oms-agent
+      component: ama-logs-agent
       tier: node
   template:
     metadata:
       labels:
-        component: oms-agent
+        component: ama-logs-agent
         tier: node
       annotations:
         agentVersion: "azure-mdsd-1.17.0"
         dockerProviderVersion: "17.0.0-0"
         schema-versions: "v1"
     spec:
-      serviceAccountName: omsagent
+      serviceAccountName: ama-logs
       dnsConfig:
         options:
           - name: ndots
@@ -349,7 +349,7 @@ spec:
         #     - /addon-token-adapter
         #   args:
         #     - --secret-namespace=kube-system
-        #     - --secret-name=omsagent-aad-msi-token
+        #     - --secret-name=ama-logs-aad-msi-token
         #     - --token-server-listening-port=8888
         #     - --health-server-listening-port=9999
         #   # Make sure this matching with version in AKS RP side
@@ -378,7 +378,7 @@ spec:
         #       add:
         #         - NET_ADMIN
         #         - NET_RAW
-        - name: omsagent
+        - name: ama-logs
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod05192022"
           imagePullPolicy: IfNotPresent
           resources:
@@ -412,7 +412,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
-            # Update this with the user assigned msi client id for omsagent
+            # Update this with the user assigned msi client id for ama-logs
             - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
               value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"
             - name: AZMON_CONTAINERLOGS_ONEAGENT_REGIONS
@@ -446,14 +446,14 @@ spec:
               readOnly: true
             - mountPath: /etc/kubernetes/host
               name: azure-json-path
-            - mountPath: /etc/omsagent-secret
-              name: omsagent-secret
+            - mountPath: /etc/ama-logs-secret
+              name: ama-logs-secret
               readOnly: true
             - mountPath: /etc/config/settings
               name: settings-vol-config
               readOnly: true
             - mountPath: /etc/config/settings/adx
-              name: omsagent-adx-secret
+              name: ama-logs-adx-secret
               readOnly: true
           livenessProbe:
             exec:
@@ -465,7 +465,7 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 15
 #Only in sidecar scraping mode
-        - name: omsagent-prometheus
+        - name: ama-logs-prometheus
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod05192022"
           imagePullPolicy: IfNotPresent
           resources:
@@ -496,7 +496,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
-            # Update this with the user assigned msi client id for omsagent
+            # Update this with the user assigned msi client id for ama-logs
             - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
               value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"
             # Uncomment below lines for MSI Auth Mode  testing
@@ -507,8 +507,8 @@ spec:
           volumeMounts:
             - mountPath: /etc/kubernetes/host
               name: azure-json-path
-            - mountPath: /etc/omsagent-secret
-              name: omsagent-secret
+            - mountPath: /etc/ama-logs-secret
+              name: ama-logs-secret
               readOnly: true
             - mountPath: /etc/config/settings
               name: settings-vol-config
@@ -573,16 +573,16 @@ spec:
         - name: azure-json-path
           hostPath:
             path: /etc/kubernetes
-        - name: omsagent-secret
+        - name: ama-logs-secret
           secret:
-            secretName: omsagent-secret
+            secretName: ama-logs-secret
         - name: settings-vol-config
           configMap:
             name: container-azm-ms-agentconfig
             optional: true
-        - name: omsagent-adx-secret
+        - name: ama-logs-adx-secret
           secret:
-            secretName: omsagent-adx-secret
+            secretName: ama-logs-adx-secret
             optional: true
         - name: osm-settings-vol-config
           configMap:
@@ -592,28 +592,28 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: omsagent-rs
+  name: ama-logs-rs
   namespace: kube-system
   labels:
-    component: oms-agent
+    component: ama-logs-agent
     tier: node
 spec:
   replicas: 1
   selector:
     matchLabels:
-      rsName: "omsagent-rs"
+      rsName: "ama-logs-rs"
   strategy:
     type: RollingUpdate
   template:
     metadata:
       labels:
-        rsName: "omsagent-rs"
+        rsName: "ama-logs-rs"
       annotations:
         agentVersion: "azure-mdsd-1.17.0"
         dockerProviderVersion: "17.0.0-0"
         schema-versions: "v1"
     spec:
-      serviceAccountName: omsagent
+      serviceAccountName: ama-logs
       containers:
         # Uncomment below lines for MSI Auth Mode  testing
         # - name: addon-token-adapter
@@ -621,7 +621,7 @@ spec:
         #     - /addon-token-adapter
         #   args:
         #     - --secret-namespace=kube-system
-        #     - --secret-name=omsagent-aad-msi-token
+        #     - --secret-name=ama-logs-aad-msi-token
         #     - --token-server-listening-port=8888
         #     - --health-server-listening-port=9999
         #   # Make sure this matching with version in AKS RP side
@@ -650,7 +650,7 @@ spec:
         #       add:
         #         - NET_ADMIN
         #         - NET_RAW
-        - name: omsagent
+        - name: ama-logs
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod05192022"
           imagePullPolicy: IfNotPresent
           resources:
@@ -677,7 +677,7 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: status.hostIP
-            # Update this with the user assigned msi client id for omsagent
+            # Update this with the user assigned msi client id for ama-logs
             - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
               value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"
             # Add the below environment variable to true only in sidecar enabled regions, else set it to false
@@ -700,16 +700,16 @@ spec:
               name: host-log
             - mountPath: /etc/kubernetes/host
               name: azure-json-path
-            - mountPath: /etc/omsagent-secret
-              name: omsagent-secret
+            - mountPath: /etc/ama-logs-secret
+              name: ama-logs-secret
               readOnly: true
             - mountPath: /etc/config
-              name: omsagent-rs-config
+              name: ama-logs-rs-config
             - mountPath: /etc/config/settings
               name: settings-vol-config
               readOnly: true
             - mountPath: /etc/config/settings/adx
-              name: omsagent-adx-secret
+              name: ama-logs-adx-secret
             - mountPath: /etc/config/osm-settings
               name: osm-settings-vol-config
               readOnly: true
@@ -771,19 +771,19 @@ spec:
         - name: azure-json-path
           hostPath:
             path: /etc/kubernetes
-        - name: omsagent-secret
+        - name: ama-logs-secret
           secret:
-            secretName: omsagent-secret
-        - name: omsagent-rs-config
+            secretName: ama-logs-secret
+        - name: ama-logs-rs-config
           configMap:
-            name: omsagent-rs-config
+            name: ama-logs-rs-config
         - name: settings-vol-config
           configMap:
             name: container-azm-ms-agentconfig
             optional: true
-        - name: omsagent-adx-secret
+        - name: ama-logs-adx-secret
           secret:
-            secretName: omsagent-adx-secret
+            secretName: ama-logs-adx-secret
             optional: true
         - name: osm-settings-vol-config
           configMap:
@@ -793,35 +793,35 @@ spec:
   apiVersion: apps/v1
   kind: DaemonSet
   metadata:
-   name: omsagent-win
+   name: ama-logs-win
    namespace: kube-system
    labels:
-    component: oms-agent-win
+    component: ama-logs-agent-win
     tier: node-win
   spec:
    updateStrategy:
     type: RollingUpdate
    selector:
     matchLabels:
-      component: oms-agent-win
+      component: ama-logs-agent-win
       tier: node-win
    template:
     metadata:
       labels:
-        component: oms-agent-win
+        component: ama-logs-agent-win
         tier: node-win
       annotations:
         agentVersion: "0.0.0-0"
         dockerProviderVersion: "17.0.0-0"
         schema-versions: "v1"
     spec:
-     serviceAccountName: omsagent
+     serviceAccountName: ama-logs
      dnsConfig:
         options:
           - name: ndots
             value: "3"
      containers:
-       - name: omsagent-win
+       - name: ama-logs-win
          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod05192022"
          imagePullPolicy: IfNotPresent
          resources:
@@ -858,7 +858,7 @@ spec:
                  fieldPath: status.hostIP
           - name: SIDECAR_SCRAPING_ENABLED
             value: "true"
-          # Update this with the user assigned msi client id for omsagent
+          # Update this with the user assigned msi client id for ama-logs
           - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
             value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"
           # Add this only for clouds that require cert bootstrapping
@@ -876,11 +876,11 @@ spec:
           - mountPath: C:\etc\config\settings
             name: settings-vol-config
             readOnly: true
-          - mountPath: C:\etc\omsagent-secret
-            name: omsagent-secret
+          - mountPath: C:\etc\ama-logs-secret
+            name: ama-logs-secret
             readOnly: true
           - mountPath: C:\etc\config\adx
-            name: omsagent-adx-secret
+            name: ama-logs-adx-secret
             readOnly: true
           # Need to mount this only for airgapped clouds - Commenting this since it wont exist in non airgapped clouds
           # - mountPath: C:\ca
@@ -898,11 +898,11 @@ spec:
             command:
               - cmd
               - /c
-              - C:\opt\omsagentwindows\scripts\cmd\livenessprobe.exe
+              - C:\opt\amalogswindows\scripts\cmd\livenessprobe.exe
               - fluent-bit.exe
               - fluentdwinaks
-              - "C:\\etc\\omsagentwindows\\filesystemwatcher.txt"
-              - "C:\\etc\\omsagentwindows\\renewcertificate.txt"
+              - "C:\\etc\\amalogswindows\\filesystemwatcher.txt"
+              - "C:\\etc\\amalogswindows\\renewcertificate.txt"
           periodSeconds: 60
           initialDelaySeconds: 180
           timeoutSeconds: 15
@@ -943,15 +943,15 @@ spec:
         configMap:
           name: container-azm-ms-agentconfig
           optional: true
-      - name: omsagent-secret
+      - name: ama-logs-secret
         secret:
-         secretName: omsagent-secret
-      - name: omsagent-adx-secret
+         secretName: ama-logs-secret
+      - name: ama-logs-adx-secret
         secret:
-          secretName: omsagent-adx-secret
+          secretName: ama-logs-adx-secret
           optional: true
       # Uncomment below lines for MSI Auth Mode  testing
       # - name: imds-token
       #   secret:
-      #     secretName: omsagent-aad-msi-token
+      #     secretName: ama-logs-aad-msi-token
 

@@ -26,7 +26,7 @@ if ($false -eq (Test-Path -Path $dockerFileDir)) {
 Write-Host "changing directory to DockerFile dir: $dockerFileDir"
 Set-Location -Path $dockerFileDir
 
-$updateImage = "omsagent-win-base"
+$updateImage = "ama-logs-win-base"
 Write-Host "STAT:Triggering base docker image build: $updateImage"
 docker build -t $updateImage -f Dockerfile-dev-base-image .
 Write-Host "END:Triggering docker image build: $updateImage"

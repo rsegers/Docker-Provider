@@ -1,4 +1,4 @@
-{{- if or ( contains "microsoft.kubernetes/connectedclusters" (.Values.Azure.Cluster.ResourceId | lower) ) ( contains "microsoft.kubernetes/connectedclusters" (.Values.omsagent.env.clusterId | lower)) }}
+{{- if or ( contains "microsoft.kubernetes/connectedclusters" (.Values.Azure.Cluster.ResourceId | lower) ) ( contains "microsoft.kubernetes/connectedclusters" (.Values.ama-logs.env.clusterId | lower)) }}
 #extension model
 {{- if not (empty .Values.Azure.Extension.Name) }}
 apiVersion: clusterconfig.azure.com/v1beta1
@@ -8,7 +8,7 @@ metadata:
   namespace: azure-arc
 spec:
   serviceAccounts:
-    - name: omsagent
+    - name: ama-logs
       namespace: kube-system
   tokenNamespace: azure-arc
 ---
