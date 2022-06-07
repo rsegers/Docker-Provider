@@ -1,4 +1,4 @@
-{{- if and (ne .Values.omsagent.secret.key "<your_workspace_key>") (ne .Values.omsagent.secret.wsid "<your_workspace_id>") (or (ne .Values.omsagent.env.clusterName "<your_cluster_name>") (ne .Values.omsagent.env.clusterId "<your_cluster_id>") (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") )}}
+{{- if and (ne .Values.ama-logs.secret.key "<your_workspace_key>") (ne .Values.ama-logs.secret.wsid "<your_workspace_id>") (or (ne .Values.ama-logs.env.clusterName "<your_cluster_name>") (ne .Values.ama-logs.env.clusterId "<your_cluster_id>") (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") )}}
 kind: ConfigMap
 apiVersion: v1
 data:
@@ -238,7 +238,7 @@ data:
       max_retry_wait 5m
     </match>
 metadata:
-  name: omsagent-rs-config
+  name: ama-logs-rs-config
   namespace: kube-system
   labels:
     chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}

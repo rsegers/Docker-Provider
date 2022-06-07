@@ -1,39 +1,39 @@
-{{- if and (ne .Values.omsagent.secret.key "<your_workspace_key>") (ne .Values.omsagent.secret.wsid "<your_workspace_id>") (or (ne .Values.omsagent.env.clusterName "<your_cluster_name>") (ne .Values.omsagent.env.clusterId "<your_cluster_id>") (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") )}}
+{{- if and (ne .Values.ama-logs.secret.key "<your_workspace_key>") (ne .Values.ama-logs.secret.wsid "<your_workspace_id>") (or (ne .Values.ama-logs.env.clusterName "<your_cluster_name>") (ne .Values.ama-logs.env.clusterId "<your_cluster_id>") (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") )}}
 apiVersion: apps/v1
 kind: Deployment
 metadata:
- name: omsagent-rs
+ name: ama-logs-rs
  namespace: kube-system
  labels:
    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
    release: {{ .Release.Name }}
    heritage: {{ .Release.Service }}
-   component: oms-agent
+   component: ama-logs-agent
    tier: node
 spec:
  replicas: 1
  selector:
   matchLabels:
-   rsName: "omsagent-rs"
+   rsName: "ama-logs-rs"
  strategy:
   type: RollingUpdate
  template:
   metadata:
    labels:
-    rsName: "omsagent-rs"
+    rsName: "ama-logs-rs"
    annotations:
-    agentVersion: {{ .Values.omsagent.image.agentVersion }}
-    dockerProviderVersion: {{ .Values.omsagent.image.dockerProviderVersion }}
+    agentVersion: {{ .Values.ama-logs.image.agentVersion }}
+    dockerProviderVersion: {{ .Values.ama-logs.image.dockerProviderVersion }}
     schema-versions: "v1"
-    checksum/secret: {{ include (print $.Template.BasePath "/omsagent-secret.yaml") . | sha256sum }}
-    checksum/config: {{ toYaml .Values.omsagent.resources | sha256sum }}
-    checksum/logsettings: {{ toYaml .Values.omsagent.logsettings | sha256sum }}
+    checksum/secret: {{ include (print $.Template.BasePath "/ama-logs-secret.yaml") . | sha256sum }}
+    checksum/config: {{ toYaml .Values.ama-logs.resources | sha256sum }}
+    checksum/logsettings: {{ toYaml .Values.ama-logs.logsettings | sha256sum }}
   spec:
-  {{- if .Values.omsagent.rbac }}
-   serviceAccountName: omsagent
+  {{- if .Values.ama-logs.rbac }}
+   serviceAccountName: ama-logs
   {{- end }}
    containers:
-{{- if and (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") (.Values.omsagent.useAADAuth) }}
+{{- if and (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") (.Values.ama-logs.useAADAuth) }}
      - name: addon-token-adapter
        imagePullPolicy: IfNotPresent
        env:
@@ -43,40 +43,40 @@ spec:
          value: "azure-arc"
 {{-  .Values.Azure.Identity.MSIAdapterYaml | nindent 7 }}
 {{- end }}
-     - name: omsagent
-       {{- if  eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
-       image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
+     - name: ama-logs
+       {{- if  eq (.Values.ama-logs.domain | lower) "opinsights.azure.cn" }}
+       image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.ama-logs.image.tag }}"
        {{- else }}
-       image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tag }}
+       image: {{ printf "%s:%s" .Values.ama-logs.image.repo .Values.ama-logs.image.tag }}
        {{- end }}
        imagePullPolicy: IfNotPresent
        resources:
-{{ toYaml .Values.omsagent.resources.deployment | indent 9 }}
+{{ toYaml .Values.ama-logs.resources.deployment | indent 9 }}
        env:
        - name: NUM_OF_FLUENTD_WORKERS
          valueFrom:
            resourceFieldRef:
-             containerName: omsagent
+             containerName: ama-logs
              resource: limits.cpu
-       {{- if ne .Values.omsagent.env.clusterId "<your_cluster_id>" }}
+       {{- if ne .Values.ama-logs.env.clusterId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
-         value: {{ .Values.omsagent.env.clusterId | quote }}
-       {{- if ne .Values.omsagent.env.clusterRegion "<your_cluster_region>" }}
+         value: {{ .Values.ama-logs.env.clusterId | quote }}
+       {{- if ne .Values.ama-logs.env.clusterRegion "<your_cluster_region>" }}
        - name: AKS_REGION
-         value: {{ .Values.omsagent.env.clusterRegion | quote }}
+         value: {{ .Values.ama-logs.env.clusterRegion | quote }}
        {{- end }}
        {{- else if ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.Azure.Cluster.ResourceId | quote }}
        - name: USING_AAD_MSI_AUTH
-         value: {{ .Values.omsagent.useAADAuth | quote }}
+         value: {{ .Values.ama-logs.useAADAuth | quote }}
        {{- if ne .Values.Azure.Cluster.Region "<your_cluster_region>" }}
        - name: AKS_REGION
          value: {{ .Values.Azure.Cluster.Region | quote }}
        {{- end }}
        {{- else }}
        - name: ACS_RESOURCE_NAME
-         value: {{ .Values.omsagent.env.clusterName | quote }}
+         value: {{ .Values.ama-logs.env.clusterName | quote }}
        {{- end }}
        - name: CONTROLLER_TYPE
          value: "ReplicaSet"
@@ -91,16 +91,16 @@ spec:
        - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
          value: ""
        - name: SIDECAR_SCRAPING_ENABLED
-         value: {{ .Values.omsagent.sidecarscraping | quote }}
+         value: {{ .Values.ama-logs.sidecarscraping | quote }}
        - name: ISTEST
-         value: {{ .Values.omsagent.ISTEST | quote }}
-       {{ if .Values.omsagent.isArcACluster }}
+         value: {{ .Values.ama-logs.ISTEST | quote }}
+       {{ if .Values.ama-logs.isArcACluster }}
        - name: IS_ARCA_CLUSTER
-         value: {{ .Values.omsagent.isArcACluster | quote }}
+         value: {{ .Values.ama-logs.isArcACluster | quote }}
        {{- end }}
-       {{- if ne .Values.omsagent.metricsEndpoint "<your_metrics_endpoint>" }}
+       {{- if ne .Values.ama-logs.metricsEndpoint "<your_metrics_endpoint>" }}
        - name: CUSTOM_METRICS_ENDPOINT
-         value: {{ .Values.omsagent.metricsEndpoint | quote }}
+         value: {{ .Values.ama-logs.metricsEndpoint | quote }}
        {{- end }}
        securityContext:
          privileged: true
@@ -118,26 +118,26 @@ spec:
           name: containerlog-path
         - mountPath: /etc/kubernetes/host
           name: azure-json-path
-        - mountPath: /etc/omsagent-secret
-          name: omsagent-secret
+        - mountPath: /etc/ama-logs-secret
+          name: ama-logs-secret
           readOnly: true
         {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) }}
         - mountPath: /etc/ssl/certs/proxy-cert.crt
           subPath: PROXYCERT.crt
-          name: omsagent-secret
+          name: ama-logs-secret
           readOnly: true
         {{- end }}
         - mountPath : /etc/config
-          name: omsagent-rs-config
+          name: ama-logs-rs-config
         - mountPath: /etc/config/settings
           name: settings-vol-config
           readOnly: true
-        {{- if .Values.omsagent.logsettings.custommountpath }}
-        - mountPath: {{ .Values.omsagent.logsettings.custommountpath }}
+        {{- if .Values.ama-logs.logsettings.custommountpath }}
+        - mountPath: {{ .Values.ama-logs.logsettings.custommountpath }}
           name: custom-mount-path
         {{- end }}
         - mountPath: /etc/config/settings/adx
-          name: omsagent-adx-secret
+          name: ama-logs-adx-secret
           readOnly: true
         - mountPath: /etc/config/osm-settings
           name: osm-settings-vol-config
@@ -151,10 +151,10 @@ spec:
         initialDelaySeconds: 60
         periodSeconds: 60
         timeoutSeconds: 15
-   {{- with .Values.omsagent.deployment.affinity }}
+   {{- with .Values.ama-logs.deployment.affinity }}
    affinity: {{- toYaml . | nindent 8 }}
    {{- end }}
-   {{- with .Values.omsagent.tolerations }}
+   {{- with .Values.ama-logs.tolerations }}
    tolerations: {{- toYaml . | nindent 8 }}
    {{- end }}
    volumes:
@@ -173,24 +173,24 @@ spec:
     - name: azure-json-path
       hostPath:
        path: /etc/kubernetes
-    - name: omsagent-secret
+    - name: ama-logs-secret
       secret:
-       secretName: omsagent-secret
-    - name: omsagent-rs-config
+       secretName: ama-logs-secret
+    - name: ama-logs-rs-config
       configMap:
-        name: omsagent-rs-config
+        name: ama-logs-rs-config
     - name: settings-vol-config
       configMap:
         name: container-azm-ms-agentconfig
         optional: true
-    {{- if .Values.omsagent.logsettings.custommountpath }}
+    {{- if .Values.ama-logs.logsettings.custommountpath }}
     - name: custom-mount-path
       hostPath:
-       path: {{ .Values.omsagent.logsettings.custommountpath }}
+       path: {{ .Values.ama-logs.logsettings.custommountpath }}
     {{- end }}
-    - name: omsagent-adx-secret
+    - name: ama-logs-adx-secret
       secret:
-       secretName: omsagent-adx-secret
+       secretName: ama-logs-adx-secret
        optional: true
     - name: osm-settings-vol-config
       configMap:

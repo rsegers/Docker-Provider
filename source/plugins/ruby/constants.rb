@@ -82,7 +82,7 @@ class Constants
   CONTAINER_TERMINATION_REASON_COMPLETED = "completed"
   CONTAINER_STATE_TERMINATED = "terminated"
   TELEGRAF_DISK_METRICS = "container.azm.ms/disk"
-  OMSAGENT_ZERO_FILL = "omsagent"
+  ama-logs_ZERO_FILL = "ama-logs"
   KUBESYSTEM_NAMESPACE_ZERO_FILL = "kube-system"
   VOLUME_NAME_ZERO_FILL = "-"
   PV_TYPES = ["awsElasticBlockStore", "azureDisk", "azureFile", "cephfs", "cinder", "csi", "fc", "flexVolume",
@@ -130,7 +130,7 @@ class Constants
   EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX = "dcr-"
 
   LINUX_LOG_PATH = $in_unit_test.nil? ? "/var/opt/microsoft/docker-cimprov/log/" : "./"
-  WINDOWS_LOG_PATH = $in_unit_test.nil? ? "/etc/omsagentwindows/" : "./"
+  WINDOWS_LOG_PATH = $in_unit_test.nil? ? "/etc/amalogswindows/" : "./"
 
   #This is for telemetry to track if any of the windows customer has any of the field size >= 64KB
   #To evaluate switching to Windows AMA 64KB impacts any existing customers

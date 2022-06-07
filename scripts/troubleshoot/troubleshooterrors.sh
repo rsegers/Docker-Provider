@@ -17,9 +17,9 @@ workspaceResourceProvider="Microsoft.OperationalInsights/workspaces"
 workspaceSolutionResourceProvider="Microsoft.OperationsManagement/solutions"
 agentK8sNamespace="kube-system"
 azureArcK8sNamespace="azure-arc"
-agentK8sSecretName="omsagent-secret"
-agentK8sDeploymentName="omsagent-rs"
-agentK8sLinuxDaemonsetName="omsagent"
+agentK8sSecretName="ama-logs-secret"
+agentK8sDeploymentName="ama-logs-rs"
+agentK8sLinuxDaemonsetName="ama-logs"
 agentArcK8sIdentityCRDName="container-insights-clusteridentityrequest"
 workspaceId=""
 workspacePrimarySharedKey=""
@@ -321,12 +321,12 @@ validate_ci_agent_pods() {
   wsKEY=$(echo $wsKEY | base64 -d)
 
   if [[ "$workspaceId" != "$wsID" ]]; then
-    log_message "-e error workspaceId: ${workspaceID} of the workspace doesnt match with workspaceId: ${wsID} value in the omsagent secret"
+    log_message "-e error workspaceId: ${workspaceID} of the workspace doesnt match with workspaceId: ${wsID} value in the ama-logs secret"
     log_message $ciExtensionReOnboarding
     exit 1
   fi
   if [[ "$workspacePrimarySharedKey" != "$wsKEY" ]]; then
-    log_message "-e error workspacePrimarySharedKey of the workspace doesnt match with workspacekey value value in the omsagent secret"
+    log_message "-e error workspacePrimarySharedKey of the workspace doesnt match with workspacekey value value in the ama-logs secret"
     log_message $ciExtensionReOnboarding
     exit 1
   fi
@@ -351,7 +351,7 @@ validate_ci_agent_pods() {
   log_message "number of linux deamonset pods currentNumberScheduled:${currentNumberScheduled} and currentNumberScheduled:${currentNumberScheduled}"
   if [[ "$currentNumberScheduled" != "$desiredNumberScheduled" ]]; then
      log_message "-e error desiredNumberScheduled: ${desiredNumberScheduled} doesnt match with currentNumberScheduled: ${currentNumberScheduled}"
-     log_message "-e error please fix the pod scheduling issues of omsagent daemonset pods in namespace: ${agentK8sNamespace}"
+     log_message "-e error please fix the pod scheduling issues of ama-logs daemonset pods in namespace: ${agentK8sNamespace}"
      exit 1
   fi
 
@@ -359,14 +359,14 @@ validate_ci_agent_pods() {
   log_message "number of linux deamonset pods numberAvailable:${numberAvailable}"
   if [[ "$numberAvailable" != "$currentNumberScheduled" ]]; then
      log_message "-e error numberAvailable: ${numberAvailable} doesnt match with currentNumberScheduled: ${currentNumberScheduled}"
-     log_message "-e error please fix the pod scheduling issues of omsagent daemonset pods in namespace: ${agentK8sNamespace}"
+     log_message "-e error please fix the pod scheduling issues of ama-logs daemonset pods in namespace: ${agentK8sNamespace}"
      exit 1
   fi
   numberReady=$(kubectl get ds -n ${agentK8sNamespace} ${agentK8sLinuxDaemonsetName} -o json | jq '.status.numberReady')
   log_message "number of linux deamonset pods numberReady:${numberReady}"
   if [[ "$numberAvailable" != "$numberReady" ]]; then
      log_message "-e error numberAvailable: ${numberAvailable} doesnt match with numberReady: ${numberReady}"
-     log_message "-e error please fix the pod scheduling issues of omsagent daemonset pods in namespace: ${agentK8sNamespace}"
+     log_message "-e error please fix the pod scheduling issues of ama-logs daemonset pods in namespace: ${agentK8sNamespace}"
      exit 1
   fi
   log_message "END:validate_ci_agent_pods:SUCCESS"
