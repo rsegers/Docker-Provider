@@ -82,7 +82,7 @@ class Constants
   CONTAINER_TERMINATION_REASON_COMPLETED = "completed"
   CONTAINER_STATE_TERMINATED = "terminated"
   TELEGRAF_DISK_METRICS = "container.azm.ms/disk"
-  ama-logs_ZERO_FILL = "ama-logs"
+  AMA_LOGS_ZERO_FILL = "ama-logs"
   KUBESYSTEM_NAMESPACE_ZERO_FILL = "kube-system"
   VOLUME_NAME_ZERO_FILL = "-"
   PV_TYPES = ["awsElasticBlockStore", "azureDisk", "azureFile", "cephfs", "cinder", "csi", "fc", "flexVolume",

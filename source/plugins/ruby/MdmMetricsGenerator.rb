@@ -190,13 +190,13 @@ class MdmMetricsGenerator
     def zeroFillMetricRecords(records, batch_time)
       begin
         @log.info "In zero fill metric records"
-        zero_fill_dim_key = [Constants::ama-logs_ZERO_FILL, Constants::KUBESYSTEM_NAMESPACE_ZERO_FILL].join("~~")
+        zero_fill_dim_key = [Constants::AMA_LOGS_ZERO_FILL, Constants::KUBESYSTEM_NAMESPACE_ZERO_FILL].join("~~")
         @oom_killed_container_count_hash[zero_fill_dim_key] = @oom_killed_container_count_hash.key?(zero_fill_dim_key) ? @oom_killed_container_count_hash[zero_fill_dim_key] : 0
         @container_restart_count_hash[zero_fill_dim_key] = @container_restart_count_hash.key?(zero_fill_dim_key) ? @container_restart_count_hash[zero_fill_dim_key] : 0
         @stale_job_count_hash[zero_fill_dim_key] = @stale_job_count_hash.key?(zero_fill_dim_key) ? @stale_job_count_hash[zero_fill_dim_key] : 0
 
         metric_threshold_hash = getContainerResourceUtilizationThresholds
-        container_zero_fill_dims = [Constants::ama-logs_ZERO_FILL, Constants::ama-logs_ZERO_FILL, Constants::ama-logs_ZERO_FILL, Constants::KUBESYSTEM_NAMESPACE_ZERO_FILL].join("~~")
+        container_zero_fill_dims = [Constants::AMA_LOGS_ZERO_FILL, Constants::AMA_LOGS_ZERO_FILL, Constants::AMA_LOGS_ZERO_FILL, Constants::KUBESYSTEM_NAMESPACE_ZERO_FILL].join("~~")
         containerCpuRecords = getContainerResourceUtilMetricRecords(batch_time,
                                                                     Constants::CPU_USAGE_NANO_CORES,
                                                                     0,
@@ -239,7 +239,7 @@ class MdmMetricsGenerator
 
         pvZeroFillDims = {}
         pvZeroFillDims[Constants::INSIGHTSMETRICS_TAGS_PVC_NAMESPACE] = Constants::KUBESYSTEM_NAMESPACE_ZERO_FILL
-        pvZeroFillDims[Constants::INSIGHTSMETRICS_TAGS_POD_NAME] = Constants::ama-logs_ZERO_FILL
+        pvZeroFillDims[Constants::INSIGHTSMETRICS_TAGS_POD_NAME] = Constants::AMA_LOGS_ZERO_FILL
         pvZeroFillDims[Constants::INSIGHTSMETRICS_TAGS_VOLUME_NAME] = Constants::VOLUME_NAME_ZERO_FILL
         pvResourceUtilMetricRecords = getPVResourceUtilMetricRecords(batch_time,
                                                                      Constants::PV_USED_BYTES,
