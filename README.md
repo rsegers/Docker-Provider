@@ -74,7 +74,7 @@ The general directory structure is:
 │   │   ├── DockerFile                        - DockerFile for Windows Agent Container Image
 │   │   ├── main.ps1                          - Windows Agent container entry point
 │   │   ├── setup.ps1                         - setup file for Windows Agent Container Image
-│   ├── omsagent.yaml                         - kubernetes yaml for both Linux and Windows Agent
+│   ├── ama-logs.yaml                         - kubernetes yaml for both Linux and Windows Agent
 │   ├── container-azm-ms-agentconfig.yaml     - kubernetes yaml for agent configuration
 ├── scripts/                                  - scripts for onboarding, troubleshooting and preview scripts related to Azure Monitor for containers
 │   ├── troubleshoot/                         - scripts for troubleshooting of Azure Monitor for containers onboarding issues
@@ -342,8 +342,8 @@ For DEV and PROD branches, automatically deployed latest yaml with latest agent 
     `az deployment group create --resource-group <ResourceGroupName> --template-file ./existingClusterOnboarding.json --parameters @./existingClusterParam.json`
   3. Get the MSI token (which is valid for 24 hrs.) value via `kubectl get secrets -n kube-system  omsagent-aad-msi-token -o=jsonpath='{.data.token}'`
   4. Disable Monitoring addon via `az aks disable-addons -a monitoring -g <rgName> -n <clusterName>`
-  5. Uncomment MSI auth related yaml lines, replace all the placeholder values, MSI token value and image tag in the omsagent.yaml
-  6. Deploy the omsagent.yaml via `kubectl apply -f omsagent.yaml`
+  5. Uncomment MSI auth related yaml lines, replace all the placeholder values, MSI token value and image tag in the ama-logs.yaml
+  6. Deploy the ama-logs.yaml via `kubectl apply -f ama-logs.yaml`
     > Note: use the image toggle for release E2E validation
   7. validate E2E for LA & Metrics data flows, and other scenarios
 
@@ -351,7 +351,7 @@ For DEV and PROD branches, automatically deployed latest yaml with latest agent 
 
 ## For executing tests
 
-1. Deploy the omsagent.yaml with your agent image. In the yaml, make sure `ISTEST` environment variable set to `true` if its not set already
+1. Deploy the ama-logs.yaml with your agent image. In the yaml, make sure `ISTEST` environment variable set to `true` if its not set already
 2. Update the Service Principal CLIENT_ID, CLIENT_SECRET and TENANT_ID placeholder values and apply e2e-tests.yaml to execute the tests
     > Note: Service Principal requires reader role on log analytics workspace and cluster resource to query LA and metrics
    ```

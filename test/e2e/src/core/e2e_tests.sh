@@ -131,9 +131,9 @@ createArcCIExtension() {
     fi
 
    if [ ! -z "$USE_AAD_AUTH" ]; then
-     az k8s-extension create $basicparameters --configuration-settings omsagent.ISTEST=true omsagent.useAADAuth=$USE_AAD_AUTH
+     az k8s-extension create $basicparameters --configuration-settings ama-logs.ISTEST=true ama-logs.useAADAuth=$USE_AAD_AUTH
    else
-     az k8s-extension create $basicparameters --configuration-settings omsagent.ISTEST=true
+     az k8s-extension create $basicparameters --configuration-settings ama-logs.ISTEST=true
    fi
 }
 
