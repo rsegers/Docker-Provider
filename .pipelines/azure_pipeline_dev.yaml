@@ -117,9 +117,21 @@ jobs:
         if [ "$(Build.Reason)" != "PullRequest" ]; then
           docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --push .
 
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "Docker build failed. Consult logs above"
+            exit 1
+          fi
+
           docker pull ${{ variables.repoImageName }}:$(linuxImagetag)
         else
           docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) .
+
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "Docker build failed. Consult logs above"
+            exit 1
+          fi
 
           # load the multi-arch image to run tests
           docker buildx build --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --load .
