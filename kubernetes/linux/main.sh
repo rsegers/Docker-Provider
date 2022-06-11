@@ -95,8 +95,8 @@ setReplicaSetSpecificConfig() {
       export FLUENTD_KUBE_PERF_QUEUE_LIMIT_LENGTH="20"
       export FLUENTD_MDM_FLUSH_THREAD_COUNT="5" # default
       case $NUM_OF_FLUENTD_WORKERS in
-      5)
-            export NUM_OF_FLUENTD_WORKERS=5
+      [5-9]|9[0-9]|100)
+            export NUM_OF_FLUENTD_WORKERS=5  # Max is 5 core even if the specified limits more than 5 cores
             export FLUENTD_POD_INVENTORY_WORKER_ID=4
             export FLUENTD_NODE_INVENTORY_WORKER_ID=3
             export FLUENTD_EVENT_INVENTORY_WORKER_ID=2

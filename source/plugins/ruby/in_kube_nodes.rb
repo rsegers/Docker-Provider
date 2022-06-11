@@ -7,11 +7,12 @@ module Fluent::Plugin
   class Kube_nodeInventory_Input < Input
     Fluent::Plugin.register_input("kube_nodes", self)
 
-    def initialize(kubernetesApiClient = nil,
+    def initialize(is_unit_test_mode = nil, kubernetesApiClient = nil,
                    applicationInsightsUtility = nil,
                    extensionUtils = nil,
                    env = nil,
-                   telemetry_flush_interval = nil)
+                   telemetry_flush_interval = nil,
+                   node_items_test_cache = nil)
       super()
 
       require "yaml"
@@ -30,6 +31,8 @@ module Fluent::Plugin
       @extensionUtils = extensionUtils == nil ? ExtensionUtils : extensionUtils
       @env = env == nil ? ENV : env
       @TELEMETRY_FLUSH_INTERVAL_IN_MINUTES = telemetry_flush_interval == nil ? Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES : telemetry_flush_interval
+      @is_unit_test_mode = is_unit_test_mode == nil ? false : true
+      @node_items_test_cache = node_items_test_cache
 
       # these defines were previously at class scope Moving them into the constructor so that they can be set by unit tests
       @@configMapMountPath = "/etc/config/settings/log-data-collection-settings"
@@ -65,6 +68,7 @@ module Fluent::Plugin
       @NodeCache = NodeStatsCache.new()
       @watchNodesThread = nil
       @nodeItemsCache = {}
+      @nodeItemsCacheSizeKB = 0
     end
 
     config_param :run_interval, :time, :default => 60
@@ -153,14 +157,9 @@ module Fluent::Plugin
         # Initializing continuation token to nil
         continuationToken = nil
         nodeInventory = {}
-        nodeItemsCacheSizeKB = 0
+        @nodeItemsCacheSizeKB = 0
         nodeCount = 0
-        @nodeCacheMutex.synchronize {
-          nodeInventory["items"] = @nodeItemsCache.values.clone
-          if KubernetesApiClient.isEmitCacheTelemetry()
-            nodeItemsCacheSizeKB = @nodeItemsCache.to_s.length / 1024
-          end
-        }
+        nodeInventory["items"] = getNodeItemsFromCache()
         nodesAPIChunkEndTime = (Time.now.to_f * 1000).to_i
         @nodesAPIE2ELatencyMs = (nodesAPIChunkEndTime - nodesAPIChunkStartTime)
         if (!nodeInventory.nil? && !nodeInventory.empty? && nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
@@ -178,7 +177,7 @@ module Fluent::Plugin
           @applicationInsightsUtility.sendMetricTelemetry("NodesAPIE2ELatencyMs", @nodesAPIE2ELatencyMs, {})
           telemetryProperties = {}
           if KubernetesApiClient.isEmitCacheTelemetry()
-            telemetryProperties["NODE_ITEMS_CACHE_SIZE_KB"] = nodeItemsCacheSizeKB
+            telemetryProperties["NODE_ITEMS_CACHE_SIZE_KB"] = @nodeItemsCacheSizeKB
           end
           ApplicationInsightsUtility.sendMetricTelemetry("NodeCount", nodeCount, telemetryProperties)
           @@nodeInventoryLatencyTelemetryTimeTracker = DateTime.now.to_time.to_i
@@ -596,109 +595,29 @@ module Fluent::Plugin
     end
 
     def watch_nodes
-      $log.info("in_kube_nodes::watch_nodes:Start @ #{Time.now.utc.iso8601}")
-      nodesResourceVersion = nil
-      loop do
-        begin
-          if nodesResourceVersion.nil?
-            # clear cache before filling the cache with list
-            @nodeCacheMutex.synchronize {
-              @nodeItemsCache.clear()
-            }
-            continuationToken = nil
-            resourceUri = KubernetesApiClient.getNodesResourceUri("nodes?limit=#{@NODES_CHUNK_SIZE}")
-            $log.info("in_kube_nodes::watch_nodes:Getting nodes from Kube API: #{resourceUri} @ #{Time.now.utc.iso8601}")
-            continuationToken, nodeInventory, responseCode = KubernetesApiClient.getResourcesAndContinuationTokenV2(resourceUri)
-            if responseCode.nil? || responseCode != "200"
-              $log.warn("in_kube_nodes::watch_nodes:Getting nodes from Kube API: #{resourceUri} failed with statuscode: #{responseCode} @ #{Time.now.utc.iso8601}")
-            else
-              $log.info("in_kube_nodes::watch_nodes:Done getting nodes from Kube API: #{resourceUri} @ #{Time.now.utc.iso8601}")
-              if (!nodeInventory.nil? && !nodeInventory.empty?)
-                nodesResourceVersion = nodeInventory["metadata"]["resourceVersion"]
-                if (nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
-                  $log.info("in_kube_nodes::watch_nodes: number of node items :#{nodeInventory["items"].length}  from Kube API @ #{Time.now.utc.iso8601}")
-                  nodeInventory["items"].each do |item|
-                    key = item["metadata"]["uid"]
-                    if !key.nil? && !key.empty?
-                      nodeItem = KubernetesApiClient.getOptimizedItem("nodes", item)
-                      if !nodeItem.nil? && !nodeItem.empty?
-                        @nodeCacheMutex.synchronize {
-                          @nodeItemsCache[key] = nodeItem
-                        }
-                      else
-                        $log.warn "in_kube_nodes::watch_nodes:Received nodeItem nil or empty  @ #{Time.now.utc.iso8601}"
-                      end
-                    else
-                      $log.warn "in_kube_nodes::watch_nodes:Received node uid either nil or empty  @ #{Time.now.utc.iso8601}"
-                    end
-                  end
-                end
+      if !@is_unit_test_mode
+        $log.info("in_kube_nodes::watch_nodes:Start @ #{Time.now.utc.iso8601}")
+        nodesResourceVersion = nil
+        loop do
+          begin
+            if nodesResourceVersion.nil?
+              # clear cache before filling the cache with list
+              @nodeCacheMutex.synchronize {
+                @nodeItemsCache.clear()
+              }
+              continuationToken = nil
+              resourceUri = KubernetesApiClient.getNodesResourceUri("nodes?limit=#{@NODES_CHUNK_SIZE}")
+              $log.info("in_kube_nodes::watch_nodes:Getting nodes from Kube API: #{resourceUri} @ #{Time.now.utc.iso8601}")
+              continuationToken, nodeInventory, responseCode = KubernetesApiClient.getResourcesAndContinuationTokenV2(resourceUri)
+              if responseCode.nil? || responseCode != "200"
+                $log.warn("in_kube_nodes::watch_nodes:Getting nodes from Kube API: #{resourceUri} failed with statuscode: #{responseCode} @ #{Time.now.utc.iso8601}")
               else
-                $log.warn "in_kube_nodes::watch_nodes:Received empty nodeInventory @ #{Time.now.utc.iso8601}"
-              end
-              while (!continuationToken.nil? && !continuationToken.empty?)
-                continuationToken, nodeInventory, responseCode = KubernetesApiClient.getResourcesAndContinuationTokenV2(resourceUri + "&continue=#{continuationToken}")
-                if responseCode.nil? || responseCode != "200"
-                  $log.warn("in_kube_nodes::watch_nodes:Getting nodes from Kube API: #{resourceUri}&continue=#{continuationToken} failed with statuscode: #{responseCode} @ #{Time.now.utc.iso8601}")
-                  nodesResourceVersion = nil # break, if any of the pagination call failed so that full cache can be rebuild with LIST again
-                  break
-                else
-                  if (!nodeInventory.nil? && !nodeInventory.empty?)
-                    nodesResourceVersion = nodeInventory["metadata"]["resourceVersion"]
-                    if (nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
-                      $log.info("in_kube_nodes::watch_nodes : number of node items :#{nodeInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
-                      nodeInventory["items"].each do |item|
-                        key = item["metadata"]["uid"]
-                        if !key.nil? && !key.empty?
-                          nodeItem = KubernetesApiClient.getOptimizedItem("nodes", item)
-                          if !nodeItem.nil? && !nodeItem.empty?
-                            @nodeCacheMutex.synchronize {
-                              @nodeItemsCache[key] = nodeItem
-                            }
-                          else
-                            $log.warn "in_kube_nodes::watch_nodes:Received nodeItem nil or empty  @ #{Time.now.utc.iso8601}"
-                          end
-                        else
-                          $log.warn "in_kube_nodes::watch_nodes:Received node uid either nil or empty  @ #{Time.now.utc.iso8601}"
-                        end
-                      end
-                    end
-                  else
-                    $log.warn "in_kube_nodes::watch_nodes:Received empty nodeInventory  @ #{Time.now.utc.iso8601}"
-                  end
-                end
-              end
-            end
-          end
-          if nodesResourceVersion.nil? || nodesResourceVersion.empty? || nodesResourceVersion == "0"
-            # https://github.com/kubernetes/kubernetes/issues/74022
-            $log.warn("in_kube_nodes::watch_nodes:received nodesResourceVersion either nil or empty or 0 @ #{Time.now.utc.iso8601}")
-            nodesResourceVersion = nil # for the LIST to happen again
-            sleep(30) # do not overwhelm the api-server if api-server broken
-          else
-            begin
-              $log.info("in_kube_nodes::watch_nodes:Establishing Watch connection for nodes with resourceversion: #{nodesResourceVersion} @ #{Time.now.utc.iso8601}")
-              watcher = KubernetesApiClient.watch("nodes", resource_version: nodesResourceVersion, allow_watch_bookmarks: true)
-              if watcher.nil?
-                $log.warn("in_kube_nodes::watch_nodes:watch API returned nil watcher for watch connection with resource version: #{nodesResourceVersion} @ #{Time.now.utc.iso8601}")
-              else
-                watcher.each do |notice|
-                  case notice["type"]
-                  when "ADDED", "MODIFIED", "DELETED", "BOOKMARK"
-                    item = notice["object"]
-                    # extract latest resource version to use for watch reconnect
-                    if !item.nil? && !item.empty? &&
-                       !item["metadata"].nil? && !item["metadata"].empty? &&
-                       !item["metadata"]["resourceVersion"].nil? && !item["metadata"]["resourceVersion"].empty?
-                      nodesResourceVersion = item["metadata"]["resourceVersion"]
-                      # $log.info("in_kube_nodes::watch_nodes: received event type: #{notice["type"]} with resource version: #{nodesResourceVersion} @ #{Time.now.utc.iso8601}")
-                    else
-                      $log.info("in_kube_nodes::watch_nodes: received event type with no resourceVersion hence stopping watcher to reconnect @ #{Time.now.utc.iso8601}")
-                      nodesResourceVersion = nil
-                      # We have to abort here because this might cause lastResourceVersion inconsistency by skipping a potential RV with valid data!
-                      break
-                    end
-                    if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
+                $log.info("in_kube_nodes::watch_nodes:Done getting nodes from Kube API: #{resourceUri} @ #{Time.now.utc.iso8601}")
+                if (!nodeInventory.nil? && !nodeInventory.empty?)
+                  nodesResourceVersion = nodeInventory["metadata"]["resourceVersion"]
+                  if (nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
+                    $log.info("in_kube_nodes::watch_nodes: number of node items :#{nodeInventory["items"].length}  from Kube API @ #{Time.now.utc.iso8601}")
+                    nodeInventory["items"].each do |item|
                       key = item["metadata"]["uid"]
                       if !key.nil? && !key.empty?
                         nodeItem = KubernetesApiClient.getOptimizedItem("nodes", item)
@@ -712,42 +631,124 @@ module Fluent::Plugin
                       else
                         $log.warn "in_kube_nodes::watch_nodes:Received node uid either nil or empty  @ #{Time.now.utc.iso8601}"
                       end
-                    elsif notice["type"] == "DELETED"
-                      key = item["metadata"]["uid"]
-                      if !key.nil? && !key.empty?
-                        @nodeCacheMutex.synchronize {
-                          @nodeItemsCache.delete(key)
-                        }
-                      end
                     end
-                  when "ERROR"
-                    nodesResourceVersion = nil
-                    $log.warn("in_kube_nodes::watch_nodes:ERROR event with :#{notice["object"]} @ #{Time.now.utc.iso8601}")
+                  end
+                else
+                  $log.warn "in_kube_nodes::watch_nodes:Received empty nodeInventory @ #{Time.now.utc.iso8601}"
+                end
+                while (!continuationToken.nil? && !continuationToken.empty?)
+                  continuationToken, nodeInventory, responseCode = KubernetesApiClient.getResourcesAndContinuationTokenV2(resourceUri + "&continue=#{continuationToken}")
+                  if responseCode.nil? || responseCode != "200"
+                    $log.warn("in_kube_nodes::watch_nodes:Getting nodes from Kube API: #{resourceUri}&continue=#{continuationToken} failed with statuscode: #{responseCode} @ #{Time.now.utc.iso8601}")
+                    nodesResourceVersion = nil # break, if any of the pagination call failed so that full cache can be rebuild with LIST again
                     break
                   else
-                    nodesResourceVersion = nil
-                    $log.warn("in_kube_nodes::watch_nodes:Unsupported event type #{notice["type"]} @ #{Time.now.utc.iso8601}")
-                    break
+                    if (!nodeInventory.nil? && !nodeInventory.empty?)
+                      nodesResourceVersion = nodeInventory["metadata"]["resourceVersion"]
+                      if (nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
+                        $log.info("in_kube_nodes::watch_nodes : number of node items :#{nodeInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
+                        nodeInventory["items"].each do |item|
+                          key = item["metadata"]["uid"]
+                          if !key.nil? && !key.empty?
+                            nodeItem = KubernetesApiClient.getOptimizedItem("nodes", item)
+                            if !nodeItem.nil? && !nodeItem.empty?
+                              @nodeCacheMutex.synchronize {
+                                @nodeItemsCache[key] = nodeItem
+                              }
+                            else
+                              $log.warn "in_kube_nodes::watch_nodes:Received nodeItem nil or empty  @ #{Time.now.utc.iso8601}"
+                            end
+                          else
+                            $log.warn "in_kube_nodes::watch_nodes:Received node uid either nil or empty  @ #{Time.now.utc.iso8601}"
+                          end
+                        end
+                      end
+                    else
+                      $log.warn "in_kube_nodes::watch_nodes:Received empty nodeInventory  @ #{Time.now.utc.iso8601}"
+                    end
                   end
                 end
               end
-            rescue Net::ReadTimeout => errorStr
-              ## This expected if there is no activity on the cluster for more than readtimeout value used in the connection
-              # $log.warn("in_kube_nodes::watch_nodes:failed with an error: #{errorStr} @ #{Time.now.utc.iso8601}")
-            rescue => errorStr
-              $log.warn("in_kube_nodes::watch_nodes:failed with an error: #{errorStr} @ #{Time.now.utc.iso8601}")
-              nodesResourceVersion = nil
-              sleep(5) # do not overwhelm the api-server if api-server broken
-            ensure
-              watcher.finish if watcher
             end
+            if nodesResourceVersion.nil? || nodesResourceVersion.empty? || nodesResourceVersion == "0"
+              # https://github.com/kubernetes/kubernetes/issues/74022
+              $log.warn("in_kube_nodes::watch_nodes:received nodesResourceVersion either nil or empty or 0 @ #{Time.now.utc.iso8601}")
+              nodesResourceVersion = nil # for the LIST to happen again
+              sleep(30) # do not overwhelm the api-server if api-server broken
+            else
+              begin
+                $log.info("in_kube_nodes::watch_nodes:Establishing Watch connection for nodes with resourceversion: #{nodesResourceVersion} @ #{Time.now.utc.iso8601}")
+                watcher = KubernetesApiClient.watch("nodes", resource_version: nodesResourceVersion, allow_watch_bookmarks: true)
+                if watcher.nil?
+                  $log.warn("in_kube_nodes::watch_nodes:watch API returned nil watcher for watch connection with resource version: #{nodesResourceVersion} @ #{Time.now.utc.iso8601}")
+                else
+                  watcher.each do |notice|
+                    case notice["type"]
+                    when "ADDED", "MODIFIED", "DELETED", "BOOKMARK"
+                      item = notice["object"]
+                      # extract latest resource version to use for watch reconnect
+                      if !item.nil? && !item.empty? &&
+                         !item["metadata"].nil? && !item["metadata"].empty? &&
+                         !item["metadata"]["resourceVersion"].nil? && !item["metadata"]["resourceVersion"].empty?
+                        nodesResourceVersion = item["metadata"]["resourceVersion"]
+                        # $log.info("in_kube_nodes::watch_nodes: received event type: #{notice["type"]} with resource version: #{nodesResourceVersion} @ #{Time.now.utc.iso8601}")
+                      else
+                        $log.info("in_kube_nodes::watch_nodes: received event type with no resourceVersion hence stopping watcher to reconnect @ #{Time.now.utc.iso8601}")
+                        nodesResourceVersion = nil
+                        # We have to abort here because this might cause lastResourceVersion inconsistency by skipping a potential RV with valid data!
+                        break
+                      end
+                      if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
+                        key = item["metadata"]["uid"]
+                        if !key.nil? && !key.empty?
+                          nodeItem = KubernetesApiClient.getOptimizedItem("nodes", item)
+                          if !nodeItem.nil? && !nodeItem.empty?
+                            @nodeCacheMutex.synchronize {
+                              @nodeItemsCache[key] = nodeItem
+                            }
+                          else
+                            $log.warn "in_kube_nodes::watch_nodes:Received nodeItem nil or empty  @ #{Time.now.utc.iso8601}"
+                          end
+                        else
+                          $log.warn "in_kube_nodes::watch_nodes:Received node uid either nil or empty  @ #{Time.now.utc.iso8601}"
+                        end
+                      elsif notice["type"] == "DELETED"
+                        key = item["metadata"]["uid"]
+                        if !key.nil? && !key.empty?
+                          @nodeCacheMutex.synchronize {
+                            @nodeItemsCache.delete(key)
+                          }
+                        end
+                      end
+                    when "ERROR"
+                      nodesResourceVersion = nil
+                      $log.warn("in_kube_nodes::watch_nodes:ERROR event with :#{notice["object"]} @ #{Time.now.utc.iso8601}")
+                      break
+                    else
+                      nodesResourceVersion = nil
+                      $log.warn("in_kube_nodes::watch_nodes:Unsupported event type #{notice["type"]} @ #{Time.now.utc.iso8601}")
+                      break
+                    end
+                  end
+                end
+              rescue Net::ReadTimeout => errorStr
+                ## This expected if there is no activity on the cluster for more than readtimeout value used in the connection
+                # $log.warn("in_kube_nodes::watch_nodes:failed with an error: #{errorStr} @ #{Time.now.utc.iso8601}")
+              rescue => errorStr
+                $log.warn("in_kube_nodes::watch_nodes:failed with an error: #{errorStr} @ #{Time.now.utc.iso8601}")
+                nodesResourceVersion = nil
+                sleep(5) # do not overwhelm the api-server if api-server broken
+              ensure
+                watcher.finish if watcher
+              end
+            end
+          rescue => errorStr
+            $log.warn("in_kube_nodes::watch_nodes:failed with an error: #{errorStr} @ #{Time.now.utc.iso8601}")
+            nodesResourceVersion = nil
           end
-        rescue => errorStr
-          $log.warn("in_kube_nodes::watch_nodes:failed with an error: #{errorStr} @ #{Time.now.utc.iso8601}")
-          nodesResourceVersion = nil
         end
+        $log.info("in_kube_nodes::watch_nodes:End @ #{Time.now.utc.iso8601}")
       end
-      $log.info("in_kube_nodes::watch_nodes:End @ #{Time.now.utc.iso8601}")
     end
 
     def writeNodeAllocatableRecords(nodeAllocatbleRecordsJson)
@@ -781,6 +782,21 @@ module Fluent::Plugin
         f.flock(File::LOCK_UN) if !f.nil?
         f.close if !f.nil?
       end
+    end
+
+    def getNodeItemsFromCache()
+      nodeItems = {}
+      if @is_unit_test_mode
+        nodeItems = @node_items_test_cache
+      else
+        @nodeCacheMutex.synchronize {
+          nodeItems = @nodeItemsCache.values.clone
+          if KubernetesApiClient.isEmitCacheTelemetry()
+            @nodeItemsCacheSizeKB = @nodeItemsCache.to_s.length / 1024
+          end
+        }
+      end
+      return nodeItems
     end
   end # Kube_Node_Input
 
