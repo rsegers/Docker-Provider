@@ -141,6 +141,8 @@ data:
     [integrations.azure_network_policy_manager]
         collect_basic_metrics = false
         collect_advanced_metrics = false
+    [integrations.azure_subnet_ip_usage]
+        enabled = false
 
 # Doc - https://github.com/microsoft/Docker-Provider/blob/ci_prod/Documentation/AgentSettings/ReadMe.md
   agent-settings: |-
