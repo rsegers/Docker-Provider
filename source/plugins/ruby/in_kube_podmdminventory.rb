@@ -76,8 +76,7 @@ module Fluent::Plugin
       begin
         $log.info "in_kube_podmdminventory:parse_and_emit_records:Start:getMDMRecords @ #{Time.now.utc.iso8601}"
         mdmPodRecords = getMDMRecords()
-        mdmPodRecordItems =
-          $log.info "in_kube_podmdminventory:parse_and_emit_records:End:getMDMRecords @ #{Time.now.utc.iso8601}"
+        $log.info "in_kube_podmdminventory:parse_and_emit_records:End:getMDMRecords @ #{Time.now.utc.iso8601}"
         if !mdmPodRecords.nil? && !mdmPodRecords.empty? && mdmPodRecords["items"].length > 0
           batchTime = mdmPodRecords["collectionTime"] # This is same batchTime used in KubePODinventory
           mdmPodRecords["items"].each do |record|
