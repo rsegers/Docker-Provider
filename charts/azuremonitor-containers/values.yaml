@@ -22,10 +22,10 @@ Azure:
 omsagent:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod05192022"
-    tagWindows: "win-ciprod05192022"
+    tag: "ciprod06142022"
+    tagWindows: "win-ciprod06142022"
     pullPolicy: IfNotPresent
-    dockerProviderVersion: "17.0.0-0"
+    dockerProviderVersion: "18.0.0-0"
     agentVersion: "azure-mdsd-1.17.0"
     winAgentVersion: "0.0.0-0" # there is no base agent version for windows agent
 

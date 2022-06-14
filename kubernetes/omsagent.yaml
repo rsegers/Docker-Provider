@@ -334,7 +334,7 @@ spec:
         tier: node
       annotations:
         agentVersion: "azure-mdsd-1.17.0"
-        dockerProviderVersion: "17.0.0-0"
+        dockerProviderVersion: "18.0.0-0"
         schema-versions: "v1"
     spec:
       serviceAccountName: omsagent
@@ -379,7 +379,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod05192022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06142022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -468,7 +468,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: omsagent-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod05192022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06142022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -612,7 +612,7 @@ spec:
         rsName: "omsagent-rs"
       annotations:
         agentVersion: "azure-mdsd-1.17.0"
-        dockerProviderVersion: "17.0.0-0"
+        dockerProviderVersion: "18.0.0-0"
         schema-versions: "v1"
     spec:
       serviceAccountName: omsagent
@@ -653,7 +653,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod05192022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06142022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -821,7 +821,7 @@ spec:
         tier: node-win
       annotations:
         agentVersion: "0.0.0-0"
-        dockerProviderVersion: "17.0.0-0"
+        dockerProviderVersion: "18.0.0-0"
         schema-versions: "v1"
     spec:
      serviceAccountName: omsagent
@@ -831,7 +831,7 @@ spec:
             value: "3"
      containers:
        - name: omsagent-win
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod05192022"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06142022"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
