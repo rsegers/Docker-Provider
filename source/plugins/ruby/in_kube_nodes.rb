@@ -752,7 +752,7 @@ module Fluent::Plugin
     end
 
     def writeNodeAllocatableRecords(nodeAllocatbleRecordsJson)
-      maxRetryCount = 3
+      maxRetryCount = 5
       initialRetryDelaySecs = 0.5
       retryAttemptCount = 1
       begin

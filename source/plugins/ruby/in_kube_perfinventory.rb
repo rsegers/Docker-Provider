@@ -103,7 +103,6 @@ module Fluent::Plugin
         end
 
         nodeAllocatableRecords = getNodeAllocatableRecords()
-        $log.info("in_kube_perfinventory::enumerate : number of nodeAllocatableRecords :#{nodeAllocatableRecords.length} from Kube API @ #{Time.now.utc.iso8601}")
         # Initializing continuation token to nil
         continuationToken = nil
         podItemsCacheSizeKB = 0
@@ -398,7 +397,7 @@ module Fluent::Plugin
     end
 
     def getNodeAllocatableRecords()
-      maxRetryCount = 3
+      maxRetryCount = 5
       initialRetryDelaySecs = 0.5
       retryAttemptCount = 1
       nodeAllocatableRecords = {}
@@ -418,8 +417,8 @@ module Fluent::Plugin
         if retryAttemptCount < maxRetryCount
           f.flock(File::LOCK_UN) if !f.nil?
           f.close if !f.nil?
-          retryAttemptCount = retryAttemptCount + 1
           sleep (initialRetryDelaySecs * retryAttemptCount)
+          retryAttemptCount = retryAttemptCount + 1
           retry
         end
         $log.warn "in_kube_perfinventory:getNodeAllocatableRecords failed with an error: #{err} after retries: #{maxRetryCount} @  #{Time.now.utc.iso8601}"
