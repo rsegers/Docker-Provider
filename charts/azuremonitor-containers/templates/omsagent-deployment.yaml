@@ -53,6 +53,11 @@ spec:
        resources:
 {{ toYaml .Values.omsagent.resources.deployment | indent 9 }}
        env:
+       - name: NUM_OF_FLUENTD_WORKERS
+         valueFrom:
+           resourceFieldRef:
+             containerName: omsagent
+             resource: limits.cpu
        {{- if ne .Values.omsagent.env.clusterId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.omsagent.env.clusterId | quote }}
@@ -89,6 +94,14 @@ spec:
          value: {{ .Values.omsagent.sidecarscraping | quote }}
        - name: ISTEST
          value: {{ .Values.omsagent.ISTEST | quote }}
+       {{ if .Values.omsagent.isArcACluster }}
+       - name: IS_ARCA_CLUSTER
+         value: {{ .Values.omsagent.isArcACluster | quote }}
+       {{- end }}
+       {{- if ne .Values.omsagent.metricsEndpoint "<your_metrics_endpoint>" }}
+       - name: CUSTOM_METRICS_ENDPOINT
+         value: {{ .Values.omsagent.metricsEndpoint | quote }}
+       {{- end }}
        securityContext:
          privileged: true
        ports:

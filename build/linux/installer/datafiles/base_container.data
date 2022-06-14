@@ -123,6 +123,8 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/fluent/plugin/in_containerinventory.rb;			                                     source/plugins/ruby/in_containerinventory.rb;	  	644; root; root
 /etc/fluent/plugin/in_kube_nodes.rb;			                                           source/plugins/ruby/in_kube_nodes.rb;		      	644; root; root
 /etc/fluent/plugin/in_kube_podinventory.rb;			                                     source/plugins/ruby/in_kube_podinventory.rb;			644; root; root
+/etc/fluent/plugin/in_kube_podmdminventory.rb;			                                  source/plugins/ruby/in_kube_podmdminventory.rb;			644; root; root
+/etc/fluent/plugin/in_kube_perfinventory.rb;			                                     source/plugins/ruby/in_kube_perfinventory.rb;			644; root; root
 /etc/fluent/plugin/KubernetesApiClient.rb;			                                     source/plugins/ruby/KubernetesApiClient.rb;			644; root; root
 /etc/fluent/plugin/in_kube_events.rb;			                                           source/plugins/ruby/in_kube_events.rb;			      644; root; root
 /etc/fluent/plugin/in_kube_pvinventory.rb;			                                     source/plugins/ruby/in_kube_pvinventory.rb;			644; root; root
@@ -134,6 +136,7 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/fluent/plugin/filter_telegraf2mdm.rb;			                                     source/plugins/ruby/filter_telegraf2mdm.rb;	644; root; root
 
 /etc/fluent/plugin/out_mdm.rb;			                                                 source/plugins/ruby/out_mdm.rb;	644; root; root
+/etc/fluent/plugin/WatchStream.rb;                                                      source/plugins/ruby/WatchStream.rb;	644; root; root
 
 
 
