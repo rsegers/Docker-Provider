@@ -7,11 +7,12 @@ module Fluent::Plugin
   class Kube_nodeInventory_Input < Input
     Fluent::Plugin.register_input("kube_nodes", self)
 
-    def initialize(kubernetesApiClient = nil,
+    def initialize(is_unit_test_mode = nil, kubernetesApiClient = nil,
                    applicationInsightsUtility = nil,
                    extensionUtils = nil,
                    env = nil,
-                   telemetry_flush_interval = nil)
+                   telemetry_flush_interval = nil,
+                   node_items_test_cache = nil)
       super()
 
       require "yaml"
@@ -30,6 +31,8 @@ module Fluent::Plugin
       @extensionUtils = extensionUtils == nil ? ExtensionUtils : extensionUtils
       @env = env == nil ? ENV : env
       @TELEMETRY_FLUSH_INTERVAL_IN_MINUTES = telemetry_flush_interval == nil ? Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES : telemetry_flush_interval
+      @is_unit_test_mode = is_unit_test_mode == nil ? false : true
+      @node_items_test_cache = node_items_test_cache
 
       # these defines were previously at class scope Moving them into the constructor so that they can be set by unit tests
       @@configMapMountPath = "/etc/config/settings/log-data-collection-settings"
@@ -63,6 +66,9 @@ module Fluent::Plugin
       require_relative "constants"
 
       @NodeCache = NodeStatsCache.new()
+      @watchNodesThread = nil
+      @nodeItemsCache = {}
+      @nodeItemsCacheSizeKB = 0
     end
 
     config_param :run_interval, :time, :default => 60
@@ -96,6 +102,8 @@ module Fluent::Plugin
         @finished = false
         @condition = ConditionVariable.new
         @mutex = Mutex.new
+        @nodeCacheMutex = Mutex.new
+        @watchNodesThread = Thread.new(&method(:watch_nodes))
         @thread = Thread.new(&method(:run_periodic))
         @@nodeTelemetryTimeTracker = DateTime.now.to_time.to_i
         @@nodeInventoryLatencyTelemetryTimeTracker = DateTime.now.to_time.to_i
@@ -109,6 +117,7 @@ module Fluent::Plugin
           @condition.signal
         }
         @thread.join
+        @watchNodesThread.join
         super # This super must be at the end of shutdown method
       end
     end
@@ -147,43 +156,30 @@ module Fluent::Plugin
 
         # Initializing continuation token to nil
         continuationToken = nil
-        $log.info("in_kube_nodes::enumerate : Getting nodes from Kube API @ #{Time.now.utc.iso8601}")
-        # KubernetesApiClient.getNodesResourceUri is a pure function, so call it from the actual module instead of from the mock
-        resourceUri = KubernetesApiClient.getNodesResourceUri("nodes?limit=#{@NODES_CHUNK_SIZE}")
-        continuationToken, nodeInventory = @kubernetesApiClient.getResourcesAndContinuationToken(resourceUri)
-        $log.info("in_kube_nodes::enumerate : Done getting nodes from Kube API @ #{Time.now.utc.iso8601}")
+        nodeInventory = {}
+        @nodeItemsCacheSizeKB = 0
+        nodeCount = 0
+        nodeInventory["items"] = getNodeItemsFromCache()
         nodesAPIChunkEndTime = (Time.now.to_f * 1000).to_i
         @nodesAPIE2ELatencyMs = (nodesAPIChunkEndTime - nodesAPIChunkStartTime)
         if (!nodeInventory.nil? && !nodeInventory.empty? && nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
-          nodeCount += nodeInventory["items"].length
-          $log.info("in_kube_nodes::enumerate : number of node items :#{nodeInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
+          nodeCount = nodeInventory["items"].length
+          $log.info("in_kube_nodes::enumerate : number of node items :#{nodeCount} from Kube API @ #{Time.now.utc.iso8601}")
           parse_and_emit_records(nodeInventory, batchTime)
         else
           $log.warn "in_kube_nodes::enumerate:Received empty nodeInventory"
         end
-
-        #If we receive a continuation token, make calls, process and flush data until we have processed all data
-        while (!continuationToken.nil? && !continuationToken.empty?)
-          nodesAPIChunkStartTime = (Time.now.to_f * 1000).to_i
-          continuationToken, nodeInventory = @kubernetesApiClient.getResourcesAndContinuationToken(resourceUri + "&continue=#{continuationToken}")
-          nodesAPIChunkEndTime = (Time.now.to_f * 1000).to_i
-          @nodesAPIE2ELatencyMs = @nodesAPIE2ELatencyMs + (nodesAPIChunkEndTime - nodesAPIChunkStartTime)
-          if (!nodeInventory.nil? && !nodeInventory.empty? && nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
-            nodeCount += nodeInventory["items"].length
-            $log.info("in_kube_nodes::enumerate : number of node items :#{nodeInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
-            parse_and_emit_records(nodeInventory, batchTime)
-          else
-            $log.warn "in_kube_nodes::enumerate:Received empty nodeInventory"
-          end
-        end
-
         @nodeInventoryE2EProcessingLatencyMs = ((Time.now.to_f * 1000).to_i - nodeInventoryStartTime)
         timeDifference = (DateTime.now.to_time.to_i - @@nodeInventoryLatencyTelemetryTimeTracker).abs
         timeDifferenceInMinutes = timeDifference / 60
         if (timeDifferenceInMinutes >= @TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
           @applicationInsightsUtility.sendMetricTelemetry("NodeInventoryE2EProcessingLatencyMs", @nodeInventoryE2EProcessingLatencyMs, {})
           @applicationInsightsUtility.sendMetricTelemetry("NodesAPIE2ELatencyMs", @nodesAPIE2ELatencyMs, {})
-          @applicationInsightsUtility.sendMetricTelemetry("NodeCount", nodeCount, {})
+          telemetryProperties = {}
+          if KubernetesApiClient.isEmitCacheTelemetry()
+            telemetryProperties["NODE_ITEMS_CACHE_SIZE_KB"] = @nodeItemsCacheSizeKB
+          end
+          ApplicationInsightsUtility.sendMetricTelemetry("NodeCount", nodeCount, telemetryProperties)
           @@nodeInventoryLatencyTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
         # Setting this to nil so that we dont hold memory until GC kicks in
@@ -205,10 +201,19 @@ module Fluent::Plugin
         insightsMetricsEventStream = Fluent::MultiEventStream.new
         kubePerfEventStream = Fluent::MultiEventStream.new
         @@istestvar = @env["ISTEST"]
+        nodeAllocatableRecords = {}
         #get node inventory
         nodeInventory["items"].each do |item|
           # node inventory
           nodeInventoryRecord = getNodeInventoryRecord(item, batchTime)
+          # node allocatble records for the kube perf plugin
+          nodeName = item["metadata"]["name"]
+          if !nodeName.nil? && !nodeName.empty?
+            nodeAllocatable = KubernetesApiClient.getNodeAllocatableValues(item)
+            if !nodeAllocatable.nil? && !nodeAllocatable.empty?
+              nodeAllocatableRecords[nodeName] = nodeAllocatable
+            end
+          end
           eventStream.add(emitTime, nodeInventoryRecord) if nodeInventoryRecord
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && eventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
             $log.info("in_kube_node::parse_and_emit_records: number of node inventory records emitted #{eventStream.count} @ #{Time.now.utc.iso8601}")
@@ -428,6 +433,17 @@ module Fluent::Plugin
             $log.info("kubeNodeInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
           end
         end
+        if !nodeAllocatableRecords.nil? && !nodeAllocatableRecords.empty?
+          nodeAllocatableRecordsJson = nodeAllocatableRecords.to_json
+          if !nodeAllocatableRecordsJson.empty?
+            @log.info "Writing node allocatable records to state file with size(bytes): #{nodeAllocatableRecordsJson.length}"
+            @log.info "in_kube_nodes::parse_and_emit_records:Start:writeNodeAllocatableRecords @ #{Time.now.utc.iso8601}"
+            writeNodeAllocatableRecords(nodeAllocatableRecordsJson)
+            @log.info "in_kube_nodes::parse_and_emit_records:End:writeNodeAllocatableRecords @ #{Time.now.utc.iso8601}"
+          end
+          nodeAllocatableRecordsJson = nil
+          nodeAllocatableRecords = nil
+        end
       rescue => errorStr
         $log.warn "Failed to retrieve node inventory: #{errorStr}"
         $log.debug_backtrace(errorStr.backtrace)
@@ -576,6 +592,211 @@ module Fluent::Plugin
         $log.warn "in_kube_nodes::getContainerNodeIngetNodeTelemetryPropsventoryRecord:Failed: #{errorStr}"
       end
       return properties
+    end
+
+    def watch_nodes
+      if !@is_unit_test_mode
+        $log.info("in_kube_nodes::watch_nodes:Start @ #{Time.now.utc.iso8601}")
+        nodesResourceVersion = nil
+        loop do
+          begin
+            if nodesResourceVersion.nil?
+              # clear cache before filling the cache with list
+              @nodeCacheMutex.synchronize {
+                @nodeItemsCache.clear()
+              }
+              continuationToken = nil
+              resourceUri = KubernetesApiClient.getNodesResourceUri("nodes?limit=#{@NODES_CHUNK_SIZE}")
+              $log.info("in_kube_nodes::watch_nodes:Getting nodes from Kube API: #{resourceUri} @ #{Time.now.utc.iso8601}")
+              continuationToken, nodeInventory, responseCode = KubernetesApiClient.getResourcesAndContinuationTokenV2(resourceUri)
+              if responseCode.nil? || responseCode != "200"
+                $log.warn("in_kube_nodes::watch_nodes:Getting nodes from Kube API: #{resourceUri} failed with statuscode: #{responseCode} @ #{Time.now.utc.iso8601}")
+              else
+                $log.info("in_kube_nodes::watch_nodes:Done getting nodes from Kube API: #{resourceUri} @ #{Time.now.utc.iso8601}")
+                if (!nodeInventory.nil? && !nodeInventory.empty?)
+                  nodesResourceVersion = nodeInventory["metadata"]["resourceVersion"]
+                  if (nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
+                    $log.info("in_kube_nodes::watch_nodes: number of node items :#{nodeInventory["items"].length}  from Kube API @ #{Time.now.utc.iso8601}")
+                    nodeInventory["items"].each do |item|
+                      key = item["metadata"]["uid"]
+                      if !key.nil? && !key.empty?
+                        nodeItem = KubernetesApiClient.getOptimizedItem("nodes", item)
+                        if !nodeItem.nil? && !nodeItem.empty?
+                          @nodeCacheMutex.synchronize {
+                            @nodeItemsCache[key] = nodeItem
+                          }
+                        else
+                          $log.warn "in_kube_nodes::watch_nodes:Received nodeItem nil or empty  @ #{Time.now.utc.iso8601}"
+                        end
+                      else
+                        $log.warn "in_kube_nodes::watch_nodes:Received node uid either nil or empty  @ #{Time.now.utc.iso8601}"
+                      end
+                    end
+                  end
+                else
+                  $log.warn "in_kube_nodes::watch_nodes:Received empty nodeInventory @ #{Time.now.utc.iso8601}"
+                end
+                while (!continuationToken.nil? && !continuationToken.empty?)
+                  continuationToken, nodeInventory, responseCode = KubernetesApiClient.getResourcesAndContinuationTokenV2(resourceUri + "&continue=#{continuationToken}")
+                  if responseCode.nil? || responseCode != "200"
+                    $log.warn("in_kube_nodes::watch_nodes:Getting nodes from Kube API: #{resourceUri}&continue=#{continuationToken} failed with statuscode: #{responseCode} @ #{Time.now.utc.iso8601}")
+                    nodesResourceVersion = nil # break, if any of the pagination call failed so that full cache can be rebuild with LIST again
+                    break
+                  else
+                    if (!nodeInventory.nil? && !nodeInventory.empty?)
+                      nodesResourceVersion = nodeInventory["metadata"]["resourceVersion"]
+                      if (nodeInventory.key?("items") && !nodeInventory["items"].nil? && !nodeInventory["items"].empty?)
+                        $log.info("in_kube_nodes::watch_nodes : number of node items :#{nodeInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
+                        nodeInventory["items"].each do |item|
+                          key = item["metadata"]["uid"]
+                          if !key.nil? && !key.empty?
+                            nodeItem = KubernetesApiClient.getOptimizedItem("nodes", item)
+                            if !nodeItem.nil? && !nodeItem.empty?
+                              @nodeCacheMutex.synchronize {
+                                @nodeItemsCache[key] = nodeItem
+                              }
+                            else
+                              $log.warn "in_kube_nodes::watch_nodes:Received nodeItem nil or empty  @ #{Time.now.utc.iso8601}"
+                            end
+                          else
+                            $log.warn "in_kube_nodes::watch_nodes:Received node uid either nil or empty  @ #{Time.now.utc.iso8601}"
+                          end
+                        end
+                      end
+                    else
+                      $log.warn "in_kube_nodes::watch_nodes:Received empty nodeInventory  @ #{Time.now.utc.iso8601}"
+                    end
+                  end
+                end
+              end
+            end
+            if nodesResourceVersion.nil? || nodesResourceVersion.empty? || nodesResourceVersion == "0"
+              # https://github.com/kubernetes/kubernetes/issues/74022
+              $log.warn("in_kube_nodes::watch_nodes:received nodesResourceVersion either nil or empty or 0 @ #{Time.now.utc.iso8601}")
+              nodesResourceVersion = nil # for the LIST to happen again
+              sleep(30) # do not overwhelm the api-server if api-server broken
+            else
+              begin
+                $log.info("in_kube_nodes::watch_nodes:Establishing Watch connection for nodes with resourceversion: #{nodesResourceVersion} @ #{Time.now.utc.iso8601}")
+                watcher = KubernetesApiClient.watch("nodes", resource_version: nodesResourceVersion, allow_watch_bookmarks: true)
+                if watcher.nil?
+                  $log.warn("in_kube_nodes::watch_nodes:watch API returned nil watcher for watch connection with resource version: #{nodesResourceVersion} @ #{Time.now.utc.iso8601}")
+                else
+                  watcher.each do |notice|
+                    case notice["type"]
+                    when "ADDED", "MODIFIED", "DELETED", "BOOKMARK"
+                      item = notice["object"]
+                      # extract latest resource version to use for watch reconnect
+                      if !item.nil? && !item.empty? &&
+                         !item["metadata"].nil? && !item["metadata"].empty? &&
+                         !item["metadata"]["resourceVersion"].nil? && !item["metadata"]["resourceVersion"].empty?
+                        nodesResourceVersion = item["metadata"]["resourceVersion"]
+                        # $log.info("in_kube_nodes::watch_nodes: received event type: #{notice["type"]} with resource version: #{nodesResourceVersion} @ #{Time.now.utc.iso8601}")
+                      else
+                        $log.info("in_kube_nodes::watch_nodes: received event type with no resourceVersion hence stopping watcher to reconnect @ #{Time.now.utc.iso8601}")
+                        nodesResourceVersion = nil
+                        # We have to abort here because this might cause lastResourceVersion inconsistency by skipping a potential RV with valid data!
+                        break
+                      end
+                      if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
+                        key = item["metadata"]["uid"]
+                        if !key.nil? && !key.empty?
+                          nodeItem = KubernetesApiClient.getOptimizedItem("nodes", item)
+                          if !nodeItem.nil? && !nodeItem.empty?
+                            @nodeCacheMutex.synchronize {
+                              @nodeItemsCache[key] = nodeItem
+                            }
+                          else
+                            $log.warn "in_kube_nodes::watch_nodes:Received nodeItem nil or empty  @ #{Time.now.utc.iso8601}"
+                          end
+                        else
+                          $log.warn "in_kube_nodes::watch_nodes:Received node uid either nil or empty  @ #{Time.now.utc.iso8601}"
+                        end
+                      elsif notice["type"] == "DELETED"
+                        key = item["metadata"]["uid"]
+                        if !key.nil? && !key.empty?
+                          @nodeCacheMutex.synchronize {
+                            @nodeItemsCache.delete(key)
+                          }
+                        end
+                      end
+                    when "ERROR"
+                      nodesResourceVersion = nil
+                      $log.warn("in_kube_nodes::watch_nodes:ERROR event with :#{notice["object"]} @ #{Time.now.utc.iso8601}")
+                      break
+                    else
+                      nodesResourceVersion = nil
+                      $log.warn("in_kube_nodes::watch_nodes:Unsupported event type #{notice["type"]} @ #{Time.now.utc.iso8601}")
+                      break
+                    end
+                  end
+                end
+              rescue Net::ReadTimeout => errorStr
+                ## This expected if there is no activity on the cluster for more than readtimeout value used in the connection
+                # $log.warn("in_kube_nodes::watch_nodes:failed with an error: #{errorStr} @ #{Time.now.utc.iso8601}")
+              rescue => errorStr
+                $log.warn("in_kube_nodes::watch_nodes:failed with an error: #{errorStr} @ #{Time.now.utc.iso8601}")
+                nodesResourceVersion = nil
+                sleep(5) # do not overwhelm the api-server if api-server broken
+              ensure
+                watcher.finish if watcher
+              end
+            end
+          rescue => errorStr
+            $log.warn("in_kube_nodes::watch_nodes:failed with an error: #{errorStr} @ #{Time.now.utc.iso8601}")
+            nodesResourceVersion = nil
+          end
+        end
+        $log.info("in_kube_nodes::watch_nodes:End @ #{Time.now.utc.iso8601}")
+      end
+    end
+
+    def writeNodeAllocatableRecords(nodeAllocatbleRecordsJson)
+      maxRetryCount = 5
+      initialRetryDelaySecs = 0.5
+      retryAttemptCount = 1
+      begin
+        f = File.open(Constants::NODE_ALLOCATABLE_RECORDS_STATE_FILE, "w")
+        if !f.nil?
+          isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
+          raise "in_kube_nodes::writeNodeAllocatableRecords:Failed to acquire file lock" if !isAcquiredLock
+          startTime = (Time.now.to_f * 1000).to_i
+          f.write(nodeAllocatbleRecordsJson)
+          f.flush
+          timetakenMs = ((Time.now.to_f * 1000).to_i - startTime)
+          $log.info "in_kube_nodes::writeNodeAllocatableRecords:Successfull and with time taken(ms): #{timetakenMs}"
+        else
+          raise "in_kube_nodes::writeNodeAllocatableRecords:Failed to open file for write"
+        end
+      rescue => err
+        if retryAttemptCount < maxRetryCount
+          f.flock(File::LOCK_UN) if !f.nil?
+          f.close if !f.nil?
+          retryAttemptCount = retryAttemptCount + 1
+          sleep (initialRetryDelaySecs * retryAttemptCount)
+          retry
+        end
+        $log.warn "in_kube_nodes::writeNodeAllocatableRecords failed with an error: #{err} after retries: #{maxRetryCount} @  #{Time.now.utc.iso8601}"
+        ApplicationInsightsUtility.sendExceptionTelemetry(err)
+      ensure
+        f.flock(File::LOCK_UN) if !f.nil?
+        f.close if !f.nil?
+      end
+    end
+
+    def getNodeItemsFromCache()
+      nodeItems = {}
+      if @is_unit_test_mode
+        nodeItems = @node_items_test_cache
+      else
+        @nodeCacheMutex.synchronize {
+          nodeItems = @nodeItemsCache.values.clone
+          if KubernetesApiClient.isEmitCacheTelemetry()
+            @nodeItemsCacheSizeKB = @nodeItemsCache.to_s.length / 1024
+          end
+        }
+      end
+      return nodeItems
     end
   end # Kube_Node_Input
 

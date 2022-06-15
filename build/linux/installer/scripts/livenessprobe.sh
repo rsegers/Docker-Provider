@@ -1,4 +1,28 @@
 #!/bin/bash
+source /opt/env_vars
+
+if [ -s "inotifyoutput.txt" ]
+then
+  # inotifyoutput file has data(config map was applied)
+  echo "inotifyoutput.txt has been updated - config changed" > /dev/termination-log
+  exit 1
+fi
+
+# Perform the following check only for prometheus sidecar that does OSM scraping or for replicaset when sidecar scraping is disabled
+if [[ ( ( ! -e "/etc/config/kube.conf" ) && ( "${CONTAINER_TYPE}" == "PrometheusSidecar" ) ) ||
+      ( ( -e "/etc/config/kube.conf" ) && ( ( ! -z "${SIDECAR_SCRAPING_ENABLED}" ) && ( "${SIDECAR_SCRAPING_ENABLED}" == "false" ) ) ) ]]; then
+    if [ -s "inotifyoutput-osm.txt" ]
+    then
+      # inotifyoutput-osm file has data(config map was applied)
+      echo "inotifyoutput-osm.txt has been updated - config changed" > /dev/termination-log
+      exit 1
+    fi
+fi
+
+# if this is the prometheus sidecar and there are no prometheus metrics to scrape then the rest of the liveness probe doesn't apply
+if [[ "${CONTAINER_TYPE}" == "PrometheusSidecar" && "${MUTE_PROM_SIDECAR}" == "true" ]]; then
+  exit 0
+fi
 
 #test to exit non zero value if mdsd is not running
 (ps -ef | grep "mdsd" | grep -v "grep")
@@ -51,24 +75,6 @@ then
  # echo "Telegraf is not running" > /dev/termination-log
  echo "Telegraf is not running (controller: ${CONTROLLER_TYPE}, container type: ${CONTAINER_TYPE})" > /dev/write-to-traces  # this file is tailed and sent to traces
  # exit 1
-fi
-
-if [ -s "inotifyoutput.txt" ]
-then
-  # inotifyoutput file has data(config map was applied)
-  echo "inotifyoutput.txt has been updated - config changed" > /dev/termination-log
-  exit 1
-fi
-
-# Perform the following check only for prometheus sidecar that does OSM scraping or for replicaset when sidecar scraping is disabled
-if [[ ( ( ! -e "/etc/config/kube.conf" ) && ( "${CONTAINER_TYPE}" == "PrometheusSidecar" ) ) ||
-      ( ( -e "/etc/config/kube.conf" ) && ( ( ! -z "${SIDECAR_SCRAPING_ENABLED}" ) && ( "${SIDECAR_SCRAPING_ENABLED}" == "false" ) ) ) ]]; then
-    if [ -s "inotifyoutput-osm.txt" ]
-    then
-      # inotifyoutput-osm file has data(config map was applied)
-      echo "inotifyoutput-osm.txt has been updated - config changed" > /dev/termination-log
-      exit 1
-    fi
 fi
 
 exit 0
