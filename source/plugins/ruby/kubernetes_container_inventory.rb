@@ -50,7 +50,7 @@ class KubernetesContainerInventory
               if !atLocation.nil?
                 containerInventoryRecord["ImageId"] = imageIdValue[(atLocation + 1)..-1]
               end
-            end            
+            end
             containerInventoryRecord["ExitCode"] = 0
             isContainerTerminated = false
             isContainerWaiting = false
@@ -84,19 +84,19 @@ class KubernetesContainerInventory
             end
 
             containerInfoMap = containersInfoMap[containerName]
-            # image can be in any one of below format in spec 
-            # repository/image[:imagetag | @digest], repository/image:imagetag@digest, repo/image, image:imagetag, image@digest, image                       
+            # image can be in any one of below format in spec
+            # repository/image[:imagetag | @digest], repository/image:imagetag@digest, repo/image, image:imagetag, image@digest, image
             imageValue = containerInfoMap["image"]
             if !imageValue.nil? && !imageValue.empty?
               # Find delimiters in image format
               atLocation = imageValue.index("@")
-              isDigestSpecified = false 
+              isDigestSpecified = false
               if !atLocation.nil?
                 # repository/image@digest or repository/image:imagetag@digest, image@digest
                 imageValue = imageValue[0..(atLocation - 1)]
                 # Use Digest from the spec's image in case when the status doesnt get populated i.e. container in pending or image pull back etc.
                 if containerInventoryRecord["ImageId"].nil? || containerInventoryRecord["ImageId"].empty?
-                   containerInventoryRecord["ImageId"] = imageValue[(atLocation + 1)..-1] 
+                  containerInventoryRecord["ImageId"] = imageValue[(atLocation + 1)..-1]
                 end
                 isDigestSpecified = true
               end
@@ -105,14 +105,14 @@ class KubernetesContainerInventory
               if !colonLocation.nil?
                 if slashLocation.nil?
                   # image:imagetag
-                  containerInventoryRecord["Image"] = imageValue[0..(colonLocation - 1)]                 
+                  containerInventoryRecord["Image"] = imageValue[0..(colonLocation - 1)]
                 else
                   # repository/image:imagetag
                   containerInventoryRecord["Repository"] = imageValue[0..(slashLocation - 1)]
                   containerInventoryRecord["Image"] = imageValue[(slashLocation + 1)..(colonLocation - 1)]
                 end
                 containerInventoryRecord["ImageTag"] = imageValue[(colonLocation + 1)..-1]
-              else 
+              else
                 if slashLocation.nil?
                   # image
                   containerInventoryRecord["Image"] = imageValue
@@ -120,15 +120,15 @@ class KubernetesContainerInventory
                   # repo/image
                   containerInventoryRecord["Repository"] = imageValue[0..(slashLocation - 1)]
                   containerInventoryRecord["Image"] = imageValue[(slashLocation + 1)..-1]
-                end 
+                end
                 # if no tag specified, k8s assumes latest as imagetag and this is same behavior from docker API and from status.
                 # Ref - https://kubernetes.io/docs/concepts/containers/images/#image-names
-                if isDigestSpecified == false 
+                if isDigestSpecified == false
                   containerInventoryRecord["ImageTag"] = "latest"
                 end
-              end           
+              end
             end
-           
+
             podName = containerInfoMap["PodName"]
             namespace = containerInfoMap["Namespace"]
             # containername in the format what docker sees
@@ -199,7 +199,12 @@ class KubernetesContainerInventory
               cmdValue = container["command"]
               cmdValueString = (cmdValue.nil?) ? "" : cmdValue.to_s
               containerInfoMap["Command"] = cmdValueString
-              containerInfoMap["EnvironmentVar"] = obtainContainerEnvironmentVarsFromPodsResponse(podItem, container)
+              if isWindows
+                # For windows container inventory, we dont need to get envvars from pods response since its already taken care in KPI as part of pod optimized item
+                containerInfoMap["EnvironmentVar"] = container["env"]
+              else
+                containerInfoMap["EnvironmentVar"] = obtainContainerEnvironmentVarsFromPodsResponse(podItem, container)
+              end
               containersInfoMap[containerName] = containerInfoMap
             end
           end
@@ -212,47 +217,47 @@ class KubernetesContainerInventory
       return containersInfoMap
     end
 
-    def obtainContainerEnvironmentVars(containerId)    
+    def obtainContainerEnvironmentVars(containerId)
       envValueString = ""
       begin
-        isCGroupPidFetchRequired = false 
+        isCGroupPidFetchRequired = false
         if !@@containerCGroupCache.has_key?(containerId)
-          isCGroupPidFetchRequired = true 
+          isCGroupPidFetchRequired = true
         else
           cGroupPid = @@containerCGroupCache[containerId]
-          if cGroupPid.nil? || cGroupPid.empty?            
+          if cGroupPid.nil? || cGroupPid.empty?
             isCGroupPidFetchRequired = true
             @@containerCGroupCache.delete(containerId)
-          elsif !File.exist?("/hostfs/proc/#{cGroupPid}/environ")              
+          elsif !File.exist?("/hostfs/proc/#{cGroupPid}/environ")
             isCGroupPidFetchRequired = true
-            @@containerCGroupCache.delete(containerId)                       
-          end        
+            @@containerCGroupCache.delete(containerId)
+          end
         end
 
-        if isCGroupPidFetchRequired         
+        if isCGroupPidFetchRequired
           Dir["/hostfs/proc/*/cgroup"].each do |filename|
             begin
               if File.file?(filename) && File.exist?(filename) && File.foreach(filename).grep(/#{containerId}/).any?
                 # file full path is /hostfs/proc/<cGroupPid>/cgroup
-                cGroupPid = filename.split("/")[3]  
-                if is_number?(cGroupPid)                              
+                cGroupPid = filename.split("/")[3]
+                if is_number?(cGroupPid)
                   if @@containerCGroupCache.has_key?(containerId)
-                    tempCGroupPid = @@containerCGroupCache[containerId]                  
+                    tempCGroupPid = @@containerCGroupCache[containerId]
                     if tempCGroupPid.to_i > cGroupPid.to_i
                       @@containerCGroupCache[containerId] = cGroupPid
                     end
                   else
                     @@containerCGroupCache[containerId] = cGroupPid
-                  end                        
+                  end
                 end
               end
-            rescue SystemCallError # ignore Error::ENOENT,Errno::ESRCH which is expected if any of the container gone while we read              
-            end          
-          end        
+            rescue SystemCallError # ignore Error::ENOENT,Errno::ESRCH which is expected if any of the container gone while we read
+            end
+          end
         end
         cGroupPid = @@containerCGroupCache[containerId]
         if !cGroupPid.nil? && !cGroupPid.empty?
-          environFilePath = "/hostfs/proc/#{cGroupPid}/environ"       
+          environFilePath = "/hostfs/proc/#{cGroupPid}/environ"
           if File.exist?(environFilePath)
             # Skip environment variable processing if it contains the flag AZMON_COLLECT_ENV=FALSE
             # Check to see if the environment variable collection is disabled for this container.
@@ -265,7 +270,7 @@ class KubernetesContainerInventory
               if !envVars.nil? && !envVars.empty?
                 envVars = envVars.split("\0")
                 envValueString = envVars.to_json
-                envValueStringLength = envValueString.length              
+                envValueStringLength = envValueString.length
                 if envValueStringLength >= 200000
                   lastIndex = envValueString.rindex("\",")
                   if !lastIndex.nil?

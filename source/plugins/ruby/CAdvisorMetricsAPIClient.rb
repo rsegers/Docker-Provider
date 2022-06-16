@@ -36,6 +36,7 @@ class CAdvisorMetricsAPIClient
   @containerLogsRoute = ENV["AZMON_CONTAINER_LOGS_ROUTE"]
   @npmIntegrationBasic = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_BASIC"]
   @npmIntegrationAdvanced = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_ADVANCED"]
+  @subnetIpUsageMetrics = ENV["TELEMETRY_SUBNET_IP_USAGE_INTEGRATION_METRICS"]
 
   @os_type = ENV["OS_TYPE"]
   if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -234,17 +235,17 @@ class CAdvisorMetricsAPIClient
               metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
               metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
 
-              
+
               metricCollection = {}
               metricCollection["CounterName"] = metricNametoReturn
               metricCollection["Value"] = metricValue
 
               metricItem["json_Collections"] = []
-              metricCollections = []               
-              metricCollections.push(metricCollection)        
+              metricCollections = []
+              metricCollections.push(metricCollection)
               metricItem["json_Collections"] = metricCollections.to_json
-              metricItems.push(metricItem)      
-              
+              metricItems.push(metricItem)
+
               #Telemetry about agent performance
               begin
                 # we can only do this much now. Ideally would like to use the docker image repository to find our pods/containers
@@ -282,15 +283,9 @@ class CAdvisorMetricsAPIClient
                     elsif (!@npmIntegrationBasic.nil? && !@npmIntegrationBasic.empty?)
                       telemetryProps["int-npm-b"] = "1"
                     end
-                    #telemetry for Container log schema version clusterContainerLogSchemaVersion
-                    if (!@clusterContainerLogSchemaVersion.nil? && !@clusterContainerLogSchemaVersion.empty?)
-                      telemetryProps["containerLogVer"] = @clusterContainerLogSchemaVersion
-                    end
-                    #telemetry for npm integration
-                    if (!@npmIntegrationAdvanced.nil? && !@npmIntegrationAdvanced.empty?)
-                      telemetryProps["int-npm-a"] = "1"
-                    elsif (!@npmIntegrationBasic.nil? && !@npmIntegrationBasic.empty?)
-                      telemetryProps["int-npm-b"] = "1"
+                    # telemetry for subnet ip usage integration
+                    if (!@subnetIpUsageMetrics.nil? && !@subnetIpUsageMetrics.empty?)
+                      telemetryProps["int-ipsubnetusage"] = "1"
                     end
                     #telemetry for Container log schema version clusterContainerLogSchemaVersion
                     if (!@clusterContainerLogSchemaVersion.nil? && !@clusterContainerLogSchemaVersion.empty?)
@@ -530,13 +525,13 @@ class CAdvisorMetricsAPIClient
               containerName = container["name"]
               metricValue = container["cpu"][cpuMetricNameToCollect]
               metricTime = metricPollTime #container["cpu"]["time"]
-            
+
               metricItem = {}
               metricItem["Timestamp"] = metricTime
               metricItem["Host"] = hostName
               metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
               metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
-              
+
               metricItem["json_Collections"] = []
               metricCollection = {}
               metricCollection["CounterName"] = metricNametoReturn
@@ -571,9 +566,9 @@ class CAdvisorMetricsAPIClient
               end
 
               metricCollection["Value"] = metricValue
-              
-              metricCollections = []               
-              metricCollections.push(metricCollection)        
+
+              metricCollections = []
+              metricCollections.push(metricCollection)
               metricItem["json_Collections"] = metricCollections.to_json
               metricItems.push(metricItem)
               #Telemetry about agent performance
@@ -660,16 +655,16 @@ class CAdvisorMetricsAPIClient
               metricItem["Host"] = hostName
               metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
               metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
-           
+
               metricCollection = {}
               metricCollection["CounterName"] = metricNametoReturn
               metricCollection["Value"] = metricValue
 
               metricItem["json_Collections"] = []
-              metricCollections = []  
-              metricCollections.push(metricCollection)        
+              metricCollections = []
+              metricCollections.push(metricCollection)
               metricItem["json_Collections"] = metricCollections.to_json
-              metricItems.push(metricItem) 
+              metricItems.push(metricItem)
 
               #Telemetry about agent performance
               begin
@@ -713,21 +708,21 @@ class CAdvisorMetricsAPIClient
         if !node[metricCategory].nil?
           metricValue = node[metricCategory][metricNameToCollect]
           metricTime = metricPollTime #node[metricCategory]["time"]
-                 
+
           metricItem["Timestamp"] = metricTime
           metricItem["Host"] = hostName
           metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
           metricItem["InstanceName"] = clusterId + "/" + nodeName
 
-         
+
           metricCollection = {}
           metricCollection["CounterName"] = metricNametoReturn
           metricCollection["Value"] = metricValue
 
           metricItem["json_Collections"] = []
-          metricCollections = []               
-          metricCollections.push(metricCollection)   
-          metricItem["json_Collections"] = metricCollections.to_json               
+          metricCollections = []
+          metricCollections.push(metricCollection)
+          metricItem["json_Collections"] = metricCollections.to_json
         end
       rescue => error
         @Log.warn("getNodeMetricItem failed: #{error} for metric #{metricNameToCollect}")
@@ -830,19 +825,19 @@ class CAdvisorMetricsAPIClient
               end
             end
           end
-                  
+
           metricItem["Timestamp"] = metricTime
           metricItem["Host"] = hostName
           metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
           metricItem["InstanceName"] = clusterId + "/" + nodeName
-     
+
           metricCollection = {}
           metricCollection["CounterName"] = metricNametoReturn
           metricCollection["Value"] = metricValue
 
           metricItem["json_Collections"] = []
-          metricCollections = []               
-          metricCollections.push(metricCollection)        
+          metricCollections = []
+          metricCollections.push(metricCollection)
           metricItem["json_Collections"] = metricCollections.to_json
         end
       rescue => error
@@ -865,21 +860,21 @@ class CAdvisorMetricsAPIClient
         metricValue = node["startTime"]
         metricTime = metricPollTime #Time.now.utc.iso8601 #2018-01-30T19:36:14Z
 
-       
+
         metricItem["Timestamp"] = metricTime
         metricItem["Host"] = hostName
         metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
         metricItem["InstanceName"] = clusterId + "/" + nodeName
 
-       
+
         metricCollection = {}
         metricCollection["CounterName"] = metricNametoReturn
         #Read it from /proc/uptime
         metricCollection["Value"] = DateTime.parse(metricTime).to_time.to_i - IO.read("/proc/uptime").split[0].to_f
 
         metricItem["json_Collections"] = []
-        metricCollections = []               
-        metricCollections.push(metricCollection)        
+        metricCollections = []
+        metricCollections.push(metricCollection)
         metricItem["json_Collections"] = metricCollections.to_json
       rescue => error
         @Log.warn("getNodeLastRebootTimeMetric failed: #{error} ")
@@ -908,14 +903,14 @@ class CAdvisorMetricsAPIClient
               metricItem["Host"] = hostName
               metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
               metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
-            
+
               metricCollection = {}
               metricCollection["CounterName"] = metricNametoReturn
               metricCollection["Value"] = DateTime.parse(metricValue).to_time.to_i
 
               metricItem["json_Collections"] = []
-              metricCollections = []               
-              metricCollections.push(metricCollection)        
+              metricCollections = []
+              metricCollections.push(metricCollection)
               metricItem["json_Collections"] = metricCollections.to_json
               metricItems.push(metricItem)
             end
