@@ -12,6 +12,7 @@ module Fluent::Plugin
       super
       require "net/http"
       require "net/https"
+      require "securerandom"
       require "uri"
       require "yajl/json_gem"
       require_relative "KubernetesApiClient"
@@ -26,7 +27,8 @@ module Fluent::Plugin
       @@token_resource_audience = "https://monitor.azure.com/"
       @@grant_type = "client_credentials"
       @@azure_json_path = "/etc/kubernetes/host/azure.json"
-      @@post_request_url_template = "https://%{aks_region}.monitoring.azure.com%{aks_resource_id}/metrics"
+      @@public_metrics_endpoint_template = "https://%{aks_region}.monitoring.azure.com"
+      @@post_request_url_template = "%{metrics_endpoint}%{aks_resource_id}/metrics"
       @@aad_token_url_template = "https://login.microsoftonline.com/%{tenant_id}/oauth2/token"
 
       # msiEndpoint is the well known endpoint for getting MSI authentications tokens
@@ -42,7 +44,6 @@ module Fluent::Plugin
 
       @data_hash = {}
       @parsed_token_uri = nil
-      @http_client = nil
       @token_expiry_time = Time.now
       @cached_access_token = String.new
       @last_post_attempt_time = Time.now
@@ -62,6 +63,7 @@ module Fluent::Plugin
       @mdm_exceptions_hash = {}
       @mdm_exceptions_count = 0
       @mdm_exception_telemetry_time_tracker = DateTime.now.to_time.to_i
+      @proxy = nil
     end
 
     def configure(conf)
@@ -98,17 +100,18 @@ module Fluent::Plugin
           if aks_resource_id.downcase.include?("microsoft.kubernetes/connectedclusters")
             @isArcK8sCluster = true
           end
-          @@post_request_url = @@post_request_url_template % { aks_region: aks_region, aks_resource_id: aks_resource_id }
-          @post_request_uri = URI.parse(@@post_request_url)
-          proxy = (ProxyUtils.getProxyConfiguration)
-          if proxy.nil? || proxy.empty?
-            @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
-          else
-            @log.info "Proxy configured on this cluster: #{aks_resource_id}"
-            @http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port, proxy[:addr], proxy[:port], proxy[:user], proxy[:pass])
-          end
 
-          @http_client.use_ssl = true
+          # If CUSTOM_METRICS_ENDPOINT provided, the url format shall be validated before emitting metrics into given endpoint.
+          custom_metrics_endpoint = ENV['CUSTOM_METRICS_ENDPOINT']
+          if !custom_metrics_endpoint.to_s.empty?
+            metrics_endpoint = custom_metrics_endpoint.strip
+            URI.parse(metrics_endpoint)
+          else
+            metrics_endpoint = @@public_metrics_endpoint_template % { aks_region: aks_region }
+          end
+          @@post_request_url = @@post_request_url_template % { metrics_endpoint: metrics_endpoint, aks_resource_id: aks_resource_id }
+          @post_request_uri = URI.parse(@@post_request_url)
+          @proxy = (ProxyUtils.getProxyConfiguration)
           @log.info "POST Request url: #{@@post_request_url}"
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMPluginStart", {})
 
@@ -153,6 +156,10 @@ module Fluent::Plugin
         ApplicationInsightsUtility.sendExceptionTelemetry(e, { "FeatureArea" => "MDM" })
         return
       end
+    end
+
+    def multi_workers_ready?
+      return true
     end
 
     # get the access token only if the time to expiry is less than 5 minutes and get_access_token_backoff has expired
@@ -346,47 +353,56 @@ module Fluent::Plugin
         else
           access_token = get_access_token
         end
+        if @proxy.nil? || @proxy.empty?
+          http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port)
+        else
+          @log.info "Proxy configured on this cluster: #{aks_resource_id}"
+          http_client = Net::HTTP.new(@post_request_uri.host, @post_request_uri.port, @proxy[:addr], @proxy[:port], @proxy[:user], @proxy[:pass])
+        end
+        http_client.use_ssl = true
+        requestId = SecureRandom.uuid.to_s
         request = Net::HTTP::Post.new(@post_request_uri.request_uri)
         request["Content-Type"] = "application/x-ndjson"
         request["Authorization"] = "Bearer #{access_token}"
+        request["x-request-id"] = requestId
 
         request.body = post_body.join("\n")
-        @log.info "REQUEST BODY SIZE #{request.body.bytesize / 1024}"
-        response = @http_client.request(request)
+        @log.info "REQUEST BODY SIZE #{request.body.bytesize / 1024} for requestId: #{requestId}"
+        response = http_client.request(request)
         response.value # this throws for non 200 HTTP response code
-        @log.info "HTTP Post Response Code : #{response.code}"
+        @log.info "HTTP Post Response Code : #{response.code} for requestId: #{requestId}"
         if @last_telemetry_sent_time.nil? || @last_telemetry_sent_time + 60 * 60 < Time.now
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMSendSuccessful", {})
           @last_telemetry_sent_time = Time.now
         end
       rescue Net::HTTPClientException => e # see https://docs.ruby-lang.org/en/2.6.0/NEWS.html about deprecating HTTPServerException and adding HTTPClientException
         if !response.nil? && !response.body.nil? #body will have actual error
-          @log.info "Failed to Post Metrics to MDM : #{e} Response.body: #{response.body}"
+          @log.info "Failed to Post Metrics to MDM for requestId: #{requestId} exception: #{e} Response.body: #{response.body}"
         else
-          @log.info "Failed to Post Metrics to MDM : #{e} Response: #{response}"
+          @log.info "Failed to Post Metrics to MDM for requestId: #{requestId} exception: #{e} Response: #{response}"
         end
         @log.debug_backtrace(e.backtrace)
         if !response.code.empty? && response.code == 403.to_s
-          @log.info "Response Code #{response.code} Updating @last_post_attempt_time"
+          @log.info "Response Code #{response.code} for requestId: #{requestId} Updating @last_post_attempt_time"
           @last_post_attempt_time = Time.now
           @first_post_attempt_made = true
           # Not raising exception, as that will cause retries to happen
         elsif !response.code.empty? && response.code.start_with?("4")
           # Log 400 errors and continue
-          @log.info "Non-retryable HTTPClientException when POSTing Metrics to MDM #{e} Response: #{response}"
+          @log.info "Non-retryable HTTPClientException when POSTing Metrics to MDM for requestId: #{requestId} exception: #{e} Response: #{response}"
         else
           # raise if the response code is non-400
-          @log.info "HTTPServerException when POSTing Metrics to MDM #{e} Response: #{response}"
+          @log.info "HTTPServerException when POSTing Metrics to MDM for requestId: #{requestId} exception: #{e} Response: #{response}"
           raise e
         end
         # Adding exceptions to hash to aggregate and send telemetry for all 400 error codes
         exception_aggregator(e)
       rescue Errno::ETIMEDOUT => e
-        @log.info "Timed out when POSTing Metrics to MDM : #{e} Response: #{response}"
+        @log.info "Timed out when POSTing Metrics to MDM for requestId: #{requestId} exception: #{e} Response: #{response}"
         @log.debug_backtrace(e.backtrace)
         raise e
       rescue Exception => e
-        @log.info "Exception POSTing Metrics to MDM : #{e} Response: #{response}"
+        @log.info "Exception POSTing Metrics to MDM for requestId: #{requestId} exception: #{e} Response: #{response}"
         @log.debug_backtrace(e.backtrace)
         raise e
       end
