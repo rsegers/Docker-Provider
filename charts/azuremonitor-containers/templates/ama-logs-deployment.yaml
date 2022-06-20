@@ -53,6 +53,11 @@ spec:
        resources:
 {{ toYaml .Values.ama-logs.resources.deployment | indent 9 }}
        env:
+       - name: NUM_OF_FLUENTD_WORKERS
+         valueFrom:
+           resourceFieldRef:
+             containerName: omsagent
+             resource: limits.cpu
        {{- if ne .Values.ama-logs.env.clusterId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.ama-logs.env.clusterId | quote }}
@@ -89,6 +94,14 @@ spec:
          value: {{ .Values.ama-logs.sidecarscraping | quote }}
        - name: ISTEST
          value: {{ .Values.ama-logs.ISTEST | quote }}
+       {{ if .Values.ama-logs.isArcACluster }}
+       - name: IS_ARCA_CLUSTER
+         value: {{ .Values.ama-logs.isArcACluster | quote }}
+       {{- end }}
+       {{- if ne .Values.ama-logs.metricsEndpoint "<your_metrics_endpoint>" }}
+       - name: CUSTOM_METRICS_ENDPOINT
+         value: {{ .Values.ama-logs.metricsEndpoint | quote }}
+       {{- end }}
        securityContext:
          privileged: true
        ports:

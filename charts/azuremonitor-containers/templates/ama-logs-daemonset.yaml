@@ -103,6 +103,14 @@ spec:
        {{- end }}
        - name: ISTEST
          value: {{ .Values.ama-logs.ISTEST | quote }}
+       {{ if .Values.ama-logs.isArcACluster }}
+       - name: IS_ARCA_CLUSTER
+         value: {{ .Values.ama-logs.isArcACluster | quote }}
+       {{- end }}
+       {{- if ne .Values.ama-logs.metricsEndpoint "<your_metrics_endpoint>" }}
+       - name: CUSTOM_METRICS_ENDPOINT
+         value: {{ .Values.ama-logs.metricsEndpoint | quote }}
+       {{- end }}
        securityContext:
          privileged: true
        ports:

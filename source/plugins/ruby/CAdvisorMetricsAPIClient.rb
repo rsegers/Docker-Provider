@@ -36,6 +36,7 @@ class CAdvisorMetricsAPIClient
   @containerLogsRoute = ENV["AZMON_CONTAINER_LOGS_ROUTE"]
   @npmIntegrationBasic = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_BASIC"]
   @npmIntegrationAdvanced = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_ADVANCED"]
+  @subnetIpUsageMetrics = ENV["TELEMETRY_SUBNET_IP_USAGE_INTEGRATION_METRICS"]
 
   @os_type = ENV["OS_TYPE"]
   if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -281,6 +282,10 @@ class CAdvisorMetricsAPIClient
                       telemetryProps["int-npm-a"] = "1"
                     elsif (!@npmIntegrationBasic.nil? && !@npmIntegrationBasic.empty?)
                       telemetryProps["int-npm-b"] = "1"
+                    end
+                    # telemetry for subnet ip usage integration
+                    if (!@subnetIpUsageMetrics.nil? && !@subnetIpUsageMetrics.empty?)
+                      telemetryProps["int-ipsubnetusage"] = "1"
                     end
                     #telemetry for Container log schema version clusterContainerLogSchemaVersion
                     if (!@clusterContainerLogSchemaVersion.nil? && !@clusterContainerLogSchemaVersion.empty?)

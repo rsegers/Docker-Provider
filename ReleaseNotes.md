@@ -11,6 +11,21 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 6/14/2022 -
+##### Version microsoft/oms:ciprod06142022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06142022 (linux)
+##### Version microsoft/oms:win-ciprod06142022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06142022 (windows)
+##### Code change log
+- Linux Agent
+  - Prometheus sidecar memory optimization
+  - Fix for issue of Telegraf connecting to FluentD Port 25228 during container startup
+  - Add integration for collecting Subnets IP usage metrics for Azure CNI (turned OFF by default)
+  - Replicaset Agent improvements related to supporting of 5K Node cluster scale
+- Common (Linux & Windows Agent)
+  - Make custom metrics endpoint configurable to support edge environments
+- Misc
+  - Moved Trivy image scan to Azure Pipeline
+
+
 ### 5/19/2022 -
 ##### Version microsoft/oms:ciprod05192022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod05192022 (linux)
 ##### Version microsoft/oms:win-ciprod05192022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod05192022 (windows)
@@ -19,7 +34,7 @@ Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate t
   - PodReadyPercentage metric bug fix
   - add cifs & fuse file systems to ignore list
   - CA Cert Fix for Mariner Hosts in Air Gap
-  - Disk usage metrics will no longer be collected for the paths "/mnt/containers" and "/mnt/docker" 
+  - Disk usage metrics will no longer be collected for the paths "/mnt/containers" and "/mnt/docker"
 - Windows Agent
   - Ruby version upgrade from 2.6.5.1 to 2.7.5.1
   - Added Support for Windows Server 2022
