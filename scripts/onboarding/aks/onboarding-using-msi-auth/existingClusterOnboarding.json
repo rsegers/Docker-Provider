@@ -61,7 +61,7 @@
                 "resources": [
                     {
                         "type": "Microsoft.Insights/dataCollectionRules",
-                        "apiVersion": "2019-11-01-preview",
+                        "apiVersion": "2021-09-01-preview",
                         "name": "[variables('dcrName')]",
                         "location": "[parameters('workspaceLocation')]",
                         "tags": "[parameters('resourceTagValues')]",
