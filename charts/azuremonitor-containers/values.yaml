@@ -19,7 +19,7 @@ Azure:
     httpsProxy: ""
     noProxy: ""
     proxyCert: ""
-ama-logs:
+amalogs:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
     tag: "ciprod06272022-hotfix"
