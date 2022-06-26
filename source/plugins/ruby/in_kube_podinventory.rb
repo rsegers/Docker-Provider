@@ -1168,7 +1168,7 @@ module Fluent::Plugin
       initialRetryDelaySecs = 0.5
       retryAttemptCount = 1
       begin
-        f = File.open(Constants::MDM_POD_INVENTORY_STATE_FILE, "w")
+        f = File.open(Constants::MDM_POD_INVENTORY_STATE_FILE, File::RDWR | File::CREAT , 0644)
         if !f.nil?
           isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
           raise "in_kube_podinventory:writeMDMRecords:Failed to acquire file lock" if !isAcquiredLock
@@ -1184,7 +1184,7 @@ module Fluent::Plugin
         if retryAttemptCount <= maxRetryCount
           f.flock(File::LOCK_UN) if !f.nil?
           f.close if !f.nil?
-          sleep (initialRetryDelaySecs * retryAttemptCount)
+          sleep (initialRetryDelaySecs * (maxRetryCount - retryAttemptCount))
           retryAttemptCount = retryAttemptCount + 1
           retry
         end
