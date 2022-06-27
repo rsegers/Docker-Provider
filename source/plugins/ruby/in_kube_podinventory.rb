@@ -1168,11 +1168,12 @@ module Fluent::Plugin
       initialRetryDelaySecs = 0.5
       retryAttemptCount = 1
       begin
-        f = File.open(Constants::MDM_POD_INVENTORY_STATE_FILE, File::RDWR | File::CREAT , 0644)
+        f = File.open(Constants::MDM_POD_INVENTORY_STATE_FILE, File::RDWR | File::CREAT, 0644)
         if !f.nil?
           isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
           raise "in_kube_podinventory:writeMDMRecords:Failed to acquire file lock" if !isAcquiredLock
           startTime = (Time.now.to_f * 1000).to_i
+          File.truncate(Constants::MDM_POD_INVENTORY_STATE_FILE, 0)
           f.write(mdmRecordsJson)
           f.flush
           timetakenMs = ((Time.now.to_f * 1000).to_i - startTime)

@@ -756,11 +756,12 @@ module Fluent::Plugin
       initialRetryDelaySecs = 0.5
       retryAttemptCount = 1
       begin
-        f = File.open(Constants::NODE_ALLOCATABLE_RECORDS_STATE_FILE, File::RDWR | File::CREAT , 0644)        
+        f = File.open(Constants::NODE_ALLOCATABLE_RECORDS_STATE_FILE, File::RDWR | File::CREAT, 0644)
         if !f.nil?
           isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
           raise "in_kube_nodes::writeNodeAllocatableRecords:Failed to acquire file lock" if !isAcquiredLock
           startTime = (Time.now.to_f * 1000).to_i
+          File.truncate(Constants::NODE_ALLOCATABLE_RECORDS_STATE_FILE, 0)
           f.write(nodeAllocatbleRecordsJson)
           f.flush
           timetakenMs = ((Time.now.to_f * 1000).to_i - startTime)
@@ -771,7 +772,7 @@ module Fluent::Plugin
       rescue => err
         if retryAttemptCount < maxRetryCount
           f.flock(File::LOCK_UN) if !f.nil?
-          f.close if !f.nil?          
+          f.close if !f.nil?
           sleep (initialRetryDelaySecs * (maxRetryCount - retryAttemptCount))
           retryAttemptCount = retryAttemptCount + 1
           retry
