@@ -28,7 +28,7 @@
         Fully qualified ResourceId of the Log Analytics workspace. This should be the same as the one configured on the ama-logs of specified AKS-engine or (ACS-engine Kubernetes) cluster
 
 	 .PARAMETER ClusterName
-        Name of the cluster configured. This should be the same as the one configured on the ama-logs (for ama-logs.env.clusterName) of specified ACS-engine Kubernetes cluster
+        Name of the cluster configured. This should be the same as the one configured on the ama-logs (for amalogs.env.clusterName) of specified ACS-engine Kubernetes cluster
 #>
 
 param(

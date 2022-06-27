@@ -555,10 +555,10 @@ try {
 
     Write-Host("helmChartRepoPath is : ${helmChartRepoPath}")
 
-    $helmParameters = "ama-logs.domain=$amaLogsDomainName,ama-logs.secret.wsid=$workspaceGUID,ama-logs.secret.key=$workspacePrimarySharedKey,ama-logs.env.clusterId=$clusterResourceId,ama-logs.env.clusterRegion=$clusterRegion"
+    $helmParameters = "amalogs.domain=$amaLogsDomainName,amalogs.secret.wsid=$workspaceGUID,amalogs.secret.key=$workspacePrimarySharedKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion"
     if ([string]::IsNullOrEmpty($proxyEndpoint) -eq $false) {
         Write-Host("using proxy endpoint since its provided")
-        $helmParameters = $helmParameters + ",ama-logs.proxy=$proxyEndpoint"
+        $helmParameters = $helmParameters + ",amalogs.proxy=$proxyEndpoint"
     }
     if ([string]::IsNullOrEmpty($kubeContext)) {
         helm upgrade --install $helmChartReleaseName --set $helmParameters $helmChartRepoPath

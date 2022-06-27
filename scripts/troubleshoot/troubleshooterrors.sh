@@ -189,7 +189,7 @@ validate_ci_extension() {
      log_message ${contactUSMessage}
      exit 1
   fi
-  logAnalyticsWorkspaceDomain=$(az k8s-extension show -c ${4} -g ${3} -t $clusterType -n $extensionInstanceName --query 'configurationSettings."ama-logs.domain"')
+  logAnalyticsWorkspaceDomain=$(az k8s-extension show -c ${4} -g ${3} -t $clusterType -n $extensionInstanceName --query 'configurationSettings."amalogs.domain"')
   log_message "Extension logAnalyticsWorkspaceDomain: ${logAnalyticsWorkspaceDomain}"
   if [ -z "$logAnalyticsWorkspaceDomain" ]; then
      log_message "-e error logAnalyticsWorkspaceDomain either null or empty in the config settings"

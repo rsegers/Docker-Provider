@@ -109,7 +109,7 @@ helm repo update
 echo "uninstalling existing release if any for azmon-containers-ci-mdm-alert-msi-release"
 helm uninstall azmon-containers-ci-mdm-alert-msi-release
 
-helm upgrade --install azmon-containers-ci-mdm-alert-msi-release --set ama-logs.secret.wsid=$workspaceGuid,ama-logs.secret.key=$workspaceKey,ama-logs.env.clusterId=$clusterResourceId,ama-logs.env.clusterRegion=$clusterRegion,ama-logs.env.msiClientId=$msiClientId azmon-preview-mdm-alert-msi/azuremonitor-containers --kube-context $clusterName
+helm upgrade --install azmon-containers-ci-mdm-alert-msi-release --set amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion,amalogs.env.msiClientId=$msiClientId azmon-preview-mdm-alert-msi/azuremonitor-containers --kube-context $clusterName
 echo "chart installation completed."
 
 echo "setting the subscription id of the cluster: ${clusterSubscriptionId}"
