@@ -199,12 +199,12 @@
                 "extensionType": "Microsoft.AzureMonitor.Containers",
                 "configurationSettings": {
                   "logAnalyticsWorkspaceResourceID": "[parameters('workspaceResourceId')]",
-                  "ama-logs.domain": "[parameters('workspaceDomain')]",
-                  "ama-logs.useAADAuth": "true"
+                  "amalogs.domain": "[parameters('workspaceDomain')]",
+                  "amalogs.useAADAuth": "true"
                 },
                 "configurationProtectedSettings": {
-                  "ama-logs.secret.wsid": "[reference(parameters('workspaceResourceId'), '2015-03-20').customerId]",
-                  "ama-logs.secret.key": "[listKeys(parameters('workspaceResourceId'), '2015-03-20').primarySharedKey]"
+                  "amalogs.secret.wsid": "[reference(parameters('workspaceResourceId'), '2015-03-20').customerId]",
+                  "amalogs.secret.key": "[listKeys(parameters('workspaceResourceId'), '2015-03-20').primarySharedKey]"
                 },
                 "autoUpgradeMinorVersion": true,
                 "releaseTrain": "Stable",
