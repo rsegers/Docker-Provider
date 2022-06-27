@@ -11,6 +11,13 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 06/27/2022 -
+##### Version microsoft/oms:ciprod06272022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022 (linux)
+##### Code change log
+- Fixes for following bugs in ciprod06142022 which are caught in AKS Canary region deployment
+  - Fix the exceptions related to file write & read access of the MDM inventory state file
+  - Fix for missing Node GPU allocatable & capacity metrics for the clusters which are whitelisted for AKS LargeCluster Private Preview feature
+
 ### 6/14/2022 -
 ##### Version microsoft/oms:ciprod06142022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06142022 (linux)
 ##### Version microsoft/oms:win-ciprod06142022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06142022 (windows)
