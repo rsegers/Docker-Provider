@@ -317,7 +317,7 @@ validate_and_configure_supported_cloud() {
       exit 1
     fi
     if [ "$azureCloudName" = "azureusgovernment" ]; then
-      echo "setting ama-logs domain as opinsights.azure.us since the azure cloud is azureusgovernment "
+      echo "setting amalogs domain as opinsights.azure.us since the azure cloud is azureusgovernment "
       amaLogsDomainName="opinsights.azure.us"
     fi
   else
@@ -525,18 +525,18 @@ install_helm_chart() {
     echo "using proxy endpoint since proxy configuration passed in"
     if [ -z "$kubeconfigContext" ]; then
       echo "using current kube-context since --kube-context/-k parameter not passed in"
-      helm upgrade --install $releaseName --set ama-logs.domain=$amaLogsDomainName,ama-logs.proxy=$proxyEndpoint,ama-logs.secret.wsid=$workspaceGuid,ama-logs.secret.key=$workspaceKey,ama-logs.env.clusterId=$clusterResourceId,ama-logs.env.clusterRegion=$clusterRegion $helmChartRepoPath
+      helm upgrade --install $releaseName --set amalogs.domain=$amaLogsDomainName,amalogs.proxy=$proxyEndpoint,amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion $helmChartRepoPath
     else
       echo "using --kube-context:${kubeconfigContext} since passed in"
-      helm upgrade --install $releaseName --set ama-logs.domain=$amaLogsDomainName,ama-logs.proxy=$proxyEndpoint,ama-logs.secret.wsid=$workspaceGuid,ama-logs.secret.key=$workspaceKey,ama-logs.env.clusterId=$clusterResourceId,ama-logs.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
+      helm upgrade --install $releaseName --set amalogs.domain=$amaLogsDomainName,amalogs.proxy=$proxyEndpoint,amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
     fi
   else
     if [ -z "$kubeconfigContext" ]; then
       echo "using current kube-context since --kube-context/-k parameter not passed in"
-      helm upgrade --install $releaseName --set ama-logs.domain=$amaLogsDomainName,ama-logs.secret.wsid=$workspaceGuid,ama-logs.secret.key=$workspaceKey,ama-logs.env.clusterId=$clusterResourceId,ama-logs.env.clusterRegion=$clusterRegion $helmChartRepoPath
+      helm upgrade --install $releaseName --set amalogs.domain=$amaLogsDomainName,amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion $helmChartRepoPath
     else
       echo "using --kube-context:${kubeconfigContext} since passed in"
-      helm upgrade --install $releaseName --set ama-logs.domain=$amaLogsDomainName,ama-logs.secret.wsid=$workspaceGuid,ama-logs.secret.key=$workspaceKey,ama-logs.env.clusterId=$clusterResourceId,ama-logs.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
+      helm upgrade --install $releaseName --set amalogs.domain=$amaLogsDomainName,amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
     fi
   fi
 

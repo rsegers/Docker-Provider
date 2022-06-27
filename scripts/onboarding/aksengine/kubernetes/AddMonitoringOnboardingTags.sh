@@ -11,7 +11,7 @@
 #  [Required]  ${2} subscriptionId                    subscriptionId  of the AKS-Engine or ACS-Engine cluster
 #  [Required]  ${3} resourceGroupName                 azure resource group AKS-Engine or ACS-Engine cluster is in
 #  [Required]  ${4} logAnalyticsWorkspaceResourceId   azure resource of the Log Analytics. This should be the same as the one configured on the ama-logs of specified acs-engine Kubernetes cluster during agent installation
-#  [Required]  ${5} clusterName                       Name of the cluster configured on the ama-logs (for ama-logs.env.clusterName) of specified acs-engine Kubernetes cluster
+#  [Required]  ${5} clusterName                       Name of the cluster configured on the ama-logs (for amalogs.env.clusterName) of specified acs-engine Kubernetes cluster
 #
 #  For example
 # https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_prod/scripts/onboarding/aksengine/kubernetes/AddMonitoringOnboardingTags.sh | bash -s "name of the cloud" "00000000-0000-0000-0000-000000000000"  "Resource Group Name of AKS-Engine cluster"  "/subscriptions/<SubscriptionId>/resourceGroups/<resourceGroup>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName>" "clusterName of AKS-Engine cluster"

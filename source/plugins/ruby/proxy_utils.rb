@@ -5,19 +5,19 @@
 class ProxyUtils
   class << self
     def getProxyConfiguration()
-      omsproxy_secret_path = "/etc/ama-logs-secret/PROXY"
-      if !File.exist?(omsproxy_secret_path)
+      amalogsproxy_secret_path = "/etc/ama-logs-secret/PROXY"
+      if !File.exist?(amalogsproxy_secret_path)
         return {}
       end
 
       begin
-        proxy_config = parseProxyConfiguration(File.read(omsproxy_secret_path))
+        proxy_config = parseProxyConfiguration(File.read(amalogsproxy_secret_path))
       rescue SystemCallError # Error::ENOENT
         return {}
       end
 
       if proxy_config.nil?
-        $log.warn("Failed to parse the proxy configuration in '#{omsproxy_secret_path}'")
+        $log.warn("Failed to parse the proxy configuration in '#{amalogsproxy_secret_path}'")
         return {}
       end
 

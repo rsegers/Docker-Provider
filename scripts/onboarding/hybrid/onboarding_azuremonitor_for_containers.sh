@@ -165,7 +165,7 @@ helm repo add azmon-preview https://ganga1980.github.io/azuremonitor-containers-
 echo "updating helm repo to get latest charts"
 helm repo update
 
-helm upgrade --install azmon-containers-release-1 --set ama-logs.secret.wsid=$workspaceGuid,ama-logs.secret.key=$workspaceKey,ama-logs.env.clusterName=${3} azmon-preview/azuremonitor-containers --kube-context ${4}
+helm upgrade --install azmon-containers-release-1 --set amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterName=${3} azmon-preview/azuremonitor-containers --kube-context ${4}
 echo "chart installation completed."
 
 echo "Proceed to https://aka.ms/azmon-containers-hybrid to view health of your newly onboarded OpenshiftV4 cluster"

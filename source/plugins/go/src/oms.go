@@ -1599,7 +1599,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		}
 		// read proxyendpoint if proxy configured
 		ProxyEndpoint = ""
-		proxySecretPath := pluginConfig["omsproxy_secret_path"]
+		proxySecretPath := pluginConfig["amalogsproxy_secret_path"]
 		if _, err := os.Stat(proxySecretPath); err == nil {
 			Log("Reading proxy configuration for Linux from %s", proxySecretPath)
 			proxyConfig, err := ioutil.ReadFile(proxySecretPath)
