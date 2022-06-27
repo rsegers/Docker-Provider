@@ -185,17 +185,17 @@ module Fluent::Plugin
         f = File.open(Constants::MDM_POD_INVENTORY_STATE_FILE, "r")
         if !f.nil?
           isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
-          raise "in_kube_podmdminventory:getMDMRecords:Failed to acquire file lock" if !isAcquiredLock
+          raise "in_kube_podmdminventory:getMDMRecords:Failed to acquire file lock @ #{Time.now.utc.iso8601}" if !isAcquiredLock
           startTime = (Time.now.to_f * 1000).to_i
           mdmRecords = Yajl::Parser.parse(f)
           timetakenMs = ((Time.now.to_f * 1000).to_i - startTime)
           if mdmRecords.nil? || mdmRecords.empty? || mdmRecords["items"].nil? || mdmRecords["collectionTime"] == @prevCollectionTime
-            raise "in_kube_podmdminventory:getMDMRecords: either read mdmRecords is nil or empty or stale"
+            raise "in_kube_podmdminventory:getMDMRecords: either read mdmRecords is nil or empty or stale @ #{Time.now.utc.iso8601}"
           end
           @prevCollectionTime = mdmRecords["collectionTime"]
-          $log.info "in_kube_podmdminventory:getMDMRecords:Number of MDM records: #{mdmRecords["items"].length} with time taken(ms) for read: #{timetakenMs} @  #{Time.now.utc.iso8601}"
+          $log.info "in_kube_podmdminventory:getMDMRecords:Number of MDM records: #{mdmRecords["items"].length} with time taken(ms) for read: #{timetakenMs} @ #{Time.now.utc.iso8601}"
         else
-          raise "in_kube_podmdminventory:getMDMRecords:Failed to open file for read"
+          raise "in_kube_podmdminventory:getMDMRecords:Failed to open file for read @ #{Time.now.utc.iso8601}"
         end
       rescue => err
         if retryAttemptCount <= maxRetryCount
