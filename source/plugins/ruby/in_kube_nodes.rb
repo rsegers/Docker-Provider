@@ -759,15 +759,15 @@ module Fluent::Plugin
         f = File.open(Constants::NODE_ALLOCATABLE_RECORDS_STATE_FILE, File::RDWR | File::CREAT, 0644)
         if !f.nil?
           isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
-          raise "in_kube_nodes::writeNodeAllocatableRecords:Failed to acquire file lock" if !isAcquiredLock
+          raise "in_kube_nodes::writeNodeAllocatableRecords:Failed to acquire file lock @ #{Time.now.utc.iso8601}" if !isAcquiredLock
           startTime = (Time.now.to_f * 1000).to_i
           File.truncate(Constants::NODE_ALLOCATABLE_RECORDS_STATE_FILE, 0)
           f.write(nodeAllocatbleRecordsJson)
           f.flush
           timetakenMs = ((Time.now.to_f * 1000).to_i - startTime)
-          $log.info "in_kube_nodes::writeNodeAllocatableRecords:Successfull and with time taken(ms): #{timetakenMs}"
+          $log.info "in_kube_nodes::writeNodeAllocatableRecords:Successfull and with time taken(ms): #{timetakenMs} @ #{Time.now.utc.iso8601}"
         else
-          raise "in_kube_nodes::writeNodeAllocatableRecords:Failed to open file for write"
+          raise "in_kube_nodes::writeNodeAllocatableRecords:Failed to open file for write @ #{Time.now.utc.iso8601}"
         end
       rescue => err
         if retryAttemptCount < maxRetryCount
