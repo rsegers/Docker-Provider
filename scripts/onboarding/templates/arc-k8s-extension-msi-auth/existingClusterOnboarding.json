@@ -75,7 +75,7 @@
           "resources": [
             {
               "type": "Microsoft.Insights/dataCollectionRules",
-              "apiVersion": "2021-09-01-preview",
+              "apiVersion": "2021-04-01",
               "name": "[variables('dcrName')]",
               "location": "[parameters('workspaceRegion')]",
               "tags": "[parameters('resourceTagValues')]",
@@ -137,7 +137,7 @@
             {
               "type": "Microsoft.Kubernetes/connectedClusters/providers/dataCollectionRuleAssociations",
               "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('associationName'))]",
-              "apiVersion": "2019-11-01-preview",
+              "apiVersion": "2021-04-01",
               "properties": {
                 "description": "Association of data collection rule. Deleting this association will break the data collection for this AKS Cluster.",
                 "dataCollectionRuleId": "[variables('dataCollectionRuleId')]"
