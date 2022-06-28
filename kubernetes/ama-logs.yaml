@@ -852,7 +852,7 @@ spec:
   apiVersion: apps/v1
   kind: DaemonSet
   metadata:
-   name: ama-logs-win
+   name: ama-logs-windows
    namespace: kube-system
    labels:
     component: ama-logs-agent-win
@@ -880,7 +880,7 @@ spec:
           - name: ndots
             value: "3"
      containers:
-       - name: ama-logs-win
+       - name: ama-logs-windows
          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06142022"
          imagePullPolicy: IfNotPresent
          resources:
