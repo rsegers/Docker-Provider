@@ -1,4 +1,4 @@
-FROM ama-logs-win-base
+FROM ama-logs-windows-base
 MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"

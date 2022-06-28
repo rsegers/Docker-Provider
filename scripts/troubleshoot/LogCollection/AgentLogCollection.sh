@@ -108,27 +108,27 @@ win_logCollection()
 {
     echo -e "Collecting logs from ${ds_win_pod}, windows pod will take several minutes for log collection, please dont exit forcely..." | tee -a Tool.log
     kubectl describe pod ${ds_win_pod} --namespace=kube-system > describe_${ds_win_pod}.txt
-    kubectl logs ${ds_win_pod} --container ama-logs-win --namespace=kube-system > logs_${ds_win_pod}.txt
+    kubectl logs ${ds_win_pod} --container ama-logs-windows --namespace=kube-system > logs_${ds_win_pod}.txt
     kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell Get-Process > process_${ds_win_pod}.txt
 
     cmd=`kubectl exec ${ds_win_pod} -n kube-system -- powershell ls /etc 2>&1`
     if [[ $cmd == *"cannot access"* ]];then
         echo -e "${Red}/etc/ not exist on ${ds_pod}${NC}" | tee -a Tool.log
     else
-        kubectl cp ${ds_win_pod}:/etc/fluent-bit ama-logs-win-daemonset-fbit --namespace=kube-system > /dev/null
-        kubectl cp ${ds_win_pod}:/etc/telegraf/telegraf.conf ama-logs-win-daemonset-fbit/telegraf.conf --namespace=kube-system > /dev/null
+        kubectl cp ${ds_win_pod}:/etc/fluent-bit ama-logs-windows-daemonset-fbit --namespace=kube-system > /dev/null
+        kubectl cp ${ds_win_pod}:/etc/telegraf/telegraf.conf ama-logs-windows-daemonset-fbit/telegraf.conf --namespace=kube-system > /dev/null
 
         echo -e "${Cyan}If your log size are too large, log collection of windows node may fail. You can reduce log size by re-creating windows pod ${NC}"
         # for some reason copying logs out of /etc/amalogswindows doesn't work (gives a permission error), but exec then cat does work.
-        # kubectl cp ${ds_win_pod}:/etc/amalogswindows ama-logs-win-daemonset --namespace=kube-system
-        mkdir -p ama-logs-win-daemonset
-        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/kubernetes_perf_log.txt > ama-logs-win-daemonset/kubernetes_perf_log.txt
-        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/appinsights_error.log > ama-logs-win-daemonset/appinsights_error.log
-        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/filter_cadvisor2mdm.log > ama-logs-win-daemonset/filter_cadvisor2mdm.log
-        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/fluent-bit-out-oms-runtime.log > ama-logs-win-daemonset/fluent-bit-out-oms-runtime.log
-        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/kubernetes_client_log.txt > ama-logs-win-daemonset/kubernetes_client_log.txt
-        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/mdm_metrics_generator.log > ama-logs-win-daemonset/mdm_metrics_generator.log
-        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/out_oms.conf > ama-logs-win-daemonset/out_oms.conf
+        # kubectl cp ${ds_win_pod}:/etc/amalogswindows ama-logs-windows-daemonset --namespace=kube-system
+        mkdir -p ama-logs-windows-daemonset
+        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/kubernetes_perf_log.txt > ama-logs-windows-daemonset/kubernetes_perf_log.txt
+        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/appinsights_error.log > ama-logs-windows-daemonset/appinsights_error.log
+        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/filter_cadvisor2mdm.log > ama-logs-windows-daemonset/filter_cadvisor2mdm.log
+        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/fluent-bit-out-oms-runtime.log > ama-logs-windows-daemonset/fluent-bit-out-oms-runtime.log
+        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/kubernetes_client_log.txt > ama-logs-windows-daemonset/kubernetes_client_log.txt
+        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/mdm_metrics_generator.log > ama-logs-windows-daemonset/mdm_metrics_generator.log
+        kubectl exec ${ds_win_pod} -n kube-system --request-timeout=10m -- powershell cat /etc/amalogswindows/out_oms.conf > ama-logs-windows-daemonset/out_oms.conf
     fi
 
     echo -e "Complete log collection from ${ds_win_pod}!" | tee -a Tool.log
@@ -201,7 +201,7 @@ else
     ds_logCollection
 fi
 
-export ds_win_pod=$(kubectl get pods -n kube-system -o custom-columns=NAME:.metadata.name | grep -E ama-logs-win-[a-z0-9]{5} | head -n 1)
+export ds_win_pod=$(kubectl get pods -n kube-system -o custom-columns=NAME:.metadata.name | grep -E ama-logs-windows-[a-z0-9]{5} | head -n 1)
 if [ -z "$ds_win_pod" ];then
 	echo -e "${Cyan} windows agent pod do not exist, skipping log collection for windows agent pod ${NC}" | tee -a Tool.log
 else

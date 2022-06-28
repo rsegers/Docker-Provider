@@ -9,7 +9,7 @@ mkdir azure-monitor-logs-tmp
 cd azure-monitor-logs-tmp
 
 export ds_pod=$(kubectl get pods -n kube-system -o custom-columns=NAME:.metadata.name | grep -E ama-logs-[a-z0-9]{5} | head -n 1)
-export ds_win_pod=$(kubectl get pods -n kube-system -o custom-columns=NAME:.metadata.name | grep -E ama-logs-win-[a-z0-9]{5} | head -n 1)
+export ds_win_pod=$(kubectl get pods -n kube-system -o custom-columns=NAME:.metadata.name | grep -E ama-logs-windows-[a-z0-9]{5} | head -n 1)
 export rs_pod=$(kubectl get pods -n kube-system -o custom-columns=NAME:.metadata.name | grep -E ama-logs-rs-[a-z0-9]{5} | head -n 1)
 
 echo -e "Collecting logs from ${ds_pod}, ${ds_win_pod}, and ${rs_pod}"
@@ -23,7 +23,7 @@ kubectl logs ${ds_pod} --container ama-logs --namespace=kube-system > logs_${ds_
 kubectl logs ${ds_pod} --container ama-logs-prometheus --namespace=kube-system > logs_${ds_pod}_prom.txt
 
 kubectl describe pod ${ds_win_pod} --namespace=kube-system > describe_${ds_win_pod}.txt
-kubectl logs ${ds_win_pod} --container ama-logs-win --namespace=kube-system > logs_${ds_win_pod}.txt
+kubectl logs ${ds_win_pod} --container ama-logs-windows --namespace=kube-system > logs_${ds_win_pod}.txt
 
 kubectl describe pod ${rs_pod} --namespace=kube-system > describe_${rs_pod}.txt
 kubectl logs ${rs_pod} --container ama-logs --namespace=kube-system > logs_${rs_pod}.txt
@@ -40,8 +40,8 @@ kubectl cp ${ds_pod}:/var/opt/microsoft/linuxmonagent/log ama-logs-prom-daemonse
 
 # for some reason copying logs out of /etc/amalogswindows doesn't work (gives a permission error), but exec then cat does work.
 # skip collecting these logs for now, would be good to come back and fix this next time a windows support case comes up
-# kubectl cp ${ds_win_pod}:/etc/amalogswindows ama-logs-win-daemonset --namespace=kube-system
-kubectl cp ${ds_win_pod}:/etc/fluent-bit ama-logs-win-daemonset-fbit --namespace=kube-system
+# kubectl cp ${ds_win_pod}:/etc/amalogswindows ama-logs-windows-daemonset --namespace=kube-system
+kubectl cp ${ds_win_pod}:/etc/fluent-bit ama-logs-windows-daemonset-fbit --namespace=kube-system
 
 kubectl cp ${rs_pod}:/var/opt/microsoft/docker-cimprov/log ama-logs-replicaset --namespace=kube-system
 kubectl cp ${rs_pod}:/var/opt/microsoft/linuxmonagent/log ama-logs-replicaset-mdsd --namespace=kube-system
