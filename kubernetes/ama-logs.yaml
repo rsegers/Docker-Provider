@@ -30,7 +30,7 @@ rules:
   # Uncomment below lines for MSI Auth Mode  testing
   # - apiGroups: [""]
   #   resources: ["secrets"]
-  #   resourceNames: [ "ama-logs-aad-msi-token" ]
+  #   resourceNames: [ "aad-msi-auth-token" ]
   #   verbs: ["get", "watch"]
   - nonResourceURLs: ["/metrics"]
     verbs: ["get"]
@@ -306,7 +306,7 @@ data:
 # apiVersion: v1
 # kind: Secret
 # metadata:
-#   name: ama-logs-aad-msi-token
+#   name: aad-msi-auth-token
 #   namespace: kube-system
 # type: Opaque
 # data:
@@ -349,7 +349,7 @@ spec:
         #     - /addon-token-adapter
         #   args:
         #     - --secret-namespace=kube-system
-        #     - --secret-name=ama-logs-aad-msi-token
+        #     - --secret-name=aad-msi-auth-token
         #     - --token-server-listening-port=8888
         #     - --health-server-listening-port=9999
         #   # Make sure this matching with version in AKS RP side
@@ -623,7 +623,7 @@ spec:
         #     - /addon-token-adapter
         #   args:
         #     - --secret-namespace=kube-system
-        #     - --secret-name=ama-logs-aad-msi-token
+        #     - --secret-name=aad-msi-auth-token
         #     - --token-server-listening-port=8888
         #     - --health-server-listening-port=9999
         #   # Make sure this matching with version in AKS RP side
@@ -962,5 +962,5 @@ spec:
       # Uncomment below lines for MSI Auth Mode  testing
       # - name: imds-token
       #   secret:
-      #     secretName: ama-logs-aad-msi-token
+      #     secretName: aad-msi-auth-token
 
