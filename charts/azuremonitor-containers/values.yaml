@@ -22,10 +22,10 @@ Azure:
 amalogs:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod06142022"
+    tag: "ciprod06272022"
     tagWindows: "win-ciprod06142022"
     pullPolicy: IfNotPresent
-    dockerProviderVersion: "18.0.0-0"
+    dockerProviderVersion: "18.0.1-0"
     agentVersion: "azure-mdsd-1.17.0"
     winAgentVersion: "0.0.0-0" # there is no base agent version for windows agent
 
