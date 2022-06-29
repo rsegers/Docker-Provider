@@ -75,7 +75,7 @@
           "resources": [
             {
               "type": "Microsoft.Insights/dataCollectionRules",
-              "apiVersion": "2019-11-01-preview",
+              "apiVersion": "2021-04-01",
               "name": "[variables('dcrName')]",
               "location": "[parameters('workspaceRegion')]",
               "tags": "[parameters('resourceTagValues')]",
@@ -86,18 +86,7 @@
                     {
                       "name": "ContainerInsightsExtension",
                       "streams": [
-                        "Microsoft-Perf",
-                        "Microsoft-ContainerInventory",
-                        "Microsoft-ContainerLog",
-                        "Microsoft-ContainerLogV2",
-                        "Microsoft-ContainerNodeInventory",
-                        "Microsoft-KubeEvents",
-                        "Microsoft-KubeMonAgentEvents",
-                        "Microsoft-KubeNodeInventory",
-                        "Microsoft-KubePodInventory",
-                        "Microsoft-KubePVInventory",
-                        "Microsoft-KubeServices",
-                        "Microsoft-InsightsMetrics"
+                        "Microsoft-ContainerInsights-Group-Default"
                       ],
                       "extensionName": "ContainerInsights"
                     }
@@ -114,18 +103,7 @@
                 "dataFlows": [
                   {
                     "streams": [
-                      "Microsoft-Perf",
-                      "Microsoft-ContainerInventory",
-                      "Microsoft-ContainerLog",
-                      "Microsoft-ContainerLogV2",
-                      "Microsoft-ContainerNodeInventory",
-                      "Microsoft-KubeEvents",
-                      "Microsoft-KubeMonAgentEvents",
-                      "Microsoft-KubeNodeInventory",
-                      "Microsoft-KubePodInventory",
-                      "Microsoft-KubePVInventory",
-                      "Microsoft-KubeServices",
-                      "Microsoft-InsightsMetrics"
+                      "Microsoft-ContainerInsights-Group-Default"
                     ],
                     "destinations": [
                       "ciworkspace"
@@ -159,7 +137,7 @@
             {
               "type": "Microsoft.Kubernetes/connectedClusters/providers/dataCollectionRuleAssociations",
               "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('associationName'))]",
-              "apiVersion": "2019-11-01-preview",
+              "apiVersion": "2021-04-01",
               "properties": {
                 "description": "Association of data collection rule. Deleting this association will break the data collection for this AKS Cluster.",
                 "dataCollectionRuleId": "[variables('dataCollectionRuleId')]"
