@@ -805,19 +805,19 @@ spec:
    name: ama-logs-windows
    namespace: kube-system
    labels:
-    component: ama-logs-agent-win
+    component: ama-logs-agent-windows
     tier: node-win
   spec:
    updateStrategy:
     type: RollingUpdate
    selector:
     matchLabels:
-      component: ama-logs-agent-win
+      component: ama-logs-agent-windows
       tier: node-win
    template:
     metadata:
       labels:
-        component: ama-logs-agent-win
+        component: ama-logs-agent-windows
         tier: node-win
       annotations:
         agentVersion: "0.0.0-0"
