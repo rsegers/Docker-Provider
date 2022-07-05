@@ -624,7 +624,7 @@ spec:
            limits:
             cpu: 100m
             memory: 300Mi
-          requests:
+           requests:
             cpu: 5m
             memory: 30Mi
           env:
