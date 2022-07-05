@@ -27,6 +27,11 @@ rules:
   - apiGroups: ["apps", "extensions", "autoscaling"]
     resources: ["replicasets", "deployments", "horizontalpodautoscalers"]
     verbs: ["list"]
+  # Comment below lines if VPA not enabled
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames: [ "omsagent-rs" ]
+    verbs: ["get", "patch"]
   # Uncomment below lines for MSI Auth Mode  testing
   # - apiGroups: [""]
   #   resources: ["secrets"]
