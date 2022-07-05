@@ -649,7 +649,7 @@ spec:
             - --config-dir=/etc/config
             - --cpu=200m
             - --extra-cpu=2m
-            - --memory=250Mi
+            - --memory=300Mi
             - --extra-memory=4Mi
             - --poll-period=180000
             - --threshold=5
