@@ -622,7 +622,7 @@ spec:
     spec:
       serviceAccountName: omsagent
       containers:
-        - image: "mcr.microsoft.com/oss/kubernetes/autoscaler/addon-resizer:1.8.14"
+        - image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:addon-resizer-1.8.15"
           imagePullPolicy: IfNotPresent
           name: omsagent-rs-vpa
           resources:
@@ -655,6 +655,7 @@ spec:
             - --threshold=5
             - --deployment=omsagent-rs
             - --container=omsagent
+            - --ignore-resource-requests=true
         # Uncomment below lines for MSI Auth Mode  testing
         # - name: addon-token-adapter
         #   command:
