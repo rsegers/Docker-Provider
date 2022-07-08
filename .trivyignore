@@ -17,3 +17,8 @@ CVE-2021-28965
 
 #dpkg vulnerability in ubuntu
 CVE-2022-1304
+
+# telegraf vulnerabilities
+CVE-2022-29190
+CVE-2022-29222
+CVE-2022-29189
