@@ -334,7 +334,7 @@ spec:
         tier: node
       annotations:
         agentVersion: "azure-mdsd-1.17.0"
-        dockerProviderVersion: "16.0.0-0"
+        dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
     spec:
       serviceAccountName: omsagent
@@ -379,7 +379,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03172022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -403,6 +403,8 @@ spec:
             # this used for e2e test and setting this just emits some additional log statements which used for the e2e tests
             - name: ISTEST
               value: "true"
+            - name: EMIT_CACHE_TELEMETRY
+              value: "false"
             #Uncomment below two lines for ACS clusters and set the cluster names manually. Also comment out the above two lines for ACS clusters
             #- name: ACS_RESOURCE_NAME
             #  value: "my_acs_cluster_name"
@@ -466,7 +468,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: omsagent-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03172022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -610,7 +612,7 @@ spec:
         rsName: "omsagent-rs"
       annotations:
         agentVersion: "azure-mdsd-1.17.0"
-        dockerProviderVersion: "16.0.0-0"
+        dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
     spec:
       serviceAccountName: omsagent
@@ -651,7 +653,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod03172022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -661,6 +663,13 @@ spec:
               cpu: 150m
               memory: 250Mi
           env:
+            - name: NUM_OF_FLUENTD_WORKERS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: omsagent
+                  resource: limits.cpu
+            - name: EMIT_CACHE_TELEMETRY
+              value: "false" # enable only debug or test purpose and disable for prod
             - name: AKS_RESOURCE_ID
               value: "VALUE_AKS_RESOURCE_ID_VALUE"
             - name: AKS_REGION
@@ -812,7 +821,7 @@ spec:
         tier: node-win
       annotations:
         agentVersion: "0.0.0-0"
-        dockerProviderVersion: "16.0.0-0"
+        dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
     spec:
      serviceAccountName: omsagent
@@ -822,7 +831,7 @@ spec:
             value: "3"
      containers:
        - name: omsagent-win
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod03172022"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06142022"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
