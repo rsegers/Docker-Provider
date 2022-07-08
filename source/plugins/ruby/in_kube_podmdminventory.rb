@@ -14,8 +14,7 @@ module Fluent::Plugin
     def initialize
       super
       require "yaml"
-      require "yajl/json_gem"
-      require "yajl"
+      require "json"
       require "set"
       require "time"
       require "net/http"
@@ -187,7 +186,7 @@ module Fluent::Plugin
           isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
           raise "in_kube_podmdminventory:getMDMRecords:Failed to acquire file lock @ #{Time.now.utc.iso8601}" if !isAcquiredLock
           startTime = (Time.now.to_f * 1000).to_i
-          mdmRecords = Yajl::Parser.parse(f)
+          mdmRecords = JSON.parse(f)
           timetakenMs = ((Time.now.to_f * 1000).to_i - startTime)
           if mdmRecords.nil? || mdmRecords.empty? || mdmRecords["items"].nil? || mdmRecords["collectionTime"] == @prevCollectionTime
             raise "in_kube_podmdminventory:getMDMRecords: either read mdmRecords is nil or empty or stale @ #{Time.now.utc.iso8601}"

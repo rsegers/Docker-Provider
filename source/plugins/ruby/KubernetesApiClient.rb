@@ -802,7 +802,7 @@ class KubernetesApiClient
         @Log.info "KubernetesApiClient::getResourcesAndContinuationTokenV2 : Done getting resources from Kube API using url: #{uri} @ #{Time.now.utc.iso8601}"
         if !responseCode.nil? && responseCode == "200" && !resourceInfo.nil?
           @Log.info "KubernetesApiClient::getResourcesAndContinuationTokenV2:Start:Parsing data for #{uri} using yajl @ #{Time.now.utc.iso8601}"
-          resourceInventory = Yajl::Parser.parse(StringIO.new(resourceInfo.body))
+          resourceInventory = JSON.parse(resourceInfo.body)
           @Log.info "KubernetesApiClient::getResourcesAndContinuationTokenV2:End:Parsing data for #{uri} using yajl @ #{Time.now.utc.iso8601}"
           resourceInfo = nil
         end

@@ -916,7 +916,7 @@ module Fluent::Plugin
               $log.info("in_kube_podinventory::watch_services: Done getting services from Kube API @ #{Time.now.utc.iso8601}")
               if !serviceInfo.nil?
                 $log.info("in_kube_podinventory::watch_services:Start:Parsing services data using yajl @ #{Time.now.utc.iso8601}")
-                serviceInventory = Yajl::Parser.parse(StringIO.new(serviceInfo.body))
+                serviceInventory = JSON.parse(serviceInfo.body)
                 $log.info("in_kube_podinventory::watch_services:End:Parsing services data using yajl @ #{Time.now.utc.iso8601}")
                 serviceInfo = nil
                 if (!serviceInventory.nil? && !serviceInventory.empty?)
