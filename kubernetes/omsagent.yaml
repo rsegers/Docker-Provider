@@ -624,7 +624,7 @@ spec:
       containers:
         - image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:addon-resizer-1.8.15"
           imagePullPolicy: IfNotPresent
-          name: omsagent-rs-vpa
+          name: omsagent-vpa
           resources:
            limits:
             cpu: 100m
