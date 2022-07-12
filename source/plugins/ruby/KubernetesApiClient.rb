@@ -470,6 +470,7 @@ class KubernetesApiClient
         if podUid.nil?
           return metricItems
         end
+        podName = pod["metadata"]["name"]
 
         nodeName = ""
         #for unscheduled (non-started) pods nodeName does NOT exist
@@ -514,7 +515,25 @@ class KubernetesApiClient
               metricCollections.push(metricCollection)
               metricProps["json_Collections"] = metricCollections.to_json
               metricItems.push(metricProps)
-              #No container level limit for the given metric, so default to node level limit
+              # if the addonResizer
+              if isAddonResizerVPAEnabled()
+                if (podName.downcase.start_with?("omsagent-rs-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("omsagent") && metricCategory.eql?("limits"))
+                  timeDifference = (DateTime.now.to_time.to_i - @@telemetryTimeTracker).abs
+                  timeDifferenceInMinutes = timeDifference / 60
+                  if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+                    @@telemetryTimeTracker = DateTime.now.to_time.to_i
+                    telemetryProps = {}
+                    telemetryProps["PodName"] = podName
+                    telemetryProps["ContainerName"] = containerName
+                    ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
+                  end
+                end
+              end
+            rescue => errorStr
+              $log.warn("Exception while generating Telemetry from getcontainerCpuMetricItems failed: #{errorStr} for metric #{cpuMetricNameToCollect}")
+            end
+          end
+        end
             else
               if (metricCategory == "limits" && !nodeAllocatableRecord.nil? && !nodeAllocatableRecord.empty? && nodeAllocatableRecord.has_key?(metricNameToCollect))
                 metricValue = nodeAllocatableRecord[metricNameToCollect]
@@ -1393,6 +1412,14 @@ class KubernetesApiClient
         isEmitCacheTelemtryEnabled = true
       end
       return isEmitCacheTelemtryEnabled
+    end
+
+    def isAddonResizerVPAEnabled
+      isAddonResizerVPAEnabled = false
+      if !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].nil? && !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].empty? && ENV["RS_ADDON-RESIZER_VPA_ENABLED"].downcase == "true".downcase
+        isAddonResizerVPAEnabled= true
+      end
+      return isAddonResizerVPAEnabled
     end
   end
 end
