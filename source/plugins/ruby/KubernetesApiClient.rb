@@ -38,7 +38,7 @@ class KubernetesApiClient
   @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
   @@TokenStr = nil
   @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
-  @@memoryLimitstelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@resourceLimitsTelemetryHash = {}
 
   def initialize
