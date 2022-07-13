@@ -22,7 +22,7 @@ class ApplicationInsightsUtility
   @@EnvControllerType = "CONTROLLER_TYPE"
   @@EnvContainerRuntime = "CONTAINER_RUNTIME"
   @@EnvAADMSIAuthMode = "AAD_MSI_AUTH_MODE"
-  @@EnvAddonResizerVPAEnabled = "ADDON-RESIZER_VPA_ENABLED"
+  @@EnvAddonResizerVPAEnabled = "RS_ADDON-RESIZER_VPA_ENABLED"
 
   @@isWindows = false
   @@hostName = (OMS::Common.get_hostname)

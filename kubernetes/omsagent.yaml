@@ -738,7 +738,7 @@ spec:
             # - name: USING_AAD_MSI_AUTH
             #   value: "true"
             # Uncomment below lines when the Addon-resizer VPA enabled
-            # - name: ADDON-RESIZER_VPA_ENABLED
+            # - name: RS_ADDON-RESIZER_VPA_ENABLED
             #   value: "true"
           securityContext:
             privileged: true
