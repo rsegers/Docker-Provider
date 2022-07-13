@@ -17,3 +17,14 @@ CVE-2021-28965
 
 #dpkg vulnerability in ubuntu
 CVE-2022-1304
+
+#containerd vulnerability - https://avd.aquasec.com/nvd/cve-2022-31030
+CVE-2022-31030
+
+#Poin DTLS v2 vulnerabilities in ubuntu
+#https://avd.aquasec.com/nvd/cve-2022-29190
+#https://avd.aquasec.com/nvd/cve-2022-29222
+#https://avd.aquasec.com/nvd/cve-2022-29189
+CVE-2022-29190
+CVE-2022-29222
+CVE-2022-29189
