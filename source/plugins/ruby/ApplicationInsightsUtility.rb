@@ -94,7 +94,7 @@ class ApplicationInsightsUtility
         else
           @@CustomProperties["aadAuthMSIMode"] = "false"
         end
-        addonResizerVPAEnabled = ENV["RS_ADDON-RESIZER_VPA_ENABLED"]
+        addonResizerVPAEnabled = ENV[@@EnvAddonResizerVPAEnabled]
         if !addonResizerVPAEnabled.nil? && !addonResizerVPAEnabled.empty? && addonResizerVPAEnabled.downcase == "true".downcase
           @@CustomProperties["addonResizerVPAEnabled"] = "true"
         end

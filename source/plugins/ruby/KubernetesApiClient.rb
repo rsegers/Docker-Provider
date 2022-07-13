@@ -515,9 +515,9 @@ class KubernetesApiClient
               metricCollections.push(metricCollection)
               metricProps["json_Collections"] = metricCollections.to_json
               metricItems.push(metricProps)
-              # if the addonResizer
+
               if isAddonResizerVPAEnabled()
-                if (podName.downcase.start_with?("omsagent-rs-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("omsagent") && metricCategory.eql?("limits"))
+                if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("omsagent") && metricCategory.eql?("limits"))
                   timeDifference = (DateTime.now.to_time.to_i - @@telemetryTimeTracker).abs
                   timeDifferenceInMinutes = timeDifference / 60
                   if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
@@ -529,12 +529,8 @@ class KubernetesApiClient
                   end
                 end
               end
-            rescue => errorStr
-              $log.warn("Exception while generating Telemetry from getcontainerCpuMetricItems failed: #{errorStr} for metric #{cpuMetricNameToCollect}")
-            end
-          end
-        end
             else
+              #No container level limit for the given metric, so default to node level limit
               if (metricCategory == "limits" && !nodeAllocatableRecord.nil? && !nodeAllocatableRecord.empty? && nodeAllocatableRecord.has_key?(metricNameToCollect))
                 metricValue = nodeAllocatableRecord[metricNameToCollect]
                 metricProps = {}
@@ -1417,7 +1413,7 @@ class KubernetesApiClient
     def isAddonResizerVPAEnabled
       isAddonResizerVPAEnabled = false
       if !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].nil? && !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].empty? && ENV["RS_ADDON-RESIZER_VPA_ENABLED"].downcase == "true".downcase
-        isAddonResizerVPAEnabled= true
+        isAddonResizerVPAEnabled = true
       end
       return isAddonResizerVPAEnabled
     end
