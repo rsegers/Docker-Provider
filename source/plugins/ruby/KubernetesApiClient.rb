@@ -519,7 +519,7 @@ class KubernetesApiClient
 
               if isAddonResizerVPAEnabled()
                 if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("omsagent") && metricCategory.eql?("limits"))
-                  if metricNameToReturn == "cpuLimitNanoCores"
+                  if metricNametoReturn == "cpuLimitNanoCores"
                     timeDifference = (DateTime.now.to_time.to_i - @@cpuLimitsTelemetryTimeTracker).abs
                     timeDifferenceInMinutes = timeDifference / 60
                     if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
@@ -529,7 +529,7 @@ class KubernetesApiClient
                       telemetryProps["ContainerName"] = containerName
                       ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
                     end
-                  elsif metricNameToReturn == "memoryLimitBytes"
+                  elsif metricNametoReturn == "memoryLimitBytes"
                     timeDifference = (DateTime.now.to_time.to_i - @@memoryLimitsTelemetryTimeTracker).abs
                     timeDifferenceInMinutes = timeDifference / 60
                     if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
