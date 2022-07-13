@@ -517,7 +517,7 @@ class KubernetesApiClient
               metricItems.push(metricProps)
 
               if isAddonResizerVPAEnabled()
-                if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("omsagent") && metricCategory.eql?("limits"))
+                if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNameSpace.eql?("kube-system") && containerName.downcase.start_with?("omsagent") && metricCategory.eql?("limits"))
                   timeDifference = (DateTime.now.to_time.to_i - @@telemetryTimeTracker).abs
                   timeDifferenceInMinutes = timeDifference / 60
                   if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
