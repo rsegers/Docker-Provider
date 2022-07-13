@@ -37,7 +37,8 @@ class KubernetesApiClient
   @Log = Logger.new(@LogPath, 2, 10 * 1048576) #keep last 2 files, max log file size = 10M
   @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
   @@TokenStr = nil
-  @@telemetryTimeTracker = DateTime.now.to_time.to_i
+  @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@memoryLimitstelemetryTimeTracker = DateTime.now.to_time.to_i
   @@resourceLimitsTelemetryHash = {}
 
   def initialize
@@ -517,15 +518,27 @@ class KubernetesApiClient
               metricItems.push(metricProps)
 
               if isAddonResizerVPAEnabled()
-                if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNameSpace.eql?("kube-system") && containerName.downcase.start_with?("omsagent") && metricCategory.eql?("limits"))
-                  timeDifference = (DateTime.now.to_time.to_i - @@telemetryTimeTracker).abs
-                  timeDifferenceInMinutes = timeDifference / 60
-                  if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
-                    @@telemetryTimeTracker = DateTime.now.to_time.to_i
-                    telemetryProps = {}
-                    telemetryProps["PodName"] = podName
-                    telemetryProps["ContainerName"] = containerName
-                    ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
+                if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("omsagent") && metricCategory.eql?("limits"))
+                  if metricNameToReturn == "cpuLimitNanoCores"
+                    timeDifference = (DateTime.now.to_time.to_i - @@cpuLimitsTelemetryTimeTracker).abs
+                    timeDifferenceInMinutes = timeDifference / 60
+                    if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+                      @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+                      telemetryProps = {}
+                      telemetryProps["PodName"] = podName
+                      telemetryProps["ContainerName"] = containerName
+                      ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
+                    end
+                  elsif metricNameToReturn == "memoryLimitBytes"
+                    timeDifference = (DateTime.now.to_time.to_i - @@memoryLimitsTelemetryTimeTracker).abs
+                    timeDifferenceInMinutes = timeDifference / 60
+                    if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+                      @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+                      telemetryProps = {}
+                      telemetryProps["PodName"] = podName
+                      telemetryProps["ContainerName"] = containerName
+                      ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
+                    end
                   end
                 end
               end
