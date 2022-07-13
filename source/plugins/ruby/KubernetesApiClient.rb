@@ -1412,7 +1412,7 @@ class KubernetesApiClient
 
     def isAddonResizerVPAEnabled
       isAddonResizerVPAEnabled = false
-      if !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].nil? && !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].empty? && ENV["RS_ADDON-RESIZER_VPA_ENABLED"].downcase == "true".downcase
+      if !ENV["ADDON-RESIZER_VPA_ENABLED"].nil? && !ENV["ADDON-RESIZER_VPA_ENABLED"].empty? && ENV["ADDON-RESIZER_VPA_ENABLED"].downcase == "true".downcase
         isAddonResizerVPAEnabled = true
       end
       return isAddonResizerVPAEnabled
