@@ -38,7 +38,9 @@ class KubernetesApiClient
   @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
   @@TokenStr = nil
   @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@memoryRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@resourceLimitsTelemetryHash = {}
 
   def initialize
@@ -518,29 +520,7 @@ class KubernetesApiClient
               metricItems.push(metricProps)
 
               if isAddonResizerVPAEnabled()
-                if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("omsagent") && metricCategory.eql?("limits"))
-                  if metricNametoReturn == "cpuLimitNanoCores"
-                    timeDifference = (DateTime.now.to_time.to_i - @@cpuLimitsTelemetryTimeTracker).abs
-                    timeDifferenceInMinutes = timeDifference / 60
-                    if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
-                      @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
-                      telemetryProps = {}
-                      telemetryProps["PodName"] = podName
-                      telemetryProps["ContainerName"] = containerName
-                      ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
-                    end
-                  elsif metricNametoReturn == "memoryLimitBytes"
-                    timeDifference = (DateTime.now.to_time.to_i - @@memoryLimitsTelemetryTimeTracker).abs
-                    timeDifferenceInMinutes = timeDifference / 60
-                    if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
-                      @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
-                      telemetryProps = {}
-                      telemetryProps["PodName"] = podName
-                      telemetryProps["ContainerName"] = containerName
-                      ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
-                    end
-                  end
-                end
+                sendReplicasetAgentRequestsAndLimitsTelemetry(podName, podNameSpace, containerName, metricNametoReturn, metricValue)
               end
             else
               #No container level limit for the given metric, so default to node level limit
@@ -1429,6 +1409,48 @@ class KubernetesApiClient
         isAddonResizerVPAEnabled = true
       end
       return isAddonResizerVPAEnabled
+    end
+
+    def sendReplicasetAgentRequestsAndLimitsTelemetry(podName, podNameSpace, containerName, metricName, metricValue)
+      begin
+        if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("omsagent"))
+          telemetryProps = {}
+          telemetryProps["PodName"] = podName
+          telemetryProps["ContainerName"] = containerName
+          case metricName
+          when "cpuLimitNanoCores"
+            timeDifference = (DateTime.now.to_time.to_i - @@cpuLimitsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          when "memoryLimitBytes"
+            timeDifference = (DateTime.now.to_time.to_i - @@memoryLimitsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          when "cpuRequestNanoCores"
+            timeDifference = (DateTime.now.to_time.to_i - @@cpuRequestsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          when "memoryRequestNanoCores"
+            timeDifference = (DateTime.now.to_time.to_i - @@memoryRequestsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@memoryRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          end
+        end
+      rescue => err
+        @Log.warn "KubernetesApiClient::sendReplicasetAgentRequestsAndLimitsTelemetry failed with an error: #{err}"
+      end
     end
   end
 end

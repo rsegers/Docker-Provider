@@ -622,8 +622,9 @@ spec:
     spec:
       serviceAccountName: omsagent
       containers:
-       # Uncomment below lines to enable VPA
-        # - image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:addon-resizer-1.8.16"
+        # Uncomment below lines to enable VPA
+        #   # Make sure this matching with version in AKS RP side
+        # - image: "mcr.microsoft.com/oss/kubernetes/autoscaler/addon-resizer:1.8.14"
         #   imagePullPolicy: IfNotPresent
         #   name: omsagent-vpa
         #   resources:
@@ -657,7 +658,6 @@ spec:
         #     - --namespace=kube-system
         #     - --deployment=omsagent-rs
         #     - --container=omsagent
-        #     - --ignore-resource-requests=true
         # Uncomment below lines for MSI Auth Mode  testing
         # - name: addon-token-adapter
         #   command:
@@ -696,8 +696,8 @@ spec:
         - name: omsagent
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022"
           imagePullPolicy: IfNotPresent
+          # comment resources if VPA configured since the VPA will set these values
           resources:
-           # comment only limits  if VPA configured
             limits:
               cpu: 1
               memory: 1Gi
