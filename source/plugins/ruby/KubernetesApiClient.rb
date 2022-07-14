@@ -1439,7 +1439,7 @@ class KubernetesApiClient
               @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
               ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
             end
-          when "memoryRequestNanoCores"
+          when "memoryRequestBytes"
             timeDifference = (DateTime.now.to_time.to_i - @@memoryRequestsTelemetryTimeTracker).abs
             timeDifferenceInMinutes = timeDifference / 60
             if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
