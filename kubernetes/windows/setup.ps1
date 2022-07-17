@@ -1,4 +1,4 @@
-# speed up Invoke-WebRequest 
+# speed up Invoke-WebRequest
 # https://stackoverflow.com/questions/28682642/powershell-why-is-using-invoke-webrequest-much-slower-than-a-browser-download
 $ProgressPreference = 'SilentlyContinue'
 
@@ -20,7 +20,7 @@ Write-Host ('Creating folder structure')
 Write-Host ('Installing Fluent Bit');
 
     try {
-        $fluentBitUri='https://fluentbit.io/releases/1.7/td-agent-bit-1.7.8-win64.zip'
+        $fluentBitUri='https://fluentbit.io/releases/1.9/td-agent-bit-1.9.6-win64.zip'
         Invoke-WebRequest -Uri $fluentBitUri -OutFile /installation/td-agent-bit.zip
         Expand-Archive -Path /installation/td-agent-bit.zip -Destination /installation/fluent-bit
         Move-Item -Path /installation/fluent-bit/*/* -Destination /opt/fluent-bit/ -ErrorAction SilentlyContinue
