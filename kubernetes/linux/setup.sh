@@ -54,6 +54,7 @@ chmod 544 /opt/telegraf
 wget -qO - https://packages.fluentbit.io/fluentbit.key | sudo apt-key add -
 sudo echo "deb https://packages.fluentbit.io/ubuntu/bionic bionic main" >> /etc/apt/sources.list
 sudo apt-get update
+#updating latest version fluent-bit on 07/18/2022
 sudo apt-get install td-agent-bit=1.9.6 -y
 
 # install ruby2.7
