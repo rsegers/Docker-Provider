@@ -20,7 +20,7 @@ Write-Host ('Creating folder structure')
 Write-Host ('Installing Fluent Bit');
 
     try {
-        $fluentBitUri='https://fluentbit.io/releases/1.9/td-agent-bit-1.9.6-win64.zip'
+        $fluentBitUri='https://fluentbit.io/releases/1.8/td-agent-bit-1.8.9-win64.zip'
         Invoke-WebRequest -Uri $fluentBitUri -OutFile /installation/td-agent-bit.zip
         Expand-Archive -Path /installation/td-agent-bit.zip -Destination /installation/fluent-bit
         Move-Item -Path /installation/fluent-bit/*/* -Destination /opt/fluent-bit/ -ErrorAction SilentlyContinue
