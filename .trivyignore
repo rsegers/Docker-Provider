@@ -2,10 +2,10 @@
 #[vishwa] - Fix telegraf & test all for next release - see work item #https://msazure.visualstudio.com/InfrastructureInsights/_workitems/edit/13322134
 # Unfixed as of 4/28/2022
 CVE-2019-3826
-CVE-2022-27191
-
-#still present in mdsd telegraf
-CVE-2021-42836
+CVE-2022-1996
+CVE-2022-29190
+CVE-2022-29222
+CVE-2022-29189
 
 # ruby in /usr/lib
 CVE-2020-36327
