@@ -299,8 +299,8 @@ metadata:
 type: Opaque
 data:
   #BASE64 ENCODED (Both WSID & KEY) INSIDE DOUBLE QUOTE ("")
-  WSID: "VALUE_WSID"
-  KEY: "VALUE_KEY"
+  WSID: "YzdkMGQwYjctYTE1Yy00ZDJjLTgwZmItMjVjZTBlYmZmMGI4Cg=="
+  KEY: "Q0hWdDRPUGhjSmtSZnRJWHFhbXlUb2NDd2prZjZxZWR6SFZSRzlYODE5cUlmZUhPM0VEQi90NTBIY243Mkd5NElFVVpvVzFwTGFrUzFZN25EeElhM0E9PQo="
 ---
 # Uncomment below lines for MSI Auth Mode  testing
 # apiVersion: v1
@@ -379,7 +379,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:07192022-ca48c223"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -468,7 +468,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: omsagent-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:07192022-ca48c223"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -653,7 +653,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:07192022-ca48c223"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -831,7 +831,7 @@ spec:
             value: "3"
      containers:
        - name: omsagent-win
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06142022"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:win-07192022-ca48c223"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
@@ -846,9 +846,9 @@ spec:
             value: "1"
           # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
           - name: AKS_RESOURCE_ID
-            value: "VALUE_AKS_RESOURCE_ID_VALUE"
+            value: "/subscriptions/b2eb1341-814f-4e78-bec8-6042f4c10c5b/resourceGroups/nprabhu-rg/providers/Microsoft.ContainerService/managedClusters/nprabhuCITestCluster"
           - name: AKS_REGION
-            value: "VALUE_AKS_RESOURCE_REGION_VALUE"
+            value: "eastus"
           #- name: ACS_RESOURCE_NAME
           #  value: "my_acs_cluster_name"
           - name: CONTROLLER_TYPE
