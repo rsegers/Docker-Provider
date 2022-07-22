@@ -11,7 +11,7 @@ module Fluent::Plugin
 
     def initialize
       super
-      require "yajl/json_gem"
+      require "json"
       require "time"
       require_relative "ContainerInventoryState"
       require_relative "ApplicationInsightsUtility"

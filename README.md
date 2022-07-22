@@ -90,7 +90,6 @@ The general directory structure is:
 │   │   |   ├── health/                       - code for health feature
 │   │   |   ├── lib/                          - lib for app insights ruby and this code of application_insights gem
 │   │   |   ...                               - plugins in, out and filters code in ruby
-│   ├── toml-parser/                          - code for parsing of toml configuration files
 ├── test/                                     - source code for tests
 │   ├── e2e/                                  - e2e tests to validate agent and e2e workflow(s)
 │   ├── unit-tests/                           - unit tests code
