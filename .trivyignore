@@ -1,15 +1,9 @@
-# related to telegraf
-#[vishwa] - Fix telegraf & test all for next release - see work item #https://msazure.visualstudio.com/InfrastructureInsights/_workitems/edit/13322134
-# Unfixed as of 4/28/2022
-CVE-2019-3826
-CVE-2022-27191
-
-#dpkg vulnerability in ubuntu
-CVE-2022-1304
-
 # telegraf vulnerabilities
+CVE-2019-3826
 CVE-2022-29190
 CVE-2022-29222
 CVE-2022-29189
-CVE-2022-31030
-CVE-2022-29526
+CVE-2022-1996
+
+#dpkg vulnerability in ubuntu
+CVE-2022-1304
