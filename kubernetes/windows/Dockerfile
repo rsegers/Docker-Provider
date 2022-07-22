@@ -21,7 +21,6 @@ RUN refreshenv \
 && echo gem: --no-document >> C:\ProgramData\gemrc \
 && gem install cool.io -v 1.7.1 --platform ruby \
 && gem install oj -v 3.3.10 \
-&& gem install json -v 2.2.0 \
 && gem install fluentd -v 1.14.6 \
 && gem install win32-service -v 1.0.1 \
 && gem install win32-ipc -v 0.7.0 \
