@@ -12,8 +12,7 @@ module Fluent::Plugin
     def initialize
       super
       require "yaml"
-      require "yajl/json_gem"
-      require "yajl"
+      require "json"
       require "set"
       require "time"
       require "net/http"
@@ -916,9 +915,9 @@ module Fluent::Plugin
             else
               $log.info("in_kube_podinventory::watch_services: Done getting services from Kube API @ #{Time.now.utc.iso8601}")
               if !serviceInfo.nil?
-                $log.info("in_kube_podinventory::watch_services:Start:Parsing services data using yajl @ #{Time.now.utc.iso8601}")
-                serviceInventory = Yajl::Parser.parse(StringIO.new(serviceInfo.body))
-                $log.info("in_kube_podinventory::watch_services:End:Parsing services data using yajl @ #{Time.now.utc.iso8601}")
+                $log.info("in_kube_podinventory::watch_services:Start:Parsing services data using JSON @ #{Time.now.utc.iso8601}")
+                serviceInventory = JSON.parse(serviceInfo.body)
+                $log.info("in_kube_podinventory::watch_services:End:Parsing services data using JSON @ #{Time.now.utc.iso8601}")
                 serviceInfo = nil
                 if (!serviceInventory.nil? && !serviceInventory.empty?)
                   servicesResourceVersion = serviceInventory["metadata"]["resourceVersion"]
