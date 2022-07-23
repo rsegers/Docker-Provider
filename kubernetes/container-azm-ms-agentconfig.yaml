@@ -155,7 +155,7 @@ data:
 
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # They increase the maximum stdout/stderr log collection rate but will also cause higher cpu/memory usage.
-    ## Ref more details about Ignore_Older -  https://docs.fluentbit.io/manual/v/1.7/pipeline/inputs/tail
+    ## Ref for more details about Ignore_Older -  https://docs.fluentbit.io/manual/v/1.7/pipeline/inputs/tail
     # [agent_settings.fbit_config]
     #   log_flush_interval_secs = "1"                 # default value is 15
     #   tail_mem_buf_limit_megabytes = "10"           # default value is 10
