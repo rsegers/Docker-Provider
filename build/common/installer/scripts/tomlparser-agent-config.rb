@@ -172,7 +172,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         if !fbitTailIgnoreOlder.nil? && !fbitTailIgnoreOlder.empty?
           if !re.match(fbitTailIgnoreOlder).nil?
             @fbitTailIgnoreOlder = fbitTailIgnoreOlder
-            puts "Using config map value: tail_ignore_older  = #{@tail_ignore_older}"
+            puts "Using config map value: tail_ignore_older  = #{@fbitTailIgnoreOlder}"
           else
             puts "config:warn: provided tail_ignore_older value is not valid hence using default value"
           end
