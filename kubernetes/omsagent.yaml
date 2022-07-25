@@ -843,10 +843,11 @@ spec:
           configMap:
             name: container-azm-ms-osmconfig
             optional: true
-        - name:  omsagent-rs-vpa-config-volume
-          configMap:
-            name:  omsagent-rs-vpa-config
-            optional: true
+        # Uncomment below lines to enable VPA
+        # - name:  omsagent-rs-vpa-config-volume
+        #   configMap:
+        #     name:  omsagent-rs-vpa-config
+        #     optional: true
 ---
   apiVersion: apps/v1
   kind: DaemonSet
