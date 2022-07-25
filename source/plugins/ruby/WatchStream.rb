@@ -3,7 +3,7 @@
 
 require "net/http"
 require "net/https"
-require "yajl/json_gem"
+require "json"
 require "logger"
 require "time"
 
@@ -50,7 +50,7 @@ class WatchStream
       response.read_body do |chunk|
         buffer << chunk
         while (line = buffer.slice!(/.+\n/))
-          yield(Yajl::Parser.parse(StringIO.new(line.chomp)))
+          yield(JSON.parse(line.chomp))
         end
       end
     end

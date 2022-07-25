@@ -1,30 +1,9 @@
-# related to telegraf
-#[vishwa] - Fix telegraf & test all for next release - see work item #https://msazure.visualstudio.com/InfrastructureInsights/_workitems/edit/13322134
-# Unfixed as of 4/28/2022
+# telegraf vulnerabilities
 CVE-2019-3826
-CVE-2022-27191
-
-#still present in mdsd telegraf
-CVE-2021-42836
-
-# ruby in /usr/lib
-CVE-2020-36327
-CVE-2021-43809
-CVE-2021-41816
-CVE-2021-41819
-CVE-2021-31799
-CVE-2021-28965
-
-#dpkg vulnerability in ubuntu
-CVE-2022-1304
-
-#containerd vulnerability - https://avd.aquasec.com/nvd/cve-2022-31030
-CVE-2022-31030
-
-#Poin DTLS v2 vulnerabilities in ubuntu
-#https://avd.aquasec.com/nvd/cve-2022-29190
-#https://avd.aquasec.com/nvd/cve-2022-29222
-#https://avd.aquasec.com/nvd/cve-2022-29189
 CVE-2022-29190
 CVE-2022-29222
 CVE-2022-29189
+CVE-2022-1996
+
+#dpkg vulnerability in ubuntu
+CVE-2022-1304

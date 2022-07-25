@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 class CAdvisorMetricsAPIClient
-  require "yajl/json_gem"
+  require "json"
   require "logger"
   require "net/http"
   require "net/https"
