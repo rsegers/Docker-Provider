@@ -1,4 +1,4 @@
-{{- if .Values.amalogs.rbac }}
+{{- if .Values.omsagent.rbac }}
 apiVersion: v1
 kind: ServiceAccount
 metadata:

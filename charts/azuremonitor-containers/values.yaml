@@ -19,11 +19,11 @@ Azure:
     httpsProxy: ""
     noProxy: ""
     proxyCert: ""
-amalogs:
+omsagent:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod06272022"
-    tagWindows: "win-ciprod06142022"
+    tag: "ciprodciprodpreviewrename0608"
+    tagWindows: "win-ciprodciprodpreviewrename0608"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "18.0.1-0"
     agentVersion: "azure-mdsd-1.17.0"

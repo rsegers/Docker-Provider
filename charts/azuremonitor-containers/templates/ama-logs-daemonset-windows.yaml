@@ -1,4 +1,4 @@
-{{- if and (ne .Values.amalogs.secret.key "<your_workspace_key>") (ne .Values.amalogs.secret.wsid "<your_workspace_id>") (or (ne .Values.amalogs.env.clusterName "<your_cluster_name>") (ne .Values.amalogs.env.clusterId "<your_cluster_id>") (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") )}}
+{{- if and (ne .Values.omsagent.secret.key "<your_workspace_key>") (ne .Values.omsagent.secret.wsid "<your_workspace_id>") (or (ne .Values.omsagent.env.clusterName "<your_cluster_name>") (ne .Values.omsagent.env.clusterId "<your_cluster_id>") (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") )}}
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -21,11 +21,11 @@ spec:
    labels:
     dsName: "ama-logs-ds"
    annotations:
-    agentVersion: {{ .Values.amalogs.image.winAgentVersion }}
-    dockerProviderVersion: {{ .Values.amalogs.image.dockerProviderVersion }}
+    agentVersion: {{ .Values.omsagent.image.winAgentVersion }}
+    dockerProviderVersion: {{ .Values.omsagent.image.dockerProviderVersion }}
     schema-versions: "v1"
     checksum/secret: {{ include (print $.Template.BasePath "/ama-logs-secret.yaml") . | sha256sum }}
-    checksum/config: {{ toYaml .Values.amalogs.resources | sha256sum }}
+    checksum/config: {{ toYaml .Values.omsagent.resources | sha256sum }}
   spec:
    priorityClassName: ama-logs
    dnsConfig:
@@ -39,19 +39,19 @@ spec:
    nodeSelector:
       beta.kubernetes.io/os: windows
 {{- end }}
-   {{- if .Values.amalogs.rbac }}
+   {{- if .Values.omsagent.rbac }}
    serviceAccountName: ama-logs
    {{- end }}
    containers:
      - name: ama-logs-windows
-       {{- if eq (.Values.amalogs.domain | lower) "opinsights.azure.cn" }}
-       image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.amalogs.image.tagWindows }}"
+       {{- if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
+       image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tagWindows }}"
        {{- else }}
-       image: {{ printf "%s:%s" .Values.amalogs.image.repo .Values.amalogs.image.tagWindows }}
+       image: {{ printf "%s:%s" .Values.omsagent.image.repo .Values.omsagent.image.tagWindows }}
        {{- end }}
        imagePullPolicy: IfNotPresent
        resources:
-{{ toYaml .Values.amalogs.resources.daemonsetwindows | indent 9 }}
+{{ toYaml .Values.omsagent.resources.daemonsetwindows | indent 9 }}
        env:
        - name: FBIT_SERVICE_FLUSH_INTERVAL
          value: "15"
@@ -59,25 +59,25 @@ spec:
          value: "1"
        - name: FBIT_TAIL_BUFFER_MAX_SIZE
          value: "1"
-       {{- if ne .Values.amalogs.env.clusterId "<your_cluster_id>" }}
+       {{- if ne .Values.omsagent.env.clusterId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
-         value: {{ .Values.amalogs.env.clusterId | quote }}
-       {{- if ne .Values.amalogs.env.clusterRegion "<your_cluster_region>" }}
+         value: {{ .Values.omsagent.env.clusterId | quote }}
+       {{- if ne .Values.omsagent.env.clusterRegion "<your_cluster_region>" }}
        - name: AKS_REGION
-         value: {{ .Values.amalogs.env.clusterRegion | quote }}
+         value: {{ .Values.omsagent.env.clusterRegion | quote }}
        {{- end }}
        {{- else if ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.Azure.Cluster.ResourceId | quote }}
        - name: USING_AAD_MSI_AUTH
-         value: {{ .Values.amalogs.useAADAuth | quote }}
+         value: {{ .Values.omsagent.useAADAuth | quote }}
        {{- if ne .Values.Azure.Cluster.Region "<your_cluster_region>" }}
        - name: AKS_REGION
          value: {{ .Values.Azure.Cluster.Region | quote }}
        {{- end }}
        {{- else }}
        - name: ACS_RESOURCE_NAME
-         value: {{ .Values.amalogs.env.clusterName | quote }}
+         value: {{ .Values.omsagent.env.clusterName | quote }}
        {{- end }}
        - name: CONTROLLER_TYPE
          value: "DaemonSet"
@@ -94,7 +94,7 @@ spec:
             fieldRef:
               fieldPath: metadata.name
        - name: SIDECAR_SCRAPING_ENABLED
-         value: {{ .Values.amalogs.sidecarscraping | quote }}
+         value: {{ .Values.omsagent.sidecarscraping | quote }}
        volumeMounts:
         - mountPath: C:\ProgramData\docker\containers
           name: docker-windows-containers
@@ -120,7 +120,7 @@ spec:
           periodSeconds: 60
           initialDelaySeconds: 180
           timeoutSeconds: 15
-   {{- with .Values.amalogs.tolerations }}
+   {{- with .Values.omsagent.tolerations }}
    tolerations: {{- toYaml . | nindent 8 }}
    {{- end }}
    volumes:

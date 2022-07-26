@@ -1,4 +1,4 @@
-{{- if or ( contains "microsoft.kubernetes/connectedclusters" (.Values.Azure.Cluster.ResourceId | lower) ) ( contains "microsoft.kubernetes/connectedclusters" (.Values.amalogs.env.clusterId | lower)) }}
+{{- if or ( contains "microsoft.kubernetes/connectedclusters" (.Values.Azure.Cluster.ResourceId | lower) ) ( contains "microsoft.kubernetes/connectedclusters" (.Values.omsagent.env.clusterId | lower)) }}
 #extension model
 {{- if not (empty .Values.Azure.Extension.Name) }}
 apiVersion: clusterconfig.azure.com/v1beta1
