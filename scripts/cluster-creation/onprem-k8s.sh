@@ -25,14 +25,14 @@ download_install_docker()
 create_cluster()
 {
 sudo touch kind-config.yaml
-sudo chmod 644 kind-config.yaml
-cat >> kind-config.yaml <<EOL
+sudo tee -a kind-config.yaml > /dev/null << 'EOF'
 kind: Cluster
 apiVersion: kind.sigs.k8s.io/v1alpha3
 nodes:
  - role: control-plane
  - role: worker
-EOL
+EOF
+
 sudo kind create cluster --config kind-config.yaml  --name $clusterName
 }
 
@@ -95,7 +95,7 @@ echo "parsing args"
 parse_args $@
 
 echo "download and install docker"
-download_install_docker
+#download_install_docker
 
 echo "download and install kind"
 install-kind

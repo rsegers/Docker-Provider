@@ -91,9 +91,9 @@ create_cluster()
 {
 
 sudo touch kubernetes.json
-sudo chmod 644 kubernetes.json
+
 # For docker runtime, remove kubernetesConfig block
-cat >> kubernetes.json <<EOL
+sudo tee -a kubernetes.json > /dev/null << 'EOF'
 {
   "apiVersion": "vlabs",
   "properties": {
@@ -132,7 +132,7 @@ cat >> kubernetes.json <<EOL
     }
   }
 }
-EOL
+EOF
 
 echo "deploying aks-engine cluster ..."
 sudo aks-engine deploy --subscription-id ${subscriptionId} --client-id ${clientId} --client-secret ${clientSecret} --dns-prefix ${dnsPrefix} --location ${location} --api-model  kubernetes.json
