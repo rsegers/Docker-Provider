@@ -24,8 +24,7 @@ download_install_docker()
 
 create_cluster()
 {
-sudo touch kind-config.yaml
-sudo tee -a kind-config.yaml > /dev/null << 'EOF'
+sudo tee kind-config.yaml > /dev/null << 'EOF'
 kind: Cluster
 apiVersion: kind.sigs.k8s.io/v1alpha3
 nodes:

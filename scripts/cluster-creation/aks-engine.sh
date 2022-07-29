@@ -89,11 +89,8 @@ while getopts 'hs:c:w:d:l:' opt; do
 }
 create_cluster()
 {
-
-sudo touch kubernetes.json
-
 # For docker runtime, remove kubernetesConfig block
-sudo tee -a kubernetes.json > /dev/null << 'EOF'
+sudo tee kubernetes.json > /dev/null << 'EOF'
 {
   "apiVersion": "vlabs",
   "properties": {
