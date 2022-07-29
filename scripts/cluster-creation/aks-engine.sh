@@ -155,6 +155,4 @@ echo "creating cluster: ${ClusterName}"
 create_cluster
 echo "creating aks-engine cluster completed."
 
-echo "changing file permissions to access the kubeconfig"
-sudo chmod 644 ~/${TEMP_DIR}/_output/${dnsPrefix}/kubeconfig
 echo "kubeconfig of this cluster should be under ~/${TEMP_DIR}/_output/${dnsPrefix}/kubeconfig"

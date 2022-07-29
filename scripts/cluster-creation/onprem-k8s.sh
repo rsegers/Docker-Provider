@@ -94,7 +94,7 @@ echo "parsing args"
 parse_args $@
 
 echo "download and install docker"
-#download_install_docker
+download_install_docker
 
 echo "download and install kind"
 install-kind
