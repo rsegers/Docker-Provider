@@ -525,7 +525,7 @@ class KubernetesApiClient
             else
               #No container level limit for the given metric, so default to node level limit
               if (metricCategory == "limits" && !nodeAllocatableRecord.nil? && !nodeAllocatableRecord.empty? && nodeAllocatableRecord.has_key?(metricNameToCollect))
-                metricValue = nodeAllocatableRecord[metricNameToCollect]
+                metricValue = getMetricNumericValue(metricNameToCollect, nodeAllocatableRecord[metricNameToCollect])
                 metricProps = {}
                 metricProps["Timestamp"] = metricTime
                 metricProps["Host"] = nodeName
@@ -599,7 +599,7 @@ class KubernetesApiClient
               #No container level limit for the given metric, so default to node level limit for non-gpu metrics
               if (metricNameToCollect.downcase != "nvidia.com/gpu") && (metricNameToCollect.downcase != "amd.com/gpu")
                 if !nodeAllocatableRecord.nil? && !nodeAllocatableRecord.empty? && nodeAllocatableRecord.has_key?(metricNameToCollect)
-                  metricValue = nodeAllocatableRecord[metricNameToCollect]
+                  metricValue = getMetricNumericValue(metricNameToCollect, nodeAllocatableRecord[metricNameToCollect])
                 end
               end
             end
