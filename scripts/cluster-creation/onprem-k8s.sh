@@ -25,7 +25,7 @@ download_install_docker()
 create_cluster()
 {
 sudo touch kind-config.yaml
-sudo chmod 777 kind-config.yaml
+sudo chmod 644 kind-config.yaml
 cat >> kind-config.yaml <<EOL
 kind: Cluster
 apiVersion: kind.sigs.k8s.io/v1alpha3

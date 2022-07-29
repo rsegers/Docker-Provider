@@ -91,7 +91,7 @@ create_cluster()
 {
 
 sudo touch kubernetes.json
-sudo chmod 777 kubernetes.json
+sudo chmod 644 kubernetes.json
 # For docker runtime, remove kubernetesConfig block
 cat >> kubernetes.json <<EOL
 {
@@ -159,5 +159,5 @@ create_cluster
 echo "creating aks-engine cluster completed."
 
 echo "changing file permissions to access the kubeconfig"
-sudo chmod -R 777  ~/${TEMP_DIR}/_output
+sudo chmod 644 ~/${TEMP_DIR}/_output/${dnsPrefix}/kubeconfig
 echo "kubeconfig of this cluster should be under ~/${TEMP_DIR}/_output/${dnsPrefix}/kubeconfig"
