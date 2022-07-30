@@ -65,6 +65,8 @@ module Fluent::Plugin
           @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
         end
         $log.info("in_container_inventory::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
+        @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
+        $log.info("in_container_inventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
       end
       begin
         containerRuntimeEnv = ENV["CONTAINER_RUNTIME"]

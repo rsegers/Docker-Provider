@@ -74,6 +74,12 @@
                                         "streams": [
                                            "Microsoft-ContainerInsights-Group-Default"
                                         ],
+                                        "extensionSettings": {
+                                            "dataCollectionIntervalMinutes": 1,
+                                            "excludeNameSpaces": [ 
+                                                "kube-system"
+                                            ]
+                                        },
                                         "extensionName": "ContainerInsights"
                                     }
                                 ]

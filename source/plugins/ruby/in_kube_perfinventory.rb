@@ -99,6 +99,8 @@ module Fluent::Plugin
           end
           $log.info("in_kube_perfinventory::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_perfinventory::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
+          @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
+          $log.info("in_kube_perfinventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
         end
 
         nodeAllocatableRecords = getNodeAllocatableRecords()
