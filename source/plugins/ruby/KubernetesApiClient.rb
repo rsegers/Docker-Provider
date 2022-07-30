@@ -1394,5 +1394,20 @@ class KubernetesApiClient
       end
       return isEmitCacheTelemtryEnabled
     end
+
+    def isExcludeResourceItem(resourceNamespace, excludeNamespaces)
+       isExclude = false 
+       begin
+         if !resourceNamespace.nil? && !resourceNamespace.empty?
+            !excludeNamespaces.nil? && !excludeNamespaces.empty? && excludeNamespaces.length > 0
+            && excludeNamespaces.include?(resourceNamespace)
+            isExclude = true
+         end 
+       rescue => errorStr
+        @Log.warn "KubernetesApiClient::isExcludeResourceItem:Failed with an error : #{errorStr}"
+       end
+       return isExclude
+    end 
+    
   end
 end
