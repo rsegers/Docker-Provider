@@ -86,9 +86,9 @@ module Fluent::Plugin
             @tag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
           end
 	        $log.info("in_kubestate_hpa::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
-          @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
+          @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
           $log.info("in_kubestate_hpa::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
-          @excludeNameSpaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
+          @excludeNameSpaces = ExtensionUtils.getDataCollectionExcludeNameSpaces()
           $log.info("in_kubestate_hpa::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
         # Initializing continuation token to nil

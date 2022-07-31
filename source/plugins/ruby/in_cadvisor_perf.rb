@@ -74,9 +74,9 @@ module Fluent::Plugin
           end
           $log.info("in_cadvisor_perf::enumerate: using perf tag -#{@tag} @ #{Time.now.utc.iso8601}")
           $log.info("in_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsmetricstag} @ #{Time.now.utc.iso8601}")
-          @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
+          @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
           $log.info("in_cadvisor_perf::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
-          @excludeNameSpaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
+          @excludeNameSpaces = ExtensionUtils.getDataCollectionExcludeNameSpaces()
           $log.info("in_cadvisor_perf::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
 

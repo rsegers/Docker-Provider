@@ -222,7 +222,7 @@ class CAdvisorMetricsAPIClient
           podName = pod["podRef"]["name"]
           podNamespace = pod["podRef"]["namespace"]
 
-          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNameSpace, excludeNameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, excludeNameSpaces)
 
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
@@ -520,7 +520,7 @@ class CAdvisorMetricsAPIClient
           podName = pod["podRef"]["name"]
           podNamespace = pod["podRef"]["namespace"]
 
-          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNameSpace, excludeNameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, excludeNameSpaces)
 
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
@@ -648,7 +648,7 @@ class CAdvisorMetricsAPIClient
           podUid = pod["podRef"]["uid"]
           podName = pod["podRef"]["name"]
           podNamespace = pod["podRef"]["namespace"]          
-          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNameSpace, excludeNameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, excludeNameSpaces)
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
               containerName = container["name"]
@@ -899,7 +899,7 @@ class CAdvisorMetricsAPIClient
           podUid = pod["podRef"]["uid"]          
           podNamespace = pod["podRef"]["namespace"] 
           podName = pod["podRef"]["name"]         
-          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNameSpace, excludeNameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, excludeNameSpaces)
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
               containerName = container["name"]

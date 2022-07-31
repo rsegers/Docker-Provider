@@ -93,7 +93,7 @@ module Fluent::Plugin
             @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_EVENTS_DATA_TYPE)
           end
           $log.info("in_kube_events::enumerate: using kubeevents tag -#{@tag} @ #{Time.now.utc.iso8601}")          
-          @excludeNameSpaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
+          @excludeNameSpaces = ExtensionUtils.getDataCollectionExcludeNameSpaces()
           $log.info("in_kube_events::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
         # Initializing continuation token to nil

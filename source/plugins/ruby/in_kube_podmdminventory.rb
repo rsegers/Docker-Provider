@@ -64,7 +64,7 @@ module Fluent::Plugin
           $log.warn "in_kube_podmdminventory::enumerate:skipping since custom metrics not available either for this cluster type or the region"
         else
           if ExtensionUtils.isAADMSIAuthMode()
-            @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
+            @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
             $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
           end
           parse_and_emit_records()

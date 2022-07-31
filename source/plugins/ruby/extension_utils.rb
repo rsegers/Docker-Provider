@@ -25,7 +25,7 @@ class ExtensionUtils
           return !ENV["AAD_MSI_AUTH_MODE"].nil? && !ENV["AAD_MSI_AUTH_MODE"].empty? && ENV["AAD_MSI_AUTH_MODE"].downcase == "true"
         end  
 
-        def getdataCollectionIntervalSeconds          
+        def getDataCollectionIntervalSeconds          
           collectionIntervalSeconds = 60
           begin
              extensionSettings = Extension.instance.get_extension_settings()
@@ -38,16 +38,16 @@ class ExtensionUtils
                 intervalMinutes.to_i <= Constants::DATA_COLLECTION_INTERVAL_MINUTES_MAX
                 collectionIntervalSeconds =  60 * intervalMinutes.to_i
                else 
-                $log.warn("ExtensionUtils::getdataCollectionIntervalSeconds: dataCollectionIntervalMinutes: #{intervalMinutes} not valid hence using default")    
+                $log.warn("ExtensionUtils::getDataCollectionIntervalSeconds: dataCollectionIntervalMinutes: #{intervalMinutes} not valid hence using default")    
                end
              end
           rescue => err 
-            $log.warn("ExtensionUtils::getdataCollectionIntervalSeconds: failed with an exception: #{errorStr}")
+            $log.warn("ExtensionUtils::getDataCollectionIntervalSeconds: failed with an exception: #{errorStr}")
           end          
           return collectionIntervalSeconds
         end          
 
-        def getdataCollectionExcludeNameSpaces
+        def getDataCollectionExcludeNameSpaces
           excludeNameSpaces = []
           begin
              extensionSettings = Extension.instance.get_extension_settings()
@@ -58,11 +58,11 @@ class ExtensionUtils
                if !namespacesToExclude.nil? && !namespacesToExclude.empty? && namespacesToExclude.kind_of?(Array) && namespacesToExclude.length > 0 
                 excludeNameSpaces = namespacesToExclude.dup
               else 
-                $log.warn("ExtensionUtils::getdataCollectionExcludeNameSpaces: excludeNameSpaces: #{namespacesToExclude} not valid hence using default")                   
+                $log.warn("ExtensionUtils::getDataCollectionExcludeNameSpaces: excludeNameSpaces: #{namespacesToExclude} not valid hence using default")                   
                end             
              end
           rescue => err 
-            $log.warn("ExtensionUtils::getdataCollectionExcludeNameSpaces: failed with an exception: #{errorStr}")
+            $log.warn("ExtensionUtils::getDataCollectionExcludeNameSpaces: failed with an exception: #{errorStr}")
           end
           return excludeNameSpaces
         end          
