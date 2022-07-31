@@ -22,6 +22,7 @@ module Fluent::Plugin
       require_relative "omslog"
       require_relative "constants"
       require_relative "extension_utils"
+      @excludeNameSpaces = []
     end
 
     config_param :run_interval, :time, :default => 60
@@ -62,11 +63,7 @@ module Fluent::Plugin
       begin
         eventStream = Fluent::MultiEventStream.new
         insightsMetricsEventStream = Fluent::MultiEventStream.new
-        metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, metricTime: batchTime)
-        metricData.each do |record|
-          eventStream.add(time, record) if record
-        end
-
+        
         if ExtensionUtils.isAADMSIAuthMode() && !@@isWindows.nil? && @@isWindows == false
           $log.info("in_cadvisor_perf::enumerate: AAD AUTH MSI MODE")
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
@@ -79,7 +76,15 @@ module Fluent::Plugin
           $log.info("in_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsmetricstag} @ #{Time.now.utc.iso8601}")
           @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
           $log.info("in_cadvisor_perf::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
+          @excludeNameSpaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
+          $log.info("in_cadvisor_perf::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
+
+        metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, @excludeNameSpaces,  metricTime: batchTime)
+        metricData.each do |record|
+          eventStream.add(time, record) if record
+        end
+        
         router.emit_stream(@tag, eventStream) if eventStream
         router.emit_stream(@mdmtag, eventStream) if eventStream
 

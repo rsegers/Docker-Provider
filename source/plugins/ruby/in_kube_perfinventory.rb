@@ -32,6 +32,7 @@ module Fluent::Plugin
 
       @kubeperfTag = "oneagent.containerInsights.LINUX_PERF_BLOB"
       @insightsMetricsTag = "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
+      @excludeNameSpaces = []
     end
 
     config_param :run_interval, :time, :default => 60
@@ -101,6 +102,8 @@ module Fluent::Plugin
           $log.info("in_kube_perfinventory::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
           @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
           $log.info("in_kube_perfinventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
+          @excludeNameSpaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
+          $log.info("in_kube_perfinventory::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
 
         nodeAllocatableRecords = getNodeAllocatableRecords()
@@ -264,6 +267,7 @@ module Fluent::Plugin
                 if (podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
                   $log.info("in_kube_perfinventory::watch_pods:number of pod items :#{podInventory["items"].length}  from Kube API @ #{Time.now.utc.iso8601}")
                   podInventory["items"].each do |item|
+                    next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["namespace"], @excludeNameSpaces)
                     key = item["metadata"]["uid"]
                     if !key.nil? && !key.empty?
                       podItem = KubernetesApiClient.getOptimizedItem("pods-perf", item)
@@ -295,6 +299,7 @@ module Fluent::Plugin
                     if (podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
                       $log.info("in_kube_perfinventory::watch_pods:number of pod items :#{podInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
                       podInventory["items"].each do |item|
+                        next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["namespace"], @excludeNameSpaces)
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?
                           podItem = KubernetesApiClient.getOptimizedItem("pods-perf", item)
@@ -345,28 +350,30 @@ module Fluent::Plugin
                       # We have to abort here because this might cause lastResourceVersion inconsistency by skipping a potential RV with valid data!
                       break
                     end
-                    if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
-                      key = item["metadata"]["uid"]
-                      if !key.nil? && !key.empty?
-                        podItem = KubernetesApiClient.getOptimizedItem("pods-perf", item)
-                        if !podItem.nil? && !podItem.empty?
-                          @podCacheMutex.synchronize {
-                            @podItemsCache[key] = podItem
-                          }
+                    if !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["namespace"], @excludeNameSpaces)
+                      if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
+                        key = item["metadata"]["uid"]
+                        if !key.nil? && !key.empty?
+                          podItem = KubernetesApiClient.getOptimizedItem("pods-perf", item)
+                          if !podItem.nil? && !podItem.empty?
+                            @podCacheMutex.synchronize {
+                              @podItemsCache[key] = podItem
+                            }
+                          else
+                            $log.warn "in_kube_perfinventory::watch_pods:Received podItem is empty or nil  @ #{Time.now.utc.iso8601}"
+                          end
                         else
-                          $log.warn "in_kube_perfinventory::watch_pods:Received podItem is empty or nil  @ #{Time.now.utc.iso8601}"
+                          $log.warn "in_kube_perfinventory::watch_pods:Received poduid either nil or empty  @ #{Time.now.utc.iso8601}"
                         end
-                      else
-                        $log.warn "in_kube_perfinventory::watch_pods:Received poduid either nil or empty  @ #{Time.now.utc.iso8601}"
+                      elsif notice["type"] == "DELETED"
+                        key = item["metadata"]["uid"]
+                        if !key.nil? && !key.empty?
+                          @podCacheMutex.synchronize {
+                            @podItemsCache.delete(key)
+                          }
+                        end
                       end
-                    elsif notice["type"] == "DELETED"
-                      key = item["metadata"]["uid"]
-                      if !key.nil? && !key.empty?
-                        @podCacheMutex.synchronize {
-                          @podItemsCache.delete(key)
-                        }
-                      end
-                    end
+                  end 
                   when "ERROR"
                     podsResourceVersion = nil
                     $log.warn("in_kube_perfinventory::watch_pods:ERROR event with :#{notice["object"]} @ #{Time.now.utc.iso8601}")

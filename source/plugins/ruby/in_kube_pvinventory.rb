@@ -69,6 +69,8 @@ module Fluent::Plugin
           end
           @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
           $log.info("in_kube_pvinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+          @excludeNameSpaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
+          $log.info("in_kube_pvinventory::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
 
         continuationToken = nil
@@ -125,9 +127,18 @@ module Fluent::Plugin
       begin
         records = []
         pvInventory["items"].each do |item|
-
           # Node, pod, & usage info can be found by joining with pvUsedBytes metric using PVCNamespace/PVCName
           record = {}
+          # Optional values
+          pvcNamespace, pvcName = getPVCInfo(item)
+          type, typeInfo = getTypeInfo(item)
+          record["PVCNamespace"] = pvcNamespace
+          record["PVCName"] = pvcName
+          record["PVType"] = type
+          record["PVTypeInfo"] = typeInfo
+ 
+          next unless !KubernetesApiClient.isExcludeResourceItem(pvcNamespace, @excludeNameSpaces)
+
           record["CollectionTime"] = batchTime
           record["ClusterId"] = KubernetesApiClient.getClusterId
           record["ClusterName"] = KubernetesApiClient.getClusterName
@@ -138,13 +149,7 @@ module Fluent::Plugin
           record["PVCapacityBytes"] = KubernetesApiClient.getMetricNumericValue("memory", item["spec"]["capacity"]["storage"])
           record["PVCreationTimeStamp"] = item["metadata"]["creationTimestamp"]
 
-          # Optional values
-          pvcNamespace, pvcName = getPVCInfo(item)
-          type, typeInfo = getTypeInfo(item)
-          record["PVCNamespace"] = pvcNamespace
-          record["PVCName"] = pvcName
-          record["PVType"] = type
-          record["PVTypeInfo"] = typeInfo
+         
 
           records.push(record)
 

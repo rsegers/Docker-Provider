@@ -133,7 +133,7 @@ class CAdvisorMetricsAPIClient
       return baseUri + relativeUri
     end
 
-    def getMetrics(winNode: nil, metricTime: Time.now.utc.iso8601)
+    def getMetrics(winNode: nil, excludeNameSpaces: [], metricTime: Time.now.utc.iso8601)
       metricDataItems = []
       begin
         cAdvisorStats = getSummaryStatsFromCAdvisor(winNode)

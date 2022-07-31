@@ -59,7 +59,7 @@ module Fluent::Plugin
 
       @kubeservicesTag = "oneagent.containerInsights.KUBE_SERVICES_BLOB"
       @containerInventoryTag = "oneagent.containerInsights.CONTAINER_INVENTORY_BLOB"
-      @excludeNamespaces = []
+      @excludeNameSpaces = []
     end
 
     config_param :run_interval, :time, :default => 60
@@ -174,8 +174,8 @@ module Fluent::Plugin
           $log.info("in_kube_podinventory::enumerate: using kubepodinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
           @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
           $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
-          @excludeNamespaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
-          $log.info("in_kube_podinventory::enumerate: using data collection excludenamespaces -#{@excludeNamespaces} @ #{Time.now.utc.iso8601}")
+          @excludeNameSpaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
+          $log.info("in_kube_podinventory::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
 
         serviceInventory = {}
@@ -745,7 +745,7 @@ module Fluent::Plugin
                       podNameSpace = item["metadata"]["namespace"]
                     end
                     # exclude resource item if this in excluded namespaces 
-                    next unless !KubernetesApiClient.isExcludeResourceItem(podNameSpace, @excludeNamespaces)
+                    next unless !KubernetesApiClient.isExcludeResourceItem(podNameSpace, @excludeNameSpaces)
                     key = item["metadata"]["uid"]
                     if !key.nil? && !key.empty?
                       nodeName = (!item["spec"].nil? && !item["spec"]["nodeName"].nil?) ? item["spec"]["nodeName"] : ""
@@ -790,7 +790,7 @@ module Fluent::Plugin
                           podNameSpace = item["metadata"]["namespace"]
                         end
                         # exclude resource item if this in excluded namespaces 
-                        next unless !KubernetesApiClient.isExcludeResourceItem(podNameSpace, @excludeNamespaces)                        
+                        next unless !KubernetesApiClient.isExcludeResourceItem(podNameSpace, @excludeNameSpaces)                        
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?
                           nodeName = (!item["spec"].nil? && !item["spec"]["nodeName"].nil?) ? item["spec"]["nodeName"] : ""
@@ -854,7 +854,7 @@ module Fluent::Plugin
                       podNameSpace = item["metadata"]["namespace"]
                     end
                     # exclude resource item if this in excluded namespaces 
-                    if !KubernetesApiClient.isExcludeResourceItem(podNameSpace, @excludeNamespaces)
+                    if !KubernetesApiClient.isExcludeResourceItem(podNameSpace, @excludeNameSpaces)
                       if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))                     
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?
@@ -953,7 +953,7 @@ module Fluent::Plugin
                         serviceNamespace = item["metadata"]["namespace"]
                       end
                       # exclude resource item if this in excluded namespaces 
-                      next unless !KubernetesApiClient.isExcludeResourceItem(serviceNamespace, @excludeNamespaces)
+                      next unless !KubernetesApiClient.isExcludeResourceItem(serviceNamespace, @excludeNameSpaces)
                       key = item["metadata"]["uid"]
                       if !key.nil? && !key.empty?
                         serviceItem = KubernetesApiClient.getOptimizedItem("services", item)
@@ -1009,7 +1009,7 @@ module Fluent::Plugin
                       serviceNamespace = item["metadata"]["namespace"]
                     end
                     # exclude resource item if this in excluded namespaces 
-                    if !KubernetesApiClient.isExcludeResourceItem(serviceNamespace, @excludeNamespaces)                    
+                    if !KubernetesApiClient.isExcludeResourceItem(serviceNamespace, @excludeNameSpaces)                    
                       if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?

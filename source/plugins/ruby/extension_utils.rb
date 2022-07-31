@@ -48,7 +48,7 @@ class ExtensionUtils
         end          
 
         def getdataCollectionExcludeNameSpaces
-          excludeNamespaces = []
+          excludeNameSpaces = []
           begin
              extensionSettings = Extension.instance.get_extension_settings()
              if !extensionSettings.nil? && 
@@ -56,15 +56,15 @@ class ExtensionUtils
               extensionSettings.has_key(Constants::EXTENSION_SETTING_EXCLUDE_NAMESPACES)
                namespacesToExclude = extensionSettings[Constants::EXTENSION_SETTING_EXCLUDE_NAMESPACES]
                if !namespacesToExclude.nil? && !namespacesToExclude.empty? && namespacesToExclude.kind_of?(Array) && namespacesToExclude.length > 0 
-                excludeNamespaces = namespacesToExclude.dup
+                excludeNameSpaces = namespacesToExclude.dup
               else 
-                $log.warn("ExtensionUtils::getdataCollectionExcludeNameSpaces: excludeNamespaces: #{namespacesToExclude} not valid hence using default")                   
+                $log.warn("ExtensionUtils::getdataCollectionExcludeNameSpaces: excludeNameSpaces: #{namespacesToExclude} not valid hence using default")                   
                end             
              end
           rescue => err 
             $log.warn("ExtensionUtils::getdataCollectionExcludeNameSpaces: failed with an exception: #{errorStr}")
           end
-          return excludeNamespaces
+          return excludeNameSpaces
         end          
 
     end

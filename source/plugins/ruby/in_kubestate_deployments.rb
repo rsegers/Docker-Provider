@@ -90,6 +90,8 @@ module Fluent::Plugin
           end
           @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
           $log.info("in_kubestate_deployments::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+          @excludeNameSpaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
+          $log.info("in_kubestate_deployments::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
         # Initializing continuation token to nil
         continuationToken = nil
@@ -142,6 +144,7 @@ module Fluent::Plugin
       begin
         metricInfo = deployments
         metricInfo["items"].each do |deployment|
+          next unless !KubernetesApiClient.isExcludeResourceItem(deployment["metadata"]["namespace"], @excludeNameSpaces)
           deploymentName = deployment["metadata"]["name"]
           deploymentNameSpace = deployment["metadata"]["namespace"]
           deploymentCreatedTime = ""

@@ -67,6 +67,8 @@ module Fluent::Plugin
         $log.info("in_container_inventory::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
         @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
         $log.info("in_container_inventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
+        @excludeNameSpaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
+        $log.info("in_container_inventory::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
       end
       begin
         containerRuntimeEnv = ENV["CONTAINER_RUNTIME"]
@@ -79,6 +81,7 @@ module Fluent::Plugin
             podList = JSON.parse(response.body)
             if !podList.nil? && !podList.empty? && podList.key?("items") && !podList["items"].nil? && !podList["items"].empty?
               podList["items"].each do |item|
+                next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["namespace"], @excludeNameSpaces)
                 containerInventoryRecords = KubernetesContainerInventory.getContainerInventoryRecords(item, batchTime, clusterCollectEnvironmentVar)
                 containerInventoryRecords.each do |containerRecord|
                   ContainerInventoryState.writeContainerState(containerRecord)

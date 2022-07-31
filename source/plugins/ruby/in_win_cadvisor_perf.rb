@@ -22,6 +22,7 @@ module Fluent::Plugin
       require_relative "constants"
       require_relative "extension_utils"
       @insightsMetricsTag = "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
+      @excludeNameSpaces = []
     end
 
     config_param :run_interval, :time, :default => 60
@@ -69,8 +70,12 @@ module Fluent::Plugin
           end
 	        $log.info("in_win_cadvisor_perf::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_win_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
+          
           @run_interval = ExtensionUtils.getdataCollectionIntervalSeconds()
           $log.info("in_win_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+
+          @excludeNameSpaces = ExtensionUtils.getdataCollectionExcludeNameSpaces()
+          $log.info("in_win_cadvisor_perf::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
 
         #Resetting this cache so that it is populated with the current set of containers with every call
@@ -86,7 +91,7 @@ module Fluent::Plugin
         end
         @@winNodes.each do |winNode|
           eventStream = Fluent::MultiEventStream.new
-          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, metricTime: Time.now.utc.iso8601)
+          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, @excludeNameSpaces, metricTime: Time.now.utc.iso8601)
           metricData.each do |record|
             if !record.empty?
               eventStream.add(time, record) if record

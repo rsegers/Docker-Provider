@@ -147,7 +147,7 @@ class Constants
 
   # extension settings and these should match with DCR extension settings
   EXTENSION_SETTING_DATA_COLLECTION_INTERVAL = "dataCollectionIntervalMinutes"
-  EXTENSION_SETTING_EXCLUDE_NAMESPACES = "excludeNamespaces"
+  EXTENSION_SETTING_EXCLUDE_NAMESPACES = "excludeNameSpaces"
 
   # min and max data collection interval minutes
   DATA_COLLECTION_INTERVAL_MINUTES_MIN = 1
