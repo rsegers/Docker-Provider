@@ -740,12 +740,8 @@ module Fluent::Plugin
                 if (podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
                   $log.info("in_kube_podinventory::watch_pods:number of pod items :#{podInventory["items"].length}  from Kube API @ #{Time.now.utc.iso8601}")
                   podInventory["items"].each do |item|
-                    podNameSpace =  ""
-                    if !item["metdata"].nil? && !item["metadata"]["namespace"].nil?
-                      podNameSpace = item["metadata"]["namespace"]
-                    end
                     # exclude resource item if this in excluded namespaces 
-                    next unless !KubernetesApiClient.isExcludeResourceItem(podNameSpace, @excludeNameSpaces)
+                    next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)
                     key = item["metadata"]["uid"]
                     if !key.nil? && !key.empty?
                       nodeName = (!item["spec"].nil? && !item["spec"]["nodeName"].nil?) ? item["spec"]["nodeName"] : ""
@@ -785,12 +781,8 @@ module Fluent::Plugin
                     if (podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
                       $log.info("in_kube_podinventory::watch_pods:number of pod items :#{podInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
                       podInventory["items"].each do |item|
-                        podNameSpace =  ""
-                        if !item["metdata"].nil? && !item["metadata"]["namespace"].nil?
-                          podNameSpace = item["metadata"]["namespace"]
-                        end
                         # exclude resource item if this in excluded namespaces 
-                        next unless !KubernetesApiClient.isExcludeResourceItem(podNameSpace, @excludeNameSpaces)                        
+                        next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)                        
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?
                           nodeName = (!item["spec"].nil? && !item["spec"]["nodeName"].nil?) ? item["spec"]["nodeName"] : ""
@@ -849,12 +841,8 @@ module Fluent::Plugin
                       # We have to abort here because this might cause lastResourceVersion inconsistency by skipping a potential RV with valid data!
                       break
                     end
-                    podNameSpace =  ""
-                    if !item["metdata"].nil? && !item["metadata"]["namespace"].nil?
-                      podNameSpace = item["metadata"]["namespace"]
-                    end
                     # exclude resource item if this in excluded namespaces 
-                    if !KubernetesApiClient.isExcludeResourceItem(podNameSpace, @excludeNameSpaces)
+                    if !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)
                       if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))                     
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?
@@ -948,12 +936,8 @@ module Fluent::Plugin
                   if (serviceInventory.key?("items") && !serviceInventory["items"].nil? && !serviceInventory["items"].empty?)
                     $log.info("in_kube_podinventory::watch_services:number of service items #{serviceInventory["items"].length} @ #{Time.now.utc.iso8601}")
                     serviceInventory["items"].each do |item|
-                      serviceNamespace =  ""
-                      if !item["metdata"].nil? && !item["metadata"]["namespace"].nil?
-                        serviceNamespace = item["metadata"]["namespace"]
-                      end
                       # exclude resource item if this in excluded namespaces 
-                      next unless !KubernetesApiClient.isExcludeResourceItem(serviceNamespace, @excludeNameSpaces)
+                      next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)
                       key = item["metadata"]["uid"]
                       if !key.nil? && !key.empty?
                         serviceItem = KubernetesApiClient.getOptimizedItem("services", item)
@@ -1004,12 +988,8 @@ module Fluent::Plugin
                       # We have to abort here because this might cause lastResourceVersion inconsistency by skipping a potential RV with valid data!
                       break
                     end
-                    serviceNamespace =  ""
-                    if !item["metdata"].nil? && !item["metadata"]["namespace"].nil?
-                      serviceNamespace = item["metadata"]["namespace"]
-                    end
                     # exclude resource item if this in excluded namespaces 
-                    if !KubernetesApiClient.isExcludeResourceItem(serviceNamespace, @excludeNameSpaces)                    
+                    if !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)                    
                       if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?

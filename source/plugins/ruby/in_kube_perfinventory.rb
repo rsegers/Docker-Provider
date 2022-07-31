@@ -267,7 +267,7 @@ module Fluent::Plugin
                 if (podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
                   $log.info("in_kube_perfinventory::watch_pods:number of pod items :#{podInventory["items"].length}  from Kube API @ #{Time.now.utc.iso8601}")
                   podInventory["items"].each do |item|
-                    next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["namespace"], @excludeNameSpaces)
+                    next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"],item["metadata"]["namespace"], @excludeNameSpaces)
                     key = item["metadata"]["uid"]
                     if !key.nil? && !key.empty?
                       podItem = KubernetesApiClient.getOptimizedItem("pods-perf", item)
@@ -299,7 +299,7 @@ module Fluent::Plugin
                     if (podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
                       $log.info("in_kube_perfinventory::watch_pods:number of pod items :#{podInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
                       podInventory["items"].each do |item|
-                        next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["namespace"], @excludeNameSpaces)
+                        next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?
                           podItem = KubernetesApiClient.getOptimizedItem("pods-perf", item)
@@ -350,7 +350,7 @@ module Fluent::Plugin
                       # We have to abort here because this might cause lastResourceVersion inconsistency by skipping a potential RV with valid data!
                       break
                     end
-                    if !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["namespace"], @excludeNameSpaces)
+                    if !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)
                       if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?

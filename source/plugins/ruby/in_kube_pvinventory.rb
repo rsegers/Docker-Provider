@@ -137,7 +137,7 @@ module Fluent::Plugin
           record["PVType"] = type
           record["PVTypeInfo"] = typeInfo
  
-          next unless !KubernetesApiClient.isExcludeResourceItem(pvcNamespace, @excludeNameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(pvcName, pvcNamespace, @excludeNameSpaces)
 
           record["CollectionTime"] = batchTime
           record["ClusterId"] = KubernetesApiClient.getClusterId

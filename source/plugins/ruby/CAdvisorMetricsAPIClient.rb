@@ -210,7 +210,7 @@ class CAdvisorMetricsAPIClient
       return metricDataItems
     end
 
-    def getContainerCpuMetricItems(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn, metricPollTime)
+    def getContainerCpuMetricItems(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn, metricPollTime, excludeNameSpaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       timeDifference = (DateTime.now.to_time.to_i - @@telemetryCpuMetricTimeTracker).abs
@@ -221,6 +221,8 @@ class CAdvisorMetricsAPIClient
           podUid = pod["podRef"]["uid"]
           podName = pod["podRef"]["name"]
           podNamespace = pod["podRef"]["namespace"]
+
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNameSpace, excludeNameSpaces)
 
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
@@ -504,7 +506,7 @@ class CAdvisorMetricsAPIClient
     end
 
     # usageNanoCores doesnt exist for windows nodes. Hence need to compute this from usageCoreNanoSeconds
-    def getContainerCpuMetricItemRate(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn, metricPollTime)
+    def getContainerCpuMetricItemRate(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn, metricPollTime, excludeNameSpaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       timeDifference = (DateTime.now.to_time.to_i - @@telemetryCpuMetricTimeTracker).abs
@@ -517,6 +519,8 @@ class CAdvisorMetricsAPIClient
           podUid = pod["podRef"]["uid"]
           podName = pod["podRef"]["name"]
           podNamespace = pod["podRef"]["namespace"]
+
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNameSpace, excludeNameSpaces)
 
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
@@ -633,7 +637,7 @@ class CAdvisorMetricsAPIClient
       return metricItems
     end
 
-    def getContainerMemoryMetricItems(metricJSON, hostName, memoryMetricNameToCollect, metricNametoReturn, metricPollTime, operatingSystem)
+    def getContainerMemoryMetricItems(metricJSON, hostName, memoryMetricNameToCollect, metricNametoReturn, metricPollTime, operatingSystem, excludeNameSpaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       timeDifference = (DateTime.now.to_time.to_i - @@telemetryMemoryMetricTimeTracker).abs
@@ -643,7 +647,8 @@ class CAdvisorMetricsAPIClient
         metricInfo["pods"].each do |pod|
           podUid = pod["podRef"]["uid"]
           podName = pod["podRef"]["name"]
-          podNamespace = pod["podRef"]["namespace"]
+          podNamespace = pod["podRef"]["namespace"]          
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNameSpace, excludeNameSpaces)
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
               containerName = container["name"]
@@ -884,14 +889,17 @@ class CAdvisorMetricsAPIClient
       return metricItem
     end
 
-    def getContainerStartTimeMetricItems(metricJSON, hostName, metricNametoReturn, metricPollTime)
+    def getContainerStartTimeMetricItems(metricJSON, hostName, metricNametoReturn, metricPollTime, excludeNameSpaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       #currentTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
       begin
         metricInfo = metricJSON
         metricInfo["pods"].each do |pod|
-          podUid = pod["podRef"]["uid"]
+          podUid = pod["podRef"]["uid"]          
+          podNamespace = pod["podRef"]["namespace"] 
+          podName = pod["podRef"]["name"]         
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNameSpace, excludeNameSpaces)
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
               containerName = container["name"]

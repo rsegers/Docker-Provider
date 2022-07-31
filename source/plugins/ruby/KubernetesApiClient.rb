@@ -1395,11 +1395,15 @@ class KubernetesApiClient
       return isEmitCacheTelemtryEnabled
     end
 
-    def isExcludeResourceItem(resourceNamespace, excludeNameSpaces)
+    def isExcludeResourceItem(resourceName, resourceNamespace, excludeNameSpaces)
        isExclude = false 
        begin
-         if !resourceNamespace.nil? && !resourceNamespace.empty?
-            !excludeNameSpaces.nil? && !excludeNameSpaces.empty? && excludeNameSpaces.length > 0
+         if !resourceName.nil? && !resourceName.empty? 
+          && resourceName.start_with("omsagent-")
+          && resourceNamespace.eql("kube-system")
+          isExclude = false  
+         elsif  !resourceNamespace.nil? && !resourceNamespace.empty?
+            && !excludeNameSpaces.nil? && !excludeNameSpaces.empty? && excludeNameSpaces.length > 0
             && excludeNameSpaces.include?(resourceNamespace)
             isExclude = true
          end 

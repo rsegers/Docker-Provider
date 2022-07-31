@@ -133,7 +133,7 @@ module Fluent::Plugin
       begin
         metricInfo = hpas
         metricInfo["items"].each do |hpa|
-          next unless !KubernetesApiClient.isExcludeResourceItem(hpa["metadata"]["namespace"], @excludeNameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(hpa["metadata"]["name"], hpa["metadata"]["namespace"], @excludeNameSpaces)
           hpaName = hpa["metadata"]["name"]
           hpaNameSpace = hpa["metadata"]["namespace"]
           hpaCreatedTime = ""

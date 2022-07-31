@@ -81,7 +81,7 @@ module Fluent::Plugin
             podList = JSON.parse(response.body)
             if !podList.nil? && !podList.empty? && podList.key?("items") && !podList["items"].nil? && !podList["items"].empty?
               podList["items"].each do |item|
-                next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["namespace"], @excludeNameSpaces)
+                next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)
                 containerInventoryRecords = KubernetesContainerInventory.getContainerInventoryRecords(item, batchTime, clusterCollectEnvironmentVar)
                 containerInventoryRecords.each do |containerRecord|
                   ContainerInventoryState.writeContainerState(containerRecord)
