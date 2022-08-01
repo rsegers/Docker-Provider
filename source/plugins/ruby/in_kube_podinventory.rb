@@ -58,7 +58,7 @@ module Fluent::Plugin
       @windowsContainerRecordsCacheSizeBytes = 0
 
       @kubeservicesTag = "oneagent.containerInsights.KUBE_SERVICES_BLOB"
-      @containerInventoryTag = "oneagent.containerInsights.CONTAINER_INVENTORY_BLOB"
+      @containerInventoryTag = "oneagent.containerInsights.CONTAINER_INVENTORY_BLOB"      
       @excludeNameSpaces = []
     end
 
@@ -110,6 +110,9 @@ module Fluent::Plugin
         @watchPodsThread = Thread.new(&method(:watch_pods))
         @watchServicesThread = Thread.new(&method(:watch_services))
         @@podTelemetryTimeTracker = DateTime.now.to_time.to_i
+        @logAnalyticsFlushIntervalSeconds = 60      
+        @logAnalyticsIngestionTimeTracker = DateTime.now.to_time.to_i
+        @logAnalyticsFlush = true
       end
     end
 
@@ -130,7 +133,7 @@ module Fluent::Plugin
     def enumerate(podList = nil)
       begin
         podInventory = podList
-        telemetryFlush = false
+        telemetryFlush = false        
         @podCount = 0
         @containerCount = 0
         @serviceCount = 0
@@ -172,11 +175,12 @@ module Fluent::Plugin
           $log.info("in_kube_podinventory::enumerate: using containerinventory tag -#{@containerInventoryTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_podinventory::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_podinventory::enumerate: using kubepodinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
-          @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-          $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
+          @logAnalyticsFlushIntervalSeconds = ExtensionUtils.getDataCollectionIntervalSeconds()
+          $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds) -#{@logAnalyticsFlushIntervalSeconds} @ #{Time.now.utc.iso8601}")
           @excludeNameSpaces = ExtensionUtils.getDataCollectionExcludeNameSpaces()
-          $log.info("in_kube_podinventory::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_podinventory::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")         
         end
+       
 
         serviceInventory = {}
         serviceItemsCacheSizeKB = 0
@@ -216,7 +220,17 @@ module Fluent::Plugin
         podInventory = nil
         serviceRecords = nil
         @mdmPodRecordItems = nil
+        
+        if ExtensionUtils.isAADMSIAuthMode()
+          if (DateTime.now.to_time.to_i - @logAnalyticsIngestionTimeTracker).abs >= @logAnalyticsFlushIntervalSeconds
+            @logAnalyticsFlush = true
+            @logAnalyticsIngestionTimeTracker = DateTime.now.to_time.to_i
+          else
+            @logAnalyticsFlush = false 
+          end
+        end
 
+       
         # Adding telemetry to send pod telemetry every 5 minutes
         timeDifference = (DateTime.now.to_time.to_i - @@podTelemetryTimeTracker).abs
         timeDifferenceInMinutes = timeDifference / 60
@@ -283,9 +297,11 @@ module Fluent::Plugin
           # pod inventory records
           podInventoryRecords = getPodInventoryRecords(item, serviceRecords, batchTime)
           @containerCount += podInventoryRecords.length
-          podInventoryRecords.each do |record|
-            if !record.nil?
-              eventStream.add(emitTime, record) if record
+          if @logAnalyticsFlush
+            podInventoryRecords.each do |record|
+              if !record.nil? 
+                eventStream.add(emitTime, record) if record
+              end
             end
           end
           # Setting this flag to true so that we can send ContainerInventory records for containers
@@ -305,7 +321,7 @@ module Fluent::Plugin
             @winContainerCount += containerInventoryRecords.length
             containerInventoryRecords.each do |cirecord|
               if !cirecord.nil?
-                containerInventoryStream.add(emitTime, cirecord) if cirecord
+                containerInventoryStream.add(emitTime, cirecord) if cirecord &&  @logAnalyticsFlush
                 ciRecordSize = cirecord.to_s.length
                 @winContainerInventoryTotalSizeBytes += ciRecordSize
                 if ciRecordSize >= Constants::MAX_RECORD_OR_FIELD_SIZE_FOR_TELEMETRY
@@ -375,32 +391,35 @@ module Fluent::Plugin
         end
 
         if continuationToken.nil? # sending kube services inventory records
-          kubeServicesEventStream = Fluent::MultiEventStream.new
-          serviceRecords.each do |kubeServiceRecord|
-            if !kubeServiceRecord.nil?
-              # adding before emit to reduce memory foot print
-              kubeServiceRecord["ClusterId"] = KubernetesApiClient.getClusterId
-              kubeServiceRecord["ClusterName"] = KubernetesApiClient.getClusterName
-              kubeServicesEventStream.add(emitTime, kubeServiceRecord) if kubeServiceRecord
-              if @PODS_EMIT_STREAM_BATCH_SIZE > 0 && kubeServicesEventStream.count >= @PODS_EMIT_STREAM_BATCH_SIZE
-                $log.info("in_kube_podinventory::parse_and_emit_records: number of service records emitted #{kubeServicesEventStream.count} @ #{Time.now.utc.iso8601}")
-                router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if kubeServicesEventStream
-                kubeServicesEventStream = Fluent::MultiEventStream.new
-                if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
-                  $log.info("kubeServicesEventEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+          if @logAnalyticsFlush
+            kubeServicesEventStream = Fluent::MultiEventStream.new
+            serviceRecords.each do |kubeServiceRecord|
+              if !kubeServiceRecord.nil?
+                # adding before emit to reduce memory foot print
+                kubeServiceRecord["ClusterId"] = KubernetesApiClient.getClusterId
+                kubeServiceRecord["ClusterName"] = KubernetesApiClient.getClusterName
+                kubeServicesEventStream.add(emitTime, kubeServiceRecord) if kubeServiceRecord 
+                if @PODS_EMIT_STREAM_BATCH_SIZE > 0 && kubeServicesEventStream.count >= @PODS_EMIT_STREAM_BATCH_SIZE
+                  $log.info("in_kube_podinventory::parse_and_emit_records: number of service records emitted #{kubeServicesEventStream.count} @ #{Time.now.utc.iso8601}")
+                  router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if kubeServicesEventStream
+                  kubeServicesEventStream = Fluent::MultiEventStream.new
+                  if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
+                    $log.info("kubeServicesEventEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+                  end
                 end
               end
-            end
-          end
+            end 
+          
 
-          if kubeServicesEventStream.count > 0
-            $log.info("in_kube_podinventory::parse_and_emit_records : number of service records emitted #{kubeServicesEventStream.count} @ #{Time.now.utc.iso8601}")
-            router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if kubeServicesEventStream
-            if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
-              $log.info("kubeServicesEventEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+            if kubeServicesEventStream.count > 0
+              $log.info("in_kube_podinventory::parse_and_emit_records : number of service records emitted #{kubeServicesEventStream.count} @ #{Time.now.utc.iso8601}")
+              router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if kubeServicesEventStream
+              if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
+                $log.info("kubeServicesEventEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+              end
             end
-          end
-          kubeServicesEventStream = nil
+            kubeServicesEventStream = nil
+          end 
         end
 
         #Updating value for AppInsights telemetry

@@ -106,6 +106,9 @@ module Fluent::Plugin
         @thread = Thread.new(&method(:run_periodic))
         @@nodeTelemetryTimeTracker = DateTime.now.to_time.to_i
         @@nodeInventoryLatencyTelemetryTimeTracker = DateTime.now.to_time.to_i
+        @logAnalyticsFlushIntervalSeconds = 60      
+        @logAnalyticsIngestionTimeTracker = DateTime.now.to_time.to_i
+        @logAnalyticsFlush = true
       end
     end
 
@@ -150,8 +153,8 @@ module Fluent::Plugin
           $log.info("in_kube_nodes::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_nodes::enumerate: using containernodeinventory tag -#{@ContainerNodeInventoryTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_nodes::enumerate: using kubenodeinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
-          @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-          $log.info("in_kube_nodes::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
+          @logAnalyticsFlushIntervalSeconds  = ExtensionUtils.getDataCollectionIntervalSeconds()
+          $log.info("in_kube_nodes::enumerate: using data collection interval(seconds) -#{@logAnalyticsFlushIntervalSeconds } @ #{Time.now.utc.iso8601}")
         end
         nodesAPIChunkStartTime = (Time.now.to_f * 1000).to_i
 
@@ -185,6 +188,16 @@ module Fluent::Plugin
         end
         # Setting this to nil so that we dont hold memory until GC kicks in
         nodeInventory = nil
+        
+        if @extensionUtils.isAADMSIAuthMode()
+          if (DateTime.now.to_time.to_i - @logAnalyticsIngestionTimeTracker).abs >= @logAnalyticsFlushIntervalSeconds
+            @logAnalyticsFlush = true
+            @logAnalyticsIngestionTimeTracker = DateTime.now.to_time.to_i
+          else
+            @logAnalyticsFlush = false 
+          end
+        end
+
       rescue => errorStr
         $log.warn "in_kube_nodes::enumerate:Failed in enumerate: #{errorStr}"
         $log.debug_backtrace(errorStr.backtrace)
@@ -229,11 +242,11 @@ module Fluent::Plugin
 
           # container node inventory
           containerNodeInventoryRecord = getContainerNodeInventoryRecord(item, batchTime)
-          containerNodeInventoryEventStream.add(emitTime, containerNodeInventoryRecord) if containerNodeInventoryRecord
+          containerNodeInventoryEventStream.add(emitTime, containerNodeInventoryRecord) if containerNodeInventoryRecord 
 
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && containerNodeInventoryEventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
             $log.info("in_kube_node::parse_and_emit_records: number of container node inventory records emitted #{containerNodeInventoryEventStream.count} @ #{Time.now.utc.iso8601}")
-            router.emit_stream(@ContainerNodeInventoryTag, containerNodeInventoryEventStream) if containerNodeInventoryEventStream
+            router.emit_stream(@ContainerNodeInventoryTag, containerNodeInventoryEventStream) if containerNodeInventoryEventStream && @logAnalyticsFlush
             containerNodeInventoryEventStream = Fluent::MultiEventStream.new
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
               $log.info("containerNodeInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -278,11 +291,11 @@ module Fluent::Plugin
             end
           end
           nodeMetricRecords.each do |metricRecord|
-            kubePerfEventStream.add(emitTime, metricRecord) if metricRecord
+            kubePerfEventStream.add(emitTime, metricRecord) if metricRecord 
           end
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && kubePerfEventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
             $log.info("in_kube_nodes::parse_and_emit_records: number of node perf metric records emitted #{kubePerfEventStream.count} @ #{Time.now.utc.iso8601}")
-            router.emit_stream(@kubeperfTag, kubePerfEventStream) if kubePerfEventStream
+            router.emit_stream(@kubeperfTag, kubePerfEventStream) if kubePerfEventStream && @logAnalyticsFlush
             kubePerfEventStream = Fluent::MultiEventStream.new
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
               $log.info("kubeNodePerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -308,11 +321,11 @@ module Fluent::Plugin
             nodeGPUInsightsMetricsRecords.push(insightsMetricsRecord)
           end
           nodeGPUInsightsMetricsRecords.each do |insightsMetricsRecord|
-            insightsMetricsEventStream.add(emitTime, insightsMetricsRecord) if insightsMetricsRecord
+            insightsMetricsEventStream.add(emitTime, insightsMetricsRecord) if insightsMetricsRecord 
           end
           if @NODES_EMIT_STREAM_BATCH_SIZE > 0 && insightsMetricsEventStream.count >= @NODES_EMIT_STREAM_BATCH_SIZE
             $log.info("in_kube_nodes::parse_and_emit_records: number of GPU node perf metric records emitted #{insightsMetricsEventStream.count} @ #{Time.now.utc.iso8601}")
-            router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream
+            router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream && @logAnalyticsFlush
             insightsMetricsEventStream = Fluent::MultiEventStream.new
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
               $log.info("kubeNodeInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -401,7 +414,7 @@ module Fluent::Plugin
         end
         if eventStream.count > 0
           $log.info("in_kube_node::parse_and_emit_records: number of node inventory records emitted #{eventStream.count} @ #{Time.now.utc.iso8601}")
-          router.emit_stream(@tag, eventStream) if eventStream
+          router.emit_stream(@tag, eventStream) if eventStream && @logAnalyticsFlush
           $log.info("in_kube_node::parse_and_emit_records: number of mdm node inventory records emitted #{eventStream.count} @ #{Time.now.utc.iso8601}")
           router.emit_stream(@MDMKubeNodeInventoryTag, eventStream) if eventStream
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
@@ -411,7 +424,7 @@ module Fluent::Plugin
         end
         if containerNodeInventoryEventStream.count > 0
           $log.info("in_kube_node::parse_and_emit_records: number of container node inventory records emitted #{containerNodeInventoryEventStream.count} @ #{Time.now.utc.iso8601}")
-          router.emit_stream(@ContainerNodeInventoryTag, containerNodeInventoryEventStream) if containerNodeInventoryEventStream
+          router.emit_stream(@ContainerNodeInventoryTag, containerNodeInventoryEventStream) if containerNodeInventoryEventStream && @logAnalyticsFlush
           containerNodeInventoryEventStream = nil
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
             $log.info("containerNodeInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -420,7 +433,7 @@ module Fluent::Plugin
 
         if kubePerfEventStream.count > 0
           $log.info("in_kube_nodes::parse_and_emit_records: number of node perf metric records emitted #{kubePerfEventStream.count} @ #{Time.now.utc.iso8601}")
-          router.emit_stream(@kubeperfTag, kubePerfEventStream) if kubePerfEventStream
+          router.emit_stream(@kubeperfTag, kubePerfEventStream) if kubePerfEventStream && @logAnalyticsFlush
           kubePerfEventStream = nil
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
             $log.info("kubeNodePerfInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -428,7 +441,7 @@ module Fluent::Plugin
         end
         if insightsMetricsEventStream.count > 0
           $log.info("in_kube_nodes::parse_and_emit_records: number of GPU node perf metric records emitted #{insightsMetricsEventStream.count} @ #{Time.now.utc.iso8601}")
-          router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream
+          router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream && @logAnalyticsFlush
           insightsMetricsEventStream = nil
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
             $log.info("kubeNodeInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")

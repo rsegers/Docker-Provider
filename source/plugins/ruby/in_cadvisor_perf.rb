@@ -41,6 +41,9 @@ module Fluent::Plugin
         @condition = ConditionVariable.new
         @mutex = Mutex.new
         @thread = Thread.new(&method(:run_periodic))
+        @logAnalyticsIngestionTimeTracker = DateTime.now.to_time.to_i
+        @logAnalyticsFlush = true
+        @logAnalyticsFlushIntervalSeconds = 60     
       end
     end
 
@@ -85,7 +88,7 @@ module Fluent::Plugin
           eventStream.add(time, record) if record
         end
         
-        router.emit_stream(@tag, eventStream) if eventStream
+        router.emit_stream(@tag, eventStream) if eventStream && @logAnalyticsFlush
         router.emit_stream(@mdmtag, eventStream) if eventStream
 
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
@@ -102,7 +105,7 @@ module Fluent::Plugin
               insightsMetricsEventStream.add(time, insightsMetricsRecord) if insightsMetricsRecord
             end
 
-            router.emit_stream(@insightsmetricstag, insightsMetricsEventStream) if insightsMetricsEventStream
+            router.emit_stream(@insightsmetricstag, insightsMetricsEventStream) if insightsMetricsEventStream && @logAnalyticsFlush
             router.emit_stream(@mdmtag, insightsMetricsEventStream) if insightsMetricsEventStream
 
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)
@@ -115,6 +118,15 @@ module Fluent::Plugin
           ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
         end
         #end GPU InsightsMetrics items
+
+        if @extensionUtils.isAADMSIAuthMode()
+          if (DateTime.now.to_time.to_i - @logAnalyticsIngestionTimeTracker).abs >= @logAnalyticsFlushIntervalSeconds
+            @logAnalyticsFlush = true
+            @logAnalyticsIngestionTimeTracker = DateTime.now.to_time.to_i
+          else
+            @logAnalyticsFlush = false 
+          end
+        end
 
       rescue => errorStr
         $log.warn "Failed to retrieve cadvisor metric data: #{errorStr}"

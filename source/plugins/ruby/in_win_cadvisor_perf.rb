@@ -41,6 +41,9 @@ module Fluent::Plugin
         @thread = Thread.new(&method(:run_periodic))
         @@winNodeQueryTimeTracker = DateTime.now.to_time.to_i
         @@cleanupRoutineTimeTracker = DateTime.now.to_time.to_i
+        @logAnalyticsIngestionTimeTracker = DateTime.now.to_time.to_i
+        @logAnalyticsFlush = true
+        @logAnalyticsFlushIntervalSeconds = 60    
       end
     end
 
@@ -71,8 +74,8 @@ module Fluent::Plugin
 	        $log.info("in_win_cadvisor_perf::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_win_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
           
-          @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-          $log.info("in_win_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+          @logAnalyticsFlushIntervalSeconds = ExtensionUtils.getDataCollectionIntervalSeconds()
+          $log.info("in_win_cadvisor_perf::enumerate: using data collection interval(seconds): #{@logAnalyticsFlushIntervalSeconds} @ #{Time.now.utc.iso8601}")
 
           @excludeNameSpaces = ExtensionUtils.getDataCollectionExcludeNameSpaces()
           $log.info("in_win_cadvisor_perf::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
@@ -90,17 +93,19 @@ module Fluent::Plugin
           @@winNodeQueryTimeTracker = DateTime.now.to_time.to_i
         end
         @@winNodes.each do |winNode|
-          eventStream = Fluent::MultiEventStream.new
-          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, @excludeNameSpaces, metricTime: Time.now.utc.iso8601)
-          metricData.each do |record|
-            if !record.empty?
-              eventStream.add(time, record) if record
+          if @logAnalyticsFlush
+            eventStream = Fluent::MultiEventStream.new
+            metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, @excludeNameSpaces, metricTime: Time.now.utc.iso8601)
+            metricData.each do |record|
+              if !record.empty?
+                eventStream.add(time, record) if record
+              end
             end
-          end
-          router.emit_stream(@tag, eventStream) if eventStream
+            router.emit_stream(@tag, eventStream) if eventStream
 
-          if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
-            $log.info("winCAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+            if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
+              $log.info("winCAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+            end
           end
 
           #start GPU InsightsMetrics items
@@ -113,7 +118,7 @@ module Fluent::Plugin
               insightsMetricsEventStream.add(time, insightsMetricsRecord) if insightsMetricsRecord
             end
 
-            router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream
+            router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream && @logAnalyticsFlush
             router.emit_stream(@mdmtag, insightsMetricsEventStream) if insightsMetricsEventStream
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)
               $log.info("winCAdvisorInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -134,6 +139,15 @@ module Fluent::Plugin
           $log.info "in_win_cadvisor_perf : Cleanup routine kicking in to clear deleted containers from cache"
           CAdvisorMetricsAPIClient.clearDeletedWinContainersFromCache()
           @@cleanupRoutineTimeTracker = DateTime.now.to_time.to_i
+        end
+
+        if @extensionUtils.isAADMSIAuthMode()
+          if (DateTime.now.to_time.to_i - @logAnalyticsIngestionTimeTracker).abs >= @logAnalyticsFlushIntervalSeconds
+            @logAnalyticsFlush = true
+            @logAnalyticsIngestionTimeTracker = DateTime.now.to_time.to_i
+          else
+            @logAnalyticsFlush = false 
+          end
         end
       rescue => errorStr
         $log.warn "Failed to retrieve cadvisor metric data for windows nodes: #{errorStr}"
