@@ -511,40 +511,41 @@ function Start-Telegraf {
     Write-Host "replacing nodename in telegraf config"
     (Get-Content "C:\etc\telegraf\telegraf.conf").replace('placeholder_hostname', $hostName) | Set-Content "C:\etc\telegraf\telegraf.conf"
 
-    Write-Host "Installing telegraf service"
-    C:\opt\telegraf\telegraf.exe --service install --config "C:\etc\telegraf\telegraf.conf"
+    #Write-Host "Installing telegraf service"
+    #C:\opt\telegraf\telegraf.exe --service install --config "C:\etc\telegraf\telegraf.conf"
 
     # Setting delay auto start for telegraf since there have been known issues with windows server and telegraf -
     # https://github.com/influxdata/telegraf/issues/4081
     # https://github.com/influxdata/telegraf/issues/3601
-    try {
-        $serverName = [System.Environment]::GetEnvironmentVariable("PODNAME", "process")
-        if (![string]::IsNullOrEmpty($serverName)) {
-            sc.exe \\$serverName config telegraf start= delayed-auto
-            Write-Host "Successfully set delayed start for telegraf"
-
-        }
-        else {
-            Write-Host "Failed to get environment variable PODNAME to set delayed telegraf start"
-        }
-    }
-    catch {
-        $e = $_.Exception
-        Write-Host $e
-        Write-Host "exception occured in delayed telegraf start.. continuing without exiting"
-    }
+    #try {
+    #    $serverName = [System.Environment]::GetEnvironmentVariable("PODNAME", "process")
+    #    if (![string]::IsNullOrEmpty($serverName)) {
+    #        sc.exe \\$serverName config telegraf start= delayed-auto
+    #        Write-Host "Successfully set delayed start for telegraf"
+    #
+    #    }
+    #    else {
+    #        Write-Host "Failed to get environment variable PODNAME to set delayed telegraf start"
+    #    }
+    #}
+    #catch {
+    #    $e = $_.Exception
+    #    Write-Host $e
+    #    Write-Host "exception occured in delayed telegraf start.. continuing without exiting"
+    #}
     Write-Host "Running telegraf service in test mode"
     C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --test
     Write-Host "Starting telegraf service"
-    C:\opt\telegraf\telegraf.exe --service start
+    #C:\opt\telegraf\telegraf.exe --service start
+    start /b "" cmd /c C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --console ^>telegraf-log.txt 2^>^&1
 
     # Trying to start telegraf again if it did not start due to fluent bit not being ready at startup
-    Get-Service telegraf | findstr Running
+    tasklist | findstr telegraf
     if ($? -eq $false) {
         Write-Host "trying to start telegraf in again in 30 seconds, since fluentbit might not have been ready..."
         Start-Sleep -s 30
-        C:\opt\telegraf\telegraf.exe --service start
-        Get-Service telegraf
+        start /b "" cmd /c C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --console ^>telegraf-log.txt 2^>^&1
+        tasklist | findstr telegraf
     }
 }
 
