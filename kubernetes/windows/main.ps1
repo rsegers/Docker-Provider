@@ -537,15 +537,15 @@ function Start-Telegraf {
     C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --test
     Write-Host "Starting telegraf service"
     #C:\opt\telegraf\telegraf.exe --service start
-    start /b "" cmd /c C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --console ^>telegraf-log.txt 2^>^&1
+    C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --console
 
     # Trying to start telegraf again if it did not start due to fluent bit not being ready at startup
-    tasklist | findstr telegraf
+    Get-Process | findstr telegraf
     if ($? -eq $false) {
         Write-Host "trying to start telegraf in again in 30 seconds, since fluentbit might not have been ready..."
         Start-Sleep -s 30
-        start /b "" cmd /c C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --console ^>telegraf-log.txt 2^>^&1
-        tasklist | findstr telegraf
+        C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --console
+        Get-Process | findstr telegraf
     }
 }
 
