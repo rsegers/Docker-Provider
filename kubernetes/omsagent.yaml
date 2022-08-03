@@ -831,7 +831,7 @@ spec:
             value: "3"
      containers:
        - name: omsagent-win
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06142022"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:win-08022022-33785659"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
