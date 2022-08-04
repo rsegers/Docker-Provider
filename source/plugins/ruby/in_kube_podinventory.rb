@@ -174,7 +174,7 @@ module Fluent::Plugin
           $log.info("in_kube_podinventory::enumerate: using kubepodinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
           @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
           $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
-          @excludeNameSpaces = ExtensionUtils.getDataCollectionExcludeNameSpaces()
+          @excludeNameSpaces = ExtensionUtils.getExcludedNamespacesForDataCollection()
           $log.info("in_kube_podinventory::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
 
