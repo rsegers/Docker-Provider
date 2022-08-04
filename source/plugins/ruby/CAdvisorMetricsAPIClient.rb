@@ -155,8 +155,8 @@ class CAdvisorMetricsAPIClient
           # Checking if we are in windows daemonset and sending only few metrics that are needed for MDM
           if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
             # Container metrics
-            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem))
-            containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime)
+            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem, excludeNameSpaces))
+            containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime, excludeNameSpaces)
             if containerCpuUsageNanoSecondsRate && !containerCpuUsageNanoSecondsRate.empty? && !containerCpuUsageNanoSecondsRate.nil?
               metricDataItems.concat(containerCpuUsageNanoSecondsRate)
             end
@@ -167,15 +167,15 @@ class CAdvisorMetricsAPIClient
             end
             metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime))
           else
-            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem))
-            metricDataItems.concat(getContainerStartTimeMetricItems(metricInfo, hostName, "restartTimeEpoch", metricTime))
+            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem, excludeNameSpaces))
+            metricDataItems.concat(getContainerStartTimeMetricItems(metricInfo, hostName, "restartTimeEpoch", metricTime, excludeNameSpaces))
 
             if operatingSystem == "Linux"
-              metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores", Constants::CPU_USAGE_NANO_CORES, metricTime))
-              metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime, operatingSystem))
+              metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores", Constants::CPU_USAGE_NANO_CORES, metricTime, excludeNameSpaces))
+              metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime, operatingSystem, excludeNameSpaces))
               metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime))
             elsif operatingSystem == "Windows"
-              containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime)
+              containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime, excludeNameSpaces)
               if containerCpuUsageNanoSecondsRate && !containerCpuUsageNanoSecondsRate.empty? && !containerCpuUsageNanoSecondsRate.nil?
                 metricDataItems.concat(containerCpuUsageNanoSecondsRate)
               end
