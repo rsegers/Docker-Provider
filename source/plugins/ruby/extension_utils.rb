@@ -31,9 +31,9 @@ class ExtensionUtils
              extensionSettings = Extension.instance.get_extension_settings()
              if !extensionSettings.nil? && 
               !extensionSettings.empty? && 
-              extensionSettings.has_key(Constants::EXTENSION_SETTING_DATA_COLLECTION_INTERVAL)
+              extensionSettings.has_key?(Constants::EXTENSION_SETTING_DATA_COLLECTION_INTERVAL)
                intervalMinutes = extensionSettings[Constants::EXTENSION_SETTING_DATA_COLLECTION_INTERVAL]
-               if is_number?(intervalMinutes) && 
+               if intervalMinutes.kind_of?(Integer) && 
                 intervalMinutes.to_i >= Constants::DATA_COLLECTION_INTERVAL_MINUTES_MIN && 
                 intervalMinutes.to_i <= Constants::DATA_COLLECTION_INTERVAL_MINUTES_MAX
                 collectionIntervalSeconds =  60 * intervalMinutes.to_i
@@ -41,7 +41,7 @@ class ExtensionUtils
                 $log.warn("ExtensionUtils::getDataCollectionIntervalSeconds: dataCollectionIntervalMinutes: #{intervalMinutes} not valid hence using default")    
                end
              end
-          rescue => err 
+          rescue => errorStr 
             $log.warn("ExtensionUtils::getDataCollectionIntervalSeconds: failed with an exception: #{errorStr}")
           end          
           return collectionIntervalSeconds
@@ -53,7 +53,7 @@ class ExtensionUtils
              extensionSettings = Extension.instance.get_extension_settings()
              if !extensionSettings.nil? && 
               !extensionSettings.empty? && 
-              extensionSettings.has_key(Constants::EXTENSION_SETTING_EXCLUDE_NAMESPACES)
+              extensionSettings.has_key?(Constants::EXTENSION_SETTING_EXCLUDE_NAMESPACES)
                namespacesToExclude = extensionSettings[Constants::EXTENSION_SETTING_EXCLUDE_NAMESPACES]
                if !namespacesToExclude.nil? && !namespacesToExclude.empty? && namespacesToExclude.kind_of?(Array) && namespacesToExclude.length > 0 
                  uniqNamespaces = namespacesToExclude.uniq                 
@@ -62,7 +62,7 @@ class ExtensionUtils
                 $log.warn("ExtensionUtils::getNamespacesToExcludeForDataCollection: excludeNameSpaces: #{namespacesToExclude} not valid hence using default")                   
                end             
              end
-          rescue => err 
+          rescue => errorStr 
             $log.warn("ExtensionUtils::getNamespacesToExcludeForDataCollection: failed with an exception: #{errorStr}")
           end
           return excludeNameSpaces

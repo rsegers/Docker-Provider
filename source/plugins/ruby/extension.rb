@@ -34,8 +34,7 @@ class Extension
       if !extensionConfigurations.nil? && !extensionConfigurations.empty?
         extensionConfigurations.each do |extensionConfig|
           extSettings = extensionConfig["extensionSettings"]
-          # TODO - can extensionsettings present in multiple extension configurations??
-          if !extensionSettings.nil? && !extensionSettings.empty?          
+          if !extSettings.nil? && !extSettings.empty?          
             extensionSettings = extSettings
           end
         end
