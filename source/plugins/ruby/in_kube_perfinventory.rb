@@ -139,6 +139,7 @@ module Fluent::Plugin
 
       begin #begin block start
         podInventory["items"].each do |item| #podInventory block start
+          next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)
           nodeName = ""
           if !item["spec"]["nodeName"].nil?
             nodeName = item["spec"]["nodeName"]
