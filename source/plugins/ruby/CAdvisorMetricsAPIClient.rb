@@ -313,7 +313,7 @@ class CAdvisorMetricsAPIClient
       return metricItems
     end
 
-    def getInsightsMetrics(winNode: nil, metricTime: Time.now.utc.iso8601)
+    def getInsightsMetrics(winNode: nil, excludeNameSpaces: [], metricTime: Time.now.utc.iso8601)
       metricDataItems = []
       begin
         cAdvisorStats = getSummaryStatsFromCAdvisor(winNode)
@@ -332,11 +332,11 @@ class CAdvisorMetricsAPIClient
           operatingSystem = "Linux"
         end
         if !metricInfo.nil?
-          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryTotal", "containerGpumemoryTotalBytes", metricTime))
-          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryUsed", "containerGpumemoryUsedBytes", metricTime))
-          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "dutyCycle", "containerGpuDutyCycle", metricTime))
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryTotal", "containerGpumemoryTotalBytes", metricTime, excludeNameSpaces))
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryUsed", "containerGpumemoryUsedBytes", metricTime, excludeNameSpaces))
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "dutyCycle", "containerGpuDutyCycle", metricTime, excludeNameSpaces))
 
-          metricDataItems.concat(getPersistentVolumeMetrics(metricInfo, hostName, "usedBytes", Constants::PV_USED_BYTES, metricTime))
+          metricDataItems.concat(getPersistentVolumeMetrics(metricInfo, hostName, "usedBytes", Constants::PV_USED_BYTES, metricTime, excludeNameSpaces))
         else
           @Log.warn("Couldn't get Insights metrics information for host: #{hostName} os:#{operatingSystem}")
         end
@@ -347,7 +347,7 @@ class CAdvisorMetricsAPIClient
       return metricDataItems
     end
 
-    def getPersistentVolumeMetrics(metricJSON, hostName, metricNameToCollect, metricNameToReturn, metricPollTime)
+    def getPersistentVolumeMetrics(metricJSON, hostName, metricNameToCollect, metricNameToReturn, metricPollTime, excludeNameSpaces)
       telemetryTimeDifference = (DateTime.now.to_time.to_i - @@telemetryPVKubeSystemMetricsTimeTracker).abs
       telemetryTimeDifferenceInMinutes = telemetryTimeDifference / 60
 
@@ -358,6 +358,7 @@ class CAdvisorMetricsAPIClient
         metricInfo = metricJSON
         metricInfo["pods"].each do |pod|
           podNamespace = pod["podRef"]["namespace"]
+          next unless !KubernetesApiClient.isExcludeResourceItem(pod["podRef"]["name"], podNamespace, excludeNameSpaces)
           excludeNamespace = false
           if (podNamespace.downcase == "kube-system") && @pvKubeSystemCollectionMetricsEnabled == "false"
             excludeNamespace = true
@@ -419,7 +420,7 @@ class CAdvisorMetricsAPIClient
       return metricItems
     end
 
-    def getContainerGpuMetricsAsInsightsMetrics(metricJSON, hostName, metricNameToCollect, metricNametoReturn, metricPollTime)
+    def getContainerGpuMetricsAsInsightsMetrics(metricJSON, hostName, metricNameToCollect, metricNametoReturn, metricPollTime, excludeNameSpaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       clusterName = KubernetesApiClient.getClusterName
@@ -429,6 +430,7 @@ class CAdvisorMetricsAPIClient
           podUid = pod["podRef"]["uid"]
           podName = pod["podRef"]["name"]
           podNamespace = pod["podRef"]["namespace"]
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, excludeNameSpaces)
 
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|

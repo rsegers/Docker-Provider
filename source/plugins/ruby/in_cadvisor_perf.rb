@@ -96,7 +96,7 @@ module Fluent::Plugin
         begin
           if !@@isWindows.nil? && @@isWindows == false
             containerGPUusageInsightsMetricsDataItems = []
-            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: nil, metricTime: batchTime))
+            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: nil, excludeNameSpaces: @excludeNameSpaces, metricTime: batchTime))
 
             containerGPUusageInsightsMetricsDataItems.each do |insightsMetricsRecord|
               insightsMetricsEventStream.add(time, insightsMetricsRecord) if insightsMetricsRecord
