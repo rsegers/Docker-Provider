@@ -1406,14 +1406,11 @@ class KubernetesApiClient
     def isExcludeResourceItem(resourceName, resourceNamespace, excludeNameSpaces)
        isExclude = false 
        begin
-         if !resourceName.nil? && !resourceName.empty? 
-          && resourceName.start_with("omsagent-")
-          && resourceNamespace.eql("kube-system")
+         # dont exclude agent related data
+         if !resourceName.nil? && !resourceName.empty? && resourceName.start_with?("omsagent") && resourceNamespace.eql?("kube-system")
           isExclude = false  
-         elsif  !resourceNamespace.nil? && !resourceNamespace.empty?
-            && !excludeNameSpaces.nil? && !excludeNameSpaces.empty? && excludeNameSpaces.length > 0
-            && excludeNameSpaces.include?(resourceNamespace)
-            isExclude = true
+         elsif  !resourceNamespace.nil? && !resourceNamespace.empty? && !excludeNameSpaces.nil? && !excludeNameSpaces.empty? && excludeNameSpaces.length > 0 && excludeNameSpaces.includee?(resourceNamespace)                  
+           isExclude = true
          end 
        rescue => errorStr
         @Log.warn "KubernetesApiClient::isExcludeResourceItem:Failed with an error : #{errorStr}"

@@ -3,7 +3,7 @@
 # frozen_string_literal: true
 
 require_relative "extension"
-require "constants"                    
+require_relative "constants"
 
 class ExtensionUtils
     class << self        

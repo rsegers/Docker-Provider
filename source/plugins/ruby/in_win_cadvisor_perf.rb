@@ -75,7 +75,7 @@ module Fluent::Plugin
           $log.info("in_win_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
 
           @excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()
-          $log.info("in_win_cadvisor_perf::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
+          $log.info("in_win_cadvisor_perf::enumerate: using data collection excludeNameSpaces: #{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
 
         #Resetting this cache so that it is populated with the current set of containers with every call
@@ -91,7 +91,7 @@ module Fluent::Plugin
         end
         @@winNodes.each do |winNode|
           eventStream = Fluent::MultiEventStream.new
-          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, @excludeNameSpaces, metricTime: Time.now.utc.iso8601)
+          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, excludeNameSpaces: @excludeNameSpaces, metricTime: Time.now.utc.iso8601)
           metricData.each do |record|
             if !record.empty?
               eventStream.add(time, record) if record

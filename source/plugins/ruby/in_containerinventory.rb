@@ -66,9 +66,9 @@ module Fluent::Plugin
         end
         $log.info("in_container_inventory::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
         @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-        $log.info("in_container_inventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
+        $log.info("in_container_inventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
         @excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()
-        $log.info("in_container_inventory::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
+        $log.info("in_container_inventory::enumerate: using data collection excludeNameSpaces: #{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
       end
       begin
         containerRuntimeEnv = ENV["CONTAINER_RUNTIME"]

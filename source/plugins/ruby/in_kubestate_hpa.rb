@@ -89,7 +89,7 @@ module Fluent::Plugin
           @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
           $log.info("in_kubestate_hpa::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
           @excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()
-          $log.info("in_kubestate_hpa::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kubestate_hpa::enumerate: using data collection excludeNameSpaces: #{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
         # Initializing continuation token to nil
         continuationToken = nil

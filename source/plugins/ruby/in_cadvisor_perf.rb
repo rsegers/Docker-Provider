@@ -75,12 +75,12 @@ module Fluent::Plugin
           $log.info("in_cadvisor_perf::enumerate: using perf tag -#{@tag} @ #{Time.now.utc.iso8601}")
           $log.info("in_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsmetricstag} @ #{Time.now.utc.iso8601}")
           @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-          $log.info("in_cadvisor_perf::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
+          $log.info("in_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
           @excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()
-          $log.info("in_cadvisor_perf::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
+          $log.info("in_cadvisor_perf::enumerate: using data collection excludeNameSpaces: #{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
 
-        metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, @excludeNameSpaces,  metricTime: batchTime)
+        metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, excludeNameSpaces: @excludeNameSpaces,  metricTime: batchTime)
         metricData.each do |record|
           eventStream.add(time, record) if record
         end

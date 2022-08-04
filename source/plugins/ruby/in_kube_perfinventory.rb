@@ -101,9 +101,9 @@ module Fluent::Plugin
           $log.info("in_kube_perfinventory::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_perfinventory::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
           @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-          $log.info("in_kube_perfinventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_perfinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
           @excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()
-          $log.info("in_kube_perfinventory::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_perfinventory::enumerate: using data collection excludeNameSpaces: #{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end
 
         nodeAllocatableRecords = getNodeAllocatableRecords()
@@ -267,7 +267,7 @@ module Fluent::Plugin
                 if (podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
                   $log.info("in_kube_perfinventory::watch_pods:number of pod items :#{podInventory["items"].length}  from Kube API @ #{Time.now.utc.iso8601}")
                   podInventory["items"].each do |item|
-                    next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"],item["metadata"]["namespace"], @excludeNameSpaces)
+                    next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)
                     key = item["metadata"]["uid"]
                     if !key.nil? && !key.empty?
                       podItem = KubernetesApiClient.getOptimizedItem("pods-perf", item)

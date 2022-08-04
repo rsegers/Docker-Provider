@@ -65,7 +65,7 @@ module Fluent::Plugin
         else
           if ExtensionUtils.isAADMSIAuthMode()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-            $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds) -#{@run_interval} @ #{Time.now.utc.iso8601}")
+            $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
           end
           parse_and_emit_records()
         end
