@@ -27,6 +27,11 @@ rules:
   - apiGroups: ["apps", "extensions", "autoscaling"]
     resources: ["replicasets", "deployments", "horizontalpodautoscalers"]
     verbs: ["list"]
+  # Uncomment below lines if AddonResizer VPA enabled
+  # - apiGroups: ["apps"]
+  #   resources: ["deployments"]
+  #   resourceNames: [ "omsagent-rs" ]
+  #   verbs: ["get", "patch"]
   # Uncomment below lines for MSI Auth Mode  testing
   # - apiGroups: [""]
   #   resources: ["secrets"]
@@ -617,6 +622,42 @@ spec:
     spec:
       serviceAccountName: omsagent
       containers:
+        # Uncomment below lines to enable VPA
+        #   # Make sure this matching with version in AKS RP side
+        # - image: "mcr.microsoft.com/oss/kubernetes/autoscaler/addon-resizer:1.8.14"
+        #   imagePullPolicy: IfNotPresent
+        #   name: omsagent-vpa
+        #   resources:
+        #    limits:
+        #     cpu: 100m
+        #     memory: 300Mi
+        #    requests:
+        #     cpu: 5m
+        #     memory: 30Mi
+        #   env:
+        #   - name: MY_POD_NAME
+        #     valueFrom:
+        #       fieldRef:
+        #         fieldPath: metadata.name
+        #   - name: MY_POD_NAMESPACE
+        #     valueFrom:
+        #       fieldRef:
+        #         fieldPath: metadata.namespace
+        #   volumeMounts:
+        #   - name: omsagent-rs-vpa-config-volume
+        #     mountPath: /etc/config
+        #   command:
+        #     - /pod_nanny
+        #     - --config-dir=/etc/config
+        #     - --cpu=200m
+        #     - --extra-cpu=2m
+        #     - --memory=300Mi
+        #     - --extra-memory=4Mi
+        #     - --poll-period=180000
+        #     - --threshold=5
+        #     - --namespace=kube-system
+        #     - --deployment=omsagent-rs
+        #     - --container=omsagent
         # Uncomment below lines for MSI Auth Mode  testing
         # - name: addon-token-adapter
         #   command:
@@ -655,6 +696,7 @@ spec:
         - name: omsagent
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022-hotfix"
           imagePullPolicy: IfNotPresent
+          # comment resources if VPA configured since the VPA will set these values
           resources:
             limits:
               cpu: 1
@@ -694,6 +736,9 @@ spec:
               value: "true"
             # Uncomment below lines for MSI Auth Mode  testing
             # - name: USING_AAD_MSI_AUTH
+            #   value: "true"
+            # Uncomment below lines when the Addon-resizer VPA enabled
+            # - name: RS_ADDON-RESIZER_VPA_ENABLED
             #   value: "true"
           securityContext:
             privileged: true
@@ -798,6 +843,11 @@ spec:
           configMap:
             name: container-azm-ms-osmconfig
             optional: true
+        # Uncomment below lines to enable VPA
+        # - name:  omsagent-rs-vpa-config-volume
+        #   configMap:
+        #     name:  omsagent-rs-vpa-config
+        #     optional: true
 ---
   apiVersion: apps/v1
   kind: DaemonSet

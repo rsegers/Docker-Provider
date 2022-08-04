@@ -22,6 +22,7 @@ class ApplicationInsightsUtility
   @@EnvControllerType = "CONTROLLER_TYPE"
   @@EnvContainerRuntime = "CONTAINER_RUNTIME"
   @@EnvAADMSIAuthMode = "AAD_MSI_AUTH_MODE"
+  @@EnvAddonResizerVPAEnabled = "RS_ADDON-RESIZER_VPA_ENABLED"
 
   @@isWindows = false
   @@hostName = (OMS::Common.get_hostname)
@@ -92,6 +93,10 @@ class ApplicationInsightsUtility
           @@CustomProperties["aadAuthMSIMode"] = "true"
         else
           @@CustomProperties["aadAuthMSIMode"] = "false"
+        end
+        addonResizerVPAEnabled = ENV[@@EnvAddonResizerVPAEnabled]
+        if !addonResizerVPAEnabled.nil? && !addonResizerVPAEnabled.empty? && addonResizerVPAEnabled.downcase == "true".downcase
+          @@CustomProperties["addonResizerVPAEnabled"] = "true"
         end
         #Check if telemetry is turned off
         telemetryOffSwitch = ENV["DISABLE_TELEMETRY"]
