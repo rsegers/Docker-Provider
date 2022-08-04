@@ -47,7 +47,7 @@ class ExtensionUtils
           return collectionIntervalSeconds
         end          
 
-        def getExcludedNamespacesForDataCollection
+        def getNamespacesToExcludeForDataCollection
           excludeNameSpaces = []
           begin
              extensionSettings = Extension.instance.get_extension_settings()
@@ -59,11 +59,11 @@ class ExtensionUtils
                  uniqNamespaces = namespacesToExclude.uniq                 
                  excludeNameSpaces = uniqNamespaces.map(&:downcase)
               else 
-                $log.warn("ExtensionUtils::getExcludedNamespacesForDataCollection: excludeNameSpaces: #{namespacesToExclude} not valid hence using default")                   
+                $log.warn("ExtensionUtils::getNamespacesToExcludeForDataCollection: excludeNameSpaces: #{namespacesToExclude} not valid hence using default")                   
                end             
              end
           rescue => err 
-            $log.warn("ExtensionUtils::getExcludedNamespacesForDataCollection: failed with an exception: #{errorStr}")
+            $log.warn("ExtensionUtils::getNamespacesToExcludeForDataCollection: failed with an exception: #{errorStr}")
           end
           return excludeNameSpaces
         end          
