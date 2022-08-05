@@ -236,10 +236,10 @@ module Fluent::Plugin
             telemetryProperties["WINDOWS_CONTAINER_RECORDS_CACHE_SIZE_KB"] = @windowsContainerRecordsCacheSizeBytes / 1024
           end
           if !@excludeNameSpaces.nil? && !@excludeNameSpaces.empty? && @excludeNameSpaces.length > 0
-            telemetry["DATACOLLECTION_EXCLUDED_NAMESPACES"] = @excludeNameSpaces
+            telemetryProperties["DATA_COLLECTION_EXCLUDED_NAMESPACES"] = @excludeNameSpaces
           end
           if @run_interval > 60
-            telemetry["DATACOLLECTION_INTERVAL_MINUTES"] = @run_interval / 60
+            telemetryProperties["DATA_COLLECTION_INTERVAL_MINUTES"] = @run_interval / 60
           end
           ApplicationInsightsUtility.sendCustomEvent("KubePodInventoryHeartBeatEvent", telemetryProperties)
           ApplicationInsightsUtility.sendMetricTelemetry("PodCount", @podCount, {})
