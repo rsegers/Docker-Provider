@@ -33,7 +33,7 @@ class Extension
       extensionConfigurations = get_extension_configs()
       if !extensionConfigurations.nil? && !extensionConfigurations.empty?
         extensionConfigurations.each do |extensionConfig|
-          extSettings = extensionConfig["extensionSettings"]
+          extSettings = extensionConfig[Constants::EXTENSION_SETTINGS]
           if !extSettings.nil? && !extSettings.empty?          
             extensionSettings = extSettings
           end
@@ -45,6 +45,24 @@ class Extension
     end
     return extensionSettings
   end
+
+  def get_extension_data_collection_settings()
+    dataCollectionSettings = Hash.new 
+    begin
+      extensionSettings = get_extension_settings()
+      if !extensionSettings.nil? && !extensionSettings.empty?
+        dcSettings = extensionSettings[Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS]
+        if !dcSettings.nil? && !dcSettings.empty?
+          dataCollectionSettings = dcSettings
+        end
+      end
+    rescue =>errorStr 
+      $log.warn("Extension::get_extension_data_collection_settings failed: #{errorStr}")
+      ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+    end
+    return dataCollectionSettings
+  end
+  
 
   def get_stream_mapping() 
      dataTypeToStreamIdMap = Hash.new 

@@ -21,8 +21,8 @@
           "<existingOrnew-tag-nameN>": "<existingOrnew-tag-valueN>"
         }
       },
-      "dataCollectionIntervalInMinutes":  {
-        "value" : 1
+      "dataCollectionInterval":  {
+        "value" : "1m"
       },
       "excludeNamespacesForDataCollection": {
         "value": [ "kube-system"]

@@ -32,16 +32,16 @@
                 "description": "Full Resource ID of the log analitycs workspace that will be used for data destination. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz"
             }
         },
-        "dataCollectionIntervalInMinutes": {
-            "type": "int",
+        "dataCollectionInterval": {
+            "type": "string",
             "metadata": {
-                "description": "data collection interval for metrics and inventory in minutes"
+                "description": "Data collection interval e.g. \"5m\" for metrics and inventory. Supported value range from 1m to 30m"
             }
         },
         "excludeNamespacesForDataCollection": {
             "type": "array",
             "metadata": {
-                "description": "Kubernetes namespaces to exclude for the data collection"
+                "description": "Kubernetes namespaces to exclude for the data collection of inventory and metrics"
             }
         }
     },
@@ -87,8 +87,10 @@
                                            "Microsoft-ContainerInsights-Group-Default"
                                         ],
                                         "extensionSettings": {
-                                            "dataCollectionIntervalMinutes": "[parameters('dataCollectionIntervalInMinutes')]",
-                                            "excludeNameSpaces": "[parameters('excludeNamespacesForDataCollection')]"
+                                            "dataCollectionSettings" : {
+                                                "interval": "[parameters('dataCollectionInterval')]",
+                                                "excludeNameSpaces": "[parameters('excludeNamespacesForDataCollection')]"
+                                            }                                         
                                         },
                                         "extensionName": "ContainerInsights"
                                     }
