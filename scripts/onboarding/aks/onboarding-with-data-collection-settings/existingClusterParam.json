@@ -22,7 +22,7 @@
         }
       },
       "dataCollectionInterval":  {
-        "value" : "1m"
+        "value" : "5m"
       },
       "excludeNamespacesForDataCollection": {
         "value": [ "kube-system"]
