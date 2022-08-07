@@ -736,9 +736,6 @@ module Fluent::Plugin
             @windowsNodeNameCacheMutex.synchronize {
               currentWindowsNodeNameList = @windowsNodeNameListCache.dup
             }
-            if ExtensionUtils.isAADMSIAuthMode()
-              excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()           
-            end
             continuationToken = nil
             resourceUri = "pods?limit=#{@PODS_CHUNK_SIZE}"
             $log.info("in_kube_podinventory::watch_pods:Getting pods from Kube API: #{resourceUri} @ #{Time.now.utc.iso8601}")
@@ -752,8 +749,6 @@ module Fluent::Plugin
                 if (podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
                   $log.info("in_kube_podinventory::watch_pods:number of pod items :#{podInventory["items"].length}  from Kube API @ #{Time.now.utc.iso8601}")
                   podInventory["items"].each do |item|
-                    # exclude resource item if this in excluded namespaces 
-                    next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], excludeNameSpaces)
                     key = item["metadata"]["uid"]
                     if !key.nil? && !key.empty?
                       nodeName = (!item["spec"].nil? && !item["spec"]["nodeName"].nil?) ? item["spec"]["nodeName"] : ""
@@ -793,8 +788,6 @@ module Fluent::Plugin
                     if (podInventory.key?("items") && !podInventory["items"].nil? && !podInventory["items"].empty?)
                       $log.info("in_kube_podinventory::watch_pods:number of pod items :#{podInventory["items"].length} from Kube API @ #{Time.now.utc.iso8601}")
                       podInventory["items"].each do |item|
-                        # exclude resource item if this in excluded namespaces 
-                        next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], excludeNameSpaces)                        
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?
                           nodeName = (!item["spec"].nil? && !item["spec"]["nodeName"].nil?) ? item["spec"]["nodeName"] : ""
@@ -922,7 +915,6 @@ module Fluent::Plugin
     def watch_services
       $log.info("in_kube_podinventory::watch_services:Start @ #{Time.now.utc.iso8601}")
       servicesResourceVersion = nil
-      excludeNameSpaces = []
       loop do
         begin
           if servicesResourceVersion.nil?
@@ -930,9 +922,6 @@ module Fluent::Plugin
             @serviceCacheMutex.synchronize {
               @serviceItemsCache.clear()
             }
-            if ExtensionUtils.isAADMSIAuthMode()
-              excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()           
-            end
             $log.info("in_kube_podinventory::watch_services:Getting services from Kube API @ #{Time.now.utc.iso8601}")
             responseCode, serviceInfo = KubernetesApiClient.getKubeResourceInfoV2("services")
             if responseCode.nil? || responseCode != "200"
@@ -949,8 +938,6 @@ module Fluent::Plugin
                   if (serviceInventory.key?("items") && !serviceInventory["items"].nil? && !serviceInventory["items"].empty?)
                     $log.info("in_kube_podinventory::watch_services:number of service items #{serviceInventory["items"].length} @ #{Time.now.utc.iso8601}")
                     serviceInventory["items"].each do |item|
-                      # exclude resource item if this in excluded namespaces 
-                      next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], excludeNameSpaces)
                       key = item["metadata"]["uid"]
                       if !key.nil? && !key.empty?
                         serviceItem = KubernetesApiClient.getOptimizedItem("services", item)
