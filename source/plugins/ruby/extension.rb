@@ -33,9 +33,11 @@ class Extension
       extensionConfigurations = get_extension_configs()
       if !extensionConfigurations.nil? && !extensionConfigurations.empty?
         extensionConfigurations.each do |extensionConfig|
-          extSettings = extensionConfig[Constants::EXTENSION_SETTINGS]
-          if !extSettings.nil? && !extSettings.empty?          
-            extensionSettings = extSettings
+          if !extensionConfig.nil? && !extensionConfig.empty?
+            extSettings = extensionConfig[Constants::EXTENSION_SETTINGS]
+            if !extSettings.nil? && !extSettings.empty?        
+              extensionSettings = extSettings
+            end
           end
         end
       end
