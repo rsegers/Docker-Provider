@@ -11,5 +11,5 @@ spec:
     command: ["/bin/sh"]
     args: ["-c", "while true; do echo '{\"container_name\": \"simple-json\", \"pod_name\": \"simple-json\",\"pod_namespace\": \"simple-json\",\"environment\": \"test\"}'; sleep 30; done"]
   nodeSelector:
-    beta.kubernetes.io/os: linux
+    kubernetes.io/os: linux
   restartPolicy: OnFailure

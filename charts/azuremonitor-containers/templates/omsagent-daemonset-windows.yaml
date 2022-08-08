@@ -37,7 +37,7 @@ spec:
       kubernetes.io/os: windows
 {{- else }}
    nodeSelector:
-      beta.kubernetes.io/os: windows
+      kubernetes.io/os: windows
 {{- end }}
    {{- if .Values.omsagent.rbac }}
    serviceAccountName: omsagent

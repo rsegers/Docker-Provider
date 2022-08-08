@@ -791,7 +791,7 @@ spec:
             nodeSelectorTerms:
               - labelSelector:
                 matchExpressions:
-                  - key: beta.kubernetes.io/os
+                  - key: kubernetes.io/os
                     operator: In
                     values:
                     - linux
@@ -970,7 +970,7 @@ spec:
          requiredDuringSchedulingIgnoredDuringExecution:
            nodeSelectorTerms:
            - matchExpressions:
-             - key: beta.kubernetes.io/os
+             - key: kubernetes.io/os
                operator: In
                values:
                - windows
