@@ -112,7 +112,7 @@ omsagent:
           nodeSelectorTerms:
             - labelSelector:
               matchExpressions:
-                - key: beta.kubernetes.io/os
+                - key: kubernetes.io/os
                   operator: In
                   values:
                     - linux
@@ -120,7 +120,7 @@ omsagent:
                   operator: NotIn
                   values:
                     - virtual-kubelet
-                - key: beta.kubernetes.io/arch
+                - key: kubernetes.io/arch
                   operator: In
                   values:
                     - amd64
@@ -159,7 +159,7 @@ omsagent:
           nodeSelectorTerms:
             - labelSelector:
               matchExpressions:
-                - key: beta.kubernetes.io/os
+                - key: kubernetes.io/os
                   operator: In
                   values:
                     - linux
@@ -171,7 +171,7 @@ omsagent:
                   operator: NotIn
                   values:
                     - master
-                - key: beta.kubernetes.io/arch
+                - key: kubernetes.io/arch
                   operator: In
                   values:
                     - amd64

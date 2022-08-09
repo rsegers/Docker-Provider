@@ -24,4 +24,4 @@ spec:
           sleep 1;
         done
   nodeSelector:
-    beta.kubernetes.io/os: linux
+    kubernetes.io/os: linux
