@@ -29,8 +29,8 @@ jobs:
   - bash: |
       commit=$(git rev-parse --short HEAD)
       datetime=$(date +'%m%d%Y')
-      linuxImagetag="$datetime"-"$commit"
-      windowsImageTag=win-"$datetime"-"$commit"
+      linuxImagetag=main"$datetime"-"$commit"
+      windowsImageTag=win-main"$datetime"-"$commit"
       echo "##vso[task.setvariable variable=linuxImagetag;isOutput=true]$linuxImagetag"
       echo "##vso[task.setvariable variable=windowsImageTag;isOutput=true]$windowsImageTag"
 
