@@ -11,6 +11,24 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
 
+### 08/10/2022 -
+##### Version microsoft/oms:ciprod08102022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022 (linux)
+##### Version microsoft/oms:win-ciprod08102022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod08102022 (windows)
+##### Code change log
+- Linux Agent
+  - Consume ruby from RVM instead of brightbox ppa
+
+- Common
+  - Update to Ruby 3.1.1
+  - Update telegraf to 1.23.2
+  - Updates fluentd to 1.14.6
+  - Use default JSON gem instead of yajl-json
+  - Consume tomlrb as a gem instead of committed source code
+  - Move from beta.kubernetes.io to kubernetes.io
+  - Bug fixes
+    - Fix bug in processing fractional memory limits
+    - Fix log loss due to inode reuse
+
 ### 07/27/2022 -
 ##### Version microsoft/oms:ciprod06272022-hotfix Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022-hotfix (linux)
 - Fixes for sending the proper node allocatable cpu and memory value for the container which does not specify limits.

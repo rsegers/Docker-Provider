@@ -384,7 +384,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022-hotfix"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -473,7 +473,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: omsagent-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022-hotfix"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -694,7 +694,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022-hotfix"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
           imagePullPolicy: IfNotPresent
           # comment resources if VPA configured since the VPA will set these values
           resources:
@@ -881,7 +881,7 @@ spec:
             value: "3"
      containers:
        - name: omsagent-win
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06142022"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod08102022"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
