@@ -6,7 +6,7 @@ require 'fluent/plugin/filter'
 
 module Fluent::Plugin
     require 'logger'
-    require 'yajl/json_gem'
+    require 'json'
     require_relative 'oms_common'
     require_relative 'CustomMetricsUtils'
 

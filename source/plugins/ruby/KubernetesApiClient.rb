@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 class KubernetesApiClient
-  require "yajl/json_gem"
+  require "json"
   require "logger"
   require "net/http"
   require "net/https"
@@ -37,7 +37,10 @@ class KubernetesApiClient
   @Log = Logger.new(@LogPath, 2, 10 * 1048576) #keep last 2 files, max log file size = 10M
   @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
   @@TokenStr = nil
-  @@telemetryTimeTracker = DateTime.now.to_time.to_i
+  @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@memoryRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@resourceLimitsTelemetryHash = {}
 
   def initialize
@@ -470,6 +473,7 @@ class KubernetesApiClient
         if podUid.nil?
           return metricItems
         end
+        podName = pod["metadata"]["name"]
 
         nodeName = ""
         #for unscheduled (non-started) pods nodeName does NOT exist
@@ -514,8 +518,12 @@ class KubernetesApiClient
               metricCollections.push(metricCollection)
               metricProps["json_Collections"] = metricCollections.to_json
               metricItems.push(metricProps)
-              #No container level limit for the given metric, so default to node level limit
+
+              if isAddonResizerVPAEnabled()
+                sendReplicasetAgentRequestsAndLimitsTelemetry(podName, podNameSpace, containerName, metricNametoReturn, metricValue)
+              end
             else
+              #No container level limit for the given metric, so default to node level limit
               if (metricCategory == "limits" && !nodeAllocatableRecord.nil? && !nodeAllocatableRecord.empty? && nodeAllocatableRecord.has_key?(metricNameToCollect))
                 metricValue = getMetricNumericValue(metricNameToCollect, nodeAllocatableRecord[metricNameToCollect])
                 metricProps = {}
@@ -594,25 +602,6 @@ class KubernetesApiClient
                   metricValue = getMetricNumericValue(metricNameToCollect, nodeAllocatableRecord[metricNameToCollect])
                 end
               end
-            end
-            if (!metricValue.nil?)
-              metricItem = {}
-              metricItem["CollectionTime"] = metricTime
-              metricItem["Computer"] = nodeName
-              metricItem["Name"] = metricNametoReturn
-              metricItem["Value"] = metricValue
-              metricItem["Origin"] = Constants::INSIGHTSMETRICS_TAGS_ORIGIN
-              metricItem["Namespace"] = Constants::INSIGHTSMETRICS_TAGS_GPU_NAMESPACE
-
-              metricTags = {}
-              metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERID] = clusterId
-              metricTags[Constants::INSIGHTSMETRICS_TAGS_CLUSTERNAME] = clusterName
-              metricTags[Constants::INSIGHTSMETRICS_TAGS_CONTAINER_NAME] = podUid + "/" + containerName
-              #metricTags[Constants::INSIGHTSMETRICS_TAGS_K8SNAMESPACE] = podNameSpace
-
-              metricItem["Tags"] = metricTags
-
-              metricItems.push(metricItem)
             end
             if (!metricValue.nil?)
               metricItem = {}
@@ -762,8 +751,13 @@ class KubernetesApiClient
             metricValue.chomp!("k")
             metricValue = Float(metricValue) * 1000.0 ** 1
           elsif (metricValue.end_with?("m"))
+            #original value before downcase ending with M is megabyte and value ending with m is milli-byte
             metricValue.chomp!("m")
-            metricValue = Float(metricValue) * 1000.0 ** 2
+            if (metricVal.end_with?("M"))
+              metricValue = Float(metricValue) * 1000.0 ** 2
+            else
+              metricValue = Float(metricValue) / 1000.0
+            end
           elsif (metricValue.end_with?("g"))
             metricValue.chomp!("g")
             metricValue = Float(metricValue) * 1000.0 ** 3
@@ -820,9 +814,9 @@ class KubernetesApiClient
         responseCode, resourceInfo = getKubeResourceInfoV2(uri, api_group: api_group)
         @Log.info "KubernetesApiClient::getResourcesAndContinuationTokenV2 : Done getting resources from Kube API using url: #{uri} @ #{Time.now.utc.iso8601}"
         if !responseCode.nil? && responseCode == "200" && !resourceInfo.nil?
-          @Log.info "KubernetesApiClient::getResourcesAndContinuationTokenV2:Start:Parsing data for #{uri} using yajl @ #{Time.now.utc.iso8601}"
-          resourceInventory = Yajl::Parser.parse(StringIO.new(resourceInfo.body))
-          @Log.info "KubernetesApiClient::getResourcesAndContinuationTokenV2:End:Parsing data for #{uri} using yajl @ #{Time.now.utc.iso8601}"
+          @Log.info "KubernetesApiClient::getResourcesAndContinuationTokenV2:Start:Parsing data for #{uri} using JSON @ #{Time.now.utc.iso8601}"
+          resourceInventory = JSON.parse(resourceInfo.body)
+          @Log.info "KubernetesApiClient::getResourcesAndContinuationTokenV2:End:Parsing data for #{uri} using JSON @ #{Time.now.utc.iso8601}"
           resourceInfo = nil
         end
         if (!resourceInventory.nil? && !resourceInventory["metadata"].nil?)
@@ -844,9 +838,9 @@ class KubernetesApiClient
         resourceInfo = getKubeResourceInfo(uri, api_group: api_group)
         @Log.info "KubernetesApiClient::getResourcesAndContinuationToken : Done getting resources from Kube API using url: #{uri} @ #{Time.now.utc.iso8601}"
         if !resourceInfo.nil?
-          @Log.info "KubernetesApiClient::getResourcesAndContinuationToken:Start:Parsing data for #{uri} using yajl @ #{Time.now.utc.iso8601}"
-          resourceInventory = Yajl::Parser.parse(StringIO.new(resourceInfo.body))
-          @Log.info "KubernetesApiClient::getResourcesAndContinuationToken:End:Parsing data for #{uri} using yajl @ #{Time.now.utc.iso8601}"
+          @Log.info "KubernetesApiClient::getResourcesAndContinuationToken:Start:Parsing data for #{uri} using JSON @ #{Time.now.utc.iso8601}"
+          resourceInventory = JSON.parse(resourceInfo.body)
+          @Log.info "KubernetesApiClient::getResourcesAndContinuationToken:End:Parsing data for #{uri} using JSON @ #{Time.now.utc.iso8601}"
           resourceInfo = nil
         end
         if (!resourceInventory.nil? && !resourceInventory["metadata"].nil?)
@@ -1412,6 +1406,56 @@ class KubernetesApiClient
         isEmitCacheTelemtryEnabled = true
       end
       return isEmitCacheTelemtryEnabled
+    end
+
+    def isAddonResizerVPAEnabled
+      isAddonResizerVPAEnabled = false
+      if !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].nil? && !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].empty? && ENV["RS_ADDON-RESIZER_VPA_ENABLED"].downcase == "true".downcase
+        isAddonResizerVPAEnabled = true
+      end
+      return isAddonResizerVPAEnabled
+    end
+
+    def sendReplicasetAgentRequestsAndLimitsTelemetry(podName, podNameSpace, containerName, metricName, metricValue)
+      begin
+        if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("omsagent"))
+          telemetryProps = {}
+          telemetryProps["PodName"] = podName
+          telemetryProps["ContainerName"] = containerName
+          case metricName
+          when "cpuLimitNanoCores"
+            timeDifference = (DateTime.now.to_time.to_i - @@cpuLimitsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          when "memoryLimitBytes"
+            timeDifference = (DateTime.now.to_time.to_i - @@memoryLimitsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          when "cpuRequestNanoCores"
+            timeDifference = (DateTime.now.to_time.to_i - @@cpuRequestsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          when "memoryRequestBytes"
+            timeDifference = (DateTime.now.to_time.to_i - @@memoryRequestsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@memoryRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          end
+        end
+      rescue => err
+        @Log.warn "KubernetesApiClient::sendReplicasetAgentRequestsAndLimitsTelemetry failed with an error: #{err}"
+      end
     end
   end
 end

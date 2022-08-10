@@ -14,7 +14,7 @@ module Fluent::Plugin
       require "net/https"
       require "securerandom"
       require "uri"
-      require "yajl/json_gem"
+      require "json"
       require_relative "KubernetesApiClient"
       require_relative "ApplicationInsightsUtility"
       require_relative "constants"
@@ -102,7 +102,7 @@ module Fluent::Plugin
           end
 
           # If CUSTOM_METRICS_ENDPOINT provided, the url format shall be validated before emitting metrics into given endpoint.
-          custom_metrics_endpoint = ENV["CUSTOM_METRICS_ENDPOINT"]
+          custom_metrics_endpoint = ENV['CUSTOM_METRICS_ENDPOINT']
           if !custom_metrics_endpoint.to_s.empty?
             metrics_endpoint = custom_metrics_endpoint.strip
             URI.parse(metrics_endpoint)

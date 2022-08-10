@@ -2,12 +2,8 @@
 
 #this should be require relative in Linux and require in windows, since it is a gem install on windows
 @os_type = ENV["OS_TYPE"]
-if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-  require "tomlrb"
-else
-  require_relative "tomlrb"
-end
-# require_relative "tomlrb"
+require "tomlrb"
+
 require_relative "ConfigParseErrorLogger"
 require "fileutils"
 

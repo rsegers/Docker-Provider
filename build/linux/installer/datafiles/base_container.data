@@ -20,15 +20,6 @@ MAINTAINER:              'Microsoft Corporation'
 
 /etc/opt/microsoft/docker-cimprov/container.conf;			    build/linux/installer/conf/container.conf;                      644; root; root
 
-/opt/tomlrb.rb;                                                 source/toml-parser/tomlrb.rb; 644; root; root
-/opt/tomlrb/generated_parser.rb;                                source/toml-parser/tomlrb/generated_parser.rb; 644; root; root
-/opt/tomlrb/handler.rb;                                         source/toml-parser/tomlrb/handler.rb; 644; root; root
-/opt/tomlrb/parser.rb;                                          source/toml-parser/tomlrb/parser.rb; 644; root; root
-/opt/tomlrb/parser.y;                                           source/toml-parser/tomlrb/parser.y; 644; root; root
-/opt/tomlrb/scanner.rb;                                         source/toml-parser/tomlrb/scanner.rb; 644; root; root
-/opt/tomlrb/string_utils.rb;                                    source/toml-parser/tomlrb/string_utils.rb; 644; root; root
-/opt/tomlrb/version.rb;                                         source/toml-parser/tomlrb/version.rb; 644; root; root
-
 /opt/td-agent-bit/bin/out_oms.so;                                       intermediate/${{BUILD_CONFIGURATION}}/out_oms.so;  	755; root; root
 /etc/opt/microsoft/docker-cimprov/prometheus-side-car.conf;		         build/linux/installer/conf/prometheus-side-car.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf;			            build/linux/installer/conf/td-agent-bit.conf;                    644; root; root

@@ -2,9 +2,8 @@
 # frozen_string_literal: true
 
 class KubernetesContainerInventory
-  require "yajl/json_gem"
-  require "time"
   require "json"
+  require "time"  
   require_relative "omslog"
   require_relative "ApplicationInsightsUtility"
 
