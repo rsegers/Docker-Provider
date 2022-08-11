@@ -3,7 +3,7 @@
 # frozen_string_literal: true
 
 require "logger"
-require "yajl/json_gem"
+require "json"
 require_relative "CAdvisorMetricsAPIClient"
 require_relative "KubernetesApiClient"
 require "bigdecimal"
@@ -52,7 +52,6 @@ class KubeletUtils
 
         cpu_allocatable = 1.0
         memory_allocatable = 1.0
-       
         allocatable_response = CAdvisorMetricsAPIClient.getCongifzCAdvisor(winNode: nil)
         parsed_response = JSON.parse(allocatable_response.body)
 
@@ -66,7 +65,7 @@ class KubeletUtils
           @log.error "Error in get_node_allocatable::kubereserved_cpu: #{errorStr}"
           kubereserved_cpu = "0.0"
           ApplicationInsightsUtility.sendExceptionTelemetry("Error in get_node_allocatable::kubereserved_cpu: #{errorStr}")
-        end 
+        end
 
         begin
           kubereserved_memory = parsed_response["kubeletconfig"]["kubeReserved"]["memory"]
@@ -78,7 +77,7 @@ class KubeletUtils
           @log.error "Error in get_node_allocatable::kubereserved_memory: #{errorStr}"
           kubereserved_memory = "0.0"
           ApplicationInsightsUtility.sendExceptionTelemetry("Error in get_node_allocatable::kubereserved_memory: #{errorStr}")
-        end 
+        end
         begin
           systemReserved_cpu = parsed_response["kubeletconfig"]["systemReserved"]["cpu"]
           if systemReserved_cpu.nil? || systemReserved_cpu == ""
@@ -90,7 +89,7 @@ class KubeletUtils
           @log.error "Error in get_node_allocatable::systemReserved_cpu: #{errorStr}"
           systemReserved_cpu = "0.0"
           ApplicationInsightsUtility.sendExceptionTelemetry("Error in get_node_allocatable::systemReserved_cpu: #{errorStr}")
-        end 
+        end
 
         begin
           explicitlyReserved_cpu = parsed_response["kubeletconfig"]["reservedCPUs"]
@@ -103,19 +102,19 @@ class KubeletUtils
           @log.error "Error in get_node_allocatable::explicitlyReserved_cpu: #{errorStr}"
           explicitlyReserved_cpu = "0.0"
           ApplicationInsightsUtility.sendExceptionTelemetry("Error in get_node_allocatable::explicitlyReserved_cpu: #{errorStr}")
-        end 
+        end
 
         begin
-           systemReserved_memory = parsed_response["kubeletconfig"]["systemReserved"]["memory"]
-           if systemReserved_memory.nil? || systemReserved_memory == ""
+          systemReserved_memory = parsed_response["kubeletconfig"]["systemReserved"]["memory"]
+          if systemReserved_memory.nil? || systemReserved_memory == ""
             systemReserved_memory = "0.0"
-           end
-           @log.info "get_node_allocatable::systemReserved_memory #{systemReserved_memory}"
+          end
+          @log.info "get_node_allocatable::systemReserved_memory #{systemReserved_memory}"
         rescue => errorStr
-           @log.error "Error in get_node_allocatable::systemReserved_memory: #{errorStr}"
-           systemReserved_memory = "0.0"
+          @log.error "Error in get_node_allocatable::systemReserved_memory: #{errorStr}"
+          systemReserved_memory = "0.0"
           ApplicationInsightsUtility.sendExceptionTelemetry("Error in get_node_allocatable::systemReserved_memory: #{errorStr}")
-        end 
+        end
 
         begin
           evictionHard_memory = parsed_response["kubeletconfig"]["evictionHard"]["memory.available"]
@@ -127,16 +126,16 @@ class KubeletUtils
           @log.error "Error in get_node_allocatable::evictionHard_memory: #{errorStr}"
           evictionHard_memory = "0.0"
           ApplicationInsightsUtility.sendExceptionTelemetry("Error in get_node_allocatable::evictionHard_memory: #{errorStr}")
-        end 
+        end
 
         # do calculation in nanocore since that's what KubernetesApiClient.getMetricNumericValue expects
         cpu_capacity_number = cpu_capacity.to_i * 1000.0 ** 2
         # subtract to get allocatable. Formula : Allocatable = Capacity - ( kube reserved + system reserved + eviction threshold )
         # https://kubernetes.io/docs/tasks/administer-cluster/reserve-compute-resources/#node-allocatable
         if KubernetesApiClient.getMetricNumericValue("cpu", explicitlyReserved_cpu) > 0
-          cpu_allocatable  = cpu_capacity_number - KubernetesApiClient.getMetricNumericValue("cpu", explicitlyReserved_cpu)
+          cpu_allocatable = cpu_capacity_number - KubernetesApiClient.getMetricNumericValue("cpu", explicitlyReserved_cpu)
         else
-          cpu_allocatable  = cpu_capacity_number - (KubernetesApiClient.getMetricNumericValue("cpu", kubereserved_cpu) + KubernetesApiClient.getMetricNumericValue("cpu", systemReserved_cpu))
+          cpu_allocatable = cpu_capacity_number - (KubernetesApiClient.getMetricNumericValue("cpu", kubereserved_cpu) + KubernetesApiClient.getMetricNumericValue("cpu", systemReserved_cpu))
         end
         # convert back to units similar to what we get for capacity
         cpu_allocatable = cpu_allocatable / (1000.0 ** 2)
@@ -165,7 +164,7 @@ class KubeletUtils
         containerResourceDimensionHash = {}
         response = CAdvisorMetricsAPIClient.getPodsFromCAdvisor(winNode: nil)
         if !response.nil? && !response.body.nil? && !response.body.empty?
-          podInventory = Yajl::Parser.parse(StringIO.new(response.body))
+          podInventory = JSON.parse(response.body)
           podInventory["items"].each do |items|
             @log.info "in pod inventory items..."
             podNameSpace = items["metadata"]["namespace"]

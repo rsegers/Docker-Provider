@@ -24,15 +24,14 @@ download_install_docker()
 
 create_cluster()
 {
-sudo touch kind-config.yaml
-sudo chmod 777 kind-config.yaml
-cat >> kind-config.yaml <<EOL
+sudo tee kind-config.yaml > /dev/null << 'EOF'
 kind: Cluster
 apiVersion: kind.sigs.k8s.io/v1alpha3
 nodes:
  - role: control-plane
  - role: worker
-EOL
+EOF
+
 sudo kind create cluster --config kind-config.yaml  --name $clusterName
 }
 
