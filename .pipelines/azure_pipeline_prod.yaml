@@ -14,31 +14,30 @@ pr:
     include:
     - ci_prod
 
-pool:
-  name: Azure-Pipelines-CI-Prod-EO
-
 variables:
-  armServiceConnectionName: 'ci-1es-acr-connection-prod'
-  subscription: '30c56c3a-54da-46ea-b004-06eb33432687'
-  containerRegistry: 'containerinsightsbuild'
-  repoImageNameLinux: '${{ variables.containerRegistry }}.azurecr.io/official/linux'
-  repoImageNameWindows: '${{ variables.containerRegistry }}.azurecr.io/official/windows'
+  armServiceConnectionName: 'ci-1es-acr-connection'
+  subscription: '9b96ebbd-c57a-42d1-bbe9-b69296e4c7fb'
+  containerRegistry: 'containerinsightsprod'
+  repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/containerinsights/cidev'
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
 
 jobs:
 - job: common
   pool:
-    name: Azure-Pipelines-CI-Prod-EO
+    name: Azure-Pipelines-CI-Test-EO
   steps:
   - bash: |
       commit=$(git rev-parse --short HEAD)
       datetime=$(date +'%m%d%Y')
-      linuxImagetag=ciprod-"$datetime"-"$commit"
-      windowsImageTag=win-ciprod-"$datetime"-"$commit"
+      linuxImagetag="$datetime"-"$commit"
+      windowsImageTag=win-"$datetime"-"$commit"
       echo "##vso[task.setvariable variable=linuxImagetag;isOutput=true]$linuxImagetag"
       echo "##vso[task.setvariable variable=windowsImageTag;isOutput=true]$windowsImageTag"
 
       cd $(Build.SourcesDirectory)/deployment/multiarch-agent-deployment/ServiceGroupRoot/Scripts
+      tar -czvf ../artifacts.tar.gz pushAgentToAcr.sh
+
+      cd $(Build.SourcesDirectory)/deployment/mergebranch-multiarch-agent-deployment/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz pushAgentToAcr.sh
 
       cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension/ServiceGroupRoot/Scripts
@@ -93,7 +92,7 @@ jobs:
 - job: build_linux
   dependsOn: common
   pool:
-    name: Azure-Pipelines-CI-Prod-EO
+    name: Azure-Pipelines-CI-Test-EO
   variables:
     linuxImagetag: $[ dependencies.common.outputs['setup.linuxImagetag'] ]
 
@@ -119,19 +118,20 @@ jobs:
         az acr login -n ${{ variables.containerRegistry }}
 
         if [ "$(Build.Reason)" != "PullRequest" ]; then
-          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageNameLinux }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --push .
+          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --push .
 
-          docker pull ${{ variables.repoImageNameLinux }}:$(linuxImagetag)
+          docker pull ${{ variables.repoImageName }}:$(linuxImagetag)
         else
-          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageNameLinux }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) .
+          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) .
 
           # load the multi-arch image to run tests
-          docker buildx build --tag ${{ variables.repoImageNameLinux }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --load .
+          docker buildx build --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --load .
         fi
 
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
-        trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageNameLinux }}:$(linuxImagetag)
+        trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
+
 
   - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
     displayName: 'Generation Task'
@@ -145,7 +145,7 @@ jobs:
     condition: eq(variables.IS_PR, false)
     inputs:
       BuildDropPath: '$(Build.ArtifactStagingDirectory)/linux'
-      DockerImagesToScan: '$(GOLANG_BASE_IMAGE), $(CI_BASE_IMAGE), ${{ variables.repoImageNameLinux }}:$(linuxImagetag)'
+      DockerImagesToScan: '$(GOLANG_BASE_IMAGE), $(CI_BASE_IMAGE), ${{ variables.repoImageName }}:$(linuxImagetag)'
 
   - task: PublishBuildArtifacts@1
     inputs:
@@ -156,7 +156,7 @@ jobs:
   dependsOn:
   -  common
   pool:
-    name: Azure-Pipelines-Windows-CI-Prod-EO
+    name: Azure-Pipelines-Windows-CI-Test-EO
   variables:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windows2019BaseImageVersion: ltsc2019
@@ -189,16 +189,16 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageNameWindows }}:$(windowsImageTag)-$(windows2019BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) .
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsImageTag) .
         if ("$(Build.Reason)" -ne "PullRequest") {
-           docker push ${{ variables.repoImageNameWindows }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
+           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
         }
 
 - job: build_windows_2022
   dependsOn:
   -  common
   pool:
-    name: Azure-Pipelines-Windows-CI-Prod-EO
+    name: Azure-Pipelines-Windows-CI-Test-EO
   variables:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windows2022BaseImageVersion: ltsc2022
@@ -231,9 +231,9 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageNameWindows }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) .
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsImageTag) .
         if ("$(Build.Reason)" -ne "PullRequest") {
-           docker push ${{ variables.repoImageNameWindows }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
+           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
         }
 
 - job: build_windows_multi_arc
@@ -242,7 +242,7 @@ jobs:
   - build_windows_2019
   - build_windows_2022
   pool:
-    name: Azure-Pipelines-Windows-CI-Prod-EO
+    name: Azure-Pipelines-Windows-CI-Test-EO
   variables:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windows2019BaseImageVersion: ltsc2019
@@ -263,11 +263,11 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        @{"image.name"="${{ variables.repoImageNameWindows }}:$(windowsImageTag)"} | ConvertTo-Json -Compress | Out-File -Encoding ascii $(Build.ArtifactStagingDirectory)/windows/metadata.json
+        @{"image.name"="${{ variables.repoImageName }}:$(windowsImageTag)"} | ConvertTo-Json -Compress | Out-File -Encoding ascii $(Build.ArtifactStagingDirectory)/windows/metadata.json
 
         if ("$(Build.Reason)" -ne "PullRequest") {
-           docker manifest create ${{ variables.repoImageNameWindows }}:$(windowsImageTag) ${{ variables.repoImageNameWindows }}:$(windowsImageTag)-$(windows2019BaseImageVersion) ${{ variables.repoImageNameWindows }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
-           docker manifest push ${{ variables.repoImageNameWindows }}:$(windowsImageTag)
+           docker manifest create ${{ variables.repoImageName }}:$(windowsImageTag) ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion) ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
+           docker manifest push ${{ variables.repoImageName }}:$(windowsImageTag)
         }
   - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
     displayName: 'Generation Task'
