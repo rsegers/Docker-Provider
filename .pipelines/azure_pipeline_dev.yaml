@@ -37,6 +37,9 @@ jobs:
       cd $(Build.SourcesDirectory)/deployment/multiarch-agent-deployment/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz pushAgentToAcr.sh
 
+      cd $(Build.SourcesDirectory)/deployment/mergebranch-multiarch-agent-deployment/ServiceGroupRoot/Scripts
+      tar -czvf ../artifacts.tar.gz pushAgentToAcr.sh
+
       cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz ../../../../charts/azuremonitor-containers/ pushChartToAcr.sh
     name: setup
