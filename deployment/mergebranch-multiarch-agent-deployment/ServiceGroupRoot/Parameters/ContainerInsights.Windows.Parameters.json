@@ -46,6 +46,10 @@
           {
             "name": "CDPX_TAG",
             "value": "__CDPX_WINDOWS_TAG__"
+          },
+          {
+            "name": "SOURCE_IMAGE_FULL_PATH",
+            "value": "mcr.microsoft.com/azuremonitor/containerinsights/cidev:__CDPX_WINDOWS_TAG__"
           }
         ], 
         "identity": {

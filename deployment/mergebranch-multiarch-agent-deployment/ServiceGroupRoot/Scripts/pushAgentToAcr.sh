@@ -48,6 +48,11 @@ if [ -z $ACR_NAME ]; then
   exit 1
 fi
 
+if [ -z $SOURCE_IMAGE_FULL_PATH ]; then
+  echo "-e error value of SOURCE_IMAGE_FULL_PATH shouldn't be empty. check release variables"
+  exit 1
+fi
+
 
 #Login to az cli and authenticate to acr
 echo "Login cli using managed identity"
@@ -60,7 +65,7 @@ else
 fi     
 
 echo "Pushing ${AGENT_IMAGE_FULL_PATH} to ${ACR_NAME}"
-az acr import --name $ACR_NAME --source mcr.microsoft.com/azuremonitor/containerinsights/cidev:${CDPX_TAG} --image $AGENT_IMAGE_FULL_PATH
+az acr import --name $ACR_NAME --source $SOURCE_IMAGE_FULL_PATH --image $AGENT_IMAGE_FULL_PATH
 if [ $? -eq 0 ]; then
   echo "Retagged and pushed image successfully"
 else
