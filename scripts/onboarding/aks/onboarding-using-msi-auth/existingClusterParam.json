@@ -11,9 +11,6 @@
       "workspaceResourceId": {
         "value": "/subscriptions/<SubscriptionId>/resourceGroups/<ResourceGroup>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName>"
       },
-      "workspaceLocation": {
-        "value": "<workspaceLocation>"
-      },
       "resourceTagValues": {
         "value": {
           "<existingOrnew-tag-name1>": "<existingOrnew-tag-value1>",

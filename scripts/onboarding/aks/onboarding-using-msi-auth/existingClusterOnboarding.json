@@ -20,12 +20,6 @@
               "description": "Existing or new tags to use on AKS, ContainerInsights and DataCollectionRule Resources"
             }
         },
-        "workspaceLocation": {
-            "type": "string",
-            "metadata": {
-                "description": "Worksapce Location for data collection rule"
-            }
-        },
         "workspaceResourceId": {
             "type": "string",
             "metadata": {
@@ -38,19 +32,17 @@
         "clusterResourceGroup": "[split(parameters('aksResourceId'),'/')[4]]",
         "clusterName": "[split(parameters('aksResourceId'),'/')[8]]",
         "clusterLocation": "[replace(parameters('aksResourceLocation'),' ', '')]",
-        "workspaceSubscriptionId": "[split(parameters('workspaceResourceId'),'/')[2]]",
-        "workspaceResourceGroup": "[split(parameters('workspaceResourceId'),'/')[4]]",
         "dcrName": "[Concat('MSCI', '-', variables('clusterName'), '-', variables('clusterLocation'))]",
         "associationName":  "ContainerInsightsExtension",
-        "dataCollectionRuleId": "[resourceId(variables('workspaceSubscriptionId'), variables('workspaceResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]"
+        "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]"
     },
     "resources": [
         {
             "type": "Microsoft.Resources/deployments",
             "name": "[Concat('aks-monitoring-msi-dcr', '-',  uniqueString(variables('dcrName')))]",
             "apiVersion": "2017-05-10",
-            "subscriptionId": "[variables('workspaceSubscriptionId')]",
-            "resourceGroup": "[variables('workspaceResourceGroup')]",
+            "subscriptionId": "[variables('clusterSubscriptionId')]",
+            "resourceGroup": "[variables('clusterResourceGroup')]",
             "properties": {
               "mode": "Incremental",
               "template": {
@@ -63,7 +55,7 @@
                         "type": "Microsoft.Insights/dataCollectionRules",
                         "apiVersion": "2021-04-01",
                         "name": "[variables('dcrName')]",
-                        "location": "[parameters('workspaceLocation')]",
+                        "location": "[parameters('clusterRegion')]",
                         "tags": "[parameters('resourceTagValues')]",
                         "kind": "Linux",
                         "properties": {
