@@ -33,10 +33,10 @@ rules:
   #   resourceNames: [ "omsagent-rs" ]
   #   verbs: ["get", "patch"]
   # Uncomment below lines for MSI Auth Mode  testing
-  # - apiGroups: [""]
-  #   resources: ["secrets"]
-  #   resourceNames: [ "omsagent-aad-msi-token" ]
-  #   verbs: ["get", "watch"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: [ "omsagent-aad-msi-token" ]
+    verbs: ["get", "watch"]
   - nonResourceURLs: ["/metrics"]
     verbs: ["get"]
 ---
@@ -308,15 +308,15 @@ data:
   KEY: "VALUE_KEY"
 ---
 # Uncomment below lines for MSI Auth Mode  testing
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: omsagent-aad-msi-token
-#   namespace: kube-system
-# type: Opaque
-# data:
-#   token: "VALUE_MSI_TOKEN"
-# ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: omsagent-aad-msi-token
+  namespace: kube-system
+type: Opaque
+data:
+  token: "VALUE_MSI_TOKEN"
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -349,40 +349,40 @@ spec:
             value: "3"
       containers:
         # Uncomment below lines for MSI Auth Mode  testing
-        # - name: addon-token-adapter
-        #   command:
-        #     - /addon-token-adapter
-        #   args:
-        #     - --secret-namespace=kube-system
-        #     - --secret-name=omsagent-aad-msi-token
-        #     - --token-server-listening-port=8888
-        #     - --health-server-listening-port=9999
-        #   # Make sure this matching with version in AKS RP side
-        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.220318.3
-        #   imagePullPolicy: IfNotPresent
-        #   env:
-        #     - name: AZMON_COLLECT_ENV
-        #       value: "false"
-        #   livenessProbe:
-        #     httpGet:
-        #       path: /healthz
-        #       port: 9999
-        #     initialDelaySeconds: 10
-        #     periodSeconds: 60
-        #   resources:
-        #     limits:
-        #       cpu: 500m
-        #       memory: 500Mi
-        #     requests:
-        #       cpu: 100m
-        #       memory: 100Mi
-        #   securityContext:
-        #     capabilities:
-        #       drop:
-        #         - ALL
-        #       add:
-        #         - NET_ADMIN
-        #         - NET_RAW
+        - name: addon-token-adapter
+          command:
+            - /addon-token-adapter
+          args:
+            - --secret-namespace=kube-system
+            - --secret-name=omsagent-aad-msi-token
+            - --token-server-listening-port=8888
+            - --health-server-listening-port=9999
+          # Make sure this matching with version in AKS RP side
+          image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.220318.3
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: AZMON_COLLECT_ENV
+              value: "false"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9999
+            initialDelaySeconds: 10
+            periodSeconds: 60
+          resources:
+            limits:
+              cpu: 500m
+              memory: 500Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_ADMIN
+                - NET_RAW
         - name: omsagent
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022-hotfix"
           imagePullPolicy: IfNotPresent
@@ -425,8 +425,8 @@ spec:
             - name: AZMON_CONTAINERLOGS_ONEAGENT_REGIONS
               value: "koreacentral,norwayeast,eastus2"
             # Uncomment below lines for MSI Auth Mode  testing
-            # - name: USING_AAD_MSI_AUTH
-            #   value: "true"
+            - name: USING_AAD_MSI_AUTH
+              value: "true"
           securityContext:
             privileged: true
           ports:
@@ -507,8 +507,8 @@ spec:
             - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
               value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"
             # Uncomment below lines for MSI Auth Mode  testing
-            # - name: USING_AAD_MSI_AUTH
-            #   value: "true"
+            - name: USING_AAD_MSI_AUTH
+              value: "true"
           securityContext:
             privileged: true
           volumeMounts:
@@ -659,40 +659,40 @@ spec:
         #     - --deployment=omsagent-rs
         #     - --container=omsagent
         # Uncomment below lines for MSI Auth Mode  testing
-        # - name: addon-token-adapter
-        #   command:
-        #     - /addon-token-adapter
-        #   args:
-        #     - --secret-namespace=kube-system
-        #     - --secret-name=omsagent-aad-msi-token
-        #     - --token-server-listening-port=8888
-        #     - --health-server-listening-port=9999
-        #   # Make sure this matching with version in AKS RP side
-        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.220318.3
-        #   imagePullPolicy: IfNotPresent
-        #   env:
-        #     - name: AZMON_COLLECT_ENV
-        #       value: "false"
-        #   livenessProbe:
-        #     httpGet:
-        #       path: /healthz
-        #       port: 9999
-        #     initialDelaySeconds: 10
-        #     periodSeconds: 60
-        #   resources:
-        #     limits:
-        #       cpu: 500m
-        #       memory: 500Mi
-        #     requests:
-        #       cpu: 100m
-        #       memory: 100Mi
-        #   securityContext:
-        #     capabilities:
-        #       drop:
-        #         - ALL
-        #       add:
-        #         - NET_ADMIN
-        #         - NET_RAW
+        - name: addon-token-adapter
+          command:
+            - /addon-token-adapter
+          args:
+            - --secret-namespace=kube-system
+            - --secret-name=omsagent-aad-msi-token
+            - --token-server-listening-port=8888
+            - --health-server-listening-port=9999
+          # Make sure this matching with version in AKS RP side
+          image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.220318.3
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: AZMON_COLLECT_ENV
+              value: "false"
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9999
+            initialDelaySeconds: 10
+            periodSeconds: 60
+          resources:
+            limits:
+              cpu: 500m
+              memory: 500Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+          securityContext:
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_ADMIN
+                - NET_RAW
         - name: omsagent
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod06272022-hotfix"
           imagePullPolicy: IfNotPresent
@@ -735,8 +735,8 @@ spec:
             - name: SIDECAR_SCRAPING_ENABLED
               value: "true"
             # Uncomment below lines for MSI Auth Mode  testing
-            # - name: USING_AAD_MSI_AUTH
-            #   value: "true"
+            - name: USING_AAD_MSI_AUTH
+              value: "true"
             # Uncomment below lines when the Addon-resizer VPA enabled
             # - name: RS_ADDON-RESIZER_VPA_ENABLED
             #   value: "true"
@@ -880,6 +880,41 @@ spec:
           - name: ndots
             value: "3"
      containers:
+       # Uncomment below lines for MSI Auth Mode  testing
+       - name: addon-token-adapter
+         command:
+           - /addon-token-adapter
+         args:
+            - --secret-namespace=kube-system
+            - --secret-name=omsagent-aad-msi-token
+            - --token-server-listening-port=8888
+            - --health-server-listening-port=9999
+         # Make sure this matching with version in AKS RP side
+         image: norshtein/addon-token-adapter-win:v0.8
+         imagePullPolicy: IfNotPresent
+         env:
+           - name: AZMON_COLLECT_ENV
+             value: "false"
+         livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 9999
+            initialDelaySeconds: 10
+            periodSeconds: 60
+         resources:
+            limits:
+              cpu: 500m
+              memory: 500Mi
+            requests:
+              cpu: 100m
+              memory: 100Mi
+         securityContext:
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - NET_ADMIN
+                - NET_RAW
        - name: omsagent-win
          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod06142022"
          imagePullPolicy: IfNotPresent
@@ -888,6 +923,8 @@ spec:
            cpu: 500m
            memory: 600Mi
          env:
+          - name: USE_IMDS_TOKEN_PROXY_END_POINT
+            value: "true"
           - name: FBIT_SERVICE_FLUSH_INTERVAL
             value: "15"
           - name: FBIT_TAIL_BUFFER_CHUNK_SIZE
@@ -924,8 +961,8 @@ spec:
           # - name: REQUIRES_CERT_BOOTSTRAP
           #   value: "true"
           # Uncomment below lines for MSI Auth Mode  testing
-          # - name: USING_AAD_MSI_AUTH
-          #   value: "true"
+          - name: USING_AAD_MSI_AUTH
+            value: "true"
          volumeMounts:
           - mountPath: C:\ProgramData\docker\containers
             name: docker-windows-containers
@@ -948,10 +985,6 @@ spec:
           - mountPath: C:\etc\kubernetes\host
             name: azure-json-path
             readOnly: true
-          # Uncomment below lines for MSI Auth Mode  testing
-          # - mountPath: C:\etc\IMDS-access-token
-          #   name: imds-token
-          #   readOnly: true
          livenessProbe:
           exec:
             command:
@@ -1009,8 +1042,3 @@ spec:
         secret:
           secretName: omsagent-adx-secret
           optional: true
-      # Uncomment below lines for MSI Auth Mode  testing
-      # - name: imds-token
-      #   secret:
-      #     secretName: omsagent-aad-msi-token
-
