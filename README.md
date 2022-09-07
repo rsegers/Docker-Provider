@@ -50,7 +50,7 @@ The general directory structure is:
 |   |   |   |── scripts/                      - script files related to livenessproble, tomlparser etc..
 |   |   |   |── InstallBuilder/               - python script files for the install builder
 │   ├── windows/                              - scripts to build the .net and go code
-|   |   |── Makefile.ps1                      - powershell script to build .net and go lang code and copy the files to omsagentwindows directory
+|   |   |── Makefile.ps1                      - powershell script to build .net and go lang code and copy the files to amalogswindows directory
 │   │   ├── installer                         - files related to installer
 |   |   |   |── conf/                         - fluent, fluentbit and out_oms plugin configuration files
 |   |   |   |── scripts/                      - script files related to livenessproble, filesystemwatcher, keepCertificateAlive etc..
@@ -237,7 +237,7 @@ If you do not want to build the image from scratch every time you make changes d
 * Agent conf and plugin changes
 
 To do this, the very first time you start developing you would need to execute below instructions in elevated command prompt of powershell.
-This builds the base image(omsagent-win-base) with all the package dependencies
+This builds the base image(ama-logs-win-base) with all the package dependencies
 ```
 cd %userprofile%\Docker-Provider\kubernetes\windows\dockerbuild # based on your repo path
 docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
@@ -285,7 +285,7 @@ pwsh #switch to powershell
 
 ####  On Windows machine, build and Push Docker Image
 
-> Note: Docker image for windows container can only built on windows hence you will have to execute below commands on windows via accessing network share or copying published bits omsagentwindows under kubernetes directory on to windows machine
+> Note: Docker image for windows container can only built on windows hence you will have to execute below commands on windows via accessing network share or copying published bits amalogswindows under kubernetes directory on to windows machine
 
 ```
 net use z: \\wsl$\Ubuntu-16.04 # map the network drive of the ubuntu app to windows
