@@ -1418,7 +1418,7 @@ class KubernetesApiClient
 
     def sendReplicasetAgentRequestsAndLimitsTelemetry(podName, podNameSpace, containerName, metricName, metricValue)
       begin
-        if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("omsagent"))
+        if (!podName.nil? && podName.downcase.start_with?("ama-logs-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("ama-logs"))
           telemetryProps = {}
           telemetryProps["PodName"] = podName
           telemetryProps["ContainerName"] = containerName

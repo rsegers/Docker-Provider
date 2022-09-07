@@ -30,7 +30,7 @@ rules:
   # Uncomment below lines if AddonResizer VPA enabled
   # - apiGroups: ["apps"]
   #   resources: ["deployments"]
-  #   resourceNames: [ "omsagent-rs" ]
+  #   resourceNames: [ "ama-logs-rs" ]
   #   verbs: ["get", "patch"]
   # Uncomment below lines for MSI Auth Mode  testing
   # - apiGroups: [""]
@@ -626,7 +626,7 @@ spec:
         #   # Make sure this matching with version in AKS RP side
         # - image: "mcr.microsoft.com/oss/kubernetes/autoscaler/addon-resizer:1.8.14"
         #   imagePullPolicy: IfNotPresent
-        #   name: omsagent-vpa
+        #   name: ama-logs-vpa
         #   resources:
         #    limits:
         #     cpu: 100m
@@ -644,7 +644,7 @@ spec:
         #       fieldRef:
         #         fieldPath: metadata.namespace
         #   volumeMounts:
-        #   - name: omsagent-rs-vpa-config-volume
+        #   - name: ama-logs-rs-vpa-config-volume
         #     mountPath: /etc/config
         #   command:
         #     - /pod_nanny
@@ -656,8 +656,8 @@ spec:
         #     - --poll-period=180000
         #     - --threshold=5
         #     - --namespace=kube-system
-        #     - --deployment=omsagent-rs
-        #     - --container=omsagent
+        #     - --deployment=ama-logs-rs
+        #     - --container=ama-logs
         # Uncomment below lines for MSI Auth Mode  testing
         # - name: addon-token-adapter
         #   command:
@@ -708,7 +708,7 @@ spec:
             - name: NUM_OF_FLUENTD_WORKERS
               valueFrom:
                 resourceFieldRef:
-                  containerName: omsagent
+                  containerName: ama-logs
                   resource: limits.cpu
             - name: EMIT_CACHE_TELEMETRY
               value: "false" # enable only debug or test purpose and disable for prod
@@ -844,9 +844,9 @@ spec:
             name: container-azm-ms-osmconfig
             optional: true
         # Uncomment below lines to enable VPA
-        # - name:  omsagent-rs-vpa-config-volume
+        # - name:  ama-logs-rs-vpa-config-volume
         #   configMap:
-        #     name:  omsagent-rs-vpa-config
+        #     name:  ama-logs-rs-vpa-config
         #     optional: true
 ---
   apiVersion: apps/v1
