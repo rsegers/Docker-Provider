@@ -14,12 +14,6 @@
               "description": "Location of the AKS resource e.g. \"East US\""
             }
         },
-        "resourceTagValues": {
-            "type": "object",
-            "metadata": {
-              "description": "Existing or new tags to use on AKS, ContainerInsights and DataCollectionRule Resources"
-            }
-        },
         "workspaceLocation": {
             "type": "string",
             "metadata": {
@@ -27,6 +21,12 @@
             }
         },
         "workspaceResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Full Resource ID of the log analitycs workspace that will be used for data destination. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz"
+            }
+        },
+        "workspaceResourceId2": {
             "type": "string",
             "metadata": {
                 "description": "Full Resource ID of the log analitycs workspace that will be used for data destination. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz"
@@ -64,7 +64,6 @@
                         "apiVersion": "2019-11-01-preview",
                         "name": "[variables('dcrName')]",
                         "location": "[parameters('workspaceLocation')]",
-                        "tags": "[parameters('resourceTagValues')]",
                         "kind": "Linux",
                         "properties": {
                             "dataSources": {
@@ -93,7 +92,11 @@
                                 "logAnalytics": [
                                     {
                                         "workspaceResourceId": "[parameters('workspaceResourceId')]",
-                                        "name": "ciworkspace"
+                                        "name": "ciworkspace1"
+                                    },
+                                    {
+                                        "workspaceResourceId": "[parameters('workspaceResourceId2')]",
+                                        "name": "ciworkspace2"
                                     }
                                 ]
                             },
@@ -102,8 +105,6 @@
                                     "streams": [
                                         "Microsoft-Perf",
                                         "Microsoft-ContainerInventory",
-                                        "Microsoft-ContainerLog",
-                                        "Microsoft-ContainerLogV2",
                                         "Microsoft-ContainerNodeInventory",
                                         "Microsoft-KubeEvents",
                                         "Microsoft-KubeMonAgentEvents",
@@ -114,7 +115,16 @@
                                         "Microsoft-InsightsMetrics"
                                     ],
                                     "destinations": [
-                                        "ciworkspace"
+                                        "ciworkspace1"
+                                    ]
+                                },
+                                {
+                                    "streams": [
+                                        "Microsoft-ContainerLog",
+                                        "Microsoft-ContainerLogV2"
+                                    ],
+                                    "destinations": [
+                                        "ciworkspace2"
                                     ]
                                 }
                             ]
@@ -178,7 +188,6 @@
                         "name": "[variables('clusterName')]",
                         "type": "Microsoft.ContainerService/managedClusters",
                         "location": "[parameters('aksResourceLocation')]",
-                        "tags": "[parameters('resourceTagValues')]",
                         "apiVersion": "2018-03-31",
                         "properties": {
                           "mode": "Incremental",
