@@ -20,6 +20,12 @@
               "description": "Existing or new tags to use on AKS, ContainerInsights and DataCollectionRule Resources"
             }
         },
+        "workspaceLocation": {
+            "type": "string",
+            "metadata": {
+                "description": "Worksapce Location for data collection rule"
+            }
+        },
         "workspaceResourceId": {
             "type": "string",
             "metadata": {
