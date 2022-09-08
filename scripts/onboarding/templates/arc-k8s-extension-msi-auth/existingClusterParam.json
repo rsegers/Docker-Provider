@@ -11,11 +11,11 @@
     "workspaceResourceId": {
       "value": "/subscriptions/<subscriptionId>/resourcegroups/<resourceGroupName>/providers/microsoft.operationalinsights/workspaces/<workspaceName>"
     },
-    "workspaceDomain": {
-      "value": "<workspaceDomainName>"
-    },
     "workspaceRegion": {
       "value": "<workspaceRegion>"
+    },
+    "workspaceDomain": {
+      "value": "<workspaceDomainName>"
     },
     "resourceTagValues": {
       "value": {
