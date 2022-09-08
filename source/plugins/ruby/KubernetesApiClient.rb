@@ -37,7 +37,10 @@ class KubernetesApiClient
   @Log = Logger.new(@LogPath, 2, 10 * 1048576) #keep last 2 files, max log file size = 10M
   @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
   @@TokenStr = nil
-  @@telemetryTimeTracker = DateTime.now.to_time.to_i
+  @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@memoryRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@resourceLimitsTelemetryHash = {}
 
   def initialize
@@ -470,6 +473,7 @@ class KubernetesApiClient
         if podUid.nil?
           return metricItems
         end
+        podName = pod["metadata"]["name"]
 
         nodeName = ""
         #for unscheduled (non-started) pods nodeName does NOT exist
@@ -514,10 +518,14 @@ class KubernetesApiClient
               metricCollections.push(metricCollection)
               metricProps["json_Collections"] = metricCollections.to_json
               metricItems.push(metricProps)
-              #No container level limit for the given metric, so default to node level limit
+
+              if isAddonResizerVPAEnabled()
+                sendReplicasetAgentRequestsAndLimitsTelemetry(podName, podNameSpace, containerName, metricNametoReturn, metricValue)
+              end
             else
+              #No container level limit for the given metric, so default to node level limit
               if (metricCategory == "limits" && !nodeAllocatableRecord.nil? && !nodeAllocatableRecord.empty? && nodeAllocatableRecord.has_key?(metricNameToCollect))
-                metricValue = nodeAllocatableRecord[metricNameToCollect]
+                metricValue = getMetricNumericValue(metricNameToCollect, nodeAllocatableRecord[metricNameToCollect])
                 metricProps = {}
                 metricProps["Timestamp"] = metricTime
                 metricProps["Host"] = nodeName
@@ -591,7 +599,7 @@ class KubernetesApiClient
               #No container level limit for the given metric, so default to node level limit for non-gpu metrics
               if (metricNameToCollect.downcase != "nvidia.com/gpu") && (metricNameToCollect.downcase != "amd.com/gpu")
                 if !nodeAllocatableRecord.nil? && !nodeAllocatableRecord.empty? && nodeAllocatableRecord.has_key?(metricNameToCollect)
-                  metricValue = nodeAllocatableRecord[metricNameToCollect]
+                  metricValue = getMetricNumericValue(metricNameToCollect, nodeAllocatableRecord[metricNameToCollect])
                 end
               end
             end
@@ -743,8 +751,13 @@ class KubernetesApiClient
             metricValue.chomp!("k")
             metricValue = Float(metricValue) * 1000.0 ** 1
           elsif (metricValue.end_with?("m"))
+            #original value before downcase ending with M is megabyte and value ending with m is milli-byte
             metricValue.chomp!("m")
-            metricValue = Float(metricValue) * 1000.0 ** 2
+            if (metricVal.end_with?("M"))
+              metricValue = Float(metricValue) * 1000.0 ** 2
+            else
+              metricValue = Float(metricValue) / 1000.0
+            end
           elsif (metricValue.end_with?("g"))
             metricValue.chomp!("g")
             metricValue = Float(metricValue) * 1000.0 ** 3
@@ -1393,6 +1406,56 @@ class KubernetesApiClient
         isEmitCacheTelemtryEnabled = true
       end
       return isEmitCacheTelemtryEnabled
+    end
+
+    def isAddonResizerVPAEnabled
+      isAddonResizerVPAEnabled = false
+      if !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].nil? && !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].empty? && ENV["RS_ADDON-RESIZER_VPA_ENABLED"].downcase == "true".downcase
+        isAddonResizerVPAEnabled = true
+      end
+      return isAddonResizerVPAEnabled
+    end
+
+    def sendReplicasetAgentRequestsAndLimitsTelemetry(podName, podNameSpace, containerName, metricName, metricValue)
+      begin
+        if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("omsagent"))
+          telemetryProps = {}
+          telemetryProps["PodName"] = podName
+          telemetryProps["ContainerName"] = containerName
+          case metricName
+          when "cpuLimitNanoCores"
+            timeDifference = (DateTime.now.to_time.to_i - @@cpuLimitsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          when "memoryLimitBytes"
+            timeDifference = (DateTime.now.to_time.to_i - @@memoryLimitsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          when "cpuRequestNanoCores"
+            timeDifference = (DateTime.now.to_time.to_i - @@cpuRequestsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          when "memoryRequestBytes"
+            timeDifference = (DateTime.now.to_time.to_i - @@memoryRequestsTelemetryTimeTracker).abs
+            timeDifferenceInMinutes = timeDifference / 60
+            if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+              @@memoryRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
+              ApplicationInsightsUtility.sendMetricTelemetry(metricName, metricValue, telemetryProps)
+            end
+          end
+        end
+      rescue => err
+        @Log.warn "KubernetesApiClient::sendReplicasetAgentRequestsAndLimitsTelemetry failed with an error: #{err}"
+      end
     end
   end
 end
