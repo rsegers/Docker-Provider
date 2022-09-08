@@ -55,7 +55,7 @@
                         "type": "Microsoft.Insights/dataCollectionRules",
                         "apiVersion": "2021-04-01",
                         "name": "[variables('dcrName')]",
-                        "location": "[parameters('clusterRegion')]",
+                        "location": "[parameters('workspaceLocation')]",
                         "tags": "[parameters('resourceTagValues')]",
                         "kind": "Linux",
                         "properties": {
