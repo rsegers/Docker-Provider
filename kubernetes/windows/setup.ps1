@@ -8,11 +8,13 @@ Write-Host ('Creating folder structure')
     New-Item -Type Directory -Path /opt/fluent-bit
     New-Item -Type Directory -Path /opt/scripts/ruby
     New-Item -Type Directory -Path /opt/telegraf
+    New-Item -Type Directory -Path /opt/genevamonitoringagent
 
     New-Item -Type Directory -Path /etc/fluent-bit
     New-Item -Type Directory -Path /etc/fluent
     New-Item -Type Directory -Path /etc/omsagentwindows
     New-Item -Type Directory -Path /etc/telegraf
+    New-Item -Type Directory -Path /etc/genevamonitoringagent
 
     New-Item -Type Directory -Path /etc/config/settings/
     New-Item -Type Directory -Path /etc/config/adx/
@@ -63,6 +65,22 @@ Write-Host ('Finished Installing Visual C++ Redistributable Package')
 Write-Host ('Extracting Certificate Generator Package')
     Expand-Archive -Path /opt/omsagentwindows/certificategenerator.zip -Destination /opt/omsagentwindows/certgenerator/ -Force
 Write-Host ('Finished Extracting Certificate Generator Package')
+
+Write-Host ('Installing GenevaMonitoringAgent');
+try {
+    $genevamonitoringagentUri='https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/genevamonitoringagent.45.13.1.zip'
+    Invoke-WebRequest -Uri $genevamonitoringagentUri -OutFile /installation/genevamonitoringagent.zip
+    Expand-Archive -Path /installation/genevamonitoringagent.zip -Destination /installation/genevamonitoringagent
+    Move-Item -Path /installation/genevamonitoringagent -Destination /opt/genevamonitoringagent/ -ErrorAction SilentlyContinue
+}
+catch {
+    $ex = $_.Exception
+    Write-Host "exception while downloading genevamonitoringagent for windows"
+    Write-Host $ex
+    exit 1
+}
+Write-Host ('Finished downloading GenevaMonitoringAgent')
+
 
 Write-Host ("Removing Install folder")
 
