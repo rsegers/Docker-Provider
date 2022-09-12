@@ -45,19 +45,19 @@
       "metadata": {
         "description": "Existing or new tags to use on Arc K8s ContainerInsights extension resources"
       }
-    },       
+    },
     "dataCollectionInterval": {
         "type": "string",
         "metadata": {
             "description": "Data collection interval e.g. \"5m\" for metrics and inventory. Supported value range from 1m to 30m and default is 1m"
         }
-    },    
+    },
     "excludeNamespacesForDataCollection": {
         "type": "array",
         "metadata": {
             "description": "Kubernetes namespaces to exclude for the data collection of inventory and metrics"
         }
-    }   
+    }
   },
   "variables": {
     "clusterSubscriptionId": "[split(parameters('clusterResourceId'),'/')[2]]",
@@ -104,7 +104,7 @@
                         "dataCollectionSettings" : {
                             "interval": "[parameters('dataCollectionInterval')]",
                             "excludeNameSpaces": "[parameters('excludeNamespacesForDataCollection')]"
-                        }                                         
+                        }
                       },
                       "extensionName": "ContainerInsights"
                     }
@@ -196,7 +196,9 @@
                 "configurationSettings": {
                   "logAnalyticsWorkspaceResourceID": "[parameters('workspaceResourceId')]",
                   "omsagent.domain": "[parameters('workspaceDomain')]",
-                  "omsagent.useAADAuth": "true"
+                  "omsagent.useAADAuth": "true",
+                  "omsagent.image.tag": "ciprodpreview08082022",
+                  "omsagent.image.tagWindows": "win-ciprodpreview08082022"
                 },
                 "configurationProtectedSettings": {
                   "omsagent.secret.wsid": "[reference(parameters('workspaceResourceId'), '2015-03-20').customerId]",
