@@ -133,6 +133,15 @@ Notes:
 <sup>(1)</sup> Use 'clusterName' to apply the rule group to the data from a specific cluster. The "clusterName" value must be identical to the 'Cluster' label used on the metrics from this cluster.
 <sup>(2)</sup> Each rule must include either 'record' or 'alert' (but not both)
 
+### Limiting rules to a specific cluster
+
+As an option, you can limit the rules in a rule group to query data originating from a specific cluster, using  the rule group **clusterName**  property.
+As a best practice, it is recommended to limit rules to a single cluster if your MAC contains a large scale of data from multiple clusters, and there is a concern that running a single set of rules on all the data may cause performance or throttling issues. Using the clusterName property, you can create multiple rule groups, each configured with the same rules, limiting each group to cover a different cluster. 
+
+Notes:
+* The **clusterName** value must be identical to the **cluster** label that is added to the metrics from a specific cluster during data collection.
+* If clusterName is not specified for a specific rule group, the rules in the group will query all the data in the MAC (from all clusters).
+
 ### Deployment of Prometheus rule groups using Azure CLI
 
 To deploy a Prometheus rule group template stored on your local Windows computer using Azure CLI, use the following steps.
@@ -153,7 +162,6 @@ az account set --subscription <subscription name>
 az deployment group create --resource-group <resource group name> --template-file <template-path/name> 
 az resource show --ids /subscriptions/<subscriptionId>/resourceGroups/<resource group name>/providers/Microsoft.AlertsManagement/prometheusRuleGroups/<rule group name>
 ```
-
 To modify an existing rule group in your subscription, edit the template file and repeat the deployment procedure above using the deployed template.
 
 ## Prometheus alerts and the Azure portal
