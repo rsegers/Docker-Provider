@@ -104,10 +104,10 @@ The general directory structure is:
 
 # Branches
 
-- `ci_prod` branch contains codebase currently in production (or being prepared for release).
-- `ci_dev` branch contains version in development.
+- We are using a single branch which has all the code in development and we will be releasing from this branch itself. 
+- `ci_prod` branch contains codebase version in development.
 
-To contribute: create your private branch off of `ci_dev`, make changes and use pull request to merge back to `ci_dev`.
+To contribute: create your private branch off of `ci_prod`, make changes and use pull request to merge back to `ci_prod`.
 Pull request must be approved by at least one engineering team members.
 
 # Authoring code
@@ -315,7 +315,7 @@ docker push <repo>/<imagename>:<imagetag>
 
 # Azure DevOps Build Pipeline
 
-Navigate to https://github-private.visualstudio.com/microsoft/_build?definitionScope=%5CCDPX%5Cdocker-provider to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_dev and ci_prod.
+Navigate to https://github-private.visualstudio.com/microsoft/_build?definitionScope=%5CCDPX%5Cdocker-provider to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_prod.
 
 Docker Images will be pushed to CDPX ACR repos and these needs to retagged and pushed to corresponding ACR or docker hub. Only onboarded Azure AD AppId has permission to pull the images from CDPx ACRs.
 
@@ -338,10 +338,12 @@ Here are the instructions to onboard the feature branch to Azure Dev Ops pipelin
 
 # Azure DevOps Release Pipeline
 
-Integrated to Azure DevOps release pipeline for the ci_dev and ci_prod.With this, for every commit to ci_dev branch, latest bits automatically deployded to DEV AKS clusters in Build subscription and similarly for for every commit to ci_prod branch, latest bits automatically deployed to PROD AKS clusters in Build subscription.
+Integrated to Azure DevOps release pipeline for the ci_prod branch. With this, for every commit to ci_prod branch, latest bits automatically deployded to DEV AKS clusters in Build subscription. 
 
-For dev, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:cidev<git-commit-id>.
-For prod, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod`<MM><DD><YYYY>`.
+When releasing the agent, we have a separate Azure DevOps pipeline which needs to be run to publish the image to prod MCR and our PROD AKS clusters. 
+
+For dev, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:`<MM><DD><YYYY>`-<git-commit-id>.
+For prod, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod`<MM><DD><YYYY>-<git-commit-id>`.
 
 Navigate to https://github-private.visualstudio.com/microsoft/_release?_a=releases&view=all to see the release pipelines.
 
@@ -351,7 +353,7 @@ Navigate to Kubernetes directory and update the yamls with latest docker image o
 
 #  Deployment and Validation
 
-For DEV and PROD branches, automatically deployed latest yaml with latest agent image (which automatically built by the azure devops pipeline) onto CIDEV and CIPROD AKS clusters in build subscription.  So, you can use CIDEV and CIPROD AKS cluster to validate E2E. Similarly, you can set up build and release pipelines for your feature branch.
+For our single branch ci_prod, automatically deployed latest yaml with latest agent image (which automatically built by the azure devops pipeline) onto CIDEV AKS clusters in build subscription.  So, you can use CIDEV AKS cluster to validate E2E. Similarly, you can set up build and release pipelines for your feature branch.
 
 # Testing MSI Auth Mode Using Yaml
 
