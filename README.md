@@ -338,12 +338,12 @@ Here are the instructions to onboard the feature branch to Azure Dev Ops pipelin
 
 # Azure DevOps Release Pipeline
 
-Integrated to Azure DevOps release pipeline for the ci_prod branch. With this, for every commit to ci_prod branch, latest bits automatically deployded to DEV AKS clusters in Build subscription. 
+Integrated to Azure DevOps release pipeline for the ci_prod branch. With this, for every commit to ci_prod branch, latest bits automatically deployed to DEV AKS clusters in Build subscription. 
 
 When releasing the agent, we have a separate Azure DevOps pipeline which needs to be run to publish the image to prod MCR and our PROD AKS clusters. 
 
-For dev, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:`<MM><DD><YYYY>`-<git-commit-id>.
-For prod, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod`<MM><DD><YYYY>-<git-commit-id>`.
+For development, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:`<MM><DD><YYYY>`-<git-commit-id>.
+For releases, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod`<MM><DD><YYYY>-<git-commit-id>`.
 
 Navigate to https://github-private.visualstudio.com/microsoft/_release?_a=releases&view=all to see the release pipelines.
 
