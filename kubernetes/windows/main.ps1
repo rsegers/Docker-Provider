@@ -325,7 +325,7 @@ function Set-EnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("MONITORING_PROCESS_START_TIME", "2022-09-12T00:00:00.360Z", "Process")
     [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Process")
     [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Process")
-    [System.Environment]::SetEnvironmentVariable("cutomRegion", $aksRegion, "Process")
+    [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Process")
 
 
         [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
@@ -342,7 +342,7 @@ function Set-EnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("MONITORING_Machine_START_TIME", "2022-09-12T00:00:00.360Z", "Machine")
     [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Machine")
     [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Machine")
-    [System.Environment]::SetEnvironmentVariable("cutomRegion", $aksRegion, "Machine") 
+    [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Machine") 
 
     # run config parser
     ruby /opt/omsagentwindows/scripts/ruby/tomlparser.rb
