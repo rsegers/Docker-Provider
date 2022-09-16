@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MonitoringManagement version="1.0" namespace="AzureMonitorAgent" timestamp="2014-03-09T00:00:00.0000000Z">
+  <Management eventVolume="Medium" disableNodeDiagnostics="true">
+       <Identity type="TenantRole" />
+    <AgentResourceUsage diskQuotaInMB="10000" />
+  </Management>
+  <Sources>
+    <Source name="KUBE_NODE_INVENTORY_BLOB" eventName="c2585688425042610651_17122439705320844850_14210799371873224896" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="KUBE_SERVICES_BLOB" eventName="c2585688425042610651_17122439705320844850_14240253972997522837" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="KUBE_POD_INVENTORY_BLOB" eventName="c2585688425042610651_17122439705320844850_10269703019919793567" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="INSIGHTS_METRICS_BLOB" eventName="c2585688425042610651_17122439705320844850_1948329415279312964" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="KUBE_PV_INVENTORY_BLOB" eventName="c2585688425042610651_17122439705320844850_922482635062264538" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="CONTAINER_NODE_INVENTORY_BLOB" eventName="c2585688425042610651_17122439705320844850_1004347973418822288" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="GENERIC_PERF_BLOB" eventName="c2585688425042610651_17122439705320844850_13952246352792174058" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="KUBE_EVENTS_BLOB" eventName="c2585688425042610651_17122439705320844850_2697761906754729046" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="KUBE_MON_AGENT_EVENTS_BLOB" eventName="c2585688425042610651_17122439705320844850_6199025647578496449" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="CONTAINER_LOG_BLOB" eventName="c2585688425042610651_17122439705320844850_15117718451157030289" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="CONTAINER_INVENTORY_BLOB" eventName="c2585688425042610651_17122439705320844850_6207291580036893107" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+    <Source name="CONTAINERINSIGHTS_CONTAINERLOGV2" eventName="c2585688425042610651_17122439705320844850_10969744290014548373" type="Pipe" streamName="ContainerInsights_c2585688425042610651_17122439705320844850" />
+
+  </Sources>
+  <Events>
+    <HeartBeats>
+      <HeartBeat diskQuotaInMB = "32" retryTimeout = "PT10M" retentionInDays = "29" duration = "PT2M" sampleRateInSeconds = "60" storeType = "Local" eventName = "MaHeartBeats" />
+    </HeartBeats>
+  </Events>
+  <EventStreamingAnnotations>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_14210799371873224896$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="ContainerInsights" logType="KUBE_NODE_INVENTORY_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_14240253972997522837$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="ContainerInsights" logType="KUBE_SERVICES_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_10269703019919793567$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="ContainerInsights" logType="KUBE_POD_INVENTORY_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_1948329415279312964$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="VMInsights" logType="INSIGHTS_METRICS_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_922482635062264538$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="ContainerInsights" logType="KUBE_PV_INVENTORY_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_1004347973418822288$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="ContainerInsights" logType="CONTAINER_NODE_INVENTORY_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_13952246352792174058$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="LogManagement" logType="GENERIC_PERF_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_2697761906754729046$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="ContainerInsights" logType="KUBE_EVENTS_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_6199025647578496449$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="Containers" logType="KUBE_MON_AGENT_EVENTS_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_15117718451157030289$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="Containers" logType="CONTAINER_LOG_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_6207291580036893107$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="ContainerInsights" logType="CONTAINER_INVENTORY_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+    <EventStreamingAnnotation name ="^c2585688425042610651_17122439705320844850_10969744290014548373$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="ContainerInsights" logType="CONTAINERINSIGHTS_CONTAINERLOGV2" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" sourceExtension="ContainerInsights" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+
+    <EventStreamingAnnotation name ="^c2585688425042610651_hb$">
+      <OMS>
+        <Content>
+          <![CDATA[ <Config channelProtocol="ods" workspaceName="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" workspaceId="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" solutionType="LogManagement" logType="HEALTH_ASSESSMENT_BLOB" globallyUniqueChannelId="dcr-bdedcb72d2b345f2b97fdea9b140072d.ods-3eb10d5d-7dfc-4782-8944-ed1bb550a6bb" endpoint="3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com" tokenBased="true" /> ]]>
+        </Content>
+      </OMS>
+    </EventStreamingAnnotation>
+
+  </EventStreamingAnnotations>
+  <TaggedData name="ContainerInsights">
+    <Data><![CDATA[
+    {
+      "version":"2.0.0",
+      "extensionName":"ContainerInsights",
+      "extensionConfigurations": [
+      {"id":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension","originIds":["/subscriptions/81895b44-c46d-44c3-9368-42f0386af28e/resourceGroups/ci_ama_win_janvi/providers/Microsoft.Insights/dataCollectionRules/MSCI-winci-3-eastus2euap"],"outputStreams":{"GENERIC_PERF_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:GENERIC_PERF_BLOB","CONTAINER_INVENTORY_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:CONTAINER_INVENTORY_BLOB","CONTAINER_LOG_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:CONTAINER_LOG_BLOB","CONTAINERINSIGHTS_CONTAINERLOGV2":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:CONTAINERINSIGHTS_CONTAINERLOGV2","CONTAINER_NODE_INVENTORY_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:CONTAINER_NODE_INVENTORY_BLOB","KUBE_EVENTS_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_EVENTS_BLOB","KUBE_MON_AGENT_EVENTS_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_MON_AGENT_EVENTS_BLOB","KUBE_NODE_INVENTORY_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_NODE_INVENTORY_BLOB","KUBE_POD_INVENTORY_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_POD_INVENTORY_BLOB","KUBE_PV_INVENTORY_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_PV_INVENTORY_BLOB","KUBE_SERVICES_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_SERVICES_BLOB","INSIGHTS_METRICS_BLOB":"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:INSIGHTS_METRICS_BLOB"}}
+      ],
+    "outputStreamDefinitions": {
+            "dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:GENERIC_PERF_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:CONTAINER_INVENTORY_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:CONTAINER_LOG_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:CONTAINERINSIGHTS_CONTAINERLOGV2": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:CONTAINER_NODE_INVENTORY_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_EVENTS_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_MON_AGENT_EVENTS_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_NODE_INVENTORY_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_POD_INVENTORY_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_PV_INVENTORY_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:KUBE_SERVICES_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"},
+"dcr-bdedcb72d2b345f2b97fdea9b140072d:ContainerInsightsExtension:INSIGHTS_METRICS_BLOB": { "namedPipe": "CAgentStream_ContainerInsights_c2585688425042610651_17122439705320844850_AzureMonitorAgent"}    }
+    }
+    ]]></Data>
+  </TaggedData>
+        </MonitoringManagement>
