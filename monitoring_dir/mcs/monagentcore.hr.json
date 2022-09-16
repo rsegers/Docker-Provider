@@ -1,1 +1,0 @@
-{"OSVer":"Windows 10.0.17763 - Windows Server 2019 Datacenter","AgentVer":"45.13.01","Context":"monagentcore","Id":"23S9","Connectivity":{"Imds":{"http://169.254.169.254":true},"Ods":{"3eb10d5d-7dfc-4782-8944-ed1bb550a6bb.ods.opinsights.azure.com":true}},"Features":{"MsiTokenDownload":true,"ResourceInfoDownload":true,"OdsTokenDownload":true},"Ext":{"ContainerInsights":true}}
