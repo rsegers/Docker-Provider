@@ -15,7 +15,7 @@ module Fluent
 
     def initialize
       super
-      require_relative "omsagenthelper"
+      require_relative "amalogshelper"
     end
 
     def configure(conf)
