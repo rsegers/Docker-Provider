@@ -133,7 +133,7 @@ spec:
         - mountPath: /etc/omsagent-secret
           name: omsagent-secret
           readOnly: true
-        {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) }}
+        {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) (not .Values.omsagent.ignoreExtensionProxySettings) }}
         - mountPath: /etc/ssl/certs/proxy-cert.crt
           subPath: PROXYCERT.crt
           name: omsagent-secret
@@ -207,7 +207,7 @@ spec:
          - mountPath: /etc/omsagent-secret
            name: omsagent-secret
            readOnly: true
-         {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) }}
+         {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) (not .Values.omsagent.ignoreExtensionProxySettings) }}
          - mountPath: /etc/ssl/certs/proxy-cert.crt
            subPath: PROXYCERT.crt
            name: omsagent-secret
