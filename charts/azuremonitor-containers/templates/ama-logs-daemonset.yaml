@@ -133,7 +133,7 @@ spec:
         - mountPath: /etc/ama-logs-secret
           name: ama-logs-secret
           readOnly: true
-        {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) }}
+        {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) (not .Values.amalogs.ignoreExtensionProxySettings) }}
         - mountPath: /etc/ssl/certs/proxy-cert.crt
           subPath: PROXYCERT.crt
           name: ama-logs-secret
@@ -207,7 +207,7 @@ spec:
          - mountPath: /etc/ama-logs-secret
            name: ama-logs-secret
            readOnly: true
-         {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) }}
+         {{- if and (.Values.Azure.proxySettings.isProxyEnabled) (.Values.Azure.proxySettings.proxyCert) (not .Values.amalogs.ignoreExtensionProxySettings) }}
          - mountPath: /etc/ssl/certs/proxy-cert.crt
            subPath: PROXYCERT.crt
            name: ama-logs-secret
