@@ -110,7 +110,7 @@
                   "omsagent.secret.key": "[listKeys(parameters('workspaceResourceId'), '2015-03-20').primarySharedKey]"
                 },
                 "autoUpgradeMinorVersion": true,
-                "releaseTrain": "Stable",
+                "releaseTrain": "preview",
                 "scope": {
                   "Cluster": {
                     "releaseNamespace": "azuremonitor-containers"
