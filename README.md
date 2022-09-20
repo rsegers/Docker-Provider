@@ -315,7 +315,7 @@ docker push <repo>/<imagename>:<imagetag>
 
 # Azure DevOps Build Pipeline
 
-Navigate to https://github-private.visualstudio.com/microsoft/_build?definitionScope=%5CCDPX%5Cdocker-provider to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_prod.
+Navigate to https://github-private.visualstudio.com/microsoft/_build?definitionId=444&_a=summary to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_prod.
 
 Docker Images will be pushed to CDPX ACR repos and these needs to retagged and pushed to corresponding ACR or docker hub. Only onboarded Azure AD AppId has permission to pull the images from CDPx ACRs.
 
@@ -338,7 +338,7 @@ Here are the instructions to onboard the feature branch to Azure Dev Ops pipelin
 
 # Azure DevOps Release Pipeline
 
-Integrated to Azure DevOps release pipeline for the ci_prod branch. With this, for every commit to ci_prod branch, latest bits automatically deployed to DEV AKS clusters in Build subscription. 
+Integrated to Azure DevOps release pipeline for the ci_prod branch. With this, for every commit to ci_prod branch, latest bits automatically deployed to DEV AKS clusters in Build subscription.
 
 When releasing the agent, we have a separate Azure DevOps pipeline which needs to be run to publish the image to prod MCR and our PROD AKS clusters. 
 
