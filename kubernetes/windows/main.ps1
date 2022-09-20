@@ -656,3 +656,6 @@ Get-WmiObject Win32_process | Where-Object { $_.Name -match 'powershell' } | For
 
 #check if fluentd service is running
 Get-Service fluentdwinaks
+
+#start Windows AMA 
+Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") }
