@@ -2,8 +2,11 @@
 
 export HELM_EXPERIMENTAL_OCI=1
 export MCR_NAME="mcr.microsoft.com"
+
 # for prod-> stable and for test -> preview
-export REPO_TYPE="stable"
+if REPO_TYPE == ""
+    export REPO_TYPE="stable"
+fi
 
 # repo paths for arc k8s extension roll-out
 # canary region
