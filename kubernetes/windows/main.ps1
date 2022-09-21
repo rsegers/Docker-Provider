@@ -658,4 +658,4 @@ Get-WmiObject Win32_process | Where-Object { $_.Name -match 'powershell' } | For
 Get-Service fluentdwinaks
 
 #start Windows AMA 
-Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") }
+Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") }
