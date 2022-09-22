@@ -269,6 +269,8 @@ jobs:
 
         az --version
         az account show
+        az identity show
+        az acr identity show --name ${{ variables.containerRegistry }}
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
