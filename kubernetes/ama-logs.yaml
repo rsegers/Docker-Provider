@@ -383,7 +383,7 @@ spec:
         #       add:
         #         - NET_ADMIN
         #         - NET_RAW
-        - name: omsagent
+        - name: ama-logs
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
           imagePullPolicy: IfNotPresent
           resources:
@@ -472,7 +472,7 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 15
 #Only in sidecar scraping mode
-        - name: omsagent-prometheus
+        - name: ama-logs-prometheus
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
           imagePullPolicy: IfNotPresent
           resources:
@@ -693,7 +693,7 @@ spec:
         #       add:
         #         - NET_ADMIN
         #         - NET_RAW
-        - name: omsagent
+        - name: ama-logs
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
           imagePullPolicy: IfNotPresent
           # comment resources if VPA configured since the VPA will set these values
@@ -880,7 +880,7 @@ spec:
           - name: ndots
             value: "3"
      containers:
-       - name: omsagent-win
+       - name: ama-logs-win
          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod08102022"
          imagePullPolicy: IfNotPresent
          resources:
