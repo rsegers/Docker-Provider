@@ -133,7 +133,7 @@
           "variables": {},
           "resources": [
             {
-              "type": "Microsoft.Kubernetes/connectedClusters/providers/dataCollectionRuleAssociations",
+              "type": "Microsoft.HybridContainerService/provisionedClusters/providers/dataCollectionRuleAssociations",
               "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('associationName'))]",
               "apiVersion": "2021-04-01",
               "properties": {
@@ -190,7 +190,7 @@
                   }
                 }
               },
-              "scope": "[concat('Microsoft.Kubernetes/connectedClusters/', split(parameters('clusterResourceId'),'/')[8])]"
+              "scope": "[concat('Microsoft.HybridContainerService/provisionedClusters/', split(parameters('clusterResourceId'),'/')[8])]"
             }
           ]
         }
