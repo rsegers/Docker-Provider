@@ -113,9 +113,6 @@ jobs:
 
         az --version
         az account show
-        az identity list
-        az acr identity show --name ${{ variables.containerRegistry }}
-        exit 0
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
@@ -180,6 +177,9 @@ jobs:
     displayName: 'install prereqs'
 
   - script: |
+      docker --version
+      docker info
+      exit /B %ERRORLEVEL%
       setlocal enabledelayedexpansion
       powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
       endlocal
@@ -198,9 +198,6 @@ jobs:
 
         az --version
         az account show
-        az identity list
-        az acr identity show --name ${{ variables.containerRegistry }}
-        exit 0
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
