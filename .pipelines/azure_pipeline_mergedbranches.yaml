@@ -113,8 +113,9 @@ jobs:
 
         az --version
         az account show
-        az identity show
+        az identity list
         az acr identity show --name ${{ variables.containerRegistry }}
+        exit 0
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
@@ -197,8 +198,9 @@ jobs:
 
         az --version
         az account show
-        az identity show
+        az identity list
         az acr identity show --name ${{ variables.containerRegistry }}
+        exit 0
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
