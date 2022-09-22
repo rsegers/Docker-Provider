@@ -28,20 +28,20 @@ class Extension
   end
 
   def get_extension_settings()
-    extensionSettings = Hash.new 
+    extensionSettings = Hash.new
     begin
       extensionConfigurations = get_extension_configs()
       if !extensionConfigurations.nil? && !extensionConfigurations.empty?
         extensionConfigurations.each do |extensionConfig|
           if !extensionConfig.nil? && !extensionConfig.empty?
             extSettings = extensionConfig[Constants::EXTENSION_SETTINGS]
-            if !extSettings.nil? && !extSettings.empty?        
+            if !extSettings.nil? && !extSettings.empty?
               extensionSettings = extSettings
             end
           end
         end
       end
-    rescue =>errorStr 
+    rescue =>errorStr
       $log.warn("Extension::get_extension_settings failed: #{errorStr}")
       ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
     end
@@ -49,7 +49,7 @@ class Extension
   end
 
   def get_extension_data_collection_settings()
-    dataCollectionSettings = Hash.new 
+    dataCollectionSettings = Hash.new
     begin
       extensionSettings = get_extension_settings()
       if !extensionSettings.nil? && !extensionSettings.empty?
@@ -58,23 +58,23 @@ class Extension
           dataCollectionSettings = dcSettings
         end
       end
-    rescue =>errorStr 
+    rescue =>errorStr
       $log.warn("Extension::get_extension_data_collection_settings failed: #{errorStr}")
       ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
     end
     return dataCollectionSettings
   end
-  
 
-  def get_stream_mapping() 
-     dataTypeToStreamIdMap = Hash.new 
-     begin      
+
+  def get_stream_mapping()
+     dataTypeToStreamIdMap = Hash.new
+     begin
       extensionConfigurations = get_extension_configs()
       if !extensionConfigurations.nil? && !extensionConfigurations.empty?
         extensionConfigurations.each do |extensionConfig|
           outputStreams = extensionConfig["outputStreams"]
           if !outputStreams.nil? && !outputStreams.empty?
-            outputStreams.each do |datatypeId, streamId|              
+            outputStreams.each do |datatypeId, streamId|
               dataTypeToStreamIdMap[datatypeId] = streamId
             end
           else
@@ -83,7 +83,7 @@ class Extension
         end
       else
         $log.warn("Extension::get_stream_mapping::received extensionConfigurations either nil or empty")
-      end    
+      end
      rescue => errorStr
       $log.warn("Extension::get_stream_mapping failed: #{errorStr}")
       ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
@@ -93,21 +93,21 @@ class Extension
 
   private
   def get_extension_configs()
-    extensionConfigurations = []    
+    extensionConfigurations = []
     begin
       clientSocket = UNIXSocket.open(Constants::ONEAGENT_FLUENT_SOCKET_NAME)
       requestId = SecureRandom.uuid.to_s
-      requestBodyJSON = { "Request" => "AgentTaggedData", "RequestId" => requestId, "Tag" => Constants::CI_EXTENSION_NAME, "Version" => Constants::CI_EXTENSION_VERSION }.to_json      
+      requestBodyJSON = { "Request" => "AgentTaggedData", "RequestId" => requestId, "Tag" => Constants::CI_EXTENSION_NAME, "Version" => Constants::CI_EXTENSION_VERSION }.to_json
       requestBodyMsgPack = requestBodyJSON.to_msgpack
       clientSocket.write(requestBodyMsgPack)
-      clientSocket.flush      
+      clientSocket.flush
       resp = clientSocket.recv(Constants::CI_EXTENSION_CONFIG_MAX_BYTES)
-      if !resp.nil? && !resp.empty?        
+      if !resp.nil? && !resp.empty?
         respJSON = JSON.parse(resp)
         taggedData = respJSON["TaggedData"]
         if !taggedData.nil? && !taggedData.empty?
           taggedAgentData = JSON.parse(taggedData)
-          extensionConfigurations = taggedAgentData["extensionConfigurations"]          
+          extensionConfigurations = taggedAgentData["extensionConfigurations"]
         end
       end
     rescue => errorStr
@@ -115,7 +115,7 @@ class Extension
       ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
     ensure
       clientSocket.close unless clientSocket.nil?
-    end    
+    end
     return extensionConfigurations
   end
 end

@@ -22,8 +22,8 @@ Azure:
 omsagent:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod06272022-hotfix"
-    tagWindows: "win-ciprod06142022"
+    tag: "ciprod08102022"
+    tagWindows: "win-ciprod08102022"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "18.0.1-0"
     agentVersion: "azure-mdsd-1.17.0"
@@ -51,6 +51,9 @@ omsagent:
 
   # This flag used to determine whether this cluster is connected to ArcA control plane. This value will be setup before pushed into on-premise ArcA ACR.
   isArcACluster: false
+
+  # This flag used to ignore the proxy settings
+  ignoreExtensionProxySettings: false
 
   ## To get your workspace id and key do the following
   ## You can create a Azure Loganalytics workspace from portal.azure.com and get its ID & PRIMARY KEY from 'Advanced Settings' tab in the Ux.
@@ -112,7 +115,7 @@ omsagent:
           nodeSelectorTerms:
             - labelSelector:
               matchExpressions:
-                - key: beta.kubernetes.io/os
+                - key: kubernetes.io/os
                   operator: In
                   values:
                     - linux
@@ -120,7 +123,7 @@ omsagent:
                   operator: NotIn
                   values:
                     - virtual-kubelet
-                - key: beta.kubernetes.io/arch
+                - key: kubernetes.io/arch
                   operator: In
                   values:
                     - amd64
@@ -159,7 +162,7 @@ omsagent:
           nodeSelectorTerms:
             - labelSelector:
               matchExpressions:
-                - key: beta.kubernetes.io/os
+                - key: kubernetes.io/os
                   operator: In
                   values:
                     - linux
@@ -171,7 +174,7 @@ omsagent:
                   operator: NotIn
                   values:
                     - master
-                - key: beta.kubernetes.io/arch
+                - key: kubernetes.io/arch
                   operator: In
                   values:
                     - amd64

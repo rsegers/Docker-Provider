@@ -52,19 +52,17 @@
     "clusterResourceGroup": "[split(parameters('clusterResourceId'),'/')[4]]",
     "clusterName": "[split(parameters('clusterResourceId'),'/')[8]]",
     "clusterLocation": "[replace(parameters('clusterRegion'),' ', '')]",
-    "workspaceSubscriptionId": "[split(parameters('workspaceResourceId'),'/')[2]]",
-    "workspaceResourceGroup": "[split(parameters('workspaceResourceId'),'/')[4]]",
     "dcrName": "[Concat('MSCI', '-', variables('clusterName'), '-', variables('clusterLocation'))]",
     "associationName": "ContainerInsightsExtension",
-    "dataCollectionRuleId": "[resourceId(variables('workspaceSubscriptionId'), variables('workspaceResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]"
+    "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]"
   },
   "resources": [
     {
       "type": "Microsoft.Resources/deployments",
       "name": "[Concat('arc-k8s-monitoring-msi-dcr', '-',  uniqueString(variables('dcrName')))]",
       "apiVersion": "2017-05-10",
-      "subscriptionId": "[variables('workspaceSubscriptionId')]",
-      "resourceGroup": "[variables('workspaceResourceGroup')]",
+      "subscriptionId": "[variables('clusterSubscriptionId')]",
+      "resourceGroup": "[variables('clusterResourceGroup')]",
       "properties": {
         "mode": "Incremental",
         "template": {

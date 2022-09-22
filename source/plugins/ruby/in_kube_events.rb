@@ -10,7 +10,7 @@ module Fluent::Plugin
 
     def initialize
       super
-      require "json"      
+      require "json"
       require "time"
 
       require_relative "KubernetesApiClient"
@@ -92,7 +92,7 @@ module Fluent::Plugin
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
             @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_EVENTS_DATA_TYPE)
           end
-          $log.info("in_kube_events::enumerate: using kubeevents tag -#{@tag} @ #{Time.now.utc.iso8601}")          
+          $log.info("in_kube_events::enumerate: using kubeevents tag -#{@tag} @ #{Time.now.utc.iso8601}")
           @excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()
           $log.info("in_kube_events::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
         end

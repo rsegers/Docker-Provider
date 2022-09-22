@@ -12,7 +12,7 @@ module Fluent::Plugin
 
     def initialize
       super
-      require "json"      
+      require "json"
       require "date"
       require "time"
 

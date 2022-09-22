@@ -314,7 +314,6 @@ function Set-EnvironmentVariables {
     # run config parser
     ruby /opt/omsagentwindows/scripts/ruby/tomlparser.rb
     .\setenv.ps1
-
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/omsagentwindows/scripts/ruby/tomlparser-agent-config.rb
     .\setagentenv.ps1

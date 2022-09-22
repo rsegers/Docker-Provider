@@ -12,7 +12,7 @@ module Fluent::Plugin
     def initialize
       super
       require "yaml"
-      require "json"      
+      require "json"
       require "time"
       require_relative "KubernetesApiClient"
       require_relative "ApplicationInsightsUtility"
@@ -136,7 +136,7 @@ module Fluent::Plugin
           record["PVCName"] = pvcName
           record["PVType"] = type
           record["PVTypeInfo"] = typeInfo
- 
+
           next unless !KubernetesApiClient.isExcludeResourceItem(pvcName, pvcNamespace, @excludeNameSpaces)
 
           record["CollectionTime"] = batchTime
@@ -149,7 +149,6 @@ module Fluent::Plugin
           record["PVCapacityBytes"] = KubernetesApiClient.getMetricNumericValue("memory", item["spec"]["capacity"]["storage"])
           record["PVCreationTimeStamp"] = item["metadata"]["creationTimestamp"]
 
-         
 
           records.push(record)
 

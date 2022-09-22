@@ -52,7 +52,6 @@ class KubeletUtils
 
         cpu_allocatable = 1.0
         memory_allocatable = 1.0
-
         allocatable_response = CAdvisorMetricsAPIClient.getCongifzCAdvisor(winNode: nil)
         parsed_response = JSON.parse(allocatable_response.body)
 

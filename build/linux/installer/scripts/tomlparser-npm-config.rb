@@ -149,7 +149,7 @@ puts "config::integrations::Successfully substituted the integrations placeholde
 telemetryFile = File.open("integration_npm_config_env_var", "w")
 
 if !telemetryFile.nil?
-  if @collect_advanced_npm_metrics == true 
+  if @collect_advanced_npm_metrics == true
     telemetryFile.write("export TELEMETRY_NPM_INTEGRATION_METRICS_ADVANCED=1\n")
   elsif @collect_basic_npm_metrics == true
     telemetryFile.write("export TELEMETRY_NPM_INTEGRATION_METRICS_BASIC=1\n")

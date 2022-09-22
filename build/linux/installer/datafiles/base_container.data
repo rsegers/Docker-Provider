@@ -227,7 +227,6 @@ chmod 666 /var/opt/microsoft/docker-cimprov/log/filter_inventory2mdm.log
 touch /var/opt/microsoft/docker-cimprov/log/mdm_metrics_generator.log
 chmod 666 /var/opt/microsoft/docker-cimprov/log/mdm_metrics_generator.log
 
-
 touch /var/opt/microsoft/docker-cimprov/log/fluent_forward_failed.log
 chmod 666 /var/opt/microsoft/docker-cimprov/log/fluent_forward_failed.log
 

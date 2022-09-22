@@ -79,7 +79,7 @@ module Fluent::Plugin
         if aks_resource_id.to_s.empty?
           @log.info "Environment Variable AKS_RESOURCE_ID is not set.. "
           @can_send_data_to_mdm = false
-        elsif !aks_resource_id.downcase.include?("/microsoft.containerservice/managedclusters/") && !aks_resource_id.downcase.include?("/microsoft.kubernetes/connectedclusters/")
+        elsif !aks_resource_id.downcase.include?("/microsoft.containerservice/managedclusters/") && !aks_resource_id.downcase.include?("/microsoft.kubernetes/connectedclusters/") && !aks_resource_id.downcase.include?("/microsoft.hybridcontainerservice/provisionedclusters/")
           @log.info "MDM Metris not supported for this cluster type resource: #{aks_resource_id}"
           @can_send_data_to_mdm = false
         end
@@ -97,7 +97,7 @@ module Fluent::Plugin
         if @can_send_data_to_mdm
           @log.info "MDM Metrics supported in #{aks_region} region"
 
-          if aks_resource_id.downcase.include?("microsoft.kubernetes/connectedclusters")
+          if aks_resource_id.downcase.include?("microsoft.kubernetes/connectedclusters") || aks_resource_id.downcase.include?("microsoft.hybridcontainerservice/provisionedclusters")
             @isArcK8sCluster = true
           end
 

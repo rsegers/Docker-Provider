@@ -3,7 +3,7 @@
 
 class KubernetesContainerInventory
   require "json"
-  require "time"  
+  require "time"
   require_relative "omslog"
   require_relative "ApplicationInsightsUtility"
 
@@ -380,7 +380,6 @@ class KubernetesContainerInventory
         ApplicationInsightsUtility.sendExceptionTelemetry(error)
       end
     end
-
     def is_number?(value)
       true if Integer(value) rescue false
     end

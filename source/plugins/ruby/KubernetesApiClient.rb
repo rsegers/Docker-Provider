@@ -751,8 +751,13 @@ class KubernetesApiClient
             metricValue.chomp!("k")
             metricValue = Float(metricValue) * 1000.0 ** 1
           elsif (metricValue.end_with?("m"))
+            #original value before downcase ending with M is megabyte and value ending with m is milli-byte
             metricValue.chomp!("m")
-            metricValue = Float(metricValue) * 1000.0 ** 2
+            if (metricVal.end_with?("M"))
+              metricValue = Float(metricValue) * 1000.0 ** 2
+            else
+              metricValue = Float(metricValue) / 1000.0
+            end
           elsif (metricValue.end_with?("g"))
             metricValue.chomp!("g")
             metricValue = Float(metricValue) * 1000.0 ** 3
@@ -1262,6 +1267,7 @@ class KubernetesApiClient
             nodeInfo["containerRuntimeVersion"] = resourceItem["status"]["nodeInfo"]["containerRuntimeVersion"]
             nodeInfo["operatingSystem"] = resourceItem["status"]["nodeInfo"]["operatingSystem"]
             nodeInfo["kernelVersion"] = resourceItem["status"]["nodeInfo"]["kernelVersion"]
+            nodeInfo["architecture"] = resourceItem["status"]["nodeInfo"]["architecture"]
           end
           item["status"]["nodeInfo"] = nodeInfo
 
@@ -1404,20 +1410,20 @@ class KubernetesApiClient
     end
 
     def isExcludeResourceItem(resourceName, resourceNamespace, excludeNameSpaces)
-       isExclude = false 
+       isExclude = false
        begin
          # dont exclude agent related data
          if !resourceName.nil? && !resourceName.empty? && resourceName.start_with?("omsagent") && resourceNamespace.eql?("kube-system")
-          isExclude = false  
-         elsif  !resourceNamespace.nil? && !resourceNamespace.empty? && !excludeNameSpaces.nil? && !excludeNameSpaces.empty? && excludeNameSpaces.length > 0 && excludeNameSpaces.include?(resourceNamespace)                  
+          isExclude = false
+         elsif  !resourceNamespace.nil? && !resourceNamespace.empty? && !excludeNameSpaces.nil? && !excludeNameSpaces.empty? && excludeNameSpaces.length > 0 && excludeNameSpaces.include?(resourceNamespace)
            isExclude = true
-         end 
+         end
        rescue => errorStr
         @Log.warn "KubernetesApiClient::isExcludeResourceItem:Failed with an error : #{errorStr}"
        end
        return isExclude
-    end 
-    
+    end
+
     def isAddonResizerVPAEnabled
       isAddonResizerVPAEnabled = false
       if !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].nil? && !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].empty? && ENV["RS_ADDON-RESIZER_VPA_ENABLED"].downcase == "true".downcase

@@ -988,7 +988,7 @@ module Fluent::Plugin
                       # We have to abort here because this might cause lastResourceVersion inconsistency by skipping a potential RV with valid data!
                       break
                     end
-                    # exclude resource item if this in excluded namespaces 
+                    # exclude resource item if this in excluded namespaces
                     if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
                         key = item["metadata"]["uid"]
                         if !key.nil? && !key.empty?

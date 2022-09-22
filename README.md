@@ -104,10 +104,10 @@ The general directory structure is:
 
 # Branches
 
-- `ci_prod` branch contains codebase currently in production (or being prepared for release).
-- `ci_dev` branch contains version in development.
+- We are using a single branch which has all the code in development and we will be releasing from this branch itself.
+- `ci_prod` branch contains codebase version in development.
 
-To contribute: create your private branch off of `ci_dev`, make changes and use pull request to merge back to `ci_dev`.
+To contribute: create your private branch off of `ci_prod`, make changes and use pull request to merge back to `ci_prod`.
 Pull request must be approved by at least one engineering team members.
 
 # Authoring code
@@ -170,6 +170,25 @@ cd ~/Docker-Provider/kubernetes/linux/dockerbuild
 sudo docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
 # build and publish using docker buildx
 bash build-and-publish-docker-image.sh --image <repo>/<imagename>:<imagetag> --ubuntu <ubuntu image url> --golang <golang image url> --multiarch
+```
+
+You can also build and push images for multiple architectures. This is powered by docker buildx
+```
+cd ~/Docker-Provider/kubernetes/linux/dockerbuild
+sudo docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
+# build and publish using docker buildx
+bash build-and-publish-docker-image.sh --image <repo>/<imagename>:<imagetag> --multiarch
+```
+
+or directly use the docker buildx commands
+```
+# multiple platforms
+cd ~/Docker-Provider
+docker buildx build --platform linux/arm64/v8,linux/amd64 -t <repo>/<imagename>:<imagetag> --build-arg IMAGE_TAG=<imagetag> -f kubernetes/linux/Dockerfile.multiarch --push .
+
+# single platform
+cd ~/Docker-Provider
+docker buildx build --platform linux/amd64 -t <repo>/<imagename>:<imagetag> --build-arg IMAGE_TAG=<imagetag> -f kubernetes/linux/Dockerfile.multiarch --push .
 ```
 
 If you prefer to build docker provider shell bundle and image separately, then you can follow below instructions
@@ -296,7 +315,7 @@ docker push <repo>/<imagename>:<imagetag>
 
 # Azure DevOps Build Pipeline
 
-Navigate to https://github-private.visualstudio.com/microsoft/_build?definitionScope=%5CCDPX%5Cdocker-provider to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_dev and ci_prod.
+Navigate to https://github-private.visualstudio.com/microsoft/_build?definitionId=444&_a=summary to see Linux and Windows Agent build pipelines. These pipelines are configured with CI triggers for ci_prod.
 
 Docker Images will be pushed to CDPX ACR repos and these needs to retagged and pushed to corresponding ACR or docker hub. Only onboarded Azure AD AppId has permission to pull the images from CDPx ACRs.
 
@@ -319,10 +338,12 @@ Here are the instructions to onboard the feature branch to Azure Dev Ops pipelin
 
 # Azure DevOps Release Pipeline
 
-Integrated to Azure DevOps release pipeline for the ci_dev and ci_prod.With this, for every commit to ci_dev branch, latest bits automatically deployded to DEV AKS clusters in Build subscription and similarly for for every commit to ci_prod branch, latest bits automatically deployed to PROD AKS clusters in Build subscription.
+Integrated to Azure DevOps release pipeline for the ci_prod branch. With this, for every commit to ci_prod branch, latest bits automatically deployed to DEV AKS clusters in Build subscription.
 
-For dev, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:cidev<git-commit-id>.
-For prod, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod`<MM><DD><YYYY>`.
+When releasing the agent, we have a separate Azure DevOps pipeline which needs to be run to publish the image to prod MCR and our PROD AKS clusters.
+
+For development, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:`<MM><DD><YYYY>`-<git-commit-id>.
+For releases, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod`<MM><DD><YYYY>-<git-commit-id>`.
 
 Navigate to https://github-private.visualstudio.com/microsoft/_release?_a=releases&view=all to see the release pipelines.
 
@@ -332,7 +353,20 @@ Navigate to Kubernetes directory and update the yamls with latest docker image o
 
 #  Deployment and Validation
 
-For DEV and PROD branches, automatically deployed latest yaml with latest agent image (which automatically built by the azure devops pipeline) onto CIDEV and CIPROD AKS clusters in build subscription.  So, you can use CIDEV and CIPROD AKS cluster to validate E2E. Similarly, you can set up build and release pipelines for your feature branch.
+For our single branch ci_prod, automatically deployed latest yaml with latest agent image (which automatically built by the azure devops pipeline) onto CIDEV AKS clusters in build subscription.  So, you can use CIDEV AKS cluster to validate E2E. Similarly, you can set up build and release pipelines for your feature branch.
+
+# Testing MSI Auth Mode Using Yaml
+
+  1. Enable Monitoring addon with Managed Idenity Auth Mode either using Portal or CLI or Template
+  2. Deploy [ARM template](./scripts/onboarding/aks/onboarding-using-msi-auth/) with enabled = false to create DCR, DCR-A and link the workspace to Portal
+   > Note - Make sure to update the parameter values in existingClusterParam.json file and have enabled = false in template file
+    `az deployment group create --resource-group <ResourceGroupName> --template-file ./existingClusterOnboarding.json --parameters @./existingClusterParam.json`
+  3. Get the MSI token (which is valid for 24 hrs.) value via `kubectl get secrets -n kube-system  omsagent-aad-msi-token -o=jsonpath='{.data.token}'`
+  4. Disable Monitoring addon via `az aks disable-addons -a monitoring -g <rgName> -n <clusterName>`
+  5. Uncomment MSI auth related yaml lines, replace all the placeholder values, MSI token value and image tag in the omsagent.yaml
+  6. Deploy the omsagent.yaml via `kubectl apply -f omsagent.yaml`
+    > Note: use the image toggle for release E2E validation
+  7. validate E2E for LA & Metrics data flows, and other scenarios
 
 # Testing MSI Auth Mode Using Yaml
 
