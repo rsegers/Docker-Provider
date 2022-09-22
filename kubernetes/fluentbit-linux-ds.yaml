@@ -121,16 +121,13 @@ data:
 
   output-fwd-fluentd.conf: |
     [OUTPUT]
-      Name file
-      Match *
-      Path /var/log/
-
-    # [OUTPUT]
-    #     Name          forward
-    #     Match         cosmic.*
-    #     Host          geneva-services-fluentd.tel-pipe.svc.cluster.local
-    #     Port          24224
-    #     storage.total_limit_size  50M
+        Name          forward
+        Match         *.*
+        Host          geneva-services.default.svc.cluster.local
+        Port          24224
+        Retry_Limit  10
+        storage.total_limit_size  50M
+        Compress gzip
 
   parsers.conf: |
     [PARSER]
