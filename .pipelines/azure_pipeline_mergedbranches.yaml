@@ -176,15 +176,12 @@ jobs:
       filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
     displayName: 'install prereqs'
 
-  - script: |
-      docker --version
-      docker info
-      exit /B %ERRORLEVEL%
-      setlocal enabledelayedexpansion
-      powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
-      endlocal
-      exit /B %ERRORLEVEL%
-    displayName: 'build base'
+  # - script: |
+  #     setlocal enabledelayedexpansion
+  #     powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
+  #     endlocal
+  #     exit /B %ERRORLEVEL%
+  #   displayName: 'build base'
 
   - task: AzureCLI@2
     displayName: "Docker windows build for ltsc2019"
@@ -193,6 +190,9 @@ jobs:
       scriptType: ps
       scriptLocation: inlineScript
       inlineScript: |
+        docker --version
+        docker info
+        exit 0
         mkdir -p $(Build.ArtifactStagingDirectory)/windows
         cd kubernetes/windows
 
