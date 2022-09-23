@@ -1,6 +1,23 @@
 #!/bin/bash
 source /opt/env_vars
 
+syslog_status=$(cat /var/opt/microsoft/docker-cimprov/state/syslog.status 2>/dev/null)
+if grep -qr LINUX_SYSLOGS_BLOB /etc/mdsd.d/config-cache/configchunks > /dev/null 2>&1; then
+        echo "found syslog in dcr" >> /var/opt/microsoft/docker-cimprov/log/syslog
+        if [[ "$syslog_status" == "disabled" ]]; then
+                echo "enabling syslog" >> /var/opt/microsoft/docker-cimprov/log/syslog
+                echo "enabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
+                echo "add" > /var/run/mdsd-ci/update.status
+        fi
+else
+        echo "no syslog in dcr" >> /var/opt/microsoft/docker-cimprov/log/syslog
+        if [[ "$syslog_status" == "enabled" ]]; then
+                echo "disabling syslog" >> /var/opt/microsoft/docker-cimprov/log/syslog
+                echo "disabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
+                echo "remove" > /var/run/mdsd-ci/update.status
+        fi
+fi
+
 if [ -s "inotifyoutput.txt" ]
 then
   # inotifyoutput file has data(config map was applied)
