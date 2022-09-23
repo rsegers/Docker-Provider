@@ -177,10 +177,10 @@ jobs:
   #   displayName: 'install prereqs'
 
   # - script: |
-  #     # setlocal enabledelayedexpansion
-  #     # powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
-  #     # endlocal
-  #     # exit /B %ERRORLEVEL%
+  #     setlocal enabledelayedexpansion
+  #     powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
+  #     endlocal
+  #     exit /B %ERRORLEVEL%
   #   displayName: 'build base'
 
   - task: AzureCLI@2
@@ -190,7 +190,7 @@ jobs:
       scriptType: ps
       scriptLocation: inlineScript
       inlineScript: |
-        $env:Path += ';C:\ProgramData\docker'
+        New-Item -ItemType SymbolicLink -Path "C:\Windows\SysWOW64\docker.exe" -Target "C:\Windows\System32\docker.exe"
         mkdir -p $(Build.ArtifactStagingDirectory)/windows
         cd kubernetes/windows
 
@@ -198,7 +198,6 @@ jobs:
         az account show
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
-        exit 0
 
         docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsImageTag) .
         if ("$(Build.Reason)" -ne "PullRequest") {
@@ -214,20 +213,18 @@ jobs:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windows2022BaseImageVersion: ltsc2022
   steps:
-  # - task: PowerShell@2
-  #   inputs:
-  #     targetType: 'filePath'
-  #     filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
-  #   displayName: 'install prereqs'
+  - task: PowerShell@2
+    inputs:
+      targetType: 'filePath'
+      filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
+    displayName: 'install prereqs'
 
-  # - script: |
-  #     echo %PATH%
-  #     exit /B %ERRORLEVEL%
-  #     setlocal enabledelayedexpansion
-  #     powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
-  #     endlocal
-  #     exit /B %ERRORLEVEL%
-  #   displayName: 'build base'
+  - script: |
+      setlocal enabledelayedexpansion
+      powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
+      endlocal
+      exit /B %ERRORLEVEL%
+    displayName: 'build base'
 
   - task: AzureCLI@2
     displayName: "Docker windows build for ltsc2022"
@@ -236,7 +233,6 @@ jobs:
       scriptType: ps
       scriptLocation: inlineScript
       inlineScript: |
-        $env:Path += ';C:\ProgramData\docker'
         mkdir -p $(Build.ArtifactStagingDirectory)/windows
         cd kubernetes/windows
 
@@ -244,7 +240,6 @@ jobs:
         az account show
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
-        exit 0
 
         docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsImageTag) .
         if ("$(Build.Reason)" -ne "PullRequest") {
@@ -275,8 +270,6 @@ jobs:
 
         az --version
         az account show
-        az identity show
-        az acr identity show --name ${{ variables.containerRegistry }}
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
