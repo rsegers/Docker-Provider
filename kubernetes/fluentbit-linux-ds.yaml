@@ -59,7 +59,7 @@ data:
 
     @INCLUDE input-kubernetes.conf
     @INCLUDE filter-kubernetes.conf
-    @INCLUDE output-fwd-fluentd.conf
+    @INCLUDE output-fwd-fluentbit.conf
     # @INCLUDE output-null.conf
 
   input-kubernetes.conf: |
@@ -67,6 +67,7 @@ data:
         Name              tail
         Tag               kube.*
         Path              /var/log/containers/*.log
+        Read_from_Head true
         # Path              /var/log/containers/*.log
         # Exclude_Path      /var/log/containers/*_kube-system_*.log,/var/log/containers/*_log-fwd_*.log
         # multiline.parser  docker, cri
@@ -119,14 +120,13 @@ data:
     #     Match               kube.*
     #     Rule                $kubernetes_namespace_name ^(.*)$ cosmic.$kubernetes_namespace_name.$kubernetes_pod_name.$kubernetes_container_name.log false
 
-  output-fwd-fluentd.conf: |
+  output-fwd-fluentbit.conf: |
     [OUTPUT]
         Name          forward
-        Match         *.*
-        Host          geneva-services.default.svc.cluster.local
+        Match         *_tenant2_*
+        Host          geneva-services.tenant1.svc.cluster.local
         Port          24224
-        Retry_Limit  10
-        storage.total_limit_size  50M
+        storage.total_limit_size  500M
         Compress gzip
 
   parsers.conf: |
