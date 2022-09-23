@@ -178,6 +178,7 @@ jobs:
 
   - script: |
       echo %PATH%
+      exit /B %ERRORLEVEL%
       setlocal enabledelayedexpansion
       powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
       endlocal
@@ -213,13 +214,15 @@ jobs:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windows2022BaseImageVersion: ltsc2022
   steps:
-  - task: PowerShell@2
-    inputs:
-      targetType: 'filePath'
-      filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
-    displayName: 'install prereqs'
+  # - task: PowerShell@2
+  #   inputs:
+  #     targetType: 'filePath'
+  #     filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
+  #   displayName: 'install prereqs'
 
   - script: |
+      echo %PATH%
+      exit /B %ERRORLEVEL%
       setlocal enabledelayedexpansion
       powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
       endlocal
