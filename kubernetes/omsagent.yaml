@@ -394,6 +394,8 @@ spec:
               cpu: 75m
               memory: 325Mi
           env:
+            - name: ENABLE_CONTAINER_LOGS_1P_MODE
+              value: "true"
             - name: FBIT_SERVICE_FLUSH_INTERVAL
               value: "15"
             - name: FBIT_TAIL_BUFFER_CHUNK_SIZE

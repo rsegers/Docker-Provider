@@ -819,13 +819,18 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             fi
       else
             echo "starting fluent-bit and setting telegraf conf file for daemonset"
+            fluentBitConfFile="td-agent-bit.conf"
+            if [ "${ENABLE_CONTAINER_LOGS_1P_MODE}" == "true" ]; then
+                fluentBitConfFile="td-agent-bit-1p.conf"
+            fi
+            echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
-                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf -e /opt/td-agent-bit/bin/out_oms.so &
+                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/td-agent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             else
                   echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
-                  sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf
-                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf -e /opt/td-agent-bit/bin/out_oms.so &
+                  sed -i 's/Parser.docker*/Parser cri/g' /etc/opt/microsoft/docker-cimprov/td-agent-bit*.conf
+                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/td-agent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             fi
       fi
