@@ -394,8 +394,11 @@ spec:
               cpu: 75m
               memory: 325Mi
           env:
-            - name: ENABLE_CONTAINER_LOGS_1P_MODE
+            - name: ENABLE_CONTAINER_LOGS_1P
               value: "true"
+            # supported values are FWD & INGESTION MODEs and it should be INGESTION mode when agent deployed through deployment
+            - name: CONTAINER_LOGS_1P_MODE
+              value: "FWD"
             - name: CONTAINER_LOGS_1P_ONBOARDED_NAMESPACES
               value: "tenant1, tenant2, tenant3"
             - name: FBIT_SERVICE_FLUSH_INTERVAL

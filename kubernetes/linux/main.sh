@@ -498,7 +498,7 @@ fi
 #Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       ruby td-agent-bit-conf-customizer.rb
-      if [ "${ENABLE_CONTAINER_LOGS_1P_MODE}" == "true" ]; then
+      if [ "${ENABLE_CONTAINER_LOGS_1P}" == "true" -a "${CONTAINER_LOGS_1P_MODE}" == "FWD" ]; then
          ruby td-agent-bit-geneva-conf-customizer.rb
          # generate genavaconfig for each tenant
          generateGenevaTenantConfig
@@ -708,43 +708,50 @@ source /etc/mdsd.d/envmdsd
 MDSD_AAD_MSI_AUTH_ARGS=""
 # check if its AAD Auth MSI mode via USING_AAD_MSI_AUTH
 export AAD_MSI_AUTH_MODE=false
-if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
-   echo "*** setting up oneagent in aad auth msi mode ***"
-   # msi auth specific args
-   MDSD_AAD_MSI_AUTH_ARGS="-a -A"
-   export AAD_MSI_AUTH_MODE=true
-   echo "export AAD_MSI_AUTH_MODE=true" >> ~/.bashrc
-   # this used by mdsd to determine the cloud specific AMCS endpoints
-   export customEnvironment=$CLOUD_ENVIRONMENT
-   echo "export customEnvironment=$customEnvironment" >> ~/.bashrc
-   export MDSD_FLUENT_SOCKET_PORT="28230"
-   echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
-   export ENABLE_MCS="true"
-   echo "export ENABLE_MCS=$ENABLE_MCS" >> ~/.bashrc
-   export MONITORING_USE_GENEVA_CONFIG_SERVICE="false"
-   echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
-   export MDSD_USE_LOCAL_PERSISTENCY="false"
-   echo "export MDSD_USE_LOCAL_PERSISTENCY=$MDSD_USE_LOCAL_PERSISTENCY" >> ~/.bashrc
+if [ "${ENABLE_CONTAINER_LOGS_1P}" == "true" -a "${CONTAINER_LOGS_1P_MODE}" == "FWD" ]; then
+    export MONITORING_GCS_REGION=$AKS_REGION
+    echo "export MONITORING_GCS_REGION=$AKS_REGION" >> ~/.bashrc
+    MDSD_AAD_MSI_AUTH_ARGS="-A"
 else
-  echo "*** setting up oneagent in legacy auth mode ***"
-  CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"
-  #use the file path as its secure than env
-  CIWORKSPACE_keyFile="/etc/omsagent-secret/KEY"
-  echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
-  export CIWORKSPACE_id=$CIWORKSPACE_id
-  echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc
-  export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile
-  echo "export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile" >> ~/.bashrc
-  export MDSD_FLUENT_SOCKET_PORT="29230"
-  echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
-  # set the libcurl specific env and configuration
-  export ENABLE_CURL_UPLOAD=true
-  echo "export ENABLE_CURL_UPLOAD=$ENABLE_CURL_UPLOAD" >> ~/.bashrc
-  export CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-  echo "export CURL_CA_BUNDLE=$CURL_CA_BUNDLE" >> ~/.bashrc
-  mkdir -p /etc/pki/tls/certs
-  cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+      if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
+            echo "*** setting up oneagent in aad auth msi mode ***"
+            # msi auth specific args
+            MDSD_AAD_MSI_AUTH_ARGS="-a -A"
+            export AAD_MSI_AUTH_MODE=true
+            echo "export AAD_MSI_AUTH_MODE=true" >> ~/.bashrc
+            # this used by mdsd to determine the cloud specific AMCS endpoints
+            export customEnvironment=$CLOUD_ENVIRONMENT
+            echo "export customEnvironment=$customEnvironment" >> ~/.bashrc
+            export MDSD_FLUENT_SOCKET_PORT="28230"
+            echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
+            export ENABLE_MCS="true"
+            echo "export ENABLE_MCS=$ENABLE_MCS" >> ~/.bashrc
+            export MONITORING_USE_GENEVA_CONFIG_SERVICE="false"
+            echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
+            export MDSD_USE_LOCAL_PERSISTENCY="false"
+            echo "export MDSD_USE_LOCAL_PERSISTENCY=$MDSD_USE_LOCAL_PERSISTENCY" >> ~/.bashrc
+      else
+            echo "*** setting up oneagent in legacy auth mode ***"
+            CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"
+            #use the file path as its secure than env
+            CIWORKSPACE_keyFile="/etc/omsagent-secret/KEY"
+            echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
+            export CIWORKSPACE_id=$CIWORKSPACE_id
+            echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc
+            export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile
+            echo "export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile" >> ~/.bashrc
+            export MDSD_FLUENT_SOCKET_PORT="29230"
+            echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
+            # set the libcurl specific env and configuration
+            export ENABLE_CURL_UPLOAD=true
+            echo "export ENABLE_CURL_UPLOAD=$ENABLE_CURL_UPLOAD" >> ~/.bashrc
+            export CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+            echo "export CURL_CA_BUNDLE=$CURL_CA_BUNDLE" >> ~/.bashrc
+            mkdir -p /etc/pki/tls/certs
+            cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+      fi
 fi
+
 source ~/.bashrc
 
 dpkg -l | grep mdsd | awk '{print $2 " " $3}'
@@ -838,8 +845,12 @@ if [ ! -e "/etc/config/kube.conf" ]; then
       else
             echo "starting fluent-bit and setting telegraf conf file for daemonset"
             fluentBitConfFile="td-agent-bit-la.conf"
-            if [ "${ENABLE_CONTAINER_LOGS_1P_MODE}" == "true" ]; then
-                fluentBitConfFile="td-agent-bit-geneva.conf"
+            if [ "${ENABLE_CONTAINER_LOGS_1P}" == "true" ]; then
+                if [ "${CONTAINER_LOGS_1P_MODE}" == "FWD" ]; then
+                  fluentBitConfFile="td-agent-bit-geneva.conf"
+                else
+                  fluentBitConfFile="td-agent-bit-geneva-svc.conf"
+                fi
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
