@@ -3,8 +3,8 @@ require_relative "ConfigParseErrorLogger"
 
 @td_agent_bit_conf_path = "/etc/opt/microsoft/docker-cimprov/td-agent-bit-la.conf"
 
-@logs_ingestion_mode = ENV["ENABLE_CONTAINER_LOGS_1P"]
-if !@logs_ingestion_mode.nil? && !@logs_ingestion_mode.empty? && @logs_ingestion_mode.strip.casecmp("true") == 0
+@isContainerLogsGenevaModeEnabled = ENV["ENABLE_CONTAINER_LOGS_1P"]
+if !@isContainerLogsGenevaModeEnabled.nil? && !@isContainerLogsGenevaModeEnabled.empty? && @isContainerLogsGenevaModeEnabled.strip.casecmp("true") == 0
   @td_agent_bit_conf_path = "/etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva.conf"
 end
 
