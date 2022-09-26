@@ -396,6 +396,8 @@ spec:
           env:
             - name: ENABLE_CONTAINER_LOGS_1P_MODE
               value: "true"
+            - name: CONTAINER_LOGS_1P_ONBOARDED_NAMESPACES
+              value: "tenant1, tenant2, tenant3"
             - name: FBIT_SERVICE_FLUSH_INTERVAL
               value: "15"
             - name: FBIT_TAIL_BUFFER_CHUNK_SIZE
