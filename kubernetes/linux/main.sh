@@ -708,7 +708,7 @@ source /etc/mdsd.d/envmdsd
 MDSD_AAD_MSI_AUTH_ARGS=""
 # check if its AAD Auth MSI mode via USING_AAD_MSI_AUTH
 export AAD_MSI_AUTH_MODE=false
-if [ "${ENABLE_CONTAINER_LOGS_1P}" == "true" -a "${CONTAINER_LOGS_1P_MODE}" == "FWD" ]; then
+if [ "${ENABLE_CONTAINER_LOGS_1P}" == "true" -a "${CONTAINER_LOGS_1P_MODE}" == "INGESTION" ]; then
     export MONITORING_GCS_REGION=$AKS_REGION
     echo "export MONITORING_GCS_REGION=$AKS_REGION" >> ~/.bashrc
     MDSD_AAD_MSI_AUTH_ARGS="-A"
