@@ -193,8 +193,10 @@ generateGenevaTenantConfig() {
       OnboardedNameSpaces=${CONTAINER_LOGS_1P_ONBOARDED_NAMESPACES}
       IFS=',' read -ra TenantNamespaces <<< "$OnboardedNameSpaces"
       for tenantNamespace in "${TenantNamespaces[@]}"; do
-            cp /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant.conf /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant_${tenantNamespace}.conf
-            sed -i 's/${TENANT_NAMESPACE}/${tenantNamespace}/g' /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant_${tenantNamespace}.conf
+            tenantNamespace=$(echo $tenantNamespace | xargs)
+            echo "namespace onboarded to geneva logs:${tenantNamespace}"
+            cp td-agent-bit-geneva-logs_tenant.conf td-agent-bit-geneva-logs_tenant_${tenantNamespace}.conf
+            sed -i "s/<TENANT_NAMESPACE>/${tenantNamespace}/g" td-agent-bit-geneva-logs_tenant_${tenantNamespace}.conf
       done
       rm /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant.conf
 }
