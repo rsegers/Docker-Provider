@@ -138,7 +138,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: geneva-services-svc
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:09272022-7364bb2c"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:09272022-0fddc9cd"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -167,9 +167,9 @@ spec:
             - name: MONITORING_USE_GENEVA_CONFIG_SERVICE
               value: "true"
             - name: WSID
-              value: "WSID"
+              value: "TestWorkspaceID"
             - name: DOMAIN
-              value: "DOMAIN"
+              value: "TestWorkspaceDomain"
             # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
             - name: AKS_RESOURCE_ID
               value: "/subscriptions/b4b0cbab-64dc-42bc-9d95-ea7c8d0cf188/resourcegroups/gangams-aks-suk/providers/Microsoft.ContainerService/managedClusters/gangams-aks-suk"

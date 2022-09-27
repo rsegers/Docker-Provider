@@ -278,6 +278,8 @@ fi
 domain="opinsights.azure.com"
 if [ "${ENABLE_CONTAINER_LOGS_1P}" == "true" -a "${CONTAINER_LOGS_1P_MODE}" == "INGESTION" ]; then
      echo "agent running in 1P and Ingestion Mode"
+     workspaceId="TestWorkspaceID"
+     domain="TestDomain"
 else
       export PROXY_ENDPOINT=""
       # Check for internet connectivity or workspace deletion

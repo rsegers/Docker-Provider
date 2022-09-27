@@ -72,7 +72,8 @@ chmod 544 /opt/telegraf
 wget -qO - https://packages.fluentbit.io/fluentbit.key | sudo apt-key add -
 sudo echo "deb https://packages.fluentbit.io/ubuntu/bionic bionic main" >> /etc/apt/sources.list
 sudo apt-get update
-sudo apt-get install td-agent-bit=1.7.8 -y
+# ganga - this version fixes this issue - https://github.com/fluent/fluent-bit/issues/4511
+sudo apt-get install td-agent-bit=1.8.12 -y
 
 # fluentd v1 gem
 gem install fluentd -v "1.14.6" --no-document
