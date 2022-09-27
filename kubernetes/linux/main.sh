@@ -280,6 +280,10 @@ if [ "${ENABLE_CONTAINER_LOGS_1P}" == "true" -a "${CONTAINER_LOGS_1P_MODE}" == "
      echo "agent running in 1P and Ingestion Mode"
      workspaceId="TestWorkspaceID"
      domain="TestDomain"
+     #gangams - only support v2 in 1P Mode
+     AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
+     echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
+     source ~/.bashrc
 else
       export PROXY_ENDPOINT=""
       # Check for internet connectivity or workspace deletion
@@ -856,6 +860,10 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   fluentBitConfFile="td-agent-bit-geneva.conf"
                 else
                   fluentBitConfFile="td-agent-bit-geneva-svc.conf"
+                  # gangams - only support v2 in case of 1P mode
+                  AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
+                  echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
+                  source ~/.bashrc
                 fi
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"

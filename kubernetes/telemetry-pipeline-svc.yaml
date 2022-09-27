@@ -138,7 +138,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: geneva-services-svc
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:09272022-0fddc9cd"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:09272022-84c8fe20"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -152,6 +152,8 @@ spec:
               value: "true"
             - name: CONTAINER_LOGS_1P_MODE
               value: "INGESTION"
+            - name: AZMON_CONTAINER_LOG_SCHEMA_VERSION
+              value: "v2"
             - name: MONITORING_GCS_ENVIRONMENT
               value: "Stage"
             - name: MONITORING_GCS_ACCOUNT

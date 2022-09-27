@@ -399,6 +399,8 @@ spec:
             # supported values are FWD & INGESTION MODEs and it should be INGESTION mode when agent deployed through deployment
             - name: CONTAINER_LOGS_1P_MODE
               value: "FWD"
+            - name: AZMON_CONTAINER_LOG_SCHEMA_VERSION
+              value: "v2"
             - name: CONTAINER_LOGS_1P_ONBOARDED_NAMESPACES
               value: "tenant1, tenant2, tenant3"
             - name: FBIT_SERVICE_FLUSH_INTERVAL
