@@ -1,0 +1,196 @@
+# apiVersion: v1
+# kind: ServiceAccount
+# metadata:
+#   name: geneva-services
+#   namespace: kube-system
+# ---
+# kind: ClusterRole
+# apiVersion: rbac.authorization.k8s.io/v1
+# metadata:
+#   name: geneva-services-reader
+# rules:
+#   - apiGroups: [""]
+#     resources:
+#       [
+#         "pods",
+#         "events",
+#         "nodes",
+#         "nodes/stats",
+#         "nodes/metrics",
+#         "nodes/spec",
+#         "nodes/proxy",
+#         "namespaces",
+#         "services",
+#         "persistentvolumes"
+#       ]
+#     verbs: ["list", "get", "watch"]
+#   - apiGroups: ["apps", "extensions", "autoscaling"]
+#     resources: ["replicasets", "deployments", "horizontalpodautoscalers"]
+#     verbs: ["list"]
+#   # Uncomment below lines if AddonResizer VPA enabled
+#   # - apiGroups: ["apps"]
+#   #   resources: ["deployments"]
+#   #   resourceNames: [ "geneva-services-rs" ]
+#   #   verbs: ["get", "patch"]
+#   # Uncomment below lines for MSI Auth Mode  testing
+#   - apiGroups: [""]
+#     resources: ["secrets"]
+#     resourceNames: [ "geneva-services-aad-msi-token" ]
+#     verbs: ["get", "watch"]
+#   - nonResourceURLs: ["/metrics"]
+#     verbs: ["get"]
+# ---
+# kind: ClusterRoleBinding
+# apiVersion: rbac.authorization.k8s.io/v1
+# metadata:
+#   name: geneva-servicesclusterrolebinding
+# subjects:
+#   - kind: ServiceAccount
+#     name: geneva-services
+#     namespace: kube-system
+# roleRef:
+#   kind: ClusterRole
+#   name: geneva-services-reader
+#   apiGroup: rbac.authorization.k8s.io
+# ---
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: geneva-services-aad-msi-token
+#   namespace: kube-system
+# type: Opaque
+# data:
+#   token: "VALUE_MSI_TOKEN"
+# ---
+apiVersion: v1
+kind: Service
+metadata:
+  annotations: {}
+  labels:
+    app: geneva-services
+  name: geneva-services
+spec:
+  ports:
+  - name: fluentbit-fwd
+    port: 24224
+    protocol: TCP
+    targetPort: 24224
+  selector:
+    name: geneva-services
+  sessionAffinity: None
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: geneva-services
+  labels:
+    app: geneva-services
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+  selector:
+    matchLabels:
+      name: geneva-services
+  template:
+    metadata:
+      labels:
+        name: geneva-services
+      annotations:
+        fluentbit.io/exclude: "true"
+    spec:
+      nodeSelector:
+        kubernetes.io/os: "linux"
+      # serviceAccountName: geneva-services
+      containers:
+        # - name: addon-token-adapter
+        #   command:
+        #     - /addon-token-adapter
+        #   args:
+        #     - --secret-namespace=kube-system
+        #     - --secret-name=geneva-services-aad-msi-token
+        #     - --token-server-listening-port=8888
+        #     - --health-server-listening-port=9999
+        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.220916.1
+        #   imagePullPolicy: IfNotPresent
+        #   env:
+        #   - name: AZMON_COLLECT_ENV
+        #     value: "false"
+        #   livenessProbe:
+        #     httpGet:
+        #       path: /healthz
+        #       port: 9999
+        #     initialDelaySeconds: 10
+        #     periodSeconds: 60
+        #   resources:
+        #     limits:
+        #       cpu: 500m
+        #       memory: 500Mi
+        #     requests:
+        #       cpu: 100m
+        #       memory: 100Mi
+        #   securityContext:
+        #     capabilities:
+        #       drop:
+        #         - ALL
+        #       add:
+        #         - NET_ADMIN
+        #         - NET_RAW
+        - name: geneva-services-svc
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:09262022-cd68a448"
+          imagePullPolicy: IfNotPresent
+          resources:
+            limits:
+              cpu: 500m
+              memory: 750Mi
+            requests:
+              cpu: 75m
+              memory: 325Mi
+          env:
+            - name: ENABLE_CONTAINER_LOGS_1P
+              value: "true"
+            - name: CONTAINER_LOGS_1P_MODE
+              value: "INGESTION"
+            - name: MONITORING_GCS_ENVIRONMENT
+              value: "Stage"
+            - name: MONITORING_GCS_ACCOUNT
+              value: "containerlogs"
+            - name: MONITORING_GCS_NAMESPACE
+              value: "akscilogs"
+            - name: MONITORING_CONFIG_VERSION
+              value: "2.0"
+            - name: MONITORING_GCS_AUTH_ID_TYPE
+              value: "AuthMSIToken"
+            - name: MONITORING_GCS_AUTH_ID
+              value: "client_id#0b91e977-d25c-4828-9dbd-ec5b6f76287a"
+            # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
+            - name: AKS_RESOURCE_ID
+              value: "/subscriptions/b4b0cbab-64dc-42bc-9d95-ea7c8d0cf188/resourcegroups/gangams-aks-suk/providers/Microsoft.ContainerService/managedClusters/gangams-aks-suk"
+            - name: AKS_REGION
+              value: "uksouth"
+            #Uncomment below two lines for ACS clusters and set the cluster names manually. Also comment out the above two lines for ACS clusters
+            #- name: ACS_RESOURCE_NAME
+            #  value: "my_acs_cluster_name"
+            - name: CONTROLLER_TYPE
+              value: "DaemonSet"
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          ports:
+            - name: fluentbit-fwd
+              containerPort: 24224
+              protocol: TCP
+          securityContext:
+            privileged: true
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #       - /bin/bash
+          #       - -c
+          #       - /opt/livenessprobe.sh
+          #   initialDelaySeconds: 60
+          #   periodSeconds: 60
+          #   timeoutSeconds: 15
+---

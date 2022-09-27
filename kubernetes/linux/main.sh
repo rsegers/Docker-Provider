@@ -275,119 +275,123 @@ if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSide
       fi
 fi
 
-export PROXY_ENDPOINT=""
-# Check for internet connectivity or workspace deletion
-if [ -e "/etc/omsagent-secret/WSID" ]; then
-      workspaceId=$(cat /etc/omsagent-secret/WSID)
-      if [ -e "/etc/omsagent-secret/DOMAIN" ]; then
-            domain=$(cat /etc/omsagent-secret/DOMAIN)
-      else
-            domain="opinsights.azure.com"
-      fi
-
-      if [ -e "/etc/omsagent-secret/PROXY" ]; then
-            export PROXY_ENDPOINT=$(cat /etc/omsagent-secret/PROXY)
-            # Validate Proxy Endpoint URL
-            # extract the protocol://
-            proto="$(echo $PROXY_ENDPOINT | grep :// | sed -e's,^\(.*://\).*,\1,g')"
-            # convert the protocol prefix in lowercase for validation
-            proxyprotocol=$(echo $proto | tr "[:upper:]" "[:lower:]")
-            if [ "$proxyprotocol" != "http://" -a "$proxyprotocol" != "https://" ]; then
-               echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
-            fi
-            # remove the protocol
-            url="$(echo ${PROXY_ENDPOINT/$proto/})"
-            # extract the creds
-            creds="$(echo $url | grep @ | cut -d@ -f1)"
-            user="$(echo $creds | cut -d':' -f1)"
-            pwd="$(echo $creds | cut -d':' -f2)"
-            # extract the host and port
-            hostport="$(echo ${url/$creds@/} | cut -d/ -f1)"
-            # extract host without port
-            host="$(echo $hostport | sed -e 's,:.*,,g')"
-            # extract the port
-            port="$(echo $hostport | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
-
-            if [ -z "$host" -o -z "$port" ]; then
-               echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
-            else
-                  echo "successfully validated provided proxy endpoint is valid and expected format"
-            fi
-
-            echo $pwd >/opt/microsoft/docker-cimprov/proxy_password
-
-            export MDSD_PROXY_MODE=application
-            echo "export MDSD_PROXY_MODE=$MDSD_PROXY_MODE" >>~/.bashrc
-            export MDSD_PROXY_ADDRESS=$proto$hostport
-            echo "export MDSD_PROXY_ADDRESS=$MDSD_PROXY_ADDRESS" >> ~/.bashrc
-            if [ ! -z "$user" -a ! -z "$pwd" ]; then
-               export MDSD_PROXY_USERNAME=$user
-               echo "export MDSD_PROXY_USERNAME=$MDSD_PROXY_USERNAME" >> ~/.bashrc
-               export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
-               echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
-            fi
-            if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
-               export PROXY_CA_CERT=/etc/omsagent-secret/PROXYCERT.crt
-               echo "export PROXY_CA_CERT=$PROXY_CA_CERT" >> ~/.bashrc
-            fi
-      fi
-
-      if [ ! -z "$PROXY_ENDPOINT" ]; then
-         if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
-           echo "Making curl request to oms endpint with domain: $domain and proxy endpoint, and proxy CA cert"
-           curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt
-         else
-           echo "Making curl request to oms endpint with domain: $domain and proxy endpoint"
-           curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
-         fi
-      else
-            echo "Making curl request to oms endpint with domain: $domain"
-            curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest
-      fi
-
-      if [ $? -ne 0 ]; then
-            if [ ! -z "$PROXY_ENDPOINT" ]; then
-               if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
-                  echo "Making curl request to ifconfig.co with proxy and proxy CA cert"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt`
-               else
-                  echo "Making curl request to ifconfig.co with proxy"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT`
-               fi
-            else
-                  echo "Making curl request to ifconfig.co"
-                  RET=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co)
-            fi
-            if [ $RET -eq 000 ]; then
-                  echo "-e error    Error resolving host during the onboarding request. Check the internet connectivity and/or network policy on the cluster"
-            else
-                  # Retrying here to work around network timing issue
-                  if [ ! -z "$PROXY_ENDPOINT" ]; then
-                    if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
-                        echo "ifconfig check succeeded, retrying oms endpoint with proxy and proxy CA cert..."
-                        curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt
-                    else
-                       echo "ifconfig check succeeded, retrying oms endpoint with proxy..."
-                       curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
-                    fi
-                  else
-                        echo "ifconfig check succeeded, retrying oms endpoint..."
-                        curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest
-                  fi
-
-                  if [ $? -ne 0 ]; then
-                        echo "-e error    Error resolving host during the onboarding request. Workspace might be deleted."
-                  else
-                        echo "curl request to oms endpoint succeeded with retry."
-                  fi
-            fi
-      else
-            echo "curl request to oms endpoint succeeded."
-      fi
+domain="opinsights.azure.com"
+if [ "${ENABLE_CONTAINER_LOGS_1P}" == "true" -a "${CONTAINER_LOGS_1P_MODE}" == "INGESTION" ]; then
+     echo "agent running in 1P and Ingestion Mode"
 else
-      echo "LA Onboarding:Workspace Id not mounted, skipping the telemetry check"
-fi
+      export PROXY_ENDPOINT=""
+      # Check for internet connectivity or workspace deletion
+      if [ -e "/etc/omsagent-secret/WSID" ]; then
+            workspaceId=$(cat /etc/omsagent-secret/WSID)
+            if [ -e "/etc/omsagent-secret/DOMAIN" ]; then
+                  domain=$(cat /etc/omsagent-secret/DOMAIN)
+            else
+                  domain="opinsights.azure.com"
+            fi
 
+            if [ -e "/etc/omsagent-secret/PROXY" ]; then
+                  export PROXY_ENDPOINT=$(cat /etc/omsagent-secret/PROXY)
+                  # Validate Proxy Endpoint URL
+                  # extract the protocol://
+                  proto="$(echo $PROXY_ENDPOINT | grep :// | sed -e's,^\(.*://\).*,\1,g')"
+                  # convert the protocol prefix in lowercase for validation
+                  proxyprotocol=$(echo $proto | tr "[:upper:]" "[:lower:]")
+                  if [ "$proxyprotocol" != "http://" -a "$proxyprotocol" != "https://" ]; then
+                  echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
+                  fi
+                  # remove the protocol
+                  url="$(echo ${PROXY_ENDPOINT/$proto/})"
+                  # extract the creds
+                  creds="$(echo $url | grep @ | cut -d@ -f1)"
+                  user="$(echo $creds | cut -d':' -f1)"
+                  pwd="$(echo $creds | cut -d':' -f2)"
+                  # extract the host and port
+                  hostport="$(echo ${url/$creds@/} | cut -d/ -f1)"
+                  # extract host without port
+                  host="$(echo $hostport | sed -e 's,:.*,,g')"
+                  # extract the port
+                  port="$(echo $hostport | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
+
+                  if [ -z "$host" -o -z "$port" ]; then
+                  echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
+                  else
+                        echo "successfully validated provided proxy endpoint is valid and expected format"
+                  fi
+
+                  echo $pwd >/opt/microsoft/docker-cimprov/proxy_password
+
+                  export MDSD_PROXY_MODE=application
+                  echo "export MDSD_PROXY_MODE=$MDSD_PROXY_MODE" >>~/.bashrc
+                  export MDSD_PROXY_ADDRESS=$proto$hostport
+                  echo "export MDSD_PROXY_ADDRESS=$MDSD_PROXY_ADDRESS" >> ~/.bashrc
+                  if [ ! -z "$user" -a ! -z "$pwd" ]; then
+                  export MDSD_PROXY_USERNAME=$user
+                  echo "export MDSD_PROXY_USERNAME=$MDSD_PROXY_USERNAME" >> ~/.bashrc
+                  export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
+                  echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
+                  fi
+                  if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+                  export PROXY_CA_CERT=/etc/omsagent-secret/PROXYCERT.crt
+                  echo "export PROXY_CA_CERT=$PROXY_CA_CERT" >> ~/.bashrc
+                  fi
+            fi
+
+            if [ ! -z "$PROXY_ENDPOINT" ]; then
+            if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+            echo "Making curl request to oms endpint with domain: $domain and proxy endpoint, and proxy CA cert"
+            curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt
+            else
+            echo "Making curl request to oms endpint with domain: $domain and proxy endpoint"
+            curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
+            fi
+            else
+                  echo "Making curl request to oms endpint with domain: $domain"
+                  curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest
+            fi
+
+            if [ $? -ne 0 ]; then
+                  if [ ! -z "$PROXY_ENDPOINT" ]; then
+                  if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+                        echo "Making curl request to ifconfig.co with proxy and proxy CA cert"
+                        RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt`
+                  else
+                        echo "Making curl request to ifconfig.co with proxy"
+                        RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT`
+                  fi
+                  else
+                        echo "Making curl request to ifconfig.co"
+                        RET=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co)
+                  fi
+                  if [ $RET -eq 000 ]; then
+                        echo "-e error    Error resolving host during the onboarding request. Check the internet connectivity and/or network policy on the cluster"
+                  else
+                        # Retrying here to work around network timing issue
+                        if [ ! -z "$PROXY_ENDPOINT" ]; then
+                        if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+                              echo "ifconfig check succeeded, retrying oms endpoint with proxy and proxy CA cert..."
+                              curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt
+                        else
+                        echo "ifconfig check succeeded, retrying oms endpoint with proxy..."
+                        curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
+                        fi
+                        else
+                              echo "ifconfig check succeeded, retrying oms endpoint..."
+                              curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest
+                        fi
+
+                        if [ $? -ne 0 ]; then
+                              echo "-e error    Error resolving host during the onboarding request. Workspace might be deleted."
+                        else
+                              echo "curl request to oms endpoint succeeded with retry."
+                        fi
+                  fi
+            else
+                  echo "curl request to oms endpoint succeeded."
+            fi
+      else
+            echo "LA Onboarding:Workspace Id not mounted, skipping the telemetry check"
+      fi
+fi
 # Set environment variable for if public cloud by checking the workspace domain.
 if [ -z $domain ]; then
       ClOUD_ENVIRONMENT="unknown"
