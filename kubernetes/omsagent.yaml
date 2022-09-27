@@ -714,6 +714,10 @@ spec:
               cpu: 150m
               memory: 250Mi
           env:
+            - name: HOSTNAME
+              valueFrom:
+                 fieldRef:
+                   fieldPath: spec.nodeName
             - name: NUM_OF_FLUENTD_WORKERS
               valueFrom:
                 resourceFieldRef:
