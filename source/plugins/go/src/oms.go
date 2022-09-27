@@ -1124,6 +1124,13 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
+		IsEnableGenevaContainerLogs := strings.ToLower(os.Getenv("ENABLE_CONTAINER_LOGS_1P"))
+		GenevaContainerLogsMode := strings.ToLower(os.Getenv("CONTAINER_LOGS_1P_MODE"))
+		if IsEnableGenevaContainerLogs == "true" && GenevaContainerLogsMode == "ingestion" {
+			//Incase of GenevaLogs Ingestion mode, use the source Computer name from which log line originated
+			Computer = ToString(record["Computer"])
+		}
+
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
 		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
