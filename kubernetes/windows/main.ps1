@@ -649,6 +649,10 @@ else {
     Test-CertificatePath
 }
 
+#start Windows AMA 
+Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") }
+
+
 Start-Fluent-Telegraf
 
 # List all powershell processes running. This should have main.ps1 and filesystemwatcher.ps1
@@ -656,6 +660,3 @@ Get-WmiObject Win32_process | Where-Object { $_.Name -match 'powershell' } | For
 
 #check if fluentd service is running
 Get-Service fluentdwinaks
-
-#start Windows AMA 
-Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")
