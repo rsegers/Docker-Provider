@@ -11,8 +11,8 @@ ARG IMAGE_TAG=win-ciprod08102022
 # Docker creates a layer for every RUN-Statement
 RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
 # Fluentd depends on cool.io whose fat gem is only available for Ruby < 2.5, so need to specify --platform ruby when install Ruby > 2.5 and install msys2 to get dev tools
-RUN choco install -y ruby --version 3.1.1.1 --params "'/InstallDir:C:\ruby31'" \
-&& choco install -y msys2 --version 20211130.0.0 --params "'/NoPath /NoUpdate /InstallDir:C:\ruby31\msys64'" \
+RUN choco install -y ruby --version 3.1.1.1 --params "'/InstallDir:.\ruby31'" \
+&& choco install -y msys2 --version 20211130.0.0 --params "'/NoPath /NoUpdate /InstallDir:.\ruby31\msys64'" \
 && choco install -y vim
 
 # gangams - optional MSYS2 update via ridk failing in merged docker file so skipping that since we dont need optional update
@@ -78,4 +78,4 @@ ENV AZMON_COLLECT_ENV False
 ENV CI_CERT_LOCATION "C://oms.crt"
 ENV CI_KEY_LOCATION "C://oms.key"
 
-ENTRYPOINT ["powershell", "C:\\opt\\omsagentwindows\\scripts\\powershell\\main.ps1"]
+ENTRYPOINT ["powershell.exe", ".\\main.ps1"]
