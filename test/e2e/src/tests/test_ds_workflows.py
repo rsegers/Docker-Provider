@@ -43,15 +43,15 @@ def test_ds_workflows(env_dict):
     time.sleep(int(waitTimeSeconds))
     print("complete: waiting for seconds: {} for agent workflows to get emitted".format(waitTimeSeconds))
 
-    isOMSBaseAgent = env_dict.get('USING_AMA_LOGS_BASE_AGENT')
+    isOMSBaseAgent = env_dict.get('USING_OMSAGENT_BASE_AGENT')
     agentLogPath = constants.AGENT_FLUENTD_LOG_PATH
     if isOMSBaseAgent:
-         agentLogPath = constants.AGENT_AMA_LOGS_LOG_PATH
+         agentLogPath = constants.AGENT_OMSAGENT_LOG_PATH
 
     for podItem in pod_list.items:
         podName = podItem.metadata.name
         logcontent = get_log_file_content(
-            api_instance, constants.AGENT_RESOURCES_NAMESPACE, podName, constants.AMA_LOGS_MAIN_CONTAINER_NAME, agentLogPath)
+            api_instance, constants.AGENT_RESOURCES_NAMESPACE, podName, constants.OMSAGENT_MAIN_CONTAINER_NAME, agentLogPath)
         if not logcontent:
             pytest.fail("logcontent should not be null or empty for pod: " + podName)
         loglines = logcontent.split("\n")

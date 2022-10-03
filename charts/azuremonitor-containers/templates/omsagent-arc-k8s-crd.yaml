@@ -8,7 +8,7 @@ metadata:
   namespace: azure-arc
 spec:
   serviceAccounts:
-    - name: ama-logs
+    - name: omsagent
       namespace: kube-system
   tokenNamespace: azure-arc
 ---

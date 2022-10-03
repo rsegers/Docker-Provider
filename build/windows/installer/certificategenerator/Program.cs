@@ -415,7 +415,7 @@ namespace certificategenerator
             try
             {
               // WSKEY isn't stored as an environment variable
-              logAnalyticsWorkspaceSharedKey = File.ReadAllText("C:/etc/ama-logs-secret/KEY").Trim();
+              logAnalyticsWorkspaceSharedKey = File.ReadAllText("C:/etc/omsagent-secret/KEY").Trim();
             }
             catch (Exception ex)
             {

@@ -458,7 +458,7 @@ if (("AKS" -eq $ClusterType ) -and ($false -eq $UseAADAuth)) {
                     $clusterSpnMsiObjectID = $clusterSPN.Id
                 }
                 if ($null -eq $clusterSpnMsiObjectID) {
-                    Write-Host("Couldn't convert Client ID to Object ID or msi for ama-logs is not present") -ForegroundColor Red
+                    Write-Host("Couldn't convert Client ID to Object ID or msi for omsagent is not present") -ForegroundColor Red
                     Write-Host("Please contact us by emailing askcoin@microsoft.com for help") -ForegroundColor Red
                     Write-Host("");
                 }
@@ -481,7 +481,7 @@ if (("AKS" -eq $ClusterType ) -and ($false -eq $UseAADAuth)) {
                             $metricsPublisherRoleAlreadyExists = $true
                         }
                         if ($metricsPublisherRoleAlreadyExists) {
-                            Write-Host("Cluster SPN/ ama-logs MSI has the Monitoring Metrics Publisher Role assigned already") -ForegroundColor Green
+                            Write-Host("Cluster SPN/ omsagent MSI has the Monitoring Metrics Publisher Role assigned already") -ForegroundColor Green
                         }
                         else {
                             $TryToOnboardToCustomMetrics = $true
@@ -842,10 +842,10 @@ if ("AKS" -eq $ClusterType ) {
         kubectl config use-context $ClusterName
         Write-Host("Successfully switched current context of the k8s cluster to:", $ClusterName)
 
-        Write-Host("Check whether the ama-logs replicaset pod running correctly ...")
-        $rsPod = kubectl get deployments ama-logs-rs -n kube-system -o json | ConvertFrom-Json
+        Write-Host("Check whether the omsagent replicaset pod running correctly ...")
+        $rsPod = kubectl get deployments omsagent-rs -n kube-system -o json | ConvertFrom-Json
         if ($null -eq $rsPod) {
-            Write-Host( "ama-logs replicaset pod not scheduled or failed to scheduled.") -ForegroundColor Red
+            Write-Host( "omsagent replicaset pod not scheduled or failed to scheduled.") -ForegroundColor Red
             Write-Host("Please refer to the following documentation to onboard and validate:") -ForegroundColor Red
             Write-Host($AksOptInLink) -ForegroundColor Red
             Write-Host($contactUSMessage)
@@ -858,15 +858,15 @@ if ("AKS" -eq $ClusterType ) {
                 ($rsPodStatus.readyReplicas -eq 1 ) -and
                 ($rsPodStatus.replicas -eq 1 )) -eq $false
         ) {
-            Write-Host( "ama-logs replicaset pod not scheduled or failed to scheduled.") -ForegroundColor Red
-            Write-Host("Available ama-logs replicas:", $rsPodStatus.availableReplicas)
-            Write-Host("Ready ama-logs replicas:", $rsPodStatus.readyReplicas)
-            Write-Host("Total ama-logs replicas:", $rsPodStatus.replicas)
+            Write-Host( "omsagent replicaset pod not scheduled or failed to scheduled.") -ForegroundColor Red
+            Write-Host("Available omsagent replicas:", $rsPodStatus.availableReplicas)
+            Write-Host("Ready omsagent replicas:", $rsPodStatus.readyReplicas)
+            Write-Host("Total omsagent replicas:", $rsPodStatus.replicas)
             Write-Host($rsPod) -ForegroundColor Red
-            Write-Host("get ama-logs rs pod details ...")
-            $amaLogsRsPod = kubectl get pods -n kube-system -l rsName=ama-logs-rs -o json | ConvertFrom-Json
-            Write-Host("status of the ama-logs rs pod is :", $amaLogsRsPod.Items[0].status.conditions) -ForegroundColor Red
-            Write-Host("successfully got ama-logs rs pod details ...")
+            Write-Host("get omsagent rs pod details ...")
+            $omsagentrsPod = kubectl get pods -n kube-system -l rsName=omsagent-rs -o json | ConvertFrom-Json
+            Write-Host("status of the omsagent rs pod is :", $omsagentrsPod.Items[0].status.conditions) -ForegroundColor Red
+            Write-Host("successfully got omsagent rs pod details ...")
             Write-Host("Please refer to the following documentation to onboard and validate:") -ForegroundColor Red
             Write-Host($AksOptInLink) -ForegroundColor Red
             Write-Host($contactUSMessage)
@@ -874,19 +874,19 @@ if ("AKS" -eq $ClusterType ) {
             exit 1
         }
 
-        Write-Host( "ama-logs replicaset pod running OK.") -ForegroundColor Green
+        Write-Host( "omsagent replicaset pod running OK.") -ForegroundColor Green
     }
     catch {
-        Write-Host ("Failed to get ama-logs replicatset pod info using kubectl get rs  : '" + $Error[0] + "' ") -ForegroundColor Red
+        Write-Host ("Failed to get omsagent replicatset pod info using kubectl get rs  : '" + $Error[0] + "' ") -ForegroundColor Red
         Stop-Transcript
         exit 1
     }
 
-    Write-Host("Checking whether the ama-logs daemonset pod running correctly ...")
+    Write-Host("Checking whether the omsagent daemonset pod running correctly ...")
     try {
-        $ds = kubectl get ds -n kube-system -o json --field-selector metadata.name=ama-logs | ConvertFrom-Json
+        $ds = kubectl get ds -n kube-system -o json --field-selector metadata.name=omsagent | ConvertFrom-Json
         if (($null -eq $ds) -or ($null -eq $ds.Items) -or ($ds.Items.Length -ne 1)) {
-            Write-Host( "ama-logs replicaset pod not scheduled or failed to schedule." + $contactUSMessage)
+            Write-Host( "omsagent replicaset pod not scheduled or failed to schedule." + $contactUSMessage)
             Stop-Transcript
             exit 1
         }
@@ -898,14 +898,14 @@ if ("AKS" -eq $ClusterType ) {
                 ($dsStatus.numberAvailable -eq $dsStatus.currentNumberScheduled) -and
                 ($dsStatus.numberAvailable -eq $dsStatus.numberReady)) -eq $false) {
 
-            Write-Host( "ama-logs daemonset pod not scheduled or failed to schedule.") -ForegroundColor Red
+            Write-Host( "omsagent daemonset pod not scheduled or failed to schedule.") -ForegroundColor Red
             Write-Host($dsStatus)
             Write-Host($contactUSMessage)
             Stop-Transcript
             exit 1
         }
 
-        Write-Host( "ama-logs daemonset pod running OK.") -ForegroundColor Green
+        Write-Host( "omsagent daemonset pod running OK.") -ForegroundColor Green
     }
     catch {
         Write-Host ("Failed to execute the script  : '" + $Error[0] + "' ") -ForegroundColor Red
@@ -913,16 +913,16 @@ if ("AKS" -eq $ClusterType ) {
         exit 1
     }
 
-    Write-Host("Checking whether the ama-logs heatlhservice  running correctly ...")
+    Write-Host("Checking whether the omsagent heatlhservice  running correctly ...")
     try {
         $healthservice = kubectl get services -n kube-system -o json --field-selector metadata.name=healthmodel-replicaset-service | ConvertFrom-Json
         if ($healthservice.Items.Length -ne 1) {
-            Write-Host( "ama-logs healthservice  not scheduled or failed to schedule." + $contactUSMessage)
+            Write-Host( "omsagent healthservice  not scheduled or failed to schedule." + $contactUSMessage)
             Stop-Transcript
             exit 1
         }
 
-        Write-Host( "ama-logs healthservice running OK.") -ForegroundColor Green
+        Write-Host( "omsagent healthservice running OK.") -ForegroundColor Green
     }
     catch {
         Write-Host ("Failed to execute kubectl get services command : '" + $Error[0] + "' ") -ForegroundColor Red
@@ -949,9 +949,9 @@ if ("AKS" -eq $ClusterType ) {
 
     Write-Host("Checking whether the WorkspaceGuid and key matching with configured log analytics workspace ...")
     try {
-        $amaLogsSecret = kubectl get secrets ama-logs-secret -n kube-system -o json | ConvertFrom-Json
-        $workspaceGuidConfiguredOnAgent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($amaLogsSecret.data.WSID))
-        $workspaceKeyConfiguredOnAgent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($amaLogsSecret.data.KEY))
+        $omsagentSecret = kubectl get secrets omsagent-secret -n kube-system -o json | ConvertFrom-Json
+        $workspaceGuidConfiguredOnAgent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($omsagentSecret.data.WSID))
+        $workspaceKeyConfiguredOnAgent = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($omsagentSecret.data.KEY))
         if ((($workspaceGuidConfiguredOnAgent -eq $workspaceGUID) -and ($workspaceKeyConfiguredOnAgent -eq $workspacePrimarySharedKey)) -eq $false) {
             Write-Host ("Error - Log Analytics Workspace Guid and key configured on the agent not matching with details of the Workspace. Please verify and fix with the correct workspace Guid and Key") -ForegroundColor Red
             Stop-Transcript
@@ -969,17 +969,17 @@ if ("AKS" -eq $ClusterType ) {
     Write-Host("Checking agent version...")
     try {
 
-        $amaLogsInfo = kubectl get pods -n kube-system -o json -l  rsName=ama-logs-rs | ConvertFrom-Json
-        for ($index = 0; $index -le $amaLogsInfo.items.spec.containers.Length; $index++)
+        $omsagentInfo = kubectl get pods -n kube-system -o json -l  rsName=omsagent-rs | ConvertFrom-Json
+        for ($index = 0; $index -le $omsagentInfo.items.spec.containers.Length; $index++)
         {
-            $containerName = $amaLogsInfo.items.spec.containers[$index].Name
-            if ($containerName -eq "ama-logs") {
-                $amaLogsImage = $amaLogsInfo.items.spec.containers[$index].image.split(":")[1]
+            $containerName = $omsagentInfo.items.spec.containers[$index].Name
+            if ($containerName -eq "omsagent") {
+                $omsagentImage = $omsagentInfo.items.spec.containers[$index].image.split(":")[1]
                 break
             }
         }
-        Write-Host('The version of the ama-logs running on your cluster is ' + $amaLogsImage)
-        Write-Host('You can encounter problems with your cluster if your ama-logs version isnt on the latest version. Please go to https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-manage-agent and validate that you have the latest ama-logs version running.') -ForegroundColor Yellow
+        Write-Host('The version of the omsagent running on your cluster is ' + $omsagentImage)
+        Write-Host('You can encounter problems with your cluster if your omsagent version isnt on the latest version. Please go to https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-manage-agent and validate that you have the latest omsagent version running.') -ForegroundColor Yellow
     } catch {
         Write-Host ("Failed to execute the script  : '" + $Error[0] + "' ") -ForegroundColor Red
         Stop-Transcript

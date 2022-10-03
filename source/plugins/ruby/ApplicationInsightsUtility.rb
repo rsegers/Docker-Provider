@@ -107,7 +107,7 @@ class ApplicationInsightsUtility
           decodedAppInsightsKey = Base64.decode64(encodedAppInsightsKey)
 
           if @@isWindows
-            logPath = "/etc/amalogswindows/appinsights_error.log"
+            logPath = "/etc/omsagentwindows/appinsights_error.log"
           else
             logPath = "/var/opt/microsoft/docker-cimprov/log/appinsights_error.log"
           end

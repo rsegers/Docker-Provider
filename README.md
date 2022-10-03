@@ -50,7 +50,7 @@ The general directory structure is:
 |   |   |   |── scripts/                      - script files related to livenessproble, tomlparser etc..
 |   |   |   |── InstallBuilder/               - python script files for the install builder
 │   ├── windows/                              - scripts to build the .net and go code
-|   |   |── Makefile.ps1                      - powershell script to build .net and go lang code and copy the files to amalogswindows directory
+|   |   |── Makefile.ps1                      - powershell script to build .net and go lang code and copy the files to omsagentwindows directory
 │   │   ├── installer                         - files related to installer
 |   |   |   |── conf/                         - fluent, fluentbit and out_oms plugin configuration files
 |   |   |   |── scripts/                      - script files related to livenessproble, filesystemwatcher, keepCertificateAlive etc..
@@ -74,7 +74,7 @@ The general directory structure is:
 │   │   ├── DockerFile                        - DockerFile for Windows Agent Container Image
 │   │   ├── main.ps1                          - Windows Agent container entry point
 │   │   ├── setup.ps1                         - setup file for Windows Agent Container Image
-│   ├── ama-logs.yaml                         - kubernetes yaml for both Linux and Windows Agent
+│   ├── omsagent.yaml                         - kubernetes yaml for both Linux and Windows Agent
 │   ├── container-azm-ms-agentconfig.yaml     - kubernetes yaml for agent configuration
 ├── scripts/                                  - scripts for onboarding, troubleshooting and preview scripts related to Azure Monitor for containers
 │   ├── troubleshoot/                         - scripts for troubleshooting of Azure Monitor for containers onboarding issues
@@ -256,7 +256,7 @@ If you do not want to build the image from scratch every time you make changes d
 * Agent conf and plugin changes
 
 To do this, the very first time you start developing you would need to execute below instructions in elevated command prompt of powershell.
-This builds the base image(ama-logs-win-base) with all the package dependencies
+This builds the base image(omsagent-win-base) with all the package dependencies
 ```
 cd %userprofile%\Docker-Provider\kubernetes\windows\dockerbuild # based on your repo path
 docker login # if you want to publish the image to acr then login to acr via `docker login <acr-name>`
@@ -304,7 +304,7 @@ pwsh #switch to powershell
 
 ####  On Windows machine, build and Push Docker Image
 
-> Note: Docker image for windows container can only built on windows hence you will have to execute below commands on windows via accessing network share or copying published bits amalogswindows under kubernetes directory on to windows machine
+> Note: Docker image for windows container can only built on windows hence you will have to execute below commands on windows via accessing network share or copying published bits omsagentwindows under kubernetes directory on to windows machine
 
 ```
 net use z: \\wsl$\Ubuntu-16.04 # map the network drive of the ubuntu app to windows
@@ -361,10 +361,10 @@ For our single branch ci_prod, automatically deployed latest yaml with latest ag
   2. Deploy [ARM template](./scripts/onboarding/aks/onboarding-using-msi-auth/) with enabled = false to create DCR, DCR-A and link the workspace to Portal
    > Note - Make sure to update the parameter values in existingClusterParam.json file and have enabled = false in template file
     `az deployment group create --resource-group <ResourceGroupName> --template-file ./existingClusterOnboarding.json --parameters @./existingClusterParam.json`
-  3. Get the MSI token (which is valid for 24 hrs.) value via `kubectl get secrets -n kube-system  aad-msi-auth-token -o=jsonpath='{.data.token}'`
+  3. Get the MSI token (which is valid for 24 hrs.) value via `kubectl get secrets -n kube-system  omsagent-aad-msi-token -o=jsonpath='{.data.token}'`
   4. Disable Monitoring addon via `az aks disable-addons -a monitoring -g <rgName> -n <clusterName>`
-  5. Uncomment MSI auth related yaml lines, replace all the placeholder values, MSI token value and image tag in the ama-logs.yaml
-  6. Deploy the ama-logs.yaml via `kubectl apply -f ama-logs.yaml`
+  5. Uncomment MSI auth related yaml lines, replace all the placeholder values, MSI token value and image tag in the omsagent.yaml
+  6. Deploy the omsagent.yaml via `kubectl apply -f omsagent.yaml`
     > Note: use the image toggle for release E2E validation
   7. validate E2E for LA & Metrics data flows, and other scenarios
 
@@ -372,7 +372,7 @@ For our single branch ci_prod, automatically deployed latest yaml with latest ag
 
 ## For executing tests
 
-1. Deploy the ama-logs.yaml with your agent image. In the yaml, make sure `ISTEST` environment variable set to `true` if its not set already
+1. Deploy the omsagent.yaml with your agent image. In the yaml, make sure `ISTEST` environment variable set to `true` if its not set already
 2. Update the Service Principal CLIENT_ID, CLIENT_SECRET and TENANT_ID placeholder values and apply e2e-tests.yaml to execute the tests
     > Note: Service Principal requires reader role on log analytics workspace and cluster resource to query LA and metrics
    ```

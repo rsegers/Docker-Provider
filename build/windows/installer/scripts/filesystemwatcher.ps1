@@ -13,7 +13,7 @@ foreach ($path in $Paths)
     $EventName = 'Changed', 'Created', 'Deleted', 'Renamed'
 
     $Action = {
-        $fileSystemWatcherStatusPath = "C:\etc\amalogswindows\filesystemwatcher.txt"
+        $fileSystemWatcherStatusPath = "C:\etc\omsagentwindows\filesystemwatcher.txt"
         $fileSystemWatcherLog = "{0} was  {1} at {2}" -f $Event.SourceEventArgs.FullPath,
         $Event.SourceEventArgs.ChangeType,
         $Event.TimeGenerated

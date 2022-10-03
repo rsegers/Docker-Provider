@@ -504,7 +504,7 @@ class KubernetesApiClient
               metricProps = {}
               metricProps["Timestamp"] = metricTime
               metricProps["Host"] = nodeName
-              # Adding this so that it is not set by base ama-logs since it was not set earlier and being set by base ama-logs
+              # Adding this so that it is not set by base omsagent since it was not set earlier and being set by base omsagent
               metricProps["Computer"] = nodeName
               metricProps["ObjectName"] = "K8SContainer"
               metricProps["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
@@ -529,7 +529,7 @@ class KubernetesApiClient
                 metricProps = {}
                 metricProps["Timestamp"] = metricTime
                 metricProps["Host"] = nodeName
-                # Adding this so that it is not set by base ama-logs since it was not set earlier and being set by base ama-logs
+                # Adding this so that it is not set by base omsagent since it was not set earlier and being set by base omsagent
                 metricProps["Computer"] = nodeName
                 metricProps["ObjectName"] = "K8SContainer"
                 metricProps["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
@@ -664,7 +664,7 @@ class KubernetesApiClient
 
           metricItem["Timestamp"] = metricTime
           metricItem["Host"] = node["metadata"]["name"]
-          # Adding this so that it is not set by base ama-logs since it was not set earlier and being set by base ama-logs
+          # Adding this so that it is not set by base omsagent since it was not set earlier and being set by base omsagent
           metricItem["Computer"] = node["metadata"]["name"]
           metricItem["ObjectName"] = "K8SNode"
           metricItem["InstanceName"] = clusterId + "/" + node["metadata"]["name"]
@@ -1419,7 +1419,7 @@ class KubernetesApiClient
 
     def sendReplicasetAgentRequestsAndLimitsTelemetry(podName, podNameSpace, containerName, metricName, metricValue)
       begin
-        if (!podName.nil? && podName.downcase.start_with?("ama-logs-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("ama-logs"))
+        if (!podName.nil? && podName.downcase.start_with?("omsagent-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("omsagent"))
           telemetryProps = {}
           telemetryProps["PodName"] = podName
           telemetryProps["ContainerName"] = containerName

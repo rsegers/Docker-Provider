@@ -47,7 +47,7 @@ def test_node_metrics_e2e_workflow(env_dict):
     envVars = pod_list.items[0].spec.containers[0].env
     if (len(pod_list.items[0].spec.containers) > 1):
         for container in pod_list.items[0].spec.containers:
-            if (container.name == constants.AMA_LOGS_MAIN_CONTAINER_NAME):
+            if (container.name == constants.OMSAGENT_MAIN_CONTAINER_NAME):
                 envVars = container.env
                 break
 

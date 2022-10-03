@@ -1,6 +1,6 @@
 # How to add 'Monitoring Metrics Publisher' role assignment to the AKS cluster(s)
 
-Monitoring Metrics Publishers role assignment required for AKS Monitoring agent (i.e. ama-logs) to push the custom metrics to Azure Monitor for the cluster resource.
+Monitoring Metrics Publishers role assignment required for AKS Monitoring agent (i.e. omsagent) to push the custom metrics to Azure Monitor for the cluster resource.
 
 Custom metrics can be used to alert and also the pining the charts of these metrics to the azure portal dashboard.
 

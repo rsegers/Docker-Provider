@@ -35,41 +35,41 @@ RUN powershell -Command "Remove-Item -Force C:\ruby31\lib\ruby\gems\3.1.0\cache\
 
 SHELL ["powershell"]
 
-ENV tmpdir /opt/amalogswindows/scripts/powershell
+ENV tmpdir /opt/omsagentwindows/scripts/powershell
 
-WORKDIR /opt/amalogswindows/scripts/powershell
+WORKDIR /opt/omsagentwindows/scripts/powershell
 
 # copy certificate generator binaries zip
-COPY ./amalogswindows/*.zip /opt/amalogswindows/
+COPY ./omsagentwindows/*.zip /opt/omsagentwindows/
 
-COPY setup.ps1 /opt/amalogswindows/scripts/powershell
+COPY setup.ps1 /opt/omsagentwindows/scripts/powershell
 RUN ./setup.ps1
 
-COPY main.ps1 /opt/amalogswindows/scripts/powershell
-COPY ./amalogswindows/installer/scripts/filesystemwatcher.ps1 /opt/amalogswindows/scripts/powershell
-COPY ./amalogswindows/installer/livenessprobe/livenessprobe.exe /opt/amalogswindows/scripts/cmd/
-COPY setdefaulttelegrafenvvariables.ps1 /opt/amalogswindows/scripts/powershell
+COPY main.ps1 /opt/omsagentwindows/scripts/powershell
+COPY ./omsagentwindows/installer/scripts/filesystemwatcher.ps1 /opt/omsagentwindows/scripts/powershell
+COPY ./omsagentwindows/installer/livenessprobe/livenessprobe.exe /opt/omsagentwindows/scripts/cmd/
+COPY setdefaulttelegrafenvvariables.ps1 /opt/omsagentwindows/scripts/powershell
 
 # copy ruby scripts to /opt folder
-COPY ./amalogswindows/installer/scripts/*.rb /opt/amalogswindows/scripts/ruby/
+COPY ./omsagentwindows/installer/scripts/*.rb /opt/omsagentwindows/scripts/ruby/
 
 # copy out_oms.so file
-COPY ./amalogswindows/out_oms.so /opt/amalogswindows/out_oms.so
+COPY ./omsagentwindows/out_oms.so /opt/omsagentwindows/out_oms.so
 
 # copy fluent, fluent-bit and out_oms conf files
-COPY ./amalogswindows/installer/conf/fluent.conf /etc/fluent/
-COPY ./amalogswindows/installer/conf/fluent-bit.conf /etc/fluent-bit
-COPY ./amalogswindows/installer/conf/azm-containers-parser.conf /etc/fluent-bit/
-COPY ./amalogswindows/installer/conf/out_oms.conf /etc/amalogswindows
+COPY ./omsagentwindows/installer/conf/fluent.conf /etc/fluent/
+COPY ./omsagentwindows/installer/conf/fluent-bit.conf /etc/fluent-bit
+COPY ./omsagentwindows/installer/conf/azm-containers-parser.conf /etc/fluent-bit/
+COPY ./omsagentwindows/installer/conf/out_oms.conf /etc/omsagentwindows
 
 # copy telegraf conf file
-COPY ./amalogswindows/installer/conf/telegraf.conf /etc/telegraf/
+COPY ./omsagentwindows/installer/conf/telegraf.conf /etc/telegraf/
 
 # copy keepcert alive ruby scripts
-COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluent/plugin/
+COPY ./omsagentwindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluent/plugin/
 
 #Copy fluentd ruby plugins
-COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
+COPY ./omsagentwindows/ruby/ /etc/fluent/plugin/
 
 ENV AGENT_VERSION ${IMAGE_TAG}
 ENV OS_TYPE "windows"
@@ -80,4 +80,4 @@ ENV CI_KEY_LOCATION "C://oms.key"
 ENV MONITORING_DATA_DIRECTORY "C:\\opt\\genevamonitoringagent\\datadirectory"
 ENV MONITORING_MCS_MODE "1"
 
-ENTRYPOINT ["powershell", "C:\\opt\\amalogswindows\\scripts\\powershell\\main.ps1"]
+ENTRYPOINT ["powershell", "C:\\opt\\omsagentwindows\\scripts\\powershell\\main.ps1"]

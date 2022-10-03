@@ -7,7 +7,7 @@ Here are the high-level instructions to get the CIPROD`<MM><DD><YYYY>` image for
       > Note: This required since Azure Dev Ops pipeline doesnt support --build-arg yet to automate this.
    - Ensure IMAGE_TAG updated with release candiate image tag in the DockerFile under kubernetes/linux and kubernetes/windows directory
    - Update the version file under build directory with build version and date
-   - Update ama-logs.yaml for the image tag and dockerProviderVersion, and any other changes
+   - Update omsagent.yaml for the image tag and dockerProviderVersion, and any other changes
    - Update the chart version and image tags in values.yaml under charts/azuremonitor-containers
    - Release notes
 2. Make PR to ci_dev branch and once the PR approved, merge the changes to ci_dev
@@ -21,7 +21,7 @@ Here are the high-level instructions to get the CIPROD`<MM><DD><YYYY>` image for
 
 # 2. Perf and scale testing
 
-Deploy latest ama-logs yaml with release candidate agent image in to supported k8s versions and validate all the critical scenarios. In perticular, throughly validate the updates going as part of this release and also make sure no regressions. If  this passes, deploy onto scale cluster and  validate perf and scale aspects. Scale cluster in AME cloud and co-ordinate with agent team who has access to this cluster to deploy  the release candiate onto this cluster.
+Deploy latest omsagent yaml with release candidate agent image in to supported k8s versions and validate all the critical scenarios. In perticular, throughly validate the updates going as part of this release and also make sure no regressions. If  this passes, deploy onto scale cluster and  validate perf and scale aspects. Scale cluster in AME cloud and co-ordinate with agent team who has access to this cluster to deploy  the release candiate onto this cluster.
 
 # 3. Production Image to MCR CN for Azure China Cloud
 

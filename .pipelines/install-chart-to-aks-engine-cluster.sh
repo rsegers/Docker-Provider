@@ -40,4 +40,4 @@ echo "Workspace GUID: ${WSID}"
 # echo "kubeconfig:${kubeconfig}"
 
 echo "installing the chart release: ${releaseName}"
-helm upgrade --install $releaseName --kubeconfig ~/kubeconfig --set amalogs.secret.wsid=$WSID,amalogs.secret.key=$WSKEY,amalogs.env.clusterName=$ClusterName,amalogs.image.repo=$imageRepo,amalogs.image.tag=$linuxAgentImageTag,amalogs.image.tagWindows=$windowsAgentImageTag  azuremonitor-containers
+helm upgrade --install $releaseName --kubeconfig ~/kubeconfig --set omsagent.secret.wsid=$WSID,omsagent.secret.key=$WSKEY,omsagent.env.clusterName=$ClusterName,omsagent.image.repo=$imageRepo,omsagent.image.tag=$linuxAgentImageTag,omsagent.image.tagWindows=$windowsAgentImageTag  azuremonitor-containers

@@ -86,7 +86,7 @@ module Fluent::Plugin
                   if @addonTokenAdapterImageTag.empty? && ExtensionUtils.isAADMSIAuthMode()
                      if !containerRecord["ElementName"].nil? && !containerRecord["ElementName"].empty? &&
                       containerRecord["ElementName"].include?("_kube-system_") &&
-                      containerRecord["ElementName"].include?("addon-token-adapter_ama-logs")
+                      containerRecord["ElementName"].include?("addon-token-adapter_omsagent")
                       if !containerRecord["ImageTag"].nil? && !containerRecord["ImageTag"].empty?
                         @addonTokenAdapterImageTag = containerRecord["ImageTag"]
                       end

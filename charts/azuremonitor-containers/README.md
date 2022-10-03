@@ -33,14 +33,14 @@ Monitoring your Kubernetes cluster and containers is critical, especially when r
 
 > Note: `--name` flag not required in Helm3 since this flag is deprecated
 
-> Note: use `amalogs.proxy` parameter to set the proxy endpoint if your K8s cluster configured behind the proxy. Refer to [configure proxy](#Configuring-Proxy-Endpoint) for more details about  proxy.
+> Note: use `omsagent.proxy` parameter to set the proxy endpoint if your K8s cluster configured behind the proxy. Refer to [configure proxy](#Configuring-Proxy-Endpoint) for more details about  proxy.
 
 ### To Use Azure Log Analytics Workspace in Public Cloud
 
 ```bash
 $ helm repo add microsoft https://microsoft.github.io/charts/repo
 $ helm install --name azmon-containers-release-1 \
---set amalogs.secret.wsid=<your_workspace_id>,amalogs.secret.key=<your_workspace_key>,amalogs.env.clusterName=<my_prod_cluster>  microsoft/azuremonitor-containers
+--set omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<my_prod_cluster>  microsoft/azuremonitor-containers
 ```
 
 ### To Use Azure Log Analytics Workspace in Azure China Cloud
@@ -48,7 +48,7 @@ $ helm install --name azmon-containers-release-1 \
 ```bash
 $ helm repo add microsoft https://microsoft.github.io/charts/repo
 $ helm install --name azmon-containers-release-1 \
---set amalogs.domain=opinsights.azure.cn,amalogs.secret.wsid=<your_workspace_id>,amalogs.secret.key=<your_workspace_key>,amalogs.env.clusterName=<your_cluster_name>  microsoft/azuremonitor-containers
+--set omsagent.domain=opinsights.azure.cn,omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<your_cluster_name>  microsoft/azuremonitor-containers
 ```
 
 ### To Use Azure Log Analytics Workspace in Azure US Government Cloud
@@ -56,7 +56,7 @@ $ helm install --name azmon-containers-release-1 \
 ```bash
 $ helm repo add microsoft https://microsoft.github.io/charts/repo
 $ helm install --name azmon-containers-release-1 \
---set amalogs.domain=opinsights.azure.us,amalogs.secret.wsid=<your_workspace_id>,amalogs.secret.key=<your_workspace_key>,amalogs.env.clusterName=<your_cluster_name>  microsoft/azuremonitor-containers
+--set omsagent.domain=opinsights.azure.us,omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<your_cluster_name>  microsoft/azuremonitor-containers
 ```
 
 ## Upgrading an existing Release to a new version
@@ -83,25 +83,25 @@ The following table lists the configurable parameters of the MSOMS chart and the
 
 | Parameter                    | Description                                             | Default                                                                                                                     |
 | -----------------------      | --------------------------------------------------------| --------------------------------------------------------------------------------------------------------------------------- |
-| `amalogs.image.tag`         | image tag for Linux Agent.                              | Most recent release                                                                                                         |
-| `amalogs.image.tagWindows`  | image tag for Windows Agent.                            | Most recent release                                                                                                         |
-| `amalogs.image.imagerepo`   | image repo for Liunx & Windows.                         | For Public and US Govt cloud: mcr.microsoft.com/azuremonitor/containerinsights/ciprod and For China Cloud: mcr.azk8s.cn/azuremonitor/containerinsights/ciprod
-| `amalogs.image.pullPolicy`  | image pull policy for the agent.                        | IfNotPresent                                                                                                                |
-| `amalogs.secret.wsid`       | Azure Log analytics workspace id                        | Does not have a default value, needs to be provided                                                                         |
-| `amalogs.secret.key`        | Azure Log analytics workspace key                       | Does not have a default value, needs to be provided                                                                         |
-| `amalogs.domain`            | Azure Log analytics cloud domain (public,china, us govt)| opinsights.azure.com (Public cloud as default), opinsights.azure.cn (China Cloud), opinsights.azure.us (US Govt Cloud)      |
-| `amalogs.env.clusterName`   | Name of your cluster                                    | Does not have a default value, needs to be provided                                                                         |
-| `amalogs.rbac`              | rbac enabled/disabled                                   | true  (i.e.enabled)                                                                                                           |
-| `amalogs.proxy`             | Proxy endpoint                                          | Doesnt have default value. Refer to [configure proxy](#Configuring-Proxy-Endpoint) |
-| `amalogs.priority`          | DaemonSet Pod Priority                                  | This is the [priority](https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/) to use for the daemonsets such that they get scheduled onto the node ahead of "normal" pods - must be an integer, defaults to 10 |
+| `omsagent.image.tag`         | image tag for Linux Agent.                              | Most recent release                                                                                                         |
+| `omsagent.image.tagWindows`  | image tag for Windows Agent.                            | Most recent release                                                                                                         |
+| `omsagent.image.imagerepo`   | image repo for Liunx & Windows.                         | For Public and US Govt cloud: mcr.microsoft.com/azuremonitor/containerinsights/ciprod and For China Cloud: mcr.azk8s.cn/azuremonitor/containerinsights/ciprod
+| `omsagent.image.pullPolicy`  | image pull policy for the agent.                        | IfNotPresent                                                                                                                |
+| `omsagent.secret.wsid`       | Azure Log analytics workspace id                        | Does not have a default value, needs to be provided                                                                         |
+| `omsagent.secret.key`        | Azure Log analytics workspace key                       | Does not have a default value, needs to be provided                                                                         |
+| `omsagent.domain`            | Azure Log analytics cloud domain (public,china, us govt)| opinsights.azure.com (Public cloud as default), opinsights.azure.cn (China Cloud), opinsights.azure.us (US Govt Cloud)      |
+| `omsagent.env.clusterName`   | Name of your cluster                                    | Does not have a default value, needs to be provided                                                                         |
+| `omsagent.rbac`              | rbac enabled/disabled                                   | true  (i.e.enabled)                                                                                                           |
+| `omsagent.proxy`             | Proxy endpoint                                          | Doesnt have default value. Refer to [configure proxy](#Configuring-Proxy-Endpoint) |
+| `omsagent.priority`          | DaemonSet Pod Priority                                  | This is the [priority](https://kubernetes.io/docs/concepts/configuration/pod-priority-preemption/) to use for the daemonsets such that they get scheduled onto the node ahead of "normal" pods - must be an integer, defaults to 10 |
 
-> Note: For Azure Manage K8s clusters such as Azure Arc K8s and ARO v4, `amalogs.env.clusterId` with fully qualified azure resource id of the cluster should be used instead of `amalogs.env.clusterName`
+> Note: For Azure Manage K8s clusters such as Azure Arc K8s and ARO v4, `omsagent.env.clusterId` with fully qualified azure resource id of the cluster should be used instead of `omsagent.env.clusterName`
 
 ### Note
 
-- Parameter `amalogs.env.doNotCollectKubeSystemLogs` has been removed starting chart version 1.0.0. Refer to 'Agent data collection settings' section below to configure it using configmap.
+- Parameter `omsagent.env.doNotCollectKubeSystemLogs` has been removed starting chart version 1.0.0. Refer to 'Agent data collection settings' section below to configure it using configmap.
 - onboarding of multiple clusters with the same cluster name to same log analytics workspace not supported. If need this configuration, use the cluster FQDN name rather than cluster dns prefix to avoid collision with clusterName
-- The `amalogs.priority` parameter sets the priority of the ama-logs daemonset priority class.  This pod priority class is used for daemonsets to allow them to have priority over pods that can be scheduled elsewhere.  Without a priority class, it is possible for a node to fill up with "normal" pods before the daemonset pods get to be created for the node or get scheduled.  Note that pods are not "daemonset" pods - they are just pods created by the daemonset controller but they have a specific affinity set during creation to the specific node each pod was created to run on.  You want this value to be greater than 0 (default is 10) and generally greater than pods that have the flexibility to run on different nodes such that they do not block the node specific pods.
+- The `omsagent.priority` parameter sets the priority of the omsagent daemonset priority class.  This pod priority class is used for daemonsets to allow them to have priority over pods that can be scheduled elsewhere.  Without a priority class, it is possible for a node to fill up with "normal" pods before the daemonset pods get to be created for the node or get scheduled.  Note that pods are not "daemonset" pods - they are just pods created by the daemonset controller but they have a specific affinity set during creation to the specific node each pod was created to run on.  You want this value to be greater than 0 (default is 10) and generally greater than pods that have the flexibility to run on different nodes such that they do not block the node specific pods.
 
 ## Agent data collection settings
 
@@ -115,7 +115,7 @@ Specify each parameter using the `--set key=value[,key=value]` argument to `helm
 ```bash
 
 $ helm install --name myrelease-1 \
---set amalogs.secret.wsid=<your_workspace_id>,amalogs.secret.key=<your_workspace_key>,amalogs.env.clusterName=<your_cluster_name>
+--set omsagent.secret.wsid=<your_workspace_id>,omsagent.secret.key=<your_workspace_key>,omsagent.env.clusterName=<your_cluster_name>
   microsoft/azuremonitor-containers
 ```
 Alternatively, a YAML file that specifies the values for the parameters can be provided while installing the chart. For example,
@@ -142,7 +142,7 @@ Starting with chart version 2.7.0, chart will support Container Runtime Interfac
 
 ## Configuring Proxy Endpoint
 
-Starting with chart version 2.7.1, chart will support specifying the Proxy endpoint via `amalogs.proxy` chart parameter so that all remote outbound traffic will be routed via configured proxy endpoint.
+Starting with chart version 2.7.1, chart will support specifying the Proxy endpoint via `omsagent.proxy` chart parameter so that all remote outbound traffic will be routed via configured proxy endpoint.
 
 Communication between the Azure Monitor for containers agent and Azure Monitor backend can use an HTTP or HTTPS proxy server.
 
@@ -160,7 +160,7 @@ proxyhost|Address or FQDN of the proxy server
 port|port number for the proxy server
 
 For example:
-`amalogs.proxy=http://user01:password@proxy01.contoso.com:8080`
+`omsagent.proxy=http://user01:password@proxy01.contoso.com:8080`
 
 > Note: Although you do not have any user/password set for the proxy, you will still need to add a psuedo user/password. This can be any username or password.
 

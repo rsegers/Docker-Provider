@@ -1,9 +1,9 @@
 #  Build script to build the .NET and Go lang code for the Windows agent.
 #  It does following  tasks
-#  1. Builds the certificate generator code in .NET and copy the binaries in zip file to ..\..\kubernetes\windows\amalogswindows
-#  2. Builds the out_oms plugin code in go lang  into the shared object(.so) file and copy the out_oms.so file  to ..\..\kubernetes\windows\amalogswindows
-#  3. copy the files under installer directory to ..\..\kubernetes\windows\amalogswindows
-#  4. Builds the livenessprobe cpp and copy the executable to the under directory ..\..\kubernetes\windows\amalogswindows
+#  1. Builds the certificate generator code in .NET and copy the binaries in zip file to ..\..\kubernetes\windows\omsagentwindows
+#  2. Builds the out_oms plugin code in go lang  into the shared object(.so) file and copy the out_oms.so file  to ..\..\kubernetes\windows\omsagentwindows
+#  3. copy the files under installer directory to ..\..\kubernetes\windows\omsagentwindows
+#  4. Builds the livenessprobe cpp and copy the executable to the under directory ..\..\kubernetes\windows\omsagentwindows
 
 $dotnetcoreframework = "netcoreapp3.1"
 
@@ -109,7 +109,7 @@ if ($false -eq (Test-Path -Path $rootdir)) {
     exit 1
 }
 
-$publishdir = Join-Path -Path $rootdir -ChildPath "kubernetes\windows\amalogswindows"
+$publishdir = Join-Path -Path $rootdir -ChildPath "kubernetes\windows\omsagentwindows"
 if ($true -eq (Test-Path -Path $publishdir)) {
     Write-Host("publish dir exist hence deleting: " + $publishdir + " ")
     Remove-Item -Path $publishdir  -Recurse -Force

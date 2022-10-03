@@ -9,8 +9,8 @@ source/plugins/go/pkg/
 # .net code build artificats
 build/windows/installer/certificategenerator/bin
 build/windows/installer/certificategenerator/obj
-# files under amalogswindows dir since this temp directory to build the docker image
-kubernetes/windows/amalogswindows
+# files under omsagentwindows dir since this temp directory to build the docker image
+kubernetes/windows/omsagentwindows
 # ignore everything under intermediate directory
 intermediate
 # ignore files which are having these extensions

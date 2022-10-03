@@ -23,7 +23,7 @@ class ArcK8sClusterIdentity
   def initialize
     @os_type = ENV["OS_TYPE"]
     if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-      @LogPath = "/etc/amalogswindows/arc_k8s_cluster_identity.log"
+      @LogPath = "/etc/omsagentwindows/arc_k8s_cluster_identity.log"
     else
       @LogPath = "/var/opt/microsoft/docker-cimprov/log/arc_k8s_cluster_identity.log"
     end

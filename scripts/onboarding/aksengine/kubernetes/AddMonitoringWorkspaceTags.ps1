@@ -5,7 +5,7 @@
         ---------------------------------------------------------------------------------------------------------
        | tagName                              | tagValue                                                         |
         ---------------------------------------------------------------------------------------------------------
-       | logAnalyticsWorkspaceResourceId      | <azure ResourceId of the workspace configured on the ama-logs >  |
+       | logAnalyticsWorkspaceResourceId      | <azure ResourceId of the workspace configured on the omsAgent >  |
 	   ----------------------------------------------------------------------------------------------------------
 	   | clusterName                          | <name of the cluster configured during agent installation>       |
 	   ----------------------------------------------------------------------------------------------------------
@@ -25,10 +25,10 @@
         Resource Group name where the aks-engine Kubernetes cluster is in
 
     .PARAMETER LogAnalyticsWorkspaceResourceId
-        Fully qualified ResourceId of the Log Analytics workspace. This should be the same as the one configured on the ama-logs of specified AKS-engine or (ACS-engine Kubernetes) cluster
+        Fully qualified ResourceId of the Log Analytics workspace. This should be the same as the one configured on the omsAgent of specified AKS-engine or (ACS-engine Kubernetes) cluster
 
 	 .PARAMETER ClusterName
-        Name of the cluster configured. This should be the same as the one configured on the ama-logs (for amalogs.env.clusterName) of specified ACS-engine Kubernetes cluster
+        Name of the cluster configured. This should be the same as the one configured on the omsAgent (for omsagent.env.clusterName) of specified ACS-engine Kubernetes cluster
 #>
 
 param(

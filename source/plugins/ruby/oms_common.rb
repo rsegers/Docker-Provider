@@ -84,13 +84,13 @@ module OMS
 
       def look_in_designated_hostnamefile
         # Issue:
-        #   When ama-logs runs inside a container, gethostname returns the hostname of the container (random name)
+        #   When omsagent runs inside a container, gethostname returns the hostname of the container (random name)
         #   not the actual machine hostname.
         #   One way to solve this problem is to set the container hostname same as machine name, but this is not
         #   possible when host-machine is a private VM inside a cluster.
         # Solution:
-        #   Share/mount ‘/etc/hostname’ as '/var/opt/microsoft/ama-logs/state/containername' with container and
-        #   ama-logs will read hostname from shared file.
+        #   Share/mount ‘/etc/hostname’ as '/var/opt/microsoft/omsagent/state/containername' with container and
+        #   omsagent will read hostname from shared file.
         hostname_buffer = nil
 
         unless File.readable?(@@HostnameFilePath)

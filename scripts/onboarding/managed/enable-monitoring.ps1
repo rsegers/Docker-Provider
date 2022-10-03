@@ -66,7 +66,7 @@ $isUsingServicePrincipal = $false
 $microsoftHelmRepo="https://microsoft.github.io/charts/repo"
 $microsoftHelmRepoName="microsoft"
 
-$amaLogsDomainName="opinsights.azure.com"
+$omsAgentDomainName="opinsights.azure.com"
 
 if ([string]::IsNullOrEmpty($azureCloudName) -eq $true) {
     Write-Host("Azure cloud name parameter not passed in so using default cloud as AzureCloud")
@@ -74,10 +74,10 @@ if ([string]::IsNullOrEmpty($azureCloudName) -eq $true) {
 } else {
     if(($azureCloudName.ToLower() -eq "azurecloud" ) -eq $true) {
         Write-Host("Specified Azure Cloud name is : $azureCloudName")
-        $amaLogsDomainName="opinsights.azure.com"
+        $omsAgentDomainName="opinsights.azure.com"
     } elseif (($azureCloudName.ToLower() -eq "azureusgovernment" ) -eq $true) {
         Write-Host("Specified Azure Cloud name is : $azureCloudName")
-        $amaLogsDomainName="opinsights.azure.us"
+        $omsAgentDomainName="opinsights.azure.us"
     } else {
         Write-Host("Specified Azure Cloud name is : $azureCloudName")
         Write-Host("Only supported azure clouds are : AzureCloud and AzureUSGovernment")
@@ -555,10 +555,10 @@ try {
 
     Write-Host("helmChartRepoPath is : ${helmChartRepoPath}")
 
-    $helmParameters = "amalogs.domain=$amaLogsDomainName,amalogs.secret.wsid=$workspaceGUID,amalogs.secret.key=$workspacePrimarySharedKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion"
+    $helmParameters = "omsagent.domain=$omsAgentDomainName,omsagent.secret.wsid=$workspaceGUID,omsagent.secret.key=$workspacePrimarySharedKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion"
     if ([string]::IsNullOrEmpty($proxyEndpoint) -eq $false) {
         Write-Host("using proxy endpoint since its provided")
-        $helmParameters = $helmParameters + ",amalogs.proxy=$proxyEndpoint"
+        $helmParameters = $helmParameters + ",omsagent.proxy=$proxyEndpoint"
     }
     if ([string]::IsNullOrEmpty($kubeContext)) {
         helm upgrade --install $helmChartReleaseName --set $helmParameters $helmChartRepoPath

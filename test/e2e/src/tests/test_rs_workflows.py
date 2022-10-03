@@ -41,13 +41,13 @@ def test_rs_workflows(env_dict):
     waitTimeSeconds = env_dict['AGENT_WAIT_TIME_SECS']
     time.sleep(int(waitTimeSeconds))
 
-    isOMSBaseAgent = env_dict.get('USING_AMA_LOGS_BASE_AGENT')
+    isOMSBaseAgent = env_dict.get('USING_OMSAGENT_BASE_AGENT')
     agentLogPath = constants.AGENT_FLUENTD_LOG_PATH
     if isOMSBaseAgent:
-        agentLogPath = constants.AGENT_AMA_LOGS_LOG_PATH
+        agentLogPath = constants.AGENT_OMSAGENT_LOG_PATH
 
     logcontent = get_log_file_content(
-        api_instance, constants.AGENT_RESOURCES_NAMESPACE, rspodName, constants.AMA_LOGS_MAIN_CONTAINER_NAME, agentLogPath)
+        api_instance, constants.AGENT_RESOURCES_NAMESPACE, rspodName, constants.OMSAGENT_MAIN_CONTAINER_NAME, agentLogPath)
     if not logcontent:
         pytest.fail("logcontent should not be null or empty for rs pod: {}".format(rspodName))
     loglines = logcontent.split("\n")

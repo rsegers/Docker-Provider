@@ -81,7 +81,7 @@ const KubeMonAgentEventsFlushedEvent = "KubeMonAgentEventsFlushed"
 // ContainerLogPluginConfFilePath --> config file path for container log plugin
 const DaemonSetContainerLogPluginConfFilePath = "/etc/opt/microsoft/docker-cimprov/out_oms.conf"
 const ReplicaSetContainerLogPluginConfFilePath = "/etc/opt/microsoft/docker-cimprov/out_oms.conf"
-const WindowsContainerLogPluginConfFilePath = "/etc/amalogswindows/out_oms.conf"
+const WindowsContainerLogPluginConfFilePath = "/etc/omsagentwindows/out_oms.conf"
 
 // IPName
 const IPName = "ContainerInsights"
@@ -378,7 +378,7 @@ func createLogger() *log.Logger {
 	if strings.Compare(strings.ToLower(osType), "windows") != 0 {
 		logPath = "/var/opt/microsoft/docker-cimprov/log/fluent-bit-out-oms-runtime.log"
 	} else {
-		logPath = "/etc/amalogswindows/fluent-bit-out-oms-runtime.log"
+		logPath = "/etc/omsagentwindows/fluent-bit-out-oms-runtime.log"
 	}
 
 	if _, err := os.Stat(logPath); err == nil {
@@ -1615,7 +1615,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		}
 		// read proxyendpoint if proxy configured
 		ProxyEndpoint = ""
-		proxySecretPath := pluginConfig["amalogsproxy_secret_path"]
+		proxySecretPath := pluginConfig["omsproxy_secret_path"]
 		if _, err := os.Stat(proxySecretPath); err == nil {
 			Log("Reading proxy configuration for Linux from %s", proxySecretPath)
 			proxyConfig, err := ioutil.ReadFile(proxySecretPath)

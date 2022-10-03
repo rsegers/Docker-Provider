@@ -55,9 +55,9 @@ az aks disable-addons -a monitoring -g $clusterResourceGroup -n $clusterName
 
 echo "Cleaning up resources that are not cleaned up by disable monitoring"
 kubectl config use-context $clusterName
-kubectl delete serviceaccount ama-logs -n kube-system
-kubectl delete clusterrole ama-logs-reader
-kubectl delete clusterrolebinding amalogsclusterrolebinding
+kubectl delete serviceaccount omsagent -n kube-system
+kubectl delete clusterrole omsagent-reader
+kubectl delete clusterrolebinding omsagentclusterrolebinding
 kubectl delete customresourcedefinition healthstates.azmon.container.insights
 
 echo "Adding permissions to the Service principal"
@@ -86,7 +86,7 @@ helm repo update
 echo "uninstalling existing release if any for azmon-containers-ci-mdm-alert-release"
 helm uninstall azmon-containers-ci-mdm-alert-release
 
-helm upgrade --install azmon-containers-ci-mdm-alert-release --set amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion azmon-preview-mdm-alert/azuremonitor-containers --kube-context $clusterName
+helm upgrade --install azmon-containers-ci-mdm-alert-release --set omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion azmon-preview-mdm-alert/azuremonitor-containers --kube-context $clusterName
 echo "chart installation completed."
 
 echo "setting the subscription id of the cluster: ${clusterSubscriptionId}"

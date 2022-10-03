@@ -45,9 +45,9 @@ function Set-EnvironmentVariables {
     $domain = "opinsights.azure.com"
     $mcs_endpoint = "monitor.azure.com"
     $cloud_environment = "azurepubliccloud"
-    if (Test-Path /etc/ama-logs-secret/DOMAIN) {
-        # TODO: Change to ama-logs-secret before merging
-        $domain = Get-Content /etc/ama-logs-secret/DOMAIN
+    if (Test-Path /etc/omsagent-secret/DOMAIN) {
+        # TODO: Change to omsagent-secret before merging
+        $domain = Get-Content /etc/omsagent-secret/DOMAIN
         if (![string]::IsNullOrEmpty($domain)) {
             if ($domain -eq "opinsights.azure.com") {
                 $cloud_environment = "azurepubliccloud"
@@ -97,9 +97,9 @@ function Set-EnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("CLOUD_ENVIRONMENT", $cloud_environment, "Machine")
 
     $wsID = ""
-    if (Test-Path /etc/ama-logs-secret/WSID) {
-        # TODO: Change to ama-logs-secret before merging
-        $wsID = Get-Content /etc/ama-logs-secret/WSID
+    if (Test-Path /etc/omsagent-secret/WSID) {
+        # TODO: Change to omsagent-secret before merging
+        $wsID = Get-Content /etc/omsagent-secret/WSID
     }
 
     # Set WSID
@@ -109,9 +109,9 @@ function Set-EnvironmentVariables {
     # Don't store WSKEY as environment variable
 
     $proxy = ""
-    if (Test-Path /etc/ama-logs-secret/PROXY) {
-        # TODO: Change to ama-logs-secret before merging
-        $proxy = Get-Content /etc/ama-logs-secret/PROXY
+    if (Test-Path /etc/omsagent-secret/PROXY) {
+        # TODO: Change to omsagent-secret before merging
+        $proxy = Get-Content /etc/omsagent-secret/PROXY
         Write-Host "Validating the proxy configuration since proxy configuration provided"
         # valide the proxy endpoint configuration
         if (![string]::IsNullOrEmpty($proxy)) {
@@ -140,9 +140,9 @@ function Set-EnvironmentVariables {
         Write-Host "Provided Proxy configuration is valid"
     }
 
-    if (Test-Path /etc/ama-logs-secret/PROXYCERT.crt) {
+    if (Test-Path /etc/omsagent-secret/PROXYCERT.crt) {
         Write-Host "Importing Proxy CA cert since Proxy CA cert configured"
-        Import-Certificate -FilePath /etc/ama-logs-secret/PROXYCERT.crt -CertStoreLocation 'Cert:\LocalMachine\Root' -Verbose
+        Import-Certificate -FilePath /etc/omsagent-secret/PROXYCERT.crt -CertStoreLocation 'Cert:\LocalMachine\Root' -Verbose
     }
 
     # Set PROXY
@@ -345,17 +345,17 @@ function Set-EnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Machine") 
 
     # run config parser
-    ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
+    ruby /opt/omsagentwindows/scripts/ruby/tomlparser.rb
     .\setenv.ps1
     #Parse the configmap to set the right environment variables for agent config.
-    ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
+    ruby /opt/omsagentwindows/scripts/ruby/tomlparser-agent-config.rb
     .\setagentenv.ps1
 
     #Replace placeholders in fluent-bit.conf
-    ruby /opt/amalogswindows/scripts/ruby/td-agent-bit-conf-customizer.rb
+    ruby /opt/omsagentwindows/scripts/ruby/td-agent-bit-conf-customizer.rb
 
     # run mdm config parser
-    ruby /opt/amalogswindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
+    ruby /opt/omsagentwindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
     .\setmdmenv.ps1
 }
 
@@ -478,7 +478,7 @@ function Start-Fluent-Telegraf {
 
     # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
     # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
-    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:\etc\fluent-bit\fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:\etc\fluent-bit\fluent-bit.conf", "-e", "C:\opt\omsagentwindows\out_oms.so") }
 
     #register fluentd as a service and start
     # there is a known issues with win32-service https://github.com/chef/win32-service/issues/70
@@ -507,7 +507,7 @@ function Start-Telegraf {
 
     # run prometheus custom config parser
     Write-Host "**********Running config parser for custom prometheus scraping**********"
-    ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
+    ruby /opt/omsagentwindows/scripts/ruby/tomlparser-prom-customconfig.rb
     Write-Host "**********End running config parser for custom prometheus scraping**********"
 
 
@@ -583,7 +583,7 @@ function Start-Telegraf {
 
 function Generate-Certificates {
     Write-Host "Generating Certificates"
-    C:\\opt\\amalogswindows\\certgenerator\\certificategenerator.exe
+    C:\\opt\\omsagentwindows\\certgenerator\\certificategenerator.exe
 }
 
 function Test-CertificatePath {
