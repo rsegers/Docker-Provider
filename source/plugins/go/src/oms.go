@@ -1256,7 +1256,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 			Log("Info::mdsd:: using mdsdsource name: %s", MdsdContainerLogTagName)
 		} else if IsWindows == true {
-			MdsdContainerLogTagName == "CONTAINER_LOG_BLOB"
+			MdsdContainerLogTagName = "CONTAINER_LOG_BLOB"
 		}
 
 		fluentForward := MsgPackForward{
@@ -1780,7 +1780,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	} else if ContainerLogsRouteADX == true {
 		CreateADXClient()
 	} else if strings.Compare(strings.ToLower(osType), "windows") == 0 {
-		CreateWindowsNamedPipesClient()
+		CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId("CONTAINER_LOG_BLOB"))
 		ContainerLogsRouteV2 = true
 	} else { // v1 or windows
 		Log("Creating HTTP Client since either OS Platform is Windows or configmap configured with fallback option for ODS direct")

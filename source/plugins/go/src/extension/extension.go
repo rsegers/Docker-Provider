@@ -105,7 +105,8 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 
 func getOutputNamedPipe(datatype string) string {
 	//implement this
-	return "hello"
+	datatypeOutputStreamMap, _ := getDataTypeToNamedPipeMapping()
+	return datatypeOutputStreamMap[datatype]
 }
 
 func getDataTypeToNamedPipeMapping() (map[string]string, error) {

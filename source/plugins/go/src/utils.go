@@ -180,9 +180,8 @@ func CreateMDSDClient(dataType DataType, containerType string) {
 	}
 }
 
-func CreateWindowsNamedPipesClient() {
-
-	containerLogPipePath := "\\\\.\\\\pipe\\\\" + datatypeOutputStreamMap["CONTAINER_LOG_BLOB"]
+func CreateWindowsNamedPipesClient(namedPipe string) {
+	containerLogPipePath := "\\\\.\\\\pipe\\\\" + namedPipe
 	// path, err := syscall.UTF16PtrFromString(containerLogPipePath)
 	// containerLogPipePath := "\\\\.\\\\pipe\\\\CAgentStream_ContainerInsights_c897862847220786730_17122439705320844850_AzureMonitorAgent"
 	fmt.Println(containerLogPipePath)
