@@ -7,6 +7,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/Microsoft/go-winio"
 	uuid "github.com/google/uuid"
 	"github.com/ugorji/go/codec"
 )
@@ -100,4 +101,64 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension config from fluent socket-end")
 
 	return datatypeOutputStreamMap, nil
+}
+
+func getOutputNamedPipe(datatype string) string {
+	//implement this
+	return "hello"
+}
+
+func getDataTypeToNamedPipeMapping() (map[string]string, error) {
+	pipePath := `\\.\\pipe\\CAgentStream_CloudAgentInfo_AzureMonitorAgent`
+	f, err := winio.DialPipe(pipePath, nil)
+	if err != nil {
+		log.Fatalf("error opening pipe: %v", err)
+	}
+	fmt.Println(f)
+	defer f.Close()
+
+	guid := uuid.New()
+	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerInsights", "Version": "1"}
+	jsonBytes, err := json.Marshal(taggedData)
+
+	n, err := f.Write([]byte(jsonBytes))
+	if err != nil {
+		log.Fatalf("write error: %v", err)
+	}
+	log.Println("wrote:", n)
+
+	buf := make([]byte, 262144)
+	n, err = f.Read(buf)
+	if err != nil {
+		log.Fatalf("read error: %v", err)
+	}
+	buf = buf[:n]
+	response := string(buf)
+	fmt.Println(response)
+	datatypeOutputStreamMap := make(map[string]string)
+
+	var responseObjet AgentTaggedDataResponse
+	err = json.Unmarshal([]byte(response), &responseObjet)
+	if err != nil {
+		fmt.Println("Error::mdsd::Failed to unmarshal config data. Error message: %s", string(err.Error()))
+	}
+	f.Close()
+	var extensionData TaggedData
+	json.Unmarshal([]byte(responseObjet.TaggedData), &extensionData)
+
+	extensionConfigs := extensionData.ExtensionConfigs
+	outputStreamDefinitions := extensionData.OutputStreamDefinitions
+	fmt.Println("Info::mdsd::build the datatype and streamid map -- start")
+	for _, extensionConfig := range extensionConfigs {
+		outputStreams := extensionConfig.OutputStreams
+		for dataType, outputStreamID := range outputStreams {
+			fmt.Println("Info::mdsd::datatype: %s, outputstreamId: %s", dataType, outputStreamID)
+			datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
+		}
+	}
+	fmt.Println("The data map is -------------------------------------------------------")
+	fmt.Println(datatypeOutputStreamMap)
+	fmt.Println("----------------------------------------------------------")
+	return datatypeOutputStreamMap, nil
+
 }

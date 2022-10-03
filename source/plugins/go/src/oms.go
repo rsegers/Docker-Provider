@@ -180,6 +180,8 @@ var (
 	ContainerType string
 	// flag to check whether LA AAD MSI Auth Enabled or not
 	IsAADMSIAuthMode bool
+	// named pipe connection to ContainerLog for Windows AMA
+	ContainerLogNamedPipe net.Conn
 )
 
 var (
@@ -1253,6 +1255,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogDataType)
 			}
 			Log("Info::mdsd:: using mdsdsource name: %s", MdsdContainerLogTagName)
+		} else if IsWindows == true {
+			MdsdContainerLogTagName == "CONTAINER_LOG_BLOB"
 		}
 
 		fluentForward := MsgPackForward{
@@ -1281,42 +1285,54 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
 		}
 
-		if MdsdMsgpUnixSocketClient == nil {
-			Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
-			CreateMDSDClient(ContainerLogV2, ContainerType)
+		if IsWindows == true {
+			n, err := ContainerLogNamedPipe.Write([]byte(msgpBytes))
+			if err != nil {
+				Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
+				return output.FLB_RETRY
+			} else {
+				numContainerLogRecords = len(msgPackEntries)
+				Log("Success::AMA::Successfully flushed %d container log records that was %d bytes to AMA ", numContainerLogRecords, n)
+			}
+
+		} else {
 			if MdsdMsgpUnixSocketClient == nil {
-				Log("Error::mdsd::Unable to create mdsd client. Please check error log.")
+				Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
+				CreateMDSDClient(ContainerLogV2, ContainerType)
+				if MdsdMsgpUnixSocketClient == nil {
+					Log("Error::mdsd::Unable to create mdsd client. Please check error log.")
+
+					ContainerLogTelemetryMutex.Lock()
+					defer ContainerLogTelemetryMutex.Unlock()
+					ContainerLogsMDSDClientCreateErrors += 1
+
+					return output.FLB_RETRY
+				}
+			}
+
+			deadline := 10 * time.Second
+			MdsdMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+
+			bts, er := MdsdMsgpUnixSocketClient.Write(msgpBytes)
+
+			elapsed = time.Since(start)
+
+			if er != nil {
+				Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
+				if MdsdMsgpUnixSocketClient != nil {
+					MdsdMsgpUnixSocketClient.Close()
+					MdsdMsgpUnixSocketClient = nil
+				}
 
 				ContainerLogTelemetryMutex.Lock()
 				defer ContainerLogTelemetryMutex.Unlock()
-				ContainerLogsMDSDClientCreateErrors += 1
+				ContainerLogsSendErrorsToMDSDFromFluent += 1
 
 				return output.FLB_RETRY
+			} else {
+				numContainerLogRecords = len(msgPackEntries)
+				Log("Success::mdsd::Successfully flushed %d container log records that was %d bytes to mdsd in %s ", numContainerLogRecords, bts, elapsed)
 			}
-		}
-
-		deadline := 10 * time.Second
-		MdsdMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-
-		bts, er := MdsdMsgpUnixSocketClient.Write(msgpBytes)
-
-		elapsed = time.Since(start)
-
-		if er != nil {
-			Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
-			if MdsdMsgpUnixSocketClient != nil {
-				MdsdMsgpUnixSocketClient.Close()
-				MdsdMsgpUnixSocketClient = nil
-			}
-
-			ContainerLogTelemetryMutex.Lock()
-			defer ContainerLogTelemetryMutex.Unlock()
-			ContainerLogsSendErrorsToMDSDFromFluent += 1
-
-			return output.FLB_RETRY
-		} else {
-			numContainerLogRecords = len(msgPackEntries)
-			Log("Success::mdsd::Successfully flushed %d container log records that was %d bytes to mdsd in %s ", numContainerLogRecords, bts, elapsed)
 		}
 	} else if ContainerLogsRouteADX == true && len(dataItemsADX) > 0 {
 		// Route to ADX
@@ -1763,6 +1779,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		CreateMDSDClient(ContainerLogV2, ContainerType)
 	} else if ContainerLogsRouteADX == true {
 		CreateADXClient()
+	} else if strings.Compare(strings.ToLower(osType), "windows") == 0 {
+		CreateWindowsNamedPipesClient()
+		ContainerLogsRouteV2 = true
 	} else { // v1 or windows
 		Log("Creating HTTP Client since either OS Platform is Windows or configmap configured with fallback option for ODS direct")
 		CreateHTTPClient()

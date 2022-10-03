@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"errors"
 	"fmt"
@@ -12,11 +13,13 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/Azure/azure-kusto-go/kusto"
 	"github.com/Azure/azure-kusto-go/kusto/ingest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/Microsoft/go-winio"
 	"github.com/tinylib/msgp/msgp"
 )
 
@@ -175,6 +178,26 @@ func CreateMDSDClient(dataType DataType, containerType string) {
 			MdsdInsightsMetricsMsgpUnixSocketClient = conn
 		}
 	}
+}
+
+func CreateWindowsNamedPipesClient() {
+
+	containerLogPipePath := "\\\\.\\\\pipe\\\\" + datatypeOutputStreamMap["CONTAINER_LOG_BLOB"]
+	// path, err := syscall.UTF16PtrFromString(containerLogPipePath)
+	// containerLogPipePath := "\\\\.\\\\pipe\\\\CAgentStream_ContainerInsights_c897862847220786730_17122439705320844850_AzureMonitorAgent"
+	fmt.Println(containerLogPipePath)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+	ContainerLogNamedPipe, err := winio.DialPipeAccess(ctx, containerLogPipePath, syscall.GENERIC_WRITE)
+
+	// new_conn, err := syscall.CreateFile(path, syscall.GENERIC_WRITE, syscall.FILE_SHARE_WRITE, nil, syscall.OPEN_EXISTING, syscall.FILE_ATTRIBUTE_NORMAL, 0)
+
+	if err != nil {
+		log.Fatalf("error opening pipe: %v", err.Error())
+	}
+	fmt.Println(ContainerLogNamedPipe)
+	defer ContainerLogNamedPipe.Close()
+
 }
 
 //ADX client to write to ADX
