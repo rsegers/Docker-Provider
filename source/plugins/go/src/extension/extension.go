@@ -103,19 +103,29 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	return datatypeOutputStreamMap, nil
 }
 
-func getOutputNamedPipe(datatype string) string {
-	//implement this
-	datatypeOutputStreamMap, _ := getDataTypeToNamedPipeMapping()
-	return datatypeOutputStreamMap[datatype]
+func (e *Extension) GetOutputNamedPipe(datatype string) string {
+	extensionconfiglock.Lock()
+	defer extensionconfiglock.Unlock()
+	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap[datatype] != "" {
+		message := fmt.Sprintf("Windows AMA: OutputstreamId: %s for the datatype: %s", e.datatypeStreamIdMap[datatype], datatype)
+		logger.Printf(message)
+		return e.datatypeStreamIdMap[datatype]
+	}
+	var err error
+	e.datatypeStreamIdMap, err = getDataTypeToNamedPipeMapping()
+	if err != nil {
+		message := fmt.Sprintf("Windows AMA: Error getting datatype to streamid mapping: %s", err.Error())
+		logger.Printf(message)
+	}
+	return e.datatypeStreamIdMap[datatype]
 }
 
 func getDataTypeToNamedPipeMapping() (map[string]string, error) {
 	pipePath := `\\.\\pipe\\CAgentStream_CloudAgentInfo_AzureMonitorAgent`
 	f, err := winio.DialPipe(pipePath, nil)
 	if err != nil {
-		log.Fatalf("error opening pipe: %v", err)
+		logger.Printf("Windows AMA: error opening pipe: %v", err)
 	}
-	fmt.Println(f)
 	defer f.Close()
 
 	guid := uuid.New()
@@ -124,9 +134,9 @@ func getDataTypeToNamedPipeMapping() (map[string]string, error) {
 
 	n, err := f.Write([]byte(jsonBytes))
 	if err != nil {
-		log.Fatalf("write error: %v", err)
+		logger.Printf("write error: %v", err)
 	}
-	log.Println("wrote:", n)
+	logger.Printf("Windows AMA: wrote:", n)
 
 	buf := make([]byte, 262144)
 	n, err = f.Read(buf)
@@ -135,13 +145,13 @@ func getDataTypeToNamedPipeMapping() (map[string]string, error) {
 	}
 	buf = buf[:n]
 	response := string(buf)
-	fmt.Println(response)
+	logger.Printf(response)
 	datatypeOutputStreamMap := make(map[string]string)
 
 	var responseObjet AgentTaggedDataResponse
 	err = json.Unmarshal([]byte(response), &responseObjet)
 	if err != nil {
-		fmt.Println("Error::mdsd::Failed to unmarshal config data. Error message: %s", string(err.Error()))
+		logger.Printf("Windows AMA: Error::mdsd::Failed to unmarshal config data. Error message: %s", string(err.Error()))
 	}
 	f.Close()
 	var extensionData TaggedData
@@ -149,17 +159,17 @@ func getDataTypeToNamedPipeMapping() (map[string]string, error) {
 
 	extensionConfigs := extensionData.ExtensionConfigs
 	outputStreamDefinitions := extensionData.OutputStreamDefinitions
-	fmt.Println("Info::mdsd::build the datatype and streamid map -- start")
+	logger.Printf("Info::mdsd::build the datatype and streamid map -- start")
 	for _, extensionConfig := range extensionConfigs {
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
-			fmt.Println("Info::mdsd::datatype: %s, outputstreamId: %s", dataType, outputStreamID)
+			logger.Printf("Info::mdsd::datatype: %s, outputstreamId: %s", dataType, outputStreamID)
 			datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
 		}
 	}
-	fmt.Println("The data map is -------------------------------------------------------")
-	fmt.Println(datatypeOutputStreamMap)
-	fmt.Println("----------------------------------------------------------")
+	logger.Printf("The data map CONTAINER_LOG_BLOB is -------------------------------------------------------")
+	logger.Printf(datatypeOutputStreamMap["CONTAINER_LOG_BLOB"])
+	logger.Printf("----------------------------------------------------------")
 	return datatypeOutputStreamMap, nil
 
 }

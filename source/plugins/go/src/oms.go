@@ -1286,6 +1286,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		if IsWindows == true {
+			Log("Windows AMA::Info::Starting to write container logs to named pipe")
 			n, err := ContainerLogNamedPipe.Write([]byte(msgpBytes))
 			if err != nil {
 				Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
@@ -1780,7 +1781,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	} else if ContainerLogsRouteADX == true {
 		CreateADXClient()
 	} else if strings.Compare(strings.ToLower(osType), "windows") == 0 {
-		CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId("CONTAINER_LOG_BLOB"))
+		Log("Windows AMA: Creating NamedPipe Client for Container Log")
+		CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe("CONTAINER_LOG_BLOB"))
 		ContainerLogsRouteV2 = true
 	} else { // v1 or windows
 		Log("Creating HTTP Client since either OS Platform is Windows or configmap configured with fallback option for ODS direct")
