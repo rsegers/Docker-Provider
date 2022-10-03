@@ -55,7 +55,7 @@ mcResourceGroup="MC_${clusterResourceGroup}_${clusterName}_${clusterRegion}"
 echo $mcResourceGroup
 
 echo "Creating User assigned MSI"
-export msiClientId=$(az identity create -g $mcResourceGroup -n omsagent-mdm-alert-msi --query clientId)
+export msiClientId=$(az identity create -g $mcResourceGroup -n ama-logs-mdm-alert-msi --query clientId)
 msiClientId=$(echo $msiClientId | tr -d '"')
 echo $msiClientId
 
@@ -73,7 +73,7 @@ echo "Looping through vmss to associate msi with vmss"
 for scaleset in ${vmssArray}
 do
   echo $scaleset
-  az vmss identity assign -g $mcResourceGroup -n $scaleset --identities omsagent-mdm-alert-msi
+  az vmss identity assign -g $mcResourceGroup -n $scaleset --identities ama-logs-mdm-alert-msi
 done
 
 echo "Disabling monitoring on the cluster"
@@ -81,9 +81,9 @@ az aks disable-addons -a monitoring -g $clusterResourceGroup -n $clusterName
 
 echo "Cleaning up resources that are not cleaned up by disable monitoring"
 kubectl config use-context $clusterName
-kubectl delete serviceaccount omsagent -n kube-system
-kubectl delete clusterrole omsagent-reader
-kubectl delete clusterrolebinding omsagentclusterrolebinding
+kubectl delete serviceaccount ama-logs -n kube-system
+kubectl delete clusterrole ama-logs-reader
+kubectl delete clusterrolebinding amalogsclusterrolebinding
 kubectl delete customresourcedefinition healthstates.azmon.container.insights
 
 echo "setting the subscription id of the workspace: ${workspaceSubscriptionId}"
@@ -109,7 +109,7 @@ helm repo update
 echo "uninstalling existing release if any for azmon-containers-ci-mdm-alert-msi-release"
 helm uninstall azmon-containers-ci-mdm-alert-msi-release
 
-helm upgrade --install azmon-containers-ci-mdm-alert-msi-release --set omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion,omsagent.env.msiClientId=$msiClientId azmon-preview-mdm-alert-msi/azuremonitor-containers --kube-context $clusterName
+helm upgrade --install azmon-containers-ci-mdm-alert-msi-release --set amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion,amalogs.env.msiClientId=$msiClientId azmon-preview-mdm-alert-msi/azuremonitor-containers --kube-context $clusterName
 echo "chart installation completed."
 
 echo "setting the subscription id of the cluster: ${clusterSubscriptionId}"
