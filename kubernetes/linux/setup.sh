@@ -9,7 +9,7 @@ else
     ARCH=$1
 fi
 
-#Download utf-8 encoding capability on the omsagent container.
+#Download utf-8 encoding capability on the ama-logs container.
 #upgrade apt to latest version
 apt-get update && apt-get install -y apt && DEBIAN_FRONTEND=noninteractive apt-get install -y locales
 

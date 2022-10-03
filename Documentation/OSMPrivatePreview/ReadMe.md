@@ -30,7 +30,7 @@ osm metrics enable --namespace "test1, test2"
      * Add the namespaces you want to monitor in configmap `monitor_namespaces = ["namespace1", "namespace2"]`
      * Run the following kubectl command: kubectl apply -f<configmap_yaml_file.yaml>
          * Example: `kubectl apply -f container-azm-ms-osmconfig.yaml`
-4. The configuration change can take upto 15 mins to finish before taking effect, and all omsagent pods in the cluster will restart. The restart is a rolling restart for all omsagent pods, not all restart at the same time.
+4. The configuration change can take upto 15 mins to finish before taking effect, and all ama-logs pods in the cluster will restart. The restart is a rolling restart for all ama-logs pods, not all restart at the same time.
 
 ### Azure Arc for Kuberentes
 This section assumes that you already have your kubernetes distribution connected via Azure Arc. If not learn more [here.](https://docs.microsoft.com/en-us/azure/azure-arc/kubernetes/quickstart-connect-cluster)
@@ -51,7 +51,7 @@ osm metrics enable --namespace "test1, test2"
      * Add the namespaces you want to monitor in configmap `monitor_namespaces = ["namespace1", "namespace2"]`
      * Run the following kubectl command: kubectl apply -f<configmap_yaml_file.yaml>
          * Example: `kubectl apply -f container-azm-ms-osmconfig.yaml`
-5. The configuration change can take upto 15 mins to finish before taking effect, and all omsagent pods in the cluster will restart. The restart is a rolling restart for all omsagent pods, not all restart at the same time.
+5. The configuration change can take upto 15 mins to finish before taking effect, and all ama-logs pods in the cluster will restart. The restart is a rolling restart for all ama-logs pods, not all restart at the same time.
 
 ## Validate the metrics flow
 1.	Query cluster's Log Analytics workspace InsightsMetrics table to see metrics are flowing or not
