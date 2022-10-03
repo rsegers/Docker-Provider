@@ -11,9 +11,9 @@ require_relative "ConfigParseErrorLogger"
 @configSchemaVersion = ""
 # Setting default values which will be used in case they are not set in the configmap or if configmap doesnt exist
 @collectStdoutLogs = true
-@stdoutExcludeNamespaces = "kube-system, gatekeeper-system"
+@stdoutExcludeNamespaces = "kube-system,gatekeeper-system"
 @collectStderrLogs = true
-@stderrExcludeNamespaces = "kube-system, gatekeeper-system"
+@stderrExcludeNamespaces = "kube-system,gatekeeper-system"
 @collectClusterEnvVariables = true
 @logTailPath = "/var/log/containers/*.log"
 @logExclusionRegexPattern = "(^((?!stdout|stderr).)*$)"
