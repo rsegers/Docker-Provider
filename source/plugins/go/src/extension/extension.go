@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/Microsoft/go-winio"
+	winio "github.com/Microsoft/go-winio"
 	uuid "github.com/google/uuid"
 	"github.com/ugorji/go/codec"
 )
