@@ -1286,6 +1286,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		if IsWindows == true {
+			Log("Windows AMA::fluentForwardTag: %s, stringMap: %s, msgpSize: %d", fluentForward.Tag, stringMap["LogMessage"], msgpSize)
 			Log("Windows AMA::Info::Starting to write container logs to named pipe")
 			n, err := ContainerLogNamedPipe.Write([]byte(msgpBytes))
 			if err != nil {
