@@ -1286,9 +1286,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		if IsWindows == true {
-			Log("Windows AMA::fluentForwardTag: %s, stringMap: %s, msgpSize: %d", fluentForward.Tag, stringMap["LogMessage"], msgpSize)
+			Log("Windows AMA::fluentForwardTag: %s, stringMap: %s, msgpSize: %d", fluentForward.Tag, stringMap["LogEntry"], msgpSize)
 			Log("Windows AMA::Info::Starting to write container logs to named pipe")
-			n, err := ContainerLogNamedPipe.Write([]byte(msgpBytes))
+			deadline := 10 * time.Second
+			ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
+			n, err := ContainerLogNamedPipe.Write(msgpBytes)
 			if err != nil {
 				Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
 				return output.FLB_RETRY
