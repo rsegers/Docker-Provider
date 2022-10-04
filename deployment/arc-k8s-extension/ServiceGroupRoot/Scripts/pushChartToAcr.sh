@@ -4,7 +4,7 @@ export HELM_EXPERIMENTAL_OCI=1
 export MCR_NAME="mcr.microsoft.com"
 
 # for prod-> stable and for test -> preview
-# by default is preview, for the prod release piepline, pass the stable value
+# by default is preview, for the prod release piepline, pass the stable value in the Variables
 if [ -z "$REPO_TYPE" ]; then
     REPO_TYPE="preview"
 fi
