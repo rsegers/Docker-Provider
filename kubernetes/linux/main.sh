@@ -280,6 +280,7 @@ if [ "${ENABLE_CONTAINER_LOGS_1P}" == "true" -a "${CONTAINER_LOGS_1P_MODE}" == "
      echo "agent running in 1P and Ingestion Mode"
      workspaceId="TestWorkspaceID"
      domain="TestDomain"
+     CLOUD_ENVIRONMENT="unknown" # gangams - check wether we need to handle this for usnat & ussec mariner cert mount
      #gangams - only support v2 in 1P Mode
      AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
      echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
@@ -721,6 +722,8 @@ export AAD_MSI_AUTH_MODE=false
 if [ "${ENABLE_CONTAINER_LOGS_1P}" == "true" -a "${CONTAINER_LOGS_1P_MODE}" == "INGESTION" ]; then
     export MONITORING_GCS_REGION=$AKS_REGION
     echo "export MONITORING_GCS_REGION=$AKS_REGION" >> ~/.bashrc
+    ENABLE_CONTAINER_LOGS_1P_INGESTION_MODE="true"
+    echo "export ENABLE_CONTAINER_LOGS_1P_INGESTION_MODE=$ENABLE_CONTAINER_LOGS_1P_INGESTION_MODE" >> ~/.bashrc
     MDSD_AAD_MSI_AUTH_ARGS="-A"
 else
       if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then

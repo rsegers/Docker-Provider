@@ -1,0 +1,95 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "containerinsights-geneva-logs.fullname" . }}
+  labels:
+    {{- include "containerinsights-geneva-logs.labels" . | nindent 4 }}
+spec:
+{{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+{{- end }}
+  selector:
+    matchLabels:
+      {{- include "containerinsights-geneva-logs.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+    {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+    {{- end }}
+      labels:
+        {{- include "containerinsights-geneva-logs.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          env:
+            - name: ENABLE_CONTAINER_LOGS_1P
+              value: "true"
+            - name: CONTAINER_LOGS_1P_MODE
+              value: "INGESTION"
+            - name: AZMON_CONTAINER_LOG_SCHEMA_VERSION
+              value: "v2"
+            - name: ClOUD_ENVIRONMENT
+              value:  {{ .Values.genevaLogsConfig.environment | quote }}
+            - name: MONITORING_GCS_ENVIRONMENT
+              value:  {{ .Values.genevaLogsConfig.environment | quote }}
+            - name: MONITORING_GCS_ACCOUNT
+              value: {{ .Values.genevaLogsConfig.account | quote }}
+            - name: MONITORING_GCS_NAMESPACE
+              value: {{ .Values.genevaLogsConfig.namespace  | quote }}
+            - name: MONITORING_CONFIG_VERSION
+              value: {{ .Values.genevaLogsConfig.configversion  | quote }}
+            - name: MONITORING_GCS_AUTH_ID_TYPE
+              value: "AuthMSIToken"
+            - name: MONITORING_GCS_AUTH_ID
+              value: {{ .Values.genevaLogsConfig.authid  | quote }}
+            - name: MONITORING_USE_GENEVA_CONFIG_SERVICE
+              value: "true"
+            # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
+            - name: AKS_RESOURCE_ID
+              value: {{ .Values.env.clusterResourceId  | quote }}
+            - name: AKS_REGION
+              value: {{ .Values.env.clusterRegion  | quote }}
+            - name: CONTROLLER_TYPE
+              value: "DaemonSet" #  TODO - figure out what should be the right controller type here since DS being utilized here
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          ports:
+            - name: http
+              containerPort: 24224
+              protocol: TCP
+          # livenessProbe:
+          #   exec:
+          #     command:
+          #       - /bin/bash
+          #       - -c
+          #       - /opt/livenessprobe.sh
+          #   initialDelaySeconds: 60
+          #   periodSeconds: 60
+          #   timeoutSeconds: 15
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
