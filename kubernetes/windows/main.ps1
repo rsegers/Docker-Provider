@@ -650,7 +650,7 @@ else {
 }
 
 #start Windows AMA 
-Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") }
+Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") -RedirectStandardOutput "out.txt" -RedirectStandardError "err.txt"
 
 
 Start-Fluent-Telegraf
