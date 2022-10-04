@@ -182,20 +182,18 @@ func CreateMDSDClient(dataType DataType, containerType string) {
 
 func CreateWindowsNamedPipesClient(namedPipe string) {
 	containerLogPipePath := "\\\\.\\\\pipe\\\\" + namedPipe
-	// path, err := syscall.UTF16PtrFromString(containerLogPipePath)
-	// containerLogPipePath := "\\\\.\\\\pipe\\\\CAgentStream_ContainerInsights_c897862847220786730_17122439705320844850_AzureMonitorAgent"
-	fmt.Println(containerLogPipePath)
+
+	Log("Windows AMA::%s", containerLogPipePath)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
-	ContainerLogNamedPipe, err := winio.DialPipeAccess(ctx, containerLogPipePath, syscall.GENERIC_WRITE)
-
-	// new_conn, err := syscall.CreateFile(path, syscall.GENERIC_WRITE, syscall.FILE_SHARE_WRITE, nil, syscall.OPEN_EXISTING, syscall.FILE_ATTRIBUTE_NORMAL, 0)
+	conn, err := winio.DialPipeAccess(ctx, containerLogPipePath, syscall.GENERIC_WRITE)
 
 	if err != nil {
-		log.Fatalf("error opening pipe: %v", err.Error())
+		Log("Error::Windows AMA::Unable to open Named Pipe %s", err.Error())
+	} else {
+		Log("Windows Named Pipe opened without any errors")
+		ContainerLogNamedPipe = conn
 	}
-	fmt.Println(ContainerLogNamedPipe)
-	defer ContainerLogNamedPipe.Close()
 
 }
 

@@ -1286,7 +1286,16 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		if IsWindows == true {
-			Log("Windows AMA::fluentForwardTag: %s, stringMap: %s, msgpSize: %d", fluentForward.Tag, stringMap["LogEntry"], msgpSize)
+			jsonStr, err := json.Marshal(stringMap)
+			Log("Windows AMA::fluentForwardTag: %s, jsonStr: %s, msgpSize: %d", fluentForward.Tag, jsonStr, msgpSize)
+			if ContainerLogNamedPipe == nil {
+				Log("Windows AMA:: The container log named pipe was nil")
+				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe("CONTAINER_LOG_BLOB"))
+			}
+			if ContainerLogNamedPipe == nil {
+				Log("Windows AMA:: Error in creating the named piep connection")
+				return output.FLB_RETRY
+			}
 			Log("Windows AMA::Info::Starting to write container logs to named pipe")
 			deadline := 10 * time.Second
 			ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
