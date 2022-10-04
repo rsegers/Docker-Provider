@@ -1,15 +1,15 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "containerinsights-geneva-logs.fullname" . }}
+  name: geneva-services
   labels:
     {{- include "containerinsights-geneva-logs.labels" . | nindent 4 }}
 spec:
   type: {{ .Values.service.type }}
   ports:
     - port: {{ .Values.service.port }}
-      targetPort: http
+      targetPort: {{ .Values.service.port }}
       protocol: TCP
-      name: http
+      name: fluentbit-fwd
   selector:
     {{- include "containerinsights-geneva-logs.selectorLabels" . | nindent 4 }}
