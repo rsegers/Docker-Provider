@@ -36,6 +36,10 @@
             "value": "__ACR_NAME__"
           },
           {
+            "name": "REPO_TYPE",
+            "value": "__REPO_TYPE__"
+          },
+          {
             "name": "CHART_VERSION",
             "value": "__CHART_VERSION__"
           }
