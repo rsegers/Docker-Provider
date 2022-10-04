@@ -91,6 +91,17 @@ class ApplicationInsightsUtility
         aadAuthMSIMode = ENV[@@EnvAADMSIAuthMode]
         if !aadAuthMSIMode.nil? && !aadAuthMSIMode.empty? && aadAuthMSIMode.downcase == "true".downcase
           @@CustomProperties["aadAuthMSIMode"] = "true"
+          begin
+            if Dir.exist?('/etc/mdsd.d/config-cache/configchunks')
+              Dir.glob('/etc/mdsd.d/config-cache/configchunks/*.json') { |file|
+                if File.file?(file) && File.exist?(file) && File.foreach(file).grep(/LINUX_SYSLOGS_BLOB/).any?
+                  @@CustomProperties["syslogEnabled"] = "true"
+                end
+              }
+            end
+          rescue => errorStr
+            $log.warn("ApplicationInsights:: Exception in getting syslog status: #{errorStr}")
+          end
         else
           @@CustomProperties["aadAuthMSIMode"] = "false"
         end
