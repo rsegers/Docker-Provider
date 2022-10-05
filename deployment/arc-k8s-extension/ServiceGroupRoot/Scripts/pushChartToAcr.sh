@@ -5,7 +5,7 @@ export MCR_NAME="mcr.microsoft.com"
 
 # for prod-> stable and for test -> preview
 if [ -z "$REPO_TYPE" ]; then
-    REPO_TYPE="stable"
+    REPO_TYPE="preview"
 fi
 
 # repo paths for arc k8s extension roll-out
