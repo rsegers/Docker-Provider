@@ -11,7 +11,7 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate the agent build dates (not release dates)
 
-### 08/10/2022 -
+### 10/05/2022 -
 ##### Version microsoft/oms:ciprod10042022-3c05dd1b Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10042022-3c05dd1b (linux)
 ##### Version microsoft/oms:win-ciprod10042022-3c05dd1b Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10042022-3c05dd1b (windows)
 ##### Code change log
