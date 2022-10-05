@@ -383,13 +383,8 @@ spec:
         #       add:
         #         - NET_ADMIN
         #         - NET_RAW
-<<<<<<< HEAD:kubernetes/omsagent.yaml
         - name: omsagent
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprodpreview09192022"
-=======
-        - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
->>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae:kubernetes/ama-logs.yaml
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -477,13 +472,8 @@ spec:
             periodSeconds: 60
             timeoutSeconds: 15
 #Only in sidecar scraping mode
-<<<<<<< HEAD:kubernetes/omsagent.yaml
         - name: omsagent-prometheus
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprodpreview09192022"
-=======
-        - name: ama-logs-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
->>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae:kubernetes/ama-logs.yaml
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -703,13 +693,8 @@ spec:
         #       add:
         #         - NET_ADMIN
         #         - NET_RAW
-<<<<<<< HEAD:kubernetes/omsagent.yaml
         - name: omsagent
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprodpreview09192022"
-=======
-        - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
->>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae:kubernetes/ama-logs.yaml
           imagePullPolicy: IfNotPresent
           # comment resources if VPA configured since the VPA will set these values
           resources:
@@ -895,13 +880,8 @@ spec:
           - name: ndots
             value: "3"
      containers:
-<<<<<<< HEAD:kubernetes/omsagent.yaml
        - name: omsagent-win
          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprodpreview09192022"
-=======
-       - name: ama-logs-windows
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod08102022"
->>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae:kubernetes/ama-logs.yaml
          imagePullPolicy: IfNotPresent
          resources:
           limits:
