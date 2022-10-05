@@ -14,6 +14,10 @@
                     "replaceWith": "$(ACRName)"
                 },            
                 {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },   
+                {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
                 },
@@ -33,7 +37,11 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },       
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },          
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
@@ -54,7 +62,11 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },    
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },             
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
@@ -75,7 +87,11 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },     
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },            
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
@@ -96,7 +112,11 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },          
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },       
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
@@ -117,7 +137,11 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },      
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },           
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
@@ -138,7 +162,11 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },              
+                },         
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },        
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
