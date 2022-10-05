@@ -1,6 +1,6 @@
 # How to add Monitoring onboarding tags to AKS-engine (or ACS-Engine) Cluster
 You can either use the Azure Powershell or Azure cli Bash script to attach the Azure Resource Id of the Log Analytics workspace and clusterName tag to AKS-Engine ( or ACS-Engine Kubernetes) master nodes or VMSSes.
-ClusterName should be match with what's configured on the omsagent for omsagent.env.clusterName as part of the omsagent installation.
+ClusterName should be match with what's configured on the ama-logs for amalogs.env.clusterName as part of the ama-logs installation.
 Log Analytics workspace ResourceId tag on the K8s master node(s) or VMSS(es) used to determine whether the specified cluster is onboarded to monitoring or not.
 
 These  tags required for the Azure Monitor for Containers Ux experience (https://docs.microsoft.com/en-us/azure/monitoring/monitoring-container-insights-overview )

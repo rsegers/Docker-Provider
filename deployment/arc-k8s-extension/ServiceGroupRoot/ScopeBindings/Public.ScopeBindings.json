@@ -18,6 +18,10 @@
                     "replaceWith": "$(RepoType)"
                 },           
                 {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },   
+                {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
                 },
@@ -37,11 +41,19 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
+<<<<<<< HEAD
                 },    
                 {
                     "find": "__REPO_TYPE__",
                     "replaceWith": "$(RepoType)"
                 },            
+=======
+                },       
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },          
+>>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
@@ -62,11 +74,19 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
+<<<<<<< HEAD
                 },     
                 {
                     "find": "__REPO_TYPE__",
                     "replaceWith": "$(RepoType)"
                 },           
+=======
+                },    
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },             
+>>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
@@ -87,11 +107,19 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
+<<<<<<< HEAD
                 },  
                 {
                     "find": "__REPO_TYPE__",
                     "replaceWith": "$(RepoType)"
                 },              
+=======
+                },     
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },            
+>>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
@@ -112,11 +140,19 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
+<<<<<<< HEAD
                 },       
                 {
                     "find": "__REPO_TYPE__",
                     "replaceWith": "$(RepoType)"
                 },         
+=======
+                },          
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },       
+>>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
@@ -137,11 +173,19 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
+<<<<<<< HEAD
                 },   
                 {
                     "find": "__REPO_TYPE__",
                     "replaceWith": "$(RepoType)"
                 },             
+=======
+                },      
+                {
+                    "find": "__REPO_TYPE__",
+                    "replaceWith": "$(RepoType)"
+                },           
+>>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae
                 {
                     "find": "__CHART_VERSION__",
                     "replaceWith": "$(ChartVersion)"
@@ -162,7 +206,11 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
+<<<<<<< HEAD
                 },        
+=======
+                },         
+>>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae
                 {
                     "find": "__REPO_TYPE__",
                     "replaceWith": "$(RepoType)"

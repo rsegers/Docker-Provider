@@ -4,8 +4,14 @@ export HELM_EXPERIMENTAL_OCI=1
 export MCR_NAME="mcr.microsoft.com"
 
 # for prod-> stable and for test -> preview
+<<<<<<< HEAD
 if [ -z "$REPO_TYPE" ]; then
     REPO_TYPE="stable"
+=======
+# by default is preview, for the prod release piepline, pass the stable value in the Variables
+if [ -z "$REPO_TYPE" ]; then
+    REPO_TYPE="preview"
+>>>>>>> 5df4b16e1ead3c706fbcb5d23874bc5993f3c9ae
 fi
 
 # repo paths for arc k8s extension roll-out
