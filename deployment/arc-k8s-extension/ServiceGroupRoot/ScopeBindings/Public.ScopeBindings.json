@@ -12,11 +12,7 @@
                 {
                     "find": "__ACR_NAME__",
                     "replaceWith": "$(ACRName)"
-                },   
-                {
-                    "find": "__REPO_TYPE__",
-                    "replaceWith": "$(RepoType)"
-                },           
+                },             
                 {
                     "find": "__REPO_TYPE__",
                     "replaceWith": "$(RepoType)"
