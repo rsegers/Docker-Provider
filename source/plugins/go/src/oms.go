@@ -1247,16 +1247,18 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
-		if IsAADMSIAuthMode == true && strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) == false {
-			Log("Info::mdsd::obtaining output stream id")
-			if ContainerLogSchemaV2 == true {
-				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogV2DataType)
-			} else {
-				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogDataType)
-			}
-			Log("Info::mdsd:: using mdsdsource name: %s", MdsdContainerLogTagName)
-		} else if IsWindows == true {
+		if IsWindows == true {
 			MdsdContainerLogTagName = "CONTAINER_LOG_BLOB"
+		} else {
+			if IsAADMSIAuthMode == true && strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) == false {
+				Log("Info::mdsd::obtaining output stream id")
+				if ContainerLogSchemaV2 == true {
+					MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogV2DataType)
+				} else {
+					MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogDataType)
+				}
+				Log("Info::mdsd:: using mdsdsource name: %s", MdsdContainerLogTagName)
+			}
 		}
 
 		fluentForward := MsgPackForward{
