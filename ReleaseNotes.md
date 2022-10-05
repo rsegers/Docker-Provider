@@ -9,7 +9,24 @@ additional questions or comments.
 
 ## Release History
 
-Note : The agent version(s) below has dates (ciprod<mmddyyyy>), which indicate the agent build dates (not release dates)
+Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate the agent build dates (not release dates)
+
+### 10/05/2022 -
+##### Version microsoft/oms:ciprod10042022-3c05dd1b Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10042022-3c05dd1b (linux)
+##### Version microsoft/oms:win-ciprod10042022-3c05dd1b Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10042022-3c05dd1b (windows)
+##### Code change log
+
+- Common
+  - Rename resource names from omsagent based to ama-logs based #823
+  - Chart major version bumped to 3.0.0 (no auto update)
+  - Change image tag format from ciprod\<mmddyyyy\> to ciprod\<mmddyyyy\>-\<short-commit-id\> where commit-id is the id of the last commit to be included in the release
+  - Add gatekeeper-system to exlude namespace #833
+  - flag to ignore proxy settings which are automatically set by arc k8s extension #824
+  - Added new rule group and rule properties #818
+  - fix: Update DCR creation to Clusters resource group instead of workspace (ARM Template update) #819
+  - Support LCM #820
+  - Bug fixes
+    - https://github.com/microsoft/Docker-Provider/pull/834
 
 ### 08/10/2022 -
 ##### Version microsoft/oms:ciprod08102022 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022 (linux)
