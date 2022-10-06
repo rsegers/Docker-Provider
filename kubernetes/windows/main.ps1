@@ -550,7 +550,7 @@ function Start-Telegraf {
 
 function Generate-Certificates {
     Write-Host "Generating Certificates"
-    C:\\opt\\omsagentwindows\\certgenerator\\certificategenerator.exe
+    ..\\..\\certgenerator\\certificategenerator.exe
 }
 
 function Test-CertificatePath {

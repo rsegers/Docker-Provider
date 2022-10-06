@@ -13,11 +13,10 @@ RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iex (
 
 ENV ROOT_DIR "C:\\"
 RUN powershell -Command "$env:ROOT_DIR=pwd"
-RUN powershell -Command "echo $env:ROOT_DIR"
 
 # Fluentd depends on cool.io whose fat gem is only available for Ruby < 2.5, so need to specify --platform ruby when install Ruby > 2.5 and install msys2 to get dev tools
-RUN choco install -y ruby --version 3.1.1.1 --params "'/InstallDir:${ROOT_DIR}\ruby31'" \
-&& choco install -y msys2 --version 20211130.0.0 --params "'/NoPath /NoUpdate /InstallDir:${ROOT_DIR}\ruby31\msys64'" \
+RUN choco install -y ruby --version 3.1.1.1 --params "'/InstallDir:C:\ruby31'" \
+&& choco install -y msys2 --version 20211130.0.0 --params "'/NoPath /NoUpdate /InstallDir:C:\ruby31\msys64'" \
 && choco install -y vim
 
 # gangams - optional MSYS2 update via ridk failing in merged docker file so skipping that since we dont need optional update
@@ -34,6 +33,10 @@ RUN refreshenv \
 && gem install tomlrb -v 2.0.1 \
 && gem install gyoku -v 1.3.1 \
 && gem sources --clear-all
+
+RUN echo %PATH%
+RUN setx path "%path%;$ROOT_DIR\Ruby31\bin"
+RUN echo %PATH%
 
 # Remove gem cache and chocolatey
 RUN powershell -Command "Remove-Item -Force C:\ruby31\lib\ruby\gems\3.1.0\cache\*.gem; Remove-Item -Recurse -Force 'C:\ProgramData\chocolatey'"
