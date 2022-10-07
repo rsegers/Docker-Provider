@@ -403,6 +403,8 @@ spec:
               value: "v2"
             - name: CONTAINER_LOGS_1P_ONBOARDED_NAMESPACES
               value: "tenant1, tenant2, tenant3"
+            - name: FBIT_OUTPUT_WORKERS
+              value: "5" # default is 2
             - name: FBIT_SERVICE_FLUSH_INTERVAL
               value: "15"
             - name: FBIT_TAIL_BUFFER_CHUNK_SIZE

@@ -55,9 +55,9 @@ spec:
               value: {{ .Values.genevaLogsConfig.authid  | quote }}
             - name: MONITORING_USE_GENEVA_CONFIG_SERVICE
               value: "true"
-            - name: INPUT_FORWARD_BUFFER_CHUNK_SIZE
+            - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_SIZE
               value: "10m"
-            - name: INPUT_FORWARD_BUFFER_CHUNK_MAX_SIZE
+            - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_MAX_SIZE
               value: "20m"
             # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
             - name: AKS_RESOURCE_ID
