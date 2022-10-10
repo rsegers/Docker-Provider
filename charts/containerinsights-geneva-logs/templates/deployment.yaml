@@ -55,10 +55,14 @@ spec:
               value: {{ .Values.genevaLogsConfig.authid  | quote }}
             - name: MONITORING_USE_GENEVA_CONFIG_SERVICE
               value: "true"
+            - name: ENABLE_CONTAINER_LOGS_1P_INGESTION_MODE
+              value: "true"
+            - name: MONITORING_MAX_EVENT_RATE
+              value: "50000" # default MDSD EPS is 20K which is not enough for large scale
             - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_SIZE
-              value: "10m"
-            - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_MAX_SIZE
               value: "20m"
+            - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_MAX_SIZE
+              value: "50m"
             # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
             - name: AKS_RESOURCE_ID
               value: {{ .Values.env.clusterResourceId  | quote }}
@@ -74,15 +78,15 @@ spec:
             - name: http
               containerPort: 24224
               protocol: TCP
-          # livenessProbe:
-          #   exec:
-          #     command:
-          #       - /bin/bash
-          #       - -c
-          #       - /opt/livenessprobe.sh
-          #   initialDelaySeconds: 60
-          #   periodSeconds: 60
-          #   timeoutSeconds: 15
+          livenessProbe:
+            exec:
+              command:
+                - /bin/bash
+                - -c
+                - /opt/livenessprobe.sh
+            initialDelaySeconds: 60
+            periodSeconds: 60
+            timeoutSeconds: 15
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       {{- with .Values.nodeSelector }}

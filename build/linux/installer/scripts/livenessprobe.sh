@@ -35,7 +35,7 @@ fi
 
 #optionally test to exit non zero value if fluentd is not running
 #fluentd not used in sidecar container and 1P Ingestion mode
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] || [ "${ENABLE_CONTAINER_LOGS_1P_INGESTION_MODE}" != "true" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${ENABLE_CONTAINER_LOGS_1P_INGESTION_MODE}" != "true" ]; then
   (ps -ef | grep "fluentd" | grep -v "grep")
   if [ $? -ne 0 ]
   then

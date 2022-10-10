@@ -1,15 +1,44 @@
-1. Get the application URL by running these commands:
-{{- if contains "NodePort" .Values.service.type }}
-  export NODE_PORT=$(kubectl get --namespace {{ .Release.Namespace }} -o jsonpath="{.spec.ports[0].nodePort}" services {{ include "containerinsights-geneva-logs.fullname" . }})
-  export NODE_IP=$(kubectl get nodes --namespace {{ .Release.Namespace }} -o jsonpath="{.items[0].status.addresses[0].address}")
-  echo http://$NODE_IP:$NODE_PORT
-{{- else if contains "LoadBalancer" .Values.service.type }}
-     NOTE: It may take a few minutes for the LoadBalancer IP to be available.
-           You can watch the status of by running 'kubectl get --namespace {{ .Release.Namespace }} svc -w {{ include "containerinsights-geneva-logs.fullname" . }}'
-  export SERVICE_IP=$(kubectl get svc --namespace {{ .Release.Namespace }} {{ include "containerinsights-geneva-logs.fullname" . }} --template "{{"{{ range (index .status.loadBalancer.ingress 0) }}{{.}}{{ end }}"}}")
-  echo http://$SERVICE_IP:{{ .Values.service.port }}
-{{- else if contains "ClusterIP" .Values.service.type }}
-  export POD_NAME=$(kubectl get pods --namespace {{ .Release.Namespace }} -l "app.kubernetes.io/name={{ include "containerinsights-geneva-logs.name" . }},app.kubernetes.io/instance={{ .Release.Name }}" -o jsonpath="{.items[0].metadata.name}")
-  echo "Visit http://127.0.0.1:8080 to use your application"
-  kubectl --namespace {{ .Release.Namespace }} port-forward $POD_NAME 8080:80
+{{- if eq .Values.genevaLogsConfig.authid "" }}
+
+##############################################################################
+####   ERROR: You did not provide Auth Id of Managed Identity.       ####
+##############################################################################
+
 {{- end }}
+
+{{- if and (ne (.Values.genevaLogsConfig.environment | lower) "test") (ne (.Values.genevaLogsConfig.environment | lower)  "stage") (ne (.Values.genevaLogsConfig.environment | lower)  "diagnosticsprod") (ne (.Values.genevaLogsConfig.environment | lower)  "diagnosticsprod") (ne (.Values.genevaLogsConfig.environment | lower)  "firstpartyprod") (ne (.Values.genevaLogsConfig.environment | lower)  "billingprod") (ne (.Values.genevaLogsConfig.environment | lower)  "externalprod") (ne (.Values.genevaLogsConfig.environment | lower)  "camooncake") (ne (.Values.genevaLogsConfig.environment | lower)  "cafairfax") (ne (.Values.genevaLogsConfig.environment | lower)  "cablackforest") }}
+
+##############################################################################
+####   ERROR: Provided environment name for Geneva Logs Account is not valid. The supported values are Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest  .       ####
+##############################################################################
+
+{{- end }}
+
+{{- if eq .Values.genevaLogsConfig.account "" }}
+
+##############################################################################
+####   ERROR: You did not provide Geneva Logs Account Name      ####
+##############################################################################
+
+{{- end }}
+
+
+{{- if eq .Values.genevaLogsConfig.namespace "" }}
+
+##############################################################################
+####   ERROR: You did not provide Geneva Logs Account Namespace      ####
+##############################################################################
+
+{{- end }}
+
+
+{{- if ne .Values.genevaLogsConfig.configversion "2.0" }}
+
+##############################################################################
+####   ERROR: Provided Geneva Logs Account Config Version is not valid    ####
+##############################################################################
+
+{{- end }}
+
+
+{{ .Release.Name }} deployment is complete.

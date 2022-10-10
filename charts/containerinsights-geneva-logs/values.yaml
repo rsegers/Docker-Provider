@@ -17,7 +17,7 @@ env:
 image:
   repository: mcr.microsoft.com/azuremonitor/containerinsights/cidev
   pullPolicy: IfNotPresent
-  tag: "10042022-8950eec0"
+  tag: "10072022-e3f6ff6c"
 
 imagePullSecrets: []
 nameOverride: ""
@@ -51,8 +51,8 @@ service:
 
 resources:
   limits:
-    cpu: 500m
-    memory: 500Mi
+    cpu: 2
+    memory: 2Gi
   requests:
     cpu: 75m
     memory: 325Mi
@@ -66,6 +66,7 @@ autoscaling:
 
 nodeSelector:
  kubernetes.io/os: linux
+ #logtest: aks-lp3-16401293-vmss000001
 
 tolerations: []
 
