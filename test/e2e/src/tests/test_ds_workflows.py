@@ -27,6 +27,7 @@ def test_ds_workflows(env_dict):
     api_instance = client.CoreV1Api()
 
     daemonsetPodLabelSelector = constants.AGENT_DAEMON_SET_PODS_LABEL_SELECTOR
+    ### dict get
     isNonArcK8Environment = env_dict.get('IS_NON_ARC_K8S_TEST_ENVIRONMENT')
     if isNonArcK8Environment:
         daemonsetPodLabelSelector = constants.AGENT_DAEMON_SET_PODS_LABEL_SELECTOR_NON_ARC

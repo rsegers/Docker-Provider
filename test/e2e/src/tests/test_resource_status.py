@@ -39,6 +39,7 @@ def test_resource_status(env_dict):
                                  constants.AGENT_DEPLOYMENT_PODS_LABEL_SELECTOR, expectedPodRestartCount, env_dict['TEST_AGENT_LOG_FILE'])
 
     # checking daemonset pod status
+    ### dict get
     isNonArcK8Environment = env_dict.get('IS_NON_ARC_K8S_TEST_ENVIRONMENT')
 
     if not isNonArcK8Environment:

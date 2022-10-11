@@ -33,6 +33,7 @@ def env_dict():
             env_dict['TENANT_ID'] = os.getenv('TENANT_ID')
             env_dict['CLIENT_ID'] = os.getenv('CLIENT_ID')
             env_dict['CLIENT_SECRET'] = os.getenv('CLIENT_SECRET')
+            ## collecting
             env_dict['IS_NON_ARC_K8S_TEST_ENVIRONMENT'] = os.getenv('IS_NON_ARC_K8S_TEST_ENVIRONMENT')
             # released agent for Arc K8s still uses ama-logs and when we rollout the agent with mdsd
             # this shouldnt set after agent rollout with mdsd

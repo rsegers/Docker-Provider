@@ -37,6 +37,7 @@ waitForArcK8sClusterCreated() {
     for i in $(seq 1 $max_retries)
     do
       echo "iteration: ${i}, clustername: ${CLUSTER_NAME}, resourcegroup: ${RESOURCE_GROUP}"
+      ### for lcm, replace command with provisioned clusted
       clusterState=$(az connectedk8s show --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --query connectivityStatus -o json)
       clusterState=$(echo $clusterState | tr -d '"' | tr -d '"\r\n')
       echo "cluster current state: ${clusterState}"
@@ -58,6 +59,7 @@ waitForCIExtensionInstalled() {
     for i in $(seq 1 $max_retries)
     do
       echo "iteration: ${i}, clustername: ${CLUSTER_NAME}, resourcegroup: ${RESOURCE_GROUP}"
+      ### for lcm, replace command with provisioned clusted
       installState=$(az k8s-extension show  --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP  --cluster-type connectedClusters --name azuremonitor-containers --query installState -o json)
       installState=$(echo $installState | tr -d '"' | tr -d '"\r\n')
       echo "extension install state: ${installState}"
@@ -107,6 +109,7 @@ validateArcConfTestParameters() {
 
 addArcConnectedK8sExtension() {
    echo "adding Arc K8s connectedk8s extension"
+   ### for lcm, replace command with provisioned clusted
    az extension add --name connectedk8s 2> ${results_dir}/error || python3 setup_failure_handler.py
 }
 
@@ -122,6 +125,7 @@ addArcK8sCLIExtension() {
 
 createArcCIExtension() {
 	echo "creating extension type: Microsoft.AzureMonitor.Containers"
+   ### for lcm, replace command with provisioned clusted
     basicparameters="--cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --cluster-type connectedClusters --extension-type Microsoft.AzureMonitor.Containers --scope cluster --name azuremonitor-containers"
     if [ ! -z "$CI_ARC_RELEASE_TRAIN" ]; then
        basicparameters="$basicparameters  --release-train $CI_ARC_RELEASE_TRAIN"
@@ -139,10 +143,12 @@ createArcCIExtension() {
 
 showArcCIExtension() {
   echo "arc ci extension status"
+  ### for lcm, replace command with provisioned clusted
   az k8s-extension show  --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP  --cluster-type connectedClusters --name azuremonitor-containers
 }
 
 deleteArcCIExtension() {
+   ### for lcm, replace command with provisioned clusted
     az k8s-extension delete --name azuremonitor-containers \
     --cluster-type connectedClusters \
 	--cluster-name $CLUSTER_NAME \
@@ -181,6 +187,8 @@ trap saveResults EXIT
 validateCommonParameters
 
 IS_ARC_K8S_ENV="true"
+### for lcm, replace command with provisioned clusted
+### maybe check RP type here and add functions for provisioned cluster
 if [ -z $IS_NON_ARC_K8S_TEST_ENVIRONMENT ]; then
    echo "arc k8s environment"
 else
@@ -200,6 +208,7 @@ else
    login_to_azure
 
    # add arc k8s connectedk8s extension
+   ### for lcm, replace command with provisioned clusted
    addArcConnectedK8sExtension
 
    # wait for arc k8s pods to be ready state
