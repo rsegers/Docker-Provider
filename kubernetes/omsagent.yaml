@@ -33,6 +33,16 @@ rules:
   - apiGroups: ["azmon.container.insights"]
     resources: ["genevaconfigs"]
     verbs: ["get", "list"]
+  # Uncomment below lines if AddonResizer VPA enabled
+  # - apiGroups: ["apps"]
+  #   resources: ["deployments"]
+  #   resourceNames: [ "omsagent-rs" ]
+  #   verbs: ["get", "patch"]
+  # Uncomment below lines for MSI Auth Mode  testing
+  # - apiGroups: [""]
+  #   resources: ["secrets"]
+  #   resourceNames: [ "omsagent-aad-msi-token" ]
+  #   verbs: ["get", "watch"]
   - nonResourceURLs: ["/metrics"]
     verbs: ["get"]
 ---
@@ -54,14 +64,6 @@ apiVersion: v1
 data:
   kube.conf: |-
     # Fluentd config file for OMS Docker - cluster components (kubeAPI)
-     #fluent forward plugin
-     <source>
-      type forward
-      port "#{ENV['HEALTHMODEL_REPLICASET_SERVICE_SERVICE_PORT']}"
-      bind 0.0.0.0
-      chunk_size_limit 4m
-     </source>
-
      #Kubernetes pod inventory
      <source>
       type kubepodinventory
@@ -90,14 +92,6 @@ data:
      <source>
       type kubenodeinventory
       tag oms.containerinsights.KubeNodeInventory
-      run_interval 60
-      log_level debug
-     </source>
-
-     #Kubernetes health
-     <source>
-      type kubehealth
-      tag kubehealth.ReplicaSet
       run_interval 60
       log_level debug
      </source>
@@ -136,11 +130,6 @@ data:
       type filter_cadvisor2mdm
       metrics_to_collect cpuUsageNanoCores,memoryWorkingSetBytes,pvUsedBytes
       log_level info
-     </filter>
-
-     #health model aggregation filter
-     <filter kubehealth**>
-      type filter_health_model_builder
      </filter>
 
      <match oms.containerinsights.KubePodInventory**>
@@ -294,21 +283,6 @@ data:
       retry_mdm_post_wait_minutes 30
      </match>
 
-    <match kubehealth.Signals**>
-     type out_oms
-     log_level debug
-     num_threads 5
-     buffer_chunk_limit 4m
-     buffer_type file
-     buffer_path %STATE_DIR_WS%/out_oms_kubehealth*.buffer
-     buffer_queue_limit 20
-     buffer_queue_full_action drop_oldest_chunk
-     flush_interval 20s
-     retry_limit 10
-     retry_wait 5s
-     max_retry_wait 5m
-    </match>
-
     <match oms.api.InsightsMetrics**>
      type out_oms
      log_level debug
@@ -339,6 +313,16 @@ data:
   WSID: "VALUE_WSID"
   KEY: "VALUE_KEY"
 ---
+# Uncomment below lines for MSI Auth Mode  testing
+# apiVersion: v1
+# kind: Secret
+# metadata:
+#   name: omsagent-aad-msi-token
+#   namespace: kube-system
+# type: Opaque
+# data:
+#   token: "VALUE_MSI_TOKEN"
+# ---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -362,6 +346,7 @@ spec:
       annotations:
         agentVersion: "azure-mdsd-1.17.0"
         dockerProviderVersion: "16.0.0-0"
+        dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
     spec:
       serviceAccountName: omsagent
@@ -370,8 +355,43 @@ spec:
           - name: ndots
             value: "3"
       containers:
+        # Uncomment below lines for MSI Auth Mode  testing
+        # - name: addon-token-adapter
+        #   command:
+        #     - /addon-token-adapter
+        #   args:
+        #     - --secret-namespace=kube-system
+        #     - --secret-name=omsagent-aad-msi-token
+        #     - --token-server-listening-port=8888
+        #     - --health-server-listening-port=9999
+        #   # Make sure this matching with version in AKS RP side
+        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.220318.3
+        #   imagePullPolicy: IfNotPresent
+        #   env:
+        #     - name: AZMON_COLLECT_ENV
+        #       value: "false"
+        #   livenessProbe:
+        #     httpGet:
+        #       path: /healthz
+        #       port: 9999
+        #     initialDelaySeconds: 10
+        #     periodSeconds: 60
+        #   resources:
+        #     limits:
+        #       cpu: 500m
+        #       memory: 500Mi
+        #     requests:
+        #       cpu: 100m
+        #       memory: 100Mi
+        #   securityContext:
+        #     capabilities:
+        #       drop:
+        #         - ALL
+        #       add:
+        #         - NET_ADMIN
+        #         - NET_RAW
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:devpreview03232022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -395,6 +415,8 @@ spec:
             # this used for e2e test and setting this just emits some additional log statements which used for the e2e tests
             - name: ISTEST
               value: "true"
+            - name: EMIT_CACHE_TELEMETRY
+              value: "false"
             #Uncomment below two lines for ACS clusters and set the cluster names manually. Also comment out the above two lines for ACS clusters
             #- name: ACS_RESOURCE_NAME
             #  value: "my_acs_cluster_name"
@@ -409,8 +431,9 @@ spec:
               value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"
             - name: AZMON_CONTAINERLOGS_ONEAGENT_REGIONS
               value: "koreacentral,norwayeast,eastus2"
-            - name: USING_AAD_MSI_AUTH
-              value: "false"
+            # Uncomment below lines for MSI Auth Mode  testing
+            # - name: USING_AAD_MSI_AUTH
+            #   value: "true"
           securityContext:
             privileged: true
           ports:
@@ -459,7 +482,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: omsagent-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:devpreview03232022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -492,13 +515,12 @@ spec:
             # Update this with the user assigned msi client id for omsagent
             - name: USER_ASSIGNED_IDENTITY_CLIENT_ID
               value: "VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE"
-            - name: USING_AAD_MSI_AUTH
-              value: "false"
+            # Uncomment below lines for MSI Auth Mode  testing
+            # - name: USING_AAD_MSI_AUTH
+            #   value: "true"
           securityContext:
             privileged: true
           volumeMounts:
-            - mountPath: /var/run/mdsd-PrometheusSidecar
-              name: mdsd-prometheus-sock
             - mountPath: /etc/kubernetes/host
               name: azure-json-path
             - mountPath: /etc/omsagent-secret
@@ -606,22 +628,101 @@ spec:
         rsName: "omsagent-rs"
       annotations:
         agentVersion: "azure-mdsd-1.17.0"
-        dockerProviderVersion: "16.0.0-0"
+        dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
     spec:
       serviceAccountName: omsagent
       containers:
+        # Uncomment below lines to enable VPA
+        #   # Make sure this matching with version in AKS RP side
+        # - image: "mcr.microsoft.com/oss/kubernetes/autoscaler/addon-resizer:1.8.14"
+        #   imagePullPolicy: IfNotPresent
+        #   name: omsagent-vpa
+        #   resources:
+        #    limits:
+        #     cpu: 100m
+        #     memory: 300Mi
+        #    requests:
+        #     cpu: 5m
+        #     memory: 30Mi
+        #   env:
+        #   - name: MY_POD_NAME
+        #     valueFrom:
+        #       fieldRef:
+        #         fieldPath: metadata.name
+        #   - name: MY_POD_NAMESPACE
+        #     valueFrom:
+        #       fieldRef:
+        #         fieldPath: metadata.namespace
+        #   volumeMounts:
+        #   - name: omsagent-rs-vpa-config-volume
+        #     mountPath: /etc/config
+        #   command:
+        #     - /pod_nanny
+        #     - --config-dir=/etc/config
+        #     - --cpu=200m
+        #     - --extra-cpu=2m
+        #     - --memory=300Mi
+        #     - --extra-memory=4Mi
+        #     - --poll-period=180000
+        #     - --threshold=5
+        #     - --namespace=kube-system
+        #     - --deployment=omsagent-rs
+        #     - --container=omsagent
+        # Uncomment below lines for MSI Auth Mode  testing
+        # - name: addon-token-adapter
+        #   command:
+        #     - /addon-token-adapter
+        #   args:
+        #     - --secret-namespace=kube-system
+        #     - --secret-name=omsagent-aad-msi-token
+        #     - --token-server-listening-port=8888
+        #     - --health-server-listening-port=9999
+        #   # Make sure this matching with version in AKS RP side
+        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.220318.3
+        #   imagePullPolicy: IfNotPresent
+        #   env:
+        #     - name: AZMON_COLLECT_ENV
+        #       value: "false"
+        #   livenessProbe:
+        #     httpGet:
+        #       path: /healthz
+        #       port: 9999
+        #     initialDelaySeconds: 10
+        #     periodSeconds: 60
+        #   resources:
+        #     limits:
+        #       cpu: 500m
+        #       memory: 500Mi
+        #     requests:
+        #       cpu: 100m
+        #       memory: 100Mi
+        #   securityContext:
+        #     capabilities:
+        #       drop:
+        #         - ALL
+        #       add:
+        #         - NET_ADMIN
+        #         - NET_RAW
         - name: omsagent
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:devpreview03232022"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod08102022"
           imagePullPolicy: IfNotPresent
+          # comment resources if VPA configured since the VPA will set these values
           resources:
             limits:
               cpu: 1
-              memory: 1Gi
+              memory: 1.25Gi
             requests:
               cpu: 150m
               memory: 250Mi
           env:
+            - name: NUM_OF_FLUENTD_WORKERS
+              valueFrom:
+                resourceFieldRef:
+                  containerName: omsagent
+                  resource: limits.cpu
+            - name: EMIT_CACHE_TELEMETRY
+              value: "false" # enable only debug or test purpose and disable for prod
             - name: AKS_RESOURCE_ID
               value: "VALUE_AKS_RESOURCE_ID_VALUE"
             - name: AKS_REGION
@@ -644,8 +745,12 @@ spec:
             # Add the below environment variable to true only in sidecar enabled regions, else set it to false
             - name: SIDECAR_SCRAPING_ENABLED
               value: "true"
-            - name: USING_AAD_MSI_AUTH
-              value: "false"
+            # Uncomment below lines for MSI Auth Mode  testing
+            # - name: USING_AAD_MSI_AUTH
+            #   value: "true"
+            # Uncomment below lines when the Addon-resizer VPA enabled
+            # - name: RS_ADDON-RESIZER_VPA_ENABLED
+            #   value: "true"
           securityContext:
             privileged: true
           ports:
@@ -653,9 +758,6 @@ spec:
               protocol: TCP
             - containerPort: 25224
               protocol: UDP
-            - containerPort: 25227
-              protocol: TCP
-              name: in-rs-tcp
           volumeMounts:
             - mountPath: /var/run/host
               name: docker-sock
@@ -700,7 +802,7 @@ spec:
             nodeSelectorTerms:
               - labelSelector:
                 matchExpressions:
-                  - key: beta.kubernetes.io/os
+                  - key: kubernetes.io/os
                     operator: In
                     values:
                     - linux
@@ -752,6 +854,11 @@ spec:
           configMap:
             name: container-azm-ms-osmconfig
             optional: true
+        # Uncomment below lines to enable VPA
+        # - name:  omsagent-rs-vpa-config-volume
+        #   configMap:
+        #     name:  omsagent-rs-vpa-config
+        #     optional: true
 ---
   apiVersion: apps/v1
   kind: DaemonSet
@@ -775,7 +882,7 @@ spec:
         tier: node-win
       annotations:
         agentVersion: "0.0.0-0"
-        dockerProviderVersion: "16.0.0-0"
+        dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
     spec:
      serviceAccountName: omsagent
@@ -785,7 +892,7 @@ spec:
             value: "3"
      containers:
        - name: omsagent-win
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod03112022"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod08102022"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
@@ -827,6 +934,9 @@ spec:
           # Add this only for clouds that require cert bootstrapping
           # - name: REQUIRES_CERT_BOOTSTRAP
           #   value: "true"
+          # Uncomment below lines for MSI Auth Mode  testing
+          # - name: USING_AAD_MSI_AUTH
+          #   value: "true"
          volumeMounts:
           - mountPath: C:\ProgramData\docker\containers
             name: docker-windows-containers
@@ -849,6 +959,10 @@ spec:
           - mountPath: C:\etc\kubernetes\host
             name: azure-json-path
             readOnly: true
+          # Uncomment below lines for MSI Auth Mode  testing
+          # - mountPath: C:\etc\IMDS-access-token
+          #   name: imds-token
+          #   readOnly: true
          livenessProbe:
           exec:
             command:
@@ -867,7 +981,7 @@ spec:
          requiredDuringSchedulingIgnoredDuringExecution:
            nodeSelectorTerms:
            - matchExpressions:
-             - key: beta.kubernetes.io/os
+             - key: kubernetes.io/os
                operator: In
                values:
                - windows
@@ -906,39 +1020,8 @@ spec:
         secret:
           secretName: omsagent-adx-secret
           optional: true
----
-kind: Service
-apiVersion: v1
-metadata:
-  name: healthmodel-replicaset-service
-  namespace: kube-system
-spec:
-  selector:
-    rsName: "omsagent-rs"
-  ports:
-    - protocol: TCP
-      port: 25227
-      targetPort: in-rs-tcp
----
-# this is for versions >=1.19, for versions <1.19 we continue to use v1beta1
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  name: healthstates.azmon.container.insights
-  namespace: kube-system
-spec:
-  group: azmon.container.insights
-  versions:
-  - name: v1
-    served: true
-    storage: true
-    schema:
-      openAPIV3Schema:
-        type: object
-        properties:
-          state:
-            type: string
-  scope: Namespaced
-  names:
-    plural: healthstates
-    kind: HealthState
+      # Uncomment below lines for MSI Auth Mode  testing
+      # - name: imds-token
+      #   secret:
+      #     secretName: omsagent-aad-msi-token
+

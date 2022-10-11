@@ -24,15 +24,16 @@ def substituteFluentBitPlaceHolders
     bufferChunkSize = ENV["FBIT_TAIL_BUFFER_CHUNK_SIZE"]
     bufferMaxSize = ENV["FBIT_TAIL_BUFFER_MAX_SIZE"]
     memBufLimit = ENV["FBIT_TAIL_MEM_BUF_LIMIT"]
+    ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
 
-    serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0 ) ? interval : @default_service_interval
+    serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
 
     tailBufferChunkSize = (!bufferChunkSize.nil? && is_number?(bufferChunkSize) && bufferChunkSize.to_i > 0) ? bufferChunkSize : nil
 
     tailBufferMaxSize = (!bufferMaxSize.nil? && is_number?(bufferMaxSize) && bufferMaxSize.to_i > 0) ? bufferMaxSize : nil
 
-    if ((!tailBufferChunkSize.nil? && tailBufferMaxSize.nil?) ||  (!tailBufferChunkSize.nil? && !tailBufferMaxSize.nil? && tailBufferChunkSize.to_i > tailBufferMaxSize.to_i))
+    if ((!tailBufferChunkSize.nil? && tailBufferMaxSize.nil?) || (!tailBufferChunkSize.nil? && !tailBufferMaxSize.nil? && tailBufferChunkSize.to_i > tailBufferMaxSize.to_i))
       puts "config:warn buffer max size must be greater or equal to chunk size"
       tailBufferMaxSize = tailBufferChunkSize
     end
@@ -52,6 +53,12 @@ def substituteFluentBitPlaceHolders
       new_contents = new_contents.gsub("${TAIL_BUFFER_MAX_SIZE}", "Buffer_Max_Size " + tailBufferMaxSize + "m")
     else
       new_contents = new_contents.gsub("\n    ${TAIL_BUFFER_MAX_SIZE}\n", "\n")
+    end
+
+    if !ignoreOlder.nil? && !ignoreOlder.empty?
+      new_contents = new_contents.gsub("${TAIL_IGNORE_OLDER}", "Ignore_Older " + ignoreOlder)
+    else
+      new_contents = new_contents.gsub("\n    ${TAIL_IGNORE_OLDER}\n", "\n")
     end
 
     File.open(@td_agent_bit_conf_path, "w") { |file| file.puts new_contents }

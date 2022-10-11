@@ -3,7 +3,7 @@
 # frozen_string_literal: true
 
 require "logger"
-require "yajl/json_gem"
+require "json"
 require "time"
 require_relative "oms_common"
 require_relative "CustomMetricsUtils"
@@ -218,23 +218,12 @@ class Inventory2MdmConvertor
     end
   end
 
-  def process_record_for_pods_ready_metric(podControllerNameDimValue, podNamespaceDimValue, podStatusConditions)
+  def process_record_for_pods_ready_metric(podControllerNameDimValue, podNamespaceDimValue, podReadyCondition)
     if @process_incoming_stream
       begin
         @log.info "in process_record_for_pods_ready_metric..."
         if podControllerNameDimValue.nil? || podControllerNameDimValue.empty?
           podControllerNameDimValue = "No Controller"
-        end
-        podReadyCondition = false
-        if !podStatusConditions.nil? && !podStatusConditions.empty?
-          podStatusConditions.each do |condition|
-            if condition["type"] == "Ready"
-              if condition["status"].downcase == "true"
-                podReadyCondition = true
-              end
-              break #Exit the for loop since we found the ready condition
-            end
-          end
         end
         MdmMetricsGenerator.generatePodReadyMetrics(podControllerNameDimValue,
                                                     podNamespaceDimValue, podReadyCondition)

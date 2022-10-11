@@ -19,8 +19,16 @@ metadata:
   name: container-insights-clusteridentityrequest
   namespace: azure-arc
 spec:
-  audience: https://monitoring.azure.com/
+  {{- if eq (.Values.Azure.Cluster.Cloud | lower) "azurepubliccloud" }}
+  audience: https://monitor.azure.com/
+  {{- else if eq (.Values.Azure.Cluster.Cloud | lower) "azurechinacloud" }}
+  audience: https://monitor.azure.cn/
+  {{- else if eq (.Values.Azure.Cluster.Cloud | lower) "azureusgovernmentcloud" }}
+  audience: https://monitor.azure.us/
+  {{- else }}
+  audience: https://monitor.azure.com/
+  {{- end }}
   {{- if not (empty .Values.Azure.Extension.Name) }}
-  resourceId: {{ .Values.Azure.Extension.Name }} 
+  resourceId: {{ .Values.Azure.Extension.Name }}
   {{- end }}
 {{- end }}

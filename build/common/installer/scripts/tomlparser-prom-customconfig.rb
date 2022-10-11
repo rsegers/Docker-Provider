@@ -2,12 +2,8 @@
 
 #this should be require relative in Linux and require in windows, since it is a gem install on windows
 @os_type = ENV["OS_TYPE"]
-if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-  require "tomlrb"
-else
-  require_relative "tomlrb"
-end
-# require_relative "tomlrb"
+require "tomlrb"
+
 require_relative "ConfigParseErrorLogger"
 require "fileutils"
 
@@ -323,7 +319,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
             File.open(file_name, "w") { |file| file.puts new_contents }
             puts "config::Successfully substituted the placeholders in telegraf conf file for custom prometheus scraping"
-            #Set environment variables for telemetry in the sidecar container
+            #Set environment variables for configuration and telemetry in the sidecar container
             if (!@containerType.nil? && @containerType.casecmp(@promSideCar) == 0)
               file = File.open("telemetry_prom_config_env_var", "w")
               if !file.nil?

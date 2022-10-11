@@ -2,19 +2,12 @@
 
 #this should be require relative in Linux and require in windows, since it is a gem install on windows
 @os_type = ENV["OS_TYPE"]
-@isWindows = false
-if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-  @isWindows = true
-  require "tomlrb"
-else
-  require_relative "tomlrb"
-end
+require "tomlrb"
 
 require_relative "ConfigParseErrorLogger"
 
 @configMapMountPath = "/etc/config/settings/agent-settings"
 @configSchemaVersion = ""
-@enable_health_model = false
 
 # 250 Node items (15KB per node) account to approximately 4MB
 @nodesChunkSize = 250
@@ -76,6 +69,7 @@ require_relative "ConfigParseErrorLogger"
 @genevaAuthId = ""
 GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "FirstpartyProd", "BillingProd", "ExternalProd", "CaMooncake", "CaFairfax", "CaBlackforest"]
 GENEVA_SUPPORTED_AUTH_METHODS = ["MSI", "CERT"]
+@fbitTailIgnoreOlder = ""
 
 def is_number?(value)
   true if Integer(value) rescue false
@@ -104,10 +98,6 @@ end
 def populateSettingValuesFromConfigMap(parsedConfig)
   begin
     if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil?
-      if !parsedConfig[:agent_settings][:health_model].nil? && !parsedConfig[:agent_settings][:health_model][:enabled].nil?
-        @enable_health_model = parsedConfig[:agent_settings][:health_model][:enabled]
-        puts "enable_health_model = #{@enable_health_model}"
-      end
       chunk_config = parsedConfig[:agent_settings][:chunk_config]
       if !chunk_config.nil?
         nodesChunkSize = chunk_config[:NODES_CHUNK_SIZE]
@@ -234,12 +224,21 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             end
           end
           puts "config::info:successfully parsed geneva_logs_config settings"
+
+        fbitTailIgnoreOlder = fbit_config[:tail_ignore_older]
+        re = /^[0-9]+[mhd]$/
+        if !fbitTailIgnoreOlder.nil? && !fbitTailIgnoreOlder.empty?
+          if !re.match(fbitTailIgnoreOlder).nil?
+            @fbitTailIgnoreOlder = fbitTailIgnoreOlder
+            puts "Using config map value: tail_ignore_older  = #{@fbitTailIgnoreOlder}"
+          else
+            puts "config:warn: provided tail_ignore_older value is not valid hence using default value"
+          end
         end
       end
     end
   rescue => errorStr
     puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
-    @enable_health_model = false
   end
 end
 
@@ -254,14 +253,12 @@ else
   if (File.file?(@configMapMountPath))
     ConfigParseErrorLogger.logError("config::unsupported/missing config schema version - '#{@configSchemaVersion}' , using defaults, please use supported schema version")
   end
-  @enable_health_model = false
 end
 
 # Write the settings to file, so that they can be set as environment variables
 file = File.open("agent_config_env_var", "w")
 
 if !file.nil?
-  file.write("export AZMON_CLUSTER_ENABLE_HEALTH_MODEL=#{@enable_health_model}\n")
   file.write("export NODES_CHUNK_SIZE=#{@nodesChunkSize}\n")
   file.write("export PODS_CHUNK_SIZE=#{@podsChunkSize}\n")
   file.write("export EVENTS_CHUNK_SIZE=#{@eventsChunkSize}\n")
@@ -304,6 +301,10 @@ if !file.nil?
       file.write("export MONITORING_GCS_AUTH_ID=#{@genevaAuthId}\n")
     end
   end
+  if !@fbitTailIgnoreOlder.nil? && !@fbitTailIgnoreOlder.empty?
+    file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
+  end
+
   # Close file after writing all environment variables
   file.close
 else
@@ -334,6 +335,10 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     end
     if @fbitTailMemBufLimitMBs > 0
       commands = get_command_windows("FBIT_TAIL_MEM_BUF_LIMIT", @fbitTailMemBufLimitMBs)
+      file.write(commands)
+    end
+    if !@fbitTailIgnoreOlder.nil? && !@fbitTailIgnoreOlder.empty?
+      commands = get_command_windows("FBIT_TAIL_IGNORE_OLDER", @fbitTailIgnoreOlder)
       file.write(commands)
     end
     # Close file after writing all environment variables

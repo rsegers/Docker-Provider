@@ -2,11 +2,7 @@
 
 #this should be require relative in Linux and require in windows, since it is a gem install on windows
 @os_type = ENV["OS_TYPE"]
-if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-  require "tomlrb"
-else
-  require_relative "tomlrb"
-end
+require "tomlrb"
 
 require_relative "ConfigParseErrorLogger"
 
@@ -84,7 +80,6 @@ else
   if (File.file?(@configMapMountPath))
     ConfigParseErrorLogger.logError("config::unsupported/missing config schema version - '#{@configSchemaVersion}' , using defaults, please use supported schema version")
   end
-  @enable_health_model = false
 end
 
 # Write the settings to file, so that they can be set as environment variables

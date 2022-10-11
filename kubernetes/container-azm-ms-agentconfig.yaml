@@ -42,6 +42,12 @@ data:
           # When the setting is set to false, only the kube events with !normal event type will be collected
           enabled = false
           # When this is enabled (enabled = true), all kube events including normal events will be collected
+       #[log_collection_settings.schema]
+          # In the absence of this configmap, default value for containerlog_schema_version is "v1"
+          # Supported values for this setting are "v1","v2"
+          # See documentation at https://aka.ms/ContainerLogv2 for benefits of v2 schema over v1 schema before opting for "v2" schema
+          # containerlog_schema_version = "v2"
+
 
   prometheus-data-collection-settings: |-
     # Custom Prometheus metrics data collection settings
@@ -135,6 +141,8 @@ data:
     [integrations.azure_network_policy_manager]
         collect_basic_metrics = false
         collect_advanced_metrics = false
+    [integrations.azure_subnet_ip_usage]
+        enabled = false
 
 # Doc - https://github.com/microsoft/Docker-Provider/blob/ci_prod/Documentation/AgentSettings/ReadMe.md
   agent-settings: |-
@@ -147,6 +155,7 @@ data:
 
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # They increase the maximum stdout/stderr log collection rate but will also cause higher cpu/memory usage.
+    ## Ref for more details about Ignore_Older -  https://docs.fluentbit.io/manual/v/1.7/pipeline/inputs/tail
     # [agent_settings.fbit_config]
     #   log_flush_interval_secs = "1"                 # default value is 15
     #   tail_mem_buf_limit_megabytes = "10"           # default value is 10
@@ -163,6 +172,7 @@ data:
       account = "cilogstest"               # name of the Geneva Logs account
       namespace = "cilogstest"             # name of the Geneva Logs account namespace
       configversion = "2.0"                # config version of the agent xml config.
+    #   tail_ignore_older = "5m"                      # default value same as fluent-bit default i.e.0m
 
 metadata:
   name: container-azm-ms-agentconfig

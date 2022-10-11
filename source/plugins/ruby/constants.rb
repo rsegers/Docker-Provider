@@ -117,7 +117,6 @@ class Constants
   KUBE_PV_INVENTORY_DATA_TYPE = "KUBE_PV_INVENTORY_BLOB"
   KUBE_EVENTS_DATA_TYPE = "KUBE_EVENTS_BLOB"
   KUBE_MON_AGENT_EVENTS_DATA_TYPE = "KUBE_MON_AGENT_EVENTS_BLOB"
-  KUBE_HEALTH_DATA_TYPE = "KUBE_HEALTH_BLOB"
   CONTAINERLOGV2_DATA_TYPE = "CONTAINERINSIGHTS_CONTAINERLOGV2"
   CONTAINERLOG_DATA_TYPE = "CONTAINER_LOG_BLOB"
 
@@ -136,4 +135,13 @@ class Constants
   #This is for telemetry to track if any of the windows customer has any of the field size >= 64KB
   #To evaluate switching to Windows AMA 64KB impacts any existing customers
   MAX_RECORD_OR_FIELD_SIZE_FOR_TELEMETRY = 65536
+
+  # FileName for MDM POD Inventory state
+  MDM_POD_INVENTORY_STATE_FILE = "/var/opt/microsoft/docker-cimprov/state/MDMPodInventoryState.json"
+  # FileName for NodeAllocatable Records state
+  NODE_ALLOCATABLE_RECORDS_STATE_FILE = "/var/opt/microsoft/docker-cimprov/state/NodeAllocatableRecords.json"
+  # Emit Stream size for Pod MDM metric
+  POD_MDM_EMIT_STREAM_BATCH_SIZE = 5000 # each record is 200 bytes, 5k records ~2MB
+  # only used in windows in AAD MSI auth mode
+  IMDS_TOKEN_PATH_FOR_WINDOWS = "c:/etc/imds-access-token/token"
 end

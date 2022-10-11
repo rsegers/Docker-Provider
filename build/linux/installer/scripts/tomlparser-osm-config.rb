@@ -1,6 +1,6 @@
 #!/usr/local/bin/ruby
 
-require_relative "tomlrb"
+require "tomlrb"
 require "fileutils"
 require_relative "ConfigParseErrorLogger"
 

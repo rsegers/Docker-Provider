@@ -15,11 +15,18 @@ fi
 
 #Make sure that tag being pushed will not overwrite an existing tag in mcr
 MCR_TAG_RESULT="`wget -qO- https://mcr.microsoft.com/v2/azuremonitor/containerinsights/ciprod/tags/list`"
-if [ $? -ne 0 ]; then         
+if [ $? -ne 0 ]; then
    echo "-e error unable to get list of mcr tags for azuremonitor/containerinsights/ciprod repository"
    exit 1
 fi
-TAG_EXISTS=$(echo $MCR_TAG_RESULT | jq '.tags | contains(["'"$AGENT_RELEASE$AGENT_IMAGE_TAG_SUFFIX"'"])')
+
+if [[ "$AGENT_IMAGE_FULL_PATH" == *"win-"* ]]; then
+  echo "checking windows tags"
+  TAG_EXISTS=$(echo $MCR_TAG_RESULT | jq '.tags | contains(["'"win-$AGENT_RELEASE$AGENT_IMAGE_TAG_SUFFIX"'"])')
+else
+  echo "checking linux tags"
+  TAG_EXISTS=$(echo $MCR_TAG_RESULT | jq '.tags | contains(["'"$AGENT_RELEASE$AGENT_IMAGE_TAG_SUFFIX"'"])')
+fi
 
 if $TAG_EXISTS; then
   echo "-e error ${AGENT_IMAGE_TAG_SUFFIX} already exists in mcr. make sure the image tag is unique"
@@ -60,7 +67,7 @@ if [ $? -eq 0 ]; then
 else
   echo "-e error failed to login to az with managed identity credentials"
   exit 1
-fi     
+fi
 
 echo "Pushing ${AGENT_IMAGE_FULL_PATH} to ${ACR_NAME}"
 az acr import --name $ACR_NAME --registry $CDPX_REGISTRY --source official/${CDPX_REPO_NAME}:${CDPX_TAG} --image $AGENT_IMAGE_FULL_PATH

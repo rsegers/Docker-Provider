@@ -37,7 +37,7 @@ spec:
       kubernetes.io/os: windows
 {{- else }}
    nodeSelector:
-      beta.kubernetes.io/os: windows
+      kubernetes.io/os: windows
 {{- end }}
    {{- if .Values.omsagent.rbac }}
    serviceAccountName: omsagent
@@ -69,6 +69,8 @@ spec:
        {{- else if ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.Azure.Cluster.ResourceId | quote }}
+       - name: USING_AAD_MSI_AUTH
+         value: {{ .Values.omsagent.useAADAuth | quote }}
        {{- if ne .Values.Azure.Cluster.Region "<your_cluster_region>" }}
        - name: AKS_REGION
          value: {{ .Values.Azure.Cluster.Region | quote }}

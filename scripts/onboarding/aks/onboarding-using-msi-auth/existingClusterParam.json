@@ -8,20 +8,13 @@
       "aksResourceLocation": {
         "value": "<aksClusterLocation>"
       },
-      "aksResourceTagValues": {
-        "value": {
-          "<existingOrnew-tag-name1>": "<existingOrnew-tag-value1>",
-          "<existingOrnew-tag-name2>": "<existingOrnew-tag-value2>",
-          "<existingOrnew-tag-nameN>": "<existingOrnew-tag-valueN>"
-        }
-      },
       "workspaceResourceId": {
         "value": "/subscriptions/<SubscriptionId>/resourceGroups/<ResourceGroup>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName>"
       },
       "workspaceLocation": {
         "value": "<workspaceLocation>"
       },
-      "dcrResourceTagValues": {
+      "resourceTagValues": {
         "value": {
           "<existingOrnew-tag-name1>": "<existingOrnew-tag-value1>",
           "<existingOrnew-tag-name2>": "<existingOrnew-tag-value2>",

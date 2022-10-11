@@ -89,11 +89,8 @@ while getopts 'hs:c:w:d:l:' opt; do
 }
 create_cluster()
 {
-
-sudo touch kubernetes.json
-sudo chmod 777 kubernetes.json
 # For docker runtime, remove kubernetesConfig block
-cat >> kubernetes.json <<EOL
+sudo tee kubernetes.json > /dev/null << 'EOF'
 {
   "apiVersion": "vlabs",
   "properties": {
@@ -132,7 +129,7 @@ cat >> kubernetes.json <<EOL
     }
   }
 }
-EOL
+EOF
 
 echo "deploying aks-engine cluster ..."
 sudo aks-engine deploy --subscription-id ${subscriptionId} --client-id ${clientId} --client-secret ${clientSecret} --dns-prefix ${dnsPrefix} --location ${location} --api-model  kubernetes.json
@@ -158,6 +155,4 @@ echo "creating cluster: ${ClusterName}"
 create_cluster
 echo "creating aks-engine cluster completed."
 
-echo "changing file permissions to access the kubeconfig"
-sudo chmod -R 777  ~/${TEMP_DIR}/_output
 echo "kubeconfig of this cluster should be under ~/${TEMP_DIR}/_output/${dnsPrefix}/kubeconfig"

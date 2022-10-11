@@ -11,5 +11,5 @@ spec:
     command: ["/bin/sh"]
     args: ["-c", "while true; do echo '{\"container_name\": \"nested-json\", \"pod_name\": \"nested-json\", \"pod_namespace\": \"nested-json\", \"environment\": \"test\", \"logmessage\": { \"msg\": \"hello, world\", \"level\": \"info\"} }'; sleep 30; done"]
   nodeSelector:
-    beta.kubernetes.io/os: linux
+    kubernetes.io/os: linux
   restartPolicy: OnFailure

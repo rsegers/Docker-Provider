@@ -12,8 +12,7 @@ module Fluent::Plugin
     def initialize
       super
       require "yaml"
-      require "yajl/json_gem"
-      require "yajl"
+      require "json"
       require "time"
       require_relative "KubernetesApiClient"
       require_relative "ApplicationInsightsUtility"

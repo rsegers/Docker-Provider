@@ -37,6 +37,16 @@ spec:
    serviceAccountName: omsagent
    {{- end }}
    containers:
+{{- if and (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") (.Values.omsagent.useAADAuth) }}
+     - name: addon-token-adapter
+       imagePullPolicy: IfNotPresent
+       env:
+       - name: AZMON_COLLECT_ENV
+         value: "false"
+       - name: TOKEN_NAMESPACE
+         value: "azure-arc"
+{{-  .Values.Azure.Identity.MSIAdapterYaml | nindent 7 }}
+{{- end }}
      - name: omsagent
        {{- if eq (.Values.omsagent.domain | lower) "opinsights.azure.cn" }}
        image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.omsagent.image.tag }}"
@@ -57,6 +67,8 @@ spec:
        {{- else if ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.Azure.Cluster.ResourceId | quote }}
+       - name: USING_AAD_MSI_AUTH
+         value: {{ .Values.omsagent.useAADAuth | quote }}
        {{- if ne .Values.Azure.Cluster.Region "<your_cluster_region>" }}
        - name: AKS_REGION
          value: {{ .Values.Azure.Cluster.Region | quote }}
@@ -91,6 +103,14 @@ spec:
        {{- end }}
        - name: ISTEST
          value: {{ .Values.omsagent.ISTEST | quote }}
+       {{ if .Values.omsagent.isArcACluster }}
+       - name: IS_ARCA_CLUSTER
+         value: {{ .Values.omsagent.isArcACluster | quote }}
+       {{- end }}
+       {{- if ne .Values.omsagent.metricsEndpoint "<your_metrics_endpoint>" }}
+       - name: CUSTOM_METRICS_ENDPOINT
+         value: {{ .Values.omsagent.metricsEndpoint | quote }}
+       {{- end }}
        securityContext:
          privileged: true
        ports:
@@ -159,6 +179,8 @@ spec:
        {{- else if ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>" }}
        - name: AKS_RESOURCE_ID
          value: {{ .Values.Azure.Cluster.ResourceId | quote }}
+       - name: USING_AAD_MSI_AUTH
+         value: {{ .Values.omsagent.useAADAuth | quote }}
        {{- if ne .Values.Azure.Cluster.Region "<your_cluster_region>" }}
        - name: AKS_REGION
          value: {{ .Values.Azure.Cluster.Region | quote }}
