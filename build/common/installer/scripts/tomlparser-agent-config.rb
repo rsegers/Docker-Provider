@@ -55,6 +55,20 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailBufferChunkSizeMBs = 0
 @fbitTailBufferMaxSizeMBs = 0
 @fbitTailMemBufLimitMBs = 0
+
+# configmap settings related to geneva logs config
+@controllerType = ENV["CONTROLLER_TYPE"]
+@containerType = ENV["CONTAINER_TYPE"]
+@genevaLogsConfig = false
+@genevaMultiTenancy = false
+@genevaEnvironment = ""
+@genevaAccount = ""
+@genevaNamespace = ""
+@genevaConfigVersion = ""
+@genevaAuthMode = ""
+@genevaAuthId = ""
+GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "FirstpartyProd", "BillingProd", "ExternalProd", "CaMooncake", "CaFairfax", "CaBlackforest"]
+GENEVA_SUPPORTED_AUTH_METHODS = ["MSI", "CERT"]
 @fbitTailIgnoreOlder = ""
 
 def is_number?(value)
@@ -166,6 +180,50 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           @fbitTailMemBufLimitMBs = fbitTailMemBufLimitMBs.to_i
           puts "Using config map value: tail_mem_buf_limit_megabytes  = #{@fbitTailMemBufLimitMBs}"
         end
+      end
+      # geneva logs config settings only applicable in main conatiner of Linux Daemonset
+      if !@isWindows && @controllerType.downcase == "daemonset" && (@containerType.nil? || @containerType.downcase != "prometheussidecar")
+        geneva_logs_config = parsedConfig[:agent_settings][:geneva_logs_config]
+        if !geneva_logs_config.nil?
+          puts "config: parsing geneva_logs_config settings"
+          genevaLogsMultiTenancy = geneva_logs_config[:multitenancy]
+          if !genevaLogsMultiTenancy.nil? && genevaLogsMultiTenancy
+            @genevaMultiTenancy = genevaLogsMultiTenancy
+            @genevaLogsConfig = true
+          else
+            genevaEnvironment = geneva_logs_config[:environment]
+            genevaAccount = geneva_logs_config[:account]
+            genevaNamespace = geneva_logs_config[:namespace]
+            genevaConfigVersion = geneva_logs_config[:configversion]
+            if !genevaEnvironment.nil? && !genevaAccount.nil? && !genevaNamespace.nil? && !genevaConfigVersion.nil?
+              if GENEVA_SUPPORTED_ENVIRONMENTS.include?(genevaEnvironment)
+                @genevaEnvironment = genevaEnvironment
+                @genevaAccount = genevaAccount
+                @genevaNamespace = genevaNamespace
+                @genevaConfigVersion = genevaConfigVersion
+                @genevaLogsConfig = true
+              else
+                puts "config::error:unsupported geneva config environment"
+              end
+            else
+              puts "config::error:invalid geneva logs config"
+            end
+          end
+          genevaAuthMode = geneva_logs_config[:authmethod]
+          if !genevaAuthMode.nil? && GENEVA_SUPPORTED_AUTH_METHODS.include?(genevaAuthMode)
+            @genevaAuthMode = genevaAuthMode
+          else
+            puts "config::info:using default geneva auth mode"
+          end
+          genevaAuthId = geneva_logs_config[:authid]
+          if !genevaAuthId.nil?
+            if genevaAuthId.start_with?("client_id#") || genevaAuthId.start_with?("object_id#") || genevaAuthId.start_with?("mi_res_id#")
+              @genevaAuthId = genevaAuthId
+            else
+              puts "config:error: auth id must be in one of the suppported formats: object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>"
+            end
+          end
+          puts "config::info:successfully parsed geneva_logs_config settings"
 
         fbitTailIgnoreOlder = fbit_config[:tail_ignore_older]
         re = /^[0-9]+[mhd]$/
@@ -222,6 +280,27 @@ if !file.nil?
     file.write("export FBIT_TAIL_MEM_BUF_LIMIT=#{@fbitTailMemBufLimitMBs}\n")
   end
 
+  if @genevaLogsConfig
+    file.write("export GENEVA_LOGS_CONFIG_ENABLED=#{@genevaLogsConfig}\n")
+    file.write("export MONITORING_USE_GENEVA_CONFIG_SERVICE=#{@genevaLogsConfig}\n")
+    file.write("export GENEVA_LOGS_MULTI_TENANCY_ENABLED=#{@genevaMultiTenancy}\n")
+    if !@genevaMultiTenancy
+      if !@genevaEnvironment.empty? && !@genevaAccount.empty? && !@genevaNamespace.empty? && !@genevaConfigVersion.empty?
+        file.write("export MONITORING_GCS_ENVIRONMENT=#{@genevaEnvironment}\n")
+        file.write("export MONITORING_GCS_ACCOUNT=#{@genevaAccount}\n")
+        file.write("export MONITORING_GCS_NAMESPACE=#{@genevaNamespace}\n")
+        file.write("export MONITORING_CONFIG_VERSION=#{@genevaConfigVersion}\n")
+      end
+    else
+      puts "config::info:multitenancy configured in geneva config hence dynamic geneva config used from k8s genevaconfig crd"
+    end
+    if !@genevaAuthMode.empty? && @genevaAuthMode == "MSI"
+      file.write("export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken\n")
+    end
+    if !@genevaAuthId.empty?
+      file.write("export MONITORING_GCS_AUTH_ID=#{@genevaAuthId}\n")
+    end
+  end
   if !@fbitTailIgnoreOlder.nil? && !@fbitTailIgnoreOlder.empty?
     file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
   end

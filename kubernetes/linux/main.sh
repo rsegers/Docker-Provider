@@ -807,6 +807,172 @@ else
       fi
 fi
 
+# this used by mdsd to determine cloud specific LA endpoints
+export OMS_TLD=$domain
+echo "export OMS_TLD=$OMS_TLD" >> ~/.bashrc
+cat /etc/mdsd.d/envmdsd | while read line; do
+   echo $line >> ~/.bashrc
+done
+source /etc/mdsd.d/envmdsd
+MDSD_AAD_MSI_AUTH_ARGS=""
+# check if its AAD Auth MSI mode via USING_AAD_MSI_AUTH
+export AAD_MSI_AUTH_MODE=false
+if [ "${GENEVA_LOGS_CONFIG_ENABLED}" == "true" ]; then
+    #TODO - Valid if there is any scenario where GCS Region & Resource Region will be different
+    export MONITORING_GCS_REGION=$AKS_REGION
+    echo "export MONITORING_GCS_REGION=$AKS_REGION" >> ~/.bashrc
+    MDSD_AAD_MSI_AUTH_ARGS="-A"
+    if [ "${MONITORING_GCS_AUTH_ID_TYPE}" == "AuthMSIToken" ]; then
+        echo "*** activating oneagent in geneva in GCS MSI auth mode with multi-tenacy enabled: ${GENEVA_LOGS_MULTI_TENANCY_ENABLED}***"
+    else
+        echo "*** activating oneagent in geneva in GCS Cert auth mode with multi-tenacy enabled: ${GENEVA_LOGS_MULTI_TENANCY_ENABLED}***"
+        if [ -e "/mnt/geneva-secrets/gcscert" -a -e "/mnt/geneva-secrets/gcskey" ]; then
+           cat /mnt/geneva-secrets/gcscert | base64 -d >> /etc/mdsd.d/gcscert.pem
+           export MONITORING_GCS_CERT_CERTFILE=/etc/mdsd.d/gcscert.pem
+           echo "export MONITORING_GCS_CERT_CERTFILE=/etc/mdsd.d/gcscert.pem"  >> ~/.bashrc
+
+           cat /mnt/geneva-secrets/gcskey | base64 -d >> /etc/mdsd.d/gcskey.pem
+           export MONITORING_GCS_CERT_KEYFILE=/etc/mdsd.d/gcskey.pem
+           echo "export MONITORING_GCS_CERT_KEYFILE=/etc/mdsd.d/gcskey.pem"  >> ~/.bashrc
+        else
+           echo "-error either geneva cert or key file doesnt exists"
+        fi
+    fi
+    if [ "${GENEVA_LOGS_MULTI_TENANCY_ENABLED}" == "true" ]; then
+      #    echo "starting MDSDMGR since multitenancy enabled"
+      #    echo "MONITORING_GCS_AUTH_ID=$MONITORING_GCS_AUTH_ID" >> /opt/system
+      #    echo "MONITORING_GCS_AUTH_ID=$MONITORING_GCS_AUTH_ID" >> /opt/user
+      #    cp /opt/system /etc/mdsd.d/tenants/
+      #    cp /opt/user /etc/mdsd.d/tenants/
+      #    cp /opt/mdsdmgr_tenants.ini /etc/mdsd.d/tenants/
+         /usr/sbin/mdsdmgr -D -t /etc/mdsd.d/tenants/ &
+         echo "delete default whitelisted tenants file"
+         rm /etc/mdsd.d/tenants/mdsdmgr_tenants.ini
+         pkill -f mdsdmgr
+          echo "start mdsdmgr after deleting of default tenants file"
+         /usr/sbin/mdsdmgr -D -t /etc/mdsd.d/tenants/ &
+    fi
+    # except logs, all other data types ingested via sidecar container MDSD port
+    export MDSD_FLUENT_SOCKET_PORT="26230"
+    echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
+else
+      if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
+            echo "*** activating oneagent in aad auth msi mode ***"
+            # msi auth specific args
+            MDSD_AAD_MSI_AUTH_ARGS="-a -A"
+            export AAD_MSI_AUTH_MODE=true
+            echo "export AAD_MSI_AUTH_MODE=true" >> ~/.bashrc
+            # this used by mdsd to determine the cloud specific AMCS endpoints
+            export customEnvironment=$CLOUD_ENVIRONMENT
+            echo "export customEnvironment=$customEnvironment" >> ~/.bashrc
+            export MDSD_FLUENT_SOCKET_PORT="28230"
+            echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
+            export ENABLE_MCS="true"
+            echo "export ENABLE_MCS=$ENABLE_MCS" >> ~/.bashrc
+            export MONITORING_USE_GENEVA_CONFIG_SERVICE="false"
+            echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
+            export MDSD_USE_LOCAL_PERSISTENCY="false"
+            echo "export MDSD_USE_LOCAL_PERSISTENCY=$MDSD_USE_LOCAL_PERSISTENCY" >> ~/.bashrc
+      else
+            echo "*** activating oneagent in legacy auth mode ***"
+            CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"
+            #use the file path as its secure than env
+            CIWORKSPACE_keyFile="/etc/omsagent-secret/KEY"
+            echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
+            export CIWORKSPACE_id=$CIWORKSPACE_id
+            echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc
+            export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile
+            echo "export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile" >> ~/.bashrc
+            export MDSD_FLUENT_SOCKET_PORT="29230"
+            echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
+            # set the libcurl specific env and configuration
+            export ENABLE_CURL_UPLOAD=true
+            echo "export ENABLE_CURL_UPLOAD=$ENABLE_CURL_UPLOAD" >> ~/.bashrc
+            export CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+            echo "export CURL_CA_BUNDLE=$CURL_CA_BUNDLE" >> ~/.bashrc
+            mkdir -p /etc/pki/tls/certs
+            cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+      fi
+      #skip imds lookup since not used either legacy or aad msi auth path
+      export SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH="true"
+      echo "export SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH=$SKIP_IMDS_LOOKUP_FOR_LEGACY_AUTH" >> ~/.bashrc
+fi
+source ~/.bashrc
+
+dpkg -l | grep mdsd | awk '{print $2 " " $3}'
+
+if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
+    echo "starting mdsd with mdsd-port=26130, fluentport=26230 and influxport=26330 in sidecar container..."
+    #use tenant name to avoid unix socket conflict and different ports for port conflict
+    #roleprefix to use container specific mdsd socket
+    export TENANT_NAME="${CONTAINER_TYPE}"
+    echo "export TENANT_NAME=$TENANT_NAME" >> ~/.bashrc
+    export MDSD_ROLE_PREFIX=/var/run/mdsd-${CONTAINER_TYPE}/default
+    echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
+    source ~/.bashrc
+    mkdir /var/run/mdsd-${CONTAINER_TYPE}
+    # add -T 0xFFFF for full traces
+    mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+else
+   if [ "${GENEVA_LOGS_MULTI_TENANCY_ENABLED}" == "true" ]; then
+      echo "not starting mdsd mode in main container since MDSDMGR will be used for the Multitenacy..."
+   else
+      echo "starting mdsd mode in main container..."
+      # add -T 0xFFFF for full traces
+      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>> /dev/null &
+   fi
+fi
+
+# Set up a cron job for logrotation
+if [ ! -f /etc/cron.d/ci-agent ]; then
+    echo "setting up cronjob for ci agent log rotation"
+    echo "*/5 * * * * root /usr/sbin/logrotate -s /var/lib/logrotate/ci-agent-status /etc/logrotate.d/ci-agent >/dev/null 2>&1" > /etc/cron.d/ci-agent
+fi
+
+# no dependency on fluentd for prometheus side car container
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+      if [ ! -e "/etc/config/kube.conf" ]; then
+         echo "*** starting fluentd v1 in daemonset"
+         fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+      else
+        echo "*** starting fluentd v1 in replicaset"
+        fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+      fi
+fi
+
+#If config parsing was successful, a copy of the conf file with replaced custom settings file is created
+if [ ! -e "/etc/config/kube.conf" ]; then
+      if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ] && [ -e "/opt/telegraf-test-prom-side-car.conf" ]; then
+            echo "****************Start Telegraf in Test Mode**************************"
+            /opt/telegraf --config /opt/telegraf-test-prom-side-car.conf --input-filter file -test
+            if [ $? -eq 0 ]; then
+                  mv "/opt/telegraf-test-prom-side-car.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
+                  echo "Moving test conf file to telegraf side-car conf since test run succeeded"
+            fi
+            echo "****************End Telegraf Run in Test Mode**************************"
+      else
+            if [ -e "/opt/telegraf-test.conf" ]; then
+                  echo "****************Start Telegraf in Test Mode**************************"
+                  /opt/telegraf --config /opt/telegraf-test.conf --input-filter file -test
+                  if [ $? -eq 0 ]; then
+                        mv "/opt/telegraf-test.conf" "/etc/opt/microsoft/docker-cimprov/telegraf.conf"
+                        echo "Moving test conf file to telegraf daemonset conf since test run succeeded"
+                  fi
+                  echo "****************End Telegraf Run in Test Mode**************************"
+            fi
+      fi
+else
+      if [ -e "/opt/telegraf-test-rs.conf" ]; then
+                  echo "****************Start Telegraf in Test Mode**************************"
+                  /opt/telegraf --config /opt/telegraf-test-rs.conf --input-filter file -test
+                  if [ $? -eq 0 ]; then
+                        mv "/opt/telegraf-test-rs.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf"
+                        echo "Moving test conf file to telegraf replicaset conf since test run succeeded"
+                  fi
+                  echo "****************End Telegraf Run in Test Mode**************************"
+      fi
+fi
+
 #telegraf & fluentbit requirements
 if [ ! -e "/etc/config/kube.conf" ]; then
       if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
@@ -899,7 +1065,6 @@ else
       echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
       waitforlisteneronTCPport 25226 30
 fi
-
 
 #start telegraf
 if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then

@@ -161,6 +161,17 @@ data:
     #   tail_mem_buf_limit_megabytes = "10"           # default value is 10
     #   tail_buf_chunksize_megabytes = "1"            # default value is 32kb (comment out this line for default)
     #   tail_buf_maxsize_megabytes = "1"              # defautl value is 32kb (comment out this line for default)
+
+    # The following settings for 1P customers to send the container logs to Geneva
+    # incase of multitenancy mode, values of environment, account, namespace & configversion not required and which are being ignored
+    [agent_settings.geneva_logs_config]
+      # multitenancy = false               # default value is false
+      authmethod = "MSI"                   # Supported values - MSI or CERT.
+      authid =  "client_id#<guid>"         # object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>
+      environment = "Stage"                # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
+      account = "cilogstest"               # name of the Geneva Logs account
+      namespace = "cilogstest"             # name of the Geneva Logs account namespace
+      configversion = "2.0"                # config version of the agent xml config.
     #   tail_ignore_older = "5m"                      # default value same as fluent-bit default i.e.0m
 
 metadata:

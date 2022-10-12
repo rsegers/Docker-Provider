@@ -1,0 +1,8 @@
+apiVersion: azmon.container.insights/v1
+kind: GenevaConfig
+metadata:
+ name: genevaconfig
+spec:
+ genevaaccount: genevacaccount
+ genevaenvironmentType: test
+ genevanamespace: containerlog

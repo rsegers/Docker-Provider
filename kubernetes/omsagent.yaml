@@ -27,6 +27,12 @@ rules:
   - apiGroups: ["apps", "extensions", "autoscaling"]
     resources: ["replicasets", "deployments", "horizontalpodautoscalers"]
     verbs: ["list"]
+  - apiGroups: ["azmon.container.insights"]
+    resources: ["healthstates"]
+    verbs: ["get", "create", "patch"]
+  - apiGroups: ["azmon.container.insights"]
+    resources: ["genevaconfigs"]
+    verbs: ["get", "list"]
   # Uncomment below lines if AddonResizer VPA enabled
   # - apiGroups: ["apps"]
   #   resources: ["deployments"]
@@ -339,6 +345,7 @@ spec:
         tier: node
       annotations:
         agentVersion: "azure-mdsd-1.17.0"
+        dockerProviderVersion: "16.0.0-0"
         dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
     spec:
@@ -435,6 +442,8 @@ spec:
             - containerPort: 25224
               protocol: UDP
           volumeMounts:
+            - mountPath: /var/run/mdsd-PrometheusSidecar
+              name: mdsd-prometheus-sock
             - mountPath: /hostfs
               name: host-root
               readOnly: true
@@ -556,6 +565,8 @@ spec:
         - operator: "Exists"
           effect: "PreferNoSchedule"
       volumes:
+        - name: mdsd-prometheus-sock
+          emptyDir: {}
         - name: host-root
           hostPath:
             path: /

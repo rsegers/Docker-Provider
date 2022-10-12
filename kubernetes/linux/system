@@ -1,0 +1,26 @@
+### Geneva Linux Agent tenant settings file
+TENANT_NAME=system
+MDSD_VAR=/var/opt/microsoft/linuxmonagent/log
+MDSD_CONFIG_DIR=/var/opt/microsoft/linuxmonagent/log/${TENANT_NAME}
+MDSD_RUN_DIR=/var/run/mdsd/${TENANT_NAME}
+MDSD_ROLE_PREFIX=${MDSD_RUN_DIR}/default
+
+# This is where rsyslog and eventhub messages are spooled.
+MDSD_SPOOL_DIRECTORY=${MDSD_VAR}/spool/${TENANT_NAME}
+
+MDSD_LOG=/var/opt/microsoft/linuxmonagent/log
+# Note: Don't set TCP ports, use instead the UNIX domain sockets already available under this folder $MDSD_RUN_DIR
+# option –R will lookup for available port number
+MDSD_OPTIONS="-A -c /etc/mdsd.d/mdsd.xml -C -d -r ${MDSD_ROLE_PREFIX} -S ${MDSD_SPOOL_DIRECTORY}/eh -R -e ${MDSD_LOG}/${TENANT_NAME}.err -w ${MDSD_LOG}/${TENANT_NAME}.warn -o ${MDSD_LOG}/${TENANT_NAME}.info"
+
+# GCS settings
+MONITORING_GCS_ENVIRONMENT=Stage
+MONITORING_GCS_ACCOUNT=cilogstest
+MONITORING_GCS_NAMESPACE=cilogstest
+MONITORING_GCS_REGION=eastus2
+MONITORING_CONFIG_VERSION=2.0
+MONITORING_USE_GENEVA_CONFIG_SERVICE=true
+MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken
+# Both MONITORING_GCS_CERT_CERTFILE and MONITORING_GCS_CERT_KEYFILE not needed for auto-config
+MONITORING_GCS_CERT_CERTFILE=/etc/mdsd.d/gcscert.pem
+MONITORING_GCS_CERT_KEYFILE=/etc/mdsd.d/gcskey.pem

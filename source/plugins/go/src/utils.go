@@ -122,31 +122,60 @@ func ToString(s interface{}) string {
 }
 
 //mdsdSocketClient to write msgp messages
-func CreateMDSDClient(dataType DataType, containerType string) {
+func CreateMDSDClient(dataType DataType, containerType, tenant string) {
 	mdsdfluentSocket := "/var/run/mdsd/default_fluent.socket"
 	if containerType != "" && strings.Compare(strings.ToLower(containerType), "prometheussidecar") == 0 {
 		mdsdfluentSocket = fmt.Sprintf("/var/run/mdsd-%s/default_fluent.socket", containerType)
 	}
+
 	switch dataType {
 	case ContainerLogV2:
-		if MdsdMsgpUnixSocketClient != nil {
-			MdsdMsgpUnixSocketClient.Close()
-			MdsdMsgpUnixSocketClient = nil
-		}
-		/*conn, err := fluent.New(fluent.Config{FluentNetwork:"unix",
-		FluentSocketPath:"/var/run/mdsd/default_fluent.socket",
-		WriteTimeout: 5 * time.Second,
-		RequestAck: true}) */
-		conn, err := net.DialTimeout("unix",
-			mdsdfluentSocket, 10*time.Second)
-		if err != nil {
-			Log("Error::mdsd::Unable to open MDSD msgp socket connection for ContainerLogV2 %s", err.Error())
-			//log.Fatalf("Unable to open MDSD msgp socket connection %s", err.Error())
+		if IsGenevaLogsEnabled && IsGenevaMultiTenancyEnabled {
+			if tenant != "" {
+				mdsdfluentSocket = fmt.Sprintf("/var/run/mdsd/%s/default_fluent.socket", tenant)
+				if MdsdMsgpUnixSocketClientByTenant[tenant] != nil {
+					MdsdMsgpUnixSocketClientByTenant[tenant].Close()
+					MdsdMsgpUnixSocketClientByTenant[tenant] = nil
+				}
+				/*conn, err := fluent.New(fluent.Config{FluentNetwork:"unix",
+				FluentSocketPath:"/var/run/mdsd/default_fluent.socket",
+				WriteTimeout: 5 * time.Second,
+				RequestAck: true}) */
+				conn, err := net.DialTimeout("unix",
+					mdsdfluentSocket, 10*time.Second)
+				if err != nil {
+					Log("Error::mdsd::Unable to open MDSD msgp socket connection for ContainerLogV2 %s", err.Error())
+					//log.Fatalf("Unable to open MDSD msgp socket connection %s", err.Error())
+				} else {
+					Log("Successfully created MDSD msgp socket connection for ContainerLogV2: %s", mdsdfluentSocket)
+					MdsdMsgpUnixSocketClientByTenant[tenant] = conn
+				}
+
+			}
 		} else {
-			Log("Successfully created MDSD msgp socket connection for ContainerLogV2: %s", mdsdfluentSocket)
-			MdsdMsgpUnixSocketClient = conn
+			if MdsdMsgpUnixSocketClient != nil {
+				MdsdMsgpUnixSocketClient.Close()
+				MdsdMsgpUnixSocketClient = nil
+			}
+			/*conn, err := fluent.New(fluent.Config{FluentNetwork:"unix",
+			FluentSocketPath:"/var/run/mdsd/default_fluent.socket",
+			WriteTimeout: 5 * time.Second,
+			RequestAck: true}) */
+			conn, err := net.DialTimeout("unix",
+				mdsdfluentSocket, 10*time.Second)
+			if err != nil {
+				Log("Error::mdsd::Unable to open MDSD msgp socket connection for ContainerLogV2 %s", err.Error())
+				//log.Fatalf("Unable to open MDSD msgp socket connection %s", err.Error())
+			} else {
+				Log("Successfully created MDSD msgp socket connection for ContainerLogV2: %s", mdsdfluentSocket)
+				MdsdMsgpUnixSocketClient = conn
+			}
 		}
 	case KubeMonAgentEvents:
+		// incase of geneva logs integration mode, KubeMonAgentEvents ingested via sidecar container socket
+		if IsGenevaLogsEnabled {
+			mdsdfluentSocket = "/var/run/mdsd-PrometheusSidecar/default_fluent.socket"
+		}
 		if MdsdKubeMonMsgpUnixSocketClient != nil {
 			MdsdKubeMonMsgpUnixSocketClient.Close()
 			MdsdKubeMonMsgpUnixSocketClient = nil
@@ -161,6 +190,10 @@ func CreateMDSDClient(dataType DataType, containerType string) {
 			MdsdKubeMonMsgpUnixSocketClient = conn
 		}
 	case InsightsMetrics:
+		// incase of geneva logs integration mode, InsightsMetrics ingested via sidecar container socket
+		if IsGenevaLogsEnabled {
+			mdsdfluentSocket = "/var/run/mdsd-PrometheusSidecar/default_fluent.socket"
+		}
 		if MdsdInsightsMetricsMsgpUnixSocketClient != nil {
 			MdsdInsightsMetricsMsgpUnixSocketClient.Close()
 			MdsdInsightsMetricsMsgpUnixSocketClient = nil
