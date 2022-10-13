@@ -521,6 +521,8 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
+            - mountPath: /var/run/mdsd-PrometheusSidecar
+              name: mdsd-prometheus-sock
             - mountPath: /etc/kubernetes/host
               name: azure-json-path
             - mountPath: /etc/omsagent-secret
