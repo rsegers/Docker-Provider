@@ -180,6 +180,16 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           @fbitTailMemBufLimitMBs = fbitTailMemBufLimitMBs.to_i
           puts "Using config map value: tail_mem_buf_limit_megabytes  = #{@fbitTailMemBufLimitMBs}"
         end
+        fbitTailIgnoreOlder = fbit_config[:tail_ignore_older]
+        re = /^[0-9]+[mhd]$/
+        if !fbitTailIgnoreOlder.nil? && !fbitTailIgnoreOlder.empty?
+          if !re.match(fbitTailIgnoreOlder).nil?
+            @fbitTailIgnoreOlder = fbitTailIgnoreOlder
+            puts "Using config map value: tail_ignore_older  = #{@fbitTailIgnoreOlder}"
+          else
+            puts "config:warn: provided tail_ignore_older value is not valid hence using default value"
+          end
+        end
       end
       # geneva logs config settings only applicable in main conatiner of Linux Daemonset
       if !@isWindows && @controllerType.downcase == "daemonset" && (@containerType.nil? || @containerType.downcase != "prometheussidecar")
@@ -224,16 +234,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             end
           end
           puts "config::info:successfully parsed geneva_logs_config settings"
-
-        fbitTailIgnoreOlder = fbit_config[:tail_ignore_older]
-        re = /^[0-9]+[mhd]$/
-        if !fbitTailIgnoreOlder.nil? && !fbitTailIgnoreOlder.empty?
-          if !re.match(fbitTailIgnoreOlder).nil?
-            @fbitTailIgnoreOlder = fbitTailIgnoreOlder
-            puts "Using config map value: tail_ignore_older  = #{@fbitTailIgnoreOlder}"
-          else
-            puts "config:warn: provided tail_ignore_older value is not valid hence using default value"
-          end
         end
       end
     end
