@@ -3,6 +3,6 @@ kind: GenevaConfig
 metadata:
  name: genevaconfig
 spec:
- genevaaccount: genevacaccount
- genevaenvironmentType: test
- genevanamespace: containerlog
+ genevaaccount: containerlogs20
+ genevaenvironmentType: Stage
+ genevanamespace: akscil20
