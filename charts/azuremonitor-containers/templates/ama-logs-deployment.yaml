@@ -142,6 +142,15 @@ spec:
         - mountPath: /etc/config/osm-settings
           name: osm-settings-vol-config
           readOnly: true
+        - mountPath: /etc/pki/ca-trust/extracted
+          name: anchors-mariner
+          readOnly: true
+        - mountPath: /anchors/ubuntu
+          name: anchors-ubuntu
+          readOnly: true
+        - mountPath: /etc/ssl/certs
+          name: ca-certs
+          readOnly: true
        livenessProbe:
         exec:
          command:
@@ -196,4 +205,16 @@ spec:
       configMap:
         name: container-azm-ms-osmconfig
         optional: true
+    - name: anchors-mariner
+      hostPath:
+        path: /etc/pki/ca-trust/extracted
+        type: DirectoryOrCreate
+    - name: anchors-ubuntu
+      hostPath:
+        path: /usr/local/share/ca-certificates/
+        type: DirectoryOrCreate
+    - name: ca-certs
+      hostPath:
+        path: /etc/ssl/certs
+        type: DirectoryOrCreate
 {{- end }}
