@@ -59,6 +59,10 @@ module Fluent::Plugin
       eventStream = Fluent::MultiEventStream.new
       hostName = ""
       $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
+      @os_type = ENV["OS_TYPE"]
+      if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+        @tag = "CONTAINER_INVENTORY_BLOB"
+      end
       if ExtensionUtils.isAADMSIAuthMode()
         $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
         if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)

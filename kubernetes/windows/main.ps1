@@ -657,7 +657,7 @@ $StopWatch = new-object system.diagnostics.stopwatch
 $StopWatch.Start()
 
 Write-Host "Starting to search for the config file"
-while (!(Test-Path "C:\opt\genevamonitoringagent\datadirectory\mcs\mcsconfig.lkg.xml") -and $StopWatch.Elapsed.TotalSeconds -lt 60) { 
+while (!(Test-Path "C:\opt\genevamonitoringagent\datadirectory\mcs\mcsconfig.latest.xml")) { 
     Start-Sleep 2 
 }
 
@@ -665,7 +665,7 @@ $StopWatch.Stop()
 $Minutes = $StopWatch.Elapsed.TotalMinutes
 Write-Host "Found the config file in $Minutes"
 
-$config = [XML](Get-Content C:\opt\genevamonitoringagent\datadirectory\mcs\mcsconfig.lkg.xml)
+$config = [XML](Get-Content C:\opt\genevamonitoringagent\datadirectory\mcs\mcsconfig.latest.xml)
 foreach ($node in $config.MonitoringManagement.Sources.Source) {
     if ($node.name -eq "CONTAINER_INVENTORY_BLOB") {
         $pipe = "\\.\\pipe\\CAgentStream_" + $node.streamName
