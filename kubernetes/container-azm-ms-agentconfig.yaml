@@ -143,6 +143,21 @@ data:
         collect_advanced_metrics = false
     [integrations.azure_subnet_ip_usage]
         enabled = false
+    [integrations.geneva_logs]
+        enabled = false
+        environment = "<geneva logs account environment name>"
+        namespace = "<geneva logs account namespace>"
+        account = "<geneva logs account name>"
+        configversion = "2.0"
+        # # when the multitenancy is true, container logs of the specific k8s namespace will be routed to corresponding geneva telemetry service endpoint
+        # # logs of the infra namespaces if infra_namespaces_suffix specified, ingested to geneva account defined in this config
+        # multitenancy = false
+        # infra_namespaces_suffix = "infra-*"
+        # # logs of the tenant namespaces will be routed to k8s service in corresponding namespace
+        # # for example tenant namespaces are tenant1, tenant2, then logs of tenant1 will be routed to genevatelemeyservice.tenant1.svc.cluster.local endpoint
+        # # and logs of tenant2 will be routed genevatelemeyservice.tenant2.svc.cluster.local endpoint
+        # # geneva telemetry service needs to be defined
+        # tenant_namespaces = [""]
 
 # Doc - https://github.com/microsoft/Docker-Provider/blob/ci_prod/Documentation/AgentSettings/ReadMe.md
   agent-settings: |-

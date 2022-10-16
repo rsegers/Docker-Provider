@@ -5,11 +5,12 @@
 replicaCount: 1
 
 genevaLogsConfig:
- authid:  "object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>" # object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>
- environment: "<your_geneva_environment_name>"  # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
- account: "<your_geneva_account_name>"          # name of the Geneva Logs account
- namespace: "<your_geneva_account_namespace>"   # name of the Geneva Logs account namespace
- configversion: "2.0"                # config version of the agent xml config. Default and only supported version currently
+ authid:  "object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>"         # object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>
+ environment: "<your_geneva_environment_name>"                # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
+ account: "<your_geneva_account_name>"            # name of the Geneva Logs account
+ namespace: "<your_geneva_account_namespace>"     # name of the Geneva Logs account namespace
+ configversion: "2.0"                # config version of the agent xml config.
+
 
 env:
   clusterResourceId: "/subscriptions/<subId>/resourcegroups/<rgName>/providers/Microsoft.ContainerService/managedClusters/<clusterName>"
@@ -51,17 +52,17 @@ service:
 
 resources:
   limits:
-    cpu: 1
-    memory: 1Gi
+    cpu: 2
+    memory: 2Gi
   requests:
-    cpu: 75m
-    memory: 325Mi
+    cpu: 150m
+    memory: 900Mi
 
 autoscaling:
-  enabled: false
+  enabled: true
   minReplicas: 1
   maxReplicas: 5
-  targetMemoryUtilizationPercentage: 80
+  targetMemoryUtilizationPercentage: 90
   # targetCPUUtilizationPercentage: 80
 
 nodeSelector:
