@@ -628,6 +628,10 @@ Start-Transcript -Path main.txt
 
 Remove-WindowsServiceIfItExists "fluentdwinaks"
 Set-EnvironmentVariables
+
+#start Windows AMA 
+Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") -RedirectStandardOutput "out.txt" -RedirectStandardError "err.txt"
+
 Start-FileSystemWatcher
 
 #Bootstrapping CA certs for non public clouds and AKS clusters
@@ -649,9 +653,28 @@ else {
     Test-CertificatePath
 }
 
-#start Windows AMA 
-Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") -RedirectStandardOutput "out.txt" -RedirectStandardError "err.txt"
+$StopWatch = new-object system.diagnostics.stopwatch
+$StopWatch.Start()
 
+Write-Host "Starting to search for the config file"
+while (!(Test-Path "C:\opt\genevamonitoringagent\datadirectory\mcs\mcsconfig.lkg.xml") -and $StopWatch.Elapsed.TotalSeconds -lt 60) { 
+    Start-Sleep 2 
+}
+
+$StopWatch.Stop()
+$Minutes = $StopWatch.Elapsed.TotalMinutes
+Write-Host "Found the config file in $Minutes"
+
+$config = [XML](Get-Content C:\opt\genevamonitoringagent\datadirectory\mcs\mcsconfig.lkg.xml)
+foreach ($node in $config.MonitoringManagement.Sources.Source) {
+    if ($node.name -eq "CONTAINER_INVENTORY_BLOB") {
+        $pipe = "\\.\\pipe\\CAgentStream_" + $node.streamName
+        [System.Environment]::SetEnvironmentVariable("CONTAINER_INVENTORY_NAMEDPIPE", $node.streamName, "machine")
+        [System.Environment]::SetEnvironmentVariable("CONTAINER_INVENTORY_NAMEDPIPE", $node.streamName, "process")
+    }
+}
+
+Write-Host dir env:
 
 Start-Fluent-Telegraf
 

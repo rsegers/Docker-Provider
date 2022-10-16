@@ -3,23 +3,21 @@
     "contentVersion": "1.0.0.0",
     "parameters": {
       "aksResourceId": {
-        "value": "/subscriptions/<SubscriptionId>/resourcegroups/<ResourceGroup>/providers/Microsoft.ContainerService/managedClusters/<ResourceName>"
+        "value": "/subscriptions/81895b44-c46d-44c3-9368-42f0386af28e/resourceGroups/ci_ama_win_janvi/providers/Microsoft.ContainerService/managedClusters/winci-3"
       },
       "aksResourceLocation": {
-        "value": "<aksClusterLocation>"
+        "value": "eastus2euap"
       },
       "workspaceResourceId": {
-        "value": "/subscriptions/<SubscriptionId>/resourceGroups/<ResourceGroup>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName>"
+        "value": "/subscriptions/81895b44-c46d-44c3-9368-42f0386af28e/resourcegroups/ci_ama_win_janvi/providers/microsoft.operationalinsights/workspaces/ci-ama-win-la"
       },
       "workspaceLocation": {
-        "value": "<workspaceLocation>"
+        "value": "eastus2euap"
       },
       "resourceTagValues": {
         "value": {
-          "<existingOrnew-tag-name1>": "<existingOrnew-tag-value1>",
-          "<existingOrnew-tag-name2>": "<existingOrnew-tag-value2>",
-          "<existingOrnew-tag-nameN>": "<existingOrnew-tag-valueN>"
-        }
+          "test-ci": "amawindows"
       }
     }
   }
+}
