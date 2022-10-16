@@ -60,7 +60,7 @@ spec:
             - name: MONITORING_MAX_EVENT_RATE
               value: "50000" # default MDSD EPS is 20K which is not enough for large scale
             - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_SIZE
-              value: "20m"
+              value: "25m"
             - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_MAX_SIZE
               value: "50m"
             # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
