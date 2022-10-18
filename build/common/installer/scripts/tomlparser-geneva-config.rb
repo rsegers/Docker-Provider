@@ -13,7 +13,7 @@ require_relative "ConfigParseErrorLogger"
 GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "FirstpartyProd", "BillingProd", "ExternalProd", "CaMooncake", "CaFairfax", "CaBlackforest"]
 @geneva_account_environment = "" # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
 @geneva_account_name = ""
-@geneva_account_namespace_name = ""
+@geneva_account_namespace = ""
 @geneva_logs_config_version = "2.0"
 @infra_namespaces_prefix = ""
 @tenant_namespaces = []
@@ -83,6 +83,18 @@ def populateSettingValuesFromConfigMap(parsedConfig)
               @tenant_namespaces = tenant_namespaces
             end
           end
+
+          puts "Using config map value: GENEVA_LOGS_INTEGRATION = #{@geneva_logs_integration}"
+          puts "Using config map value: GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}"
+
+          puts "Using config map value: MONITORING_GCS_ENVIRONMENT = #{@geneva_account_environment}"
+          puts "Using config map value: MONITORING_GCS_NAMESPACE = #{@geneva_account_namespace}"
+          puts "Using config map value: MONITORING_GCS_ACCOUNT = #{@geneva_account_name}"
+          puts "Using config map value: MONITORING_CONFIG_VERSION = #{@geneva_logs_config_version}"
+
+          puts "Using config map value: GENEVA_LOGS_INFRA_NAMESPACES_PREFIX = #{@infra_namespaces_prefix}"
+          puts "Using config map value: GENEVA_LOGS_TENANT_NAMESPACES = #{@tenant_namespaces}"
+
         end
       end
     end
@@ -144,7 +156,7 @@ else
   @multi_tenancy = false
   @geneva_account_environment = ""
   @geneva_account_name = ""
-  @geneva_account_namespace_name = ""
+  @geneva_account_namespace = ""
 end
 
 # Write the settings to file, so that they can be set as environment variables
@@ -155,7 +167,7 @@ if !file.nil?
   file.write("export GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}\n")
 
   file.write("export MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}\n")
-  file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace_name}\n")
+  file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}\n")
   file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
   file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
 
@@ -181,7 +193,7 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
 
     commands = get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment)
     file.write(commands)
-    commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace_name)
+    commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace)
     file.write(commands)
     commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
     file.write(commands)
