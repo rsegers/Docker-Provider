@@ -573,10 +573,11 @@ if [[ ( ( ! -e "/etc/config/kube.conf" ) && ( "${CONTAINER_TYPE}" == "Prometheus
 fi
 
 # If the prometheus sidecar isn't doing anything then there's no need to run mdsd and telegraf in it.
-if [[ ( "${CONTAINER_TYPE}" == "PrometheusSidecar" ) &&
+if [[ ( "${GENEVA_LOGS_INTEGRATION}" != "true" ) &&
+      ( "${CONTAINER_TYPE}" == "PrometheusSidecar" ) &&
       ( "${TELEMETRY_CUSTOM_PROM_MONITOR_PODS}" == "false" ) &&
       ( "${TELEMETRY_OSM_CONFIGURATION_NAMESPACES_COUNT}" -eq 0 ) ]]; then
-      setGlobalEnvVar MUTE_PROM_SIDECAR true
+       setGlobalEnvVar MUTE_PROM_SIDECAR true
 else
       setGlobalEnvVar MUTE_PROM_SIDECAR false
 fi

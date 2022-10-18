@@ -180,6 +180,8 @@ var (
 	ContainerType string
 	// flag to check whether LA AAD MSI Auth Enabled or not
 	IsAADMSIAuthMode bool
+	// flag to check whether Geneva Logs Integration enabled or not
+	IsGenevaLogsIntegrationEnabled bool
 )
 
 var (
@@ -1708,6 +1710,13 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	ContainerLogsRouteV2 = false
 	ContainerLogsRouteADX = false
+
+	genevaLogsIntegrationEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("GENEVA_LOGS_INTEGRATION")))
+	IsGenevaLogsIntegrationEnabled = false
+	if genevaLogsIntegrationEnabled != "" && strings.Compare(strings.ToLower(genevaLogsIntegrationEnabled), "true") == 0 {
+		IsGenevaLogsIntegrationEnabled = true
+		Log("Geneva Logs Integration Enabled")
+	}
 
 	if strings.Compare(ContainerLogsRoute, ContainerLogsADXRoute) == 0 {
 		// Try to read the ADX database name from environment variables. Default to DefaultAdsDatabaseName if not set.
