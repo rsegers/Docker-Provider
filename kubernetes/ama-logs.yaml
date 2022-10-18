@@ -435,6 +435,8 @@ spec:
             - containerPort: 25224
               protocol: UDP
           volumeMounts:
+            - mountPath: /var/run/mdsd-PrometheusSidecar
+              name: mdsd-prometheus-sock
             - mountPath: /hostfs
               name: host-root
               readOnly: true
@@ -512,6 +514,8 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
+            - mountPath: /var/run/mdsd-PrometheusSidecar
+              name: mdsd-prometheus-sock
             - mountPath: /etc/kubernetes/host
               name: azure-json-path
             - mountPath: /etc/ama-logs-secret
@@ -556,6 +560,8 @@ spec:
         - operator: "Exists"
           effect: "PreferNoSchedule"
       volumes:
+        - name: mdsd-prometheus-sock
+          emptyDir: {}
         - name: host-root
           hostPath:
             path: /

@@ -487,6 +487,14 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidec
       ruby td-agent-bit-conf-customizer.rb
 fi
 
+#Parse geneva config
+if [ "${CONTROLLER_TYPE}" != "ReplicaSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+      ruby tomlparser-geneva-config.rb
+      cat geneva_config_env_var | while read line; do
+            echo $line >> ~/.bashrc
+      done
+      source geneva_config_env_var
+fi
 #Parse the prometheus configmap to create a file with new custom settings.
 ruby tomlparser-prom-customconfig.rb
 
@@ -690,42 +698,55 @@ source /etc/mdsd.d/envmdsd
 MDSD_AAD_MSI_AUTH_ARGS=""
 # check if its AAD Auth MSI mode via USING_AAD_MSI_AUTH
 export AAD_MSI_AUTH_MODE=false
-if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
-   echo "*** setting up oneagent in aad auth msi mode ***"
-   # msi auth specific args
-   MDSD_AAD_MSI_AUTH_ARGS="-a -A"
-   export AAD_MSI_AUTH_MODE=true
-   echo "export AAD_MSI_AUTH_MODE=true" >> ~/.bashrc
-   # this used by mdsd to determine the cloud specific AMCS endpoints
-   export customEnvironment=$CLOUD_ENVIRONMENT
-   echo "export customEnvironment=$customEnvironment" >> ~/.bashrc
-   export MDSD_FLUENT_SOCKET_PORT="28230"
-   echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
-   export ENABLE_MCS="true"
-   echo "export ENABLE_MCS=$ENABLE_MCS" >> ~/.bashrc
-   export MONITORING_USE_GENEVA_CONFIG_SERVICE="false"
-   echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
-   export MDSD_USE_LOCAL_PERSISTENCY="false"
-   echo "export MDSD_USE_LOCAL_PERSISTENCY=$MDSD_USE_LOCAL_PERSISTENCY" >> ~/.bashrc
+if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ]; then
+    export MONITORING_GCS_REGION=$AKS_REGION
+    echo "export MONITORING_GCS_REGION=$AKS_REGION" >> ~/.bashrc
+    export MONITORING_USE_GENEVA_CONFIG_SERVICE=true
+    echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=true" >> ~/.bashrc
+    export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken
+    echo "export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken" >> ~/.bashrc
+    MDSD_AAD_MSI_AUTH_ARGS="-A"
+    # except logs, all other data types ingested via sidecar container MDSD port
+    export MDSD_FLUENT_SOCKET_PORT="26230"
+    echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
 else
-  echo "*** setting up oneagent in legacy auth mode ***"
-  CIWORKSPACE_id="$(cat /etc/ama-logs-secret/WSID)"
-  #use the file path as its secure than env
-  CIWORKSPACE_keyFile="/etc/ama-logs-secret/KEY"
-  echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
-  export CIWORKSPACE_id=$CIWORKSPACE_id
-  echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc
-  export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile
-  echo "export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile" >> ~/.bashrc
-  export MDSD_FLUENT_SOCKET_PORT="29230"
-  echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
-  # set the libcurl specific env and configuration
-  export ENABLE_CURL_UPLOAD=true
-  echo "export ENABLE_CURL_UPLOAD=$ENABLE_CURL_UPLOAD" >> ~/.bashrc
-  export CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
-  echo "export CURL_CA_BUNDLE=$CURL_CA_BUNDLE" >> ~/.bashrc
-  mkdir -p /etc/pki/tls/certs
-  cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+      if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
+            echo "*** setting up oneagent in aad auth msi mode ***"
+            # msi auth specific args
+            MDSD_AAD_MSI_AUTH_ARGS="-a -A"
+            export AAD_MSI_AUTH_MODE=true
+            echo "export AAD_MSI_AUTH_MODE=true" >> ~/.bashrc
+            # this used by mdsd to determine the cloud specific AMCS endpoints
+            export customEnvironment=$CLOUD_ENVIRONMENT
+            echo "export customEnvironment=$customEnvironment" >> ~/.bashrc
+            export MDSD_FLUENT_SOCKET_PORT="28230"
+            echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
+            export ENABLE_MCS="true"
+            echo "export ENABLE_MCS=$ENABLE_MCS" >> ~/.bashrc
+            export MONITORING_USE_GENEVA_CONFIG_SERVICE="false"
+            echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
+            export MDSD_USE_LOCAL_PERSISTENCY="false"
+            echo "export MDSD_USE_LOCAL_PERSISTENCY=$MDSD_USE_LOCAL_PERSISTENCY" >> ~/.bashrc
+      else
+            echo "*** setting up oneagent in legacy auth mode ***"
+            CIWORKSPACE_id="$(cat /etc/ama-logs-secret/WSID)"
+            #use the file path as its secure than env
+            CIWORKSPACE_keyFile="/etc/ama-logs-secret/KEY"
+            echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
+            export CIWORKSPACE_id=$CIWORKSPACE_id
+            echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc
+            export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile
+            echo "export CIWORKSPACE_keyFile=$CIWORKSPACE_keyFile" >> ~/.bashrc
+            export MDSD_FLUENT_SOCKET_PORT="29230"
+            echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
+            # set the libcurl specific env and configuration
+            export ENABLE_CURL_UPLOAD=true
+            echo "export ENABLE_CURL_UPLOAD=$ENABLE_CURL_UPLOAD" >> ~/.bashrc
+            export CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+            echo "export CURL_CA_BUNDLE=$CURL_CA_BUNDLE" >> ~/.bashrc
+            mkdir -p /etc/pki/tls/certs
+            cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+     fi
 fi
 source ~/.bashrc
 
