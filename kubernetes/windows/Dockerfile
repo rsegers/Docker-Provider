@@ -39,8 +39,8 @@ ENV tmpdir /opt/omsagentwindows/scripts/powershell
 
 WORKDIR /opt/omsagentwindows/scripts/powershell
 
-COPY fluent-plugin-named_pipe-0.2.1.gem /opt/omsagentwindows/scripts/powershell
-RUN gem install ./fluent-plugin-named_pipe-0.2.1.gem 
+COPY fluent-plugin-named_pipe-0.2.3.gem /opt/omsagentwindows/scripts/powershell
+RUN gem install ./fluent-plugin-named_pipe-0.2.3.gem 
 
 # copy certificate generator binaries zip
 COPY ./omsagentwindows/*.zip /opt/omsagentwindows/
