@@ -51,7 +51,7 @@ function Build-Dependencies {
     New-Item -Path $destinationPath -ItemType "directory" -Force -ErrorAction Stop
 
     Write-Host("downloading gcc : " + $destinationPath + "  ...")
-    $gccDownLoadUrl = "https://ciwinagentbuildgcc.blob.core.windows.net/tdm-gcc-64/TDM-GCC-64.zip"
+    $gccDownLoadUrl = "https://github.com/microsoft/Docker-Provider/releases/download/tdm-gcc/TDM-GCC-64.zip"
     $gccPath =  Join-Path -Path $destinationPath -ChildPath "gcc.zip"
     Invoke-WebRequest -UserAgent "BuildAgent" -Uri $gccDownLoadUrl -OutFile $gccPath
     Write-Host("downloading gcc zip  file completed")
