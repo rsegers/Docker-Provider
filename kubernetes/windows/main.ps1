@@ -669,8 +669,8 @@ $config = [XML](Get-Content C:\opt\genevamonitoringagent\datadirectory\mcs\mcsco
 foreach ($node in $config.MonitoringManagement.Sources.Source) {
     if ($node.name -eq "CONTAINER_INVENTORY_BLOB") {
         $pipe = "\\.\\pipe\\CAgentStream_" + $node.streamName
-        [System.Environment]::SetEnvironmentVariable("CONTAINER_INVENTORY_NAMEDPIPE", $node.streamName, "machine")
-        [System.Environment]::SetEnvironmentVariable("CONTAINER_INVENTORY_NAMEDPIPE", $node.streamName, "process")
+        [System.Environment]::SetEnvironmentVariable("CONTAINER_INVENTORY_NAMEDPIPE", $pipe, "machine")
+        [System.Environment]::SetEnvironmentVariable("CONTAINER_INVENTORY_NAMEDPIPE", $pipe, "process")
     }
 }
 
