@@ -37,7 +37,6 @@ waitForArcK8sClusterCreated() {
     for i in $(seq 1 $max_retries)
     do
       echo "iteration: ${i}, clustername: ${CLUSTER_NAME}, resourcegroup: ${RESOURCE_GROUP}"
-      ### for lcm, replace command with provisioned clusted
       clusterState=$(az connectedk8s show --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --query connectivityStatus -o json)
       clusterState=$(echo $clusterState | tr -d '"' | tr -d '"\r\n')
       echo "cluster current state: ${clusterState}"
@@ -52,6 +51,30 @@ waitForArcK8sClusterCreated() {
     echo "Arc K8s cluster connectivityState: $connectivityState"
 }
 
+waitForLCMCreated() {
+    connectivityState=false
+    max_retries=60
+    sleep_seconds=10
+    for i in $(seq 1 $max_retries)
+    do
+      echo "iteration: ${i}, clustername: ${CLUSTER_NAME}, resourcegroup: ${RESOURCE_GROUP}"
+      ## hybridaks does not support checking connectivityStatus  maybe compare date with system date to see if has difference
+      # az hybridaks show -n $k8sClusterName -g $resourceGroup --query properties.status.featuresStatus.arcAgentStatus.lastConnectivityTime -o json
+
+      clusterState=$(az connectedk8s show --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --query connectivityStatus -o json)  arc
+      clusterState=$(echo $clusterState | tr -d '"' | tr -d '"\r\n')
+      echo "cluster current state: ${clusterState}"
+      if [ ! -z "$clusterState" ]; then
+         if [[ ("${clusterState}" == "Connected") || ("${clusterState}" == "Connecting") ]]; then
+            connectivityState=true
+            break
+         fi
+      fi
+      sleep ${sleep_seconds}
+    done
+    echo "Provisioned cluster connectivityState: $connectivityState"
+}
+
 waitForCIExtensionInstalled() {
     installedState=false
     max_retries=60
@@ -59,12 +82,36 @@ waitForCIExtensionInstalled() {
     for i in $(seq 1 $max_retries)
     do
       echo "iteration: ${i}, clustername: ${CLUSTER_NAME}, resourcegroup: ${RESOURCE_GROUP}"
-      ### for lcm, replace command with provisioned clusted
-      installState=$(az k8s-extension show  --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP  --cluster-type connectedClusters --name azuremonitor-containers --query installState -o json)
+      installState=$(az k8s-extension show --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP  --cluster-type connectedClusters --name azuremonitor-containers --query provisioningState -o json)
       installState=$(echo $installState | tr -d '"' | tr -d '"\r\n')
       echo "extension install state: ${installState}"
       if [ ! -z "$installState" ]; then
-         if [ "${installState}" == "Installed" ]; then
+         if [ "${installState}" == "Succeeded" ]; then
+            installedState=true
+            break
+         fi
+      fi
+      sleep ${sleep_seconds}
+    done
+    echo "container insights extension installedState: $installedState"
+}
+
+waitForLCMCIExtensionInstalled() {
+    installedState=false
+    max_retries=60
+    sleep_seconds=10
+    for i in $(seq 1 $max_retries)
+    do
+      echo "iteration: ${i}, clustername: ${CLUSTER_NAME}, resourcegroup: ${RESOURCE_GROUP}"
+      ### for lcm, replace command with provisioned clusted
+      # installed version  installState missing
+      # start a issue on arc to see why this has been removed
+      ## maybe use helm command to verify or use the provsioned status
+      installState=$(az k8s-extension show --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP  --cluster-type provisionedclusters --cluster-resource-provider microsoft.hybridcontainerservice --name azuremonitor-containers --query provisioningState -o json)
+      installState=$(echo $installState | tr -d '"' | tr -d '"\r\n')
+      echo "extension install state: ${installState}"
+      if [ ! -z "$installState" ]; then
+         if [ "${installState}" == "Succeeded" ]; then
             installedState=true
             break
          fi
@@ -109,8 +156,12 @@ validateArcConfTestParameters() {
 
 addArcConnectedK8sExtension() {
    echo "adding Arc K8s connectedk8s extension"
-   ### for lcm, replace command with provisioned clusted
    az extension add --name connectedk8s 2> ${results_dir}/error || python3 setup_failure_handler.py
+}
+
+addHybridaksExtension() {
+   echo "adding Arc hybridaks extension"
+   az extension add --name hybridaks 2> ${results_dir}/error || python3 setup_failure_handler.py
 }
 
 addArcK8sCLIExtension() {
@@ -125,8 +176,24 @@ addArcK8sCLIExtension() {
 
 createArcCIExtension() {
 	echo "creating extension type: Microsoft.AzureMonitor.Containers"
-   ### for lcm, replace command with provisioned clusted
     basicparameters="--cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --cluster-type connectedClusters --extension-type Microsoft.AzureMonitor.Containers --scope cluster --name azuremonitor-containers"
+    if [ ! -z "$CI_ARC_RELEASE_TRAIN" ]; then
+       basicparameters="$basicparameters  --release-train $CI_ARC_RELEASE_TRAIN"
+    fi
+    if [ ! -z "$CI_ARC_VERSION" ]; then
+       basicparameters="$basicparameters  --version $CI_ARC_VERSION"
+    fi
+
+   if [ ! -z "$USE_AAD_AUTH" ]; then
+     az k8s-extension create $basicparameters --configuration-settings amalogs.ISTEST=true amalogs.useAADAuth=$USE_AAD_AUTH
+   else
+     az k8s-extension create $basicparameters --configuration-settings amalogs.ISTEST=true
+   fi
+}
+
+createLCMCIExtension() {
+	echo "creating extension type: Microsoft.AzureMonitor.Containers"
+    basicparameters="--cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --cluster-type provisionedclusters --cluster-resource-provider microsoft.hybridcontainerservice --extension-type Microsoft.AzureMonitor.Containers --scope cluster --name azuremonitor-containers"
     if [ ! -z "$CI_ARC_RELEASE_TRAIN" ]; then
        basicparameters="$basicparameters  --release-train $CI_ARC_RELEASE_TRAIN"
     fi
@@ -143,16 +210,20 @@ createArcCIExtension() {
 
 showArcCIExtension() {
   echo "arc ci extension status"
-  ### for lcm, replace command with provisioned clusted
-  az k8s-extension show  --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP  --cluster-type connectedClusters --name azuremonitor-containers
+  az k8s-extension show  --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --cluster-type connectedClusters --name azuremonitor-containers
+}
+
+showLCMCIExtension() {
+  echo "LCM extension status"
+  az k8s-extension show  --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --cluster-type provisionedclusters --cluster-resource-provider microsoft.hybridcontainerservice --name azuremonitor-containers
 }
 
 deleteArcCIExtension() {
-   ### for lcm, replace command with provisioned clusted
-    az k8s-extension delete --name azuremonitor-containers \
-    --cluster-type connectedClusters \
-	--cluster-name $CLUSTER_NAME \
-	--resource-group $RESOURCE_GROUP --yes
+  az k8s-extension delete --name azuremonitor-containers --cluster-type connectedClusters --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --yes
+}
+
+deleteLCMCIExtension() {
+  az k8s-extension delete --name azuremonitor-containers --cluster-type provisionedclusters --cluster-resource-provider microsoft.hybridcontainerservice --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --yes
 }
 
 login_to_azure() {
@@ -187,8 +258,6 @@ trap saveResults EXIT
 validateCommonParameters
 
 IS_ARC_K8S_ENV="true"
-### for lcm, replace command with provisioned clusted
-### maybe check RP type here and add functions for provisioned cluster
 if [ -z $IS_NON_ARC_K8S_TEST_ENVIRONMENT ]; then
    echo "arc k8s environment"
 else
@@ -207,27 +276,46 @@ else
    # login to azure
    login_to_azure
 
-   # add arc k8s connectedk8s extension
-   ### for lcm, replace command with provisioned clusted
-   addArcConnectedK8sExtension
+   # add extensions
+   if [ "$CLUSTER_TYPE" = "provisionedclusters" ]; then
+      addHybridaksExtension
+   else
+      addArcConnectedK8sExtension
+   fi
 
    # wait for arc k8s pods to be ready state
    waitForResourcesReady azure-arc pods
 
-   # wait for Arc K8s cluster to be created
-   waitForArcK8sClusterCreated
+   # wait for clusters to be created
+   if [ "$CLUSTER_TYPE" = "provisionedclusters" ]; then
+      waitForLCMCreated
+   else
+      waitForArcK8sClusterCreated
+   fi
 
    # add CLI extension
    addArcK8sCLIExtension
 
-   # add ARC K8s container insights extension
-   createArcCIExtension
+   # add container insights extension
+   if [ "$CLUSTER_TYPE" = "provisionedclusters" ]; then
+      createLCMCIExtension
+   else
+      createArcCIExtension
+   fi
 
    # show the ci extension status
-   showArcCIExtension
+   if [ "$CLUSTER_TYPE" = "provisionedclusters" ]; then
+      showLCMCIExtension
+   else
+      showArcCIExtension
+   fi
 
    #wait for extension state to be installed
-   waitForCIExtensionInstalled
+   if [ "$CLUSTER_TYPE" = "provisionedclusters" ]; then
+      waitForLCMCIExtensionInstalled
+   else
+      waitForCIExtensionInstalled
+   fi
 fi
 
 # The variable 'TEST_LIST' should be provided if we want to run specific tests. If not provided, all tests are run
@@ -239,4 +327,9 @@ export NUM_TESTS="$NUM_PROCESS"
 pytest /e2etests/ --junitxml=/tmp/results/results.xml -d --tx "$NUM_PROCESS"*popen -k "$TEST_NAME_LIST" -m "$TEST_MARKER_LIST"
 
 # cleanup extension resource
-deleteArcCIExtension
+if [ "$CLUSTER_TYPE" = "provisionedclusters" ]; then
+   deleteLCMCIExtension
+else
+   deleteArcCIExtension
+fi
+
