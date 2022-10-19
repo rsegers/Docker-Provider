@@ -22,8 +22,6 @@ import (
 	"github.com/tinylib/msgp/msgp"
 
 	"Docker-Provider/source/plugins/go/src/extension"
-	"Docker-Provider/source/plugins/go/src/extension_windows"
-
 
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
@@ -1294,7 +1292,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			Log("Windows AMA::fluentForwardTag: %s, jsonStr: %s, msgpSize: %d", fluentForward.Tag, jsonStr, msgpSize)
 			if ContainerLogNamedPipe == nil {
 				Log("Windows AMA:: The container log named pipe was nil")
-				CreateWindowsNamedPipesClient(extension_windows.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe("CONTAINER_LOG_BLOB"))
+				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe("CONTAINER_LOG_BLOB"))
 			}
 			if ContainerLogNamedPipe == nil {
 				Log("Windows AMA:: Error in creating the named piep connection")
@@ -1798,7 +1796,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		CreateADXClient()
 	} else if strings.Compare(strings.ToLower(osType), "windows") == 0 {
 		Log("Windows AMA: Creating NamedPipe Client for Container Log")
-		CreateWindowsNamedPipesClient(extension_windows.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe("CONTAINER_LOG_BLOB"))
+		CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe("CONTAINER_LOG_BLOB"))
 		ContainerLogsRouteV2 = true
 	} else { // v1 or windows
 		Log("Creating HTTP Client since either OS Platform is Windows or configmap configured with fallback option for ODS direct")
