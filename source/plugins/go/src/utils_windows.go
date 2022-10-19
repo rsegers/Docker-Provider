@@ -3,12 +3,7 @@
 package main
 
 import (
-	"bufio"
 	"context"
-	"errors"
-	"io/ioutil"
-	"log"
-	"os"
 	"syscall"
 	"time"
 
