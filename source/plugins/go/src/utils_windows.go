@@ -5,16 +5,10 @@ package main
 import (
 	"bufio"
 	"context"
-	"crypto/tls"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"log"
-	"net"
-	"net/http"
-	"net/url"
 	"os"
-	"strings"
 	"syscall"
 	"time"
 
