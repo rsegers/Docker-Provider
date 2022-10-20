@@ -756,6 +756,7 @@ else
       source ~/.bashrc
       mkdir /var/run/mdsd-ci
       mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
+      cp /etc/opt/microsoft/docker-cimprov/70-rsyslog-forward-mdsd-ci.conf /var/run/mdsd-ci
 fi
 
 # Set up a cron job for logrotation
