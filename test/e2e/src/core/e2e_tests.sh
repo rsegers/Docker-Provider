@@ -58,14 +58,13 @@ waitForLCMCreated() {
     for i in $(seq 1 $max_retries)
     do
       echo "iteration: ${i}, clustername: ${CLUSTER_NAME}, resourcegroup: ${RESOURCE_GROUP}"
-      ## hybridaks does not support checking connectivityStatus  maybe compare date with system date to see if has difference
-      # az hybridaks show -n $k8sClusterName -g $resourceGroup --query properties.status.featuresStatus.arcAgentStatus.lastConnectivityTime -o json
-
-      clusterState=$(az connectedk8s show --name $CLUSTER_NAME --resource-group $RESOURCE_GROUP --query connectivityStatus -o json)  arc
+      # hybridaks does not support checking connectivityStatus
+      todayDate=$(date +'%Y-%m-%d')
+      clusterState=$(az hybridaks show -n $k8sClusterName -g $resourceGroup --query properties.status.featuresStatus.arcAgentStatus.lastConnectivityTime -o json | cut -c2-11)
       clusterState=$(echo $clusterState | tr -d '"' | tr -d '"\r\n')
       echo "cluster current state: ${clusterState}"
       if [ ! -z "$clusterState" ]; then
-         if [[ ("${clusterState}" == "Connected") || ("${clusterState}" == "Connecting") ]]; then
+         if [[ "${clusterState}" == "${todayDate}" ]]; then
             connectivityState=true
             break
          fi
@@ -103,10 +102,6 @@ waitForLCMCIExtensionInstalled() {
     for i in $(seq 1 $max_retries)
     do
       echo "iteration: ${i}, clustername: ${CLUSTER_NAME}, resourcegroup: ${RESOURCE_GROUP}"
-      ### for lcm, replace command with provisioned clusted
-      # installed version  installState missing
-      # start a issue on arc to see why this has been removed
-      ## maybe use helm command to verify or use the provsioned status
       installState=$(az k8s-extension show --cluster-name $CLUSTER_NAME --resource-group $RESOURCE_GROUP  --cluster-type provisionedclusters --cluster-resource-provider microsoft.hybridcontainerservice --name azuremonitor-containers --query provisioningState -o json)
       installState=$(echo $installState | tr -d '"' | tr -d '"\r\n')
       echo "extension install state: ${installState}"
