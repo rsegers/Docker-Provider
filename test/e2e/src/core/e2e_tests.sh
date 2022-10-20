@@ -60,11 +60,11 @@ waitForLCMCreated() {
       echo "iteration: ${i}, clustername: ${CLUSTER_NAME}, resourcegroup: ${RESOURCE_GROUP}"
       # hybridaks does not support checking connectivityStatus
       todayDate=$(date +'%Y-%m-%d')
-      clusterState=$(az hybridaks show -n $k8sClusterName -g $resourceGroup --query properties.status.featuresStatus.arcAgentStatus.lastConnectivityTime -o json | cut -c2-11)
-      clusterState=$(echo $clusterState | tr -d '"' | tr -d '"\r\n')
-      echo "cluster current state: ${clusterState}"
-      if [ ! -z "$clusterState" ]; then
-         if [[ "${clusterState}" == "${todayDate}" ]]; then
+      clusterLastConnectDate=$(az hybridaks show -n $k8sClusterName -g $resourceGroup --query properties.status.featuresStatus.arcAgentStatus.lastConnectivityTime -o json | cut -c2-11)
+      clusterLastConnectDate=$(echo $clusterLastConnectDate | tr -d '"' | tr -d '"\r\n')
+      echo "cluster last connectDate: ${clusterLastConnectDate}, current date:${todayDate}"
+      if [ ! -z "$clusterLastConnectDate" ]; then
+         if [[ "${clusterLastConnectDate}" == "${todayDate}" ]]; then
             connectivityState=true
             break
          fi
