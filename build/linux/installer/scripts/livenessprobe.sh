@@ -5,12 +5,12 @@ syslog_status=$(cat /var/opt/microsoft/docker-cimprov/state/syslog.status 2>/dev
 if grep -qr LINUX_SYSLOGS_BLOB /etc/mdsd.d/config-cache/configchunks > /dev/null 2>&1; then
         if [[ "$syslog_status" == "disabled" ]]; then
                 echo "enabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
-                echo "add" > /var/run/mdsd-ci/update.status
+                [ -d "/var/run/mdsd-ci" ] && cp /etc/opt/microsoft/docker-cimprov/70-rsyslog-forward-mdsd-ci.conf /var/run/mdsd-ci && echo "add" > /var/run/mdsd-ci/update.status
         fi
 else
         if [[ "$syslog_status" == "enabled" ]]; then
                 echo "disabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
-                echo "remove" > /var/run/mdsd-ci/update.status
+                [ -f "/var/run/mdsd-ci/70-rsyslog-forward-mdsd-ci.conf" ] && rm /var/run/mdsd-ci/70-rsyslog-forward-mdsd-ci.conf && echo "remove" > /var/run/mdsd-ci/update.status
         fi
 fi
 
