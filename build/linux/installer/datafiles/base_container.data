@@ -22,7 +22,7 @@ MAINTAINER:              'Microsoft Corporation'
 
 /opt/td-agent-bit/bin/out_oms.so;                                       intermediate/${{BUILD_CONFIGURATION}}/out_oms.so;  	755; root; root
 /etc/opt/microsoft/docker-cimprov/prometheus-side-car.conf;		         build/linux/installer/conf/prometheus-side-car.conf;                    644; root; root
-/etc/opt/microsoft/docker-cimprov/td-agent-bit-la.conf;			          build/linux/installer/conf/td-agent-bit-la.conf;                    644; root; root
+/etc/opt/microsoft/docker-cimprov/td-agent-bit.conf;			          build/linux/installer/conf/td-agent-bit.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/td-agent-bit-prom-side-car.conf;	   build/linux/installer/conf/td-agent-bit-prom-side-car.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/td-agent-bit-rs.conf;			         build/linux/installer/conf/td-agent-bit-rs.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/azm-containers-parser.conf;	         build/common/installer/conf/azm-containers-parser.conf;                    644; root; root

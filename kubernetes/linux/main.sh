@@ -876,7 +876,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             fi
       else
             echo "starting fluent-bit and setting telegraf conf file for daemonset"
-            fluentBitConfFile="td-agent-bit-la.conf"
+            fluentBitConfFile="td-agent-bit.conf"
             if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
                 if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
                   fluentBitConfFile="td-agent-bit-geneva-telemetry-svc.conf"

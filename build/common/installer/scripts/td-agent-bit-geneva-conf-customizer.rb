@@ -64,7 +64,7 @@ def substituteFluentBitPlaceHolders
     File.open(@td_agent_bit_conf_path, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in td-agent-bit.conf file"
   rescue => errorStr
-    ConfigParseErrorLogger.logError("td-agent-bit-config-customizer: error while substituting values in td-agent-bit.conf file: #{errorStr}")
+    ConfigParseErrorLogger.logError("td-agent-bit-geneva-conf-customizer: error while substituting values in td-agent-bit.conf file: #{errorStr}")
   end
 end
 
