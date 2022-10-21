@@ -62,7 +62,7 @@ waitForLCMCreated() {
       todayDate=$(date +'%Y-%m-%d')
       clusterLastConnectDate=$(az hybridaks show -n $k8sClusterName -g $resourceGroup --query properties.status.featuresStatus.arcAgentStatus.lastConnectivityTime -o json | cut -c2-11)
       clusterLastConnectDate=$(echo $clusterLastConnectDate | tr -d '"' | tr -d '"\r\n')
-      echo "cluster last connectDate: ${clusterLastConnectDate}, current date:${todayDate}"
+      echo "cluster last connect date: ${clusterLastConnectDate}, current date:${todayDate}"
       if [ ! -z "$clusterLastConnectDate" ]; then
          if [[ "${clusterLastConnectDate}" == "${todayDate}" ]]; then
             connectivityState=true
