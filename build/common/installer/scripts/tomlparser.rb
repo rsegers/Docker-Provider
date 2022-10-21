@@ -166,9 +166,9 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         if !parsedConfig[:log_collection_settings][:route_container_logs][:version].empty?
            @containerLogsRoute = parsedConfig[:log_collection_settings][:route_container_logs][:version]
            puts "config::Using config map setting for container logs route: #{@containerLogsRoute}"
-        else 
-           puts "config::Ignoring config map settings and using default value since provided container logs route value is empty"    
-        end         
+        else
+           puts "config::Ignoring config map settings and using default value since provided container logs route value is empty"
+        end
       end
     rescue => errorStr
       ConfigParseErrorLogger.logError("Exception while reading config map settings for container logs route - #{errorStr}, using defaults, please check config map for errors")
@@ -180,10 +180,10 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         if !parsedConfig[:log_collection_settings][:adx_database][:name].empty?
            @adxDatabaseName = parsedConfig[:log_collection_settings][:adx_database][:name]
            puts "config::Using config map setting for ADX database name : #{@adxDatabaseName}"
-        else 
-           puts "config::Ignoring config map settings and using default value '#{@adxDatabaseName}' since provided adx database name value is empty"    
-        end   
-      else      
+        else
+           puts "config::Ignoring config map settings and using default value '#{@adxDatabaseName}' since provided adx database name value is empty"
+        end
+      else
         puts "config::No ADX database name set, using default value : #{@adxDatabaseName}"
       end
     rescue => errorStr

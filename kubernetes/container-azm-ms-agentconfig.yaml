@@ -148,17 +148,17 @@ data:
         environment = "<geneva logs account environment name>"
         namespace = "<geneva logs account namespace>"
         account = "<geneva logs account name>"
-        configversion = "2.0" # this default version if not specified and only supported version
+        configversion = "2.0" # this is default version if not specified
 
         # # when the multitenancy is true, container logs of the specific k8s namespace will be routed to corresponding geneva telemetry service endpoint
         # # logs of the infra namespaces if infra_namespaces_suffix specified, ingested to geneva account defined in this config
         # multi_tenancy = false
-        # infra_namespaces_prefix = "infra-*"
+        # infra_namespaces = ["cosmic-infra-*", "gate-keeper-system"]
         # # logs of the tenant namespaces will be routed to k8s service in corresponding namespace
         # # for example tenant namespaces are tenant1, tenant2, then logs of tenant1 will be routed to genevatelemeyservice.tenant1.svc.cluster.local endpoint
         # # and logs of tenant2 will be routed genevatelemeyservice.tenant2.svc.cluster.local endpoint
         # # geneva telemetry service needs to be defined
-        # tenant_namespaces = [""]
+        # tenant_namespaces = ["tenant1", "tenant2"]
 
 # Doc - https://github.com/microsoft/Docker-Provider/blob/ci_prod/Documentation/AgentSettings/ReadMe.md
   agent-settings: |-

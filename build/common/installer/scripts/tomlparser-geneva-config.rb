@@ -1,4 +1,4 @@
-#!/usr/local/bin/ruby
+#!/usr/local/bin/rubyinfra_namespaces
 
 @os_type = ENV["OS_TYPE"]
 require "tomlrb"
@@ -15,7 +15,7 @@ GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "Firstparty
 @geneva_account_name = ""
 @geneva_account_namespace = ""
 @geneva_logs_config_version = "2.0"
-@infra_namespaces_prefix = ""
+@infra_namespaces = []
 @tenant_namespaces = []
 
 # Use parser to parse the configmap toml file to a ruby structure
@@ -56,31 +56,38 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
           if @multi_tenancy
             # this is only applicable incase of multi-tenacy
-            infra_namespaces_prefix = parsedConfig[:integrations][:geneva_logs][:infra_namespaces_prefix].to_s
-            if !infra_namespaces_prefix.nil? && !infra_namespaces_prefix.empty?
-              @infra_namespaces_prefix = infra_namespaces_prefix
+            infra_namespaces = parsedConfig[:integrations][:geneva_logs][:infra_namespaces].to_s
+            if !infra_namespaces.nil? && !infra_namespaces.empty? &&
+              infra_namespaces.kind_of?(Array) && infra_namespaces.length > 0 &&
+              infra_namespaces[0].kind_of?(String)   # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+              @infra_namespaces = infra_namespaces.dup
             end
           end
 
-          if !@multi_tenancy || (@multi_tenancy && !@infra_namespaces_prefix.empty?)
+          if !@multi_tenancy || (@multi_tenancy && !@infra_namespaces.empty?)
             geneva_account_environment = parsedConfig[:integrations][:geneva_logs][:environment].to_s
             geneva_account_namespace = parsedConfig[:integrations][:geneva_logs][:namespace].to_s
             geneva_account_name = parsedConfig[:integrations][:geneva_logs][:account].to_s
             geneva_logs_config_version = parsedConfig[:integrations][:geneva_logs][:configversion].to_s
-            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_logs_config_version)
+            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name)
               @geneva_account_environment = geneva_account_environment
               @geneva_account_namespace = geneva_account_namespace
               @geneva_account_name = geneva_account_name
               if !geneva_logs_config_version.nil? && !geneva_logs_config_version.empty?
                 @geneva_logs_config_version = geneva_logs_config_version
+              else
+                @geneva_logs_config_version = "2.0"
+                puts "Since config version not specified so using default config version : #{@geneva_logs_config_version}"
               end
             end
           end
 
           if @multi_tenancy
             tenant_namespaces = parsedConfig[:integrations][:geneva_logs][:tenant_namespaces]
-            if isValidTenantNamespaces(isValidTenantNamespaces)
-              @tenant_namespaces = tenant_namespaces
+            if !tenant_namespaces.nil? && !tenant_namespaces.empty? &&
+              tenant_namespaces.kind_of?(Array) && tenant_namespaces.length > 0 &&
+              tenant_namespaces[0].kind_of?(String)   # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+              @tenant_namespaces = tenant_namespaces.dup
             end
           end
 
@@ -92,9 +99,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "Using config map value: MONITORING_GCS_ACCOUNT = #{@geneva_account_name}"
           puts "Using config map value: MONITORING_CONFIG_VERSION = #{@geneva_logs_config_version}"
 
-          puts "Using config map value: GENEVA_LOGS_INFRA_NAMESPACES_PREFIX = #{@infra_namespaces_prefix}"
+          puts "Using config map value: GENEVA_LOGS_INFRA_NAMESPACES = #{@infra_namespaces}"
           puts "Using config map value: GENEVA_LOGS_TENANT_NAMESPACES = #{@tenant_namespaces}"
-
         end
       end
     end
@@ -108,11 +114,14 @@ def populateSettingValuesFromConfigMap(parsedConfig)
   end
 end
 
-def isValidGenevaConfig(environment, namespace, account, configVersion)
-  isValid = true
+def isValidGenevaConfig(environment, namespace, account)
+  isValid = false
   begin
-    if !GENEVA_SUPPORTED_ENVIRONMENTS.include?(environment) || namespace.empty? || account.empty?
-      isValid = false
+    if !environment.nil? && !environment.empty? &&
+       !namespace.nil? && !namespace.empty? &&
+       !account.nil? && !account.empty? &&
+       GENEVA_SUPPORTED_ENVIRONMENTS.map(&:downcase).include?(environment.downcase)
+      isValid = true
     end
   rescue => error
   end
@@ -171,7 +180,7 @@ if !file.nil?
   file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
   file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
 
-  file.write("export GENEVA_LOGS_INFRA_NAMESPACES_PREFIX=#{@infra_namespaces_prefix}\n")
+  file.write("export GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}\n")
   file.write("export GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}\n")
 
   # Close file after writing all environment variables
@@ -200,7 +209,7 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version)
     file.write(commands)
 
-    commands = get_command_windows("GENEVA_LOGS_INFRA_NAMESPACES_PREFIX", @infra_namespaces_prefix)
+    commands = get_command_windows("GENEVA_LOGS_INFRA_NAMESPACES", @infra_namespaces)
     file.write(commands)
     commands = get_command_windows("GENEVA_LOGS_TENANT_NAMESPACES", @tenant_namespaces)
     file.write(commands)

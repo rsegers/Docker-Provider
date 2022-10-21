@@ -188,6 +188,34 @@ setReplicaSetSpecificConfig() {
       echo "fluentd out mdm flush thread count: ${FLUENTD_MDM_FLUSH_THREAD_COUNT}"
 }
 
+generateGenevaTenantNamespaceConfig() {
+      echo "generating GenevaTenantNamespaceConfig since GenevaLogsIntegration Enabled "
+      OnboardedNameSpaces=${GENEVA_LOGS_TENANT_NAMESPACES}
+      IFS=',' read -ra TenantNamespaces <<< "$OnboardedNameSpaces"
+      for tenantNamespace in "${TenantNamespaces[@]}"; do
+            tenantNamespace=$(echo $tenantNamespace | xargs)
+            echo "tenant namespace onboarded to geneva logs:${tenantNamespace}"
+            cp /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant.conf /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant_${tenantNamespace}.conf
+            sed -i "s/<TENANT_NAMESPACE>/${tenantNamespace}/g" /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant_${tenantNamespace}.conf
+      done
+      rm /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant.conf
+}
+
+generateGenevaInfraNamespaceConfig() {
+      echo "generating GenevaInfraNamespaceConfig since GenevaLogsIntegration Enabled "
+      suffix="-*"
+      OnboardedNameSpaces=${GENEVA_LOGS_INFRA_NAMESPACES}
+      IFS=',' read -ra InfraNamespaces <<< "$OnboardedNameSpaces"
+      for infraNamespace in "${InfraNamespaces[@]}"; do
+            infraNamespace=$(echo $infraNamespace | xargs)
+            echo "infra namespace onboarded to geneva logs:${infraNamespace}"
+            infraNamespaceWithoutSuffix=${infraNamespace%"$suffix"}
+            cp /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_infra.conf /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_infra_${infraNamespaceWithoutSuffix}.conf
+            sed -i "s/<INFRA_NAMESPACE>/${infraNamespace}/g" /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_infra_${infraNamespaceWithoutSuffix}.conf
+      done
+      rm /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_infra.conf
+}
+
 #using /var/opt/microsoft/docker-cimprov/state instead of /var/opt/microsoft/ama-logs/state since the latter gets deleted during onboarding
 mkdir -p /var/opt/microsoft/docker-cimprov/state
 
@@ -485,6 +513,13 @@ fi
 #Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       ruby td-agent-bit-conf-customizer.rb
+      if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
+         ruby td-agent-bit-geneva-conf-customizer.rb
+         # generate genavaconfig for each tenant
+         generateGenevaTenantNamespaceConfig
+         # generate genavaconfig for infra namespace
+         generateGenevaInfraNamespaceConfig
+      fi
 fi
 
 #Parse geneva config
@@ -841,13 +876,26 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             fi
       else
             echo "starting fluent-bit and setting telegraf conf file for daemonset"
+            fluentBitConfFile="td-agent-bit-la.conf"
+            if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
+                if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
+                  fluentBitConfFile="td-agent-bit-geneva-telemetry-svc.conf"
+                  # gangams - only support v2 in case of 1P mode
+                  AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
+                  echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
+                  source ~/.bashrc
+                else
+                   fluentBitConfFile="td-agent-bit-geneva.conf"
+                fi
+            fi
+            echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
-                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf -e /opt/td-agent-bit/bin/out_oms.so &
+                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}-e /opt/td-agent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             else
                   echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
-                  sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf
-                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf -e /opt/td-agent-bit/bin/out_oms.so &
+                  sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}
+                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/td-agent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             fi
       fi
