@@ -514,7 +514,7 @@ fi
 if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       ruby td-agent-bit-conf-customizer.rb
       if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-         ruby td-agent-bit-geneva-conf-customizer.rb
+         ruby td-agent-bit-geneva-tenant-conf-customizer.rb
          # generate genavaconfig for each tenant
          generateGenevaTenantNamespaceConfig
          # generate genavaconfig for infra namespace
@@ -523,7 +523,7 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidec
 fi
 
 #Parse geneva config
-if [ "${CONTROLLER_TYPE}" != "ReplicaSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${CONTROLLER_TYPE}" != "ReplicaSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       ruby tomlparser-geneva-config.rb
       cat geneva_config_env_var | while read line; do
             echo $line >> ~/.bashrc

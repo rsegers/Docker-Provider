@@ -40,11 +40,11 @@ MAINTAINER:              'Microsoft Corporation'
 
 /opt/tomlparser-geneva-config.rb;                                       build/common/installer/scripts/tomlparser-geneva-config.rb;     755; root; root
 
-/opt/td-agent-bit-geneva-conf-customizer.rb;                             build/common/installer/scripts/td-agent-bit-geneva-conf-customizer.rb;     755; root; root
-/etc/opt/microsoft/docker-cimprov/td-agent-bit-common.conf;			       build/linux/installer/conf/td-agent-bit-common.conf;                644; root; root
-/etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva.conf;			       build/linux/installer/conf/td-agent-bit-geneva.conf;                644; root; root
-/etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_infra.conf;   build/linux/installer/conf/td-agent-bit-geneva-logs_infra.conf;   644; root; root
-/etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant.conf;  build/linux/installer/conf/td-agent-bit-geneva-logs_tenant.conf;   644; root; root
+/opt/td-agent-bit-geneva-tenant-conf-customizer.rb;                     build/common/installer/scripts/td-agent-bit-geneva-tenant-conf-customizer.rb;     755; root; root
+/etc/opt/microsoft/docker-cimprov/td-agent-bit-common.conf;			      build/linux/installer/conf/td-agent-bit-common.conf;                644; root; root
+/etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva.conf;			      build/linux/installer/conf/td-agent-bit-geneva.conf;                644; root; root
+/etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_infra.conf;  build/linux/installer/conf/td-agent-bit-geneva-logs_infra.conf;   644; root; root
+/etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant.conf; build/linux/installer/conf/td-agent-bit-geneva-logs_tenant.conf;   644; root; root
 /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-telemetry-svc.conf;          build/linux/installer/conf/td-agent-bit-geneva-telemetry-svc.conf;   644; root; root
 
 

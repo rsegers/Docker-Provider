@@ -58,8 +58,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             # this is only applicable incase of multi-tenacy
             infra_namespaces = parsedConfig[:integrations][:geneva_logs][:infra_namespaces].to_s
             if !infra_namespaces.nil? && !infra_namespaces.empty? &&
-              infra_namespaces.kind_of?(Array) && infra_namespaces.length > 0 &&
-              infra_namespaces[0].kind_of?(String)   # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+               infra_namespaces.kind_of?(Array) && infra_namespaces.length > 0 &&
+               infra_namespaces[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
               @infra_namespaces = infra_namespaces.dup
             end
           end
@@ -79,25 +79,27 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 @geneva_logs_config_version = "2.0"
                 puts "Since config version not specified so using default config version : #{@geneva_logs_config_version}"
               end
+            else
+              puts "config::geneva_logs::error: provided geneva logs config is not valid"
             end
           end
 
           if @multi_tenancy
             tenant_namespaces = parsedConfig[:integrations][:geneva_logs][:tenant_namespaces]
             if !tenant_namespaces.nil? && !tenant_namespaces.empty? &&
-              tenant_namespaces.kind_of?(Array) && tenant_namespaces.length > 0 &&
-              tenant_namespaces[0].kind_of?(String)   # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+               tenant_namespaces.kind_of?(Array) && tenant_namespaces.length > 0 &&
+               tenant_namespaces[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
               @tenant_namespaces = tenant_namespaces.dup
             end
           end
 
-          puts "Using config map value: GENEVA_LOGS_INTEGRATION = #{@geneva_logs_integration}"
+          puts "Using config map value: GENEVA_LOGS_INTEGRATION=#{@geneva_logs_integration}"
           puts "Using config map value: GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}"
 
-          puts "Using config map value: MONITORING_GCS_ENVIRONMENT = #{@geneva_account_environment}"
-          puts "Using config map value: MONITORING_GCS_NAMESPACE = #{@geneva_account_namespace}"
-          puts "Using config map value: MONITORING_GCS_ACCOUNT = #{@geneva_account_name}"
-          puts "Using config map value: MONITORING_CONFIG_VERSION = #{@geneva_logs_config_version}"
+          puts "Using config map value: MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}"
+          puts "Using config map value: MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}"
+          puts "Using config map value: MONITORING_GCS_ACCOUNT=#{@geneva_account_name}"
+          puts "Using config map value: MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}"
 
           puts "Using config map value: GENEVA_LOGS_INFRA_NAMESPACES = #{@infra_namespaces}"
           puts "Using config map value: GENEVA_LOGS_TENANT_NAMESPACES = #{@tenant_namespaces}"
@@ -105,7 +107,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       end
     end
   rescue => errorStr
-    puts "config::npm::error:Exception while reading config settings for geneva logs setting - #{errorStr}, using defaults"
+    puts "config::geneva_logs::error:Exception while reading config settings for geneva logs setting - #{errorStr}, using defaults"
     @geneva_logs_integration = false
     @multi_tenancy = false
     @geneva_account_environment = ""
@@ -126,16 +128,6 @@ def isValidGenevaConfig(environment, namespace, account)
   rescue => error
   end
   return isValid
-end
-
-def isValidTenantNamespaces(tenant_namespaces)
-  begin
-    if tenant_namespaces && !tenant_namespaces.nil? && checkForTypeArray(monitorKubernetesPodsNamespaces, String)
-      return true
-    end
-  rescue => errorStr
-  end
-  return false
 end
 
 def checkForTypeArray(arrayValue, arrayType)
