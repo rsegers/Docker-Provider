@@ -5,7 +5,7 @@ require_relative "ConfigParseErrorLogger"
 
 @os_type = ENV["OS_TYPE"]
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-  @td_agent_bit_conf_path = "/etc/fluent-bit/fluent-bit.conf"
+  @td_agent_bit_conf_path = "/etc/fluent-bit/td-agent-bit-geneva-logs_tenant.conf"
 end
 
 @default_service_interval = "15"
