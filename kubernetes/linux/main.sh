@@ -887,15 +887,13 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             echo "starting fluent-bit and setting telegraf conf file for daemonset"
             fluentBitConfFile="td-agent-bit.conf"
             if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-                if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
+                  fluentBitConfFile="td-agent-bit-geneva.conf"               
+            elif [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
                   fluentBitConfFile="td-agent-bit-geneva-telemetry-svc.conf"
                   # gangams - only support v2 in case of 1P mode
                   AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
                   echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
                   source ~/.bashrc
-                else
-                   fluentBitConfFile="td-agent-bit-geneva.conf"
-                fi
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
