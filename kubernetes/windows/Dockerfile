@@ -61,6 +61,7 @@ COPY ./amalogswindows/installer/conf/fluent.conf /etc/fluent/
 COPY ./amalogswindows/installer/conf/fluent-bit.conf /etc/fluent-bit
 COPY ./amalogswindows/installer/conf/azm-containers-parser.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/out_oms.conf /etc/amalogswindows
+COPY ./amalogswindows/installer/conf/td-agent-bit-geneva-logs_tenant.conf /etc/fluent-bit/
 
 # copy telegraf conf file
 COPY ./amalogswindows/installer/conf/telegraf.conf /etc/telegraf/

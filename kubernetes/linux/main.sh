@@ -481,7 +481,7 @@ echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc
 
 source ~/.bashrc
 
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
       #Parse the configmap to set the right environment variables.
       ruby tomlparser.rb
 
@@ -489,11 +489,11 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
             echo $line >>~/.bashrc
       done
       source config_env_var
-fi
 
-#Parse the configmap to set the right environment variables for agent config.
-#Note > tomlparser-agent-config.rb has to be parsed first before td-agent-bit-conf-customizer.rb for fbit agent settings
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+
+      #Parse the configmap to set the right environment variables for agent config.
+      #Note > tomlparser-agent-config.rb has to be parsed first before td-agent-bit-conf-customizer.rb for fbit agent settings
+
       ruby tomlparser-agent-config.rb
 
       cat agent_config_env_var | while read line; do
@@ -511,7 +511,7 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
 fi
 
 #Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
-if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
       ruby td-agent-bit-conf-customizer.rb
       if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
          ruby td-agent-bit-geneva-tenant-conf-customizer.rb
@@ -577,7 +577,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
 fi
 
 #Parse the configmap to set the right environment variables for MDM metrics configuration for Alerting.
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
       ruby tomlparser-mdm-metrics-config.rb
 
       cat config_mdm_metrics_env_var | while read line; do
@@ -619,92 +619,97 @@ fi
 
 echo "MUTE_PROM_SIDECAR = $MUTE_PROM_SIDECAR"
 
-#Setting environment variable for CAdvisor metrics to use port 10255/10250 based on curl request
-echo "Making wget request to cadvisor endpoint with port 10250"
-#Defaults to use secure port: 10250
-cAdvisorIsSecure=true
-RET_CODE=$(wget --server-response https://$NODE_IP:10250/stats/summary --no-check-certificate --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" 2>&1 | awk '/^  HTTP/{print $2}')
-if [ -z "$RET_CODE" ] || [ $RET_CODE -ne 200 ]; then
-      echo "Making wget request to cadvisor endpoint with port 10255 since failed with port 10250"
-      RET_CODE=$(wget --server-response http://$NODE_IP:10255/stats/summary 2>&1 | awk '/^  HTTP/{print $2}')
-      if [ ! -z "$RET_CODE" ] && [ $RET_CODE -eq 200 ]; then
-            cAdvisorIsSecure=false
+if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then 
+     echo "running in geneva logs telemetry service mode"
+else 
+
+      #Setting environment variable for CAdvisor metrics to use port 10255/10250 based on curl request
+      echo "Making wget request to cadvisor endpoint with port 10250"
+      #Defaults to use secure port: 10250
+      cAdvisorIsSecure=true
+      RET_CODE=$(wget --server-response https://$NODE_IP:10250/stats/summary --no-check-certificate --header="Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" 2>&1 | awk '/^  HTTP/{print $2}')
+      if [ -z "$RET_CODE" ] || [ $RET_CODE -ne 200 ]; then
+            echo "Making wget request to cadvisor endpoint with port 10255 since failed with port 10250"
+            RET_CODE=$(wget --server-response http://$NODE_IP:10255/stats/summary 2>&1 | awk '/^  HTTP/{print $2}')
+            if [ ! -z "$RET_CODE" ] && [ $RET_CODE -eq 200 ]; then
+                  cAdvisorIsSecure=false
+            fi
       fi
-fi
 
-# default to containerd since this is common default in AKS and non-AKS
-export CONTAINER_RUNTIME="containerd"
-export NODE_NAME=""
+      # default to containerd since this is common default in AKS and non-AKS
+      export CONTAINER_RUNTIME="containerd"
+      export NODE_NAME=""
 
-if [ "$cAdvisorIsSecure" = true ]; then
-      echo "Using port 10250"
-      export IS_SECURE_CADVISOR_PORT=true
-      echo "export IS_SECURE_CADVISOR_PORT=true" >>~/.bashrc
-      export CADVISOR_METRICS_URL="https://$NODE_IP:10250/metrics"
-      echo "export CADVISOR_METRICS_URL=https://$NODE_IP:10250/metrics" >>~/.bashrc
-      echo "Making curl request to cadvisor endpoint /pods with port 10250 to get the configured container runtime on kubelet"
-      podWithValidContainerId=$(curl -s -k -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" https://$NODE_IP:10250/pods | jq -R 'fromjson? | [ .items[] | select( any(.status.phase; contains("Running")) ) ] | .[0]')
-else
-      echo "Using port 10255"
-      export IS_SECURE_CADVISOR_PORT=false
-      echo "export IS_SECURE_CADVISOR_PORT=false" >>~/.bashrc
-      export CADVISOR_METRICS_URL="http://$NODE_IP:10255/metrics"
-      echo "export CADVISOR_METRICS_URL=http://$NODE_IP:10255/metrics" >>~/.bashrc
-      echo "Making curl request to cadvisor endpoint with port 10255 to get the configured container runtime on kubelet"
-      podWithValidContainerId=$(curl -s http://$NODE_IP:10255/pods | jq -R 'fromjson? | [ .items[] | select( any(.status.phase; contains("Running")) ) ] | .[0]')
-fi
-
-if [ ! -z "$podWithValidContainerId" ]; then
-      containerRuntime=$(echo $podWithValidContainerId | jq -r '.status.containerStatuses[0].containerID' | cut -d ':' -f 1)
-      nodeName=$(echo $podWithValidContainerId | jq -r '.spec.nodeName')
-      # convert to lower case so that everywhere else can be used in lowercase
-      containerRuntime=$(echo $containerRuntime | tr "[:upper:]" "[:lower:]")
-      nodeName=$(echo $nodeName | tr "[:upper:]" "[:lower:]")
-      # use default container runtime if obtained runtime value is either empty or null
-      if [ -z "$containerRuntime" -o "$containerRuntime" == null ]; then
-            echo "using default container runtime as $CONTAINER_RUNTIME since got containeRuntime as empty or null"
+      if [ "$cAdvisorIsSecure" = true ]; then
+            echo "Using port 10250"
+            export IS_SECURE_CADVISOR_PORT=true
+            echo "export IS_SECURE_CADVISOR_PORT=true" >>~/.bashrc
+            export CADVISOR_METRICS_URL="https://$NODE_IP:10250/metrics"
+            echo "export CADVISOR_METRICS_URL=https://$NODE_IP:10250/metrics" >>~/.bashrc
+            echo "Making curl request to cadvisor endpoint /pods with port 10250 to get the configured container runtime on kubelet"
+            podWithValidContainerId=$(curl -s -k -H "Authorization: Bearer $(cat /var/run/secrets/kubernetes.io/serviceaccount/token)" https://$NODE_IP:10250/pods | jq -R 'fromjson? | [ .items[] | select( any(.status.phase; contains("Running")) ) ] | .[0]')
       else
-            export CONTAINER_RUNTIME=$containerRuntime
+            echo "Using port 10255"
+            export IS_SECURE_CADVISOR_PORT=false
+            echo "export IS_SECURE_CADVISOR_PORT=false" >>~/.bashrc
+            export CADVISOR_METRICS_URL="http://$NODE_IP:10255/metrics"
+            echo "export CADVISOR_METRICS_URL=http://$NODE_IP:10255/metrics" >>~/.bashrc
+            echo "Making curl request to cadvisor endpoint with port 10255 to get the configured container runtime on kubelet"
+            podWithValidContainerId=$(curl -s http://$NODE_IP:10255/pods | jq -R 'fromjson? | [ .items[] | select( any(.status.phase; contains("Running")) ) ] | .[0]')
       fi
 
-      if [ -z "$nodeName" -o "$nodeName" == null ]; then
-            echo "-e error nodeName in /pods API response is empty"
+      if [ ! -z "$podWithValidContainerId" ]; then
+            containerRuntime=$(echo $podWithValidContainerId | jq -r '.status.containerStatuses[0].containerID' | cut -d ':' -f 1)
+            nodeName=$(echo $podWithValidContainerId | jq -r '.spec.nodeName')
+            # convert to lower case so that everywhere else can be used in lowercase
+            containerRuntime=$(echo $containerRuntime | tr "[:upper:]" "[:lower:]")
+            nodeName=$(echo $nodeName | tr "[:upper:]" "[:lower:]")
+            # use default container runtime if obtained runtime value is either empty or null
+            if [ -z "$containerRuntime" -o "$containerRuntime" == null ]; then
+                  echo "using default container runtime as $CONTAINER_RUNTIME since got containeRuntime as empty or null"
+            else
+                  export CONTAINER_RUNTIME=$containerRuntime
+            fi
+
+            if [ -z "$nodeName" -o "$nodeName" == null ]; then
+                  echo "-e error nodeName in /pods API response is empty"
+            else
+                  export NODE_NAME=$nodeName
+            fi
       else
-            export NODE_NAME=$nodeName
+            echo "-e error either /pods API request failed or no running pods"
       fi
-else
-      echo "-e error either /pods API request failed or no running pods"
-fi
 
-echo "configured container runtime on kubelet is : "$CONTAINER_RUNTIME
-echo "export CONTAINER_RUNTIME="$CONTAINER_RUNTIME >>~/.bashrc
+      echo "configured container runtime on kubelet is : "$CONTAINER_RUNTIME
+      echo "export CONTAINER_RUNTIME="$CONTAINER_RUNTIME >>~/.bashrc
 
-export KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC="kubelet_runtime_operations_total"
-echo "export KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC="$KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC >>~/.bashrc
-export KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC="kubelet_runtime_operations_errors_total"
-echo "export KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC="$KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC >>~/.bashrc
+      export KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC="kubelet_runtime_operations_total"
+      echo "export KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC="$KUBELET_RUNTIME_OPERATIONS_TOTAL_METRIC >>~/.bashrc
+      export KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC="kubelet_runtime_operations_errors_total"
+      echo "export KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC="$KUBELET_RUNTIME_OPERATIONS_ERRORS_TOTAL_METRIC >>~/.bashrc
 
-# default to docker metrics
-export KUBELET_RUNTIME_OPERATIONS_METRIC="kubelet_docker_operations"
-export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="kubelet_docker_operations_errors"
+      # default to docker metrics
+      export KUBELET_RUNTIME_OPERATIONS_METRIC="kubelet_docker_operations"
+      export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="kubelet_docker_operations_errors"
 
-if [ "$CONTAINER_RUNTIME" != "docker" ]; then
-      # these metrics are avialble only on k8s versions <1.18 and will get deprecated from 1.18
-      export KUBELET_RUNTIME_OPERATIONS_METRIC="kubelet_runtime_operations"
-      export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="kubelet_runtime_operations_errors"
-fi
+      if [ "$CONTAINER_RUNTIME" != "docker" ]; then
+            # these metrics are avialble only on k8s versions <1.18 and will get deprecated from 1.18
+            export KUBELET_RUNTIME_OPERATIONS_METRIC="kubelet_runtime_operations"
+            export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="kubelet_runtime_operations_errors"
+      fi
 
-echo "set caps for ruby process to read container env from proc"
-RUBY_PATH=$(which ruby)
-sudo setcap cap_sys_ptrace,cap_dac_read_search+ep "$RUBY_PATH"
-echo "export KUBELET_RUNTIME_OPERATIONS_METRIC="$KUBELET_RUNTIME_OPERATIONS_METRIC >> ~/.bashrc
-echo "export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="$KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC >> ~/.bashrc
+      echo "set caps for ruby process to read container env from proc"
+      RUBY_PATH=$(which ruby)
+      sudo setcap cap_sys_ptrace,cap_dac_read_search+ep "$RUBY_PATH"
+      echo "export KUBELET_RUNTIME_OPERATIONS_METRIC="$KUBELET_RUNTIME_OPERATIONS_METRIC >> ~/.bashrc
+      echo "export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="$KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC >> ~/.bashrc
 
-source ~/.bashrc
+      source ~/.bashrc
 
-echo $NODE_NAME >/var/opt/microsoft/docker-cimprov/state/containerhostname
-#check if file was written successfully.
-cat /var/opt/microsoft/docker-cimprov/state/containerhostname
+      echo $NODE_NAME >/var/opt/microsoft/docker-cimprov/state/containerhostname
+      #check if file was written successfully.
+      cat /var/opt/microsoft/docker-cimprov/state/containerhostname
+fi 
 
 #start cron daemon for logrotate
 service cron start
@@ -734,7 +739,7 @@ source /etc/mdsd.d/envmdsd
 MDSD_AAD_MSI_AUTH_ARGS=""
 # check if its AAD Auth MSI mode via USING_AAD_MSI_AUTH
 export AAD_MSI_AUTH_MODE=false
-if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ]; then
+if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
     export MONITORING_GCS_REGION=$AKS_REGION
     echo "export MONITORING_GCS_REGION=$AKS_REGION" >> ~/.bashrc
     export MONITORING_USE_GENEVA_CONFIG_SERVICE=true
@@ -817,7 +822,7 @@ if [ ! -f /etc/cron.d/ci-agent ]; then
 fi
 
 # no dependency on fluentd for prometheus side car container
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
       if [ ! -e "/etc/config/kube.conf" ]; then
             echo "*** starting fluentd v1 in daemonset"
             fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
@@ -828,41 +833,45 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
 fi
 
 #If config parsing was successful, a copy of the conf file with replaced custom settings file is created
-if [ ! -e "/etc/config/kube.conf" ]; then
-      if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ] && [ -e "/opt/telegraf-test-prom-side-car.conf" ]; then
-            if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
-                  echo "****************Start Telegraf in Test Mode**************************"
-                  /opt/telegraf --config /opt/telegraf-test-prom-side-car.conf --input-filter file -test
-                  if [ $? -eq 0 ]; then
-                        mv "/opt/telegraf-test-prom-side-car.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
-                        echo "Moving test conf file to telegraf side-car conf since test run succeeded"
+if  [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
+     echo "****************Skipping Telegraf Run in Test Mode since GENEVA_LOGS_TELEMETRY_SERVICE_MODE is true**************************"
+else 
+      if [ ! -e "/etc/config/kube.conf" ]; then
+            if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ] && [ -e "/opt/telegraf-test-prom-side-car.conf" ]; then
+                  if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+                        echo "****************Start Telegraf in Test Mode**************************"
+                        /opt/telegraf --config /opt/telegraf-test-prom-side-car.conf --input-filter file -test
+                        if [ $? -eq 0 ]; then
+                              mv "/opt/telegraf-test-prom-side-car.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
+                              echo "Moving test conf file to telegraf side-car conf since test run succeeded"
+                        fi
+                        echo "****************End Telegraf Run in Test Mode**************************"
+                  else
+                        echo "****************Skipping Telegraf Run in Test Mode since MUTE_PROM_SIDECAR is true**************************"
                   fi
-                  echo "****************End Telegraf Run in Test Mode**************************"
             else
-                  echo "****************Skipping Telegraf Run in Test Mode since MUTE_PROM_SIDECAR is true**************************"
+                  if [ -e "/opt/telegraf-test.conf" ]; then
+                        echo "****************Start Telegraf in Test Mode**************************"
+                        /opt/telegraf --config /opt/telegraf-test.conf --input-filter file -test
+                        if [ $? -eq 0 ]; then
+                              mv "/opt/telegraf-test.conf" "/etc/opt/microsoft/docker-cimprov/telegraf.conf"
+                              echo "Moving test conf file to telegraf daemonset conf since test run succeeded"
+                        fi
+                        echo "****************End Telegraf Run in Test Mode**************************"
+                  fi
             fi
       else
-            if [ -e "/opt/telegraf-test.conf" ]; then
+            if [ -e "/opt/telegraf-test-rs.conf" ]; then
                   echo "****************Start Telegraf in Test Mode**************************"
-                  /opt/telegraf --config /opt/telegraf-test.conf --input-filter file -test
+                  /opt/telegraf --config /opt/telegraf-test-rs.conf --input-filter file -test
                   if [ $? -eq 0 ]; then
-                        mv "/opt/telegraf-test.conf" "/etc/opt/microsoft/docker-cimprov/telegraf.conf"
-                        echo "Moving test conf file to telegraf daemonset conf since test run succeeded"
+                        mv "/opt/telegraf-test-rs.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf"
+                        echo "Moving test conf file to telegraf replicaset conf since test run succeeded"
                   fi
                   echo "****************End Telegraf Run in Test Mode**************************"
             fi
       fi
-else
-      if [ -e "/opt/telegraf-test-rs.conf" ]; then
-            echo "****************Start Telegraf in Test Mode**************************"
-            /opt/telegraf --config /opt/telegraf-test-rs.conf --input-filter file -test
-            if [ $? -eq 0 ]; then
-                  mv "/opt/telegraf-test-rs.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf"
-                  echo "Moving test conf file to telegraf replicaset conf since test run succeeded"
-            fi
-            echo "****************End Telegraf Run in Test Mode**************************"
-      fi
-fi
+fi 
 
 #telegraf & fluentbit requirements
 if [ ! -e "/etc/config/kube.conf" ]; then
@@ -951,7 +960,7 @@ echo "export HOST_ETC=/hostfs/etc" >>~/.bashrc
 export HOST_VAR=/hostfs/var
 echo "export HOST_VAR=/hostfs/var" >>~/.bashrc
 
-if [ ! -e "/etc/config/kube.conf" ]; then
+if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
       if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
             if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
                   echo "checking for listener on tcp #25229 and waiting for 30 secs if not.."
