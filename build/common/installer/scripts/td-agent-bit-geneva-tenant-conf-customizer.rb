@@ -1,11 +1,11 @@
 #!/usr/local/bin/ruby
 require_relative "ConfigParseErrorLogger"
 
-@td_agent_bit_conf_path = "/etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant.conf"
+@td_agent_bit_conf_path = "/etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva.conf"
 
 @os_type = ENV["OS_TYPE"]
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-  @td_agent_bit_conf_path = "/etc/fluent-bit/td-agent-bit-geneva-logs_tenant.conf"
+  @td_agent_bit_conf_path = "/etc/fluent-bit/td-agent-bit-geneva.conf"
 end
 
 @default_service_interval = "15"
