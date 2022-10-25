@@ -513,6 +513,13 @@ fi
 #Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
       ruby td-agent-bit-conf-customizer.rb
+      #Parse geneva config
+      ruby tomlparser-geneva-config.rb
+      cat geneva_config_env_var | while read line; do
+            echo $line >> ~/.bashrc
+      done
+      source geneva_config_env_var
+
       if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
          ruby td-agent-bit-geneva-tenant-conf-customizer.rb
          # generate genavaconfig for each tenant
@@ -522,14 +529,6 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidec
       fi
 fi
 
-#Parse geneva config
-if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${CONTROLLER_TYPE}" != "ReplicaSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      ruby tomlparser-geneva-config.rb
-      cat geneva_config_env_var | while read line; do
-            echo $line >> ~/.bashrc
-      done
-      source geneva_config_env_var
-fi
 #Parse the prometheus configmap to create a file with new custom settings.
 ruby tomlparser-prom-customconfig.rb
 
@@ -619,9 +618,9 @@ fi
 
 echo "MUTE_PROM_SIDECAR = $MUTE_PROM_SIDECAR"
 
-if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then 
+if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
      echo "running in geneva logs telemetry service mode"
-else 
+else
 
       #Setting environment variable for CAdvisor metrics to use port 10255/10250 based on curl request
       echo "Making wget request to cadvisor endpoint with port 10250"
@@ -709,7 +708,7 @@ else
       echo $NODE_NAME >/var/opt/microsoft/docker-cimprov/state/containerhostname
       #check if file was written successfully.
       cat /var/opt/microsoft/docker-cimprov/state/containerhostname
-fi 
+fi
 
 #start cron daemon for logrotate
 service cron start
@@ -835,7 +834,7 @@ fi
 #If config parsing was successful, a copy of the conf file with replaced custom settings file is created
 if  [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
      echo "****************Skipping Telegraf Run in Test Mode since GENEVA_LOGS_TELEMETRY_SERVICE_MODE is true**************************"
-else 
+else
       if [ ! -e "/etc/config/kube.conf" ]; then
             if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ] && [ -e "/opt/telegraf-test-prom-side-car.conf" ]; then
                   if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
@@ -871,7 +870,7 @@ else
                   echo "****************End Telegraf Run in Test Mode**************************"
             fi
       fi
-fi 
+fi
 
 #telegraf & fluentbit requirements
 if [ ! -e "/etc/config/kube.conf" ]; then
@@ -887,7 +886,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             echo "starting fluent-bit and setting telegraf conf file for daemonset"
             fluentBitConfFile="td-agent-bit.conf"
             if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-                  fluentBitConfFile="td-agent-bit-geneva.conf"               
+                  fluentBitConfFile="td-agent-bit-geneva.conf"
             elif [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
                   fluentBitConfFile="td-agent-bit-geneva-telemetry-svc.conf"
                   # gangams - only support v2 in case of 1P mode
