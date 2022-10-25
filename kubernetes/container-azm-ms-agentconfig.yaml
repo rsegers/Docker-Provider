@@ -153,7 +153,7 @@ data:
         # # when the multitenancy is true, container logs of the specific k8s namespace will be routed to corresponding geneva telemetry service endpoint
         # # logs of the infra namespaces if infra_namespaces_suffix specified, ingested to geneva account defined in this config
         # multi_tenancy = false
-        # infra_namespaces = ["cosmic-infra-*", "gate-keeper-system"]
+        # infra_namespaces = ["infra-*", "gate-keeper-system", "kube-system"]
         # # logs of the tenant namespaces will be routed to k8s service in corresponding namespace
         # # for example tenant namespaces are tenant1, tenant2, then logs of tenant1 will be routed to genevatelemeyservice.tenant1.svc.cluster.local endpoint
         # # and logs of tenant2 will be routed genevatelemeyservice.tenant2.svc.cluster.local endpoint

@@ -56,7 +56,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
           if @multi_tenancy
             # this is only applicable incase of multi-tenacy
-            infra_namespaces = parsedConfig[:integrations][:geneva_logs][:infra_namespaces].to_s
+            infra_namespaces = parsedConfig[:integrations][:geneva_logs][:infra_namespaces]
+            puts "config::geneva_logs:infra_namespaces provided in the configmap: #{infra_namespaces}"
             if !infra_namespaces.nil? && !infra_namespaces.empty? &&
                infra_namespaces.kind_of?(Array) && infra_namespaces.length > 0 &&
                infra_namespaces[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
@@ -86,6 +87,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
           if @multi_tenancy
             tenant_namespaces = parsedConfig[:integrations][:geneva_logs][:tenant_namespaces]
+            puts "config::geneva_logs:tenant_namespaces provided in the configmap: #{tenant_namespaces}"
             if !tenant_namespaces.nil? && !tenant_namespaces.empty? &&
                tenant_namespaces.kind_of?(Array) && tenant_namespaces.length > 0 &&
                tenant_namespaces[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
