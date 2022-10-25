@@ -81,6 +81,8 @@ data:
         ## This will take effect when monitor_kubernetes_pods is set to true
         ##   ex: monitor_kubernetes_pods_namespaces = ["default1", "default2", "default3"]
         # monitor_kubernetes_pods_namespaces = ["default1"]
+        ## Default is 'namespace' but this can conflict with metrics that have the label 'namespace'
+        # pod_namespace_label_name = "namespace"
 
         ## Label selector to target pods which have the specified label
         ## This will take effect when monitor_kubernetes_pods is set to true
