@@ -1,0 +1,64 @@
+# Default values for azuremonitor-containers-logs.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+replicaCount: 1
+
+genevaLogsConfig:
+ authid:  "object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>"         # object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>
+ environment: "<your_geneva_environment_name>"                # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
+ account: "<your_geneva_account_name>"            # name of the Geneva Logs account
+ namespace: "<your_geneva_account_namespace>"     # name of the Geneva Logs account namespace
+ configversion: "2.0"                # config version of the agent xml config.
+
+
+env:
+  clusterResourceId: "/subscriptions/<subId>/resourcegroups/<rgName>/providers/Microsoft.ContainerService/managedClusters/<clusterName>"
+  clusterRegion: "<clusterRegion>"
+image:
+  repository: mcr.microsoft.com/azuremonitor/containerinsights/cidev
+  pullPolicy: IfNotPresent
+  tag: "10142022-db90aa0f"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+service:
+  type: ClusterIP
+  port: 24224
+
+resources:
+  limits:
+    cpu: 2
+    memory: 2Gi
+  requests:
+    cpu: 150m
+    memory: 900Mi
+
+autoscaling:
+  enabled: true
+  minReplicas: 1
+  maxReplicas: 10
+  targetMemoryUtilizationPercentage: 70
+  # targetCPUUtilizationPercentage: 80
+
+nodeSelector:
+ kubernetes.io/os: linux
+
+tolerations: []
+
+affinity: {}

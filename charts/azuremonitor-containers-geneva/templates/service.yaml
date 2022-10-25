@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: geneva-services
+  labels:
+    {{- include "azuremonitor-containers-logs.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.port }}
+      protocol: TCP
+      name: fluentbit-fwd
+  selector:
+    {{- include "azuremonitor-containers-logs.selectorLabels" . | nindent 4 }}
