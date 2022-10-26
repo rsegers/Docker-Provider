@@ -15,8 +15,8 @@ GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "Firstparty
 @geneva_account_name = ""
 @geneva_account_namespace = ""
 @geneva_logs_config_version = "2.0"
-@infra_namespaces = []
-@tenant_namespaces = []
+@infra_namespaces = ""
+@tenant_namespaces = ""
 
 # Use parser to parse the configmap toml file to a ruby structure
 def parseConfigMap
@@ -61,7 +61,14 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             if !infra_namespaces.nil? && !infra_namespaces.empty? &&
                infra_namespaces.kind_of?(Array) && infra_namespaces.length > 0 &&
                infra_namespaces[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
-              @infra_namespaces = infra_namespaces.dup
+              infra_namespaces.each do |namespace|
+                if @infra_namespaces.empty?
+                  # To not append , for the first element
+                  @infra_namespaces.concat(namespace)
+                else
+                  @infra_namespaces.concat("," + namespace)
+                end
+              end
             end
           end
 
@@ -91,7 +98,14 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             if !tenant_namespaces.nil? && !tenant_namespaces.empty? &&
                tenant_namespaces.kind_of?(Array) && tenant_namespaces.length > 0 &&
                tenant_namespaces[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
-              @tenant_namespaces = tenant_namespaces.dup
+              tenant_namespaces.each do |namespace|
+                if @tenant_namespaces.empty?
+                  # To not append , for the first element
+                  @tenant_namespaces.concat(namespace)
+                else
+                  @tenant_namespaces.concat("," + namespace)
+                end
+              end
             end
           end
 
