@@ -942,11 +942,13 @@ echo "export TELEMETRY_CLUSTER_TYPE=$telemetry_cluster_type" >>~/.bashrc
 #if [ ! -e "/etc/config/kube.conf" ]; then
 #   nodename=$(cat /hostfs/etc/hostname)
 #else
-nodename=$(cat /var/opt/microsoft/docker-cimprov/state/containerhostname)
-#fi
-echo "nodename: $nodename"
-echo "replacing nodename in telegraf config"
-sed -i -e "s/placeholder_hostname/$nodename/g" $telegrafConfFile
+if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
+      nodename=$(cat /var/opt/microsoft/docker-cimprov/state/containerhostname)
+      #fi
+      echo "nodename: $nodename"
+      echo "replacing nodename in telegraf config"
+      sed -i -e "s/placeholder_hostname/$nodename/g" $telegrafConfFile
+fi
 
 export HOST_MOUNT_PREFIX=/hostfs
 echo "export HOST_MOUNT_PREFIX=/hostfs" >>~/.bashrc
