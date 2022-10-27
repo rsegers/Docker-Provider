@@ -9,6 +9,13 @@ require_relative "ConfigParseErrorLogger"
 @configMapMountPath = "/etc/config/settings/agent-settings"
 @configSchemaVersion = ""
 
+# Checking to see if this is the daemonset or replicaset to parse config accordingly
+@controllerType = ENV["CONTROLLER_TYPE"]
+@daemonset = "daemonset"
+# Checking to see if container is not prometheus sidecar.
+# CONTAINER_TYPE is populated only for prometheus sidecar container.
+@containerType = ENV["CONTAINER_TYPE"]
+
 # 250 Node items (15KB per node) account to approximately 4MB
 @nodesChunkSize = 250
 # 1000 pods (10KB per pod) account to approximately 10MB
@@ -182,13 +189,16 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         end
       end
 
-      # syslog settings
-      syslog_config = parsedConfig[:agent_settings][:syslog_config]
-      if !syslog_config.nil?
-        syslogMonitoringMaxEventRate = syslog_config[:monitoring_max_event_rate]
-        if !syslogMonitoringMaxEventRate.nil? && is_number?(syslogMonitoringMaxEventRate) && syslogMonitoringMaxEventRate.to_i > 0
-          @syslogMonitoringMaxEventRate = syslogMonitoringMaxEventRate.to_i
-          puts "Using config map value: monitoring_max_event_rate  = #{@syslogMonitoringMaxEventRate}"
+      # ama-logs daemonset only settings
+      if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
+        # syslog settings
+        syslog_config = parsedConfig[:agent_settings][:syslog_config]
+        if !syslog_config.nil?
+          syslogMonitoringMaxEventRate = syslog_config[:monitoring_max_event_rate]
+          if !syslogMonitoringMaxEventRate.nil? && is_number?(syslogMonitoringMaxEventRate) && syslogMonitoringMaxEventRate.to_i > 0
+            @syslogMonitoringMaxEventRate = syslogMonitoringMaxEventRate.to_i
+            puts "Using config map value: monitoring_max_event_rate  = #{@syslogMonitoringMaxEventRate}"
+          end
         end
       end
     end
