@@ -13,13 +13,12 @@ genevaLogsConfig:
 
 
 env:
-  clusterResourceId: "/subscriptions/<subId>/resourcegroups/<rgName>/providers/Microsoft.ContainerService/managedClusters/<clusterName>"
-  clusterRegion: "<clusterRegion>"
+  clusterResourceId: "/subscriptions/b4b0cbab-64dc-42bc-9d95-ea7c8d0cf188/resourcegroups/gangams-aks-suk/providers/Microsoft.ContainerService/managedClusters/gangams-aks-suk"
+  clusterRegion: "uksouth"
 image:
   repository: mcr.microsoft.com/azuremonitor/containerinsights/cidev
   pullPolicy: IfNotPresent
-  tag: "10142022-db90aa0f"
-
+  tag: "10262022-8df4dcab"
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""

@@ -2,7 +2,7 @@
 {{/*
 Expand the name of the chart.
 */}}
-{{- define "azuremonitor-containers-logs.name" -}}
+{{- define "azuremonitor-containers-geneva.name" -}}
 {{- default .Chart.Name .Values.nameOverride | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
@@ -11,7 +11,7 @@ Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.
 */}}
-{{- define "azuremonitor-containers-logs.fullname" -}}
+{{- define "azuremonitor-containers-geneva.fullname" -}}
 {{- if .Values.fullnameOverride }}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" }}
 {{- else }}
@@ -27,16 +27,16 @@ If release name contains chart name it will be used as a full name.
 {{/*
 Create chart name and version as used by the chart label.
 */}}
-{{- define "azuremonitor-containers-logs.chart" -}}
+{{- define "azuremonitor-containers-geneva.chart" -}}
 {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
 {{/*
 Common labels
 */}}
-{{- define "azuremonitor-containers-logs.labels" -}}
-helm.sh/chart: {{ include "azuremonitor-containers-logs.chart" . }}
-{{ include "azuremonitor-containers-logs.selectorLabels" . }}
+{{- define "azuremonitor-containers-geneva.labels" -}}
+helm.sh/chart: {{ include "azuremonitor-containers-geneva.chart" . }}
+{{ include "azuremonitor-containers-geneva.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
@@ -46,17 +46,17 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 {{/*
 Selector labels
 */}}
-{{- define "azuremonitor-containers-logs.selectorLabels" -}}
-app.kubernetes.io/name: {{ include "azuremonitor-containers-logs.name" . }}
+{{- define "azuremonitor-containers-geneva.selectorLabels" -}}
+app.kubernetes.io/name: {{ include "azuremonitor-containers-geneva.name" . }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 {{- end }}
 
 {{/*
 Create the name of the service account to use
 */}}
-{{- define "azuremonitor-containers-logs.serviceAccountName" -}}
+{{- define "azuremonitor-containers-geneva.serviceAccountName" -}}
 {{- if .Values.serviceAccount.create }}
-{{- default (include "azuremonitor-containers-logs.fullname" .) .Values.serviceAccount.name }}
+{{- default (include "azuremonitor-containers-geneva.fullname" .) .Values.serviceAccount.name }}
 {{- else }}
 {{- default "default" .Values.serviceAccount.name }}
 {{- end }}

@@ -1568,8 +1568,11 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	osType := os.Getenv("OS_TYPE")
 	IsWindows = false
+	genevaTelemetryServiceMode := os.Getenv("GENEVA_LOGS_TELEMETRY_SERVICE_MODE")
 	// Linux
-	if strings.Compare(strings.ToLower(osType), "windows") != 0 {
+	if strings.Compare(strings.ToLower(genevaTelemetryServiceMode), "true") == 0 {
+		Log("genevaTelemetryServiceMode %s", genevaTelemetryServiceMode)
+	} else if strings.Compare(strings.ToLower(osType), "windows") != 0 {
 		Log("Reading configuration for Linux from %s", pluginConfPath)
 		WorkspaceID = os.Getenv("WSID")
 		if WorkspaceID == "" {

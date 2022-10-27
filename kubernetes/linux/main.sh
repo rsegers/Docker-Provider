@@ -291,6 +291,7 @@ if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSide
 fi
 
 export PROXY_ENDPOINT=""
+export domain=""
 # Check for internet connectivity or workspace deletion
 if [ -e "/etc/ama-logs-secret/WSID" ]; then
       workspaceId=$(cat /etc/ama-logs-secret/WSID)
@@ -404,6 +405,7 @@ else
 fi
 
 # Set environment variable for if public cloud by checking the workspace domain.
+ClOUD_ENVIRONMENT="unknown"
 if [ -z $domain ]; then
       ClOUD_ENVIRONMENT="unknown"
 elif [ $domain == "opinsights.azure.com" ]; then
@@ -971,14 +973,16 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}"
             echo "checking for listener on tcp #25228 and waiting for 30 secs if not.."
             waitforlisteneronTCPport 25228 30
       fi
-else
-      echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
-      waitforlisteneronTCPport 25226 30
+elif [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
+        echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
+        waitforlisteneronTCPport 25226 30
 fi
 
 
 #start telegraf
-if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
+    echo "not starting telegraf (no metrics to scrape since GENEVA_LOGS_TELEMETRY_SERVICE_MODE is true)"
+elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       /opt/telegraf --config $telegrafConfFile &
       echo "telegraf version: $(/opt/telegraf --version)"
       dpkg -l | grep td-agent-bit | awk '{print $2 " " $3}'
@@ -997,7 +1001,9 @@ service rsyslog stop
 echo "getting rsyslog status..."
 service rsyslog status
 
-if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
+  echo "not checking onboarding status since GENEVA_LOGS_TELEMETRY_SERVICE_MODE is true"
+elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
 else
       echo "not checking onboarding status (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
