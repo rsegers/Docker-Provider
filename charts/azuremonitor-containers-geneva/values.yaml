@@ -18,7 +18,7 @@ env:
 image:
   repository: mcr.microsoft.com/azuremonitor/containerinsights/cidev
   pullPolicy: IfNotPresent
-  tag: "10262022-8df4dcab"
+  tag: "10272022-0e3d9890"
 imagePullSecrets: []
 nameOverride: ""
 fullnameOverride: ""
