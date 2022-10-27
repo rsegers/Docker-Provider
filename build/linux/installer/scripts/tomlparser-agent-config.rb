@@ -61,6 +61,8 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailBufferMaxSizeMBs = 0
 @fbitTailMemBufLimitMBs = 0
 
+# configmap settings related to syslog
+@syslogMonitoringMaxEventRate = 0
 
 def is_number?(value)
   true if Integer(value) rescue false
@@ -176,6 +178,15 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "Using config map value: tail_mem_buf_limit_megabytes  = #{@fbitTailMemBufLimitMBs}"
         end
       end
+      # syslog settings
+      syslog_config = parsedConfig[:agent_settings][:syslog_config]
+      if !syslog_config.nil?
+        syslogMonitoringMaxEventRate = syslog_config[:monitoring_max_event_rate]
+        if !syslogMonitoringMaxEventRate.nil? && is_number?(syslogMonitoringMaxEventRate) && syslogMonitoringMaxEventRate.to_i > 0
+          @syslogMonitoringMaxEventRate = syslogMonitoringMaxEventRate.to_i
+          puts "Using config map value: monitoring_max_event_rate  = #{@syslogMonitoringMaxEventRate}"
+        end
+      end
     end
   rescue => errorStr
     puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
@@ -221,6 +232,9 @@ if !file.nil?
   end 
   if @fbitTailMemBufLimitMBs > 0
     file.write("export FBIT_TAIL_MEM_BUF_LIMIT=#{@fbitTailMemBufLimitMBs}\n")
+  end 
+  if @syslogMonitoringMaxEventRate > 0
+    file.write("export MONITORING_MAX_EVENT_RATE=#{@syslogMonitoringMaxEventRate}\n")
   end 
   # Close file after writing all environment variables
   file.close

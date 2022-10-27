@@ -3,22 +3,22 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "clusterResourceId": {
-      "value": "/subscriptions/<subscriptionId>/resourceGroups/<resourceGroupName>/providers/Microsoft.HybridContainerService/provisionedClusters/<clusterName>"
+      "value": "/subscriptions/6e377996-dbe0-4f90-aeee-e1592d1d7c0d/resourceGroups/rsyslog-test/providers/Microsoft.Kubernetes/connectedClusters/kind-syslog"
     },
     "clusterRegion": {
-      "value": "<clusterRegion>"
+      "value": "eastus"
     },
     "workspaceResourceId": {
-      "value": "/subscriptions/<subscriptionId>/resourcegroups/<resourceGroupName>/providers/microsoft.operationalinsights/workspaces/<workspaceName>"
+      "value": "/subscriptions/6e377996-dbe0-4f90-aeee-e1592d1d7c0d/resourceGroups/rsyslog-test/providers/Microsoft.OperationalInsights/workspaces/rsyslog-la"
     },
     "workspaceRegion": {
-      "value": "<workspaceRegion>"
+      "value": "eastus"
     },
     "workspaceDomain": {
-      "value": "<workspaceDomainName>"
+      "value": "opinsights.azure.com"
     },
     "enableSyslog": {
-      "value": false
+      "value": true
     },
     "syslogLevels": {
       "value": [
@@ -58,9 +58,7 @@
     },
     "resourceTagValues": {
       "value": {
-        "<existingOrnew-tag-name1>": "<existingOrnew-tag-value1>",
-        "<existingOrnew-tag-name2>": "<existingOrnew-tag-value2>",
-        "<existingOrnew-tag-nameN>": "<existingOrnew-tag-valueN>"
+        "test": "hello"
       }
     }
   }
