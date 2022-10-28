@@ -5,7 +5,7 @@ MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
-ARG IMAGE_TAG=win-ciprod08102022
+ARG IMAGE_TAG=win-ciprodpreview09192022
 
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
