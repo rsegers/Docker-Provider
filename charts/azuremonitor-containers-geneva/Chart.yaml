@@ -1,8 +1,8 @@
 apiVersion: v2
-version: 0.1.0
 description: Helm chart for deploying Azure Monitor container monitoring agent in Kubernetes for Geneva Logs Integration
 name: azuremonitor-containers-geneva
-kubeVersion: "^1.14.0-0"
+version: 0.1.0
+kubeVersion: "^1.16.0-0"
 keywords:
   - monitoring
   - azuremonitor

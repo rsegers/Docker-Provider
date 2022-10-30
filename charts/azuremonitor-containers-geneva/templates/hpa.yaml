@@ -2,14 +2,15 @@
 apiVersion: autoscaling/v2beta1
 kind: HorizontalPodAutoscaler
 metadata:
-  name: {{ include "azuremonitor-containers-geneva.fullname" . }}
+  name: ama-logs-geneva-hpa
   labels:
-    {{- include "azuremonitor-containers-geneva.labels" . | nindent 4 }}
+   chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+   release: {{ .Release.Name }}
 spec:
   scaleTargetRef:
     apiVersion: apps/v1
     kind: Deployment
-    name: {{ include "azuremonitor-containers-geneva.fullname" . }}
+    name: ama-logs-geneva-deployment
   minReplicas: {{ .Values.autoscaling.minReplicas }}
   maxReplicas: {{ .Values.autoscaling.maxReplicas }}
   metrics:

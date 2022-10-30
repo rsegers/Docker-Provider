@@ -1,4 +1,13 @@
-{{- if eq .Values.genevaLogsConfig.authid "" }}
+{{- if eq .Values.genevaLogsConfig.aadpodidbinding "<AAD_POD_IDENTITY_NAME>" }}
+
+##############################################################################
+####   ERROR: You did not provide AAD POD IDENTITY NAME                   ####
+##############################################################################
+
+{{- end }}
+
+
+{{- if eq .Values.genevaLogsConfig.authid "object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>"  }}
 
 ##############################################################################
 ####   ERROR: You did not provide Auth Id of Managed Identity.       ####

@@ -5,41 +5,27 @@
 replicaCount: 1
 
 genevaLogsConfig:
+ aadpodidbinding: "<AAD_POD_IDENTITY_NAME>"                                                  # AAD POD Identity Name in case of AAD POD Managed Identity
  authid:  "object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>"         # object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>
- environment: "<your_geneva_environment_name>"                # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
- account: "<your_geneva_account_name>"            # name of the Geneva Logs account
- namespace: "<your_geneva_account_namespace>"     # name of the Geneva Logs account namespace
- configversion: "2.0"                # config version of the agent xml config.
-
+ environment: "<your_geneva_environment_name>"                                               # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
+ account: "<your_geneva_account_name>"                                                       # name of the Geneva Logs account
+ namespace: "<your_geneva_account_namespace>"                                                # name of the Geneva Logs account namespace
+ configversion: "2.0"                                                                        # config version of the agent xml config.
 
 env:
-  clusterResourceId: "/subscriptions/b4b0cbab-64dc-42bc-9d95-ea7c8d0cf188/resourcegroups/gangams-aks-suk/providers/Microsoft.ContainerService/managedClusters/gangams-aks-suk"
-  clusterRegion: "uksouth"
+  clusterResourceId: "/subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.ContainerService/managedClusters/<clusterName>"
+  clusterRegion: "<clusterRegion>"
 image:
   repository: mcr.microsoft.com/azuremonitor/containerinsights/cidev
   pullPolicy: IfNotPresent
   tag: "10272022-0e3d9890"
-imagePullSecrets: []
+  agentVersion: "azure-mdsd-1.17.1"
 nameOverride: ""
 fullnameOverride: ""
-
 podAnnotations: {}
-
-podSecurityContext: {}
-  # fsGroup: 2000
-
-securityContext: {}
-  # capabilities:
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
 service:
   type: ClusterIP
   port: 24224
-
 resources:
   limits:
     cpu: 2
@@ -47,17 +33,23 @@ resources:
   requests:
     cpu: 150m
     memory: 900Mi
-
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 10
   targetMemoryUtilizationPercentage: 70
   # targetCPUUtilizationPercentage: 80
-
-nodeSelector:
- kubernetes.io/os: linux
-
-tolerations: []
-
-affinity: {}
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+         nodeSelectorTerms:
+            - labelSelector:
+              matchExpressions:
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                    - linux
+                - key: type
+                  operator: NotIn
+                  values:
+                    - virtual-kubelet

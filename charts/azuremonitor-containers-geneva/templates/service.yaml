@@ -3,7 +3,8 @@ kind: Service
 metadata:
   name: geneva-services
   labels:
-    {{- include "azuremonitor-containers-geneva.labels" . | nindent 4 }}
+   chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
+   release: {{ .Release.Name }}
 spec:
   type: {{ .Values.service.type }}
   ports:
@@ -12,4 +13,4 @@ spec:
       protocol: TCP
       name: fluentbit-fwd
   selector:
-    {{- include "azuremonitor-containers-geneva.selectorLabels" . | nindent 4 }}
+    rsName: "ama-logs-geneva"
