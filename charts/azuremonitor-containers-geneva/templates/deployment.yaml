@@ -52,6 +52,8 @@ spec:
            value: "AuthMSIToken"
          - name: MONITORING_GCS_AUTH_ID
            value: {{ .Values.genevaLogsConfig.authid  | quote }}
+         - name: MONITORING_GCS_REGION
+           value: {{ .Values.genevaLogsConfig.region | quote }}
          - name: MONITORING_USE_GENEVA_CONFIG_SERVICE
            value: "true"
          - name: MONITORING_MAX_EVENT_RATE
@@ -60,10 +62,8 @@ spec:
            value: "15m"
          - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_MAX_SIZE
            value: "30m"
-         - name: CONTROLLER_TYPE
-           value: "DaemonSet" #  TODO - figure out what should be the right controller type here since DS being utilized here
-         - name: AKS_REGION
-           value: {{ .Values.genevaLogsConfig.region | quote }}
+        #  - name: CONTROLLER_TYPE
+        #    value: "DaemonSet" #  TODO - figure out what should be the right controller type here since DS being utilized here
          - name: NODE_IP
            valueFrom:
               fieldRef:

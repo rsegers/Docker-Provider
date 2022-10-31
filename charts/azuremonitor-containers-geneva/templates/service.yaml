@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: geneva-services
+  name: ama-logs-geneva-service
   labels:
    chart: {{ .Chart.Name }}-{{ .Chart.Version | replace "+" "_" }}
    release: {{ .Release.Name }}
