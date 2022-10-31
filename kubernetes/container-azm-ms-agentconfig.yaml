@@ -148,6 +148,7 @@ data:
         environment = "<geneva logs account environment name>"
         namespace = "<geneva logs account namespace>"
         account = "<geneva logs account name>"
+        region = "<geneva logs gcs region>"
         configversion = "2.0" # this is default version if not specified
 
         # # when the multitenancy is true, container logs of the specific k8s namespace will be routed to corresponding geneva telemetry service endpoint

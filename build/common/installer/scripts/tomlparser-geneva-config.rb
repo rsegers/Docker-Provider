@@ -15,6 +15,7 @@ GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "Firstparty
 @geneva_account_name = ""
 @geneva_account_namespace = ""
 @geneva_logs_config_version = "2.0"
+@geneva_gcs_region = ""
 @infra_namespaces = ""
 @tenant_namespaces = ""
 
@@ -77,10 +78,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             geneva_account_namespace = parsedConfig[:integrations][:geneva_logs][:namespace].to_s
             geneva_account_name = parsedConfig[:integrations][:geneva_logs][:account].to_s
             geneva_logs_config_version = parsedConfig[:integrations][:geneva_logs][:configversion].to_s
-            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name)
+            geneva_gcs_region = parsedConfig[:integrations][:geneva_logs][:region].to_s
+            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_gcs_region)
               @geneva_account_environment = geneva_account_environment
               @geneva_account_namespace = geneva_account_namespace
               @geneva_account_name = geneva_account_name
+              @geneva_gcs_region = geneva_gcs_region
               if !geneva_logs_config_version.nil? && !geneva_logs_config_version.empty?
                 @geneva_logs_config_version = geneva_logs_config_version
               else
@@ -115,6 +118,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "Using config map value: MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}"
           puts "Using config map value: MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}"
           puts "Using config map value: MONITORING_GCS_ACCOUNT=#{@geneva_account_name}"
+          puts "Using config map value: MONITORING_GCS_REGION=#{@geneva_gcs_region}"
           puts "Using config map value: MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}"
 
           puts "Using config map value: GENEVA_LOGS_INFRA_NAMESPACES = #{@infra_namespaces}"
@@ -129,15 +133,17 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     @geneva_account_environment = ""
     @geneva_account_name = ""
     @geneva_account_namespace = ""
+    @geneva_gcs_region = ""
   end
 end
 
-def isValidGenevaConfig(environment, namespace, account)
+def isValidGenevaConfig(environment, namespace, account, region)
   isValid = false
   begin
     if !environment.nil? && !environment.empty? &&
        !namespace.nil? && !namespace.empty? &&
        !account.nil? && !account.empty? &&
+       !region.nil? && !region.empty? &&
        GENEVA_SUPPORTED_ENVIRONMENTS.map(&:downcase).include?(environment.downcase)
       isValid = true
     end
@@ -174,6 +180,7 @@ else
   @geneva_account_environment = ""
   @geneva_account_name = ""
   @geneva_account_namespace = ""
+  @geneva_gcs_region = ""
 end
 
 # Write the settings to file, so that they can be set as environment variables
@@ -186,6 +193,7 @@ if !file.nil?
   file.write("export MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}\n")
   file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}\n")
   file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
+  file.write("export MONITORING_GCS_REGION=#{@geneva_gcs_region}\n")
   file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
 
   file.write("export GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}\n")
