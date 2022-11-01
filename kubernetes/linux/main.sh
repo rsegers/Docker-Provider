@@ -483,7 +483,7 @@ echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc
 
 source ~/.bashrc
 
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       #Parse the configmap to set the right environment variables.
       ruby tomlparser.rb
 
@@ -513,7 +513,7 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_
 fi
 
 #Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
-if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
+if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       ruby td-agent-bit-conf-customizer.rb
       #Parse geneva config
       ruby tomlparser-geneva-config.rb
@@ -578,7 +578,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
 fi
 
 #Parse the configmap to set the right environment variables for MDM metrics configuration for Alerting.
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       ruby tomlparser-mdm-metrics-config.rb
 
       cat config_mdm_metrics_env_var | while read line; do
@@ -620,7 +620,7 @@ fi
 
 echo "MUTE_PROM_SIDECAR = $MUTE_PROM_SIDECAR"
 
-if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
+if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
      echo "running in geneva logs telemetry service mode"
 else
 
@@ -740,7 +740,7 @@ source /etc/mdsd.d/envmdsd
 MDSD_AAD_MSI_AUTH_ARGS=""
 # check if its AAD Auth MSI mode via USING_AAD_MSI_AUTH
 export AAD_MSI_AUTH_MODE=false
-if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
+if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
     export MONITORING_USE_GENEVA_CONFIG_SERVICE=true
     echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=true" >> ~/.bashrc
     export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken
@@ -821,7 +821,7 @@ if [ ! -f /etc/cron.d/ci-agent ]; then
 fi
 
 # no dependency on fluentd for prometheus side car container
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       if [ ! -e "/etc/config/kube.conf" ]; then
             echo "*** starting fluentd v1 in daemonset"
             fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
@@ -832,8 +832,8 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_TELEMETRY_
 fi
 
 #If config parsing was successful, a copy of the conf file with replaced custom settings file is created
-if  [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
-     echo "****************Skipping Telegraf Run in Test Mode since GENEVA_LOGS_TELEMETRY_SERVICE_MODE is true**************************"
+if  [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+     echo "****************Skipping Telegraf Run in Test Mode since GENEVA_LOGS_INTEGRATION_SERVICE_MODE is true**************************"
 else
       if [ ! -e "/etc/config/kube.conf" ]; then
             if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ] && [ -e "/opt/telegraf-test-prom-side-car.conf" ]; then
@@ -887,7 +887,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             fluentBitConfFile="td-agent-bit.conf"
             if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
                   fluentBitConfFile="td-agent-bit-geneva.conf"
-            elif [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
+            elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
                   fluentBitConfFile="td-agent-bit-geneva-telemetry-svc.conf"
                   # gangams - only support v2 in case of 1P mode
                   AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
@@ -940,7 +940,7 @@ echo "export TELEMETRY_CLUSTER_TYPE=$telemetry_cluster_type" >>~/.bashrc
 #if [ ! -e "/etc/config/kube.conf" ]; then
 #   nodename=$(cat /hostfs/etc/hostname)
 #else
-if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
+if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       nodename=$(cat /var/opt/microsoft/docker-cimprov/state/containerhostname)
       #fi
       echo "nodename: $nodename"
@@ -959,7 +959,7 @@ echo "export HOST_ETC=/hostfs/etc" >>~/.bashrc
 export HOST_VAR=/hostfs/var
 echo "export HOST_VAR=/hostfs/var" >>~/.bashrc
 
-if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
+if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
             if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
                   echo "checking for listener on tcp #25229 and waiting for 30 secs if not.."
@@ -973,15 +973,15 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}"
             echo "checking for listener on tcp #25228 and waiting for 30 secs if not.."
             waitforlisteneronTCPport 25228 30
       fi
-elif [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
+elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
         echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
         waitforlisteneronTCPport 25226 30
 fi
 
 
 #start telegraf
-if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
-    echo "not starting telegraf (no metrics to scrape since GENEVA_LOGS_TELEMETRY_SERVICE_MODE is true)"
+if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+    echo "not starting telegraf (no metrics to scrape since GENEVA_LOGS_INTEGRATION_SERVICE_MODE is true)"
 elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       /opt/telegraf --config $telegrafConfFile &
       echo "telegraf version: $(/opt/telegraf --version)"
@@ -1001,8 +1001,8 @@ service rsyslog stop
 echo "getting rsyslog status..."
 service rsyslog status
 
-if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then
-  echo "not checking onboarding status since GENEVA_LOGS_TELEMETRY_SERVICE_MODE is true"
+if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+  echo "not checking onboarding status since GENEVA_LOGS_INTEGRATION_SERVICE_MODE is true"
 elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
 else

@@ -32,7 +32,7 @@ spec:
          resources:
           {{- toYaml .Values.resources | nindent 12 }}
          env:
-         - name: GENEVA_LOGS_TELEMETRY_SERVICE_MODE
+         - name: GENEVA_LOGS_INTEGRATION_SERVICE_MODE
            value: "true"
          - name: CONTAINER_TYPE
            value: "geneva-container"

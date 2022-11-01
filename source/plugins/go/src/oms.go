@@ -182,6 +182,8 @@ var (
 	IsAADMSIAuthMode bool
 	// flag to check whether Geneva Logs Integration enabled or not
 	IsGenevaLogsIntegrationEnabled bool
+	// flag to check whether Geneva Logs Integration enabled or not
+	IsGenevaLogsTelemetryServiceMode bool
 )
 
 var (
@@ -1124,6 +1126,15 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		id := ""
 		name := ""
 
+		if IsGenevaLogsTelemetryServiceMode == true {
+			//Incase of GenevaLogs Service mode, use the source Computer name from which log line originated
+            // And the ClusterResourceId in the receiving record
+			Computer = ToString(record["Computer"])
+			stringMap["AzureResourceId"] = ToString(record["AzureResourceId"])
+		} else if IsGenevaLogsIntegrationEnabled == true {
+			stringMap["AzureResourceId"] = ResourceID
+		}
+
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
@@ -1568,10 +1579,12 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	osType := os.Getenv("OS_TYPE")
 	IsWindows = false
-	genevaTelemetryServiceMode := os.Getenv("GENEVA_LOGS_TELEMETRY_SERVICE_MODE")
+	IsGenevaLogsTelemetryServiceMode = false
+	genevaLogsIntegrationServiceMode := os.Getenv("GENEVA_LOGS_INTEGRATION_SERVICE_MODE")
 	// Linux
-	if strings.Compare(strings.ToLower(genevaTelemetryServiceMode), "true") == 0 {
-		Log("genevaTelemetryServiceMode %s", genevaTelemetryServiceMode)
+	if strings.Compare(strings.ToLower(genevaLogsIntegrationServiceMode), "true") == 0 {
+		IsGenevaLogsTelemetryServiceMode = true
+		Log("IsGenevaLogsTelemetryServiceMode %v", IsGenevaLogsTelemetryServiceMode)
 	} else if strings.Compare(strings.ToLower(osType), "windows") != 0 {
 		Log("Reading configuration for Linux from %s", pluginConfPath)
 		WorkspaceID = os.Getenv("WSID")

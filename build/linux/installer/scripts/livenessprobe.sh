@@ -35,7 +35,7 @@ fi
 
 #optionally test to exit non zero value if fluentd is not running
 #fluentd not used in sidecar container
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]  && [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" != "true" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]  && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
   (ps -ef | grep "fluentd" | grep -v "grep")
   if [ $? -ne 0 ]
   then
@@ -69,9 +69,9 @@ then
 fi
 
 #test to exit non zero value if telegraf is not running
-if [ "${GENEVA_LOGS_TELEMETRY_SERVICE_MODE}" == "true" ]; then 
+if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
   exit 0
-else 
+else
   (ps -ef | grep telegraf | grep -v "grep")
   if [ $? -ne 0 ]
   then
@@ -79,6 +79,6 @@ else
   echo "Telegraf is not running (controller: ${CONTROLLER_TYPE}, container type: ${CONTAINER_TYPE})" > /dev/write-to-traces  # this file is tailed and sent to traces
   # exit 1
   fi
-fi 
+fi
 
 exit 0
