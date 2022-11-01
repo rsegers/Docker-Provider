@@ -33,12 +33,12 @@ RUN powershell -Command "Remove-Item -Force C:\ruby26\lib\ruby\gems\2.6.0\cache\
 
 SHELL ["powershell"]
 
-ENV tmpdir /opt/omsagentwindows/scripts/powershell
+ENV tmpdir /opt/amalogswindows/scripts/powershell
 
-WORKDIR /opt/omsagentwindows/scripts/powershell
+WORKDIR /opt/amalogswindows/scripts/powershell
 
 # copy certificate generator binaries zip
-COPY ./omsagentwindows/*.zip /opt/omsagentwindows/
+COPY ./amalogswindows/*.zip /opt/amalogswindows/
 
-COPY setup.ps1 /opt/omsagentwindows/scripts/powershell
+COPY setup.ps1 /opt/amalogswindows/scripts/powershell
 RUN ./setup.ps1

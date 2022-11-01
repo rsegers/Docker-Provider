@@ -19,15 +19,15 @@ done
 
 echo "clusterResourceId:$ClusterResourceId"
 echo "replace cluster resource id"
-sed -i "s=VALUE_AKS_RESOURCE_ID_VALUE=$ClusterResourceId=g" omsagent.yaml
+sed -i "s=VALUE_AKS_RESOURCE_ID_VALUE=$ClusterResourceId=g" ama-logs.yaml
 
 echo "clusterRegion:$ClusterRegion"
 echo "replace cluster region"
-sed -i "s/VALUE_AKS_RESOURCE_REGION_VALUE/$ClusterRegion/g" omsagent.yaml
+sed -i "s/VALUE_AKS_RESOURCE_REGION_VALUE/$ClusterRegion/g" ama-logs.yaml
 
 echo "userAssignedIdentityClientId:$UserAssignedIdentityClientId"
 echo "replace user assigned identity client id"
-sed -i "s=VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE=$UserAssignedIdentityClientId=g" omsagent.yaml
+sed -i "s=VALUE_USER_ASSIGNED_IDENTITY_CLIENT_ID_VALUE=$UserAssignedIdentityClientId=g" ama-logs.yaml
 
 echo "replace linux agent image"
 linuxAgentImageTag=$CI_RELEASE$CI_IMAGE_TAG_SUFFIX
@@ -35,7 +35,7 @@ echo "Linux Agent Image Tag:"$linuxAgentImageTag
 
 linuxAgentImage="mcr.microsoft.com/azuremonitor/containerinsights/${CI_RELEASE}:${linuxAgentImageTag}"
 imagePrefixLinuxAgent="mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod[0-9]*(-[0-9])?"
-sed -i -E "s=$imagePrefixLinuxAgent=$linuxAgentImage=g" omsagent.yaml
+sed -i -E "s=$imagePrefixLinuxAgent=$linuxAgentImage=g" ama-logs.yaml
 
 echo "replace windows agent image"
 windowsAgentImageTag="win-"$CI_RELEASE$CI_IMAGE_TAG_SUFFIX
@@ -43,7 +43,7 @@ echo "Windows Agent Image Tag:"$windowsAgentImageTag
 
 windowsAgentImage="mcr.microsoft.com/azuremonitor/containerinsights/${CI_RELEASE}:${windowsAgentImageTag}"
 imagePrefixWindowsAgent="mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod[0-9]*(-[0-9])?"
-sed -i -E "s=$imagePrefixWindowsAgent=$windowsAgentImage=g" omsagent.yaml
+sed -i -E "s=$imagePrefixWindowsAgent=$windowsAgentImage=g" ama-logs.yaml
 
 
 echo "read workspace id and key which written by get-workspace-id-and-key.sh script"
@@ -63,9 +63,9 @@ echo "Base64 encoded log analytics workspace guid: ${Base64EncodedWSID}"
 # echo "Base64 encoded log analytics workspace key: ${Base64EncodedWSKEY}"
 
 echo "replace base64 encoded log analytics workspace id"
-sed -i "s/VALUE_WSID/$Base64EncodedWSID/g" omsagent.yaml
+sed -i "s/VALUE_WSID/$Base64EncodedWSID/g" ama-logs.yaml
 
 echo "replace base64 encoded log analytics workspace key"
-sed -i "s/VALUE_KEY/$Base64EncodedWSKEY/g" omsagent.yaml
+sed -i "s/VALUE_KEY/$Base64EncodedWSKEY/g" ama-logs.yaml
 
 echo "end: update placeholders such as clusterResourceId, clusterRegion, WSID, WSKEY and Image etc.."

@@ -19,17 +19,17 @@ Azure:
     httpsProxy: ""
     noProxy: ""
     proxyCert: ""
-omsagent:
+amalogs:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod08102022"
-    tagWindows: "win-ciprod08102022"
+    tag: "ciprod10042022-3c05dd1b"
+    tagWindows: "win-ciprod10042022-3c05dd1b"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "18.0.1-0"
     agentVersion: "azure-mdsd-1.17.0"
     winAgentVersion: "0.0.0-0" # there is no base agent version for windows agent
 
-  # The priority used by the omsagent priority class for the daemonset pods
+  # The priority used by the ama-logs priority class for the daemonset pods
   # Note that this is not execution piority - it is scheduling priority, as
   # in getting scheduled to the node.  This needs to be greater than 0 such
   # that the daemonset pods, which can not schedule onto different nodes as

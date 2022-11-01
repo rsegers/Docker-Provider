@@ -41,7 +41,7 @@ set -o pipefail
 # default to public cloud since only supported cloud is azure public cloud
 defaultAzureCloud="AzureCloud"
 # default domain will be for public cloud
-omsAgentDomainName="opinsights.azure.com"
+amaLogsDomainName="opinsights.azure.com"
 
 # microsoft helm chart repo
 microsoftHelmRepo="https://microsoft.github.io/charts/repo"
@@ -317,8 +317,8 @@ validate_and_configure_supported_cloud() {
       exit 1
     fi
     if [ "$azureCloudName" = "azureusgovernment" ]; then
-      echo "setting omsagent domain as opinsights.azure.us since the azure cloud is azureusgovernment "
-      omsAgentDomainName="opinsights.azure.us"
+      echo "setting amalogs domain as opinsights.azure.us since the azure cloud is azureusgovernment "
+      amaLogsDomainName="opinsights.azure.us"
     fi
   else
     # For ARO v4, only supported cloud is public so just configure to public to keep the existing behavior
@@ -525,18 +525,18 @@ install_helm_chart() {
     echo "using proxy endpoint since proxy configuration passed in"
     if [ -z "$kubeconfigContext" ]; then
       echo "using current kube-context since --kube-context/-k parameter not passed in"
-      helm upgrade --install $releaseName --set omsagent.domain=$omsAgentDomainName,omsagent.proxy=$proxyEndpoint,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath
+      helm upgrade --install $releaseName --set amalogs.domain=$amaLogsDomainName,amalogs.proxy=$proxyEndpoint,amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion $helmChartRepoPath
     else
       echo "using --kube-context:${kubeconfigContext} since passed in"
-      helm upgrade --install $releaseName --set omsagent.domain=$omsAgentDomainName,omsagent.proxy=$proxyEndpoint,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
+      helm upgrade --install $releaseName --set amalogs.domain=$amaLogsDomainName,amalogs.proxy=$proxyEndpoint,amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
     fi
   else
     if [ -z "$kubeconfigContext" ]; then
       echo "using current kube-context since --kube-context/-k parameter not passed in"
-      helm upgrade --install $releaseName --set omsagent.domain=$omsAgentDomainName,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath
+      helm upgrade --install $releaseName --set amalogs.domain=$amaLogsDomainName,amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion $helmChartRepoPath
     else
       echo "using --kube-context:${kubeconfigContext} since passed in"
-      helm upgrade --install $releaseName --set omsagent.domain=$omsAgentDomainName,omsagent.secret.wsid=$workspaceGuid,omsagent.secret.key=$workspaceKey,omsagent.env.clusterId=$clusterResourceId,omsagent.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
+      helm upgrade --install $releaseName --set amalogs.domain=$amaLogsDomainName,amalogs.secret.wsid=$workspaceGuid,amalogs.secret.key=$workspaceKey,amalogs.env.clusterId=$clusterResourceId,amalogs.env.clusterRegion=$clusterRegion $helmChartRepoPath --kube-context ${kubeconfigContext}
     fi
   fi
 
