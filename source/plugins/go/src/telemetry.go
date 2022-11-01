@@ -194,9 +194,9 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				if fbitTailMemBufLimitMBs != "" {
 					telemetryDimensions["FbitMemBufLimitSizeMBs"] = fbitTailMemBufLimitMBs
 				}
-				syslogMonitoringMaxEventRate := os.Getenv("MONITORING_MAX_EVENT_RATE")
-				if fbitTailMemBufLimitMBs != "" {
-					telemetryDimensions["SyslogMonitoringMaxEventRate"] = syslogMonitoringMaxEventRate
+				mdsdMonitoringMaxEventRate := os.Getenv("MONITORING_MAX_EVENT_RATE")
+				if mdsdMonitoringMaxEventRate != "" {
+					telemetryDimensions["mdsdMonitoringMaxEventRate"] = mdsdMonitoringMaxEventRate
 				}
 				SendEvent(eventNameDaemonSetHeartbeat, telemetryDimensions)
 				flushRateMetric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)

@@ -27,7 +27,7 @@ data:
           # exclude_namespaces setting holds good only if enabled is set to true
           # kube-system,gatekeeper-system log collection are disabled by default in the absence of 'log_collection_settings.stderr' setting. If you want to enable kube-system,gatekeeper-system, remove them from the following setting.
           # If you want to continue to disable kube-system,gatekeeper-system log collection keep the namespaces in the following setting and add any other namespace you want to disable log collection to the array.
-          # In the absense of this cofigmap, default value for exclude_namespaces = ["kube-system","gatekeeper-system"]
+          # In the absense of this configmap, default value for exclude_namespaces = ["kube-system","gatekeeper-system"]
           exclude_namespaces = ["kube-system","gatekeeper-system"]
 
        [log_collection_settings.env_var]
@@ -162,10 +162,6 @@ data:
     #   tail_buf_chunksize_megabytes = "1"            # default value is 32kb (comment out this line for default)
     #   tail_buf_maxsize_megabytes = "1"              # defautl value is 32kb (comment out this line for default)
     #   tail_ignore_older = "5m"                      # default value same as fluent-bit default i.e.0m
-
-    # Controls max event rate for mdsd. Increasing this also increases memory consumption
-    # [agent_settings.syslog_config]
-    # monitoring_max_event_rate = "20000"             # default value is 20000
 
 metadata:
   name: container-azm-ms-agentconfig

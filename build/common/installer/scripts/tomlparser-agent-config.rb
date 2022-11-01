@@ -64,8 +64,8 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailMemBufLimitMBs = 0
 @fbitTailIgnoreOlder = ""
 
-# configmap settings related to syslog
-@syslogMonitoringMaxEventRate = 0
+# configmap settings related to mdsd
+@mdsdMonitoringMaxEventRate = 0
 
 def is_number?(value)
   true if Integer(value) rescue false
@@ -191,13 +191,13 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
       # ama-logs daemonset only settings
       if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
-        # syslog settings
-        syslog_config = parsedConfig[:agent_settings][:syslog_config]
-        if !syslog_config.nil?
-          syslogMonitoringMaxEventRate = syslog_config[:monitoring_max_event_rate]
-          if !syslogMonitoringMaxEventRate.nil? && is_number?(syslogMonitoringMaxEventRate) && syslogMonitoringMaxEventRate.to_i > 0
-            @syslogMonitoringMaxEventRate = syslogMonitoringMaxEventRate.to_i
-            puts "Using config map value: monitoring_max_event_rate  = #{@syslogMonitoringMaxEventRate}"
+        # mdsd settings
+        mdsd_config = parsedConfig[:agent_settings][:mdsd_config]
+        if !mdsd_config.nil?
+          mdsdMonitoringMaxEventRate = mdsd_config[:monitoring_max_event_rate]
+          if !mdsdMonitoringMaxEventRate.nil? && is_number?(mdsdMonitoringMaxEventRate) && mdsdMonitoringMaxEventRate.to_i > 0
+            @mdsdMonitoringMaxEventRate = mdsdMonitoringMaxEventRate.to_i
+            puts "Using config map value: monitoring_max_event_rate  = #{@mdsdMonitoringMaxEventRate}"
           end
         end
       end
@@ -248,9 +248,9 @@ if !file.nil?
     file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
   end
 
-  #syslog settings
-  if @syslogMonitoringMaxEventRate > 0
-    file.write("export MONITORING_MAX_EVENT_RATE=#{@syslogMonitoringMaxEventRate}\n")
+  #mdsd settings
+  if @mdsdMonitoringMaxEventRate > 0
+    file.write("export MONITORING_MAX_EVENT_RATE=#{@mdsdMonitoringMaxEventRate}\n")
   end
 
   # Close file after writing all environment variables
