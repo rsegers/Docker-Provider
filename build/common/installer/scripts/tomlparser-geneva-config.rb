@@ -14,7 +14,7 @@ GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "Firstparty
 @geneva_account_environment = "" # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
 @geneva_account_name = ""
 @geneva_account_namespace = ""
-@geneva_logs_config_version = "2.0"
+@geneva_logs_config_version = "1.0"
 @geneva_gcs_region = ""
 @infra_namespaces = ""
 @tenant_namespaces = ""
@@ -87,7 +87,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
               if !geneva_logs_config_version.nil? && !geneva_logs_config_version.empty?
                 @geneva_logs_config_version = geneva_logs_config_version
               else
-                @geneva_logs_config_version = "2.0"
+                @geneva_logs_config_version = "1.0"
                 puts "Since config version not specified so using default config version : #{@geneva_logs_config_version}"
               end
             else
