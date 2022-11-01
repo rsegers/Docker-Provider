@@ -110,7 +110,7 @@ module OMS
 
     # Create file which the livenessprobe is checking for to restart the container
     def renew_certs
-      filename = "C:\\etc\\omsagentwindows\\renewcertificate.txt"
+      filename = "C:\\etc\\amalogswindows\\renewcertificate.txt"
       File.open(filename, "w") { |f| f.write("Please renew the certificate") }
       if File.file?(filename) == true
         return OMS::ERROR_EXECUTING_RENEW_CERTS_COMMAND

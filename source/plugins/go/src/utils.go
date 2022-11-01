@@ -177,10 +177,6 @@ func CreateMDSDClient(dataType DataType, containerType string) {
 	}
 }
 
-func CreateNamedPipeConnection(dataType DataType) {
-
-}
-
 //ADX client to write to ADX
 func CreateADXClient() {
 
