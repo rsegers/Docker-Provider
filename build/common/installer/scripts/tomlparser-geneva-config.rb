@@ -147,17 +147,10 @@ def isValidGenevaConfig(environment, namespace, account, region)
        GENEVA_SUPPORTED_ENVIRONMENTS.map(&:downcase).include?(environment.downcase)
       isValid = true
     end
-  rescue => error
+  rescue => errorStr
+    puts "config::geneva_logs::error:Exception while validating Geneva config - #{errorStr}"
   end
   return isValid
-end
-
-def checkForTypeArray(arrayValue, arrayType)
-  if (arrayValue.nil? || (arrayValue.kind_of?(Array) && ((arrayValue.length == 0) || (arrayValue.length > 0 && arrayValue[0].kind_of?(arrayType)))))
-    return true
-  else
-    return false
-  end
 end
 
 def get_command_windows(env_variable_name, env_variable_value)

@@ -56,6 +56,8 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailBufferMaxSizeMBs = 0
 @fbitTailMemBufLimitMBs = 0
 @fbitTailIgnoreOlder = ""
+@storageTotalLimitSizeMB = 100
+@outputForwardWorkers = 10
 
 def is_number?(value)
   true if Integer(value) rescue false
@@ -178,6 +180,21 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           end
         end
       end
+
+      # fbit forward plugins geneva settings per tenant
+      fbit_config = parsedConfig[:agent_settings][:geneva_tenant_fbit_settings]
+      if !fbit_config.nil?
+        storageTotalLimitSizeMB = fbit_config[:storage_total_limit_size_mb]
+        if !storageTotalLimitSizeMB.nil? && is_number?(storageTotalLimitSizeMB) && storageTotalLimitSizeMB.to_i > 0
+          @storageTotalLimitSizeMB = storageTotalLimitSizeMB.to_i
+          puts "Using config map value: storage_total_limit_size_mb = #{@storageTotalLimitSizeMB}"
+        end
+        outputForwardWorkers = fbit_config[:output_forward_workers]
+        if !outputForwardWorkers.nil? && is_number?(outputForwardWorkers) && outputForwardWorkers.to_i > 0
+          @outputForwardWorkers = outputForwardWorkers.to_i
+          puts "Using config map value: output_forward_workers = #{@outputForwardWorkers}"
+        end
+      end
     end
   rescue => errorStr
     puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
@@ -224,6 +241,13 @@ if !file.nil?
 
   if !@fbitTailIgnoreOlder.nil? && !@fbitTailIgnoreOlder.empty?
     file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
+  end
+
+  if @storage_total_limit_size_mb > 0
+    file.write("export STORAGE_TOTAL_LIMIT_SIZE_MB:#{@storage_total_limit_size_mb.to_s + "M"}\n")
+  end
+  if @outputForwardWorkers > 0
+    file.write("export OUTPUT_FORWARD_WORKERS_COUNT:#{@outputForwardWorkers}")
   end
 
   # Close file after writing all environment variables
