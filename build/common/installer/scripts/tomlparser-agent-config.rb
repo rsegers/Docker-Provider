@@ -243,8 +243,8 @@ if !file.nil?
     file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
   end
 
-  if @storage_total_limit_size_mb > 0
-    file.write("export STORAGE_TOTAL_LIMIT_SIZE_MB:#{@storage_total_limit_size_mb.to_s + "M"}\n")
+  if @storageTotalLimitSizeMB > 0
+    file.write("export STORAGE_TOTAL_LIMIT_SIZE_MB:#{@storageTotalLimitSizeMB.to_s + "M"}\n")
   end
   if @outputForwardWorkers > 0
     file.write("export OUTPUT_FORWARD_WORKERS_COUNT:#{@outputForwardWorkers}")
