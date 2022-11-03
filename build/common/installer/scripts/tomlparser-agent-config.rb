@@ -244,10 +244,10 @@ if !file.nil?
   end
 
   if @storageTotalLimitSizeMB > 0
-    file.write("export STORAGE_TOTAL_LIMIT_SIZE_MB:#{@storageTotalLimitSizeMB.to_s + "M"}\n")
+    file.write("export STORAGE_TOTAL_LIMIT_SIZE_MB=#{@storageTotalLimitSizeMB.to_s + "M"}\n")
   end
   if @outputForwardWorkers > 0
-    file.write("export OUTPUT_FORWARD_WORKERS_COUNT:#{@outputForwardWorkers}")
+    file.write("export OUTPUT_FORWARD_WORKERS_COUNT=#{@outputForwardWorkers}\n")
   end
 
   # Close file after writing all environment variables
