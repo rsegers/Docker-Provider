@@ -57,7 +57,7 @@ spec:
          - name: MONITORING_USE_GENEVA_CONFIG_SERVICE
            value: "true"
          - name: MONITORING_MAX_EVENT_RATE
-           value: "50000" # default MDSD EPS is 20K which is not enough for large scale
+           value: "100000" # default MDSD EPS is 20K which is not enough for large scale
          - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_SIZE
            value: "15m"
          - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_MAX_SIZE
