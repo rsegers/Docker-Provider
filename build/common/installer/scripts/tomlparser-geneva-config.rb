@@ -2,6 +2,7 @@
 
 @os_type = ENV["OS_TYPE"]
 require "tomlrb"
+require "json"
 
 require_relative "ConfigParseErrorLogger"
 
@@ -18,8 +19,9 @@ GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "Firstparty
 @geneva_gcs_region = ""
 @infra_namespaces = ""
 @tenant_namespaces = ""
-@geneva_gc_authid = ""
+@geneva_gcs_authid = ""
 @containerType = ENV["CONTAINER_TYPE"]
+@azure_json_path = "/etc/kubernetes/host/azure.json"
 
 # Use parser to parse the configmap toml file to a ruby structure
 def parseConfigMap
@@ -81,13 +83,34 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             geneva_account_name = parsedConfig[:integrations][:geneva_logs][:account].to_s
             geneva_logs_config_version = parsedConfig[:integrations][:geneva_logs][:configversion].to_s
             geneva_gcs_region = parsedConfig[:integrations][:geneva_logs][:region].to_s
-            geneva_gc_authid = parsedConfig[:integrations][:geneva_logs][:authid].to_s
-            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_gc_authid, geneva_gcs_region)
+            geneva_gcs_authid = parsedConfig[:integrations][:geneva_logs][:authid].to_s
+            if geneva_gcs_authid.nil? || geneva_gcs_authid.empty?
+              # extract authid from nodes config
+              begin
+                file = File.read(@azure_json_path)
+                data_hash = JSON.parse(file)
+                # Check to see if SP exists, if it does use SP. Else, use msi
+                sp_client_id = data_hash["aadClientId"]
+                sp_client_secret = data_hash["aadClientSecret"]
+                user_assigned_client_id = data_hash["userAssignedIdentityID"]
+                if (!sp_client_id.nil? &&
+                    !sp_client_id.empty? &&
+                    sp_client_id.downcase == "msi" &&
+                    !user_assigned_client_id.nil? &&
+                    !user_assigned_client_id.empty?)
+                  geneva_gcs_authid = "client_id#{user_assigned_client_id}"
+                  puts "using authid for geneva integration: #{geneva_gcs_authid}"
+                end
+              rescue => errorStr
+                puts "failed to get user assigned client id with an error: #{errorStr}"
+              end
+            end
+            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_gcs_authid, geneva_gcs_region)
               @geneva_account_environment = geneva_account_environment
               @geneva_account_namespace = geneva_account_namespace
               @geneva_account_name = geneva_account_name
               @geneva_gcs_region = geneva_gcs_region
-              @geneva_gc_authid = geneva_gc_authid
+              @geneva_gcs_authid = geneva_gcs_authid
               if !geneva_logs_config_version.nil? && !geneva_logs_config_version.empty?
                 @geneva_logs_config_version = geneva_logs_config_version
               else
@@ -123,7 +146,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "Using config map value: MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}"
           puts "Using config map value: MONITORING_GCS_ACCOUNT=#{@geneva_account_name}"
           puts "Using config map value: MONITORING_GCS_REGION=#{@geneva_gcs_region}"
-          puts "Using config map value: MONITORING_GCS_AUTH_ID=#{@geneva_gc_authid}"
+          puts "Using config map value: MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}"
 
           puts "Using config map value: MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}"
 
@@ -196,7 +219,7 @@ if (@containerType.nil? || @containerType.empty?)
     file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
     file.write("export MONITORING_GCS_REGION=#{@geneva_gcs_region}\n")
     file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
-    file.write("export MONITORING_GCS_AUTH_ID=#{@geneva_gc_authid}\n")
+    file.write("export MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}\n")
 
     file.write("export GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}\n")
     file.write("export GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}\n")
@@ -225,6 +248,8 @@ if (@containerType.nil? || @containerType.empty?)
       commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
       file.write(commands)
       commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version)
+      file.write(commands)
+      commands = get_command_windows("MONITORING_GCS_AUTH_ID", @geneva_gcs_authid)
       file.write(commands)
 
       commands = get_command_windows("GENEVA_LOGS_INFRA_NAMESPACES", @infra_namespaces)
