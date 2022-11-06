@@ -98,7 +98,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                     sp_client_id.downcase == "msi" &&
                     !user_assigned_client_id.nil? &&
                     !user_assigned_client_id.empty?)
-                  geneva_gcs_authid = "client_id#{user_assigned_client_id}"
+                  geneva_gcs_authid = "client_id##{user_assigned_client_id}"
                   puts "using authid for geneva integration: #{geneva_gcs_authid}"
                 end
               rescue => errorStr
