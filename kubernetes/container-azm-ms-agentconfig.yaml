@@ -174,11 +174,12 @@ data:
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # They increase the maximum stdout/stderr log collection rate but will also cause higher cpu/memory usage.
     ## Ref for more details about Ignore_Older -  https://docs.fluentbit.io/manual/v/1.7/pipeline/inputs/tail
-    # [agent_settings.fbit_config]
-    #   log_flush_interval_secs = "1"                 # default value is 15
-    #   tail_mem_buf_limit_megabytes = "10"           # default value is 10
-    #   tail_buf_chunksize_megabytes = "1"            # default value is 32kb (comment out this line for default)
-    #   tail_buf_maxsize_megabytes = "1"              # defautl value is 32kb (comment out this line for default)
+    # ganga - following config values are tested for geneva integration
+    [agent_settings.fbit_config]
+      log_flush_interval_secs = "1"                 # default value is 15
+      tail_mem_buf_limit_megabytes = "1000"           # default value is 10
+      tail_buf_chunksize_megabytes = "10"            # default value is 32kb (comment out this line for default)
+      tail_buf_maxsize_megabytes = "20"              # defautl value is 32kb (comment out this line for default)
     #   tail_ignore_older = "5m"                      # default value same as fluent-bit default i.e.0m
 
     # settings for geneva fluent-bit forward plugin settings per tenant
