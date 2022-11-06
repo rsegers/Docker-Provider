@@ -318,7 +318,7 @@ function Set-EnvironmentVariables {
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
     .\setagentenv.ps1
 
-    #Replace placeholders in fluent-bit.conf
+    #Replace placeholders in td-agent-bit.conf
     ruby /opt/amalogswindows/scripts/ruby/td-agent-bit-conf-customizer.rb
 
     # run mdm config parser
@@ -445,14 +445,14 @@ function Start-Fluent-Telegraf {
 
     # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
     # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
-    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:\etc\fluent-bit\fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:\etc\fluent-bit\td-agent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
 
     #register fluentd as a service and start
     # there is a known issues with win32-service https://github.com/chef/win32-service/issues/70
     if (![string]::IsNullOrEmpty($containerRuntime) -and [string]$containerRuntime.StartsWith('docker') -eq $false) {
         # change parser from docker to cri if the container runtime is not docker
         Write-Host "changing parser from Docker to CRI since container runtime : $($containerRuntime) and which is non-docker"
-        (Get-Content -Path C:/etc/fluent-bit/fluent-bit.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit.conf
+        (Get-Content -Path C:/etc/fluent-bit/td-agent-bit.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/td-agent-bit.conf
     }
 
     # Start telegraf only in sidecar scraping mode

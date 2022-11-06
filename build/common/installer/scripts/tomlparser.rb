@@ -140,8 +140,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       ConfigParseErrorLogger.logError("Exception while reading config map settings for cluster level container log enrichment - #{errorStr}, using defaults, please check config map for errors")
     end
 
-     #Get container log schema version setting
-     begin
+    #Get container log schema version setting
+    begin
       if !parsedConfig[:log_collection_settings][:schema].nil? && !parsedConfig[:log_collection_settings][:schema][:containerlog_schema_version].nil?
         @containerLogSchemaVersion = parsedConfig[:log_collection_settings][:schema][:containerlog_schema_version]
         puts "config::Using config map setting for container log schema version"
@@ -164,10 +164,10 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     begin
       if !parsedConfig[:log_collection_settings][:route_container_logs].nil? && !parsedConfig[:log_collection_settings][:route_container_logs][:version].nil?
         if !parsedConfig[:log_collection_settings][:route_container_logs][:version].empty?
-           @containerLogsRoute = parsedConfig[:log_collection_settings][:route_container_logs][:version]
-           puts "config::Using config map setting for container logs route: #{@containerLogsRoute}"
+          @containerLogsRoute = parsedConfig[:log_collection_settings][:route_container_logs][:version]
+          puts "config::Using config map setting for container logs route: #{@containerLogsRoute}"
         else
-           puts "config::Ignoring config map settings and using default value since provided container logs route value is empty"
+          puts "config::Ignoring config map settings and using default value since provided container logs route value is empty"
         end
       end
     rescue => errorStr
@@ -178,10 +178,10 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     begin
       if !parsedConfig[:log_collection_settings][:adx_database].nil? && !parsedConfig[:log_collection_settings][:adx_database][:name].nil?
         if !parsedConfig[:log_collection_settings][:adx_database][:name].empty?
-           @adxDatabaseName = parsedConfig[:log_collection_settings][:adx_database][:name]
-           puts "config::Using config map setting for ADX database name : #{@adxDatabaseName}"
+          @adxDatabaseName = parsedConfig[:log_collection_settings][:adx_database][:name]
+          puts "config::Using config map setting for ADX database name : #{@adxDatabaseName}"
         else
-           puts "config::Ignoring config map settings and using default value '#{@adxDatabaseName}' since provided adx database name value is empty"
+          puts "config::Ignoring config map settings and using default value '#{@adxDatabaseName}' since provided adx database name value is empty"
         end
       else
         puts "config::No ADX database name set, using default value : #{@adxDatabaseName}"
@@ -242,7 +242,6 @@ else
   puts "****************End Config Processing********************"
 end
 
-
 =begin
 This section generates the file that will set the environment variables for windows. This script will be called by the main.ps1 script
 which is the ENTRYPOINT script for the windows aks log container
@@ -257,7 +256,7 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   file = File.open("setenv.ps1", "w")
 
   if !file.nil?
-    # This will be used in fluent-bit.conf file to filter out logs
+    # This will be used in td-agent-bit.conf file to filter out logs
     if (!@collectStdoutLogs && !@collectStderrLogs)
       #Stop log tailing completely
       @logTailPath = "C:\\opt\\nolog*.log"
@@ -269,29 +268,29 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     end
     commands = get_command_windows("AZMON_COLLECT_STDOUT_LOGS", @collectStdoutLogs)
     file.write(commands)
-    commands = get_command_windows('AZMON_LOG_TAIL_PATH', @logTailPath)
+    commands = get_command_windows("AZMON_LOG_TAIL_PATH", @logTailPath)
     file.write(commands)
-    commands = get_command_windows('AZMON_LOG_EXCLUSION_REGEX_PATTERN', @logExclusionRegexPattern)
+    commands = get_command_windows("AZMON_LOG_EXCLUSION_REGEX_PATTERN", @logExclusionRegexPattern)
     file.write(commands)
-    commands = get_command_windows('AZMON_STDOUT_EXCLUDED_NAMESPACES', @stdoutExcludeNamespaces)
+    commands = get_command_windows("AZMON_STDOUT_EXCLUDED_NAMESPACES", @stdoutExcludeNamespaces)
     file.write(commands)
-    commands = get_command_windows('AZMON_COLLECT_STDERR_LOGS', @collectStderrLogs)
+    commands = get_command_windows("AZMON_COLLECT_STDERR_LOGS", @collectStderrLogs)
     file.write(commands)
-    commands = get_command_windows('AZMON_STDERR_EXCLUDED_NAMESPACES', @stderrExcludeNamespaces)
+    commands = get_command_windows("AZMON_STDERR_EXCLUDED_NAMESPACES", @stderrExcludeNamespaces)
     file.write(commands)
-    commands = get_command_windows('AZMON_CLUSTER_COLLECT_ENV_VAR', @collectClusterEnvVariables)
+    commands = get_command_windows("AZMON_CLUSTER_COLLECT_ENV_VAR", @collectClusterEnvVariables)
     file.write(commands)
-    commands = get_command_windows('AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH', @excludePath)
+    commands = get_command_windows("AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH", @excludePath)
     file.write(commands)
-    commands = get_command_windows('AZMON_CLUSTER_CONTAINER_LOG_ENRICH', @enrichContainerLogs)
+    commands = get_command_windows("AZMON_CLUSTER_CONTAINER_LOG_ENRICH", @enrichContainerLogs)
     file.write(commands)
-    commands = get_command_windows('AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS', @collectAllKubeEvents)
+    commands = get_command_windows("AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS", @collectAllKubeEvents)
     file.write(commands)
-    commands = get_command_windows('AZMON_CONTAINER_LOGS_ROUTE', @containerLogsRoute)
+    commands = get_command_windows("AZMON_CONTAINER_LOGS_ROUTE", @containerLogsRoute)
     file.write(commands)
-    commands = get_command_windows('AZMON_CONTAINER_LOG_SCHEMA_VERSION', @containerLogSchemaVersion)
+    commands = get_command_windows("AZMON_CONTAINER_LOG_SCHEMA_VERSION", @containerLogSchemaVersion)
     file.write(commands)
-    commands = get_command_windows('AZMON_ADX_DATABASE_NAME', @adxDatabaseName)
+    commands = get_command_windows("AZMON_ADX_DATABASE_NAME", @adxDatabaseName)
     file.write(commands)
 
     # Close file after writing all environment variables
