@@ -1001,7 +1001,7 @@ service rsyslog stop
 echo "getting rsyslog status..."
 service rsyslog status
 
-if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
   echo "not checking onboarding status since GENEVA_LOGS_INTEGRATION_SERVICE_MODE is true"
 elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30

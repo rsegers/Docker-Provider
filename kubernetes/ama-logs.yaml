@@ -384,7 +384,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:11022022-6fe64c15"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:11032022-79b29dbc"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -429,6 +429,10 @@ spec:
             # Uncomment below lines for MSI Auth Mode  testing
             # - name: USING_AAD_MSI_AUTH
             #   value: "true"
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           securityContext:
             privileged: true
           ports:
@@ -477,7 +481,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: ama-logs-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:11022022-6fe64c15"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:11032022-79b29dbc"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -702,7 +706,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:11022022-6fe64c15"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:11032022-79b29dbc"
           imagePullPolicy: IfNotPresent
           # comment resources if VPA configured since the VPA will set these values
           resources:
@@ -889,7 +893,7 @@ spec:
             value: "3"
      containers:
        - name: ama-logs-windows
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:win-11022022-6fe64c15"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:win-11032022-79b29dbc"
          imagePullPolicy: IfNotPresent
          resources:
           limits:

@@ -62,6 +62,8 @@ spec:
            value: "15m"
          - name: FBIT_INPUT_FORWARD_BUFFER_CHUNK_MAX_SIZE
            value: "30m"
+         - name: MDSD_MSGPACK_SORT_COLUMNS # confirm this setting with AMA team
+           value: "1"
          - name: NODE_IP
            valueFrom:
               fieldRef:
