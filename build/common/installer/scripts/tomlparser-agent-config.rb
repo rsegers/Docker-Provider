@@ -9,6 +9,13 @@ require_relative "ConfigParseErrorLogger"
 @configMapMountPath = "/etc/config/settings/agent-settings"
 @configSchemaVersion = ""
 
+# Checking to see if this is the daemonset or replicaset to parse config accordingly
+@controllerType = ENV["CONTROLLER_TYPE"]
+@daemonset = "daemonset"
+# Checking to see if container is not prometheus sidecar.
+# CONTAINER_TYPE is populated only for prometheus sidecar container.
+@containerType = ENV["CONTAINER_TYPE"]
+
 # 250 Node items (15KB per node) account to approximately 4MB
 @nodesChunkSize = 250
 # 1000 pods (10KB per pod) account to approximately 10MB
@@ -57,6 +64,8 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailMemBufLimitMBs = 0
 @fbitTailIgnoreOlder = ""
 
+# configmap settings related to mdsd
+@mdsdMonitoringMaxEventRate = 0
 # Checking to see if this is the daemonset or replicaset to parse config accordingly
 @controllerType = ENV["CONTROLLER_TYPE"]
 @daemonset = "daemonset"
@@ -193,6 +202,19 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           end
         end
       end
+
+      # ama-logs daemonset only settings
+      if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
+        # mdsd settings
+        mdsd_config = parsedConfig[:agent_settings][:mdsd_config]
+        if !mdsd_config.nil?
+          mdsdMonitoringMaxEventRate = mdsd_config[:monitoring_max_event_rate]
+          if !mdsdMonitoringMaxEventRate.nil? && is_number?(mdsdMonitoringMaxEventRate) && mdsdMonitoringMaxEventRate.to_i > 0
+            @mdsdMonitoringMaxEventRate = mdsdMonitoringMaxEventRate.to_i
+            puts "Using config map value: monitoring_max_event_rate  = #{@mdsdMonitoringMaxEventRate}"
+          end
+        end
+      end
     
       prom_fbit_config = nil
       if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
@@ -265,9 +287,13 @@ if !file.nil?
   if @fbitTailMemBufLimitMBs > 0
     file.write("export FBIT_TAIL_MEM_BUF_LIMIT=#{@fbitTailMemBufLimitMBs}\n")
   end
-
   if !@fbitTailIgnoreOlder.nil? && !@fbitTailIgnoreOlder.empty?
     file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
+  end
+
+  #mdsd settings
+  if @mdsdMonitoringMaxEventRate > 0
+    file.write("export MONITORING_MAX_EVENT_RATE=#{@mdsdMonitoringMaxEventRate}\n")
   end
 
   if @promFbitChunkSize > 0
