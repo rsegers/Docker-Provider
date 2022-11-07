@@ -40,16 +40,16 @@ function Start-FileSystemWatcher {
 }
 
 function Generate-GenevaTenantNameSpaceConfig {
-     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")  
-    if (![string]::IsNullOrEmpty($genevaLogsTenantNameSpaces)) {    
-        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", $genevaLogsTenantNameSpaces, "machine")     
+     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsTenantNameSpaces)) {
+        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", $genevaLogsTenantNameSpaces, "machine")
         $genevaLogsTenantNameSpacesArray = $genevaLogsTenantNameSpaces.Split(",")
-        for ($i = 0; $i -lt $genevaLogsTenantNameSpacesArray.Length; $i = $i + 1) { 
+        for ($i = 0; $i -lt $genevaLogsTenantNameSpacesArray.Length; $i = $i + 1) {
           $tenantName = $genevaLogsTenantNameSpacesArray[$i]
-          Copy-Item C:/etc/fluent-bit/td-agent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/td-agent-bit-geneva-logs_$tenantName.conf 
-          (Get-Content -Path C:/etc/fluent-bit/td-agent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/td-agent-bit-geneva-logs_$tenantName.conf                     
+          Copy-Item C:/etc/fluent-bit/td-agent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/td-agent-bit-geneva-logs_$tenantName.conf
+          (Get-Content -Path C:/etc/fluent-bit/td-agent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/td-agent-bit-geneva-logs_$tenantName.conf
         }
-    }     
+    }
     Remove-Item C:/etc/fluent-bit/td-agent-bit-geneva-logs_tenant.conf
 }
 
@@ -334,7 +334,7 @@ function Set-EnvironmentVariables {
 
     #Replace placeholders in td-agent-bit.conf
     ruby /opt/amalogswindows/scripts/ruby/td-agent-bit-conf-customizer.rb
-    
+
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
     .\setgenevaconfigenv.ps1
 
@@ -355,11 +355,9 @@ function Set-EnvironmentVariables {
     else {
         Write-Host "Failed to set environment variable GENEVA_LOGS_MULTI_TENANCY for target 'machine' since it is either null or empty"
     }
-    if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true'
-     -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true'
-    ) { 
+    if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
         ruby /opt/amalogswindows/scripts/ruby/td-agent-bit-geneva-tenant-conf-customizer.rb
-        Generate-GenevaTenantNameSpaceConfig 
+        Generate-GenevaTenantNameSpaceConfig
     }
 
 
@@ -497,24 +495,23 @@ function Start-Fluent-Telegraf {
     }
     $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
     $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
-    
-    if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true'
-     -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {        
+
+    if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
         $fluentbitConfFile = "C:/etc/fluent-bit/td-agent-bit-geneva.conf "
-     }
+    }
 
 
     # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
     # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", $fluentbitConfFile, "-e", "C:\opt\amalogswindows\out_oms.so") }
-    
+
     # Start telegraf only in sidecar scraping mode
     $sidecarScrapingEnabled = [System.Environment]::GetEnvironmentVariable('SIDECAR_SCRAPING_ENABLED')
     if (![string]::IsNullOrEmpty($sidecarScrapingEnabled) -and $sidecarScrapingEnabled.ToLower() -eq 'true') {
         Write-Host "Starting telegraf..."
         Start-Telegraf
     }
- 
+
     fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'
 
     Notepad.exe | Out-Null
