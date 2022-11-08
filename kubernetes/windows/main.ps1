@@ -503,7 +503,7 @@ function Start-Fluent-Telegraf {
 
     # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
     # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
-    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", $fluentbitConfFile, "-e", "C:\opt\amalogswindows\out_oms.so") }
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\td-agent-bit.exe" -ArgumentList @("-c", $fluentbitConfFile, "-e", "C:\opt\amalogswindows\out_oms.so") }
 
     # Start telegraf only in sidecar scraping mode
     $sidecarScrapingEnabled = [System.Environment]::GetEnvironmentVariable('SIDECAR_SCRAPING_ENABLED')
