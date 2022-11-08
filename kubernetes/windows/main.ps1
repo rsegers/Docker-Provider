@@ -497,7 +497,8 @@ function Start-Fluent-Telegraf {
     $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
 
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
-        $fluentbitConfFile = "C:/etc/fluent-bit/td-agent-bit-geneva.conf "
+        $fluentbitConfFile = "C:/etc/fluent-bit/td-agent-bit-geneva.conf"
+        Write-Host "since GenevaLogsIntegration enabled using fluent-bit config: $($fluentbitConfFile)"
     }
 
 
