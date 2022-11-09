@@ -880,6 +880,30 @@ spec:
           - name: ndots
             value: "3"
      containers:
+      - name: addon-token-adapter-win
+         command:
+          - addon-token-adapter-win
+         args:
+          - --secret-namespace=kube-system
+          - --secret-name=omsagent-aad-msi-token
+         image: norshtein/addon-token-adapter-win:v0.8
+         imagePullPolicy: Always
+         livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9999
+          initialDelaySeconds: 10
+          periodSeconds: 60
+         resources:
+          limits:
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+         securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
        - name: ama-logs-windows
          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10042022-3c05dd1b"
          imagePullPolicy: IfNotPresent
