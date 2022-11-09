@@ -311,13 +311,14 @@ function Set-EnvironmentVariables {
         Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
     }
 
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Process")
-    # [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Process")
+    [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Process")
     [System.Environment]::SetEnvironmentVariable("MCS_GLOBAL_ENDPOINT", "https://global.handler.control.monitor.azure.com", "Process")
-    # [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Process")
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Process")
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Process")
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_TENANT", "cloudAgentTenantIdentity", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Process")
 
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksregion, "Process")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Process")
@@ -328,13 +329,14 @@ function Set-EnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Process")
 
 
-    #     [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
-    # [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Machine")
     [System.Environment]::SetEnvironmentVariable("MCS_GLOBAL_ENDPOINT", "https://global.handler.control.monitor.azure.com", "Machine")
-    # [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Machine")
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Machine")
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Machine")
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_TENANT", "cloudAgentTenantIdentity", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Machine")
 
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksregion, "Machine")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Machine")
