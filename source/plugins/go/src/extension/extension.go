@@ -101,3 +101,4 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 
 	return datatypeOutputStreamMap, nil
 }
+
