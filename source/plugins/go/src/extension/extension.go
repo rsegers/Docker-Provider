@@ -22,7 +22,7 @@ var containerType string
 
 func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 	once.Do(func() {
-		singleton = &Extension{make(map[string]string)}
+		singleton = &Extension{make(map[string]string), make(map[string]string)}
 		flbLogger.Println("Extension Instance created")
 	})
 	logger = flbLogger
