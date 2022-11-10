@@ -5,13 +5,10 @@ package extension
 import (
 	"encoding/json"
 	"fmt"
-	"log"
 
 	winio "github.com/Microsoft/go-winio"
 	uuid "github.com/google/uuid"
 )
-
-const ReadBufferSize = 20480
 
 func (e *Extension) GetOutputNamedPipe(datatype string) string {
 	extensionconfiglock.Lock()
@@ -38,7 +35,7 @@ func getExtensionConfigResponse(jsonBytes []byte) (string, error) {
 		return "", err
 	}
 	defer config_namedpipe.Close()
-	number_bytes, err := config_namedpipe.Write(data)
+	number_bytes, err := config_namedpipe.Write(jsonBytes)
 	if err != nil {
 		logger.Printf("Windows AMA: write error: %v", err)
 		return "", err
@@ -54,7 +51,7 @@ func getExtensionConfigResponse(jsonBytes []byte) (string, error) {
 	response := string(read_buffer)
 	logger.Printf("extensionconfig::getExtensionConfigResponse:: getting extension config from fluent named pipe")
 
-	return response
+	return response, nil
 }
 
 func getDataTypeToNamedPipeMapping() (map[string]string, error) {
@@ -71,7 +68,6 @@ func getDataTypeToNamedPipeMapping() (map[string]string, error) {
 	if err != nil {
 		logger.Printf("Error::Windows AMA:Failed to unmarshal config data. Error message: %s", string(err.Error()))
 	}
-	f.Close()
 	var extensionData TaggedData
 	json.Unmarshal([]byte(responseObjet.TaggedData), &extensionData)
 
