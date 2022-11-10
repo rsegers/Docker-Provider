@@ -15,7 +15,7 @@ genevaLogsConfig:
 
 image:
   repository: mcr.microsoft.com/azuremonitor/containerinsights/cidev
-  tag: "11072022-4ab42aef"
+  tag: "11092022-dd1405cf"
   pullPolicy: IfNotPresent
   agentVersion: "azure-mdsd-1.17.1"
 nameOverride: ""
