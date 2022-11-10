@@ -321,8 +321,8 @@ function Set-EnvironmentVariables {
 
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksregion, "Process")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Process")
-    [System.Environment]::SetEnvironmentVariable("MCS_REGIONAL_ENDPOINT", "https://eastus2euap.handler.control.monitor.azure.com", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_PROCESS_START_TIME", "2022-09-12T00:00:00.360Z", "Process")
+    # [System.Environment]::SetEnvironmentVariable("MCS_REGIONAL_ENDPOINT", "https://eastus2euap.handler.control.monitor.azure.com", "Process")
+    # [System.Environment]::SetEnvironmentVariable("MONITORING_PROCESS_START_TIME", "2022-09-12T00:00:00.360Z", "Process")
     [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Process")
     [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Process")
     [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Process")
@@ -338,8 +338,8 @@ function Set-EnvironmentVariables {
 
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksregion, "Machine")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Machine")
-    [System.Environment]::SetEnvironmentVariable("MCS_REGIONAL_ENDPOINT", "https://eastus2euap.handler.control.monitor.azure.com", "Machine")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_Machine_START_TIME", "2022-09-12T00:00:00.360Z", "Machine")
+    # [System.Environment]::SetEnvironmentVariable("MCS_REGIONAL_ENDPOINT", "https://eastus2euap.handler.control.monitor.azure.com", "Machine")
+    # [System.Environment]::SetEnvironmentVariable("MONITORING_Machine_START_TIME", "2022-09-12T00:00:00.360Z", "Machine")
     [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Machine")
     [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Machine")
     [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Machine") 
@@ -650,7 +650,8 @@ else {
 }
 
 #start Windows AMA 
-Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") -RedirectStandardOutput "out.txt" -RedirectStandardError "err.txt"
+# Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") -RedirectStandardOutput "out.txt" -RedirectStandardError "err.txt"
+Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
 
 
 Start-Fluent-Telegraf
