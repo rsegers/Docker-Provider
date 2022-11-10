@@ -57,9 +57,14 @@ func getExtensionConfigResponse(jsonBytes []byte) (string, error) {
 func getDataTypeToNamedPipeMapping() (map[string]string, error) {
 
 	guid := uuid.New()
+	datatypeOutputStreamMap := make(map[string]string)
+
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerInsights", "Version": "1"}
 	jsonBytes, err := json.Marshal(taggedData)
-	response := getExtensionConfigResponse(jsonBytes)
+	response, err := getExtensionConfigResponse(jsonBytes)
+	if err != nil {
+		return datatypeOutputStreamMap, err
+	}
 	
 	datatypeOutputStreamMap := make(map[string]string)
 
