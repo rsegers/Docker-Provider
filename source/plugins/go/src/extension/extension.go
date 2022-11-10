@@ -4,11 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 	"sync"
 
 	uuid "github.com/google/uuid"
-	"github.com/ugorji/go/codec"
 )
 
 type Extension struct {
@@ -57,34 +55,20 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	jsonBytes, err := json.Marshal(taggedData)
 	// TODO: this error is unhandled
 
-	var data []byte
-	enc := codec.NewEncoderBytes(&data, new(codec.MsgpackHandle))
-	if err := enc.Encode(string(jsonBytes)); err != nil {
-		return datatypeOutputStreamMap, err
-	}
-
-	fs := &FluentSocket{}
-	fs.sockAddress = "/var/run/mdsd-ci/default_fluent.socket"
-	if containerType != "" && strings.Compare(strings.ToLower(containerType), "prometheussidecar") == 0 {
-		fs.sockAddress = fmt.Sprintf("/var/run/mdsd-%s/default_fluent.socket", containerType)
-	}
-	responseBytes, err := FluentSocketWriter.writeAndRead(fs, data)
-	defer FluentSocketWriter.disconnect(fs)
-	logger.Printf("Info::mdsd::Making call to FluentSocket: %s to write and read the config data", fs.sockAddress)
+	response, err := getExtensionConfigResponse(jsonBytes)
 	if err != nil {
 		return datatypeOutputStreamMap, err
 	}
-	response := string(responseBytes) // TODO: why is this converted to a string then back into a []byte?
 
-	var responseObjet AgentTaggedDataResponse
-	err = json.Unmarshal([]byte(response), &responseObjet)
+	var responseObject AgentTaggedDataResponse
+	err = json.Unmarshal([]byte(response), &responseObject)
 	if err != nil {
 		logger.Printf("Error::mdsd::Failed to unmarshal config data. Error message: %s", string(err.Error()))
 		return datatypeOutputStreamMap, err
 	}
 
 	var extensionData TaggedData
-	json.Unmarshal([]byte(responseObjet.TaggedData), &extensionData)
+	json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 
 	extensionConfigs := extensionData.ExtensionConfigs
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- start")
@@ -97,7 +81,6 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	}
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- end")
 
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension config from fluent socket-end")
 
 	return datatypeOutputStreamMap, nil
 }
