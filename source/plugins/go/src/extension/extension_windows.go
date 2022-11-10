@@ -66,8 +66,6 @@ func getDataTypeToNamedPipeMapping() (map[string]string, error) {
 		return datatypeOutputStreamMap, err
 	}
 	
-	datatypeOutputStreamMap := make(map[string]string)
-
 	var responseObjet AgentTaggedDataResponse
 	err = json.Unmarshal([]byte(response), &responseObjet)
 	if err != nil {
