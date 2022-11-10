@@ -4,7 +4,6 @@ package extension
 
 import (
 	"fmt"
-	"log"
 	"strings"
 	"github.com/ugorji/go/codec"
 )
