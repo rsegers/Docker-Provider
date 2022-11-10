@@ -13,18 +13,18 @@ import (
 func (e *Extension) GetOutputNamedPipe(datatype string) string {
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
-	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap[datatype] != "" {
-		message := fmt.Sprintf("Windows AMA: OutputstreamId: %s for the datatype: %s", e.datatypeStreamIdMap[datatype], datatype)
+	if len(e.datatypeNamedPipeMap) > 0 && e.datatypeNamedPipeMap[datatype] != "" {
+		message := fmt.Sprintf("Windows AMA: OutputstreamId: %s for the datatype: %s", e.datatypeNamedPipeMap[datatype], datatype)
 		logger.Printf(message)
-		return e.datatypeStreamIdMap[datatype]
+		return e.datatypeNamedPipeMap[datatype]
 	}
 	var err error
-	e.datatypeStreamIdMap, err = getDataTypeToNamedPipeMapping()
+	e.datatypeNamedPipeMap, err = getDataTypeToNamedPipeMapping()
 	if err != nil {
 		message := fmt.Sprintf("Windows AMA: Error getting datatype to streamid mapping: %s", err.Error())
 		logger.Printf(message)
 	}
-	return e.datatypeStreamIdMap[datatype]
+	return e.datatypeNamedPipeMap[datatype]
 }
 
 func getExtensionConfigResponse(jsonBytes []byte) (string, error) {
