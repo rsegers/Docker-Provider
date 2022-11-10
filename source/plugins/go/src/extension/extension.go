@@ -11,6 +11,7 @@ import (
 
 type Extension struct {
 	datatypeStreamIdMap map[string]string
+	datatypeNamedPipeMap map[string]string
 }
 
 var singleton *Extension
