@@ -10,23 +10,6 @@ import (
 	uuid "github.com/google/uuid"
 )
 
-func (e *Extension) GetOutputNamedPipe(datatype string) string {
-	extensionconfiglock.Lock()
-	defer extensionconfiglock.Unlock()
-	if len(e.datatypeNamedPipeMap) > 0 && e.datatypeNamedPipeMap[datatype] != "" {
-		message := fmt.Sprintf("Windows AMA: OutputstreamId: %s for the datatype: %s", e.datatypeNamedPipeMap[datatype], datatype)
-		logger.Printf(message)
-		return e.datatypeNamedPipeMap[datatype]
-	}
-	var err error
-	e.datatypeNamedPipeMap, err = getDataTypeToNamedPipeMapping()
-	if err != nil {
-		message := fmt.Sprintf("Windows AMA: Error getting datatype to streamid mapping: %s", err.Error())
-		logger.Printf(message)
-	}
-	return e.datatypeNamedPipeMap[datatype]
-}
-
 func getExtensionConfigResponse(jsonBytes []byte) (string, error) {
 	pipePath := `\\.\\pipe\\CAgentStream_CloudAgentInfo_AzureMonitorAgent`
 	config_namedpipe, err := winio.DialPipe(pipePath, nil)
@@ -52,41 +35,4 @@ func getExtensionConfigResponse(jsonBytes []byte) (string, error) {
 	logger.Printf("extensionconfig::getExtensionConfigResponse:: getting extension config from fluent named pipe")
 
 	return response, nil
-}
-
-func getDataTypeToNamedPipeMapping() (map[string]string, error) {
-
-	guid := uuid.New()
-	datatypeOutputStreamMap := make(map[string]string)
-
-	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerInsights", "Version": "1"}
-	jsonBytes, err := json.Marshal(taggedData)
-	response, err := getExtensionConfigResponse(jsonBytes)
-	if err != nil {
-		return datatypeOutputStreamMap, err
-	}
-	
-	var responseObjet AgentTaggedDataResponse
-	err = json.Unmarshal([]byte(response), &responseObjet)
-	if err != nil {
-		logger.Printf("Error::Windows AMA:Failed to unmarshal config data. Error message: %s", string(err.Error()))
-	}
-	var extensionData TaggedData
-	json.Unmarshal([]byte(responseObjet.TaggedData), &extensionData)
-
-	extensionConfigs := extensionData.ExtensionConfigs
-	outputStreamDefinitions := extensionData.OutputStreamDefinitions
-	logger.Printf("Info::mdsd::build the datatype and streamid map -- start")
-	for _, extensionConfig := range extensionConfigs {
-		outputStreams := extensionConfig.OutputStreams
-		for dataType, outputStreamID := range outputStreams {
-			logger.Printf("Info::mdsd::datatype: %s, outputstreamId: %s", dataType, outputStreamID)
-			datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
-		}
-	}
-	logger.Printf("The data map CONTAINER_LOG_BLOB is -------------------------------------------------------")
-	logger.Printf(datatypeOutputStreamMap["CONTAINER_LOG_BLOB"])
-	logger.Printf("----------------------------------------------------------")
-	return datatypeOutputStreamMap, nil
-
 }

@@ -1290,7 +1290,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			jsonStr, err := json.Marshal(stringMap)
 			Log("Windows AMA::fluentForwardTag: %s, jsonStr: %s, msgpSize: %d", fluentForward.Tag, jsonStr, msgpSize)
 			if ContainerLogNamedPipe == nil {
-				Log("Windows AMA:: The container log named pipe was nil")
+				Log("Error::Windows AMA:: The connection to named pipe was nil. re-connecting...")
 				if ContainerLogSchemaV2 {
 					CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogDataType))
 				} else {
@@ -1298,19 +1298,19 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				}
 			}
 			if ContainerLogNamedPipe == nil {
-				Log("Windows AMA:: Error in creating the named pipe connection")
+				Log("Error::Windows AMA::Error in creating the named pipe connection")
 				return output.FLB_RETRY
 			}
-			Log("Windows AMA::Info::Starting to write container logs to named pipe")
+			Log("Info::Windows AMA::Starting to write container logs to named pipe")
 			deadline := 10 * time.Second
 			ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
 			n, err := ContainerLogNamedPipe.Write(msgpBytes)
 			if err != nil {
-				Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
+				Log("Error::Windows AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
 				return output.FLB_RETRY
 			} else {
 				numContainerLogRecords = len(msgPackEntries)
-				Log("Success::AMA::Successfully flushed %d container log records that was %d bytes to AMA ", numContainerLogRecords, n)
+				Log("Success::Windows AMA::Successfully flushed %d container log records that was %d bytes to AMA ", numContainerLogRecords, n)
 			}
 
 		} else {
