@@ -8,19 +8,6 @@ import (
 	"github.com/ugorji/go/codec"
 )
 
-func (e *Extension) GetOutputNamedPipe(datatype string) string {
-	//unimplemented function
-	logger.Printf("extensionconfig::GetOutputNamedPipe:: Function is not implemented for Linux")
-	return ""
-}
-
-func getDataTypeToNamedPipeMapping() (map[string]string, error) {
-	//unimplemented function
-	logger.Printf("extensionconfig::getDataTypeToNamedPipeMapping:: Function is not implemented for Linux")
-	return nil, nil
-
-}
-
 func getExtensionConfigResponse(jsonBytes []byte) (string, error) {
 	var data []byte
 	enc := codec.NewEncoderBytes(&data, new(codec.MsgpackHandle))
