@@ -249,7 +249,9 @@ class CAdvisorMetricsAPIClient
               if metricValue > 10000000000
                 telemetryProperties = {}
                 telemetryProperties["metricJSON"] = JSON.generate(metricJSON)
-                ApplicationInsightsUtility.sendCustomEvent("ImpossibleCpuUsageCadvisorResponse", telemetryProperties)
+                telemetryProperties["Value"] = metricValue
+                $log.warn("######################## metricJSON #{metricJSON}")
+                ApplicationInsightsUtility.sendCustomEvent("ImpossibleCpuUsageCadvisorResponse1", telemetryProperties)
               end
 
               #Telemetry about agent performance
@@ -577,6 +579,16 @@ class CAdvisorMetricsAPIClient
               metricCollections.push(metricCollection)
               metricItem["json_Collections"] = metricCollections.to_json
               metricItems.push(metricItem)
+
+              if metricValue > 10000000000
+                telemetryProperties = {}
+                telemetryProperties["metricJSON"] = JSON.generate(metricJSON)
+                telemetryProperties["Value"] = metricValue
+                telemetryProperties["metricRateValue"] = metricRateValue
+                $log.warn("???????????????????????? metricJSON #{metricJSON}")
+                ApplicationInsightsUtility.sendCustomEvent("ImpossibleCpuUsageCadvisorResponse2", telemetryProperties)
+              end
+
               #Telemetry about agent performance
               begin
                 # we can only do this much now. Ideally would like to use the docker image repository to find our pods/containers
