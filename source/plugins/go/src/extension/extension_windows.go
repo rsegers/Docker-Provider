@@ -3,11 +3,8 @@
 package extension
 
 import (
-	"encoding/json"
-	"fmt"
 
 	winio "github.com/Microsoft/go-winio"
-	uuid "github.com/google/uuid"
 )
 
 func getExtensionConfigResponse(jsonBytes []byte) (string, error) {
