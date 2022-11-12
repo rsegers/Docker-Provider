@@ -447,13 +447,17 @@ function Start-Fluent-Telegraf {
     # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:\etc\fluent-bit\fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
 
+    Write-Host "30 second sleep start"
+    Start-Sleep -Seconds 30
+    Write-Host "30 second sleep end"
+
     #register fluentd as a service and start
     # there is a known issues with win32-service https://github.com/chef/win32-service/issues/70
-    # if (![string]::IsNullOrEmpty($containerRuntime) -and [string]$containerRuntime.StartsWith('docker') -eq $false) {
-    #     # change parser from docker to cri if the container runtime is not docker
-    #     Write-Host "changing parser from Docker to CRI since container runtime : $($containerRuntime) and which is non-docker"
-    #     (Get-Content -Path C:/etc/fluent-bit/fluent-bit.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit.conf
-    # }
+    if (![string]::IsNullOrEmpty($containerRuntime) -and [string]$containerRuntime.StartsWith('docker') -eq $false) {
+        # change parser from docker to cri if the container runtime is not docker
+        Write-Host "changing parser from Docker to CRI since container runtime : $($containerRuntime) and which is non-docker"
+        (Get-Content -Path C:/etc/fluent-bit/fluent-bit.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit.conf
+    }
 
     # Start telegraf only in sidecar scraping mode
     $sidecarScrapingEnabled = [System.Environment]::GetEnvironmentVariable('SIDECAR_SCRAPING_ENABLED')
