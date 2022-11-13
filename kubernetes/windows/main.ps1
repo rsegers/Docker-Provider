@@ -328,7 +328,7 @@ function Set-EnvironmentVariables {
 
 function Get-ContainerRuntime {
     # containerd is the default runtime on AKS windows
-    $containerRuntime =
+    $containerRuntime = "containerd"
     #Defaults to use secure port: 10250
     $cAdvisorIsSecure = "true"
     $response = ""
