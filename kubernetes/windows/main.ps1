@@ -327,9 +327,10 @@ function Set-EnvironmentVariables {
 }
 
 function Get-ContainerRuntime {
-    # default container runtime and make default as containerd when containerd becomes default in AKS
-    $containerRuntime = "docker"
-    $cAdvisorIsSecure = "false"
+    # containerd is the default runtime on AKS windows
+    $containerRuntime =
+    #Defaults to use secure port: 10250
+    $cAdvisorIsSecure = "true"
     $response = ""
     $NODE_IP = ""
     try {
@@ -347,33 +348,33 @@ function Get-ContainerRuntime {
             $isPodsAPISuccess = $false
             Write-Host "Value of NODE_IP environment variable : $($NODE_IP)"
             try {
-                Write-Host "Making API call to http://$($NODE_IP):10255/pods"
-                $response = Invoke-WebRequest -uri http://$($NODE_IP):10255/pods  -UseBasicParsing
-                Write-Host "Response status code of API call to http://$($NODE_IP):10255/pods : $($response.StatusCode)"
+                Write-Host "Making API call to https://$($NODE_IP):10250/pods"
+                # ignore certificate validation since kubelet uses self-signed cert
+                [ServerCertificateValidationCallback]::Ignore()
+                $response = Invoke-WebRequest -Uri https://$($NODE_IP):10250/pods  -Headers @{'Authorization' = "Bearer $(Get-Content /var/run/secrets/kubernetes.io/serviceaccount/token)" } -UseBasicParsing
+                Write-Host "Response status code of API call to https://$($NODE_IP):10250/pods : $($response.StatusCode)"
             }
             catch {
-                Write-Host "API call to http://$($NODE_IP):10255/pods failed"
+                Write-Host "API call to https://$($NODE_IP):10250/pods failed"
             }
 
             if (![string]::IsNullOrEmpty($response) -and $response.StatusCode -eq 200) {
-                Write-Host "API call to http://$($NODE_IP):10255/pods succeeded"
+                Write-Host "API call to http://$($NODE_IP):10250/pods succeeded"
                 $isPodsAPISuccess = $true
             }
             else {
                 try {
-                    Write-Host "Making API call to https://$($NODE_IP):10250/pods"
-                    # ignore certificate validation since kubelet uses self-signed cert
-                    [ServerCertificateValidationCallback]::Ignore()
-                    $response = Invoke-WebRequest -Uri https://$($NODE_IP):10250/pods  -Headers @{'Authorization' = "Bearer $(Get-Content /var/run/secrets/kubernetes.io/serviceaccount/token)" } -UseBasicParsing
-                    Write-Host "Response status code of API call to https://$($NODE_IP):10250/pods : $($response.StatusCode)"
+                    Write-Host "Making API call to http://$($NODE_IP):10255/pods"
+                    $response = Invoke-WebRequest -uri http://$($NODE_IP):10255/pods  -UseBasicParsing
+                    Write-Host "Response status code of API call to http://$($NODE_IP):10255/pods : $($response.StatusCode)"
                     if (![string]::IsNullOrEmpty($response) -and $response.StatusCode -eq 200) {
-                        Write-Host "API call to https://$($NODE_IP):10250/pods succeeded"
+                        Write-Host "API call to https://$($NODE_IP):10255/pods succeeded"
                         $isPodsAPISuccess = $true
-                        $cAdvisorIsSecure = "true"
+                        $cAdvisorIsSecure = "false"
                     }
                 }
                 catch {
-                    Write-Host "API call to https://$($NODE_IP):10250/pods failed"
+                    Write-Host "API call to http://$($NODE_IP):10255/pods failed"
                 }
             }
 
@@ -400,7 +401,7 @@ function Get-ContainerRuntime {
                                     $containerID = $pod.status.ContainerStatuses[0].containerID
                                     $detectedContainerRuntime = $containerID.split(":")[0].trim()
                                     Write-Host "detected containerRuntime as : $($detectedContainerRuntime)"
-                                    if (![string]::IsNullOrEmpty($detectedContainerRuntime) -and [string]$detectedContainerRuntime.StartsWith('docker') -eq $false) {
+                                    if (![string]::IsNullOrEmpty($detectedContainerRuntime)) {
                                         $containerRuntime = $detectedContainerRuntime
                                     }
                                     Write-Host "using containerRuntime as : $($containerRuntime)"
@@ -411,8 +412,6 @@ function Get-ContainerRuntime {
                         else {
                             Write-Host "got podItems count is 0 hence using default container runtime:  $($containerRuntime)"
                         }
-
-
                     }
                     else {
                         Write-Host "got podList null or empty hence using default container runtime:  $($containerRuntime)"
