@@ -250,7 +250,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       if !proxy_config.nil?
         ignoreProxySettings = proxy_config[:ignore_proxy_settings]
         if !ignoreProxySettings.nil? && ignoreProxySettings.downcase == "true"
-          @ignoreProxySettings = ignoreProxySettings
+          @ignoreProxySettings = ignoreProxySettings.downcase
           puts "Using config map value: ignoreProxySettings = #{@ignoreProxySettings}"
         end
       end
