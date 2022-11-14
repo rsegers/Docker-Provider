@@ -5,22 +5,26 @@
 class ProxyUtils
   class << self
     def getProxyConfiguration()
-      amalogsproxy_secret_path = "/etc/ama-logs-secret/PROXY"
-      if !File.exist?(amalogsproxy_secret_path)
-        return {}
-      end
+      proxy_config = {}
+      if isIgnoreProxySettings()
+        $log.info("Proxy settings ignored since configured ignoreProxySettings is true")
+      else
+        amalogsproxy_secret_path = "/etc/ama-logs-secret/PROXY"
+        if !File.exist?(amalogsproxy_secret_path)
+          return {}
+        end
 
-      begin
-        proxy_config = parseProxyConfiguration(File.read(amalogsproxy_secret_path))
-      rescue SystemCallError # Error::ENOENT
-        return {}
-      end
+        begin
+          proxy_config = parseProxyConfiguration(File.read(amalogsproxy_secret_path))
+        rescue SystemCallError # Error::ENOENT
+          return {}
+        end
 
-      if proxy_config.nil?
-        $log.warn("Failed to parse the proxy configuration in '#{amalogsproxy_secret_path}'")
-        return {}
+        if proxy_config.nil?
+          $log.warn("Failed to parse the proxy configuration in '#{amalogsproxy_secret_path}'")
+          return {}
+        end
       end
-
       return proxy_config
     end
 
@@ -60,6 +64,10 @@ class ProxyUtils
         $log.warn("Failed to check the existence of Proxy CA cert '#{proxy_cert_path}'")
       end
       return isProxyCACertExist
+    end
+
+    def isIgnoreProxySettings()
+      return !ENV["IGNORE_PROXY_SETTINGS"].nil? && !ENV["IGNORE_PROXY_SETTINGS"].empty? && ENV["IGNORE_PROXY_SETTINGS"].downcase == "true"
     end
   end
 end
