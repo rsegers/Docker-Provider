@@ -1,22 +1,81 @@
+# Uncomment below lines for MSI Auth Mode  testing
+ apiVersion: v1
+ kind: Secret
+ metadata:
+   name: aad-msi-auth-token
+   namespace: kube-system
+ type: Opaque
+ data:
+   token: "xxxxx"
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: omsagent-reader
+rules:
+  - apiGroups: [""]
+    resources:
+      [
+        "pods",
+        "events",
+        "nodes",
+        "nodes/stats",
+        "nodes/metrics",
+        "nodes/spec",
+        "nodes/proxy",
+        "namespaces",
+        "services",
+        "persistentvolumes"
+      ]
+    verbs: ["list", "get", "watch"]
+  - apiGroups: ["apps", "extensions", "autoscaling"]
+    resources: ["replicasets", "deployments", "horizontalpodautoscalers"]
+    verbs: ["list"]
+  # Uncomment below lines if AddonResizer VPA enabled
+  # - apiGroups: ["apps"]
+  #   resources: ["deployments"]
+  #   resourceNames: [ "omsagent-rs" ]
+  #   verbs: ["get", "patch"]
+  # Uncomment below lines for MSI Auth Mode  testing
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: [ "omsagent-aad-msi-token" ]
+    verbs: ["get", "watch"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: omsagentclusterrolebinding
+subjects:
+  - kind: ServiceAccount
+    name: omsagent
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: omsagent-reader
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
- name: geneva-logs-windows
+ name: geneva-logs-cacarlt-windows
  namespace: kube-system
  labels:
-  component: geneva-logs-agent-windows
+  component: geneva-logs-agent-cacarlt-windows
   tier: node-win
 spec:
  updateStrategy:
   type: RollingUpdate
  selector:
   matchLabels:
-    component: geneva-logs-agent-windows
+    component: geneva-logs-agent-cacarlt-windows
     tier: node-win
  template:
   metadata:
     labels:
-      component: geneva-logs-agent-windows
+      component: geneva-logs-agent-cacarlt-windows
       tier: node-win
     annotations:
       agentVersion: "0.0.0-0"
@@ -33,33 +92,65 @@ spec:
         runAsUserName: "NT AUTHORITY\\SYSTEM"
     hostNetwork: true
     containers:
-     - name: geneva-logs-windows
-       image: "VALUE_IMAGE_NAME"
-       imagePullPolicy: IfNotPresent
-       resources:
-        limits:
-         cpu: 500m
-         memory: 600Mi
-       env:
+      # Uncomment below lines for MSI Auth Mode  testing
+      - name: addon-token-adapter-win
+        command:
+          - addon-token-adapter-win
+        args:
+          - --secret-namespace=kube-system
+          - --secret-name=aad-msi-auth-token
+        image: norshtein/addon-token-adapter-win:v0.8
+        imagePullPolicy: Always
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 9999
+          initialDelaySeconds: 10
+          periodSeconds: 60
+        resources:
+          limits:
+            memory: 500Mi
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        securityContext:
+          capabilities:
+            add:
+              - NET_ADMIN
+      - name: geneva-logs-cacarlt-windows
+        image: observabilityacr.azurecr.io/skydev:win-11142022-geneva-hpc
+        imagePullPolicy: IfNotPresent
+        resources:
+          limits:
+            cpu: 500m
+            memory: 600Mi
+        env:
         # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
-        - name: AKS_RESOURCE_ID
-          value: "VALUE_AKS_RESOURCE_ID_VALUE"
-        - name: AKS_REGION
-          value: "VALUE_AKS_RESOURCE_REGION_VALUE"
-        - name: CONTROLLER_TYPE
-          value: "DaemonSet"
-        - name: HOSTNAME
-          valueFrom:
-             fieldRef:
-               fieldPath: spec.nodeName
-        - name: PODNAME
-          valueFrom:
-             fieldRef:
-              fieldPath: metadata.name
-        - name: NODE_IP
-          valueFrom:
+          - name: AKS_RESOURCE_ID
+            value: "VALUE_AKS_RESOURCE_ID_VALUE"
+          - name: AKS_REGION
+            value: "VALUE_AKS_RESOURCE_REGION_VALUE"
+          - name: CONTROLLER_TYPE
+            value: "DaemonSet"
+          - name: USING_AAD_MSI_AUTH
+            value: "true"
+          - name: HOSTNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: spec.nodeName
+          - name: PODNAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: NODE_IP
+            valueFrom:
              fieldRef:
                fieldPath: status.hostIP
+        volumeMounts:
+        - mountPath: C:\etc\IMDS-access-token
+          name: imds-token
+          readOnly: true    
+    nodeName: akscambox000000
     affinity:
      nodeAffinity:
        requiredDuringSchedulingIgnoredDuringExecution:
@@ -78,3 +169,8 @@ spec:
       effect: NoSchedule
     - operator: "Exists"
       effect: PreferNoSchedule
+    volumes:
+      # Uncomment below lines for MSI Auth Mode  testing
+    - name: imds-token
+      secret:
+        secretName: aad-msi-auth-token
