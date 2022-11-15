@@ -37,20 +37,21 @@ function Set-EnvironmentVariables {
     # Set env vars for geneva monitor
     $envVars = @{
         MONITORING_DATA_DIRECTORY = (Join-Path $rootDir "opt\genevamonitoringagent\datadirectory")
-        MONITORING_GCS_AUTH_ID_TYPE = "AuthMSIToken"
-        MONITORING_MANAGED_ID_IDENTIFIER = "object_id"
+        #MONITORING_GCS_AUTH_ID_TYPE = "AuthMSIToken"
+        #MONITORING_MANAGED_ID_IDENTIFIER = "object_id"
         MONITORING_GCS_REGION = $aksregion
         MA_RoleEnvironment_Location = $aksregion
         MA_RoleEnvironment_ResourceId = $aksResourceId
+        customResourceId = $aksResourceId
         MONITORING_TENANT = "CloudAgent"
         MONITORING_ROLE = "Windows-HPC-Geneva"
         MONITORING_ROLE_INSTANCE = "$hostName-$podName"
 
-        MONITORING_MANAGED_ID_VALUE="VALUE_MSI_OBJECT_ID"
-        MONITORING_GCS_ACCOUNT = "VALUE_GCS_ACCOUNT"
-        MONITORING_GCS_NAMESPACE = "VALUE_GCS_NAMESPACE"              
-        MONITORING_GCS_ENVIRONMENT = "VALUE_GCS_ENVIRONMENT}"
-        MONITORING_CONFIG_VERSION = "VALUE_GCS_CONFIG_VERSION"
+        #MONITORING_MANAGED_ID_VALUE="VALUE_MSI_OBJECT_ID"
+        MONITORING_GCS_ACCOUNT = "SkyMERSandboxLogs"
+        MONITORING_GCS_NAMESPACE = "SkyMERSandboxMATest"              
+        MONITORING_GCS_ENVIRONMENT = "Test"
+        MONITORING_CONFIG_VERSION = "2.2"
     }
 
     foreach($key in $envVars.PSBase.Keys) {
