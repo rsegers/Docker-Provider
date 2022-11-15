@@ -263,6 +263,25 @@ if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSide
       fi
 fi
 
+#Parse the configmap to set the right environment variables for agent config.
+#Note > tomlparser-agent-config.rb has to be parsed first before td-agent-bit-conf-customizer.rb for fbit agent settings
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+      ruby tomlparser-agent-config.rb
+
+      cat agent_config_env_var | while read line; do
+            echo $line >> ~/.bashrc
+      done
+      source agent_config_env_var
+
+      #Parse the configmap to set the right environment variables for network policy manager (npm) integration.
+      ruby tomlparser-npm-config.rb
+
+      cat integration_npm_config_env_var | while read line; do
+            echo $line >> ~/.bashrc
+      done
+      source integration_npm_config_env_var
+fi
+
 export PROXY_ENDPOINT=""
 # Check for internet connectivity or workspace deletion
 if [ -e "/etc/ama-logs-secret/WSID" ]; then
@@ -272,8 +291,9 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
       else
             domain="opinsights.azure.com"
       fi
-
-      if [ -e "/etc/ama-logs-secret/PROXY" ]; then
+       if [ ! -z "${IGNORE_PROXY_SETTINGS}" ] && [ ${IGNORE_PROXY_SETTINGS} == "true" ]; then
+              echo "ignore proxy settings since IGNORE_PROXY_SETTINGS is set to true"
+       elif [ -e "/etc/ama-logs-secret/PROXY" ]; then
             export PROXY_ENDPOINT=$(cat /etc/ama-logs-secret/PROXY)
             # Validate Proxy Endpoint URL
             # extract the protocol://
@@ -462,25 +482,6 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
             echo $line >>~/.bashrc
       done
       source config_env_var
-fi
-
-#Parse the configmap to set the right environment variables for agent config.
-#Note > tomlparser-agent-config.rb has to be parsed first before td-agent-bit-conf-customizer.rb for fbit agent settings
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      ruby tomlparser-agent-config.rb
-
-      cat agent_config_env_var | while read line; do
-            echo $line >> ~/.bashrc
-      done
-      source agent_config_env_var
-
-      #Parse the configmap to set the right environment variables for network policy manager (npm) integration.
-      ruby tomlparser-npm-config.rb
-
-      cat integration_npm_config_env_var | while read line; do
-            echo $line >> ~/.bashrc
-      done
-      source integration_npm_config_env_var
 fi
 
 #Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
