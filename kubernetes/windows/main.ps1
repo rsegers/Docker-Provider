@@ -359,7 +359,7 @@ function Get-ContainerRuntime {
             }
 
             if (![string]::IsNullOrEmpty($response) -and $response.StatusCode -eq 200) {
-                Write-Host "API call to http://$($NODE_IP):10250/pods succeeded"
+                Write-Host "API call to https://$($NODE_IP):10250/pods succeeded"
                 $isPodsAPISuccess = $true
             }
             else {
@@ -368,7 +368,7 @@ function Get-ContainerRuntime {
                     $response = Invoke-WebRequest -uri http://$($NODE_IP):10255/pods  -UseBasicParsing
                     Write-Host "Response status code of API call to http://$($NODE_IP):10255/pods : $($response.StatusCode)"
                     if (![string]::IsNullOrEmpty($response) -and $response.StatusCode -eq 200) {
-                        Write-Host "API call to https://$($NODE_IP):10255/pods succeeded"
+                        Write-Host "API call to http://$($NODE_IP):10255/pods succeeded"
                         $isPodsAPISuccess = $true
                         $cAdvisorIsSecure = "false"
                     }
