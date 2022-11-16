@@ -105,21 +105,29 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 puts "failed to get user assigned client id with an error: #{errorStr}"
               end
             end
-            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_gcs_authid, geneva_gcs_region)
-              @geneva_account_environment = geneva_account_environment
-              @geneva_account_namespace = geneva_account_namespace
-              @geneva_account_name = geneva_account_name
-              @geneva_gcs_region = geneva_gcs_region
-              @geneva_gcs_authid = geneva_gcs_authid
-              if !geneva_logs_config_version.nil? && !geneva_logs_config_version.empty?
-                @geneva_logs_config_version = geneva_logs_config_version
-              else
-                @geneva_logs_config_version = "1.0"
-                puts "Since config version not specified so using default config version : #{@geneva_logs_config_version}"
-              end
+            # if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_gcs_authid, geneva_gcs_region)
+            @geneva_account_environment = geneva_account_environment
+            @geneva_account_namespace = geneva_account_namespace
+            @geneva_account_name = geneva_account_name
+            @geneva_gcs_region = geneva_gcs_region
+            @geneva_gcs_authid = geneva_gcs_authid
+
+            if !geneva_logs_config_version.nil? && !geneva_logs_config_version.empty?
+              @geneva_logs_config_version = geneva_logs_config_version
             else
-              puts "config::geneva_logs::error: provided geneva logs config is not valid"
+              @geneva_logs_config_version = "1.0"
+              puts "Since config version not specified so using default config version : #{@geneva_logs_config_version}"
             end
+
+            puts "using environment for geneva integration: #{@geneva_account_environment}"
+            puts "using namespace for geneva integration: #{@geneva_account_namespace}"
+            puts "using account for geneva integration: #{@geneva_account_name}"
+            puts "using authid for geneva integration: #{@geneva_gcs_authid}"
+            puts "using config version for geneva integration: #{@geneva_logs_config_version}"
+
+            # else
+            #   puts "config::geneva_logs::error: provided geneva logs config is not valid"
+            # end
           end
 
           if @multi_tenancy
