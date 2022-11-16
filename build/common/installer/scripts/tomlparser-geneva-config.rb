@@ -174,7 +174,8 @@ def isValidGenevaConfig(environment, namespace, account, authid, region)
        !account.nil? && !account.empty? &&
        !region.nil? && !region.empty? &&
        !authid.nil? && !authid.empty?
-      GENEVA_SUPPORTED_ENVIRONMENTS.map(&:downcase).include?(environment.downcase)
+      # TODO - add the validation once we figured out the environment for airgap clouds
+      # GENEVA_SUPPORTED_ENVIRONMENTS.map(&:downcase).include?(environment.downcase)
       isValid = true
     end
   rescue => errorStr
