@@ -330,7 +330,7 @@ function Read-Configs {
     .\setagentenv.ps1
 
     #Replace placeholders in fluent-bit.conf
-    ruby /opt/amalogswindows/scripts/ruby/td-agent-bit-conf-customizer.rb
+    ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
     # run mdm config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-mdm-metrics-config.rb

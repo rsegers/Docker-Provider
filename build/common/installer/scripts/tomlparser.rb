@@ -210,7 +210,7 @@ end
 file = File.open("config_env_var", "w")
 
 if !file.nil?
-  # This will be used in td-agent-bit.conf file to filter out logs
+  # This will be used in fluent-bit.conf file to filter out logs
   if (!@collectStdoutLogs && !@collectStderrLogs)
     #Stop log tailing completely
     @logTailPath = "/opt/nolog*.log"
