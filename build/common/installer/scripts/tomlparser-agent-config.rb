@@ -81,6 +81,8 @@ require_relative "ConfigParseErrorLogger"
 @promFbitBufferSizeDefault  = "64k" #kb
 @promFbitMemBufLimitDefault  = "10m" #mb
 
+@multiline_enabled = "false"
+
 def is_number?(value)
   true if Integer(value) rescue false
 end
@@ -244,6 +246,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "Using config map value: AZMON_FBIT_MEM_BUF_LIMIT = #{@promFbitMemBufLimit.to_s + "m"}"
         end
       end
+
+      multiline_config = parsedConfig[:agent_settings][:multiline]
+      if !multiline_config.nil?
+        @multiline_enabled = multiline_config[:enabled]
+        puts "Using config map value: AZMON_MULTILINE_ENABLED = #{@multiline_enabled}"
+      end
     end
   rescue => errorStr
     puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
@@ -314,6 +322,10 @@ if !file.nil?
     file.write("export AZMON_FBIT_MEM_BUF_LIMIT=#{@promFbitMemBufLimitDefault}\n")
   end
 
+  if @multiline_enabled.strip.casecmp("true") == 0
+    file.write("export AZMON_MULTILINE_ENABLED=#{@multiline_enabled}\n")
+  end
+
   # Close file after writing all environment variables
   file.close
 else
@@ -369,6 +381,10 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       file.write(commands)
     else
       commands = get_command_windows("AZMON_FBIT_MEM_BUF_LIMIT", @promFbitMemBufLimitDefault)
+      file.write(commands)
+    end
+    if @multiline_enabled.strip.casecmp("true") == 0
+      commands = get_command_windows("AZMON_MULTILINE_ENABLED", @multiline_enabled)
       file.write(commands)
     end
     # Close file after writing all environment variables

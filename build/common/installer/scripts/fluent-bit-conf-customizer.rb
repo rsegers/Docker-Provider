@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby
 require_relative "ConfigParseErrorLogger"
 
-@td_agent_bit_conf_path = "/etc/opt/microsoft/docker-cimprov/td-agent-bit.conf"
+@td_agent_bit_conf_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit.conf"
 
 @os_type = ENV["OS_TYPE"]
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -18,13 +18,14 @@ end
 def substituteFluentBitPlaceHolders
   begin
     # Replace the fluentbit config file with custom values if present
-    puts "config::Starting to substitute the placeholders in td-agent-bit.conf file for log collection"
+    puts "config::Starting to substitute the placeholders in fluent-bit.conf file for log collection"
 
     interval = ENV["FBIT_SERVICE_FLUSH_INTERVAL"]
     bufferChunkSize = ENV["FBIT_TAIL_BUFFER_CHUNK_SIZE"]
     bufferMaxSize = ENV["FBIT_TAIL_BUFFER_MAX_SIZE"]
     memBufLimit = ENV["FBIT_TAIL_MEM_BUF_LIMIT"]
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
+    multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
 
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
@@ -61,10 +62,14 @@ def substituteFluentBitPlaceHolders
       new_contents = new_contents.gsub("\n    ${TAIL_IGNORE_OLDER}\n", "\n")
     end
 
+    if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true"
+      new_contents = new_contents.gsub("#${MultilineEnabled}", "")
+    end
+
     File.open(@td_agent_bit_conf_path, "w") { |file| file.puts new_contents }
-    puts "config::Successfully substituted the placeholders in td-agent-bit.conf file"
+    puts "config::Successfully substituted the placeholders in fluent-bit.conf file"
   rescue => errorStr
-    ConfigParseErrorLogger.logError("td-agent-bit-config-customizer: error while substituting values in td-agent-bit.conf file: #{errorStr}")
+    ConfigParseErrorLogger.logError("fluent-bit-config-customizer: error while substituting values in fluent-bit.conf file: #{errorStr}")
   end
 end
 
