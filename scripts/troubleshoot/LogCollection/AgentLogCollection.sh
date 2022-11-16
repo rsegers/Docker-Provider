@@ -96,10 +96,10 @@ ds_logCollection()
     if [[ $cmd == *"cannot access"* ]];then
         echo -e "${Red}/etc/opt/microsoft/docker-cimprov not exist on ${ds_pod}${NC}" | tee -a Tool.log
     else
-        kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/td-agent-bit.conf ama-logs-daemonset/td-agent-bit.conf --namespace=kube-system --container ama-logs > /dev/null
+        kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/fluent-bit.conf ama-logs-daemonset/fluent-bit.conf --namespace=kube-system --container ama-logs > /dev/null
         kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/telegraf.conf ama-logs-daemonset/telegraf.conf --namespace=kube-system --container ama-logs > /dev/null
         kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/telegraf.conf ama-logs-prom-daemonset/telegraf.conf --namespace=kube-system --container ama-logs-prometheus > /dev/null
-        kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/td-agent-bit.conf ama-logs-prom-daemonset/td-agent-bit.conf --namespace=kube-system --container ama-logs-prometheus > /dev/null
+        kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/fluent-bit.conf ama-logs-prom-daemonset/fluent-bit.conf --namespace=kube-system --container ama-logs-prometheus > /dev/null
     fi
     echo -e "Complete log collection from ${ds_pod}!" | tee -a Tool.log
 }
@@ -160,7 +160,7 @@ rs_logCollection()
     if [[ $cmd == *"cannot access"* ]];then
         echo -e "${Red}/etc/opt/microsoft/docker-cimprov not exist on ${rs_pod}${NC}" | tee -a Tool.log
     else
-        kubectl cp ${rs_pod}:/etc/opt/microsoft/docker-cimprov/td-agent-bit-rs.conf ama-logs-replicaset/td-agent-bit.conf --namespace=kube-system --container ama-logs > /dev/null
+        kubectl cp ${rs_pod}:/etc/opt/microsoft/docker-cimprov/fluent-bit-rs.conf ama-logs-replicaset/fluent-bit.conf --namespace=kube-system --container ama-logs > /dev/null
         kubectl cp ${rs_pod}:/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf ama-logs-replicaset/telegraf-rs.conf --namespace=kube-system --container ama-logs > /dev/null
     fi
     echo -e "Complete log collection from ${rs_pod}!" | tee -a Tool.log

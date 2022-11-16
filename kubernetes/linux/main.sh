@@ -465,7 +465,7 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
 fi
 
 #Parse the configmap to set the right environment variables for agent config.
-#Note > tomlparser-agent-config.rb has to be parsed first before td-agent-bit-conf-customizer.rb for fbit agent settings
+#Note > tomlparser-agent-config.rb has to be parsed first before fluent-bit-conf-customizer.rb for fbit agent settings
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       ruby tomlparser-agent-config.rb
 
@@ -483,9 +483,9 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       source integration_npm_config_env_var
 fi
 
-#Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
+#Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      ruby td-agent-bit-conf-customizer.rb
+      ruby fluent-bit-conf-customizer.rb
 fi
 
 #Parse the prometheus configmap to create a file with new custom settings.
@@ -818,25 +818,25 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
             if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
                   echo "starting fluent-bit and setting telegraf conf file for prometheus sidecar"
-                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit-prom-side-car.conf -e /opt/td-agent-bit/bin/out_oms.so &
+                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-prom-side-car.conf -e /opt/fluent-bit/bin/out_oms.so &
             else
                   echo "not starting fluent-bit in prometheus sidecar (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
             fi
       else
             echo "starting fluent-bit and setting telegraf conf file for daemonset"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
-                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf -e /opt/td-agent-bit/bin/out_oms.so &
+                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit.conf -e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             else
                   echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
-                  sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf
-                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit.conf -e /opt/td-agent-bit/bin/out_oms.so &
+                  sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/fluent-bit.conf
+                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit.conf -e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             fi
       fi
 else
       echo "starting fluent-bit and setting telegraf conf file for replicaset"
-      /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit-rs.conf -e /opt/td-agent-bit/bin/out_oms.so &
+      /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-rs.conf -e /opt/fluent-bit/bin/out_oms.so &
       telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf"
 fi
 
@@ -910,7 +910,7 @@ fi
 if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       /opt/telegraf --config $telegrafConfFile &
       echo "telegraf version: $(/opt/telegraf --version)"
-      dpkg -l | grep td-agent-bit | awk '{print $2 " " $3}'
+      dpkg -l | grep fluent-bit | awk '{print $2 " " $3}'
 else
       echo "not starting telegraf (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
 fi
