@@ -64,8 +64,7 @@ def substituteFluentBitPlaceHolders
 
     if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true"
       new_contents = new_contents.gsub("#${MultilineEnabled}", "")
-      new_contents = new_contents.gsub("Parsers_File  /etc/opt/microsoft/docker-cimprov/azm-containers-parser.conf",
-        "Parsers_File  /etc/opt/microsoft/docker-cimprov/azm-containers-parser-multiline.conf")
+      new_contents = new_contents.gsub("azm-containers-parser.conf", "azm-containers-parser-multiline.conf")
       if (/[^\.]]Parser +docker/).match(text)
         new_contents = new_contents.gsub(/[^\.]Parser +docker/, " Multiline.Parser docker")
       else
