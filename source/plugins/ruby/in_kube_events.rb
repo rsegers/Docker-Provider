@@ -152,8 +152,8 @@ module Fluent::Plugin
           if !eventQueryState.empty? && eventQueryState.include?(eventId)
             next
           end
-          # source will be deprecated per https://kubernetes.io/docs/reference/using-api/deprecation-guide/
-          nodeName = items.key?("source")? items["source"]["host"] : ""
+
+          nodeName = items["source"].key?("host") ? items["source"]["host"] : ""
           # For ARO v3 cluster, drop the master and infra node sourced events to ingest
           if KubernetesApiClient.isAROV3Cluster && !nodeName.nil? && !nodeName.empty? &&
              (nodeName.downcase.start_with?("infra-") || nodeName.downcase.start_with?("master-"))
@@ -167,7 +167,7 @@ module Fluent::Plugin
           record["Message"] = items["message"]
           record["KubeEventType"] = items["type"]
           record["TimeGenerated"] = items["metadata"]["creationTimestamp"]
-          record["SourceComponent"] = items.key?("source")? items["source"]["component"] : items["reportingController"]
+          record["SourceComponent"] = items["source"]["component"]
           record["FirstSeen"] = items["firstTimestamp"]
           record["LastSeen"] = items["lastTimestamp"]
           record["Count"] = items["count"]
