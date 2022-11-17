@@ -741,7 +741,8 @@ source /etc/mdsd.d/envmdsd
 MDSD_AAD_MSI_AUTH_ARGS=""
 # check if its AAD Auth MSI mode via USING_AAD_MSI_AUTH
 export AAD_MSI_AUTH_MODE=false
-if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "false" ] || [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" -a ! -z "${GENEVA_LOGS_INFRA_NAMESPACES}" ]  || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+    echo "Runnning AMA in Geneva Logs Integration Mode"
     export MONITORING_USE_GENEVA_CONFIG_SERVICE=true
     echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=true" >> ~/.bashrc
     export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken
@@ -1007,7 +1008,7 @@ echo "getting rsyslog status..."
 service rsyslog status
 
 if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
-  echo "not checking onboarding status since GENEVA_LOGS_INTEGRATION_SERVICE_MODE is true"
+  echo "not checking onboarding status since agent running Geneva Logs Mode is true"
 elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
 else

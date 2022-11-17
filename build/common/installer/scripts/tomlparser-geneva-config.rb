@@ -77,57 +77,56 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             end
           end
 
-          # ganga: TODO uncomment this when infra log collection enabled out of the box
-          # if !@multi_tenancy || (@multi_tenancy && !@infra_namespaces.empty?)
-          geneva_account_environment = parsedConfig[:integrations][:geneva_logs][:environment].to_s
-          geneva_account_namespace = parsedConfig[:integrations][:geneva_logs][:namespace].to_s
-          geneva_account_name = parsedConfig[:integrations][:geneva_logs][:account].to_s
-          geneva_logs_config_version = parsedConfig[:integrations][:geneva_logs][:configversion].to_s
-          geneva_gcs_region = parsedConfig[:integrations][:geneva_logs][:region].to_s
-          geneva_gcs_authid = parsedConfig[:integrations][:geneva_logs][:authid].to_s
-          if geneva_gcs_authid.nil? || geneva_gcs_authid.empty?
-            # extract authid from nodes config
-            begin
-              file = File.read(@azure_json_path)
-              data_hash = JSON.parse(file)
-              # Check to see if SP exists, if it does use SP. Else, use msi
-              sp_client_id = data_hash["aadClientId"]
-              sp_client_secret = data_hash["aadClientSecret"]
-              user_assigned_client_id = data_hash["userAssignedIdentityID"]
-              if (!sp_client_id.nil? &&
-                  !sp_client_id.empty? &&
-                  sp_client_id.downcase == "msi" &&
-                  !user_assigned_client_id.nil? &&
-                  !user_assigned_client_id.empty?)
-                geneva_gcs_authid = "client_id##{user_assigned_client_id}"
-                puts "using authid for geneva integration: #{geneva_gcs_authid}"
+          if !@multi_tenancy || (@multi_tenancy && !@infra_namespaces.empty?)
+            geneva_account_environment = parsedConfig[:integrations][:geneva_logs][:environment].to_s
+            geneva_account_namespace = parsedConfig[:integrations][:geneva_logs][:namespace].to_s
+            geneva_account_name = parsedConfig[:integrations][:geneva_logs][:account].to_s
+            geneva_logs_config_version = parsedConfig[:integrations][:geneva_logs][:configversion].to_s
+            geneva_gcs_region = parsedConfig[:integrations][:geneva_logs][:region].to_s
+            geneva_gcs_authid = parsedConfig[:integrations][:geneva_logs][:authid].to_s
+            if geneva_gcs_authid.nil? || geneva_gcs_authid.empty?
+              # extract authid from nodes config
+              begin
+                file = File.read(@azure_json_path)
+                data_hash = JSON.parse(file)
+                # Check to see if SP exists, if it does use SP. Else, use msi
+                sp_client_id = data_hash["aadClientId"]
+                sp_client_secret = data_hash["aadClientSecret"]
+                user_assigned_client_id = data_hash["userAssignedIdentityID"]
+                if (!sp_client_id.nil? &&
+                    !sp_client_id.empty? &&
+                    sp_client_id.downcase == "msi" &&
+                    !user_assigned_client_id.nil? &&
+                    !user_assigned_client_id.empty?)
+                  geneva_gcs_authid = "client_id##{user_assigned_client_id}"
+                  puts "using authid for geneva integration: #{geneva_gcs_authid}"
+                end
+              rescue => errorStr
+                puts "failed to get user assigned client id with an error: #{errorStr}"
               end
-            rescue => errorStr
-              puts "failed to get user assigned client id with an error: #{errorStr}"
             end
-          end
-          if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_gcs_authid, geneva_gcs_region)
-            @geneva_account_environment = geneva_account_environment
-            @geneva_account_namespace = geneva_account_namespace
-            @geneva_account_name = geneva_account_name
-            @geneva_gcs_region = geneva_gcs_region
-            @geneva_gcs_authid = geneva_gcs_authid
+            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_gcs_authid, geneva_gcs_region)
+              @geneva_account_environment = geneva_account_environment
+              @geneva_account_namespace = geneva_account_namespace
+              @geneva_account_name = geneva_account_name
+              @geneva_gcs_region = geneva_gcs_region
+              @geneva_gcs_authid = geneva_gcs_authid
 
-            if !geneva_logs_config_version.nil? && !geneva_logs_config_version.empty?
-              @geneva_logs_config_version = geneva_logs_config_version
+              if !geneva_logs_config_version.nil? && !geneva_logs_config_version.empty?
+                @geneva_logs_config_version = geneva_logs_config_version
+              else
+                @geneva_logs_config_version = "1.0"
+                puts "Since config version not specified so using default config version : #{@geneva_logs_config_version}"
+              end
+              puts "using environment for geneva integration: #{@geneva_account_environment}"
+              puts "using namespace for geneva integration: #{@geneva_account_namespace}"
+              puts "using account for geneva integration: #{@geneva_account_name}"
+              puts "using authid for geneva integration: #{@geneva_gcs_authid}"
+              puts "using config version for geneva integration: #{@geneva_logs_config_version}"
             else
-              @geneva_logs_config_version = "1.0"
-              puts "Since config version not specified so using default config version : #{@geneva_logs_config_version}"
+              puts "config::geneva_logs::error: provided geneva logs config is not valid"
             end
-            puts "using environment for geneva integration: #{@geneva_account_environment}"
-            puts "using namespace for geneva integration: #{@geneva_account_namespace}"
-            puts "using account for geneva integration: #{@geneva_account_name}"
-            puts "using authid for geneva integration: #{@geneva_gcs_authid}"
-            puts "using config version for geneva integration: #{@geneva_logs_config_version}"
-          else
-            puts "config::geneva_logs::error: provided geneva logs config is not valid"
           end
-          #end
 
           if @multi_tenancy
             tenant_namespaces = parsedConfig[:integrations][:geneva_logs][:tenant_namespaces]
