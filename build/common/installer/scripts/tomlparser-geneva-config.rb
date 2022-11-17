@@ -105,29 +105,27 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 puts "failed to get user assigned client id with an error: #{errorStr}"
               end
             end
-            # if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_gcs_authid, geneva_gcs_region)
-            @geneva_account_environment = geneva_account_environment
-            @geneva_account_namespace = geneva_account_namespace
-            @geneva_account_name = geneva_account_name
-            @geneva_gcs_region = geneva_gcs_region
-            @geneva_gcs_authid = geneva_gcs_authid
+            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_gcs_authid, geneva_gcs_region)
+              @geneva_account_environment = geneva_account_environment
+              @geneva_account_namespace = geneva_account_namespace
+              @geneva_account_name = geneva_account_name
+              @geneva_gcs_region = geneva_gcs_region
+              @geneva_gcs_authid = geneva_gcs_authid
 
-            if !geneva_logs_config_version.nil? && !geneva_logs_config_version.empty?
-              @geneva_logs_config_version = geneva_logs_config_version
+              if !geneva_logs_config_version.nil? && !geneva_logs_config_version.empty?
+                @geneva_logs_config_version = geneva_logs_config_version
+              else
+                @geneva_logs_config_version = "1.0"
+                puts "Since config version not specified so using default config version : #{@geneva_logs_config_version}"
+              end
+              puts "using environment for geneva integration: #{@geneva_account_environment}"
+              puts "using namespace for geneva integration: #{@geneva_account_namespace}"
+              puts "using account for geneva integration: #{@geneva_account_name}"
+              puts "using authid for geneva integration: #{@geneva_gcs_authid}"
+              puts "using config version for geneva integration: #{@geneva_logs_config_version}"
             else
-              @geneva_logs_config_version = "1.0"
-              puts "Since config version not specified so using default config version : #{@geneva_logs_config_version}"
+              puts "config::geneva_logs::error: provided geneva logs config is not valid"
             end
-
-            puts "using environment for geneva integration: #{@geneva_account_environment}"
-            puts "using namespace for geneva integration: #{@geneva_account_namespace}"
-            puts "using account for geneva integration: #{@geneva_account_name}"
-            puts "using authid for geneva integration: #{@geneva_gcs_authid}"
-            puts "using config version for geneva integration: #{@geneva_logs_config_version}"
-
-            # else
-            #   puts "config::geneva_logs::error: provided geneva logs config is not valid"
-            # end
           end
 
           if @multi_tenancy
@@ -149,17 +147,14 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
           puts "Using config map value: GENEVA_LOGS_INTEGRATION=#{@geneva_logs_integration}"
           puts "Using config map value: GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}"
-
           puts "Using config map value: MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}"
           puts "Using config map value: MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}"
           puts "Using config map value: MONITORING_GCS_ACCOUNT=#{@geneva_account_name}"
           puts "Using config map value: MONITORING_GCS_REGION=#{@geneva_gcs_region}"
           puts "Using config map value: MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}"
-
           puts "Using config map value: MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}"
-
-          puts "Using config map value: GENEVA_LOGS_INFRA_NAMESPACES = #{@infra_namespaces}"
-          puts "Using config map value: GENEVA_LOGS_TENANT_NAMESPACES = #{@tenant_namespaces}"
+          puts "Using config map value: GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}"
+          puts "Using config map value: GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}"
         end
       end
     end
@@ -177,15 +172,28 @@ end
 def isValidGenevaConfig(environment, namespace, account, authid, region)
   isValid = false
   begin
-    if !environment.nil? && !environment.empty? &&
-       !namespace.nil? && !namespace.empty? &&
-       !account.nil? && !account.empty? &&
-       !region.nil? && !region.empty? &&
-       !authid.nil? && !authid.empty?
-      # TODO - add the validation once we figured out the environment for airgap clouds
-      # GENEVA_SUPPORTED_ENVIRONMENTS.map(&:downcase).include?(environment.downcase)
-      isValid = true
+    if environment.nil? || environment.empty?
+      puts "config::geneva_logs::error:geneva environment MUST be valid"
+      return isValid
     end
+
+    if namespace.nil? || namespace.empty?
+      puts "config::geneva_logs::error:geneva account namespace MUST be valid"
+      return isValid
+    end
+
+    if region.nil? || region.empty?
+      puts "config::geneva_logs::error:geneva GCS region MUST be valid"
+      return isValid
+    end
+
+    if authid.nil? || authid.empty?
+      puts "config::geneva_logs::error:geneva GCS AuthID MUST be valid"
+      return isValid
+    end
+    # TODO - add the validation once we figured out the environment for airgap clouds
+    # GENEVA_SUPPORTED_ENVIRONMENTS.map(&:downcase).include?(environment.downcase)
+    isValid = true
   rescue => errorStr
     puts "config::geneva_logs::error:Exception while validating Geneva config - #{errorStr}"
   end
@@ -232,6 +240,9 @@ if (@containerType.nil? || @containerType.empty?)
 
     file.write("export GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}\n")
     file.write("export GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}\n")
+
+    # This required environment variable in geneva mode
+    file.write("export MDSD_MSGPACK_SORT_COLUMNS=1\n")
 
     # Close file after writing all environment variables
     file.close
