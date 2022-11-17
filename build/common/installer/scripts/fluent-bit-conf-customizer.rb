@@ -65,10 +65,11 @@ def substituteFluentBitPlaceHolders
     if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true"
       new_contents = new_contents.gsub("#${MultilineEnabled}", "")
       new_contents = new_contents.gsub("azm-containers-parser.conf", "azm-containers-parser-multiline.conf")
-      if (/[^\.]]Parser +docker/).match(text)
-        new_contents = new_contents.gsub(/[^\.]Parser +docker/, " Multiline.Parser docker")
+      # replace parser with multiline version. ensure running script multiple times does not have negative impact
+      if (/[^\.]Parser\s{1,}docker/).match(text)
+        new_contents = new_contents.gsub(/[^\.]Parser\s{1,}docker/, " Multiline.Parser docker")
       else
-        new_contents = new_contents.gsub(/[^\.]Parser +cri/, " Multiline.Parser cri")
+        new_contents = new_contents.gsub(/[^\.]Parser\s{1,}cri/, " Multiline.Parser cri")
       end
     end
 
