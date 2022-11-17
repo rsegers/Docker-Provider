@@ -5,7 +5,7 @@ MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
-ARG IMAGE_TAG=win-ciprod08102022
+ARG IMAGE_TAG=win-ciprod10042022-3c05dd1b
 
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
@@ -35,41 +35,41 @@ RUN powershell -Command "Remove-Item -Force C:\ruby31\lib\ruby\gems\3.1.0\cache\
 
 SHELL ["powershell"]
 
-ENV tmpdir /opt/omsagentwindows/scripts/powershell
+ENV tmpdir /opt/amalogswindows/scripts/powershell
 
-WORKDIR /opt/omsagentwindows/scripts/powershell
+WORKDIR /opt/amalogswindows/scripts/powershell
 
 # copy certificate generator binaries zip
-COPY ./omsagentwindows/*.zip /opt/omsagentwindows/
+COPY ./amalogswindows/*.zip /opt/amalogswindows/
 
-COPY setup.ps1 /opt/omsagentwindows/scripts/powershell
+COPY setup.ps1 /opt/amalogswindows/scripts/powershell
 RUN ./setup.ps1
 
-COPY main.ps1 /opt/omsagentwindows/scripts/powershell
-COPY ./omsagentwindows/installer/scripts/filesystemwatcher.ps1 /opt/omsagentwindows/scripts/powershell
-COPY ./omsagentwindows/installer/livenessprobe/livenessprobe.exe /opt/omsagentwindows/scripts/cmd/
-COPY setdefaulttelegrafenvvariables.ps1 /opt/omsagentwindows/scripts/powershell
+COPY main.ps1 /opt/amalogswindows/scripts/powershell
+COPY ./amalogswindows/installer/scripts/filesystemwatcher.ps1 /opt/amalogswindows/scripts/powershell
+COPY ./amalogswindows/installer/livenessprobe/livenessprobe.exe /opt/amalogswindows/scripts/cmd/
+COPY setdefaulttelegrafenvvariables.ps1 /opt/amalogswindows/scripts/powershell
 
 # copy ruby scripts to /opt folder
-COPY ./omsagentwindows/installer/scripts/*.rb /opt/omsagentwindows/scripts/ruby/
+COPY ./amalogswindows/installer/scripts/*.rb /opt/amalogswindows/scripts/ruby/
 
 # copy out_oms.so file
-COPY ./omsagentwindows/out_oms.so /opt/omsagentwindows/out_oms.so
+COPY ./amalogswindows/out_oms.so /opt/amalogswindows/out_oms.so
 
 # copy fluent, fluent-bit and out_oms conf files
-COPY ./omsagentwindows/installer/conf/fluent.conf /etc/fluent/
-COPY ./omsagentwindows/installer/conf/fluent-bit.conf /etc/fluent-bit
-COPY ./omsagentwindows/installer/conf/azm-containers-parser.conf /etc/fluent-bit/
-COPY ./omsagentwindows/installer/conf/out_oms.conf /etc/omsagentwindows
+COPY ./amalogswindows/installer/conf/fluent.conf /etc/fluent/
+COPY ./amalogswindows/installer/conf/fluent-bit.conf /etc/fluent-bit
+COPY ./amalogswindows/installer/conf/azm-containers-parser.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/out_oms.conf /etc/amalogswindows
 
 # copy telegraf conf file
-COPY ./omsagentwindows/installer/conf/telegraf.conf /etc/telegraf/
+COPY ./amalogswindows/installer/conf/telegraf.conf /etc/telegraf/
 
 # copy keepcert alive ruby scripts
-COPY ./omsagentwindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluent/plugin/
+COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluent/plugin/
 
 #Copy fluentd ruby plugins
-COPY ./omsagentwindows/ruby/ /etc/fluent/plugin/
+COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
 
 ENV AGENT_VERSION ${IMAGE_TAG}
 ENV OS_TYPE "windows"
@@ -78,4 +78,4 @@ ENV AZMON_COLLECT_ENV False
 ENV CI_CERT_LOCATION "C://oms.crt"
 ENV CI_KEY_LOCATION "C://oms.key"
 
-ENTRYPOINT ["powershell", "C:\\opt\\omsagentwindows\\scripts\\powershell\\main.ps1"]
+ENTRYPOINT ["powershell", "C:\\opt\\amalogswindows\\scripts\\powershell\\main.ps1"]

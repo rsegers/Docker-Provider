@@ -188,8 +188,9 @@ setReplicaSetSpecificConfig() {
       echo "fluentd out mdm flush thread count: ${FLUENTD_MDM_FLUSH_THREAD_COUNT}"
 }
 
-#using /var/opt/microsoft/docker-cimprov/state instead of /var/opt/microsoft/omsagent/state since the latter gets deleted during onboarding
+#using /var/opt/microsoft/docker-cimprov/state instead of /var/opt/microsoft/ama-logs/state since the latter gets deleted during onboarding
 mkdir -p /var/opt/microsoft/docker-cimprov/state
+echo "disabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
 
 #Run inotify as a daemon to track changes to the mounted configmap.
 inotifywait /etc/config/settings --daemon --recursive --outfile "/opt/inotifyoutput.txt" --event create,delete --format '%e : %T' --timefmt '+%s'
@@ -264,16 +265,16 @@ fi
 
 export PROXY_ENDPOINT=""
 # Check for internet connectivity or workspace deletion
-if [ -e "/etc/omsagent-secret/WSID" ]; then
-      workspaceId=$(cat /etc/omsagent-secret/WSID)
-      if [ -e "/etc/omsagent-secret/DOMAIN" ]; then
-            domain=$(cat /etc/omsagent-secret/DOMAIN)
+if [ -e "/etc/ama-logs-secret/WSID" ]; then
+      workspaceId=$(cat /etc/ama-logs-secret/WSID)
+      if [ -e "/etc/ama-logs-secret/DOMAIN" ]; then
+            domain=$(cat /etc/ama-logs-secret/DOMAIN)
       else
             domain="opinsights.azure.com"
       fi
 
-      if [ -e "/etc/omsagent-secret/PROXY" ]; then
-            export PROXY_ENDPOINT=$(cat /etc/omsagent-secret/PROXY)
+      if [ -e "/etc/ama-logs-secret/PROXY" ]; then
+            export PROXY_ENDPOINT=$(cat /etc/ama-logs-secret/PROXY)
             # Validate Proxy Endpoint URL
             # extract the protocol://
             proto="$(echo $PROXY_ENDPOINT | grep :// | sed -e's,^\(.*://\).*,\1,g')"
@@ -313,16 +314,16 @@ if [ -e "/etc/omsagent-secret/WSID" ]; then
                export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
                echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
             fi
-            if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
-               export PROXY_CA_CERT=/etc/omsagent-secret/PROXYCERT.crt
+            if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+               export PROXY_CA_CERT=/etc/ama-logs-secret/PROXYCERT.crt
                echo "export PROXY_CA_CERT=$PROXY_CA_CERT" >> ~/.bashrc
             fi
       fi
 
       if [ ! -z "$PROXY_ENDPOINT" ]; then
-         if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+         if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
            echo "Making curl request to oms endpint with domain: $domain and proxy endpoint, and proxy CA cert"
-           curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt
+           curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt
          else
            echo "Making curl request to oms endpint with domain: $domain and proxy endpoint"
            curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
@@ -334,9 +335,9 @@ if [ -e "/etc/omsagent-secret/WSID" ]; then
 
       if [ $? -ne 0 ]; then
             if [ ! -z "$PROXY_ENDPOINT" ]; then
-               if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+               if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
                   echo "Making curl request to ifconfig.co with proxy and proxy CA cert"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt`
+                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt`
                else
                   echo "Making curl request to ifconfig.co with proxy"
                   RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT`
@@ -350,9 +351,9 @@ if [ -e "/etc/omsagent-secret/WSID" ]; then
             else
                   # Retrying here to work around network timing issue
                   if [ ! -z "$PROXY_ENDPOINT" ]; then
-                    if [ -e "/etc/omsagent-secret/PROXYCERT.crt" ]; then
+                    if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
                         echo "ifconfig check succeeded, retrying oms endpoint with proxy and proxy CA cert..."
-                        curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/omsagent-secret/PROXYCERT.crt
+                        curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt
                     else
                        echo "ifconfig check succeeded, retrying oms endpoint with proxy..."
                        curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
@@ -709,9 +710,9 @@ if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
    echo "export MDSD_USE_LOCAL_PERSISTENCY=$MDSD_USE_LOCAL_PERSISTENCY" >> ~/.bashrc
 else
   echo "*** setting up oneagent in legacy auth mode ***"
-  CIWORKSPACE_id="$(cat /etc/omsagent-secret/WSID)"
+  CIWORKSPACE_id="$(cat /etc/ama-logs-secret/WSID)"
   #use the file path as its secure than env
-  CIWORKSPACE_keyFile="/etc/omsagent-secret/KEY"
+  CIWORKSPACE_keyFile="/etc/ama-logs-secret/KEY"
   echo "setting mdsd workspaceid & key for workspace:$CIWORKSPACE_id"
   export CIWORKSPACE_id=$CIWORKSPACE_id
   echo "export CIWORKSPACE_id=$CIWORKSPACE_id" >> ~/.bashrc
@@ -750,7 +751,11 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
 else
       echo "starting mdsd in main container..."
       # add -T 0xFFFF for full traces
-      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
+      export MDSD_ROLE_PREFIX=/var/run/mdsd-ci/default
+      echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
+      source ~/.bashrc
+      mkdir /var/run/mdsd-ci
+      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
 fi
 
 # Set up a cron job for logrotation

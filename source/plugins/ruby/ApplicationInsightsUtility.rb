@@ -91,6 +91,17 @@ class ApplicationInsightsUtility
         aadAuthMSIMode = ENV[@@EnvAADMSIAuthMode]
         if !aadAuthMSIMode.nil? && !aadAuthMSIMode.empty? && aadAuthMSIMode.downcase == "true".downcase
           @@CustomProperties["aadAuthMSIMode"] = "true"
+          begin
+            if Dir.exist?('/etc/mdsd.d/config-cache/configchunks')
+              Dir.glob('/etc/mdsd.d/config-cache/configchunks/*.json') { |file|
+                if File.file?(file) && File.exist?(file) && File.foreach(file).grep(/LINUX_SYSLOGS_BLOB/).any?
+                  @@CustomProperties["syslogEnabled"] = "true"
+                end
+              }
+            end
+          rescue => errorStr
+            $log.warn("ApplicationInsights:: Exception in getting syslog status: #{errorStr}")
+          end
         else
           @@CustomProperties["aadAuthMSIMode"] = "false"
         end
@@ -107,7 +118,7 @@ class ApplicationInsightsUtility
           decodedAppInsightsKey = Base64.decode64(encodedAppInsightsKey)
 
           if @@isWindows
-            logPath = "/etc/omsagentwindows/appinsights_error.log"
+            logPath = "/etc/amalogswindows/appinsights_error.log"
           else
             logPath = "/var/opt/microsoft/docker-cimprov/log/appinsights_error.log"
           end

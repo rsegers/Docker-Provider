@@ -305,8 +305,8 @@ if ($null -eq $LogAnalyticsWorkspaceResourceID) {
 else {
 
     if ($null -eq $AksEngineClusterName) {
-        Write-Host("There is no existing clusterName tag on AKS-Engine k8 master nodes to correlate the clusterName used on the omsagent" ) -ForegroundColor Red
-        Write-Host("Please add the clusterName tag with the value of clusterName used during the omsagent agent onboarding. Refer below link for details:") -ForegroundColor Red
+        Write-Host("There is no existing clusterName tag on AKS-Engine k8 master nodes to correlate the clusterName used on the ama-logs" ) -ForegroundColor Red
+        Write-Host("Please add the clusterName tag with the value of clusterName used during the ama-logs agent onboarding. Refer below link for details:") -ForegroundColor Red
         Write-Host("Opt-in - " + $OptInLink) -ForegroundColor Red
 
         exit 1
@@ -490,11 +490,11 @@ Write-Host("Checking agent version...")
 try {
     Write-Host("KubeConfig: " + $KubeConfig)
 
-    $omsagentInfo = kubectl get pods -n kube-system -o json -l  rsName=omsagent-rs | ConvertFrom-Json
-    $omsagentImage = $omsagentInfo.items.spec.containers.image.split(":")[1]
+    $amaLogsInfo = kubectl get pods -n kube-system -o json -l  rsName=ama-logs-rs | ConvertFrom-Json
+    $amaLogsImage = $amaLogsInfo.items.spec.containers.image.split(":")[1]
 
-    Write-Host('The version of the omsagent running on your cluster is' + $omsagentImage)
-    Write-Host('You can encounter problems with your cluster if your omsagent isnt on the latest version. Please go to https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-manage-agent and validate that you have the latest omsagent version running.') -ForegroundColor Yellow
+    Write-Host('The version of the ama-logs running on your cluster is' + $amaLogsImage)
+    Write-Host('You can encounter problems with your cluster if your ama-logs isnt on the latest version. Please go to https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-manage-agent and validate that you have the latest ama-logs version running.') -ForegroundColor Yellow
 } catch {
     Write-Host ("Failed to execute the script  : '" + $Error[0] + "' ") -ForegroundColor Red
     Stop-Transcript

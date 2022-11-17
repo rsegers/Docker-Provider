@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-require 'fluent/plugin/input'
+require "fluent/plugin/input"
 
 module Fluent::Plugin
   class Kube_Event_Input < Input
@@ -99,11 +99,11 @@ module Fluent::Plugin
         # Initializing continuation token to nil
         continuationToken = nil
         $log.info("in_kube_events::enumerate : Getting events from Kube API @ #{Time.now.utc.iso8601}")
+        eventsFilter = "events?fieldSelector=type!=Normal&limit=#{@EVENTS_CHUNK_SIZE}"
         if @collectAllKubeEvents
-          continuationToken, eventList = KubernetesApiClient.getResourcesAndContinuationToken("events?limit=#{@EVENTS_CHUNK_SIZE}")
-        else
-          continuationToken, eventList = KubernetesApiClient.getResourcesAndContinuationToken("events?fieldSelector=type!=Normal&limit=#{@EVENTS_CHUNK_SIZE}")
+          eventsFilter = "events?limit=#{@EVENTS_CHUNK_SIZE}"
         end
+        continuationToken, eventList = KubernetesApiClient.getResourcesAndContinuationToken("#{eventsFilter}")
         $log.info("in_kube_events::enumerate : Done getting events from Kube API @ #{Time.now.utc.iso8601}")
         if (!eventList.nil? && !eventList.empty? && eventList.key?("items") && !eventList["items"].nil? && !eventList["items"].empty?)
           eventsCount = eventList["items"].length
@@ -115,7 +115,7 @@ module Fluent::Plugin
 
         #If we receive a continuation token, make calls, process and flush data until we have processed all data
         while (!continuationToken.nil? && !continuationToken.empty?)
-          continuationToken, eventList = KubernetesApiClient.getResourcesAndContinuationToken("events?fieldSelector=type!=Normal&limit=#{@EVENTS_CHUNK_SIZE}&continue=#{continuationToken}")
+          continuationToken, eventList = KubernetesApiClient.getResourcesAndContinuationToken("#{eventsFilter}&continue=#{continuationToken}")
           if (!eventList.nil? && !eventList.empty? && eventList.key?("items") && !eventList["items"].nil? && !eventList["items"].empty?)
             eventsCount = eventList["items"].length
             $log.info "in_kube_events::enumerate:Received number of events in eventList is #{eventsCount} @ #{Time.now.utc.iso8601}"

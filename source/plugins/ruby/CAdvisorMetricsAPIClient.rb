@@ -252,7 +252,7 @@ class CAdvisorMetricsAPIClient
               begin
                 # we can only do this much now. Ideally would like to use the docker image repository to find our pods/containers
                 # cadvisor does not have pod/container metadata. so would need more work to cache as pv & use
-                if (podName.downcase.start_with?("omsagent-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("omsagent") && metricNametoReturn.eql?(Constants::CPU_USAGE_NANO_CORES))
+                if (podName.downcase.start_with?("ama-logs-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("ama-logs") && metricNametoReturn.eql?(Constants::CPU_USAGE_NANO_CORES))
                   if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
                     telemetryProps = {}
                     telemetryProps["PodName"] = podName
@@ -581,7 +581,7 @@ class CAdvisorMetricsAPIClient
               begin
                 # we can only do this much now. Ideally would like to use the docker image repository to find our pods/containers
                 # cadvisor does not have pod/container metadata. so would need more work to cache as pv & use
-                if (podName.downcase.start_with?("omsagent-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("omsagent"))
+                if (podName.downcase.start_with?("ama-logs-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("ama-logs"))
                   if (timeDifferenceInMinutes >= 10)
                     telemetryProps = {}
                     telemetryProps["PodName"] = podName
@@ -677,7 +677,7 @@ class CAdvisorMetricsAPIClient
               begin
                 # we can only do this much now. Ideally would like to use the docker image repository to find our pods/containers
                 # cadvisor does not have pod/container metadata. so would need more work to cache as pv & use
-                if (podName.downcase.start_with?("omsagent-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("omsagent") && ((metricNametoReturn.eql?(Constants::MEMORY_RSS_BYTES) && operatingSystem == "Linux") || (metricNametoReturn.eql?(Constants::MEMORY_WORKING_SET_BYTES) && operatingSystem == "Windows")))
+                if (podName.downcase.start_with?("ama-logs-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("ama-logs") && ((metricNametoReturn.eql?(Constants::MEMORY_RSS_BYTES) && operatingSystem == "Linux") || (metricNametoReturn.eql?(Constants::MEMORY_WORKING_SET_BYTES) && operatingSystem == "Windows")))
                   if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
                     telemetryProps = {}
                     telemetryProps["PodName"] = podName
@@ -978,7 +978,7 @@ class CAdvisorMetricsAPIClient
 
     def isCAdvisorOnSecurePort
       cAdvisorSecurePort = false
-      # Check to see whether omsagent needs to use 10255(insecure) port or 10250(secure) port
+      # Check to see whether ama-logs needs to use 10255(insecure) port or 10250(secure) port
       if !@cAdvisorMetricsSecurePort.nil? && @cAdvisorMetricsSecurePort == "true"
         cAdvisorSecurePort = true
       end
