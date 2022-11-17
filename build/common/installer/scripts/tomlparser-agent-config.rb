@@ -83,8 +83,6 @@ require_relative "ConfigParseErrorLogger"
 
 @ignoreProxySettings = false
 
-@multiline_enabled = "false"
-
 def is_number?(value)
   true if Integer(value) rescue false
 end
