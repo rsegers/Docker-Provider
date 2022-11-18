@@ -237,7 +237,7 @@
                           "mode": "Incremental",
                           "id": "[parameters('aksResourceId')]",
                           "addonProfiles": {
-                            "amalogs": {
+                            "omsagent": {
                               "enabled": true,
                               "config": {
                                 "logAnalyticsWorkspaceResourceID": "[parameters('workspaceResourceId')]",
