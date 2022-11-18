@@ -62,6 +62,12 @@
         "<existingOrnew-tag-name2>": "<existingOrnew-tag-value2>",
         "<existingOrnew-tag-nameN>": "<existingOrnew-tag-valueN>"
       }
+    },
+    "dataCollectionInterval":  {
+      "value" : "1m"
+    },
+    "excludeNamespacesForDataCollection": {
+      "value": [ "kube-system"]
     }
   }
 }

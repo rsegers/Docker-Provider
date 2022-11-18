@@ -49,6 +49,18 @@
             "metadata": {
                 "description": "Array of allowed syslog facilities"
             }
+        },
+        "dataCollectionInterval": {
+            "type": "string",
+            "metadata": {
+                "description": "Data collection interval e.g. \"5m\" for metrics and inventory. Supported value range from 1m to 30m"
+            }
+        },
+        "excludeNamespacesForDataCollection": {
+            "type": "array",
+            "metadata": {
+                "description": "Kubernetes namespaces to exclude for the data collection of inventory and metrics"
+            }
         }
     },
     "variables": {
@@ -80,6 +92,12 @@
                                         "streams": [
                                            "Microsoft-ContainerInsights-Group-Default"
                                         ],
+                                        "extensionSettings": {
+                                            "dataCollectionSettings" : {
+                                                "interval": "[parameters('dataCollectionInterval')]",
+                                                "excludeNameSpaces": "[parameters('excludeNamespacesForDataCollection')]"
+                                            }
+                                        },
                                         "extensionName": "ContainerInsights"
                                     }
                                 ]
