@@ -110,7 +110,7 @@ module Fluent::Plugin
           #start GPU InsightsMetrics items
           begin
             containerGPUusageInsightsMetricsDataItems = []
-            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: winNode, nameSpaces: @nameSpaces, metricTime: Time.now.utc.iso8601))
+            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: winNode, mode: @mode, nameSpaces: @nameSpaces, metricTime: Time.now.utc.iso8601))
             insightsMetricsEventStream = Fluent::MultiEventStream.new
 
             containerGPUusageInsightsMetricsDataItems.each do |insightsMetricsRecord|
