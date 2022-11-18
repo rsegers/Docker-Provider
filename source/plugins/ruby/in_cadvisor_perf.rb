@@ -23,7 +23,7 @@ module Fluent::Plugin
       require_relative "constants"
       require_relative "extension_utils"
       @nameSpaces = []
-      @mode = "Off"
+      @mode = "off"
     end
 
     config_param :run_interval, :time, :default => 60

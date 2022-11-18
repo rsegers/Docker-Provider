@@ -33,7 +33,7 @@ module Fluent::Plugin
       @ClusterId = KubernetesApiClient.getClusterId
       @ClusterName = KubernetesApiClient.getClusterName
       @nameSpaces = []
-      @mode = "Off"
+      @mode = "off"
     end
 
     config_param :run_interval, :time, :default => 60

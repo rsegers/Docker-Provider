@@ -74,15 +74,18 @@ class ExtensionUtils
     end
 
     def getNamespacesModeForDataCollection
-      nameSpaceMode = "Off"
+      nameSpaceMode = "off"
       begin
         dataCollectionSettings = Extension.instance.get_extension_data_collection_settings()
         if !dataCollectionSettings.nil? &&
            !dataCollectionSettings.empty? &&
            dataCollectionSettings.has_key?(Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_MODE)
           mode = dataCollectionSettings[Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_MODE]
-          if !mode.nil? && !mode.empty? && Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_FILTERING_MODES.include?(mode)
-            nameSpaceMode = mode
+          if !mode.nil? && !mode.empty?
+            nameSpaceMode = mode.downcase
+            if !Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_FILTERING_MODES.include?(nameSpaceMode)
+              $log.warn("ExtensionUtils::getNamespacesModeForDataCollection: nameSpaceMode: #{mode} not supported hence using default")
+            end
           else
             $log.warn("ExtensionUtils::getNamespacesModeForDataCollection: nameSpaceMode: #{mode} not valid hence using default")
           end

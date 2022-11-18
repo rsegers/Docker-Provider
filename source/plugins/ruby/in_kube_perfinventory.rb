@@ -33,7 +33,7 @@ module Fluent::Plugin
       @kubeperfTag = "oneagent.containerInsights.LINUX_PERF_BLOB"
       @insightsMetricsTag = "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
       @nameSpaces = []
-      @mode = "Off"
+      @mode = "off"
     end
 
     config_param :run_interval, :time, :default => 60

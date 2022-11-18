@@ -23,7 +23,7 @@ module Fluent::Plugin
       require_relative "extension_utils"
       @insightsMetricsTag = "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
       @nameSpaces = []
-      @mode = "Off"
+      @mode = "off"
     end
 
     config_param :run_interval, :time, :default => 60

@@ -29,7 +29,7 @@ module Fluent::Plugin
       # Initilize enable/disable normal event collection
       @collectAllKubeEvents = false
       @nameSpaces = []
-      @mode = "Off"
+      @mode = "off"
     end
 
     config_param :run_interval, :time, :default => 60

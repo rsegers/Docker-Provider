@@ -25,7 +25,7 @@ module Fluent::Plugin
       @PV_CHUNK_SIZE = "5000"
       @pvTypeToCountHash = {}
       @nameSpaces = []
-      @mode = "Off"
+      @mode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
