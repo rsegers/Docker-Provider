@@ -242,7 +242,7 @@ module Fluent::Plugin
             telemetryProperties["DATA_COLLECTION_NAMESPACES"] = @nameSpaces
           end
           if !@mode.nil? && !@mode.empty?
-            telemetryProperties["DATA_COLLECTION_NAMESPACES_MODE"] = @mode
+            telemetryProperties["DATA_COLLECTION_NAMESPACES_FILTERING_MODE"] = @mode
           end
           if @run_interval > 60
             telemetryProperties["DATA_COLLECTION_INTERVAL_MINUTES"] = @run_interval / 60
