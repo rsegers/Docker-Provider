@@ -1409,19 +1409,20 @@ class KubernetesApiClient
       return isEmitCacheTelemtryEnabled
     end
 
-    def isExcludeResourceItem(resourceName, resourceNamespace, excludeNameSpaces)
-       isExclude = false
-       begin
-         # dont exclude agent related data
-         if !resourceName.nil? && !resourceName.empty? && resourceName.start_with?("omsagent") && resourceNamespace.eql?("kube-system")
-          isExclude = false
-         elsif  !resourceNamespace.nil? && !resourceNamespace.empty? && !excludeNameSpaces.nil? && !excludeNameSpaces.empty? && excludeNameSpaces.length > 0 && excludeNameSpaces.include?(resourceNamespace)
-           isExclude = true
-         end
-       rescue => errorStr
+    def isExcludeResourceItem(resourceName, resourceNamespace, mode, nameSpaces)
+      isExclude = false
+      begin
+        if mode == "Exclude"
+          if !resourceName.nil? && !resourceName.empty? && resourceName.start_with?("ama-logs") && resourceNamespace.eql?("kube-system")
+            isExclude = false
+          elsif !resourceNamespace.nil? && !resourceNamespace.empty? && !nameSpaces.nil? && !nameSpaces.empty? && nameSpaces.length > 0 && nameSpaces.include?(resourceNamespace)
+            isExclude = true
+          end
+        end
+      rescue => errorStr
         @Log.warn "KubernetesApiClient::isExcludeResourceItem:Failed with an error : #{errorStr}"
-       end
-       return isExclude
+      end
+      return isExclude
     end
 
     def isAddonResizerVPAEnabled

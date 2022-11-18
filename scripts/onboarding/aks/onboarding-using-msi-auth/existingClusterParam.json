@@ -63,7 +63,10 @@
       "dataCollectionInterval":  {
         "value" : "1m"
       },
-      "excludeNamespacesForDataCollection": {
+      "nameSpacesFilteringModeForDataCollection": {
+        "value": "Off"
+      },
+      "namespacesForDataCollection": {
         "value": [ "kube-system"]
       }
     }

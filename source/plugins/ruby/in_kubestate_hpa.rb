@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-require 'fluent/plugin/input'
+require "fluent/plugin/input"
 
 module Fluent::Plugin
   class Kube_Kubestate_HPA_Input < Input
@@ -32,7 +32,8 @@ module Fluent::Plugin
       @NodeName = OMS::Common.get_hostname
       @ClusterId = KubernetesApiClient.getClusterId
       @ClusterName = KubernetesApiClient.getClusterName
-      @excludeNameSpaces = []
+      @nameSpaces = []
+      @mode = "Off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -85,11 +86,13 @@ module Fluent::Plugin
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
             @tag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
           end
-	        $log.info("in_kubestate_hpa::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kubestate_hpa::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
           @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
           $log.info("in_kubestate_hpa::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
-          @excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()
-          $log.info("in_kubestate_hpa::enumerate: using data collection excludeNameSpaces: #{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
+          @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
+          $log.info("in_kubestate_hpa::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
+          @mode = ExtensionUtils.getNamespacesModeForDataCollection()
+          $log.info("in_kubestate_hpa::enumerate: using data collection mode for nameSpaces: #{@mode} @ #{Time.now.utc.iso8601}")
         end
         # Initializing continuation token to nil
         continuationToken = nil
@@ -133,7 +136,7 @@ module Fluent::Plugin
       begin
         metricInfo = hpas
         metricInfo["items"].each do |hpa|
-          next unless !KubernetesApiClient.isExcludeResourceItem(hpa["metadata"]["name"], hpa["metadata"]["namespace"], @excludeNameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(hpa["metadata"]["name"], hpa["metadata"]["namespace"], @mode, @nameSpaces)
           hpaName = hpa["metadata"]["name"]
           hpaNameSpace = hpa["metadata"]["namespace"]
           hpaCreatedTime = ""

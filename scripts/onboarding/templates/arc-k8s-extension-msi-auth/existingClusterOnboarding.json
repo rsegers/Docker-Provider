@@ -67,15 +67,27 @@
     "dataCollectionInterval": {
       "type": "string",
       "metadata": {
-          "description": "Data collection interval e.g. \"5m\" for metrics and inventory. Supported value range from 1m to 30m and default is 1m"
+          "description": "Data collection interval e.g. \"5m\" for metrics and inventory. Supported value range from 1m to 30m"
       }
-   },
-   "excludeNamespacesForDataCollection": {
+    },
+    "nameSpacesFilteringModeForDataCollection": {
+      "type": "string",
+      "metadata": {
+          "description": "Data collection Mode for the namespaces"
+      },
+      "allowedValues": [
+        "Off",
+        "Include",
+        "Exclude"
+      ],
+      "defaultValue": "Off"
+    },
+    "namespacesForDataCollection": {
       "type": "array",
       "metadata": {
-          "description": "Kubernetes namespaces to exclude for the data collection of inventory and metrics"
+          "description": "Kubernetes namespaces for the data collection of inventory and metrics"
       }
-   }
+    }
   },
   "variables": {
     "clusterSubscriptionId": "[split(parameters('clusterResourceId'),'/')[2]]",
@@ -108,8 +120,9 @@
                                         ],
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
-                                              "interval": "[parameters('dataCollectionInterval')]",
-                                              "excludeNameSpaces": "[parameters('excludeNamespacesForDataCollection')]"
+                                            "interval": "[parameters('dataCollectionInterval')]",
+                                             "mode" : "[parameters('nameSpacesFilteringModeForDataCollection')]",
+                                             "nameSpaces": "[parameters('namespacesForDataCollection')]"
                                           }
                                         },
                                         "extensionName": "ContainerInsights"

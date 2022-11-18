@@ -59,7 +59,8 @@ module Fluent::Plugin
 
       @kubeservicesTag = "oneagent.containerInsights.KUBE_SERVICES_BLOB"
       @containerInventoryTag = "oneagent.containerInsights.CONTAINER_INVENTORY_BLOB"
-      @excludeNameSpaces = []
+      @nameSpaces = []
+      @mode = "Off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -174,8 +175,10 @@ module Fluent::Plugin
           $log.info("in_kube_podinventory::enumerate: using kubepodinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
           @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
           $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
-          @excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()
-          $log.info("in_kube_podinventory::enumerate: using data collection excludeNameSpaces: #{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
+          @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
+          $log.info("in_kube_podinventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
+          @mode = ExtensionUtils.getNamespacesModeForDataCollection()
+          $log.info("in_kube_podinventory::enumerate: using data collection mode for nameSpaces: #{@mode} @ #{Time.now.utc.iso8601}")
         end
 
         serviceInventory = {}
@@ -235,8 +238,11 @@ module Fluent::Plugin
             telemetryProperties["SERVICE_ITEMS_CACHE_SIZE_KB"] = serviceItemsCacheSizeKB
             telemetryProperties["WINDOWS_CONTAINER_RECORDS_CACHE_SIZE_KB"] = @windowsContainerRecordsCacheSizeBytes / 1024
           end
-          if !@excludeNameSpaces.nil? && !@excludeNameSpaces.empty? && @excludeNameSpaces.length > 0
-            telemetryProperties["DATA_COLLECTION_EXCLUDED_NAMESPACES"] = @excludeNameSpaces
+          if !@nameSpaces.nil? && !@nameSpaces.empty? && @nameSpaces.length > 0
+            telemetryProperties["DATA_COLLECTION_NAMESPACES"] = @nameSpaces
+          end
+          if !@mode.nil? && !@mode.empty?
+            telemetryProperties["DATA_COLLECTION_NAMESPACES_MODE"] = @mode
           end
           if @run_interval > 60
             telemetryProperties["DATA_COLLECTION_INTERVAL_MINUTES"] = @run_interval / 60
@@ -286,7 +292,7 @@ module Fluent::Plugin
 
       begin #begin block start
         podInventory["items"].each do |item| #podInventory block start
-          next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"],item["metadata"]["namespace"], @excludeNameSpaces )
+          next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @mode, @nameSpaces)
           # pod inventory records
           podInventoryRecords = getPodInventoryRecords(item, serviceRecords, batchTime)
           @containerCount += podInventoryRecords.length
@@ -384,7 +390,7 @@ module Fluent::Plugin
         if continuationToken.nil? # sending kube services inventory records
           kubeServicesEventStream = Fluent::MultiEventStream.new
           serviceRecords.each do |kubeServiceRecord|
-            next unless !KubernetesApiClient.isExcludeResourceItem(kubeServiceRecord["ServiceName"], kubeServiceRecord["namespace"], @excludeNameSpaces)
+            next unless !KubernetesApiClient.isExcludeResourceItem(kubeServiceRecord["ServiceName"], kubeServiceRecord["namespace"], @mode, @nameSpaces)
             if !kubeServiceRecord.nil?
               # adding before emit to reduce memory foot print
               kubeServiceRecord["ClusterId"] = KubernetesApiClient.getClusterId
@@ -849,35 +855,35 @@ module Fluent::Plugin
                     if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
                       key = item["metadata"]["uid"]
                       if !key.nil? && !key.empty?
-                          currentWindowsNodeNameList = []
-                          @windowsNodeNameCacheMutex.synchronize {
-                            currentWindowsNodeNameList = @windowsNodeNameListCache.dup
-                          }
-                          isWindowsPodItem = false
-                          nodeName = (!item["spec"].nil? && !item["spec"]["nodeName"].nil?) ? item["spec"]["nodeName"] : ""
-                          if !nodeName.empty? &&
-                            !currentWindowsNodeNameList.nil? &&
-                            !currentWindowsNodeNameList.empty? &&
-                            currentWindowsNodeNameList.include?(nodeName)
-                            isWindowsPodItem = true
-                          end
-                          podItem = KubernetesApiClient.getOptimizedItem("pods", item, isWindowsPodItem)
-                          if !podItem.nil? && !podItem.empty?
-                            @podCacheMutex.synchronize {
-                              @podItemsCache[key] = podItem
-                            }
-                          else
-                            $log.warn "in_kube_podinventory::watch_pods:Received podItem is empty or nil  @ #{Time.now.utc.iso8601}"
-                          end
-                        else
-                          $log.warn "in_kube_podinventory::watch_pods:Received poduid either nil or empty  @ #{Time.now.utc.iso8601}"
+                        currentWindowsNodeNameList = []
+                        @windowsNodeNameCacheMutex.synchronize {
+                          currentWindowsNodeNameList = @windowsNodeNameListCache.dup
+                        }
+                        isWindowsPodItem = false
+                        nodeName = (!item["spec"].nil? && !item["spec"]["nodeName"].nil?) ? item["spec"]["nodeName"] : ""
+                        if !nodeName.empty? &&
+                           !currentWindowsNodeNameList.nil? &&
+                           !currentWindowsNodeNameList.empty? &&
+                           currentWindowsNodeNameList.include?(nodeName)
+                          isWindowsPodItem = true
                         end
-                      elsif notice["type"] == "DELETED"
-                        key = item["metadata"]["uid"]
-                        if !key.nil? && !key.empty?
+                        podItem = KubernetesApiClient.getOptimizedItem("pods", item, isWindowsPodItem)
+                        if !podItem.nil? && !podItem.empty?
                           @podCacheMutex.synchronize {
-                            @podItemsCache.delete(key)
+                            @podItemsCache[key] = podItem
                           }
+                        else
+                          $log.warn "in_kube_podinventory::watch_pods:Received podItem is empty or nil  @ #{Time.now.utc.iso8601}"
+                        end
+                      else
+                        $log.warn "in_kube_podinventory::watch_pods:Received poduid either nil or empty  @ #{Time.now.utc.iso8601}"
+                      end
+                    elsif notice["type"] == "DELETED"
+                      key = item["metadata"]["uid"]
+                      if !key.nil? && !key.empty?
+                        @podCacheMutex.synchronize {
+                          @podItemsCache.delete(key)
+                        }
                       end
                     end
                   when "ERROR"
@@ -990,26 +996,26 @@ module Fluent::Plugin
                     end
                     # exclude resource item if this in excluded namespaces
                     if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
-                        key = item["metadata"]["uid"]
-                        if !key.nil? && !key.empty?
-                          serviceItem = KubernetesApiClient.getOptimizedItem("services", item)
-                          if !serviceItem.nil? && !serviceItem.empty?
-                            @serviceCacheMutex.synchronize {
-                              @serviceItemsCache[key] = serviceItem
-                            }
-                          else
-                            $log.warn "in_kube_podinventory::watch_services:Received serviceItem either nil or empty  @ #{Time.now.utc.iso8601}"
-                          end
-                        else
-                          $log.warn "in_kube_podinventory::watch_services:Received serviceuid either nil or empty  @ #{Time.now.utc.iso8601}"
-                        end
-                    elsif notice["type"] == "DELETED"
-                        key = item["metadata"]["uid"]
-                        if !key.nil? && !key.empty?
+                      key = item["metadata"]["uid"]
+                      if !key.nil? && !key.empty?
+                        serviceItem = KubernetesApiClient.getOptimizedItem("services", item)
+                        if !serviceItem.nil? && !serviceItem.empty?
                           @serviceCacheMutex.synchronize {
-                            @serviceItemsCache.delete(key)
+                            @serviceItemsCache[key] = serviceItem
                           }
+                        else
+                          $log.warn "in_kube_podinventory::watch_services:Received serviceItem either nil or empty  @ #{Time.now.utc.iso8601}"
                         end
+                      else
+                        $log.warn "in_kube_podinventory::watch_services:Received serviceuid either nil or empty  @ #{Time.now.utc.iso8601}"
+                      end
+                    elsif notice["type"] == "DELETED"
+                      key = item["metadata"]["uid"]
+                      if !key.nil? && !key.empty?
+                        @serviceCacheMutex.synchronize {
+                          @serviceItemsCache.delete(key)
+                        }
+                      end
                     end
                   when "ERROR"
                     servicesResourceVersion = nil

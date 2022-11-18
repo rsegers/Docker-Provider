@@ -32,7 +32,8 @@ module Fluent::Plugin
 
       @kubeperfTag = "oneagent.containerInsights.LINUX_PERF_BLOB"
       @insightsMetricsTag = "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
-      @excludeNameSpaces = []
+      @nameSpaces = []
+      @mode = "Off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -102,8 +103,10 @@ module Fluent::Plugin
           $log.info("in_kube_perfinventory::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
           @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
           $log.info("in_kube_perfinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
-          @excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()
-          $log.info("in_kube_perfinventory::enumerate: using data collection excludeNameSpaces: #{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
+          @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
+          $log.info("in_kube_perfinventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
+          @mode = ExtensionUtils.getNamespacesModeForDataCollection()
+          $log.info("in_kube_perfinventory::enumerate: using data collection mode for nameSpaces: #{@mode} @ #{Time.now.utc.iso8601}")
         end
 
         nodeAllocatableRecords = getNodeAllocatableRecords()
@@ -139,7 +142,7 @@ module Fluent::Plugin
 
       begin #begin block start
         podInventory["items"].each do |item| #podInventory block start
-          next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @excludeNameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @mode, @nameSpaces)
           nodeName = ""
           if !item["spec"]["nodeName"].nil?
             nodeName = item["spec"]["nodeName"]
@@ -352,24 +355,24 @@ module Fluent::Plugin
                     if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
                       key = item["metadata"]["uid"]
                       if !key.nil? && !key.empty?
-                          podItem = KubernetesApiClient.getOptimizedItem("pods-perf", item)
-                          if !podItem.nil? && !podItem.empty?
-                            @podCacheMutex.synchronize {
-                              @podItemsCache[key] = podItem
-                            }
-                          else
-                            $log.warn "in_kube_perfinventory::watch_pods:Received podItem is empty or nil  @ #{Time.now.utc.iso8601}"
-                          end
+                        podItem = KubernetesApiClient.getOptimizedItem("pods-perf", item)
+                        if !podItem.nil? && !podItem.empty?
+                          @podCacheMutex.synchronize {
+                            @podItemsCache[key] = podItem
+                          }
+                        else
+                          $log.warn "in_kube_perfinventory::watch_pods:Received podItem is empty or nil  @ #{Time.now.utc.iso8601}"
+                        end
                       else
-                          $log.warn "in_kube_perfinventory::watch_pods:Received poduid either nil or empty  @ #{Time.now.utc.iso8601}"
+                        $log.warn "in_kube_perfinventory::watch_pods:Received poduid either nil or empty  @ #{Time.now.utc.iso8601}"
                       end
                     elsif notice["type"] == "DELETED"
-                        key = item["metadata"]["uid"]
-                        if !key.nil? && !key.empty?
-                          @podCacheMutex.synchronize {
-                            @podItemsCache.delete(key)
-                          }
-                        end
+                      key = item["metadata"]["uid"]
+                      if !key.nil? && !key.empty?
+                        @podCacheMutex.synchronize {
+                          @podItemsCache.delete(key)
+                        }
+                      end
                     end
                   when "ERROR"
                     podsResourceVersion = nil

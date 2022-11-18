@@ -28,7 +28,8 @@ module Fluent::Plugin
 
       # Initilize enable/disable normal event collection
       @collectAllKubeEvents = false
-      @excludeNameSpaces = []
+      @nameSpaces = []
+      @mode = "Off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -93,8 +94,10 @@ module Fluent::Plugin
             @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_EVENTS_DATA_TYPE)
           end
           $log.info("in_kube_events::enumerate: using kubeevents tag -#{@tag} @ #{Time.now.utc.iso8601}")
-          @excludeNameSpaces = ExtensionUtils.getNamespacesToExcludeForDataCollection()
-          $log.info("in_kube_events::enumerate: using data collection excludeNameSpaces -#{@excludeNameSpaces} @ #{Time.now.utc.iso8601}")
+          @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
+          $log.info("in_kube_events::enumerate: using data collection nameSpaces -#{@nameSpaces} @ #{Time.now.utc.iso8601}")
+          @mode = ExtensionUtils.getNamespacesModeForDataCollection()
+          $log.info("in_kube_events::enumerate: using data collection mode for nameSpaces -#{@mode} @ #{Time.now.utc.iso8601}")
         end
         # Initializing continuation token to nil
         continuationToken = nil
@@ -164,7 +167,7 @@ module Fluent::Plugin
           end
 
           # drop the events if the event of the excluded namespace
-          next unless !KubernetesApiClient.isExcludeResourceItem("", items["involvedObject"]["namespace"], @excludeNameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem("", items["involvedObject"]["namespace"], @mode, @nameSpaces)
 
           record["ObjectKind"] = items["involvedObject"]["kind"]
           record["Namespace"] = items["involvedObject"]["namespace"]
