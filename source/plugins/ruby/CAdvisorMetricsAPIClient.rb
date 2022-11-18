@@ -168,11 +168,11 @@ class CAdvisorMetricsAPIClient
             metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime))
           else
             metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem, mode, nameSpaces))
-            metricDataItems.concat(getContainerStartTimeMetricItems(metricInfo, hostName, "restartTimeEpoch", metricTime, nameSpaces))
+            metricDataItems.concat(getContainerStartTimeMetricItems(metricInfo, hostName, "restartTimeEpoch", metricTime, mode, nameSpaces))
 
             if operatingSystem == "Linux"
-              metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores", Constants::CPU_USAGE_NANO_CORES, metricTime, nameSpaces))
-              metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime, operatingSystem, nameSpaces))
+              metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores", Constants::CPU_USAGE_NANO_CORES, metricTime, mode, nameSpaces))
+              metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime, operatingSystem, mode, nameSpaces))
               metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime))
             elsif operatingSystem == "Windows"
               containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime, mode, nameSpaces)
@@ -638,7 +638,7 @@ class CAdvisorMetricsAPIClient
       return metricItems
     end
 
-    def getContainerMemoryMetricItems(metricJSON, hostName, memoryMetricNameToCollect, metricNametoReturn, metricPollTime, operatingSystem, nameSpaces)
+    def getContainerMemoryMetricItems(metricJSON, hostName, memoryMetricNameToCollect, metricNametoReturn, metricPollTime, operatingSystem, mode, nameSpaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       timeDifference = (DateTime.now.to_time.to_i - @@telemetryMemoryMetricTimeTracker).abs
@@ -887,7 +887,7 @@ class CAdvisorMetricsAPIClient
       return metricItem
     end
 
-    def getContainerStartTimeMetricItems(metricJSON, hostName, metricNametoReturn, metricPollTime, nameSpaces)
+    def getContainerStartTimeMetricItems(metricJSON, hostName, metricNametoReturn, metricPollTime, mode, nameSpaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       #currentTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
