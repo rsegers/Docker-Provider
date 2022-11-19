@@ -1416,7 +1416,7 @@ class KubernetesApiClient
           # data collection namespace filtering not applicable for ama-logs agent as customer needs to monitor the agent
           if resourceName.start_with?("ama-logs") && resourceNamespace.eql?("kube-system")
             isExclude = false
-          elsif !nameSpaces.nil? && !nameSpaces.empty? && nameSpaces.length > 0
+          elsif !nameSpaces.nil? && !nameSpaces.empty? && nameSpaces.length > 0 && !nameSpaceFilteringMode.nil? && !nameSpaceFilteringMode.empty?
             if nameSpaceFilteringMode == "exclude" && nameSpaces.include?(resourceNamespace)
               isExclude = true
             elsif nameSpaceFilteringMode == "include" && !nameSpaces.include?(resourceNamespace)

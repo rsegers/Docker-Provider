@@ -459,7 +459,7 @@ class CAdvisorMetricsAPIClient
                     end
 
                     if (!accelerator["model"].nil? && !accelerator["model"].empty?)
-                      metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_nameSpaceFilteringModeL] = accelerator["model"]
+                      metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_MODEL] = accelerator["model"]
                     end
 
                     if (!accelerator["id"].nil? && !accelerator["id"].empty?)

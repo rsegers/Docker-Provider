@@ -178,7 +178,7 @@ module Fluent::Plugin
           @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
           $log.info("in_kube_podinventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
           @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-          $log.info("in_kube_podinventory::enumerate: using data collection mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_podinventory::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
         end
 
         serviceInventory = {}

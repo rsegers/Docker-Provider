@@ -79,7 +79,7 @@ module Fluent::Plugin
           $log.info("in_win_cadvisor_perf::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
 
           @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-          $log.info("in_cadvisor_perf::enumerate: using data collection mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          $log.info("in_cadvisor_perf::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
         end
 
         #Resetting this cache so that it is populated with the current set of containers with every call
