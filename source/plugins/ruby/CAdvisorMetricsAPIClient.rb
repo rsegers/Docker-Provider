@@ -458,8 +458,8 @@ class CAdvisorMetricsAPIClient
                       metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_VENDOR] = accelerator["make"]
                     end
 
-                    if (!accelerator["nameSpaceFilteringModel"].nil? && !accelerator["nameSpaceFilteringModel"].empty?)
-                      metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_nameSpaceFilteringModeL] = accelerator["nameSpaceFilteringModel"]
+                    if (!accelerator["model"].nil? && !accelerator["model"].empty?)
+                      metricTags[Constants::INSIGHTSMETRICS_TAGS_GPU_nameSpaceFilteringModeL] = accelerator["model"]
                     end
 
                     if (!accelerator["id"].nil? && !accelerator["id"].empty?)

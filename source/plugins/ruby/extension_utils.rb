@@ -79,8 +79,8 @@ class ExtensionUtils
         dataCollectionSettings = Extension.instance.get_extension_data_collection_settings()
         if !dataCollectionSettings.nil? &&
            !dataCollectionSettings.empty? &&
-           dataCollectionSettings.has_key?(Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_MODE)
-          mode = dataCollectionSettings[Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_MODE]
+           dataCollectionSettings.has_key?(Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE)
+          mode = dataCollectionSettings[Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE]
           if !mode.nil? && !mode.empty?
             if Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_FILTERING_MODES.include?(mode.downcase)
               nameSpaceFilteringMode = mode.downcase
