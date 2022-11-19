@@ -58,7 +58,7 @@ module Fluent::Plugin
       containerInventory = Array.new
       eventStream = Fluent::MultiEventStream.new
       hostName = ""
-      @mode = "off"
+      @nameSpacesFilteringMode = "off"
       @nameSpaces = []
       $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
       if ExtensionUtils.isAADMSIAuthMode()
@@ -71,8 +71,8 @@ module Fluent::Plugin
         $log.info("in_container_inventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
         @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
         $log.info("in_container_inventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-        @mode = ExtensionUtils.getNamespacesModeForDataCollection()
-        $log.info("in_container_inventory::enumerate: using data collection mode for nameSpaces: #{@mode} @ #{Time.now.utc.iso8601}")
+        @nameSpacesFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+        $log.info("in_container_inventory::enumerate: using data collection mode for nameSpaces: #{@nameSpacesFilteringMode} @ #{Time.now.utc.iso8601}")
       end
       begin
         containerRuntimeEnv = ENV["CONTAINER_RUNTIME"]
@@ -85,7 +85,7 @@ module Fluent::Plugin
           podList = JSON.parse(response.body)
           if !podList.nil? && !podList.empty? && podList.key?("items") && !podList["items"].nil? && !podList["items"].empty?
             podList["items"].each do |item|
-              next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @mode, @nameSpaces)
+              next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @nameSpacesFilteringMode, @nameSpaces)
               containerInventoryRecords = KubernetesContainerInventory.getContainerInventoryRecords(item, batchTime, clusterCollectEnvironmentVar)
               containerInventoryRecords.each do |containerRecord|
                 ContainerInventoryState.writeContainerState(containerRecord)
