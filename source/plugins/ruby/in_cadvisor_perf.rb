@@ -83,7 +83,7 @@ module Fluent::Plugin
           $log.info("in_cadvisor_perf::enumerate: using data collection mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
         end
 
-        metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, mode: @nameSpaceFilteringMode, nameSpaces: @nameSpaces, metricTime: batchTime)
+        metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, nameSpaceFilteringMode: @nameSpaceFilteringMode, nameSpaces: @nameSpaces, metricTime: batchTime)
         metricData.each do |record|
           eventStream.add(time, record) if record
         end
@@ -99,7 +99,7 @@ module Fluent::Plugin
         begin
           if !@@isWindows.nil? && @@isWindows == false
             containerGPUusageInsightsMetricsDataItems = []
-            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: nil, mode: @nameSpaceFilteringMode, nameSpaces: @nameSpaces, metricTime: batchTime))
+            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: nil, nameSpaceFilteringMode: @nameSpaceFilteringMode, nameSpaces: @nameSpaces, metricTime: batchTime))
 
             containerGPUusageInsightsMetricsDataItems.each do |insightsMetricsRecord|
               insightsMetricsEventStream.add(time, insightsMetricsRecord) if insightsMetricsRecord

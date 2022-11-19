@@ -1409,7 +1409,7 @@ class KubernetesApiClient
       return isEmitCacheTelemtryEnabled
     end
 
-    def isExcludeResourceItem(resourceName, resourceNamespace, mode, nameSpaces)
+    def isExcludeResourceItem(resourceName, resourceNamespace, nameSpaceFilteringMode, nameSpaces)
       isExclude = false
       begin
         if !resourceName.nil? && !resourceName.empty? && !resourceNamespace.nil? && !resourceNamespace.empty?
@@ -1417,9 +1417,9 @@ class KubernetesApiClient
           if resourceName.start_with?("ama-logs") && resourceNamespace.eql?("kube-system")
             isExclude = false
           elsif !nameSpaces.nil? && !nameSpaces.empty? && nameSpaces.length > 0
-            if mode == "exclude" && nameSpaces.include?(resourceNamespace)
+            if nameSpaceFilteringMode == "exclude" && nameSpaces.include?(resourceNamespace)
               isExclude = true
-            elsif mode == "include" && !nameSpaces.include?(resourceNamespace)
+            elsif nameSpaceFilteringMode == "include" && !nameSpaces.include?(resourceNamespace)
               isExclude = true
             end
           end

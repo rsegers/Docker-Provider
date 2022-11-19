@@ -95,7 +95,7 @@ module Fluent::Plugin
         end
         @@winNodes.each do |winNode|
           eventStream = Fluent::MultiEventStream.new
-          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, mode: @nameSpaceFilteringMode, nameSpaces: @nameSpaces, metricTime: Time.now.utc.iso8601)
+          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, nameSpaceFilteringMode: @nameSpaceFilteringMode, nameSpaces: @nameSpaces, metricTime: Time.now.utc.iso8601)
           metricData.each do |record|
             if !record.empty?
               eventStream.add(time, record) if record
@@ -110,7 +110,7 @@ module Fluent::Plugin
           #start GPU InsightsMetrics items
           begin
             containerGPUusageInsightsMetricsDataItems = []
-            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: winNode, mode: @nameSpaceFilteringMode, nameSpaces: @nameSpaces, metricTime: Time.now.utc.iso8601))
+            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: winNode, nameSpaceFilteringMode: @nameSpaceFilteringMode, nameSpaces: @nameSpaces, metricTime: Time.now.utc.iso8601))
             insightsMetricsEventStream = Fluent::MultiEventStream.new
 
             containerGPUusageInsightsMetricsDataItems.each do |insightsMetricsRecord|
