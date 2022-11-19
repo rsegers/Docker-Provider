@@ -59,7 +59,7 @@
         "nameSpacesFilteringModeForDataCollection": {
             "type": "string",
             "metadata": {
-                "description": "Data collection Mode for the namespaces"
+                "description": "Data collection Filtering Mode for the namespaces"
             },
             "allowedValues": [
               "Off",
@@ -71,7 +71,7 @@
         "namespacesForDataCollection": {
             "type": "array",
             "metadata": {
-                "description": "Kubernetes namespaces for the data collection of inventory and metrics"
+                "description": "An array of Kubernetes namespaces for the data collection of inventory, events and metrics"
             }
         }
     },

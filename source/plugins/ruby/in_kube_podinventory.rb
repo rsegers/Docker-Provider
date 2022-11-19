@@ -723,7 +723,6 @@ module Fluent::Plugin
     def watch_pods
       $log.info("in_kube_podinventory::watch_pods:Start @ #{Time.now.utc.iso8601}")
       podsResourceVersion = nil
-      excludeNameSpaces = []
       # invoke getWindowsNodes to handle scenario where windowsNodeNameCache not populated yet on containerstart
       winNodes = KubernetesApiClient.getWindowsNodesArray()
       if winNodes.length > 0
@@ -994,7 +993,6 @@ module Fluent::Plugin
                       # We have to abort here because this might cause lastResourceVersion inconsistency by skipping a potential RV with valid data!
                       break
                     end
-                    # exclude resource item if this in excluded namespaces
                     if ((notice["type"] == "ADDED") || (notice["type"] == "MODIFIED"))
                       key = item["metadata"]["uid"]
                       if !key.nil? && !key.empty?

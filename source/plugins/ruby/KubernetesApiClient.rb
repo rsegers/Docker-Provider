@@ -1412,14 +1412,16 @@ class KubernetesApiClient
     def isExcludeResourceItem(resourceName, resourceNamespace, mode, nameSpaces)
       isExclude = false
       begin
-        # include or exclude doesnt applicable for ama-logs agent as customer needs to monitor the agent
-        if !resourceName.nil? && !resourceName.empty? && resourceName.start_with?("ama-logs") && resourceNamespace.eql?("kube-system")
-          isExclude = false
-        elsif !resourceNamespace.nil? && !resourceNamespace.empty? && !nameSpaces.nil? && !nameSpaces.empty? && nameSpaces.length > 0
-          if mode == "exclude" && nameSpaces.include?(resourceNamespace)
-            isExclude = true
-          elsif mode == "include" && !nameSpaces.include?(resourceNamespace)
-            isExclude = true
+        if !resourceName.nil? && !resourceName.empty? && !resourceNamespace.nil? && !resourceNamespace.empty?
+          # data collection namespace filtering not applicable for ama-logs agent as customer needs to monitor the agent
+          if resourceName.start_with?("ama-logs") && resourceNamespace.eql?("kube-system")
+            isExclude = false
+          elsif !nameSpaces.nil? && !nameSpaces.empty? && nameSpaces.length > 0
+            if mode == "exclude" && nameSpaces.include?(resourceNamespace)
+              isExclude = true
+            elsif mode == "include" && !nameSpaces.include?(resourceNamespace)
+              isExclude = true
+            end
           end
         end
       rescue => errorStr
