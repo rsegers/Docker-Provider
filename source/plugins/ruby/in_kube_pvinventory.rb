@@ -25,7 +25,7 @@ module Fluent::Plugin
       @PV_CHUNK_SIZE = "5000"
       @pvTypeToCountHash = {}
       @nameSpaces = []
-      @nameSpacesFilteringMode = "off"
+      @nameSpaceFilteringMode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -73,8 +73,8 @@ module Fluent::Plugin
           $log.info("in_kube_pvinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
           @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
           $log.info("in_kube_pvinventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-          @nameSpacesFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-          $log.info("in_kube_pvinventory::enumerate: using data collection mode for nameSpaces: #{@nameSpacesFilteringMode} @ #{Time.now.utc.iso8601}")
+          @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+          $log.info("in_kube_pvinventory::enumerate: using data collection mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
         end
 
         continuationToken = nil
@@ -140,7 +140,7 @@ module Fluent::Plugin
           record["PVType"] = type
           record["PVTypeInfo"] = typeInfo
 
-          next unless !KubernetesApiClient.isExcludeResourceItem(pvcName, pvcNamespace, @nameSpacesFilteringMode, @nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(pvcName, pvcNamespace, @nameSpaceFilteringMode, @nameSpaces)
 
           record["CollectionTime"] = batchTime
           record["ClusterId"] = KubernetesApiClient.getClusterId

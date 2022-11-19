@@ -33,7 +33,7 @@ module Fluent::Plugin
       @ClusterId = KubernetesApiClient.getClusterId
       @ClusterName = KubernetesApiClient.getClusterName
       @nameSpaces = []
-      @nameSpacesFilteringMode = "off"
+      @nameSpaceFilteringMode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -91,8 +91,8 @@ module Fluent::Plugin
           $log.info("in_kubestate_hpa::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
           @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
           $log.info("in_kubestate_hpa::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-          @nameSpacesFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-          $log.info("in_kubestate_hpa::enumerate: using data collection mode for nameSpaces: #{@nameSpacesFilteringMode} @ #{Time.now.utc.iso8601}")
+          @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+          $log.info("in_kubestate_hpa::enumerate: using data collection mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
         end
         # Initializing continuation token to nil
         continuationToken = nil
@@ -136,7 +136,7 @@ module Fluent::Plugin
       begin
         metricInfo = hpas
         metricInfo["items"].each do |hpa|
-          next unless !KubernetesApiClient.isExcludeResourceItem(hpa["metadata"]["name"], hpa["metadata"]["namespace"], @nameSpacesFilteringMode, @nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(hpa["metadata"]["name"], hpa["metadata"]["namespace"], @nameSpaceFilteringMode, @nameSpaces)
           hpaName = hpa["metadata"]["name"]
           hpaNameSpace = hpa["metadata"]["namespace"]
           hpaCreatedTime = ""

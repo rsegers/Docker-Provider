@@ -33,7 +33,7 @@ module Fluent::Plugin
       @kubeperfTag = "oneagent.containerInsights.LINUX_PERF_BLOB"
       @insightsMetricsTag = "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
       @nameSpaces = []
-      @nameSpacesFilteringMode = "off"
+      @nameSpaceFilteringMode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -105,8 +105,8 @@ module Fluent::Plugin
           $log.info("in_kube_perfinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
           @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
           $log.info("in_kube_perfinventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-          @nameSpacesFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-          $log.info("in_kube_perfinventory::enumerate: using data collection mode for nameSpaces: #{@nameSpacesFilteringMode} @ #{Time.now.utc.iso8601}")
+          @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+          $log.info("in_kube_perfinventory::enumerate: using data collection mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
         end
 
         nodeAllocatableRecords = getNodeAllocatableRecords()
@@ -142,7 +142,7 @@ module Fluent::Plugin
 
       begin #begin block start
         podInventory["items"].each do |item| #podInventory block start
-          next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @nameSpacesFilteringMode, @nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @nameSpaceFilteringMode, @nameSpaces)
           nodeName = ""
           if !item["spec"]["nodeName"].nil?
             nodeName = item["spec"]["nodeName"]

@@ -74,7 +74,7 @@ class ExtensionUtils
     end
 
     def getNamespacesFilteringModeForDataCollection
-      nameSpacesFilteringMode = "off"
+      nameSpaceFilteringMode = "off"
       begin
         dataCollectionSettings = Extension.instance.get_extension_data_collection_settings()
         if !dataCollectionSettings.nil? &&
@@ -82,18 +82,19 @@ class ExtensionUtils
            dataCollectionSettings.has_key?(Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_MODE)
           mode = dataCollectionSettings[Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_MODE]
           if !mode.nil? && !mode.empty?
-            nameSpacesFilteringMode = mode.downcase
-            if !Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_FILTERING_MODES.include?(nameSpacesFilteringMode)
-              $log.warn("ExtensionUtils::getNamespacesFilteringModeForDataCollection: nameSpacesFilteringMode: #{mode} not supported hence using default")
+            if Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_FILTERING_MODES.include?(mode.downcase)
+              nameSpaceFilteringMode = mode.downcase
+            else
+              $log.warn("ExtensionUtils::getNamespacesFilteringModeForDataCollection: nameSpaceFilteringMode: #{mode} not supported hence using default")
             end
           else
-            $log.warn("ExtensionUtils::getNamespacesFilteringModeForDataCollection: nameSpacesFilteringMode: #{mode} not valid hence using default")
+            $log.warn("ExtensionUtils::getNamespacesFilteringModeForDataCollection: nameSpaceFilteringMode: #{mode} not valid hence using default")
           end
         end
       rescue => errorStr
         $log.warn("ExtensionUtils::getNamespacesFilteringModeForDataCollection: failed with an exception: #{errorStr}")
       end
-      return nameSpacesFilteringMode
+      return nameSpaceFilteringMode
     end
   end
 end
