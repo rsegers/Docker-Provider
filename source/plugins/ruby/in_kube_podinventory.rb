@@ -240,14 +240,17 @@ module Fluent::Plugin
             telemetryProperties["SERVICE_ITEMS_CACHE_SIZE_KB"] = serviceItemsCacheSizeKB
             telemetryProperties["WINDOWS_CONTAINER_RECORDS_CACHE_SIZE_KB"] = @windowsContainerRecordsCacheSizeBytes / 1024
           end
-          if !@nameSpaces.nil? && !@nameSpaces.empty? && @nameSpaces.length > 0
-            telemetryProperties["DATA_COLLECTION_NAMESPACES"] = @nameSpaces
-          end
-          if !@nameSpaceFilteringMode.nil? && !@nameSpaceFilteringMode.empty?
-            telemetryProperties["DATA_COLLECTION_NAMESPACES_FILTERING_MODE"] = @nameSpaceFilteringMode
-          end
-          if @run_interval > 60
-            telemetryProperties["DATA_COLLECTION_INTERVAL_MINUTES"] = @run_interval / 60
+          if ExtensionUtils.isDataCollectionSettingsConfigured()
+            telemetryProperties["dataCollectionSettingsEnabled"] = "true"
+            if !@nameSpaces.nil? && !@nameSpaces.empty? && @nameSpaces.length > 0
+              telemetryProperties["DATA_COLLECTION_NAMESPACES"] = @nameSpaces
+            end
+            if !@nameSpaceFilteringMode.nil? && !@nameSpaceFilteringMode.empty?
+              telemetryProperties["DATA_COLLECTION_NAMESPACES_FILTERING_MODE"] = @nameSpaceFilteringMode
+            end
+            if @run_interval > 60
+              telemetryProperties["DATA_COLLECTION_INTERVAL_MINUTES"] = @run_interval / 60
+            end
           end
           ApplicationInsightsUtility.sendCustomEvent("KubePodInventoryHeartBeatEvent", telemetryProperties)
           ApplicationInsightsUtility.sendMetricTelemetry("PodCount", @podCount, {})

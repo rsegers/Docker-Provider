@@ -92,13 +92,15 @@ class ApplicationInsightsUtility
         if !aadAuthMSIMode.nil? && !aadAuthMSIMode.empty? && aadAuthMSIMode.downcase == "true".downcase
           @@CustomProperties["aadAuthMSIMode"] = "true"
           begin
-            if Dir.exist?('/etc/mdsd.d/config-cache/configchunks')
-              Dir.glob('/etc/mdsd.d/config-cache/configchunks/*.json') { |file|
-                if File.file?(file) && File.exist?(file) && File.foreach(file).grep(/LINUX_SYSLOGS_BLOB/).any?
-                  @@CustomProperties["syslogEnabled"] = "true"
-                end
-                if File.file?(file) && File.exist?(file) && File.foreach(file).grep(/ContainerInsightsExtension/).any? && File.foreach(file).grep(/dataCollectionSettings/).any?
-                  @@CustomProperties["dataCollectionSettingsEnabled"] = "true"
+            if Dir.exist?("/etc/mdsd.d/config-cache/configchunks")
+              Dir.glob("/etc/mdsd.d/config-cache/configchunks/*.json") { |file|
+                if File.file?(file) && File.exist?(file)
+                  if File.foreach(file).grep(/LINUX_SYSLOGS_BLOB/).any?
+                    @@CustomProperties["syslogEnabled"] = "true"
+                  end
+                  if File.foreach(file).grep(/ContainerInsightsExtension/).any? && File.foreach(file).grep(/dataCollectionSettings/).any?
+                    @@CustomProperties["dataCollectionSettingsEnabled"] = "true"
+                  end
                 end
               }
             end
