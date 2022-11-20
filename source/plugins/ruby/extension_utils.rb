@@ -26,6 +26,19 @@ class ExtensionUtils
       return !ENV["AAD_MSI_AUTH_MODE"].nil? && !ENV["AAD_MSI_AUTH_MODE"].empty? && ENV["AAD_MSI_AUTH_MODE"].downcase == "true"
     end
 
+    def isDataCollectionSettingsConfigured
+      isCollectionSettingsEnabled = false
+      begin
+        dataCollectionSettings = Extension.instance.get_extension_data_collection_settings()
+        if !dataCollectionSettings.nil? && !dataCollectionSettings.empty?
+          isCollectionSettingsEnabled = true
+        end
+      rescue => errorStr
+        $log.warn("ExtensionUtils::isDataCollectionSettingsConfigured: failed with an exception: #{errorStr}")
+      end
+      return isCollectionSettingsEnabled
+    end
+
     def getDataCollectionIntervalSeconds
       collectionIntervalSeconds = 60
       begin

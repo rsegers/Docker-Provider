@@ -97,6 +97,9 @@ class ApplicationInsightsUtility
                 if File.file?(file) && File.exist?(file) && File.foreach(file).grep(/LINUX_SYSLOGS_BLOB/).any?
                   @@CustomProperties["syslogEnabled"] = "true"
                 end
+                if File.file?(file) && File.exist?(file) && File.foreach(file).grep(/ContainerInsightsExtension/).any? && File.foreach(file).grep(/dataCollectionSettings/).any?
+                  @@CustomProperties["dataCollectionSettingsEnabled"] = "true"
+                end
               }
             end
           rescue => errorStr

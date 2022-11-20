@@ -67,12 +67,14 @@ module Fluent::Plugin
           @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
         end
         $log.info("in_container_inventory::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
-        @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-        $log.info("in_container_inventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
-        @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
-        $log.info("in_container_inventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-        @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-        $log.info("in_container_inventory::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+        if ExtensionUtils.isDataCollectionSettingsConfigured()
+          @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
+          $log.info("in_container_inventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+          @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
+          $log.info("in_container_inventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
+          @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+          $log.info("in_container_inventory::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+        end
       end
       begin
         containerRuntimeEnv = ENV["CONTAINER_RUNTIME"]

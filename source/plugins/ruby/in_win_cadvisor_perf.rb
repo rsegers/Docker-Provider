@@ -72,14 +72,14 @@ module Fluent::Plugin
           $log.info("in_win_cadvisor_perf::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_win_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
 
-          @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-          $log.info("in_win_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
-
-          @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
-          $log.info("in_win_cadvisor_perf::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-
-          @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-          $log.info("in_cadvisor_perf::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          if ExtensionUtils.isDataCollectionSettingsConfigured()
+            @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
+            $log.info("in_win_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+            @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
+            $log.info("in_win_cadvisor_perf::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
+            @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+            $log.info("in_cadvisor_perf::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          end
         end
 
         #Resetting this cache so that it is populated with the current set of containers with every call

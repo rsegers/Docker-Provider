@@ -101,12 +101,14 @@ module Fluent::Plugin
           end
           $log.info("in_kube_perfinventory::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_perfinventory::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
-          @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-          $log.info("in_kube_perfinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
-          @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
-          $log.info("in_kube_perfinventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-          @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-          $log.info("in_kube_perfinventory::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          if ExtensionUtils.isDataCollectionSettingsConfigured()
+            @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
+            $log.info("in_kube_perfinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+            @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
+            $log.info("in_kube_perfinventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
+            @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+            $log.info("in_kube_perfinventory::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          end
         end
 
         nodeAllocatableRecords = getNodeAllocatableRecords()
