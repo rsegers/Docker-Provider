@@ -67,7 +67,7 @@
         "value": "Off"
       },
       "namespacesForDataCollection": {
-        "value": [ "kube-system"]
+        "value": [ "kube-system", "gatekeeper-system" ]
       }
     }
   }
