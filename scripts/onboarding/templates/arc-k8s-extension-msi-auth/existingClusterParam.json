@@ -70,7 +70,7 @@
       "value": "Off"
     },
     "namespacesForDataCollection": {
-      "value": [ "kube-system", "gatekeeper-system" ]
+      "value": [ "kube-system", "gatekeeper-system", "azure-arc" ]
     }
   }
 }
