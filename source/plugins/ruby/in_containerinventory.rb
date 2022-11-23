@@ -59,7 +59,7 @@ module Fluent::Plugin
       eventStream = Fluent::MultiEventStream.new
       hostName = ""
       @namespaceFilteringMode = "off"
-      @nameSpaces = []
+      @namespaces = []
       $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
       if ExtensionUtils.isAADMSIAuthMode()
         $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
@@ -70,10 +70,10 @@ module Fluent::Plugin
         if ExtensionUtils.isDataCollectionSettingsConfigured()
           @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
           $log.info("in_container_inventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
-          @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
-          $log.info("in_container_inventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
+          @namespaces = ExtensionUtils.getNamespacesForDataCollection()
+          $log.info("in_container_inventory::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
           @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
-          $log.info("in_container_inventory::enumerate: using data collection filtering mode for nameSpaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          $log.info("in_container_inventory::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
         end
       end
       begin
@@ -87,7 +87,7 @@ module Fluent::Plugin
           podList = JSON.parse(response.body)
           if !podList.nil? && !podList.empty? && podList.key?("items") && !podList["items"].nil? && !podList["items"].empty?
             podList["items"].each do |item|
-              next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @namespaceFilteringMode, @nameSpaces)
+              next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @namespaceFilteringMode, @namespaces)
               containerInventoryRecords = KubernetesContainerInventory.getContainerInventoryRecords(item, batchTime, clusterCollectEnvironmentVar)
               containerInventoryRecords.each do |containerRecord|
                 ContainerInventoryState.writeContainerState(containerRecord)

@@ -133,7 +133,7 @@ class CAdvisorMetricsAPIClient
       return baseUri + relativeUri
     end
 
-    def getMetrics(winNode: nil, namespaceFilteringMode: "off", nameSpaces: [], metricTime: Time.now.utc.iso8601)
+    def getMetrics(winNode: nil, namespaceFilteringMode: "off", namespaces: [], metricTime: Time.now.utc.iso8601)
       metricDataItems = []
       begin
         cAdvisorStats = getSummaryStatsFromCAdvisor(winNode)
@@ -155,8 +155,8 @@ class CAdvisorMetricsAPIClient
           # Checking if we are in windows daemonset and sending only few metrics that are needed for MDM
           if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
             # Container metrics
-            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem, namespaceFilteringMode, nameSpaces))
-            containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime, namespaceFilteringMode, nameSpaces)
+            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem, namespaceFilteringMode, namespaces))
+            containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime, namespaceFilteringMode, namespaces)
             if containerCpuUsageNanoSecondsRate && !containerCpuUsageNanoSecondsRate.empty? && !containerCpuUsageNanoSecondsRate.nil?
               metricDataItems.concat(containerCpuUsageNanoSecondsRate)
             end
@@ -167,15 +167,15 @@ class CAdvisorMetricsAPIClient
             end
             metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime))
           else
-            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem, namespaceFilteringMode, nameSpaces))
-            metricDataItems.concat(getContainerStartTimeMetricItems(metricInfo, hostName, "restartTimeEpoch", metricTime, namespaceFilteringMode, nameSpaces))
+            metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem, namespaceFilteringMode, namespaces))
+            metricDataItems.concat(getContainerStartTimeMetricItems(metricInfo, hostName, "restartTimeEpoch", metricTime, namespaceFilteringMode, namespaces))
 
             if operatingSystem == "Linux"
-              metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores", Constants::CPU_USAGE_NANO_CORES, metricTime, namespaceFilteringMode, nameSpaces))
-              metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime, operatingSystem, namespaceFilteringMode, nameSpaces))
+              metricDataItems.concat(getContainerCpuMetricItems(metricInfo, hostName, "usageNanoCores", Constants::CPU_USAGE_NANO_CORES, metricTime, namespaceFilteringMode, namespaces))
+              metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime, operatingSystem, namespaceFilteringMode, namespaces))
               metricDataItems.push(getNodeMetricItem(metricInfo, hostName, "memory", "rssBytes", Constants::MEMORY_RSS_BYTES, metricTime))
             elsif operatingSystem == "Windows"
-              containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime, namespaceFilteringMode, nameSpaces)
+              containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime, namespaceFilteringMode, namespaces)
               if containerCpuUsageNanoSecondsRate && !containerCpuUsageNanoSecondsRate.empty? && !containerCpuUsageNanoSecondsRate.nil?
                 metricDataItems.concat(containerCpuUsageNanoSecondsRate)
               end
@@ -210,7 +210,7 @@ class CAdvisorMetricsAPIClient
       return metricDataItems
     end
 
-    def getContainerCpuMetricItems(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn, metricPollTime, namespaceFilteringMode, nameSpaces)
+    def getContainerCpuMetricItems(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn, metricPollTime, namespaceFilteringMode, namespaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       timeDifference = (DateTime.now.to_time.to_i - @@telemetryCpuMetricTimeTracker).abs
@@ -222,7 +222,7 @@ class CAdvisorMetricsAPIClient
           podName = pod["podRef"]["name"]
           podNamespace = pod["podRef"]["namespace"]
 
-          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, namespaceFilteringMode, nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, namespaceFilteringMode, namespaces)
 
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
@@ -312,7 +312,7 @@ class CAdvisorMetricsAPIClient
       return metricItems
     end
 
-    def getInsightsMetrics(winNode: nil, namespaceFilteringMode: "off", nameSpaces: [], metricTime: Time.now.utc.iso8601)
+    def getInsightsMetrics(winNode: nil, namespaceFilteringMode: "off", namespaces: [], metricTime: Time.now.utc.iso8601)
       metricDataItems = []
       begin
         cAdvisorStats = getSummaryStatsFromCAdvisor(winNode)
@@ -331,11 +331,11 @@ class CAdvisorMetricsAPIClient
           operatingSystem = "Linux"
         end
         if !metricInfo.nil?
-          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryTotal", "containerGpumemoryTotalBytes", metricTime, namespaceFilteringMode, nameSpaces))
-          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryUsed", "containerGpumemoryUsedBytes", metricTime, namespaceFilteringMode, nameSpaces))
-          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "dutyCycle", "containerGpuDutyCycle", metricTime, namespaceFilteringMode, nameSpaces))
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryTotal", "containerGpumemoryTotalBytes", metricTime, namespaceFilteringMode, namespaces))
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "memoryUsed", "containerGpumemoryUsedBytes", metricTime, namespaceFilteringMode, namespaces))
+          metricDataItems.concat(getContainerGpuMetricsAsInsightsMetrics(metricInfo, hostName, "dutyCycle", "containerGpuDutyCycle", metricTime, namespaceFilteringMode, namespaces))
 
-          metricDataItems.concat(getPersistentVolumeMetrics(metricInfo, hostName, "usedBytes", Constants::PV_USED_BYTES, metricTime, namespaceFilteringMode, nameSpaces))
+          metricDataItems.concat(getPersistentVolumeMetrics(metricInfo, hostName, "usedBytes", Constants::PV_USED_BYTES, metricTime, namespaceFilteringMode, namespaces))
         else
           @Log.warn("Couldn't get Insights metrics information for host: #{hostName} os:#{operatingSystem}")
         end
@@ -346,7 +346,7 @@ class CAdvisorMetricsAPIClient
       return metricDataItems
     end
 
-    def getPersistentVolumeMetrics(metricJSON, hostName, metricNameToCollect, metricNameToReturn, metricPollTime, namespaceFilteringMode, nameSpaces)
+    def getPersistentVolumeMetrics(metricJSON, hostName, metricNameToCollect, metricNameToReturn, metricPollTime, namespaceFilteringMode, namespaces)
       telemetryTimeDifference = (DateTime.now.to_time.to_i - @@telemetryPVKubeSystemMetricsTimeTracker).abs
       telemetryTimeDifferenceInMinutes = telemetryTimeDifference / 60
 
@@ -357,7 +357,7 @@ class CAdvisorMetricsAPIClient
         metricInfo = metricJSON
         metricInfo["pods"].each do |pod|
           podNamespace = pod["podRef"]["namespace"]
-          next unless !KubernetesApiClient.isExcludeResourceItem(pod["podRef"]["name"], podNamespace, namespaceFilteringMode, nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(pod["podRef"]["name"], podNamespace, namespaceFilteringMode, namespaces)
           excludeNamespace = false
           if (podNamespace.downcase == "kube-system") && @pvKubeSystemCollectionMetricsEnabled == "false"
             excludeNamespace = true
@@ -419,7 +419,7 @@ class CAdvisorMetricsAPIClient
       return metricItems
     end
 
-    def getContainerGpuMetricsAsInsightsMetrics(metricJSON, hostName, metricNameToCollect, metricNametoReturn, metricPollTime, namespaceFilteringMode, nameSpaces)
+    def getContainerGpuMetricsAsInsightsMetrics(metricJSON, hostName, metricNameToCollect, metricNametoReturn, metricPollTime, namespaceFilteringMode, namespaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       clusterName = KubernetesApiClient.getClusterName
@@ -429,7 +429,7 @@ class CAdvisorMetricsAPIClient
           podUid = pod["podRef"]["uid"]
           podName = pod["podRef"]["name"]
           podNamespace = pod["podRef"]["namespace"]
-          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, namespaceFilteringMode, nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, namespaceFilteringMode, namespaces)
 
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
@@ -507,7 +507,7 @@ class CAdvisorMetricsAPIClient
     end
 
     # usageNanoCores doesnt exist for windows nodes. Hence need to compute this from usageCoreNanoSeconds
-    def getContainerCpuMetricItemRate(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn, metricPollTime, namespaceFilteringMode, nameSpaces)
+    def getContainerCpuMetricItemRate(metricJSON, hostName, cpuMetricNameToCollect, metricNametoReturn, metricPollTime, namespaceFilteringMode, namespaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       timeDifference = (DateTime.now.to_time.to_i - @@telemetryCpuMetricTimeTracker).abs
@@ -521,7 +521,7 @@ class CAdvisorMetricsAPIClient
           podName = pod["podRef"]["name"]
           podNamespace = pod["podRef"]["namespace"]
 
-          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, namespaceFilteringMode, nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, namespaceFilteringMode, namespaces)
 
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
@@ -638,7 +638,7 @@ class CAdvisorMetricsAPIClient
       return metricItems
     end
 
-    def getContainerMemoryMetricItems(metricJSON, hostName, memoryMetricNameToCollect, metricNametoReturn, metricPollTime, operatingSystem, namespaceFilteringMode, nameSpaces)
+    def getContainerMemoryMetricItems(metricJSON, hostName, memoryMetricNameToCollect, metricNametoReturn, metricPollTime, operatingSystem, namespaceFilteringMode, namespaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       timeDifference = (DateTime.now.to_time.to_i - @@telemetryMemoryMetricTimeTracker).abs
@@ -649,7 +649,7 @@ class CAdvisorMetricsAPIClient
           podUid = pod["podRef"]["uid"]
           podName = pod["podRef"]["name"]
           podNamespace = pod["podRef"]["namespace"]
-          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, namespaceFilteringMode, nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, namespaceFilteringMode, namespaces)
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
               containerName = container["name"]
@@ -887,7 +887,7 @@ class CAdvisorMetricsAPIClient
       return metricItem
     end
 
-    def getContainerStartTimeMetricItems(metricJSON, hostName, metricNametoReturn, metricPollTime, namespaceFilteringMode, nameSpaces)
+    def getContainerStartTimeMetricItems(metricJSON, hostName, metricNametoReturn, metricPollTime, namespaceFilteringMode, namespaces)
       metricItems = []
       clusterId = KubernetesApiClient.getClusterId
       #currentTime = Time.now.utc.iso8601 #2018-01-30T19:36:14Z
@@ -897,7 +897,7 @@ class CAdvisorMetricsAPIClient
           podUid = pod["podRef"]["uid"]
           podNamespace = pod["podRef"]["namespace"]
           podName = pod["podRef"]["name"]
-          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, namespaceFilteringMode, nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(podName, podNamespace, namespaceFilteringMode, namespaces)
           if (!pod["containers"].nil?)
             pod["containers"].each do |container|
               containerName = container["name"]

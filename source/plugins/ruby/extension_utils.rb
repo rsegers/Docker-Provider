@@ -66,7 +66,7 @@ class ExtensionUtils
     end
 
     def getNamespacesForDataCollection
-      nameSpaces = []
+      namespaces = []
       begin
         dataCollectionSettings = Extension.instance.get_extension_data_collection_settings()
         if !dataCollectionSettings.nil? &&
@@ -75,15 +75,15 @@ class ExtensionUtils
           nameSpacesSetting = dataCollectionSettings[Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES]
           if !nameSpacesSetting.nil? && !nameSpacesSetting.empty? && nameSpacesSetting.kind_of?(Array) && nameSpacesSetting.length > 0
             uniqNamespaces = nameSpacesSetting.uniq
-            nameSpaces = uniqNamespaces.map(&:downcase)
+            namespaces = uniqNamespaces.map(&:downcase)
           else
-            $log.warn("ExtensionUtils::getNamespacesForDataCollection: nameSpaces: #{nameSpacesSetting} not valid hence using default")
+            $log.warn("ExtensionUtils::getNamespacesForDataCollection: namespaces: #{nameSpacesSetting} not valid hence using default")
           end
         end
       rescue => errorStr
         $log.warn("ExtensionUtils::getNamespacesForDataCollection: failed with an exception: #{errorStr}")
       end
-      return nameSpaces
+      return namespaces
     end
 
     def getNamespaceFilteringModeForDataCollection

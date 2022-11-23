@@ -35,7 +35,7 @@ module Fluent::Plugin
       @NodeName = OMS::Common.get_hostname
       @ClusterId = KubernetesApiClient.getClusterId
       @ClusterName = KubernetesApiClient.getClusterName
-      @nameSpaces = []
+      @namespaces = []
       @namespaceFilteringMode = "off"
     end
 
@@ -93,10 +93,10 @@ module Fluent::Plugin
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
             $log.info("in_kubestate_deployments::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
-            @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
-            $log.info("in_kubestate_deployments::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
+            @namespaces = ExtensionUtils.getNamespacesForDataCollection()
+            $log.info("in_kubestate_deployments::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
             @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
-            $log.info("in_kubestate_deployments::enumerate: using data collection filtering mode for nameSpaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
+            $log.info("in_kubestate_deployments::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
           end
         end
         # Initializing continuation token to nil
@@ -150,7 +150,7 @@ module Fluent::Plugin
       begin
         metricInfo = deployments
         metricInfo["items"].each do |deployment|
-          next unless !KubernetesApiClient.isExcludeResourceItem(deployment["metadata"]["name"], deployment["metadata"]["namespace"], @namespaceFilteringMode, @nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(deployment["metadata"]["name"], deployment["metadata"]["namespace"], @namespaceFilteringMode, @namespaces)
           deploymentName = deployment["metadata"]["name"]
           deploymentNameSpace = deployment["metadata"]["namespace"]
           deploymentCreatedTime = ""

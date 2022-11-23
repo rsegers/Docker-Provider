@@ -107,7 +107,7 @@
                                         "extensionSettings": {
                                             "dataCollectionSettings" : {
                                                 "interval": "[parameters('dataCollectionInterval')]",
-                                                 "namespaceFilteringMode" : "[parameters('namespaceFilteringModeForDataCollection')]",
+                                                 "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
                                                  "namespaces": "[parameters('namespacesForDataCollection')]"
                                             }
                                         },
