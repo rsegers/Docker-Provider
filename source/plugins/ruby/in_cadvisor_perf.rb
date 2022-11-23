@@ -23,7 +23,7 @@ module Fluent::Plugin
       require_relative "constants"
       require_relative "extension_utils"
       @nameSpaces = []
-      @nameSpaceFilteringMode = "off"
+      @namespaceFilteringMode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -80,12 +80,12 @@ module Fluent::Plugin
             $log.info("in_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
             @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
             $log.info("in_cadvisor_perf::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-            @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-            $log.info("in_cadvisor_perf::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+            @namespaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+            $log.info("in_cadvisor_perf::enumerate: using data collection filtering mode for nameSpaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
           end
         end
 
-        metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, nameSpaceFilteringMode: @nameSpaceFilteringMode, nameSpaces: @nameSpaces, metricTime: batchTime)
+        metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, namespaceFilteringMode: @namespaceFilteringMode, nameSpaces: @nameSpaces, metricTime: batchTime)
         metricData.each do |record|
           eventStream.add(time, record) if record
         end
@@ -101,7 +101,7 @@ module Fluent::Plugin
         begin
           if !@@isWindows.nil? && @@isWindows == false
             containerGPUusageInsightsMetricsDataItems = []
-            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: nil, nameSpaceFilteringMode: @nameSpaceFilteringMode, nameSpaces: @nameSpaces, metricTime: batchTime))
+            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: nil, namespaceFilteringMode: @namespaceFilteringMode, nameSpaces: @nameSpaces, metricTime: batchTime))
 
             containerGPUusageInsightsMetricsDataItems.each do |insightsMetricsRecord|
               insightsMetricsEventStream.add(time, insightsMetricsRecord) if insightsMetricsRecord

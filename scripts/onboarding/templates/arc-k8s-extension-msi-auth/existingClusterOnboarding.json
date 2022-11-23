@@ -121,7 +121,7 @@
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
                                             "interval": "[parameters('dataCollectionInterval')]",
-                                             "nameSpaceFilteringMode" : "[parameters('namespacesFilteringModeForDataCollection')]",
+                                             "namespaceFilteringMode" : "[parameters('namespacesFilteringModeForDataCollection')]",
                                              "nameSpaces": "[parameters('namespacesForDataCollection')]"
                                           }
                                         },

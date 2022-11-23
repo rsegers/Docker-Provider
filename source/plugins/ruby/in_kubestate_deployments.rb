@@ -36,7 +36,7 @@ module Fluent::Plugin
       @ClusterId = KubernetesApiClient.getClusterId
       @ClusterName = KubernetesApiClient.getClusterName
       @nameSpaces = []
-      @nameSpaceFilteringMode = "off"
+      @namespaceFilteringMode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -95,8 +95,8 @@ module Fluent::Plugin
             $log.info("in_kubestate_deployments::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
             @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
             $log.info("in_kubestate_deployments::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-            @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-            $log.info("in_kubestate_deployments::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+            @namespaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+            $log.info("in_kubestate_deployments::enumerate: using data collection filtering mode for nameSpaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
           end
         end
         # Initializing continuation token to nil
@@ -150,7 +150,7 @@ module Fluent::Plugin
       begin
         metricInfo = deployments
         metricInfo["items"].each do |deployment|
-          next unless !KubernetesApiClient.isExcludeResourceItem(deployment["metadata"]["name"], deployment["metadata"]["namespace"], @nameSpaceFilteringMode, @nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(deployment["metadata"]["name"], deployment["metadata"]["namespace"], @namespaceFilteringMode, @nameSpaces)
           deploymentName = deployment["metadata"]["name"]
           deploymentNameSpace = deployment["metadata"]["namespace"]
           deploymentCreatedTime = ""

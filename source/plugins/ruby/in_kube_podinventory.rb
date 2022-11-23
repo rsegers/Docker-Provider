@@ -60,7 +60,7 @@ module Fluent::Plugin
       @kubeservicesTag = "oneagent.containerInsights.KUBE_SERVICES_BLOB"
       @containerInventoryTag = "oneagent.containerInsights.CONTAINER_INVENTORY_BLOB"
       @nameSpaces = []
-      @nameSpaceFilteringMode = "off"
+      @namespaceFilteringMode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -178,8 +178,8 @@ module Fluent::Plugin
             $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
             @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
             $log.info("in_kube_podinventory::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-            @nameSpaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
-            $log.info("in_kube_podinventory::enumerate: using data collection filtering mode for nameSpaces: #{@nameSpaceFilteringMode} @ #{Time.now.utc.iso8601}")
+            @namespaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+            $log.info("in_kube_podinventory::enumerate: using data collection filtering mode for nameSpaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
           end
         end
 
@@ -245,8 +245,8 @@ module Fluent::Plugin
             if !@nameSpaces.nil? && !@nameSpaces.empty? && @nameSpaces.length > 0
               telemetryProperties["DATA_COLLECTION_NAMESPACES"] = @nameSpaces
             end
-            if !@nameSpaceFilteringMode.nil? && !@nameSpaceFilteringMode.empty?
-              telemetryProperties["DATA_COLLECTION_NAMESPACES_FILTERING_MODE"] = @nameSpaceFilteringMode
+            if !@namespaceFilteringMode.nil? && !@namespaceFilteringMode.empty?
+              telemetryProperties["DATA_COLLECTION_NAMESPACES_FILTERING_MODE"] = @namespaceFilteringMode
             end
             if @run_interval > 60
               telemetryProperties["DATA_COLLECTION_INTERVAL_MINUTES"] = @run_interval / 60
@@ -297,7 +297,7 @@ module Fluent::Plugin
 
       begin #begin block start
         podInventory["items"].each do |item| #podInventory block start
-          next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @nameSpaceFilteringMode, @nameSpaces)
+          next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @namespaceFilteringMode, @nameSpaces)
           # pod inventory records
           podInventoryRecords = getPodInventoryRecords(item, serviceRecords, batchTime)
           @containerCount += podInventoryRecords.length
@@ -395,7 +395,7 @@ module Fluent::Plugin
         if continuationToken.nil? # sending kube services inventory records
           kubeServicesEventStream = Fluent::MultiEventStream.new
           serviceRecords.each do |kubeServiceRecord|
-            next unless !KubernetesApiClient.isExcludeResourceItem(kubeServiceRecord["ServiceName"], kubeServiceRecord["namespace"], @nameSpaceFilteringMode, @nameSpaces)
+            next unless !KubernetesApiClient.isExcludeResourceItem(kubeServiceRecord["ServiceName"], kubeServiceRecord["namespace"], @namespaceFilteringMode, @nameSpaces)
             if !kubeServiceRecord.nil?
               # adding before emit to reduce memory foot print
               kubeServiceRecord["ClusterId"] = KubernetesApiClient.getClusterId
