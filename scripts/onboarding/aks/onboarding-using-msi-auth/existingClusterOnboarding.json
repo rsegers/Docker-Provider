@@ -108,7 +108,7 @@
                                             "dataCollectionSettings" : {
                                                 "interval": "[parameters('dataCollectionInterval')]",
                                                  "namespaceFilteringMode" : "[parameters('namespacesFilteringModeForDataCollection')]",
-                                                 "nameSpaces": "[parameters('namespacesForDataCollection')]"
+                                                 "namespaces": "[parameters('namespacesForDataCollection')]"
                                             }
                                         },
                                         "extensionName": "ContainerInsights"
