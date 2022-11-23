@@ -77,7 +77,7 @@ module Fluent::Plugin
             $log.info("in_win_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
             @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
             $log.info("in_win_cadvisor_perf::enumerate: using data collection nameSpaces: #{@nameSpaces} @ #{Time.now.utc.iso8601}")
-            @namespaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+            @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
             $log.info("in_cadvisor_perf::enumerate: using data collection filtering mode for nameSpaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
           end
         end

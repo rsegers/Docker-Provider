@@ -96,7 +96,7 @@ module Fluent::Plugin
           $log.info("in_kube_events::enumerate: using kubeevents tag -#{@tag} @ #{Time.now.utc.iso8601}")
           @nameSpaces = ExtensionUtils.getNamespacesForDataCollection()
           $log.info("in_kube_events::enumerate: using data collection nameSpaces -#{@nameSpaces} @ #{Time.now.utc.iso8601}")
-          @namespaceFilteringMode = ExtensionUtils.getNamespacesFilteringModeForDataCollection()
+          @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
           $log.info("in_kube_events::enumerate: using data collection filtering mode for nameSpaces -#{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
         end
         # Initializing continuation token to nil
