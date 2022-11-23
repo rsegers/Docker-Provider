@@ -72,12 +72,12 @@ class ExtensionUtils
         if !dataCollectionSettings.nil? &&
            !dataCollectionSettings.empty? &&
            dataCollectionSettings.has_key?(Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES)
-          nameSpacesSetting = dataCollectionSettings[Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES]
-          if !nameSpacesSetting.nil? && !nameSpacesSetting.empty? && nameSpacesSetting.kind_of?(Array) && nameSpacesSetting.length > 0
-            uniqNamespaces = nameSpacesSetting.uniq
+          namespacesSetting = dataCollectionSettings[Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES]
+          if !namespacesSetting.nil? && !namespacesSetting.empty? && namespacesSetting.kind_of?(Array) && namespacesSetting.length > 0
+            uniqNamespaces = namespacesSetting.uniq
             namespaces = uniqNamespaces.map(&:downcase)
           else
-            $log.warn("ExtensionUtils::getNamespacesForDataCollection: namespaces: #{nameSpacesSetting} not valid hence using default")
+            $log.warn("ExtensionUtils::getNamespacesForDataCollection: namespaces: #{namespacesSetting} not valid hence using default")
           end
         end
       rescue => errorStr
