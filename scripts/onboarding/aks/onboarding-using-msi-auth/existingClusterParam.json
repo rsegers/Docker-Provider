@@ -63,7 +63,7 @@
       "dataCollectionInterval":  {
         "value" : "1m"
       },
-      "nameSpacesFilteringModeForDataCollection": {
+      "namespacesFilteringModeForDataCollection": {
         "value": "Off"
       },
       "namespacesForDataCollection": {

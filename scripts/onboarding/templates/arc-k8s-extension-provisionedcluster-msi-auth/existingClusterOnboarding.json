@@ -70,7 +70,7 @@
           "description": "Data collection interval e.g. \"5m\" for metrics and inventory. Supported value range from 1m to 30m"
       }
     },
-    "nameSpacesFilteringModeForDataCollection": {
+    "namespacesFilteringModeForDataCollection": {
       "type": "string",
       "metadata": {
           "description": "Data collection Filtering Mode for the namespaces"
@@ -121,7 +121,7 @@
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
                                             "interval": "[parameters('dataCollectionInterval')]",
-                                             "nameSpaceFilteringMode" : "[parameters('nameSpacesFilteringModeForDataCollection')]",
+                                             "nameSpaceFilteringMode" : "[parameters('namespacesFilteringModeForDataCollection')]",
                                              "nameSpaces": "[parameters('namespacesForDataCollection')]"
                                           }
                                         },
