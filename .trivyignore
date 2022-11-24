@@ -9,3 +9,8 @@ CVE-2022-32149
 
 #dpkg vulnerability in ubuntu
 CVE-2022-2526
+CVE-2022-40674
+CVE-2022-43680
+
+#ruby gem
+CVE-2021-33621
