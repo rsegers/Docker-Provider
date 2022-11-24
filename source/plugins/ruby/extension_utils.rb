@@ -95,7 +95,7 @@ class ExtensionUtils
            dataCollectionSettings.has_key?(Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE)
           mode = dataCollectionSettings[Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE]
           if !mode.nil? && !mode.empty?
-            if Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES_FILTERING_MODES.include?(mode.downcase)
+            if Constants::EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODES.include?(mode.downcase)
               namespaceFilteringMode = mode.downcase
             else
               $log.warn("ExtensionUtils::getNamespaceFilteringModeForDataCollection: namespaceFilteringMode: #{mode} not supported hence using default")
