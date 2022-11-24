@@ -93,11 +93,11 @@ module Fluent::Plugin
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
             @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_EVENTS_DATA_TYPE)
           end
-          $log.info("in_kube_events::enumerate: using kubeevents tag -#{@tag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_events::enumerate: using kubeevents tag: #{@tag} @ #{Time.now.utc.iso8601}")
           @namespaces = ExtensionUtils.getNamespacesForDataCollection()
-          $log.info("in_kube_events::enumerate: using data collection namespaces -#{@namespaces} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_events::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
           @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
-          $log.info("in_kube_events::enumerate: using data collection filtering mode for namespaces -#{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_events::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
         end
         # Initializing continuation token to nil
         continuationToken = nil
