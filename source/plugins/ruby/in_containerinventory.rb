@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-require 'fluent/plugin/input'
+require "fluent/plugin/input"
 
 module Fluent::Plugin
   class Container_Inventory_Input < Input
@@ -58,6 +58,8 @@ module Fluent::Plugin
       containerInventory = Array.new
       eventStream = Fluent::MultiEventStream.new
       hostName = ""
+      @namespaceFilteringMode = "off"
+      @namespaces = []
       $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
       if ExtensionUtils.isAADMSIAuthMode()
         $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
@@ -65,6 +67,14 @@ module Fluent::Plugin
           @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
         end
         $log.info("in_container_inventory::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
+        if ExtensionUtils.isDataCollectionSettingsConfigured()
+          @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
+          $log.info("in_container_inventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+          @namespaces = ExtensionUtils.getNamespacesForDataCollection()
+          $log.info("in_container_inventory::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
+          @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
+          $log.info("in_container_inventory::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
+        end
       end
       begin
         containerRuntimeEnv = ENV["CONTAINER_RUNTIME"]
@@ -74,29 +84,30 @@ module Fluent::Plugin
         containerIds = Array.new
         response = CAdvisorMetricsAPIClient.getPodsFromCAdvisor(winNode: nil)
         if !response.nil? && !response.body.nil?
-            podList = JSON.parse(response.body)
-            if !podList.nil? && !podList.empty? && podList.key?("items") && !podList["items"].nil? && !podList["items"].empty?
-              podList["items"].each do |item|
-                containerInventoryRecords = KubernetesContainerInventory.getContainerInventoryRecords(item, batchTime, clusterCollectEnvironmentVar)
-                containerInventoryRecords.each do |containerRecord|
-                  ContainerInventoryState.writeContainerState(containerRecord)
-                  if hostName.empty? && !containerRecord["Computer"].empty?
-                    hostName = containerRecord["Computer"]
-                  end
-                  if @addonTokenAdapterImageTag.empty? && ExtensionUtils.isAADMSIAuthMode()
-                     if !containerRecord["ElementName"].nil? && !containerRecord["ElementName"].empty? &&
-                      containerRecord["ElementName"].include?("_kube-system_") &&
-                      containerRecord["ElementName"].include?("addon-token-adapter_ama-logs")
-                      if !containerRecord["ImageTag"].nil? && !containerRecord["ImageTag"].empty?
-                        @addonTokenAdapterImageTag = containerRecord["ImageTag"]
-                      end
-                     end
-                  end
-                  containerIds.push containerRecord["InstanceID"]
-                  containerInventory.push containerRecord
+          podList = JSON.parse(response.body)
+          if !podList.nil? && !podList.empty? && podList.key?("items") && !podList["items"].nil? && !podList["items"].empty?
+            podList["items"].each do |item|
+              next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @namespaceFilteringMode, @namespaces)
+              containerInventoryRecords = KubernetesContainerInventory.getContainerInventoryRecords(item, batchTime, clusterCollectEnvironmentVar)
+              containerInventoryRecords.each do |containerRecord|
+                ContainerInventoryState.writeContainerState(containerRecord)
+                if hostName.empty? && !containerRecord["Computer"].empty?
+                  hostName = containerRecord["Computer"]
                 end
+                if @addonTokenAdapterImageTag.empty? && ExtensionUtils.isAADMSIAuthMode()
+                  if !containerRecord["ElementName"].nil? && !containerRecord["ElementName"].empty? &&
+                     containerRecord["ElementName"].include?("_kube-system_") &&
+                     containerRecord["ElementName"].include?("addon-token-adapter_ama-logs")
+                    if !containerRecord["ImageTag"].nil? && !containerRecord["ImageTag"].empty?
+                      @addonTokenAdapterImageTag = containerRecord["ImageTag"]
+                    end
+                  end
+                end
+                containerIds.push containerRecord["InstanceID"]
+                containerInventory.push containerRecord
               end
             end
+          end
         end
         # Update the state for deleted containers
         deletedContainers = ContainerInventoryState.getDeletedContainers(containerIds)
@@ -108,8 +119,8 @@ module Fluent::Plugin
               container["State"] = "Deleted"
               KubernetesContainerInventory.deleteCGroupCacheEntryForDeletedContainer(container["InstanceID"])
               containerInventory.push container
-             end
-           end
+            end
+          end
         end
         containerInventory.each do |record|
           eventStream.add(emitTime, record) if record

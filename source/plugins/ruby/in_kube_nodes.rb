@@ -16,7 +16,7 @@ module Fluent::Plugin
       super()
 
       require "yaml"
-      require "json"      
+      require "json"
       require "time"
 
       require_relative "KubernetesApiClient"
@@ -150,6 +150,10 @@ module Fluent::Plugin
           $log.info("in_kube_nodes::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_nodes::enumerate: using containernodeinventory tag -#{@ContainerNodeInventoryTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_nodes::enumerate: using kubenodeinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
+          if ExtensionUtils.isDataCollectionSettingsConfigured()
+            @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
+            $log.info("in_kube_nodes::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+          end
         end
         nodesAPIChunkStartTime = (Time.now.to_f * 1000).to_i
 
