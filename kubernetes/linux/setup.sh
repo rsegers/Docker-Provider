@@ -57,10 +57,10 @@ sudo apt-get install jq=1.5+dfsg-2 -y
 #used to setcaps for ruby process to read /proc/env
 sudo apt-get install libcap2-bin -y
 
-wget https://dl.influxdata.com/telegraf/releases/telegraf-1.23.2_linux_$ARCH.tar.gz
-tar -zxvf telegraf-1.23.2_linux_$ARCH.tar.gz
+wget https://dl.influxdata.com/telegraf/releases/telegraf-1.24.2_linux_$ARCH.tar.gz
+tar -zxvf telegraf-1.24.2_linux_$ARCH.tar.gz
 
-mv /opt/telegraf-1.23.2/usr/bin/telegraf /opt/telegraf
+mv /opt/telegraf-1.24.2/usr/bin/telegraf /opt/telegraf
 
 chmod 544 /opt/telegraf
 

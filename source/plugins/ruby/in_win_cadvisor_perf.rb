@@ -22,6 +22,8 @@ module Fluent::Plugin
       require_relative "constants"
       require_relative "extension_utils"
       @insightsMetricsTag = "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
+      @namespaces = []
+      @namespaceFilteringMode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -67,8 +69,17 @@ module Fluent::Plugin
           if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
             @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
           end
-	        $log.info("in_win_cadvisor_perf::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_win_cadvisor_perf::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_win_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
+
+          if ExtensionUtils.isDataCollectionSettingsConfigured()
+            @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
+            $log.info("in_win_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+            @namespaces = ExtensionUtils.getNamespacesForDataCollection()
+            $log.info("in_win_cadvisor_perf::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
+            @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
+            $log.info("in_cadvisor_perf::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          end
         end
 
         #Resetting this cache so that it is populated with the current set of containers with every call
@@ -84,7 +95,7 @@ module Fluent::Plugin
         end
         @@winNodes.each do |winNode|
           eventStream = Fluent::MultiEventStream.new
-          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, metricTime: Time.now.utc.iso8601)
+          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
           metricData.each do |record|
             if !record.empty?
               eventStream.add(time, record) if record
@@ -99,7 +110,7 @@ module Fluent::Plugin
           #start GPU InsightsMetrics items
           begin
             containerGPUusageInsightsMetricsDataItems = []
-            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: winNode, metricTime: Time.now.utc.iso8601))
+            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601))
             insightsMetricsEventStream = Fluent::MultiEventStream.new
 
             containerGPUusageInsightsMetricsDataItems.each do |insightsMetricsRecord|

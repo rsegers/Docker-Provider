@@ -573,7 +573,6 @@ class MdmMetricsGenerator
           }
           records.push(JSON.parse(additional_record))
         end
-
       rescue => errorStr
         @log.info "Error in getNodeResourceMetricRecords: #{errorStr}"
         ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
