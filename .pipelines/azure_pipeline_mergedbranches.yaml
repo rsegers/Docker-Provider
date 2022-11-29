@@ -27,12 +27,11 @@ jobs:
     name: Azure-Pipelines-CI-Test-EO
   steps:
   - task: ComponentGovernanceComponentDetection@0
-
+  ## commit will be in format 3.0.0-14-g833be407
   - bash: |
-      commit=$(git rev-parse --short HEAD)
-      datetime=$(date +'%m%d%Y')
-      linuxImagetag="$datetime"-"$commit"
-      windowsImageTag=win-"$datetime"-"$commit"
+      commit=$(git describe) 
+      linuxImagetag="$commit"
+      windowsImageTag=win-"$commit"
       echo "##vso[task.setvariable variable=linuxImagetag;isOutput=true]$linuxImagetag"
       echo "##vso[task.setvariable variable=windowsImageTag;isOutput=true]$windowsImageTag"
 
