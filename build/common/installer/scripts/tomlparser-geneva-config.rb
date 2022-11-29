@@ -269,8 +269,15 @@ if (@containerType.nil? || @containerType.empty?)
       file.write(commands)
       commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version)
       file.write(commands)
-      commands = get_command_windows("MONITORING_GCS_AUTH_ID", @geneva_gcs_authid)
-      file.write(commands)
+
+      #Windows AMA expects these and these are different from Linux AMA
+      authIdParts = @geneva_gcs_authid.split("#", 2)
+      if authIdParts.length == 2
+        file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
+        file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
+      else
+        puts "Invalid GCS Auth Id: #{@geneva_gcs_authid}"
+      end
 
       commands = get_command_windows("GENEVA_LOGS_INFRA_NAMESPACES", @infra_namespaces)
       file.write(commands)
