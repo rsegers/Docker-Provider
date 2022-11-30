@@ -15,18 +15,19 @@ Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate
 ##### Version microsoft/oms:ciprod11292022-6a507f9a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod11292022-6a507f9a (linux)
 ##### Version microsoft/oms:win-ciprod11292022-6a507f9a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod11292022-6a507f9a (windows)
 ##### Code change log
-
+- Linux Agent
+  - Update MDSD version from (AMD64) 1.17.0 & (ARM64) 1.17.1 to 1.23.3
+  - Enable syslog support
 - Windows Agent
   - Use ghrelease as gcc download path
-  - Move conf update before fluent-bit start
+  - Move fluent-bit conf update before fluent-bit start
   - Make containerd and secure port as default for windows same as linux
 - Common (Linux & Windows Agent)
-  - Add telegraf config options to configmap
-  - Enable syslog support
+  - Add FluentBit Telegraf Plugin buffer and chunk config options to configmap
   - Remove references to healthservice in troubleshooting script
   - Add pods namespace label name for all telegraf conf
   - Update telegraf version from 1.23.2 to 1.24.2
-  - Address source.host name mismatch in KubeEvents
+  - Address Computer Name mismatch in KubeEvents
 
 ### 10/05/2022 -
 ##### Version microsoft/oms:ciprod10042022-3c05dd1b Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10042022-3c05dd1b (linux)
