@@ -358,7 +358,7 @@ spec:
         #     - --token-server-listening-port=8888
         #     - --health-server-listening-port=9999
         #   # Make sure this matching with version in AKS RP side
-        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.220318.3
+        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.221118.2
         #   imagePullPolicy: IfNotPresent
         #   env:
         #     - name: AZMON_COLLECT_ENV
@@ -673,7 +673,7 @@ spec:
         #     - --token-server-listening-port=8888
         #     - --health-server-listening-port=9999
         #   # Make sure this matching with version in AKS RP side
-        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.220318.3
+        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.221118.2
         #   imagePullPolicy: IfNotPresent
         #   env:
         #     - name: AZMON_COLLECT_ENV
