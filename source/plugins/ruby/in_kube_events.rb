@@ -28,6 +28,8 @@ module Fluent::Plugin
 
       # Initilize enable/disable normal event collection
       @collectAllKubeEvents = false
+      @namespaces = []
+      @namespaceFilteringMode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -91,7 +93,11 @@ module Fluent::Plugin
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
             @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_EVENTS_DATA_TYPE)
           end
-          $log.info("in_kube_events::enumerate: using kubeevents tag -#{@tag} @ #{Time.now.utc.iso8601}")
+          $log.info("in_kube_events::enumerate: using kubeevents tag: #{@tag} @ #{Time.now.utc.iso8601}")
+          @namespaces = ExtensionUtils.getNamespacesForDataCollection()
+          $log.info("in_kube_events::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
+          @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
+          $log.info("in_kube_events::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
         end
         # Initializing continuation token to nil
         continuationToken = nil
@@ -153,12 +159,18 @@ module Fluent::Plugin
             next
           end
 
-          nodeName = items["source"].key?("host") ? items["source"]["host"] : (OMS::Common.get_hostname)
+          nodeName = ""
+          if items.key?("source") && items["source"].key?("host")
+            nodeName = items["source"]["host"]
+          end
           # For ARO v3 cluster, drop the master and infra node sourced events to ingest
           if KubernetesApiClient.isAROV3Cluster && !nodeName.nil? && !nodeName.empty? &&
              (nodeName.downcase.start_with?("infra-") || nodeName.downcase.start_with?("master-"))
             next
           end
+
+          # drop the events if the event of the excluded namespace
+          next unless !KubernetesApiClient.isExcludeResourceItem("", items["involvedObject"]["namespace"], @namespaceFilteringMode, @namespaces)
 
           record["ObjectKind"] = items["involvedObject"]["kind"]
           record["Namespace"] = items["involvedObject"]["namespace"]
@@ -167,7 +179,10 @@ module Fluent::Plugin
           record["Message"] = items["message"]
           record["KubeEventType"] = items["type"]
           record["TimeGenerated"] = items["metadata"]["creationTimestamp"]
-          record["SourceComponent"] = items["source"]["component"]
+          record["SourceComponent"] = ""
+          if items.key?("source") && items["source"].key?("component")
+            record["SourceComponent"] = items["source"]["component"]
+          end
           record["FirstSeen"] = items["firstTimestamp"]
           record["LastSeen"] = items["lastTimestamp"]
           record["Count"] = items["count"]
