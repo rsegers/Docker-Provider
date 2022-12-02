@@ -24,7 +24,7 @@ variables:
 jobs:
 - job: common
   pool:
-    name: Azure-Pipelines-CI-Test-EO
+    vmImage: 'ubuntu-latest'
   steps:
   - task: ComponentGovernanceComponentDetection@0
 
@@ -91,7 +91,7 @@ jobs:
   dependsOn:
   -  common
   pool:
-    name: Azure-Pipelines-Windows-CI-Test-EO
+    vmImage: 'ubuntu-latest'
   variables:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windows2019BaseImageVersion: ltsc2019
@@ -133,7 +133,7 @@ jobs:
   dependsOn:
   -  common
   pool:
-    name: Azure-Pipelines-Windows-CI-Test-EO
+    vmImage: 'ubuntu-latest'
   variables:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windows2022BaseImageVersion: ltsc2022
@@ -177,7 +177,7 @@ jobs:
   - build_windows_2019
   - build_windows_2022
   pool:
-    name: Azure-Pipelines-Windows-CI-Test-EO
+    vmImage: 'ubuntu-latest'
   variables:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windows2019BaseImageVersion: ltsc2019
