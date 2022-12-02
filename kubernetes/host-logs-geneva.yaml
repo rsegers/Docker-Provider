@@ -41,7 +41,7 @@ spec:
          cpu: 500m
          memory: 600Mi
        env:
-        - name: AKS_RESOURCE_ID
+        - name: AKS_CLUSTER_NAME
           value: "VALUE_AKS_RESOURCE_ID_VALUE"
         - name: AKS_REGION
           value: "VALUE_AKS_RESOURCE_REGION_VALUE"
