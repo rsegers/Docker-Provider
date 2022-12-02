@@ -15,7 +15,7 @@ pr:
     - sky-dev
 
 variables:
-  armServiceConnectionName: 'Sky_MER_Sandbox'
+  armServiceConnectionName: 'Sky_MER_Sandbox_Connection'
   subscription: 'b2eb1341-814f-4e78-bec8-6042f4c10c5b'
   containerRegistry: 'ObservabilityACR'
   repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/containerinsights/cidev'
