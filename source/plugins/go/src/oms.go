@@ -154,6 +154,8 @@ var (
 	ProxyEndpoint string
 	// container log route for routing thru oneagent
 	ContainerLogsRouteV2 bool
+	// container log route for routing thru oneagent in Windows
+	ContainerLogsRouteV2Windows bool
 	// container log route for routing thru ADX
 	ContainerLogsRouteADX bool
 	// container log schema (applicable only for non-ADX route)
@@ -180,6 +182,8 @@ var (
 	ContainerType string
 	// flag to check whether LA AAD MSI Auth Enabled or not
 	IsAADMSIAuthMode bool
+	// named pipe connection to ContainerLog for Windows AMA
+	ContainerLogNamedPipe net.Conn
 )
 
 var (
@@ -1246,13 +1250,14 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
 		if IsAADMSIAuthMode == true && strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) == false {
-			Log("Info::mdsd::obtaining output stream id")
+			Log("Info::mdsd/windows ama::obtaining output stream id")
 			if ContainerLogSchemaV2 == true {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogV2DataType)
 			} else {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogDataType)
 			}
-			Log("Info::mdsd:: using mdsdsource name: %s", MdsdContainerLogTagName)
+			Log("Info::mdsd/windows ama:: using mdsdsource name: %s", MdsdContainerLogTagName)
+			
 		}
 
 		fluentForward := MsgPackForward{
@@ -1281,42 +1286,71 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
 		}
 
-		if MdsdMsgpUnixSocketClient == nil {
-			Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
-			CreateMDSDClient(ContainerLogV2, ContainerType)
+		if IsWindows == true {
+			jsonStr, err := json.Marshal(stringMap)
+			Log("Windows AMA::fluentForwardTag: %s, jsonStr: %s, msgpSize: %d", fluentForward.Tag, jsonStr, msgpSize)
+			if ContainerLogNamedPipe == nil {
+				Log("Error::Windows AMA:: The connection to named pipe was nil. re-connecting...")
+				if ContainerLogSchemaV2 {
+					CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogDataType))
+				} else {
+					CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogV2DataType))
+				}
+			}
+			if ContainerLogNamedPipe == nil {
+				Log("Error::Windows AMA::Error in creating the named pipe connection")
+				return output.FLB_RETRY
+			}
+			Log("Info::Windows AMA::Starting to write container logs to named pipe")
+			deadline := 10 * time.Second
+			ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
+			n, err := ContainerLogNamedPipe.Write(msgpBytes)
+			if err != nil {
+				Log("Error::Windows AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
+				return output.FLB_RETRY
+			} else {
+				numContainerLogRecords = len(msgPackEntries)
+				Log("Success::Windows AMA::Successfully flushed %d container log records that was %d bytes to AMA ", numContainerLogRecords, n)
+			}
+
+		} else {
 			if MdsdMsgpUnixSocketClient == nil {
-				Log("Error::mdsd::Unable to create mdsd client. Please check error log.")
+				Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
+				CreateMDSDClient(ContainerLogV2, ContainerType)
+				if MdsdMsgpUnixSocketClient == nil {
+					Log("Error::mdsd::Unable to create mdsd client. Please check error log.")
+
+					ContainerLogTelemetryMutex.Lock()
+					defer ContainerLogTelemetryMutex.Unlock()
+					ContainerLogsMDSDClientCreateErrors += 1
+
+					return output.FLB_RETRY
+				}
+			}
+
+			deadline := 10 * time.Second
+			MdsdMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+
+			bts, er := MdsdMsgpUnixSocketClient.Write(msgpBytes)
+
+			elapsed = time.Since(start)
+
+			if er != nil {
+				Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
+				if MdsdMsgpUnixSocketClient != nil {
+					MdsdMsgpUnixSocketClient.Close()
+					MdsdMsgpUnixSocketClient = nil
+				}
 
 				ContainerLogTelemetryMutex.Lock()
 				defer ContainerLogTelemetryMutex.Unlock()
-				ContainerLogsMDSDClientCreateErrors += 1
+				ContainerLogsSendErrorsToMDSDFromFluent += 1
 
 				return output.FLB_RETRY
+			} else {
+				numContainerLogRecords = len(msgPackEntries)
+				Log("Success::mdsd::Successfully flushed %d container log records that was %d bytes to mdsd in %s ", numContainerLogRecords, bts, elapsed)
 			}
-		}
-
-		deadline := 10 * time.Second
-		MdsdMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-
-		bts, er := MdsdMsgpUnixSocketClient.Write(msgpBytes)
-
-		elapsed = time.Since(start)
-
-		if er != nil {
-			Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
-			if MdsdMsgpUnixSocketClient != nil {
-				MdsdMsgpUnixSocketClient.Close()
-				MdsdMsgpUnixSocketClient = nil
-			}
-
-			ContainerLogTelemetryMutex.Lock()
-			defer ContainerLogTelemetryMutex.Unlock()
-			ContainerLogsSendErrorsToMDSDFromFluent += 1
-
-			return output.FLB_RETRY
-		} else {
-			numContainerLogRecords = len(msgPackEntries)
-			Log("Success::mdsd::Successfully flushed %d container log records that was %d bytes to mdsd in %s ", numContainerLogRecords, bts, elapsed)
 		}
 	} else if ContainerLogsRouteADX == true && len(dataItemsADX) > 0 {
 		// Route to ADX
@@ -1708,6 +1742,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	ContainerLogsRouteV2 = false
 	ContainerLogsRouteADX = false
+	ContainerLogsRouteV2Windows = false
 
 	if strings.Compare(ContainerLogsRoute, ContainerLogsADXRoute) == 0 {
 		// Try to read the ADX database name from environment variables. Default to DefaultAdsDatabaseName if not set.
@@ -1753,25 +1788,14 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 			Log("Routing container logs thru %s route...", ContainerLogsADXRoute)
 			fmt.Fprintf(os.Stdout, "Routing container logs thru %s route...\n", ContainerLogsADXRoute)
 		}
-	} else if strings.Compare(strings.ToLower(osType), "windows") != 0 { //for linux, oneagent will be default route
+	} else if IsWindows == false { //for linux, oneagent will be default route
 		ContainerLogsRouteV2 = true //default is mdsd route
 		Log("Routing container logs thru %s route...", ContainerLogsRoute)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsRoute)
-	}
-
-	if ContainerLogsRouteV2 == true {
-		CreateMDSDClient(ContainerLogV2, ContainerType)
-	} else if ContainerLogsRouteADX == true {
-		CreateADXClient()
-	} else { // v1 or windows
-		Log("Creating HTTP Client since either OS Platform is Windows or configmap configured with fallback option for ODS direct")
-		CreateHTTPClient()
-	}
-
-	if IsWindows == false { // mdsd linux specific
-		Log("Creating MDSD clients for KubeMonAgentEvents & InsightsMetrics")
-		CreateMDSDClient(KubeMonAgentEvents, ContainerType)
-		CreateMDSDClient(InsightsMetrics, ContainerType)
+	} else if IsAADMSIAuthMode { //for windows, check if ContainerLogsV2
+		ContainerLogsRouteV2 = true 
+		Log("Routing container logs thru %s route...", ContainerLogsV2Route)
+		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsV2Route)
 	}
 
 	ContainerLogSchemaVersion := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOG_SCHEMA_VERSION")))
@@ -1784,6 +1808,31 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
 	}
+	
+	if ContainerLogsRouteV2 == true {
+		if IsWindows {
+			if ContainerLogSchemaV2 {
+				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogDataType))
+			} else {
+				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogV2DataType))
+			}
+		} else {
+			CreateMDSDClient(ContainerLogV2, ContainerType)
+		}
+	} else if ContainerLogsRouteADX == true {
+		CreateADXClient()
+	} else { // v1 or windows without MSI AUTH
+		Log("Creating HTTP Client since either OS Platform is Windows or configmap configured with fallback option for ODS direct")
+		CreateHTTPClient()
+	}
+
+	if IsWindows == false { // mdsd linux specific
+		Log("Creating MDSD clients for KubeMonAgentEvents & InsightsMetrics")
+		CreateMDSDClient(KubeMonAgentEvents, ContainerType)
+		CreateMDSDClient(InsightsMetrics, ContainerType)
+	}
+
+	
 
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		populateExcludedStdoutNamespaces()
