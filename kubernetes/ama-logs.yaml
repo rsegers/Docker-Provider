@@ -338,7 +338,7 @@ spec:
         component: ama-logs-agent
         tier: node
       annotations:
-        agentVersion: "azure-mdsd-1.23.3"
+        agentVersion: "azure-mdsd-1.17.0"
         dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
     spec:
@@ -621,7 +621,7 @@ spec:
       labels:
         rsName: "ama-logs-rs"
       annotations:
-        agentVersion: "azure-mdsd-1.23.3"
+        agentVersion: "azure-mdsd-1.17.0"
         dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
     spec:

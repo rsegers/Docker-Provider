@@ -16,7 +16,6 @@ Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate
 ##### Version microsoft/oms:win-ciprod11292022-6a507f9a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod11292022-6a507f9a (windows)
 ##### Code change log
 - Linux Agent
-  - Update MDSD version from (AMD64) 1.17.0 & (ARM64) 1.17.1 to 1.23.3
   - Enable syslog support
 - Windows Agent
   - Use ghrelease as gcc download path
