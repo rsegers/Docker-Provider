@@ -11,12 +11,11 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate the agent build dates (not release dates)
 
-### 11/29/2022 -
-##### Version microsoft/oms:ciprod11292022-6a507f9a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod11292022-6a507f9a (linux)
-##### Version microsoft/oms:win-ciprod11292022-6a507f9a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod11292022-6a507f9a (windows)
+### 12/03/2022 -
+##### Version microsoft/oms:ciprod12032022-c9f3dc30 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12032022-c9f3dc30 (linux)
+##### Version microsoft/oms:win-ciprod12032022-c9f3dc30 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod12032022-c9f3dc30 (windows)
 ##### Code change log
 - Linux Agent
-  - Update MDSD version from (AMD64) 1.17.0 & (ARM64) 1.17.1 to 1.23.3
   - Enable syslog support
 - Windows Agent
   - Use ghrelease as gcc download path
