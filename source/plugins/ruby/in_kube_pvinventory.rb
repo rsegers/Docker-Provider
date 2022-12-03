@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-require 'fluent/plugin/input'
+require "fluent/plugin/input"
 
 module Fluent::Plugin
   class Kube_PVInventory_Input < Input
@@ -12,7 +12,7 @@ module Fluent::Plugin
     def initialize
       super
       require "yaml"
-      require "json"      
+      require "json"
       require "time"
       require_relative "KubernetesApiClient"
       require_relative "ApplicationInsightsUtility"
@@ -24,6 +24,8 @@ module Fluent::Plugin
       # Response size is around 1500 bytes per PV
       @PV_CHUNK_SIZE = "5000"
       @pvTypeToCountHash = {}
+      @namespaces = []
+      @namespaceFilteringMode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -67,6 +69,14 @@ module Fluent::Plugin
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
             @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_PV_INVENTORY_DATA_TYPE)
           end
+          if ExtensionUtils.isDataCollectionSettingsConfigured()
+            @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
+            $log.info("in_kube_pvinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+            @namespaces = ExtensionUtils.getNamespacesForDataCollection()
+            $log.info("in_kube_pvinventory::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
+            @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
+            $log.info("in_kube_pvinventory::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          end
         end
 
         continuationToken = nil
@@ -107,7 +117,6 @@ module Fluent::Plugin
           ApplicationInsightsUtility.sendCustomEvent(Constants::PV_INVENTORY_HEART_BEAT_EVENT, telemetryProperties)
           @@pvTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
-
       rescue => errorStr
         $log.warn "in_kube_pvinventory::enumerate:Failed in enumerate: #{errorStr}"
         $log.debug_backtrace(errorStr.backtrace)
@@ -123,19 +132,8 @@ module Fluent::Plugin
       begin
         records = []
         pvInventory["items"].each do |item|
-
           # Node, pod, & usage info can be found by joining with pvUsedBytes metric using PVCNamespace/PVCName
           record = {}
-          record["CollectionTime"] = batchTime
-          record["ClusterId"] = KubernetesApiClient.getClusterId
-          record["ClusterName"] = KubernetesApiClient.getClusterName
-          record["PVName"] = item["metadata"]["name"]
-          record["PVStatus"] = item["status"]["phase"]
-          record["PVAccessModes"] = item["spec"]["accessModes"].join(', ')
-          record["PVStorageClassName"] = item["spec"]["storageClassName"]
-          record["PVCapacityBytes"] = KubernetesApiClient.getMetricNumericValue("memory", item["spec"]["capacity"]["storage"])
-          record["PVCreationTimeStamp"] = item["metadata"]["creationTimestamp"]
-
           # Optional values
           pvcNamespace, pvcName = getPVCInfo(item)
           type, typeInfo = getTypeInfo(item)
@@ -143,6 +141,18 @@ module Fluent::Plugin
           record["PVCName"] = pvcName
           record["PVType"] = type
           record["PVTypeInfo"] = typeInfo
+
+          next unless !KubernetesApiClient.isExcludeResourceItem(pvcName, pvcNamespace, @namespaceFilteringMode, @namespaces)
+
+          record["CollectionTime"] = batchTime
+          record["ClusterId"] = KubernetesApiClient.getClusterId
+          record["ClusterName"] = KubernetesApiClient.getClusterName
+          record["PVName"] = item["metadata"]["name"]
+          record["PVStatus"] = item["status"]["phase"]
+          record["PVAccessModes"] = item["spec"]["accessModes"].join(", ")
+          record["PVStorageClassName"] = item["spec"]["storageClassName"]
+          record["PVCapacityBytes"] = KubernetesApiClient.getMetricNumericValue("memory", item["spec"]["capacity"]["storage"])
+          record["PVCreationTimeStamp"] = item["metadata"]["creationTimestamp"]
 
           records.push(record)
 
@@ -167,7 +177,6 @@ module Fluent::Plugin
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
           $log.info("kubePVInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
         end
-
       rescue => errorStr
         $log.warn "Failed in parse_and_emit_record for in_kube_pvinventory: #{errorStr}"
         $log.debug_backtrace(errorStr.backtrace)
@@ -213,7 +222,6 @@ module Fluent::Plugin
 
               # Can only have one type: return right away when found
               return pvType, typeInfo
-
             end
           end
         end
@@ -226,7 +234,6 @@ module Fluent::Plugin
       # No matches from list of types or an error
       return nil, {}
     end
-
 
     def run_periodic
       @mutex.lock

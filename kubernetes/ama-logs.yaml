@@ -1018,4 +1018,3 @@ spec:
       # - name: imds-token
       #   secret:
       #     secretName: aad-msi-auth-token
-

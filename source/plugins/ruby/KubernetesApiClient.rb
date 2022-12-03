@@ -1409,6 +1409,27 @@ class KubernetesApiClient
       return isEmitCacheTelemtryEnabled
     end
 
+    def isExcludeResourceItem(resourceName, resourceNamespace, namespaceFilteringMode, namespaces)
+      isExclude = false
+      begin
+        if !resourceName.nil? && !resourceName.empty? && !resourceNamespace.nil? && !resourceNamespace.empty?
+          # data collection namespace filtering not applicable for ama-logs agent as customer needs to monitor the agent
+          if resourceName.start_with?("ama-logs") && resourceNamespace.eql?("kube-system")
+            isExclude = false
+          elsif !namespaces.nil? && !namespaces.empty? && namespaces.length > 0 && !namespaceFilteringMode.nil? && !namespaceFilteringMode.empty?
+            if namespaceFilteringMode == "exclude" && namespaces.include?(resourceNamespace)
+              isExclude = true
+            elsif namespaceFilteringMode == "include" && !namespaces.include?(resourceNamespace)
+              isExclude = true
+            end
+          end
+        end
+      rescue => errorStr
+        @Log.warn "KubernetesApiClient::isExcludeResourceItem:Failed with an error : #{errorStr}"
+      end
+      return isExclude
+    end
+
     def isAddonResizerVPAEnabled
       isAddonResizerVPAEnabled = false
       if !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].nil? && !ENV["RS_ADDON-RESIZER_VPA_ENABLED"].empty? && ENV["RS_ADDON-RESIZER_VPA_ENABLED"].downcase == "true".downcase
