@@ -311,6 +311,9 @@ function Set-EnvironmentVariables {
         Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
     }
 
+if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+    [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\genevamonitoringagent\\datadirectory", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_MCS_MODE", "1", "Process")
     [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Process")
     [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Process")
     [System.Environment]::SetEnvironmentVariable("MCS_GLOBAL_ENDPOINT", "https://global.handler.control.monitor.azure.com", "Process")
@@ -318,31 +321,28 @@ function Set-EnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Process")
     [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Process")
     [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Process")
-
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksregion, "Process")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Process")
-    # [System.Environment]::SetEnvironmentVariable("MCS_REGIONAL_ENDPOINT", "https://eastus2euap.handler.control.monitor.azure.com", "Process")
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_PROCESS_START_TIME", "2022-09-12T00:00:00.360Z", "Process")
     [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Process")
     [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Process")
     [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Process")
 
-
-        [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\genevamonitoringagent\\datadirectory", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_MCS_MODE", "1", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
     [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Machine")
     [System.Environment]::SetEnvironmentVariable("MCS_GLOBAL_ENDPOINT", "https://global.handler.control.monitor.azure.com", "Machine")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Machine")
     [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Machine")
     [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Machine")
     [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Machine")
-
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksregion, "Machine")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Machine")
-    # [System.Environment]::SetEnvironmentVariable("MCS_REGIONAL_ENDPOINT", "https://eastus2euap.handler.control.monitor.azure.com", "Machine")
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_Machine_START_TIME", "2022-09-12T00:00:00.360Z", "Machine")
     [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Machine")
     [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Machine")
     [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Machine") 
+}
+    
 
     # run config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
@@ -640,15 +640,16 @@ if (![string]::IsNullOrEmpty($requiresCertBootstrap) -and `
 $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
 if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
     Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
+
+    #start Windows AMA 
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
 }
 else {
     Generate-Certificates
     Test-CertificatePath
-}
 
-#start Windows AMA 
-# Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") -RedirectStandardOutput "out.txt" -RedirectStandardError "err.txt"
-Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
+    Write-Host "skipping starting the windows ama agent"
+}
 
 
 Start-Fluent-Telegraf

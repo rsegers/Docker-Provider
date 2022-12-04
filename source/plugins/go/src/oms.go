@@ -154,8 +154,6 @@ var (
 	ProxyEndpoint string
 	// container log route for routing thru oneagent
 	ContainerLogsRouteV2 bool
-	// container log route for routing thru oneagent in Windows
-	ContainerLogsRouteV2Windows bool
 	// container log route for routing thru ADX
 	ContainerLogsRouteADX bool
 	// container log schema (applicable only for non-ADX route)
@@ -1299,6 +1297,9 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 			if ContainerLogNamedPipe == nil {
 				Log("Error::Windows AMA::Error in creating the named pipe connection")
+				ContainerLogTelemetryMutex.Lock()
+				defer ContainerLogTelemetryMutex.Unlock()
+				ContainerLogsWindowsAMAClientCreateErrors += 1
 				return output.FLB_RETRY
 			}
 			Log("Info::Windows AMA::Starting to write container logs to named pipe")
@@ -1307,6 +1308,9 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			n, err := ContainerLogNamedPipe.Write(msgpBytes)
 			if err != nil {
 				Log("Error::Windows AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
+				ContainerLogTelemetryMutex.Lock()
+				defer ContainerLogTelemetryMutex.Unlock()
+				ContainerLogsSendErrorsToWindowsAMAFromFluent += 1
 				return output.FLB_RETRY
 			} else {
 				numContainerLogRecords = len(msgPackEntries)
@@ -1742,7 +1746,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	ContainerLogsRouteV2 = false
 	ContainerLogsRouteADX = false
-	ContainerLogsRouteV2Windows = false
 
 	if strings.Compare(ContainerLogsRoute, ContainerLogsADXRoute) == 0 {
 		// Try to read the ADX database name from environment variables. Default to DefaultAdsDatabaseName if not set.
@@ -1792,7 +1795,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		ContainerLogsRouteV2 = true //default is mdsd route
 		Log("Routing container logs thru %s route...", ContainerLogsRoute)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsRoute)
-	} else if IsAADMSIAuthMode { //for windows, check if ContainerLogsV2
+	} else if IsAADMSIAuthMode { //for windows, check if MSI Auth mode, then send through AMA
 		ContainerLogsRouteV2 = true 
 		Log("Routing container logs thru %s route...", ContainerLogsV2Route)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsV2Route)
