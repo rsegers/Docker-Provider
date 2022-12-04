@@ -377,6 +377,9 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 					if genevaLogsInfraNamespaces != "" {
 						CommonProperties["GenevaLogsInfraNamespaces"] = genevaLogsInfraNamespaces
 					}
+				} else {
+					genevaLogsConfigVersion := os.Getenv("MONITORING_CONFIG_VERSION")
+					CommonProperties["GENEVA_LOGS_CONFIG_VERSION"] = genevaLogsConfigVersion
 				}
 			}
 		}
