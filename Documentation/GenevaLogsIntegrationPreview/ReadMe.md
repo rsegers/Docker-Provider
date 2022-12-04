@@ -9,7 +9,7 @@ in case of multi-tenancy mode, Container Std{out;err} logs from one or more K8s 
   1. Create Geneva Logs Account if you dont have one to use
   2. Navigate to [GenevaLogs Account](https://portal.microsoftgeneva.com/account/logs/configurations)
   3. Update namespace, account, moniker & identity values in [AGENTCONFIG](./ContainerLogV2.xml) corresponding to your geneva Logs account
-     > both account and moniker should have the value of storage group name (i.e. moniker)
+     > Both account and moniker should have the same value of storage group name (i.e. moniker)
      > If you dont have Account Moniker, you can create one by creating storage group from Resources tab of Geneva Logs Account
   4. Upload this updated configuration to your Geneva Logs Account
 
@@ -79,6 +79,7 @@ in case of multi-tenancy mode, Container Std{out;err} logs from one or more K8s 
      ```
  2. Download the [AgentConfigMap](../../kubernetes/container-azm-ms-agentconfig.yaml)
  3. Update below settings under `integrations.geneva_logs` in downloaded configmap
+
     ``` bash
         enabled = true
         # # when the multitenancy is true, container logs of the specific k8s namespace will be routed to corresponding geneva telemetry service endpoint
@@ -91,7 +92,15 @@ in case of multi-tenancy mode, Container Std{out;err} logs from one or more K8s 
         # geneva telemetry service needs to be defined
         tenant_namespaces = ["tenant1", "tenant2", "tenant3"]
     ```
-  4. Apply the configmap to your AKS cluster via `kubectl apply -f container-azm-ms-agentconfig.yaml`
+  4. For very high volume log collection, recommended to use below settings under `agent_settings.fbit_config` in the configmap to avoid the log loss
+
+     ``` bash
+         log_flush_interval_secs = "1"                 # default value is 15
+         tail_mem_buf_limit_megabytes = "2000"         # default value is 10
+         tail_buf_chunksize_megabytes = "10"           # default value is 32kb
+         tail_buf_maxsize_megabytes = "20"             # defautl value is 32kb
+     ```
+  5. Apply the configmap to your AKS cluster via `kubectl apply -f container-azm-ms-agentconfig.yaml`
 
 ## Validation
 
