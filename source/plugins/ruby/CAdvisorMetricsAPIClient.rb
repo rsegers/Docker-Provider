@@ -247,6 +247,14 @@ class CAdvisorMetricsAPIClient
               metricItem["json_Collections"] = metricCollections.to_json
               metricItems.push(metricItem)
 
+              if metricValue > 10000000000
+                telemetryProperties = {}
+                telemetryProperties["metricJSON"] = JSON.generate(metricJSON)
+                telemetryProperties["Value"] = metricValue
+                $log.warn("Impossible CPU Usage detected metricJSON #{metricJSON}")
+                ApplicationInsightsUtility.sendCustomEvent("ImpossibleCpuUsageCadvisorResponse", telemetryProperties)
+              end
+
               #Telemetry about agent performance
               begin
                 # we can only do this much now. Ideally would like to use the docker image repository to find our pods/containers
