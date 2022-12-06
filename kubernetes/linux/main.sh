@@ -334,17 +334,20 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
       fi
 
       if [ $? -ne 0 ]; then
+            registry="mcr.microsoft.com"
+            if  [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
+                  registry=$MCR_URL
             if [ ! -z "$PROXY_ENDPOINT" ]; then
                if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-                  echo "Making curl request to ifconfig.co with proxy and proxy CA cert"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt`
+                  echo "Making curl request to MCR url with proxy and proxy CA cert"
+                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry/v2/ --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt`
                else
-                  echo "Making curl request to ifconfig.co with proxy"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT`
+                  echo "Making curl request to MCR url with proxy"
+                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry/v2/ --proxy $PROXY_ENDPOINT`
                fi
             else
-                  echo "Making curl request to ifconfig.co"
-                  RET=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co)
+                  echo "Making curl request to MCR url"
+                  RET=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry/v2/)
             fi
             if [ $RET -eq 000 ]; then
                   echo "-e error    Error resolving host during the onboarding request. Check the internet connectivity and/or network policy on the cluster"
@@ -352,14 +355,14 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
                   # Retrying here to work around network timing issue
                   if [ ! -z "$PROXY_ENDPOINT" ]; then
                     if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-                        echo "ifconfig check succeeded, retrying oms endpoint with proxy and proxy CA cert..."
+                        echo "MCR url check succeeded, retrying oms endpoint with proxy and proxy CA cert..."
                         curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt
                     else
-                       echo "ifconfig check succeeded, retrying oms endpoint with proxy..."
+                       echo "MCR url check succeeded, retrying oms endpoint with proxy..."
                        curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
                     fi
                   else
-                        echo "ifconfig check succeeded, retrying oms endpoint..."
+                        echo "MCR url check succeeded, retrying oms endpoint..."
                         curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest
                   fi
 
