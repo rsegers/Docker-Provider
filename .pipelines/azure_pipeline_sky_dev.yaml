@@ -7,12 +7,12 @@ trigger:
   batch: true
   branches:
     include:
-    - sky-dev
+    - ci_prod
 
 pr:
   branches:
     include:
-    - sky-dev
+    - ci_prod
 
 variables:
   armServiceConnectionName: 'Sky_MER_Sandbox_Connection'
@@ -31,7 +31,9 @@ jobs:
   - bash: |
       commit=$(git rev-parse --short HEAD)
       datetime=$(date +'%m%d%Y')
+      linuxImagetag="$datetime"-"$commit"
       windowsImageTag=win-"$datetime"-"$commit"
+      echo "##vso[task.setvariable variable=linuxImagetag;isOutput=true]$linuxImagetag"
       echo "##vso[task.setvariable variable=windowsImageTag;isOutput=true]$windowsImageTag"
 
       cd $(Build.SourcesDirectory)/deployment/mergebranch-multiarch-agent-deployment/ServiceGroupRoot/Scripts
@@ -86,6 +88,78 @@ jobs:
       pathToPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: drop
   
+- job: build_linux
+  dependsOn: common
+  pool:
+    name: Azure-Pipelines-CI-Test-EO
+  variables:
+    linuxImagetag: $[ dependencies.common.outputs['setup.linuxImagetag'] ]
+
+  steps:
+  - task: AzureCLI@2
+    displayName: "Multi-arch Linux build and Vulnerability Scan"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        mkdir -p $(Build.ArtifactStagingDirectory)/linux
+
+        sudo apt-get update && sudo apt-get -y install qemu binfmt-support qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+
+        docker buildx create --name testbuilder
+        docker buildx use testbuilder
+
+        az --version
+        az account show
+        az account set -s ${{ variables.subscription }}
+        az acr login -n ${{ variables.containerRegistry }}
+
+        if [ "$(Build.Reason)" != "PullRequest" ]; then
+          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --push .
+
+          docker pull ${{ variables.repoImageName }}:$(linuxImagetag)
+        else
+          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) .
+
+          # load the multi-arch image to run tests
+          docker buildx build --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --load .
+        fi
+
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+        trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
+
+
+  - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+    displayName: 'Generation Task'
+    condition: eq(variables.IS_PR, true)
+    inputs:
+      BuildDropPath: '$(Build.ArtifactStagingDirectory)/linux'
+      DockerImagesToScan: '$(GOLANG_BASE_IMAGE), $(CI_BASE_IMAGE)'
+
+  - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
+    displayName: 'Generation Task'
+    condition: eq(variables.IS_PR, false)
+    inputs:
+      BuildDropPath: '$(Build.ArtifactStagingDirectory)/linux'
+      DockerImagesToScan: '$(GOLANG_BASE_IMAGE), $(CI_BASE_IMAGE), ${{ variables.repoImageName }}:$(linuxImagetag)'
+
+  - task: ComponentGovernanceComponentDetection@0
+    condition: eq(variables.IS_PR, true)
+    inputs:
+      DockerImagesToScan: '$(GOLANG_BASE_IMAGE), $(CI_BASE_IMAGE)'
+
+  - task: ComponentGovernanceComponentDetection@0
+    condition: eq(variables.IS_PR, false)
+    inputs:
+      DockerImagesToScan: '$(GOLANG_BASE_IMAGE), $(CI_BASE_IMAGE), ${{ variables.repoImageName }}:$(linuxImagetag)'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: drop
 
 - job: build_windows_2019
   dependsOn:
@@ -104,7 +178,7 @@ jobs:
 
   - script: |
       setlocal enabledelayedexpansion
-      powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
+      powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\hostlogswindows\Makefile.ps1"
       endlocal
       exit /B %ERRORLEVEL%
     displayName: 'build base'
@@ -146,7 +220,7 @@ jobs:
 
   - script: |
       setlocal enabledelayedexpansion
-      powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
+      powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\hostlogswindows\Makefile.ps1"
       endlocal
       exit /B %ERRORLEVEL%
     displayName: 'build base'
@@ -158,7 +232,7 @@ jobs:
       scriptType: ps
       scriptLocation: inlineScript
       inlineScript: |
-        mkdir -p $(Build.ArtifactStagingDirectory)/windows
+        mkdir -p $(Build.ArtifactStagingDirectory)/hostlogswindows
         cd kubernetes/windows
 
         az --version
@@ -190,7 +264,7 @@ jobs:
       scriptType: ps
       scriptLocation: inlineScript
       inlineScript: |
-        mkdir -p $(Build.ArtifactStagingDirectory)/windows
+        mkdir -p $(Build.ArtifactStagingDirectory)/hostlogswindows
         cd kubernetes/windows
 
         az --version
