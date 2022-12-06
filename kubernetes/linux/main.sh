@@ -334,20 +334,21 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
       fi
 
       if [ $? -ne 0 ]; then
-            registry="mcr.microsoft.com"
+            registry="https://mcr.microsoft.com/v2/"
             if  [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
                   registry=$MCR_URL
+            fi
             if [ ! -z "$PROXY_ENDPOINT" ]; then
                if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
                   echo "Making curl request to MCR url with proxy and proxy CA cert"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry/v2/ --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt`
+                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt`
                else
                   echo "Making curl request to MCR url with proxy"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry/v2/ --proxy $PROXY_ENDPOINT`
+                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry --proxy $PROXY_ENDPOINT`
                fi
             else
                   echo "Making curl request to MCR url"
-                  RET=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry/v2/)
+                  RET=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry)
             fi
             if [ $RET -eq 000 ]; then
                   echo "-e error    Error resolving host during the onboarding request. Check the internet connectivity and/or network policy on the cluster"
