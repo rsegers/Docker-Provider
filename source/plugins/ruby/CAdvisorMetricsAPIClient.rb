@@ -235,17 +235,25 @@ class CAdvisorMetricsAPIClient
               metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
               metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
 
-              
+
               metricCollection = {}
               metricCollection["CounterName"] = metricNametoReturn
               metricCollection["Value"] = metricValue
 
               metricItem["json_Collections"] = []
-              metricCollections = []               
-              metricCollections.push(metricCollection)        
+              metricCollections = []
+              metricCollections.push(metricCollection)
               metricItem["json_Collections"] = metricCollections.to_json
-              metricItems.push(metricItem)      
-              
+              metricItems.push(metricItem)
+
+              if metricValue > 10000000000
+                telemetryProperties = {}
+                telemetryProperties["metricJSON"] = JSON.generate(metricJSON)
+                telemetryProperties["Value"] = metricValue
+                $log.warn("Impossible CPU Usage detected metricJSON #{metricJSON}")
+                ApplicationInsightsUtility.sendCustomEvent("ImpossibleCpuUsageCadvisorResponse", telemetryProperties)
+              end
+
               #Telemetry about agent performance
               begin
                 # we can only do this much now. Ideally would like to use the docker image repository to find our pods/containers
@@ -525,13 +533,13 @@ class CAdvisorMetricsAPIClient
               containerName = container["name"]
               metricValue = container["cpu"][cpuMetricNameToCollect]
               metricTime = metricPollTime #container["cpu"]["time"]
-            
+
               metricItem = {}
               metricItem["Timestamp"] = metricTime
               metricItem["Host"] = hostName
               metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
               metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
-              
+
               metricItem["json_Collections"] = []
               metricCollection = {}
               metricCollection["CounterName"] = metricNametoReturn
@@ -566,9 +574,9 @@ class CAdvisorMetricsAPIClient
               end
 
               metricCollection["Value"] = metricValue
-              
-              metricCollections = []               
-              metricCollections.push(metricCollection)        
+
+              metricCollections = []
+              metricCollections.push(metricCollection)
               metricItem["json_Collections"] = metricCollections.to_json
               metricItems.push(metricItem)
               #Telemetry about agent performance
@@ -655,16 +663,16 @@ class CAdvisorMetricsAPIClient
               metricItem["Host"] = hostName
               metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
               metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
-           
+
               metricCollection = {}
               metricCollection["CounterName"] = metricNametoReturn
               metricCollection["Value"] = metricValue
 
               metricItem["json_Collections"] = []
-              metricCollections = []  
-              metricCollections.push(metricCollection)        
+              metricCollections = []
+              metricCollections.push(metricCollection)
               metricItem["json_Collections"] = metricCollections.to_json
-              metricItems.push(metricItem) 
+              metricItems.push(metricItem)
 
               #Telemetry about agent performance
               begin
@@ -708,21 +716,21 @@ class CAdvisorMetricsAPIClient
         if !node[metricCategory].nil?
           metricValue = node[metricCategory][metricNameToCollect]
           metricTime = metricPollTime #node[metricCategory]["time"]
-                 
+
           metricItem["Timestamp"] = metricTime
           metricItem["Host"] = hostName
           metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
           metricItem["InstanceName"] = clusterId + "/" + nodeName
 
-         
+
           metricCollection = {}
           metricCollection["CounterName"] = metricNametoReturn
           metricCollection["Value"] = metricValue
 
           metricItem["json_Collections"] = []
-          metricCollections = []               
-          metricCollections.push(metricCollection)   
-          metricItem["json_Collections"] = metricCollections.to_json               
+          metricCollections = []
+          metricCollections.push(metricCollection)
+          metricItem["json_Collections"] = metricCollections.to_json
         end
       rescue => error
         @Log.warn("getNodeMetricItem failed: #{error} for metric #{metricNameToCollect}")
@@ -825,19 +833,19 @@ class CAdvisorMetricsAPIClient
               end
             end
           end
-                  
+
           metricItem["Timestamp"] = metricTime
           metricItem["Host"] = hostName
           metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
           metricItem["InstanceName"] = clusterId + "/" + nodeName
-     
+
           metricCollection = {}
           metricCollection["CounterName"] = metricNametoReturn
           metricCollection["Value"] = metricValue
 
           metricItem["json_Collections"] = []
-          metricCollections = []               
-          metricCollections.push(metricCollection)        
+          metricCollections = []
+          metricCollections.push(metricCollection)
           metricItem["json_Collections"] = metricCollections.to_json
         end
       rescue => error
@@ -860,21 +868,21 @@ class CAdvisorMetricsAPIClient
         metricValue = node["startTime"]
         metricTime = metricPollTime #Time.now.utc.iso8601 #2018-01-30T19:36:14Z
 
-       
+
         metricItem["Timestamp"] = metricTime
         metricItem["Host"] = hostName
         metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_NODE
         metricItem["InstanceName"] = clusterId + "/" + nodeName
 
-       
+
         metricCollection = {}
         metricCollection["CounterName"] = metricNametoReturn
         #Read it from /proc/uptime
         metricCollection["Value"] = DateTime.parse(metricTime).to_time.to_i - IO.read("/proc/uptime").split[0].to_f
 
         metricItem["json_Collections"] = []
-        metricCollections = []               
-        metricCollections.push(metricCollection)        
+        metricCollections = []
+        metricCollections.push(metricCollection)
         metricItem["json_Collections"] = metricCollections.to_json
       rescue => error
         @Log.warn("getNodeLastRebootTimeMetric failed: #{error} ")
@@ -903,14 +911,14 @@ class CAdvisorMetricsAPIClient
               metricItem["Host"] = hostName
               metricItem["ObjectName"] = Constants::OBJECT_NAME_K8S_CONTAINER
               metricItem["InstanceName"] = clusterId + "/" + podUid + "/" + containerName
-            
+
               metricCollection = {}
               metricCollection["CounterName"] = metricNametoReturn
               metricCollection["Value"] = DateTime.parse(metricValue).to_time.to_i
 
               metricItem["json_Collections"] = []
-              metricCollections = []               
-              metricCollections.push(metricCollection)        
+              metricCollections = []
+              metricCollections.push(metricCollection)
               metricItem["json_Collections"] = metricCollections.to_json
               metricItems.push(metricItem)
             end
