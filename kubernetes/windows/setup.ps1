@@ -69,7 +69,7 @@ Write-Host ('Finished Extracting Certificate Generator Package')
 
 Write-Host ('Installing GenevaMonitoringAgent');
 try {
-    $genevamonitoringagentUri='https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/genevamonitoringagent.45.13.1.zip'
+    $genevamonitoringagentUri='https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/genevamonitoringagent.46.2.1.zip'
     Invoke-WebRequest -Uri $genevamonitoringagentUri -OutFile /installation/genevamonitoringagent.zip
     Expand-Archive -Path /installation/genevamonitoringagent.zip -Destination /installation/genevamonitoringagent
     Move-Item -Path /installation/genevamonitoringagent -Destination /opt/genevamonitoringagent/ -ErrorAction SilentlyContinue
