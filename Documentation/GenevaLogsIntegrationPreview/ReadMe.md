@@ -8,10 +8,16 @@ in case of multi-tenancy mode, Container Std{out;err} logs from one or more K8s 
 
   1. Create Geneva Logs Account if you dont have one to use
   2. Navigate to [GenevaLogs Account](https://portal.microsoftgeneva.com/account/logs/configurations)
-  3. Update namespace, account, moniker & identity values in [AGENTCONFIG](./ContainerLogV2.xml) corresponding to your geneva Logs account
+  3. Create new Namespace
+     Note > Ensure to select the option add Namespace to the MA Communication Role (strongly recommended)
+  3. Select Logs Endpoint & Account Name, then select User Roles
+  4. Select the View/Add Claims option on _MaCommunication Role
+  5. Navigate to Agent option and add the Execute option for the namespace.
+     For example, if the namespace ContainerLogs, it will be  ^ContainerLogs.*	Execute
+  4. Update namespace, account, moniker & identity values in [AGENTCONFIG](./ContainerLogV2.xml) corresponding to your geneva Logs account
      > Both account and moniker should have the same value of storage group name (i.e. moniker)
      > If you dont have Account Moniker, you can create one by creating storage group from Resources tab of Geneva Logs Account
-  4. Upload this updated configuration to your Geneva Logs Account
+  5. Upload this updated configuration to your Geneva Logs Account
 
 ### 2a. Managed Identity Auth for Single Tenancy Mode
 
