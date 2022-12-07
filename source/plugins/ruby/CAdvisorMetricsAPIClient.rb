@@ -249,8 +249,9 @@ class CAdvisorMetricsAPIClient
 
               if metricValue > 10000000000
                 telemetryProperties = {}
-                telemetryProperties["metricJSON"] = JSON.generate(metricJSON)
-                telemetryProperties["Value"] = metricValue
+                telemetryProperties["podName"] = podName
+                telemetryProperties["containerName"] = containerName
+                telemetryProperties["metricValue"] = metricValue
                 $log.warn("Impossible CPU Usage detected metricJSON #{metricJSON}")
                 ApplicationInsightsUtility.sendCustomEvent("ImpossibleCpuUsageCadvisorResponse", telemetryProperties)
               end
