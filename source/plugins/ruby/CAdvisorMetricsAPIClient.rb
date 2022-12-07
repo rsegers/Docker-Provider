@@ -77,7 +77,7 @@ class CAdvisorMetricsAPIClient
 
   class << self
     def getSummaryStatsFromCAdvisor(winNode)
-      relativeUri = "/stats/summary"
+      relativeUri = "/stats/summary?only_cpu_and_memory=true"
       return getResponse(winNode, relativeUri)
     end
 
