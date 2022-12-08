@@ -335,9 +335,10 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
 
       if [ $? -ne 0 ]; then
             registry="https://mcr.microsoft.com/v2/"
-            if  [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
+            if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
                   registry=$MCR_URL
             fi
+            echo "The registry is: $registry"
             if [ ! -z "$PROXY_ENDPOINT" ]; then
                if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
                   echo "Making curl request to MCR url with proxy and proxy CA cert"
