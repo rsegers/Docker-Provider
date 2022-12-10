@@ -22,8 +22,8 @@ Azure:
 amalogs:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod10042022-3c05dd1b"
-    tagWindows: "win-ciprod10042022-3c05dd1b"
+    tag: "ciprod12032022-c9f3dc30"
+    tagWindows: "win-ciprod12032022-c9f3dc30"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "18.0.1-0"
     agentVersion: "azure-mdsd-1.17.0"
@@ -207,4 +207,3 @@ amalogs:
         requests:
           cpu: 75m
           memory: 225Mi
-
