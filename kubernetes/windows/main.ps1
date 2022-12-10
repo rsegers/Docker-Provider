@@ -46,11 +46,11 @@ function Generate-GenevaTenantNameSpaceConfig {
         $genevaLogsTenantNameSpacesArray = $genevaLogsTenantNameSpaces.Split(",")
         for ($i = 0; $i -lt $genevaLogsTenantNameSpacesArray.Length; $i = $i + 1) {
           $tenantName = $genevaLogsTenantNameSpacesArray[$i]
-          Copy-Item C:/etc/fluent-bit/td-agent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/td-agent-bit-geneva-logs_$tenantName.conf
-          (Get-Content -Path C:/etc/fluent-bit/td-agent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/td-agent-bit-geneva-logs_$tenantName.conf
+          Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
+          (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
         }
     }
-    Remove-Item C:/etc/fluent-bit/td-agent-bit-geneva-logs_tenant.conf
+    Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf
 }
 
 #register fluentd as a windows service
@@ -332,8 +332,8 @@ function Set-EnvironmentVariables {
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
     .\setagentenv.ps1
 
-    #Replace placeholders in td-agent-bit.conf
-    ruby /opt/amalogswindows/scripts/ruby/td-agent-bit-conf-customizer.rb
+    #Replace placeholders in fluent-bit.conf
+    ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
     .\setgenevaconfigenv.ps1
@@ -356,7 +356,7 @@ function Set-EnvironmentVariables {
         Write-Host "Failed to set environment variable GENEVA_LOGS_MULTI_TENANCY for target 'machine' since it is either null or empty"
     }
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
-        ruby /opt/amalogswindows/scripts/ruby/td-agent-bit-geneva-tenant-conf-customizer.rb
+        ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-tenant-conf-customizer.rb
         Generate-GenevaTenantNameSpaceConfig
     }
 
@@ -485,26 +485,26 @@ function Start-Fluent-Telegraf {
     if (![string]::IsNullOrEmpty($containerRuntime) -and [string]$containerRuntime.StartsWith('docker') -eq $false) {
         # change parser from docker to cri if the container runtime is not docker
         Write-Host "changing parser from Docker to CRI since container runtime : $($containerRuntime) and which is non-docker"
-        (Get-Content -Path C:/etc/fluent-bit/td-agent-bit.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/td-agent-bit.conf
-        (Get-Content -Path C:/etc/fluent-bit/td-agent-bit-common.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/td-agent-bit-common.conf
-        (Get-Content -Path C:/etc/fluent-bit/td-agent-bit-geneva.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/td-agent-bit-geneva.conf
+        (Get-Content -Path C:/etc/fluent-bit/fluent-bit.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit.conf
+        (Get-Content -Path C:/etc/fluent-bit/fluent-bit-common.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit-common.conf
+        (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit-geneva.conf
     }
     $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
     $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
 
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
-        $fluentbitConfFile = "C:/etc/fluent-bit/td-agent-bit-geneva.conf"
+        $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit-geneva.conf"
         Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
           # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
         # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
-        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\td-agent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/td-agent-bit-geneva.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit-geneva.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
 
     } else {
-        $fluentbitConfFile = "C:/etc/fluent-bit/td-agent-bit.conf"
+        $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit.conf"
         Write-Host "since GenevaLogsIntegration enabled using fluent-bit config: $($fluentbitConfFile)"
         # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
         # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
-        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\td-agent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/td-agent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
     }
 
 

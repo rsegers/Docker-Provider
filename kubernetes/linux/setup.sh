@@ -67,12 +67,12 @@ chmod 544 /opt/telegraf
 # Use wildcard version so that it doesnt require to touch this file
 /$TMPDIR/docker-cimprov-*.*.*-*.*.sh --install
 
-#download and install fluent-bit(td-agent-bit)
+#download and install fluent-bit(fluent-bit)
 wget -qO - https://packages.fluentbit.io/fluentbit.key | sudo apt-key add -
 sudo echo "deb https://packages.fluentbit.io/ubuntu/bionic bionic main" >> /etc/apt/sources.list
 sudo apt-get update
 # gangams - this version fixes this issue - https://github.com/fluent/fluent-bit/issues/4511
-sudo apt-get install td-agent-bit=1.9.8 -y
+sudo apt-get install fluent-bit=2.0.5 -y
 
 # fluentd v1 gem
 gem install fluentd -v "1.14.6" --no-document

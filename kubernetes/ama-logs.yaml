@@ -975,7 +975,7 @@ spec:
               - cmd
               - /c
               - C:\opt\amalogswindows\scripts\cmd\livenessprobe.exe
-              - td-agent-bit.exe
+              - fluent-bit.exe
               - fluentdwinaks
               - "C:\\etc\\amalogswindows\\filesystemwatcher.txt"
               - "C:\\etc\\amalogswindows\\renewcertificate.txt"

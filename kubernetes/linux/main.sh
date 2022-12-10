@@ -195,10 +195,10 @@ generateGenevaTenantNamespaceConfig() {
       for tenantNamespace in "${TenantNamespaces[@]}"; do
             tenantNamespace=$(echo $tenantNamespace | xargs)
             echo "tenant namespace onboarded to geneva logs:${tenantNamespace}"
-            cp /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant.conf /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant_${tenantNamespace}.conf
-            sed -i "s/<TENANT_NAMESPACE>/${tenantNamespace}/g" /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant_${tenantNamespace}.conf
+            cp /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant_${tenantNamespace}.conf
+            sed -i "s/<TENANT_NAMESPACE>/${tenantNamespace}/g" /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant_${tenantNamespace}.conf
       done
-      rm /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_tenant.conf
+      rm /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf
 }
 
 generateGenevaInfraNamespaceConfig() {
@@ -210,10 +210,10 @@ generateGenevaInfraNamespaceConfig() {
             infraNamespace=$(echo $infraNamespace | xargs)
             echo "infra namespace onboarded to geneva logs:${infraNamespace}"
             infraNamespaceWithoutSuffix=${infraNamespace%"$suffix"}
-            cp /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_infra.conf /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_infra_${infraNamespaceWithoutSuffix}.conf
-            sed -i "s/<INFRA_NAMESPACE>/${infraNamespace}/g" /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_infra_${infraNamespaceWithoutSuffix}.conf
+            cp /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra_${infraNamespaceWithoutSuffix}.conf
+            sed -i "s/<INFRA_NAMESPACE>/${infraNamespace}/g" /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra_${infraNamespaceWithoutSuffix}.conf
       done
-      rm /etc/opt/microsoft/docker-cimprov/td-agent-bit-geneva-logs_infra.conf
+      rm /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf
 }
 
 #using /var/opt/microsoft/docker-cimprov/state instead of /var/opt/microsoft/ama-logs/state since the latter gets deleted during onboarding
@@ -495,7 +495,7 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATIO
 
 
       #Parse the configmap to set the right environment variables for agent config.
-      #Note > tomlparser-agent-config.rb has to be parsed first before td-agent-bit-conf-customizer.rb for fbit agent settings
+      #Note > tomlparser-agent-config.rb has to be parsed first before fluent-bit-conf-customizer.rb for fbit agent settings
 
       ruby tomlparser-agent-config.rb
 
@@ -513,9 +513,9 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATIO
       source integration_npm_config_env_var
 fi
 
-#Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
+#Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
-      ruby td-agent-bit-conf-customizer.rb
+      ruby fluent-bit-conf-customizer.rb
       #Parse geneva config
       ruby tomlparser-geneva-config.rb
       cat geneva_config_env_var | while read line; do
@@ -524,7 +524,7 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidec
       source geneva_config_env_var
 
       if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-         ruby td-agent-bit-geneva-tenant-conf-customizer.rb
+         ruby fluent-bit-geneva-tenant-conf-customizer.rb
          # generate genavaconfig for each tenant
          generateGenevaTenantNamespaceConfig
          # generate genavaconfig for infra namespace
@@ -884,17 +884,17 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
             if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
                   echo "starting fluent-bit and setting telegraf conf file for prometheus sidecar"
-                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit-prom-side-car.conf -e /opt/td-agent-bit/bin/out_oms.so &
+                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-prom-side-car.conf -e /opt/fluent-bit/bin/out_oms.so &
             else
                   echo "not starting fluent-bit in prometheus sidecar (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
             fi
       else
             echo "starting fluent-bit and setting telegraf conf file for daemonset"
-            fluentBitConfFile="td-agent-bit.conf"
+            fluentBitConfFile="fluent-bit.conf"
             if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-                  fluentBitConfFile="td-agent-bit-geneva.conf"
+                  fluentBitConfFile="fluent-bit-geneva.conf"
             elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
-                  fluentBitConfFile="td-agent-bit-geneva-telemetry-svc.conf"
+                  fluentBitConfFile="fluent-bit-geneva-telemetry-svc.conf"
                   # gangams - only support v2 in case of 1P mode
                   AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
                   echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
@@ -902,18 +902,18 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
-                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}-e /opt/td-agent-bit/bin/out_oms.so &
+                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}-e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             else
                   echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
                   sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}
-                  /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/td-agent-bit/bin/out_oms.so &
+                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             fi
       fi
 else
       echo "starting fluent-bit and setting telegraf conf file for replicaset"
-      /opt/td-agent-bit/bin/td-agent-bit -c /etc/opt/microsoft/docker-cimprov/td-agent-bit-rs.conf -e /opt/td-agent-bit/bin/out_oms.so &
+      /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-rs.conf -e /opt/fluent-bit/bin/out_oms.so &
       telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf"
 fi
 
@@ -991,7 +991,7 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
 elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       /opt/telegraf --config $telegrafConfFile &
       echo "telegraf version: $(/opt/telegraf --version)"
-      dpkg -l | grep td-agent-bit | awk '{print $2 " " $3}'
+      dpkg -l | grep fluent-bit | awk '{print $2 " " $3}'
 else
       echo "not starting telegraf (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
 fi

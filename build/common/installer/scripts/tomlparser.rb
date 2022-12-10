@@ -210,7 +210,7 @@ end
 file = File.open("config_env_var", "w")
 
 if !file.nil?
-  # This will be used in td-agent-bit.conf file to filter out logs
+  # This will be used in fluent-bit.conf file to filter out logs
   if (!@collectStdoutLogs && !@collectStderrLogs)
     #Stop log tailing completely
     @logTailPath = "/opt/nolog*.log"
@@ -256,7 +256,7 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   file = File.open("setenv.ps1", "w")
 
   if !file.nil?
-    # This will be used in td-agent-bit.conf file to filter out logs
+    # This will be used in fluent-bit.conf file to filter out logs
     if (!@collectStdoutLogs && !@collectStderrLogs)
       #Stop log tailing completely
       @logTailPath = "C:\\opt\\nolog*.log"
