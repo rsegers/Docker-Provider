@@ -74,14 +74,9 @@ in case of multi-tenancy mode, Container Std{out;err} logs from one or more K8s 
   1. Deploy the AMA Logs Geneva Service to your Kubernetes namespace through
 
      ``` bash
-      export  HELM_EXPERIMENTAL_OCI=1
-      # pull chart  from MCR registry
-      helm chart pull  mcr.microsoft.com/azuremonitor/containerinsights/preview/azuremonitor-containers:0.1.0
-      # export the chart to local directory
-      helm chart export mcr.microsoft.com/azuremonitor/containerinsights/preview/azuremonitor-containers:0.1.0
-      # update the parameters and install the chart
-      helm upgrade --install  azuremonitor-containers-geneva  --set genevaLogsConfig.aadpodidbinding=<aadpodbindingname>,genevaLogsConfig.configversion=1.0,genevaLogsConfig.authid=object_id#<ObjectIdOfTheManagedIdentity>,genevaLogsConfig.environment=<environment>,genevaLogsConfig.account=<accountName>,genevaLogsConfig.namespace=<namespace>,genevaLogsConfig.region=<region> -n <K8sNamespace> azuremonitor-containers/
-
+     helm repo add geneva https://ganga1980.github.io/azuremonitor-containers-helm-charts/
+     helm repo update
+     helm upgrade --install  azuremonitor-containers-geneva  --set genevaLogsConfig.aadpodidbinding=<aadpodbindingname>,genevaLogsConfig.configversion=1.0,genevaLogsConfig.authid=object_id#<ObjectIdOfTheManagedIdentity>,genevaLogsConfig.environment=<environment>,genevaLogsConfig.account=<accountName>,genevaLogsConfig.namespace=<namespace>,genevaLogsConfig.region=<region> -n <K8sNamespace> geneva/azuremonitor-containers
      ```
  2. Download the [AgentConfigMap](../../kubernetes/container-azm-ms-agentconfig.yaml)
  3. Update below settings under `integrations.geneva_logs` in downloaded configmap
