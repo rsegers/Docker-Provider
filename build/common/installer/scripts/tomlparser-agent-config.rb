@@ -65,7 +65,7 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailIgnoreOlder = ""
 @storageTotalLimitSizeMB = 100
 @outputForwardWorkers = 10
-@outputForwardRetryCount = 5
+@outputForwardRetryLimit = 3
 
 # configmap settings related to mdsd
 @mdsdMonitoringMaxEventRate = 0
@@ -219,10 +219,16 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           @outputForwardWorkers = outputForwardWorkers.to_i
           puts "Using config map value: output_forward_workers = #{@outputForwardWorkers}"
         end
-        outputForwardRetryCount = fbit_config[:output_forward_retry_count]
-        if !outputForwardRetryCount.nil? && is_number?(outputForwardRetryCount) && outputForwardRetryCount.to_i > 0
-          @outputForwardRetryCount = outputForwardRetryCount.to_i
-          puts "Using config map value: output_forward_retry_count = #{@outputForwardRetryCount}"
+        #Ref https://docs.fluentbit.io/manual/administration/scheduling-and-retries
+        outputForwardRetryLimit = fbit_config[:output_forward_retry_limit]
+        if !outputForwardRetryLimit.nil?
+          if is_number?(outputForwardRetryLimit) && outputForwardRetryLimit.to_i > 0
+            @outputForwardRetryLimit = outputForwardRetryLimit.to_i
+            puts "Using config map value: output_forward_retry_limit = #{@outputForwardRetryLimit}"
+          elsif ["False", "no_limits", "no_retries"].include?(outputForwardRetryLimit)
+            @outputForwardRetryLimit = outputForwardRetryLimit
+            puts "Using config map value: output_forward_retry_limit = #{@outputForwardRetryLimit}"
+          end
         end
       end
       # ama-logs daemonset only settings
@@ -321,9 +327,7 @@ if !file.nil?
     file.write("export OUTPUT_FORWARD_WORKERS_COUNT=#{@outputForwardWorkers}\n")
   end
 
-  if @outputForwardRetryCount > 0
-    file.write("export OUTPUT_FORWARD_RETRY_COUNT=#{@outputForwardRetryCount}\n")
-  end
+  file.write("export OUTPUT_FORWARD_RETRY_LIMIT=#{@outputForwardRetryLimit}\n")
 
   #mdsd settings
   if @mdsdMonitoringMaxEventRate > 0
