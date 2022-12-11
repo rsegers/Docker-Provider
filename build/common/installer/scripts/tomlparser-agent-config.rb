@@ -65,6 +65,7 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailIgnoreOlder = ""
 @storageTotalLimitSizeMB = 100
 @outputForwardWorkers = 10
+@outputForwardRetryCount = 5
 
 # configmap settings related to mdsd
 @mdsdMonitoringMaxEventRate = 0
@@ -80,8 +81,8 @@ require_relative "ConfigParseErrorLogger"
 @promFbitMemBufLimit = 0
 
 @promFbitChunkSizeDefault = "32k" #kb
-@promFbitBufferSizeDefault  = "64k" #kb
-@promFbitMemBufLimitDefault  = "10m" #mb
+@promFbitBufferSizeDefault = "64k" #kb
+@promFbitMemBufLimitDefault = "10m" #mb
 
 def is_number?(value)
   true if Integer(value) rescue false
@@ -218,6 +219,11 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           @outputForwardWorkers = outputForwardWorkers.to_i
           puts "Using config map value: output_forward_workers = #{@outputForwardWorkers}"
         end
+        outputForwardRetryCount = fbit_config[:output_forward_retry_count]
+        if !outputForwardRetryCount.nil? && is_number?(outputForwardRetryCount) && outputForwardRetryCount.to_i > 0
+          @outputForwardRetryCount = outputForwardRetryCount.to_i
+          puts "Using config map value: output_forward_retry_count = #{@outputForwardRetryCount}"
+        end
       end
       # ama-logs daemonset only settings
       if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
@@ -313,6 +319,10 @@ if !file.nil?
 
   if @outputForwardWorkers > 0
     file.write("export OUTPUT_FORWARD_WORKERS_COUNT=#{@outputForwardWorkers}\n")
+  end
+
+  if @outputForwardRetryCount > 0
+    file.write("export OUTPUT_FORWARD_RETRY_COUNT=#{@outputForwardRetryCount}\n")
   end
 
   #mdsd settings
