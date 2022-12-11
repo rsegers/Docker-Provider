@@ -677,6 +677,7 @@ else
                   echo "-e error nodeName in /pods API response is empty"
             else
                   export NODE_NAME=$nodeName
+                  echo "export HOSTNAME="$NODE_NAME >> ~/.bashrc
             fi
       else
             echo "-e error either /pods API request failed or no running pods"
