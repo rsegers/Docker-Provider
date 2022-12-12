@@ -20,7 +20,7 @@ az account set --subscription <subscriptionIdOftheCluster>
 az aks get-credentials --resource-group <clusterResourceGroup> --name <clusterName> --file ~/ClusterKubeConfig
 export KUBECONFIG=~/ClusterKubeConfig
 
-wget https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_dev/scripts/troubleshoot/LogCollection/AgentLogCollection.sh && bash ./AgentLogCollection.sh
+wget https://raw.githubusercontent.com/microsoft/Docker-Provider/ci_prod/scripts/troubleshoot/LogCollection/AgentLogCollection.sh && bash ./AgentLogCollection.sh
 ```
 
 Output:

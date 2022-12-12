@@ -144,4 +144,16 @@ class Constants
   POD_MDM_EMIT_STREAM_BATCH_SIZE = 5000 # each record is 200 bytes, 5k records ~2MB
   # only used in windows in AAD MSI auth mode
   IMDS_TOKEN_PATH_FOR_WINDOWS = "c:/etc/imds-access-token/token"
+
+  # extension settings and these should match with DCR extension settings
+  EXTENSION_SETTINGS = "extensionSettings"
+  EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS = "dataCollectionSettings"
+  EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL = "interval"
+  EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE = "namespaceFilteringMode"
+  EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODES = ["off", "include", "exclude"]
+  EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES = "namespaces"
+
+  # min and max data collection interval minutes
+  EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL_MIN = 1
+  EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL_MAX = 30
 end

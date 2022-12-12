@@ -11,6 +11,23 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate the agent build dates (not release dates)
 
+### 12/03/2022 -
+##### Version microsoft/oms:ciprod12032022-c9f3dc30 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12032022-c9f3dc30 (linux)
+##### Version microsoft/oms:win-ciprod12032022-c9f3dc30 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod12032022-c9f3dc30 (windows)
+##### Code change log
+- Linux Agent
+  - Enable syslog support
+- Windows Agent
+  - Use ghrelease as gcc download path
+  - Move fluent-bit conf update before fluent-bit start
+  - Make containerd and secure port as default for windows same as linux
+- Common (Linux & Windows Agent)
+  - Add FluentBit Telegraf Plugin buffer and chunk config options to configmap
+  - Remove references to healthservice in troubleshooting script
+  - Add pods namespace label name for all telegraf conf
+  - Update telegraf version from 1.23.2 to 1.24.2
+  - Address Computer Name mismatch in KubeEvents
+
 ### 10/05/2022 -
 ##### Version microsoft/oms:ciprod10042022-3c05dd1b Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10042022-3c05dd1b (linux)
 ##### Version microsoft/oms:win-ciprod10042022-3c05dd1b Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10042022-3c05dd1b (windows)
