@@ -263,23 +263,6 @@ if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSide
       fi
 fi
 
-# Set environment variable for if public cloud by checking the workspace domain.
-if [ -z $domain ]; then
-      ClOUD_ENVIRONMENT="unknown"
-elif [ $domain == "opinsights.azure.com" ]; then
-      CLOUD_ENVIRONMENT="azurepubliccloud"
-elif [ $domain == "opinsights.azure.cn" ]; then
-      CLOUD_ENVIRONMENT="azurechinacloud"
-elif [ $domain == "opinsights.azure.us" ]; then
-      CLOUD_ENVIRONMENT="azureusgovernmentcloud"
-elif [ $domain == "opinsights.azure.eaglex.ic.gov" ]; then
-      CLOUD_ENVIRONMENT="usnat"
-elif [ $domain == "opinsights.azure.microsoft.scloud" ]; then
-      CLOUD_ENVIRONMENT="ussec"
-fi
-export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT
-echo "export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT" >>~/.bashrc
-
 export PROXY_ENDPOINT=""
 # Check for internet connectivity or workspace deletion
 if [ -e "/etc/ama-logs-secret/WSID" ]; then
@@ -352,7 +335,7 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
 
       if [ $? -ne 0 ]; then
             registry="https://mcr.microsoft.com/v2/"
-            if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
+            if [ ! -z "$MCR_URL" ]; then
                   registry=$MCR_URL
             fi
             echo "The registry is: $registry"
@@ -397,6 +380,23 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
 else
       echo "LA Onboarding:Workspace Id not mounted, skipping the telemetry check"
 fi
+
+# Set environment variable for if public cloud by checking the workspace domain.
+if [ -z $domain ]; then
+      ClOUD_ENVIRONMENT="unknown"
+elif [ $domain == "opinsights.azure.com" ]; then
+      CLOUD_ENVIRONMENT="azurepubliccloud"
+elif [ $domain == "opinsights.azure.cn" ]; then
+      CLOUD_ENVIRONMENT="azurechinacloud"
+elif [ $domain == "opinsights.azure.us" ]; then
+      CLOUD_ENVIRONMENT="azureusgovernmentcloud"
+elif [ $domain == "opinsights.azure.eaglex.ic.gov" ]; then
+      CLOUD_ENVIRONMENT="usnat"
+elif [ $domain == "opinsights.azure.microsoft.scloud" ]; then
+      CLOUD_ENVIRONMENT="ussec"
+fi
+export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT
+echo "export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT" >>~/.bashrc
 
 # Copying over CA certs for airgapped clouds. This is needed for Mariner vs Ubuntu hosts.
 # We are unable to tell if the host is Mariner or Ubuntu,
