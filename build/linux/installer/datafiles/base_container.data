@@ -41,6 +41,7 @@ MAINTAINER:              'Microsoft Corporation'
 
 /opt/tomlparser-geneva-config.rb;                                       build/common/installer/scripts/tomlparser-geneva-config.rb;     755; root; root
 
+/opt/fluent-bit-geneva-conf-customizer.rb;                            build/common/installer/scripts/fluent-bit-geneva-conf-customizer.rb;     755; root; root
 /opt/fluent-bit-geneva-tenant-conf-customizer.rb;                     build/common/installer/scripts/fluent-bit-geneva-tenant-conf-customizer.rb;     755; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf;			      build/linux/installer/conf/fluent-bit-common.conf;                644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva.conf;			      build/linux/installer/conf/fluent-bit-geneva.conf;                644; root; root
