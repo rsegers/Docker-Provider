@@ -353,8 +353,10 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
 
       if [ $? -ne 0 ]; then
             registry="https://mcr.microsoft.com/v2/"
-            if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
-                  registry=$MCR_URL
+            if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ $CLOUD_ENVIRONMENT == "azurechinacloud" ]; then
+                  if [ ! -z "$MCR_URL" ]; then
+                        registry=$MCR_URL
+                  fi
             fi
             echo "The registry is: $registry"
             if [ ! -z "$PROXY_ENDPOINT" ]; then
