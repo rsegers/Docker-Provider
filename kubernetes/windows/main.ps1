@@ -359,7 +359,7 @@ function Set-EnvironmentVariables {
     if (![string]::IsNullOrEmpty($enableFbitInternalMetrics) -and $enableFbitInternalMetrics.ToLower() -eq 'true') {
         Write-Host "Fluent-bit Internal metrics configured"
     } else {
-        Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_metrics.conf
+        Clear-Content C:/etc/fluent-bit/fluent-bit-internal-metrics.conf
     }
 
 

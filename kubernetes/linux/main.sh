@@ -516,7 +516,8 @@ fi
 if [ "${ENABLE_FBIT_INTERNAL_METRICS}" == "true" ]; then
     echo "Fluent-bit Internal metrics configured"
 else
-    rm /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_metrics.conf
+    # clear the conf file content
+    true > /etc/opt/microsoft/docker-cimprov/fluent-bit-internal-metrics.conf
 fi
 
 #Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
