@@ -161,7 +161,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       fbit_config = parsedConfig[:agent_settings][:fbit_config]
       if !fbit_config.nil?
         enableFbitInternalMetrics = fbit_config[:enable_internal_metrics]
-        if !enableFbitInternalMetrics.nil? && enable_internal_metrics.downcase == "true"
+        if !enableFbitInternalMetrics.nil? && enableFbitInternalMetrics.downcase == "true"
           @enableFbitInternalMetrics = true
           puts "Using config map value: enable_internal_metrics = #{@enableFbitInternalMetrics}"
         end
