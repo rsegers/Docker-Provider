@@ -64,6 +64,7 @@ COPY ./amalogswindows/installer/conf/out_oms.conf /etc/amalogswindows
 COPY ./amalogswindows/installer/conf/fluent-bit-geneva-logs_tenant.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/fluent-bit-geneva.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/fluent-bit-common.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/fluent-bit-geneva-logs_metrics.conf /etc/fluent-bit/
 
 
 # copy telegraf conf file

@@ -192,6 +192,7 @@ data:
     ## Ref for more details about Ignore_Older -  https://docs.fluentbit.io/manual/v/1.7/pipeline/inputs/tail
     # ganga - following config values are tested for geneva integration
     [agent_settings.fbit_config]
+      enable_internal_metrics = "true"              # default is false
       log_flush_interval_secs = "1"                 # default value is 15
       tail_mem_buf_limit_megabytes = "1000"           # default value is 10
       tail_buf_chunksize_megabytes = "10"            # default value is 32kb (comment out this line for default)

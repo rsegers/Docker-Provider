@@ -58,6 +58,7 @@ require_relative "ConfigParseErrorLogger"
 @nodesEmitStreamBatchSizeMin = 50
 
 # configmap settings related fbit config
+@enableFbitInternalMetrics = false
 @fbitFlushIntervalSecs = 0
 @fbitTailBufferChunkSizeMBs = 0
 @fbitTailBufferMaxSizeMBs = 0
@@ -159,6 +160,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       # fbit config settings
       fbit_config = parsedConfig[:agent_settings][:fbit_config]
       if !fbit_config.nil?
+        enableFbitInternalMetrics = fbit_config[:enable_internal_metrics]
+        if !enableFbitInternalMetrics.nil? && enable_internal_metrics.downcase == "true"
+          @enableFbitInternalMetrics = true
+          puts "Using config map value: enable_internal_metrics = #{@enableFbitInternalMetrics}"
+        end
+
         fbitFlushIntervalSecs = fbit_config[:log_flush_interval_secs]
         if !fbitFlushIntervalSecs.nil? && is_number?(fbitFlushIntervalSecs) && fbitFlushIntervalSecs.to_i > 0
           @fbitFlushIntervalSecs = fbitFlushIntervalSecs.to_i
@@ -303,6 +310,7 @@ if !file.nil?
   file.write("export PODS_EMIT_STREAM_BATCH_SIZE=#{@podsEmitStreamBatchSize}\n")
   file.write("export NODES_EMIT_STREAM_BATCH_SIZE=#{@nodesEmitStreamBatchSize}\n")
   # fbit settings
+  file.write("export ENABLE_FBIT_INTERNAL_METRICS=#{@enableFbitInternalMetrics}\n")
   if @fbitFlushIntervalSecs > 0
     file.write("export FBIT_SERVICE_FLUSH_INTERVAL=#{@fbitFlushIntervalSecs}\n")
   end
@@ -368,6 +376,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   file = File.open("setagentenv.ps1", "w")
 
   if !file.nil?
+    commands = get_command_windows("ENABLE_FBIT_INTERNAL_METRICS", @enableFbitInternalMetrics)
+    file.write(commands)
     if @fbitFlushIntervalSecs > 0
       commands = get_command_windows("FBIT_SERVICE_FLUSH_INTERVAL", @fbitFlushIntervalSecs)
       file.write(commands)

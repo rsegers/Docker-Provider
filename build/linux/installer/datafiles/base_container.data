@@ -48,6 +48,7 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf;  build/linux/installer/conf/fluent-bit-geneva-logs_infra.conf;   644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf; build/linux/installer/conf/fluent-bit-geneva-logs_tenant.conf;   644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-telemetry-svc.conf;          build/linux/installer/conf/fluent-bit-geneva-telemetry-svc.conf;   644; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_metrics.conf; build/linux/installer/conf/fluent-bit-geneva-logs_metrics.conf;   644; root; root
 
 
 

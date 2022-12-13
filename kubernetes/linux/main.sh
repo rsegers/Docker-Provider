@@ -513,6 +513,12 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATIO
       source integration_npm_config_env_var
 fi
 
+if [ "${ENABLE_FBIT_INTERNAL_METRICS}" == "true" ]; then
+    echo "Fluent-bit Internal metrics configured"
+else
+    rm /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_metrics.conf
+fi
+
 #Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       ruby fluent-bit-conf-customizer.rb
