@@ -27,7 +27,7 @@ jobs:
     name: Azure-Pipelines-CI-Test-EO
   steps:
   - task: ComponentGovernanceComponentDetection@0
-  ## commit will be in format 3.0.0-14-g833be407
+  ## commit will be in format Major.Minor.Patch-CommitAheadCount-CommitId
   - bash: |
       commit=$(git describe) 
       linuxImagetag="$commit"

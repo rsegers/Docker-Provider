@@ -8,7 +8,6 @@
 
 #Name of the ACR for ciprod & cidev images
 ACR_NAME=containerinsightsprod.azurecr.io
-## possible change
 AGENT_IMAGE_FULL_PATH=${ACR_NAME}/public/azuremonitor/containerinsights/${AGENT_RELEASE}:${AGENT_IMAGE_TAG_SUFFIX}
 AGENT_IMAGE_TAR_FILE_NAME=agentimage.tar.gz
 
