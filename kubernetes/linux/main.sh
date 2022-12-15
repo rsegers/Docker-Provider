@@ -358,18 +358,22 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
                         registry=$MCR_URL
                   fi
             fi
-            echo "The registry is: $registry"
-            if [ ! -z "$PROXY_ENDPOINT" ]; then
-               if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-                  echo "Making curl request to MCR url with proxy and proxy CA cert"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt`
-               else
-                  echo "Making curl request to MCR url with proxy"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry --proxy $PROXY_ENDPOINT`
-               fi
+            if [ -z $registry ]; then
+                  echo "The environment variable MCR_URL is not set for CLOUD_ENVIRONMENT: $CLOUD_ENVIRONMENT"
+                  RET=000
             else
-                  echo "Making curl request to MCR url"
-                  RET=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry)
+                  if [ ! -z "$PROXY_ENDPOINT" ]; then
+                  if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+                        echo "Making curl request to MCR url with proxy and proxy CA cert"
+                        RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt`
+                  else
+                        echo "Making curl request to MCR url with proxy"
+                        RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry --proxy $PROXY_ENDPOINT`
+                  fi
+                  else
+                        echo "Making curl request to MCR url"
+                        RET=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry)
+                  fi
             fi
             if [ $RET -eq 000 ]; then
                   echo "-e error    Error resolving host during the onboarding request. Check the internet connectivity and/or network policy on the cluster"
