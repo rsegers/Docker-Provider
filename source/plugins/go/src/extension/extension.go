@@ -80,7 +80,7 @@ func getExtensionDataTypeMapping(isNamedPipe bool) (map[string]string, error) {
 	var responseObject AgentTaggedDataResponse
 	err = json.Unmarshal([]byte(response), &responseObject)
 	if err != nil {
-		logger.Printf("Error::mdsd/Windows AMA::Failed to unmarshal config data. Error message: %s", string(err.Error()))
+		logger.Printf("Error::mdsd/AMA::Failed to unmarshal config data. Error message: %s", string(err.Error()))
 		return datatypeMap, err
 	}
 
@@ -92,7 +92,7 @@ func getExtensionDataTypeMapping(isNamedPipe bool) (map[string]string, error) {
 	if isNamedPipe == true {
 		outputStreamDefinitions = extensionData.OutputStreamDefinitions
 	}
-	logger.Printf("Info::mdsd/Windows AMA::build the datatype and streamid map -- start")
+	logger.Printf("Info::mdsd/AMA::build the datatype and streamid map -- start")
 	for _, extensionConfig := range extensionConfigs {
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
@@ -104,7 +104,7 @@ func getExtensionDataTypeMapping(isNamedPipe bool) (map[string]string, error) {
 			}
 		}
 	}
-	logger.Printf("Info::mdsd/Windows AMA::build the datatype and streamid map -- end")
+	logger.Printf("Info::mdsd/AMA::build the datatype and streamid map -- end")
 
 
 	return datatypeMap, nil

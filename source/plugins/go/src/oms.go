@@ -180,7 +180,7 @@ var (
 	ContainerType string
 	// flag to check whether LA AAD MSI Auth Enabled or not
 	IsAADMSIAuthMode bool
-	// named pipe connection to ContainerLog for Windows AMA
+	// named pipe connection to ContainerLog for AMA
 	ContainerLogNamedPipe net.Conn
 )
 
@@ -1248,13 +1248,13 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
 		if IsAADMSIAuthMode == true && strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) == false {
-			Log("Info::mdsd/windows ama::obtaining output stream id")
+			Log("Info::mdsd/ama::obtaining output stream id")
 			if ContainerLogSchemaV2 == true {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogV2DataType)
 			} else {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogDataType)
 			}
-			Log("Info::mdsd/windows ama:: using mdsdsource name: %s", MdsdContainerLogTagName)
+			Log("Info::mdsd/ama:: using mdsdsource name: %s", MdsdContainerLogTagName)
 			
 		}
 
@@ -1286,35 +1286,35 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		if IsWindows == true {
 			jsonStr, err := json.Marshal(stringMap)
-			Log("Windows AMA::fluentForwardTag: %s, jsonStr: %s, msgpSize: %d", fluentForward.Tag, jsonStr, msgpSize)
+			Log("AMA::fluentForwardTag: %s, jsonStr: %s, msgpSize: %d", fluentForward.Tag, jsonStr, msgpSize)
 			if ContainerLogNamedPipe == nil {
-				Log("Error::Windows AMA:: The connection to named pipe was nil. re-connecting...")
+				Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
 				if ContainerLogSchemaV2 {
-					CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogDataType))
-				} else {
 					CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogV2DataType))
+				} else {
+					CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogDataType))
 				}
 			}
 			if ContainerLogNamedPipe == nil {
-				Log("Error::Windows AMA::Error in creating the named pipe connection")
+				Log("Error::AMA::Error in creating the named pipe connection")
 				ContainerLogTelemetryMutex.Lock()
 				defer ContainerLogTelemetryMutex.Unlock()
 				ContainerLogsWindowsAMAClientCreateErrors += 1
 				return output.FLB_RETRY
 			}
-			Log("Info::Windows AMA::Starting to write container logs to named pipe")
+			Log("Info::AMA::Starting to write container logs to named pipe")
 			deadline := 10 * time.Second
 			ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
 			n, err := ContainerLogNamedPipe.Write(msgpBytes)
 			if err != nil {
-				Log("Error::Windows AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
+				Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
 				ContainerLogTelemetryMutex.Lock()
 				defer ContainerLogTelemetryMutex.Unlock()
 				ContainerLogsSendErrorsToWindowsAMAFromFluent += 1
 				return output.FLB_RETRY
 			} else {
 				numContainerLogRecords = len(msgPackEntries)
-				Log("Success::Windows AMA::Successfully flushed %d container log records that was %d bytes to AMA ", numContainerLogRecords, n)
+				Log("Success::AMA::Successfully flushed %d container log records that was %d bytes to AMA ", numContainerLogRecords, n)
 			}
 
 		} else {
@@ -1824,7 +1824,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		}
 	} else if ContainerLogsRouteADX == true {
 		CreateADXClient()
-	} else { // v1 or windows without MSI AUTH
+	} else { // windows without MSI AUTH
 		Log("Creating HTTP Client since either OS Platform is Windows or configmap configured with fallback option for ODS direct")
 		CreateHTTPClient()
 	}
