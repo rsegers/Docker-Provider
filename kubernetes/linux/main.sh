@@ -353,10 +353,11 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
 
       if [ $? -ne 0 ]; then
             registry="https://mcr.microsoft.com/v2/"
-            if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ $CLOUD_ENVIRONMENT == "azurechinacloud" ]; then
-                  if [ ! -z "$MCR_URL" ]; then
-                        registry=$MCR_URL
-                  fi
+            if [ $CLOUD_ENVIRONMENT == "azurechinacloud" ]; then
+                  registry="https://mcr.azk8s.cn/v2/"
+            fi
+            if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
+                  registry=$MCR_URL
             fi
             if [ -z $registry ]; then
                   echo "The environment variable MCR_URL is not set for CLOUD_ENVIRONMENT: $CLOUD_ENVIRONMENT"
