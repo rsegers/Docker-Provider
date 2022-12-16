@@ -502,7 +502,7 @@ function Start-Fluent-Telegraf {
 
     } else {
         $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit.conf"
-        Write-Host "since GenevaLogsIntegration enabled using fluent-bit config: $($fluentbitConfFile)"
+        Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
         # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
         # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
         Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
