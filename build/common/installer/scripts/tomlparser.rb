@@ -222,6 +222,8 @@ if !file.nil?
   end
   file.write("export AZMON_COLLECT_STDOUT_LOGS=#{@collectStdoutLogs}\n")
   file.write("export AZMON_LOG_TAIL_PATH=#{@logTailPath}\n")
+  logTailPathDir = File.dirname(@logTailPath)
+  file.write("export AZMON_LOG_TAIL_PATH_DIR=#{File.dirname(logTailPathDir)}\n")
   file.write("export AZMON_LOG_EXCLUSION_REGEX_PATTERN=\"#{@logExclusionRegexPattern}\"\n")
   file.write("export AZMON_STDOUT_EXCLUDED_NAMESPACES=#{@stdoutExcludeNamespaces}\n")
   file.write("export AZMON_COLLECT_STDERR_LOGS=#{@collectStderrLogs}\n")
@@ -269,6 +271,9 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows("AZMON_COLLECT_STDOUT_LOGS", @collectStdoutLogs)
     file.write(commands)
     commands = get_command_windows("AZMON_LOG_TAIL_PATH", @logTailPath)
+    file.write(commands)
+    logTailPathDir = File.dirname(@logTailPath)
+    commands = get_command_windows("AZMON_LOG_TAIL_PATH_DIR", logTailPathDir)
     file.write(commands)
     commands = get_command_windows("AZMON_LOG_EXCLUSION_REGEX_PATTERN", @logExclusionRegexPattern)
     file.write(commands)
