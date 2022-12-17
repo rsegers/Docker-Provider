@@ -921,6 +921,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             else
                   echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
                   sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}
+                  sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf
                   /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             fi
