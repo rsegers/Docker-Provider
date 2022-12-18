@@ -35,7 +35,7 @@ class Extension
     }
   end
 
-  def get_output_stream_id(datatypeId)
+  def get_output_named_pipe(datatypeId)
     @cache_lock.synchronize {
       if @datatype_to_named_pipe_mapping.has_key?(datatypeId)
         return @datatype_to_named_pipe_mapping[datatypeId]
@@ -173,6 +173,7 @@ class Extension
     end
     if getTaggedAgentData == true
       return taggedAgentData
+    end
     return extensionConfigurations
   end
 end

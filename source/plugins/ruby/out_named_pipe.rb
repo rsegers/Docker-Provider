@@ -27,7 +27,7 @@ module Fluent::Plugin
     def start
       super
       begin
-        @pipe_name = ExtensionUtils.getOutputNamedPipe(@datatype)
+        @pipe_name = "\\\\.\\pipe\\" + ExtensionUtils.getOutputNamedPipe(@datatype)
         @log.info "Named pipe: #{@pipe_name}"
         if !File.exist?(@pipe_name)
             @log.error "Pipe name doesn't exist"
