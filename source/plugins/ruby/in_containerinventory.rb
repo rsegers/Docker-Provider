@@ -123,6 +123,11 @@ module Fluent::Plugin
           end
         end
         containerInventory.each do |record|
+          @os_type = ENV["OS_TYPE"]
+          if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+            record["Collections"] = record["json_Collections"]
+            record.delete("json_Collections")
+          end
           eventStream.add(emitTime, record) if record
         end
         router.emit_stream(@tag, eventStream) if eventStream
