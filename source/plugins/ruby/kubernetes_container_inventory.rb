@@ -192,7 +192,7 @@ class KubernetesContainerInventory
               containerInfoMap["PodName"] = podName
               containerInfoMap["Namespace"] = namespace
               containerInfoMap["CreatedTime"] = createdTime
-              portsValue = container["ports"]
+              portsValue = "" + container["ports"]
               portsValueString = (portsValue.nil?) ? "" : portsValue.to_s
               containerInfoMap["Ports"] = portsValueString
               cmdValue = container["command"]

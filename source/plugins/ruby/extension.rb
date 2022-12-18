@@ -10,19 +10,38 @@ require_relative "ApplicationInsightsUtility"
 class Extension
   include Singleton
 
+  @@isWindows = false
+  @@os_type = ENV["OS_TYPE"]
+  if !@@os_type.nil? && !@@os_type.empty? && @@os_type.strip.casecmp("windows") == 0
+    @@isWindows = true
+  end
+
   def initialize
     @cache = {}
+    @datatype_to_stream_id_mapping = {}
+    @datatype_to_named_pipe_mapping = {}
     @cache_lock = Mutex.new
     $log.info("Extension::initialize complete")
   end
 
   def get_output_stream_id(datatypeId)
     @cache_lock.synchronize {
-      if @cache.has_key?(datatypeId)
-        return @cache[datatypeId]
+      if @datatype_to_stream_id_mapping.has_key?(datatypeId)
+        return @datatype_to_stream_id_mapping[datatypeId]
       else
-        @cache = get_stream_mapping()
-        return @cache[datatypeId]
+        @datatype_to_stream_id_mapping = get_stream_mapping()
+        return @datatype_to_stream_id_mapping[datatypeId]
+      end
+    }
+  end
+
+  def get_output_stream_id(datatypeId)
+    @cache_lock.synchronize {
+      if @datatype_to_named_pipe_mapping.has_key?(datatypeId)
+        return @datatype_to_named_pipe_mapping[datatypeId]
+      else
+        @datatype_to_named_pipe_mapping = get_namedpipe_mapping()
+        return @datatype_to_named_pipe_mapping[datatypeId]
       end
     }
   end
@@ -91,17 +110,53 @@ class Extension
      return dataTypeToStreamIdMap
   end
 
+  def get_namedpipe_mapping()
+    dataTypeToNamedPipeMap = Hash.new
+    begin
+     taggedAgentData = get_extension_configs(true)
+     extensionConfigurations = taggedAgentData["extensionConfigurations"]
+     outputStreamDefinitions = taggedAgentData["outputStreamDefinitions"]
+     if !extensionConfigurations.nil? && !extensionConfigurations.empty?
+       extensionConfigurations.each do |extensionConfig|
+         outputStreams = extensionConfig["outputStreams"]
+         if !outputStreams.nil? && !outputStreams.empty?
+           outputStreams.each do |datatypeId, streamId|
+           dataTypeToNamedPipeMap[datatypeId] = outputStreamDefinitions[streamId]["namedPipe"]
+           end
+         else
+           $log.warn("Extension::get_stream_mapping::received outputStreams is either nil or empty")
+         end
+       end
+     else
+       $log.warn("Extension::get_stream_mapping::received extensionConfigurations either nil or empty")
+     end
+    rescue => errorStr
+     $log.warn("Extension::get_stream_mapping failed: #{errorStr}")
+     ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+    end
+    return dataTypeToNamedPipeMap
+ end
+
+
   private
-  def get_extension_configs()
+  def get_extension_configs(getTaggedAgentData = false)
     extensionConfigurations = []
     begin
       clientSocket = UNIXSocket.open(Constants::ONEAGENT_FLUENT_SOCKET_NAME)
       requestId = SecureRandom.uuid.to_s
       requestBodyJSON = { "Request" => "AgentTaggedData", "RequestId" => requestId, "Tag" => Constants::CI_EXTENSION_NAME, "Version" => Constants::CI_EXTENSION_VERSION }.to_json
-      requestBodyMsgPack = requestBodyJSON.to_msgpack
-      clientSocket.write(requestBodyMsgPack)
-      clientSocket.flush
-      resp = clientSocket.recv(Constants::CI_EXTENSION_CONFIG_MAX_BYTES)
+      if !@@isWindows.nil? && @@isWindows == false
+        requestBodyMsgPack = requestBodyJSON.to_msgpack
+        clientSocket.write(requestBodyMsgPack)
+        clientSocket.flush
+        resp = clientSocket.recv(Constants::CI_EXTENSION_CONFIG_MAX_BYTES)
+      else
+        configPipe = "\\\\.\\pipe\\CAgentStream_CloudAgentInfo_AzureMonitorAgent"
+        clientNamedPipe = File.open(configPipe, "w+")
+        clientNamedPipe.write(requestBodyJSON)
+        resp = ''
+        clientNamedPipe.sysread(Constants::CI_EXTENSION_CONFIG_MAX_BYTES, resp)
+      end
       if !resp.nil? && !resp.empty?
         respJSON = JSON.parse(resp)
         taggedData = respJSON["TaggedData"]
@@ -116,6 +171,8 @@ class Extension
     ensure
       clientSocket.close unless clientSocket.nil?
     end
+    if getTaggedAgentData == true
+      return taggedAgentData
     return extensionConfigurations
   end
 end

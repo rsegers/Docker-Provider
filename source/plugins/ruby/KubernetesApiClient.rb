@@ -192,7 +192,7 @@ class KubernetesApiClient
       # e.g. md5 digest is 128 bits = 32 character in hex. Get first 16 and get a guid, and the next 16 to get resource id
       @@ClusterId = getClusterName
       begin
-        cluster = env["AKS_RESOURCE_ID"]
+        cluster = "" + env["AKS_RESOURCE_ID"]
         if cluster && !cluster.nil? && !cluster.empty?
           @@ClusterId = cluster
         end
