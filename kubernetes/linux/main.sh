@@ -315,7 +315,6 @@ export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT
 echo "export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT" >>~/.bashrc
 
 export PROXY_ENDPOINT=""
-export domain=""
 # Check for internet connectivity or workspace deletion
 if [ -e "/etc/ama-logs-secret/WSID" ]; then
       workspaceId=$(cat /etc/ama-logs-secret/WSID)
