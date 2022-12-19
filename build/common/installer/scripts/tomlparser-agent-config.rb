@@ -409,6 +409,20 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       commands = get_command_windows("AZMON_FBIT_MEM_BUF_LIMIT", @promFbitMemBufLimitDefault)
       file.write(commands)
     end
+
+    if @storageTotalLimitSizeMB > 0
+      commands = get_command_windows("STORAGE_TOTAL_LIMIT_SIZE_MB", @storageTotalLimitSizeMB.to_s + "M")
+      file.write(commands)
+    end
+
+    if @outputForwardWorkers > 0
+      commands = get_command_windows("OUTPUT_FORWARD_WORKERS_COUNT", @outputForwardWorkers)
+      file.write(commands)
+    end
+
+    commands = get_command_windows("OUTPUT_FORWARD_RETRY_LIMIT", @outputForwardRetryLimit)
+    file.write(commands)
+
     # Close file after writing all environment variables
     file.close
     puts "****************End Config Processing********************"
