@@ -39,8 +39,7 @@ module Fluent::Plugin
 
     def format(tag, time, record)
         if record != {}
-          @log.trace "Buffering #{tag}"
-          return [tag, record].to_msgpack
+          return [tag, [[time, record]]].to_msgpack
         else
           return ""
         end
@@ -51,12 +50,15 @@ module Fluent::Plugin
     def write(chunk)
         begin
           @pipe = File.open(@pipe_name, File::WRONLY)
-          chunk.extend Fluent::ChunkMessagePackEventStreamer
-          chunk.msgpack_each { |(tag, record)|
-              bytes = @pipe.write [tag, [record]].to_msgpack
-              @log.info "Data bytes sent: #{bytes}"
-              @pipe.flush
-          }
+          chunk.write_to(@pipe)
+          @pipe.flush
+          @pipe.close
+        #   chunk.extend Fluent::ChunkMessagePackEventStreamer
+        #   chunk.msgpack_each { |(tag, record)|
+        #       bytes = @pipe.write [tag, [record]].to_msgpack
+        #       @log.info "Data bytes sent: #{bytes}"
+        #       @pipe.flush
+        #   }
          
         rescue Exception => e
           @log.info "Exception when writing to named pipe: #{e}"
