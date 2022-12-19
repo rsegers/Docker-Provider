@@ -142,10 +142,10 @@ class Extension
   def get_extension_configs(getTaggedAgentData = false)
     extensionConfigurations = []
     begin
-      clientSocket = UNIXSocket.open(Constants::ONEAGENT_FLUENT_SOCKET_NAME)
       requestId = SecureRandom.uuid.to_s
       requestBodyJSON = { "Request" => "AgentTaggedData", "RequestId" => requestId, "Tag" => Constants::CI_EXTENSION_NAME, "Version" => Constants::CI_EXTENSION_VERSION }.to_json
       if !@@isWindows.nil? && @@isWindows == false
+        clientSocket = UNIXSocket.open(Constants::ONEAGENT_FLUENT_SOCKET_NAME)
         requestBodyMsgPack = requestBodyJSON.to_msgpack
         clientSocket.write(requestBodyMsgPack)
         clientSocket.flush

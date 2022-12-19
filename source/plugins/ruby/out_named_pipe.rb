@@ -53,7 +53,7 @@ module Fluent::Plugin
           @pipe = File.open(@pipe_name, File::WRONLY)
           chunk.extend Fluent::ChunkMessagePackEventStreamer
           chunk.msgpack_each { |(tag, record)|
-              bytes = @pipe.write record
+              bytes = @pipe.write [tag, [record]].to_msgpack
               @log.info "Data bytes sent: #{bytes}"
               @pipe.flush
           }

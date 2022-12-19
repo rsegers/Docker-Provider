@@ -61,6 +61,11 @@ module Fluent::Plugin
       @namespaceFilteringMode = "off"
       @namespaces = []
       $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
+      @isWindows = false
+      @os_type = ENV["OS_TYPE"]
+      if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+        @isWindows = true
+      end
       if ExtensionUtils.isAADMSIAuthMode()
         $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
         if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
@@ -88,7 +93,7 @@ module Fluent::Plugin
           if !podList.nil? && !podList.empty? && podList.key?("items") && !podList["items"].nil? && !podList["items"].empty?
             podList["items"].each do |item|
               next unless !KubernetesApiClient.isExcludeResourceItem(item["metadata"]["name"], item["metadata"]["namespace"], @namespaceFilteringMode, @namespaces)
-              containerInventoryRecords = KubernetesContainerInventory.getContainerInventoryRecords(item, batchTime, clusterCollectEnvironmentVar)
+              containerInventoryRecords = KubernetesContainerInventory.getContainerInventoryRecords(item, batchTime, clusterCollectEnvironmentVar, @isWindows)
               containerInventoryRecords.each do |containerRecord|
                 ContainerInventoryState.writeContainerState(containerRecord)
                 if hostName.empty? && !containerRecord["Computer"].empty?
@@ -123,11 +128,6 @@ module Fluent::Plugin
           end
         end
         containerInventory.each do |record|
-          @os_type = ENV["OS_TYPE"]
-          if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-            record["Collections"] = record["json_Collections"]
-            record.delete("json_Collections")
-          end
           eventStream.add(emitTime, record) if record
         end
         router.emit_stream(@tag, eventStream) if eventStream

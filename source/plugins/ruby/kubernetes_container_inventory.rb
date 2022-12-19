@@ -192,11 +192,11 @@ class KubernetesContainerInventory
               containerInfoMap["PodName"] = podName
               containerInfoMap["Namespace"] = namespace
               containerInfoMap["CreatedTime"] = createdTime
-              portsValue = "" + container["ports"]
-              portsValueString = (portsValue.nil?) ? "" : portsValue.to_s
+              portsValue = container["ports"]
+              portsValueString = (portsValue.nil?) ? "" : "" + portsValue.to_s
               containerInfoMap["Ports"] = portsValueString
               cmdValue = container["command"]
-              cmdValueString = (cmdValue.nil?) ? "" : cmdValue.to_s
+              cmdValueString = (cmdValue.nil?) ? "" : "" + cmdValue.to_s
               containerInfoMap["Command"] = cmdValueString
               if isWindows
                 # For windows container inventory, we dont need to get envvars from pods response since its already taken care in KPI as part of pod optimized item
