@@ -12,6 +12,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
@@ -1128,7 +1129,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		if IsGenevaLogsTelemetryServiceMode == true {
 			//Incase of GenevaLogs Service mode, use the source Computer name from which log line originated
-            // And the ClusterResourceId in the receiving record
+			// And the ClusterResourceId in the receiving record
 			Computer = ToString(record["Computer"])
 			stringMap["AzureResourceId"] = ToString(record["AzureResourceId"])
 		} else if IsGenevaLogsIntegrationEnabled == true {
@@ -1489,11 +1490,13 @@ func containsKey(currentMap map[string]bool, key string) bool {
 
 // GetContainerIDK8sNamespacePodNameFromFileName Gets the container ID, k8s namespace, pod name and containername From the file Name
 // sample filename kube-proxy-dgcx7_kube-system_kube-proxy-8df7e49e9028b60b5b0d0547f409c455a9567946cf763267b7e6fa053ab8c182.log
-func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, string, string, string) {
+func GetContainerIDK8sNamespacePodNameFromFileName(filePath string) (string, string, string, string) {
 	id := ""
 	ns := ""
 	podName := ""
 	containerName := ""
+
+	_, filename := filepath.Split(filePath)
 
 	start := strings.LastIndex(filename, "-")
 	end := strings.LastIndex(filename, ".")
@@ -1522,13 +1525,13 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 		containerName = filename[start+1 : end]
 	}
 
-	start = strings.Index(filename, "/containers/")
+	start = 0
 	end = strings.Index(filename, "_")
 
 	if start >= end || start == -1 || end == -1 {
 		podName = ""
 	} else {
-		podName = filename[(start + len("/containers/")):end]
+		podName = filename[0 : end]
 	}
 
 	return id, ns, podName, containerName

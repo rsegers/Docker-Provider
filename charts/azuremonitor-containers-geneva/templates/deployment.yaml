@@ -72,6 +72,15 @@ spec:
          - name: http
            containerPort: 24224
            protocol: TCP
+         lifecycle:
+            preStop:
+              exec:
+               command: [
+                  "sh", "-c",
+                  # Introduce a delay to the shutdown sequence to wait for the
+                  # pod eviction event to propagate. Then, gracefully shutdown
+                  "sleep 15"
+                ]
          livenessProbe:
           exec:
             command:

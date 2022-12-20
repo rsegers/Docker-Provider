@@ -14,8 +14,8 @@ genevaLogsConfig:
  configversion: "<your_geneva_config_version>"                                               # config version of the agent xml config.
 
 image:
-  repository: mcr.microsoft.com/azuremonitor/containerinsights/ciprod
-  tag: "ciprod12112022-preview"
+  repository: mcr.microsoft.com/azuremonitor/containerinsights/cidev
+  tag: "12192022-5ce37c26"
   pullPolicy: IfNotPresent
   agentVersion: "azure-mdsd-1.17.1"
 nameOverride: ""
@@ -40,14 +40,13 @@ autoscaling:
 affinity:
   nodeAffinity:
     requiredDuringSchedulingIgnoredDuringExecution:
-         nodeSelectorTerms:
-            - labelSelector:
-              matchExpressions:
-                - key: kubernetes.io/os
-                  operator: In
-                  values:
-                    - linux
-                - key: type
-                  operator: NotIn
-                  values:
-                    - virtual-kubelet
+      nodeSelectorTerms:
+      - matchExpressions:
+        - key: kubernetes.io/os
+          operator: In
+          values:
+          - linux
+        - key: type
+          operator: NotIn
+          values:
+          - virtual-kubelet
