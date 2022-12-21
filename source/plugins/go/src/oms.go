@@ -1496,7 +1496,10 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filePath string) (string, str
 	podName := ""
 	containerName := ""
 
-	_, filename := filepath.Split(filePath)
+	Log("GetContainerIDK8sNamespacePodNameFromFileName filePath: %s", filePath)
+	dir, filename := filepath.Split(filePath)
+	Log("GetContainerIDK8sNamespacePodNameFromFileName dir: %s", dir)
+	Log("GetContainerIDK8sNamespacePodNameFromFileName filename: %s", filename)
 
 	start := strings.LastIndex(filename, "-")
 	end := strings.LastIndex(filename, ".")
