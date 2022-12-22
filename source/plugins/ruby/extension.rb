@@ -114,24 +114,28 @@ class Extension
     dataTypeToNamedPipeMap = Hash.new
     begin
      taggedAgentData = get_extension_configs(true)
-     extensionConfigurations = taggedAgentData["extensionConfigurations"]
-     outputStreamDefinitions = taggedAgentData["outputStreamDefinitions"]
-     if !extensionConfigurations.nil? && !extensionConfigurations.empty?
-       extensionConfigurations.each do |extensionConfig|
-         outputStreams = extensionConfig["outputStreams"]
-         if !outputStreams.nil? && !outputStreams.empty?
-           outputStreams.each do |datatypeId, streamId|
-           dataTypeToNamedPipeMap[datatypeId] = outputStreamDefinitions[streamId]["namedPipe"]
-           end
-         else
-           $log.warn("Extension::get_stream_mapping::received outputStreams is either nil or empty")
-         end
-       end
+     if !taggedAgentData.nil? && !taggedAgentData.empty?
+      extensionConfigurations = taggedAgentData["extensionConfigurations"]
+      outputStreamDefinitions = taggedAgentData["outputStreamDefinitions"]
+      if !extensionConfigurations.nil? && !extensionConfigurations.empty?
+        extensionConfigurations.each do |extensionConfig|
+          outputStreams = extensionConfig["outputStreams"]
+          if !outputStreams.nil? && !outputStreams.empty?
+            outputStreams.each do |datatypeId, streamId|
+            dataTypeToNamedPipeMap[datatypeId] = outputStreamDefinitions[streamId]["namedPipe"]
+            end
+          else
+            $log.warn("Extension::get_namedpipe_mapping::received outputStreams or outputStreamDefinitions is either nil or empty")
+          end
+        end
+      else
+        $log.warn("Extension::get_namedpipe_mapping::received extensionConfigurations either nil or empty")
+      end
      else
-       $log.warn("Extension::get_stream_mapping::received extensionConfigurations either nil or empty")
+      $log.warn("Extension::get_namedpipe_mapping::received taggedAgentData either nil or empty")
      end
     rescue => errorStr
-     $log.warn("Extension::get_stream_mapping failed: #{errorStr}")
+     $log.warn("Extension::get_namedpipe_mapping failed: #{errorStr}")
      ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
     end
     return dataTypeToNamedPipeMap

@@ -24,16 +24,26 @@ module Fluent::Plugin
       @formatter = formatter_create(usage: 'msgpack_formatter', type: 'msgpack' )
     end
 
+    def getNamedPipeFromExtension()
+        @pipe_name = ""
+        pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
+        if !pipe_suffix.nil? && !pipe_suffix.empty?
+          @pipe_name = "\\\\.\\pipe\\" + @name
+          @log.info "Named pipe: #{pipe_name}"
+        end
+    end
+
     def start
       super
       begin
-        @pipe_name = "\\\\.\\pipe\\" + ExtensionUtils.getOutputNamedPipe(@datatype)
-        @log.info "Named pipe: #{@pipe_name}"
-        if !File.exist?(@pipe_name)
-            @log.error "Pipe name doesn't exist"
+        getNamedPipeFromExtension()    
+        if @pipe_name.nil? || @pipe_name.empty?
+            @log.error "Couldn't get pipe name from extension config. Will retry during write"
+        elsif !File.exist?(@pipe_name)
+            @log.error "Named pipe with name: #{@pipe_name} doesn't exist"
         end
       rescue => e
-        @log.info "exception while starting out_named_pipe #{e}"
+        @log.info "Exception while starting out_named_pipe #{e}"
       end
     end
 
@@ -48,6 +58,11 @@ module Fluent::Plugin
         # This method is called every flush interval. Send the buffer chunk to MDM.
     # 'chunk' is a buffer chunk that includes multiple formatted records
     def write(chunk)
+        while !@pipe_name.nil? && !@pipe_name.empty?
+            sleep 5
+            getNamedPipeFromExtension()
+        end
+
         begin
           @pipe = File.open(@pipe_name, File::WRONLY)
           chunk.write_to(@pipe)
