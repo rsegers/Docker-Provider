@@ -28,8 +28,8 @@ module Fluent::Plugin
         @pipe_name = ""
         pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
         if !pipe_suffix.nil? && !pipe_suffix.empty?
-          @pipe_name = "\\\\.\\pipe\\" + @name
-          @log.info "Named pipe: #{pipe_name}"
+          @pipe_name = "\\\\.\\pipe\\" + pipe_suffix
+          @log.info "Named pipe: #{@pipe_name}"
         end
     end
 
@@ -58,11 +58,9 @@ module Fluent::Plugin
         # This method is called every flush interval. Send the buffer chunk to MDM.
     # 'chunk' is a buffer chunk that includes multiple formatted records
     def write(chunk)
-        while !@pipe_name.nil? && !@pipe_name.empty?
-            sleep 5
-            getNamedPipeFromExtension()
+        if @pipe_name.nil? || @pipe_name.empty?
+          getNamedPipeFromExtension()
         end
-
         begin
           @pipe = File.open(@pipe_name, File::WRONLY)
           chunk.write_to(@pipe)
