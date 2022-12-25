@@ -66,6 +66,7 @@ require_relative "ConfigParseErrorLogger"
 @storageTotalLimitSizeMB = 100
 @outputForwardWorkers = 10
 @outputForwardRetryLimit = 3
+@requireAckResponse = "false"
 
 # configmap settings related to mdsd
 @mdsdMonitoringMaxEventRate = 0
@@ -230,6 +231,11 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             puts "Using config map value: output_forward_retry_limit = #{@outputForwardRetryLimit}"
           end
         end
+        requireAckResponse = fbit_config[:require_ack_response]
+        if !requireAckResponse.nil? && requireAckResponse.downcase == "true"
+          @requireAckResponse = requireAckResponse
+          puts "Using config map value: require_ack_response = #{@requireAckResponse}"
+        end
       end
       # ama-logs daemonset only settings
       if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
@@ -328,6 +334,7 @@ if !file.nil?
   end
 
   file.write("export OUTPUT_FORWARD_RETRY_LIMIT=#{@outputForwardRetryLimit}\n")
+  file.write("export REQUIRE_ACK_RESPONSE=#{@requireAckResponse}\n")
 
   #mdsd settings
   if @mdsdMonitoringMaxEventRate > 0
@@ -421,6 +428,9 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     end
 
     commands = get_command_windows("OUTPUT_FORWARD_RETRY_LIMIT", @outputForwardRetryLimit)
+    file.write(commands)
+
+    commands = get_command_windows("REQUIRE_ACK_RESPONSE", @requireAckResponse)
     file.write(commands)
 
     # Close file after writing all environment variables

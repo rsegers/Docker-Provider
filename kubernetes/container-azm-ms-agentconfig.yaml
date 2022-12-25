@@ -203,6 +203,7 @@ data:
       storage_total_limit_size_mb = "500"           # default is 100 MB
       output_forward_workers = "20"                 # default is 10
       output_forward_retry_limit = "no_limits"      # default is 3, use no_limits to retry infinetly
+      require_ack_response  = "true"                # default is false
 
 
 metadata:
