@@ -15,7 +15,7 @@ genevaLogsConfig:
 
 image:
   repository: mcr.microsoft.com/azuremonitor/containerinsights/cidev
-  tag: "12222022-3bf99f67"
+  tag: "12252022-f1fc9df8"
   pullPolicy: IfNotPresent
   agentVersion: "azure-mdsd-1.17.1"
 nameOverride: ""
@@ -42,6 +42,10 @@ affinity:
     requiredDuringSchedulingIgnoredDuringExecution:
       nodeSelectorTerms:
       - matchExpressions:
+        - key: logloss
+          operator: In
+          values:
+          - test
         - key: kubernetes.io/os
           operator: In
           values:
