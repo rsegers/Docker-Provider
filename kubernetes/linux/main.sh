@@ -1030,6 +1030,8 @@ else
 fi
 
 shutdown() {
+      pkill -f fluent-bit
+      sleep 10 # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
       pkill -f mdsd
 }
 

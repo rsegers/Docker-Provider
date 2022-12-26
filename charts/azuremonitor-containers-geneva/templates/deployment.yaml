@@ -79,7 +79,7 @@ spec:
                   "sh", "-c",
                   # Introduce a delay to the shutdown sequence to wait for the
                   # pod eviction event to propagate. Then, gracefully shutdown
-                  "sleep 15"
+                  "sleep 10"
                 ]
          livenessProbe:
           exec:
