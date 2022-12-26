@@ -25,7 +25,7 @@ if [[ "$AGENT_IMAGE_FULL_PATH" == *"win-"* ]]; then
   TAG_EXISTS=$(echo $MCR_TAG_RESULT | jq '.tags | contains(["'"win-$AGENT_IMAGE_TAG_SUFFIX"'"])')
 else
   echo "checking linux tags"
-  TAG_EXISTS=$(echo $MCR_TAG_RESULT | jq '.tags | contains(["'":IMAGE_TAG_SUFFIX"'"])')
+  TAG_EXISTS=$(echo $MCR_TAG_RESULT | jq '.tags | contains(["'":$AGENT_IMAGE_TAG_SUFFIX"'"])')
 fi
 
 if $TAG_EXISTS; then
