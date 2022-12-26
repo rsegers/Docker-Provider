@@ -1030,9 +1030,30 @@ else
 fi
 
 shutdown() {
+      timestamp=`date --rfc-3339=seconds`
+      echo "shutdown start @ ${timestamp}"
+      echo "shutdown fluent-bit process @ ${timestamp}"
       pkill -f fluent-bit
       sleep 10 # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
+
+      timestamp=`date --rfc-3339=seconds`
+      echo "*** fluent-bit logs: start @ ${timestamp}"
+      cat /var/opt/microsoft/docker-cimprov/log/fluent-bit-geneva.log
+      timestamp=`date --rfc-3339=seconds`
+      echo "*** fluent-bit logs: end @ ${timestamp}"
+
+      timestamp=`date --rfc-3339=seconds`
+      echo "shutdown mdsd process @ ${timestamp}"
       pkill -f mdsd
+      timestamp=`date --rfc-3339=seconds`
+      echo "*** mdsd logs: start @ ${timestamp}"
+      cat /var/opt/microsoft/linuxmonagent/log/mdsd.info
+      echo "*** mdsd logs: end @ ${timestamp}"
+      timestamp=`date --rfc-3339=seconds`
+      echo "sleep for 60 seconds @ ${timestamp}"
+      sleep 60
+      timestamp=`date --rfc-3339=seconds`
+      echo "shutdown completed @ ${timestamp}"
 }
 
 trap "shutdown" SIGTERM
