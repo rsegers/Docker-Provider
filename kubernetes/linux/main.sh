@@ -913,9 +913,9 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
 
                   if [ -z $FBIT_SERVICE_GRACE_INTERVAL_SECONDS ]; then
-                       FBIT_SERVICE_GRACE_INTERVAL_SECONDS="10"
+                       export FBIT_SERVICE_GRACE_INTERVAL_SECONDS="10"
                   fi
-                  echo "using FluentBit Grace Interval seconds:${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
+                  echo "Using FluentBit Grace Interval seconds:${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
                   echo "export FBIT_SERVICE_GRACE_INTERVAL_SECONDS=$FBIT_SERVICE_GRACE_INTERVAL_SECONDS" >>~/.bashrc
 
                   source ~/.bashrc
@@ -1057,10 +1057,12 @@ shutdown() {
             echo "*** mdsd logs: start @ ${timestamp}"
             cat /var/opt/microsoft/linuxmonagent/log/mdsd.info
             echo "*** mdsd logs: end @ ${timestamp}"
+            sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for grace interval to avoid data loss for transit records
             timestamp=`date --rfc-3339=seconds`
-            # echo "sleep for 60 seconds @ ${timestamp}"
-            # sleep 60
-            # timestamp=`date --rfc-3339=seconds`
+            echo "*** fluent-bit-out-oms-runtime logs: start @ ${timestamp}"
+            cat /var/opt/microsoft/docker-cimprov/log/fluent-bit-out-oms-runtime.log
+            echo "*** fluent-bit-out-oms-runtime logs: end @ ${timestamp}"
+            timestamp=`date --rfc-3339=seconds`
             echo "shutdown completed @ ${timestamp}"
       else
          pkill -f mdsd
