@@ -1296,7 +1296,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				}
 			}
 			if ContainerLogNamedPipe == nil {
-				Log("Error::AMA::Error in creating the named pipe connection")
+				Log("Error::AMA::Cannot create the named pipe connection")
 				ContainerLogTelemetryMutex.Lock()
 				defer ContainerLogTelemetryMutex.Unlock()
 				ContainerLogsWindowsAMAClientCreateErrors += 1
@@ -1815,9 +1815,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	if ContainerLogsRouteV2 == true {
 		if IsWindows {
 			if ContainerLogSchemaV2 {
-				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogDataType))
-			} else {
 				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogV2DataType))
+			} else {
+				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogDataType))
 			}
 		} else {
 			CreateMDSDClient(ContainerLogV2, ContainerType)

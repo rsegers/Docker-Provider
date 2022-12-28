@@ -11,9 +11,13 @@ import (
 )
 
 func CreateWindowsNamedPipesClient(namedPipe string) {
+	if namedPipe == "" {
+		Log("Error::AMA::CreateWindowsNamedPipesClient::namedPipe is empty")
+		return
+	}
 	containerLogPipePath := "\\\\.\\\\pipe\\\\" + namedPipe
 
-	Log("AMA::%s", containerLogPipePath)
+	Log("AMA::CreateWindowsNamedPipesClient::The named pipe is: %s", containerLogPipePath)
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	conn, err := winio.DialPipeAccess(ctx, containerLogPipePath, syscall.GENERIC_WRITE)
