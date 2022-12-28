@@ -1,5 +1,19 @@
 #!/bin/bash
 
+gracefulShutdown() {
+      timestamp=`date --rfc-3339=seconds`
+      echo "gracefulShutdown start @ ${timestamp}"
+      echo "gracefulShutdown fluent-bit process start @ ${timestamp}"
+      pkill -f fluent-bit
+      sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
+      timestamp=`date --rfc-3339=seconds`
+      echo "gracefulShutdown fluent-bit process end @ ${timestamp}"
+      echo "gracefulShutdown mdsd process @ ${timestamp}"
+      pkill -f mdsd
+      timestamp=`date --rfc-3339=seconds`
+      echo "gracefulShutdown completed @ ${timestamp}"
+}
+
 # please use this instead of adding env vars to bashrc directly
 # usage: setGlobalEnvVar ENABLE_SIDECAR_SCRAPING true
 setGlobalEnvVar() {
@@ -1038,32 +1052,8 @@ fi
 
 shutdown() {
       if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
-            timestamp=`date --rfc-3339=seconds`
-            echo "shutdown start @ ${timestamp}"
-            echo "shutdown fluent-bit process @ ${timestamp}"
-            pkill -f fluent-bit
-            sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
-
-            timestamp=`date --rfc-3339=seconds`
-            echo "*** fluent-bit logs: start @ ${timestamp}"
-            cat /var/opt/microsoft/docker-cimprov/log/fluent-bit-geneva.log
-            timestamp=`date --rfc-3339=seconds`
-            echo "*** fluent-bit logs: end @ ${timestamp}"
-
-            timestamp=`date --rfc-3339=seconds`
-            echo "shutdown mdsd process @ ${timestamp}"
-            pkill -f mdsd
-            timestamp=`date --rfc-3339=seconds`
-            echo "*** mdsd logs: start @ ${timestamp}"
-            cat /var/opt/microsoft/linuxmonagent/log/mdsd.info
-            echo "*** mdsd logs: end @ ${timestamp}"
-            # sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for grace interval to avoid data loss for transit records
-            timestamp=`date --rfc-3339=seconds`
-            echo "*** fluent-bit-out-oms-runtime logs: start @ ${timestamp}"
-            cat /var/opt/microsoft/docker-cimprov/log/fluent-bit-out-oms-runtime.log
-            echo "*** fluent-bit-out-oms-runtime logs: end @ ${timestamp}"
-            timestamp=`date --rfc-3339=seconds`
-            echo "shutdown completed @ ${timestamp}"
+         echo "graceful shutdown"
+         gracefulShutdown
       else
          pkill -f mdsd
       fi
