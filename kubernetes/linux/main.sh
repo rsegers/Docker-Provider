@@ -1057,7 +1057,7 @@ shutdown() {
             echo "*** mdsd logs: start @ ${timestamp}"
             cat /var/opt/microsoft/linuxmonagent/log/mdsd.info
             echo "*** mdsd logs: end @ ${timestamp}"
-            sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for grace interval to avoid data loss for transit records
+            # sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for grace interval to avoid data loss for transit records
             timestamp=`date --rfc-3339=seconds`
             echo "*** fluent-bit-out-oms-runtime logs: start @ ${timestamp}"
             cat /var/opt/microsoft/docker-cimprov/log/fluent-bit-out-oms-runtime.log
