@@ -1,5 +1,19 @@
 #!/bin/bash
 
+gracefulShutdown() {
+      timestamp=`date --rfc-3339=seconds`
+      echo "gracefulShutdown start @ ${timestamp}"
+      echo "gracefulShutdown fluent-bit process start @ ${timestamp}"
+      pkill -f fluent-bit
+      sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
+      timestamp=`date --rfc-3339=seconds`
+      echo "gracefulShutdown fluent-bit process completed @ ${timestamp}"
+      echo "gracefulShutdown mdsd process @ ${timestamp}"
+      pkill -f mdsd
+      timestamp=`date --rfc-3339=seconds`
+      echo "gracefulShutdown completed @ ${timestamp}"
+}
+
 # please use this instead of adding env vars to bashrc directly
 # usage: setGlobalEnvVar ENABLE_SIDECAR_SCRAPING true
 setGlobalEnvVar() {
@@ -911,6 +925,13 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   # gangams - only support v2 in case of 1P mode
                   AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
                   echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
+
+                  if [ -z $FBIT_SERVICE_GRACE_INTERVAL_SECONDS ]; then
+                       export FBIT_SERVICE_GRACE_INTERVAL_SECONDS="10"
+                  fi
+                  echo "Using FluentBit Grace Interval seconds:${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
+                  echo "export FBIT_SERVICE_GRACE_INTERVAL_SECONDS=$FBIT_SERVICE_GRACE_INTERVAL_SECONDS" >>~/.bashrc
+
                   source ~/.bashrc
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
@@ -1030,7 +1051,12 @@ else
 fi
 
 shutdown() {
-      pkill -f mdsd
+     if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+         echo "graceful shutdown"
+         gracefulShutdown
+      else
+         pkill -f mdsd
+      fi
 }
 
 trap "shutdown" SIGTERM
