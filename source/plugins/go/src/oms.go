@@ -1285,15 +1285,15 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		if IsWindows == true {
-			jsonStr, err := json.Marshal(stringMap)
-			Log("AMA::fluentForwardTag: %s, jsonStr: %s, msgpSize: %d", fluentForward.Tag, jsonStr, msgpSize)
 			if ContainerLogNamedPipe == nil {
 				Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
+				var datatype string
 				if ContainerLogSchemaV2 {
-					CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogV2DataType))
+					datatype = ContainerLogV2DataType
 				} else {
-					CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogDataType))
+					datatype = ContainerLogDataType
 				}
+				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
 			}
 			if ContainerLogNamedPipe == nil {
 				Log("Error::AMA::Cannot create the named pipe connection")
@@ -1801,12 +1801,12 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsV2Route)
 	}
 
-	ContainerLogSchemaVersion := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOG_SCHEMA_VERSION")))
-	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", ContainerLogSchemaVersion)
+	EnvContainerLogSchemaVersion := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOG_SCHEMA_VERSION")))
+	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", EnvContainerLogSchemaVersion)
 
 	ContainerLogSchemaV2 = false //default is v1 schema
 
-	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
+	if strings.Compare(EnvContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
@@ -1814,11 +1814,13 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	
 	if ContainerLogsRouteV2 == true {
 		if IsWindows {
+			var datatype string
 			if ContainerLogSchemaV2 {
-				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogV2DataType))
+				datatype = ContainerLogV2DataType
 			} else {
-				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(ContainerLogDataType))
+				datatype = ContainerLogDataType
 			}
+			CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
 		} else {
 			CreateMDSDClient(ContainerLogV2, ContainerType)
 		}

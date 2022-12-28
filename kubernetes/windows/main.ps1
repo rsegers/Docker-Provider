@@ -69,8 +69,8 @@ function Set-AMAEnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Machine")
 
     $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksregion, "Process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksregion, "Machine")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Machine")
     [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Process")
     [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Machine") 
 
@@ -660,10 +660,10 @@ if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'tr
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
 }
 else {
+    Write-Host "skipping starting windows ama agent"
+
     Generate-Certificates
     Test-CertificatePath
-
-    Write-Host "skipping starting the windows ama agent"
 }
 
 
