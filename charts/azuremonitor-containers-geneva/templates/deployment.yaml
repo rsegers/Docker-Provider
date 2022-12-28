@@ -25,6 +25,7 @@ spec:
      {{- with .Values.affinity }}
      affinity: {{- toYaml . | nindent 8 }}
      {{- end }}
+     terminationGracePeriodSeconds: 45
      containers:
        - name: ama-logs-geneva
          image: {{ printf "%s:%s" .Values.image.repository .Values.image.tag }}
@@ -33,7 +34,7 @@ spec:
           {{- toYaml .Values.resources | nindent 12 }}
          env:
          - name: FBIT_SERVICE_GRACE_INTERVAL_SECONDS
-           value: "10"
+           value: "15"
          - name: GENEVA_LOGS_INTEGRATION_SERVICE_MODE
            value: "true"
          - name: CONTAINER_TYPE
@@ -81,7 +82,7 @@ spec:
                   "sh", "-c",
                   # Introduce a delay to the shutdown sequence to wait for the
                   # pod eviction event to propagate. Then, gracefully shutdown
-                  "sleep 10"
+                  "sleep 5"
                 ]
          livenessProbe:
           exec:
