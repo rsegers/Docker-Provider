@@ -2,30 +2,14 @@
 
 gracefulShutdown() {
       echo "gracefulShutdown start @ `date --rfc-3339=seconds`"
-
       echo "gracefulShutdown fluent-bit process start @ `date --rfc-3339=seconds`"
       pkill -f fluent-bit
       sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
-      echo "gracefulShutdown fluent-bit process completed @ `date --rfc-3339=seconds`"
-
-      echo "fluent-bit geneva log file start @ `date --rfc-3339=seconds`"
-      cat /var/opt/microsoft/docker-cimprov/log/fluent-bit-geneva.log
-      echo "fluent-bit geneva log file complete @ `date --rfc-3339=seconds`"
-
-      echo "fluent-bit log file start @ `date --rfc-3339=seconds`"
-      cat /var/opt/microsoft/docker-cimprov/log/fluent-bit-out-oms-runtime.log
-      echo "fluent-bit log file complete @ `date --rfc-3339=seconds`"
-
+      echo "gracefulShutdown fluent-bit process complete @ `date --rfc-3339=seconds`"
       echo "gracefulShutdown mdsd process start @ `date --rfc-3339=seconds`"
       pkill -f mdsd
       echo "gracefulShutdown mdsd process compelete @ `date --rfc-3339=seconds`"
-
-
-      echo "mdsd info log file start @ `date --rfc-3339=seconds`"
-      cat /var/opt/microsoft/linuxmonagent/log/mdsd.info
-      echo "mdsd info log file complete @ `date --rfc-3339=seconds`"
-
-      echo "gracefulShutdown completed @ `date --rfc-3339=seconds`"
+      echo "gracefulShutdown complete @ `date --rfc-3339=seconds`"
 }
 
 # please use this instead of adding env vars to bashrc directly
@@ -847,7 +831,7 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
       source ~/.bashrc
       mkdir /var/run/mdsd-${CONTAINER_TYPE}
       # add -T 0xFFFF for full traces
-      mdsd -T 0x8008 ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
     else
       echo "not starting mdsd (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
     fi
@@ -858,7 +842,7 @@ else
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
       source ~/.bashrc
       mkdir /var/run/mdsd-ci
-      mdsd -T 0x8008 ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
+      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
 fi
 
 # Set up a cron job for logrotation
@@ -947,7 +931,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   echo "export FBIT_SERVICE_GRACE_INTERVAL_SECONDS=$FBIT_SERVICE_GRACE_INTERVAL_SECONDS" >>~/.bashrc
 
                   source ~/.bashrc
-                  # workaround - delay FBIT to ensure MDSD is ready in 1P mode
+                  # Delay FBIT service start to ensure MDSD is ready in 1P mode to avoid data loss
                   sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
