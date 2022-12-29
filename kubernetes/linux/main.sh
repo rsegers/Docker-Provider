@@ -947,6 +947,8 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   echo "export FBIT_SERVICE_GRACE_INTERVAL_SECONDS=$FBIT_SERVICE_GRACE_INTERVAL_SECONDS" >>~/.bashrc
 
                   source ~/.bashrc
+                  # workaround - delay FBIT to ensure MDSD is ready in 1P mode
+                  sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
