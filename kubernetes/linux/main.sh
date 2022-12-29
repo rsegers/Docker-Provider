@@ -8,13 +8,18 @@ gracefulShutdown() {
       sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
       echo "gracefulShutdown fluent-bit process completed @ `date --rfc-3339=seconds`"
 
-      echo "gracefulShutdown mdsd process start @ `date --rfc-3339=seconds`"
-      pkill -f mdsd
-      echo "gracefulShutdown mdsd process compelete @ `date --rfc-3339=seconds`"
+      echo "fluent-bit geneva log file start @ `date --rfc-3339=seconds`"
+      cat /var/opt/microsoft/docker-cimprov/log/fluent-bit-geneva.log
+      echo "fluent-bit geneva log file complete @ `date --rfc-3339=seconds`"
 
       echo "fluent-bit log file start @ `date --rfc-3339=seconds`"
       cat /var/opt/microsoft/docker-cimprov/log/fluent-bit-out-oms-runtime.log
       echo "fluent-bit log file complete @ `date --rfc-3339=seconds`"
+
+      echo "gracefulShutdown mdsd process start @ `date --rfc-3339=seconds`"
+      pkill -f mdsd
+      echo "gracefulShutdown mdsd process compelete @ `date --rfc-3339=seconds`"
+
 
       echo "mdsd info log file start @ `date --rfc-3339=seconds`"
       cat /var/opt/microsoft/linuxmonagent/log/mdsd.info

@@ -1137,6 +1137,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
+
+        // gangams - debug logs to validate the graceful shutdown
+		if IsGenevaLogsTelemetryServiceMode == true {
+			Log("MDSD::Received LogEntry: %s with TimeGenerated: %s", logEntry, logEntryTimeStamp)
+		}
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
 		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
