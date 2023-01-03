@@ -48,7 +48,7 @@ az login --service-principal --username=${SPN_CLIENT_ID} --password=${SPN_SECRET
 ACCESS_TOKEN=$(az account get-access-token --resource $RESOURCE_ID --query accessToken -o json)
 ACCESS_TOKEN=$(echo $ACCESS_TOKEN | tr -d '"' | tr -d '"\r\n')
 ARC_API_URL="https://eastus2euap.dp.kubernetesconfiguration.azure.com"
-VERSION="2.9.8"
+VERSION=${VERSION}
 EXTENSION_NAME="microsoft.azuremonitor.containers"
 
 az rest --method $METHOD --headers "{\"Authorization\": \"Bearer $ACCESS_TOKEN\", \"Content-Type\": \"application/json\"}" --body @request.json --uri $ARC_API_URL/subscriptions/$SUBSCRIPTION/extensionTypeRegistrations/$EXTENSION_NAME/versions/$VERSION?api-version=$API_VERSION
