@@ -281,6 +281,28 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       done
       source integration_npm_config_env_var
 fi
+if [ -e "/etc/ama-logs-secret/DOMAIN" ]; then
+      domain=$(cat /etc/ama-logs-secret/DOMAIN)
+else
+      domain="opinsights.azure.com"
+fi
+
+# Set environment variable for if public cloud by checking the workspace domain.
+if [ -z $domain ]; then
+      ClOUD_ENVIRONMENT="unknown"
+elif [ $domain == "opinsights.azure.com" ]; then
+      CLOUD_ENVIRONMENT="azurepubliccloud"
+elif [ $domain == "opinsights.azure.cn" ]; then
+      CLOUD_ENVIRONMENT="azurechinacloud"
+elif [ $domain == "opinsights.azure.us" ]; then
+      CLOUD_ENVIRONMENT="azureusgovernmentcloud"
+elif [ $domain == "opinsights.azure.eaglex.ic.gov" ]; then
+      CLOUD_ENVIRONMENT="usnat"
+elif [ $domain == "opinsights.azure.microsoft.scloud" ]; then
+      CLOUD_ENVIRONMENT="ussec"
+fi
+export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT
+echo "export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT" >>~/.bashrc
 
 export PROXY_ENDPOINT=""
 # Check for internet connectivity or workspace deletion
@@ -294,6 +316,8 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
        if [ ! -z "${IGNORE_PROXY_SETTINGS}" ] && [ ${IGNORE_PROXY_SETTINGS} == "true" ]; then
               echo "ignore proxy settings since IGNORE_PROXY_SETTINGS is set to true"
        elif [ -e "/etc/ama-logs-secret/PROXY" ]; then
+
+      if [ -e "/etc/ama-logs-secret/PROXY" ]; then
             export PROXY_ENDPOINT=$(cat /etc/ama-logs-secret/PROXY)
             # Validate Proxy Endpoint URL
             # extract the protocol://
@@ -354,17 +378,28 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
       fi
 
       if [ $? -ne 0 ]; then
-            if [ ! -z "$PROXY_ENDPOINT" ]; then
-               if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-                  echo "Making curl request to ifconfig.co with proxy and proxy CA cert"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt`
-               else
-                  echo "Making curl request to ifconfig.co with proxy"
-                  RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co --proxy $PROXY_ENDPOINT`
-               fi
+            registry="https://mcr.microsoft.com/v2/"
+            if [ $CLOUD_ENVIRONMENT == "azurechinacloud" ]; then
+                  registry="https://mcr.azk8s.cn/v2/"
+            elif [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
+                  registry=$MCR_URL
+            fi
+            if [ -z $registry ]; then
+                  echo "The environment variable MCR_URL is not set for CLOUD_ENVIRONMENT: $CLOUD_ENVIRONMENT"
+                  RET=000
             else
-                  echo "Making curl request to ifconfig.co"
-                  RET=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" ifconfig.co)
+                  if [ ! -z "$PROXY_ENDPOINT" ]; then
+                        if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+                              echo "Making curl request to MCR url with proxy and proxy CA cert"
+                              RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt`
+                        else
+                              echo "Making curl request to MCR url with proxy"
+                              RET=`curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry --proxy $PROXY_ENDPOINT`
+                        fi
+                  else
+                        echo "Making curl request to MCR url"
+                        RET=$(curl --max-time 10 -s -o /dev/null -w "%{http_code}" $registry)
+                  fi
             fi
             if [ $RET -eq 000 ]; then
                   echo "-e error    Error resolving host during the onboarding request. Check the internet connectivity and/or network policy on the cluster"
@@ -372,14 +407,14 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
                   # Retrying here to work around network timing issue
                   if [ ! -z "$PROXY_ENDPOINT" ]; then
                     if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-                        echo "ifconfig check succeeded, retrying oms endpoint with proxy and proxy CA cert..."
+                        echo "MCR url check succeeded, retrying oms endpoint with proxy and proxy CA cert..."
                         curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT --proxy-cacert /etc/ama-logs-secret/PROXYCERT.crt
                     else
-                       echo "ifconfig check succeeded, retrying oms endpoint with proxy..."
+                       echo "MCR url check succeeded, retrying oms endpoint with proxy..."
                        curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest --proxy $PROXY_ENDPOINT
                     fi
                   else
-                        echo "ifconfig check succeeded, retrying oms endpoint..."
+                        echo "MCR url check succeeded, retrying oms endpoint..."
                         curl --max-time 10 https://$workspaceId.oms.$domain/AgentService.svc/LinuxAgentTopologyRequest
                   fi
 
@@ -395,23 +430,6 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
 else
       echo "LA Onboarding:Workspace Id not mounted, skipping the telemetry check"
 fi
-
-# Set environment variable for if public cloud by checking the workspace domain.
-if [ -z $domain ]; then
-      ClOUD_ENVIRONMENT="unknown"
-elif [ $domain == "opinsights.azure.com" ]; then
-      CLOUD_ENVIRONMENT="azurepubliccloud"
-elif [ $domain == "opinsights.azure.cn" ]; then
-      CLOUD_ENVIRONMENT="azurechinacloud"
-elif [ $domain == "opinsights.azure.us" ]; then
-      CLOUD_ENVIRONMENT="azureusgovernmentcloud"
-elif [ $domain == "opinsights.azure.eaglex.ic.gov" ]; then
-      CLOUD_ENVIRONMENT="usnat"
-elif [ $domain == "opinsights.azure.microsoft.scloud" ]; then
-      CLOUD_ENVIRONMENT="ussec"
-fi
-export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT
-echo "export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT" >>~/.bashrc
 
 # Copying over CA certs for airgapped clouds. This is needed for Mariner vs Ubuntu hosts.
 # We are unable to tell if the host is Mariner or Ubuntu,
