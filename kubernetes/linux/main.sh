@@ -308,59 +308,54 @@ export PROXY_ENDPOINT=""
 # Check for internet connectivity or workspace deletion
 if [ -e "/etc/ama-logs-secret/WSID" ]; then
       workspaceId=$(cat /etc/ama-logs-secret/WSID)
-      if [ -e "/etc/ama-logs-secret/DOMAIN" ]; then
-            domain=$(cat /etc/ama-logs-secret/DOMAIN)
-      else
-            domain="opinsights.azure.com"
-      fi
-       if [ ! -z "${IGNORE_PROXY_SETTINGS}" ] && [ ${IGNORE_PROXY_SETTINGS} == "true" ]; then
+      if [ ! -z "${IGNORE_PROXY_SETTINGS}" ] && [ ${IGNORE_PROXY_SETTINGS} == "true" ]; then
               echo "ignore proxy settings since IGNORE_PROXY_SETTINGS is set to true"
-       elif [ -e "/etc/ama-logs-secret/PROXY" ]; then
+      elif [ -e "/etc/ama-logs-secret/PROXY" ]; then
+            if [ -e "/etc/ama-logs-secret/PROXY" ]; then
+                  export PROXY_ENDPOINT=$(cat /etc/ama-logs-secret/PROXY)
+                  # Validate Proxy Endpoint URL
+                  # extract the protocol://
+                  proto="$(echo $PROXY_ENDPOINT | grep :// | sed -e's,^\(.*://\).*,\1,g')"
+                  # convert the protocol prefix in lowercase for validation
+                  proxyprotocol=$(echo $proto | tr "[:upper:]" "[:lower:]")
+                  if [ "$proxyprotocol" != "http://" -a "$proxyprotocol" != "https://" ]; then
+                      echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
+                  fi
+                  # remove the protocol
+                  url="$(echo ${PROXY_ENDPOINT/$proto/})"
+                  # extract the creds
+                  creds="$(echo $url | grep @ | cut -d@ -f1)"
+                  user="$(echo $creds | cut -d':' -f1)"
+                  pwd="$(echo $creds | cut -d':' -f2)"
+                  # extract the host and port
+                  hostport="$(echo ${url/$creds@/} | cut -d/ -f1)"
+                  # extract host without port
+                  host="$(echo $hostport | sed -e 's,:.*,,g')"
+                  # extract the port
+                  port="$(echo $hostport | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
 
-      if [ -e "/etc/ama-logs-secret/PROXY" ]; then
-            export PROXY_ENDPOINT=$(cat /etc/ama-logs-secret/PROXY)
-            # Validate Proxy Endpoint URL
-            # extract the protocol://
-            proto="$(echo $PROXY_ENDPOINT | grep :// | sed -e's,^\(.*://\).*,\1,g')"
-            # convert the protocol prefix in lowercase for validation
-            proxyprotocol=$(echo $proto | tr "[:upper:]" "[:lower:]")
-            if [ "$proxyprotocol" != "http://" -a "$proxyprotocol" != "https://" ]; then
-               echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
-            fi
-            # remove the protocol
-            url="$(echo ${PROXY_ENDPOINT/$proto/})"
-            # extract the creds
-            creds="$(echo $url | grep @ | cut -d@ -f1)"
-            user="$(echo $creds | cut -d':' -f1)"
-            pwd="$(echo $creds | cut -d':' -f2)"
-            # extract the host and port
-            hostport="$(echo ${url/$creds@/} | cut -d/ -f1)"
-            # extract host without port
-            host="$(echo $hostport | sed -e 's,:.*,,g')"
-            # extract the port
-            port="$(echo $hostport | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
+                  if [ -z "$host" -o -z "$port" ]; then
+                       echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
+                  else
+                       echo "successfully validated provided proxy endpoint is valid and expected format"
+                  fi
 
-            if [ -z "$host" -o -z "$port" ]; then
-               echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
-            else
-                  echo "successfully validated provided proxy endpoint is valid and expected format"
-            fi
+                  echo $pwd >/opt/microsoft/docker-cimprov/proxy_password
 
-            echo $pwd >/opt/microsoft/docker-cimprov/proxy_password
-
-            export MDSD_PROXY_MODE=application
-            echo "export MDSD_PROXY_MODE=$MDSD_PROXY_MODE" >>~/.bashrc
-            export MDSD_PROXY_ADDRESS=$proto$hostport
-            echo "export MDSD_PROXY_ADDRESS=$MDSD_PROXY_ADDRESS" >> ~/.bashrc
-            if [ ! -z "$user" -a ! -z "$pwd" ]; then
-               export MDSD_PROXY_USERNAME=$user
-               echo "export MDSD_PROXY_USERNAME=$MDSD_PROXY_USERNAME" >> ~/.bashrc
-               export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
-               echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
-            fi
-            if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-               export PROXY_CA_CERT=/etc/ama-logs-secret/PROXYCERT.crt
-               echo "export PROXY_CA_CERT=$PROXY_CA_CERT" >> ~/.bashrc
+                  export MDSD_PROXY_MODE=application
+                  echo "export MDSD_PROXY_MODE=$MDSD_PROXY_MODE" >>~/.bashrc
+                  export MDSD_PROXY_ADDRESS=$proto$hostport
+                  echo "export MDSD_PROXY_ADDRESS=$MDSD_PROXY_ADDRESS" >> ~/.bashrc
+                  if [ ! -z "$user" -a ! -z "$pwd" ]; then
+                        export MDSD_PROXY_USERNAME=$user
+                        echo "export MDSD_PROXY_USERNAME=$MDSD_PROXY_USERNAME" >> ~/.bashrc
+                        export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
+                        echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
+                  fi
+                  if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+                        export PROXY_CA_CERT=/etc/ama-logs-secret/PROXYCERT.crt
+                        echo "export PROXY_CA_CERT=$PROXY_CA_CERT" >> ~/.bashrc
+                  fi
             fi
       fi
 
