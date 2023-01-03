@@ -20,10 +20,10 @@
               "description": "Existing or new tags to use on AKS, ContainerInsights and DataCollectionRule Resources"
             }
         },
-        "workspaceLocation": {
+        "workspaceRegion": {
             "type": "string",
             "metadata": {
-                "description": "Worksapce Location for data collection rule"
+                "description": "Worksapce Region for data collection rule"
             }
         },
         "workspaceResourceId": {
@@ -80,7 +80,8 @@
         "clusterResourceGroup": "[split(parameters('aksResourceId'),'/')[4]]",
         "clusterName": "[split(parameters('aksResourceId'),'/')[8]]",
         "clusterLocation": "[replace(parameters('aksResourceLocation'),' ', '')]",
-        "dcrName": "[Concat('MSCI', '-', variables('clusterName'), '-', variables('clusterLocation'))]",
+        "dcrNameFull": "[Concat('MSCI', '-', variables('workspaceRegion'), '-', variables('clusterName'))]",
+        "dcrName": "[substring(variables('dcrNameFull'), 0, 64)]",
         "associationName":  "ContainerInsightsExtension",
         "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]",
         "ciOnlyTemplate": {
@@ -93,7 +94,7 @@
                         "type": "Microsoft.Insights/dataCollectionRules",
                         "apiVersion": "2021-04-01",
                         "name": "[variables('dcrName')]",
-                        "location": "[parameters('workspaceLocation')]",
+                        "location": "[parameters('workspaceRegion')]",
                         "tags": "[parameters('resourceTagValues')]",
                         "kind": "Linux",
                         "properties": {
@@ -147,7 +148,7 @@
                         "type": "Microsoft.Insights/dataCollectionRules",
                         "apiVersion": "2021-04-01",
                         "name": "[variables('dcrName')]",
-                        "location": "[parameters('workspaceLocation')]",
+                        "location": "[parameters('workspaceRegion')]",
                         "tags": "[parameters('resourceTagValues')]",
                         "kind": "Linux",
                         "properties": {
