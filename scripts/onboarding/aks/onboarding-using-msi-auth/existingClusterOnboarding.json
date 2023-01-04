@@ -23,7 +23,7 @@
         "workspaceRegion": {
             "type": "string",
             "metadata": {
-                "description": "Worksapce Region for data collection rule"
+                "description": "Workspace Region for data collection rule"
             }
         },
         "workspaceResourceId": {
