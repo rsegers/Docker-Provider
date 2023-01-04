@@ -38,8 +38,8 @@ spec:
        imagePullPolicy: IfNotPresent
        resources:
         limits:
-         cpu: 500m
-         memory: 600Mi
+         cpu: "1"
+         memory: 2Gi
        env:
         - name: AKS_CLUSTER_NAME
           value: "VALUE_AKS_CLUSTER_NAME"
