@@ -336,6 +336,7 @@ function Read-Configs {
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
     .\setmdmenv.ps1
 }
+
 function Get-ContainerRuntime {
     # containerd is the default runtime on AKS windows
     $containerRuntime = "containerd"
