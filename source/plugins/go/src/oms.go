@@ -180,6 +180,10 @@ var (
 	ContainerType string
 	// flag to check whether LA AAD MSI Auth Enabled or not
 	IsAADMSIAuthMode bool
+	// flag to check whether Geneva Logs Integration enabled or not
+	IsGenevaLogsIntegrationEnabled bool
+	// flag to check whether Geneva Logs Integration enabled or not
+	IsGenevaLogsTelemetryServiceMode bool
 )
 
 var (
@@ -1122,8 +1126,22 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		id := ""
 		name := ""
 
+		if IsGenevaLogsTelemetryServiceMode == true {
+			//Incase of GenevaLogs Service mode, use the source Computer name from which log line originated
+			// And the ClusterResourceId in the receiving record
+			Computer = ToString(record["Computer"])
+			stringMap["AzureResourceId"] = ToString(record["AzureResourceId"])
+		} else if IsGenevaLogsIntegrationEnabled == true {
+			stringMap["AzureResourceId"] = ResourceID
+		}
+
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
+
+        // gangams - debug logs to validate the graceful shutdown
+		if IsGenevaLogsTelemetryServiceMode == true {
+			Log("MDSD::Received LogEntry: %s with TimeGenerated: %s", logEntry, logEntryTimeStamp)
+		}
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
 		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
@@ -1509,13 +1527,17 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 		containerName = filename[start+1 : end]
 	}
 
-	start = strings.Index(filename, "/containers/")
-	end = strings.Index(filename, "_")
+	pattern := "/containers/"
+	if strings.Contains(filename, "\\containers\\") { // for windows
+		pattern = "\\containers\\"
+	}
 
+	start = strings.Index(filename, pattern)
+	end = strings.Index(filename, "_")
 	if start >= end || start == -1 || end == -1 {
 		podName = ""
 	} else {
-		podName = filename[(start + len("/containers/")):end]
+		podName = filename[(start + len(pattern)): end]
 	}
 
 	return id, ns, podName, containerName
@@ -1566,8 +1588,13 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	osType := os.Getenv("OS_TYPE")
 	IsWindows = false
+	IsGenevaLogsTelemetryServiceMode = false
+	genevaLogsIntegrationServiceMode := os.Getenv("GENEVA_LOGS_INTEGRATION_SERVICE_MODE")
 	// Linux
-	if strings.Compare(strings.ToLower(osType), "windows") != 0 {
+	if strings.Compare(strings.ToLower(genevaLogsIntegrationServiceMode), "true") == 0 {
+		IsGenevaLogsTelemetryServiceMode = true
+		Log("IsGenevaLogsTelemetryServiceMode %v", IsGenevaLogsTelemetryServiceMode)
+	} else if strings.Compare(strings.ToLower(osType), "windows") != 0 {
 		Log("Reading configuration for Linux from %s", pluginConfPath)
 		WorkspaceID = os.Getenv("WSID")
 		if WorkspaceID == "" {
@@ -1708,6 +1735,13 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	ContainerLogsRouteV2 = false
 	ContainerLogsRouteADX = false
+
+	genevaLogsIntegrationEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("GENEVA_LOGS_INTEGRATION")))
+	IsGenevaLogsIntegrationEnabled = false
+	if genevaLogsIntegrationEnabled != "" && strings.Compare(strings.ToLower(genevaLogsIntegrationEnabled), "true") == 0 {
+		IsGenevaLogsIntegrationEnabled = true
+		Log("Geneva Logs Integration Enabled")
+	}
 
 	if strings.Compare(ContainerLogsRoute, ContainerLogsADXRoute) == 0 {
 		// Try to read the ADX database name from environment variables. Default to DefaultAdsDatabaseName if not set.

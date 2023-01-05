@@ -143,6 +143,23 @@ data:
         collect_advanced_metrics = false
     [integrations.azure_subnet_ip_usage]
         enabled = false
+    [integrations.geneva_logs]
+        enabled = false
+        environment = "<geneva logs account environment name>"
+        namespace = "<geneva logs account namespace>"
+        account = "<geneva logs account name>"
+        region = "<geneva logs gcs region>"
+        configversion = "<containerlogs geneva config version>"
+
+        # # when the multitenancy is true, container logs of the specific k8s namespace will be routed to corresponding geneva telemetry service endpoint
+        # # logs of the infra namespaces if infra_namespaces_suffix specified, ingested to geneva account defined in this config
+        # multi_tenancy = false
+        # infra_namespaces = ["cosmic-infra-*", "gate-keeper-system", "kube-system"]
+        # # logs of the tenant namespaces will be routed to k8s service in corresponding namespace
+        # # for example tenant namespaces are tenant1, tenant2, then logs of tenant1 will be routed to genevatelemeyservice.tenant1.svc.cluster.local endpoint
+        # # and logs of tenant2 will be routed genevatelemeyservice.tenant2.svc.cluster.local endpoint
+        # # geneva telemetry service needs to be defined
+        # tenant_namespaces = ["tenant1", "tenant2", "tenant3"]
 
 # Doc - https://github.com/microsoft/Docker-Provider/blob/ci_prod/Documentation/AgentSettings/ReadMe.md
   agent-settings: |-
@@ -173,12 +190,19 @@ data:
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # They increase the maximum stdout/stderr log collection rate but will also cause higher cpu/memory usage.
     ## Ref for more details about Ignore_Older -  https://docs.fluentbit.io/manual/v/1.7/pipeline/inputs/tail
-    # [agent_settings.fbit_config]
-    #   log_flush_interval_secs = "1"                 # default value is 15
-    #   tail_mem_buf_limit_megabytes = "10"           # default value is 10
-    #   tail_buf_chunksize_megabytes = "1"            # default value is 32kb (comment out this line for default)
-    #   tail_buf_maxsize_megabytes = "1"              # defautl value is 32kb (comment out this line for default)
+    # ganga - following config values are tested for geneva integration
+    [agent_settings.fbit_config]
+      log_flush_interval_secs = "1"                 # default value is 15
+      tail_mem_buf_limit_megabytes = "1000"           # default value is 10
+      tail_buf_chunksize_megabytes = "10"            # default value is 32kb (comment out this line for default)
+      tail_buf_maxsize_megabytes = "20"              # defautl value is 32kb (comment out this line for default)
     #   tail_ignore_older = "5m"                      # default value same as fluent-bit default i.e.0m
+
+    # settings for geneva fluent-bit forward plugin settings per tenant
+    [agent_settings.geneva_tenant_fbit_settings]
+      storage_total_limit_size_mb = "500"           # default is 100 MB
+      output_forward_workers = "20"                 # default is 10
+      output_forward_retry_limit = "no_limits"      # default is 3, use no_limits to retry infinetly
 
 metadata:
   name: container-azm-ms-agentconfig

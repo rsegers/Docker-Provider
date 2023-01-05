@@ -39,6 +39,20 @@ function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\filesystemwatcher.ps1
 }
 
+function Generate-GenevaTenantNameSpaceConfig {
+     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsTenantNameSpaces)) {
+        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", $genevaLogsTenantNameSpaces, "machine")
+        $genevaLogsTenantNameSpacesArray = $genevaLogsTenantNameSpaces.Split(",")
+        for ($i = 0; $i -lt $genevaLogsTenantNameSpacesArray.Length; $i = $i + 1) {
+          $tenantName = $genevaLogsTenantNameSpacesArray[$i]
+          Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
+          (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
+        }
+    }
+    Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf
+}
+
 #register fluentd as a windows service
 
 function Set-EnvironmentVariables {
@@ -321,6 +335,33 @@ function Set-EnvironmentVariables {
     #Replace placeholders in fluent-bit.conf
     ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
+    ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
+    .\setgenevaconfigenv.ps1
+
+    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsIntegration)) {
+        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", $genevaLogsIntegration, "machine")
+        Write-Host "Successfully set environment variable GENEVA_LOGS_INTEGRATION - $($genevaLogsIntegration) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
+    }
+
+    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsMultitenancy)) {
+        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", $genevaLogsMultitenancy, "machine")
+        Write-Host "Successfully set environment variable GENEVA_LOGS_MULTI_TENANCY - $($genevaLogsMultitenancy) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable GENEVA_LOGS_MULTI_TENANCY for target 'machine' since it is either null or empty"
+    }
+    if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
+        ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb
+        ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-tenant-conf-customizer.rb
+        Generate-GenevaTenantNameSpaceConfig
+    }
+
+
     # run mdm config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
     .\setmdmenv.ps1
@@ -446,11 +487,25 @@ function Start-Fluent-Telegraf {
         # change parser from docker to cri if the container runtime is not docker
         Write-Host "changing parser from Docker to CRI since container runtime : $($containerRuntime) and which is non-docker"
         (Get-Content -Path C:/etc/fluent-bit/fluent-bit.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit.conf
+        (Get-Content -Path C:/etc/fluent-bit/fluent-bit-common.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit-common.conf
     }
+    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
+    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
 
-    # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
-    # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
-    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:\etc\fluent-bit\fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+    if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
+        $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit-geneva.conf"
+        Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
+          # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
+        # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
+        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit-geneva.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+
+    } else {
+        $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit.conf"
+        Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
+        # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
+        # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
+        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+    }
 
     # Start telegraf only in sidecar scraping mode
     $sidecarScrapingEnabled = [System.Environment]::GetEnvironmentVariable('SIDECAR_SCRAPING_ENABLED')

@@ -40,6 +40,17 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/tomlparser-mdm-metrics-config.rb;                                  build/common/installer/scripts/tomlparser-mdm-metrics-config.rb;     755; root; root
 /opt/tomlparser-metric-collection-config.rb;                            build/linux/installer/scripts/tomlparser-metric-collection-config.rb;     755; root; root
 
+/opt/tomlparser-geneva-config.rb;                                       build/common/installer/scripts/tomlparser-geneva-config.rb;     755; root; root
+
+/opt/fluent-bit-geneva-conf-customizer.rb;                            build/common/installer/scripts/fluent-bit-geneva-conf-customizer.rb;     755; root; root
+/opt/fluent-bit-geneva-tenant-conf-customizer.rb;                     build/common/installer/scripts/fluent-bit-geneva-tenant-conf-customizer.rb;     755; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf;			      build/linux/installer/conf/fluent-bit-common.conf;                644; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva.conf;			      build/linux/installer/conf/fluent-bit-geneva.conf;                644; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf;  build/linux/installer/conf/fluent-bit-geneva-logs_infra.conf;   644; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf; build/linux/installer/conf/fluent-bit-geneva-logs_tenant.conf;   644; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-telemetry-svc.conf;          build/linux/installer/conf/fluent-bit-geneva-telemetry-svc.conf;   644; root; root
+
+
 
 /opt/tomlparser-agent-config.rb;                                build/common/installer/scripts/tomlparser-agent-config.rb;     755; root; root
 /opt/tomlparser.rb;                                             build/common/installer/scripts/tomlparser.rb;     755; root; root

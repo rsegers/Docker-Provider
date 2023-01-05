@@ -147,6 +147,10 @@ func CreateMDSDClient(dataType DataType, containerType string) {
 			MdsdMsgpUnixSocketClient = conn
 		}
 	case KubeMonAgentEvents:
+		// incase of geneva logs integration mode, KubeMonAgentEvents ingested via sidecar container socket
+		if IsGenevaLogsIntegrationEnabled {
+			mdsdfluentSocket = "/var/run/mdsd-PrometheusSidecar/default_fluent.socket"
+		}
 		if MdsdKubeMonMsgpUnixSocketClient != nil {
 			MdsdKubeMonMsgpUnixSocketClient.Close()
 			MdsdKubeMonMsgpUnixSocketClient = nil
@@ -161,6 +165,10 @@ func CreateMDSDClient(dataType DataType, containerType string) {
 			MdsdKubeMonMsgpUnixSocketClient = conn
 		}
 	case InsightsMetrics:
+		// incase of geneva logs integration mode, KubeMonAgentEvents ingested via sidecar container socket
+		if IsGenevaLogsIntegrationEnabled {
+			mdsdfluentSocket = "/var/run/mdsd-PrometheusSidecar/default_fluent.socket"
+		}
 		if MdsdInsightsMetricsMsgpUnixSocketClient != nil {
 			MdsdInsightsMetricsMsgpUnixSocketClient.Close()
 			MdsdInsightsMetricsMsgpUnixSocketClient = nil

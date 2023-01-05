@@ -384,12 +384,12 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12032022-c9f3dc30"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12112022-preview"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
-              cpu: 500m
-              memory: 750Mi
+              cpu: 5
+              memory: 6Gi
             requests:
               cpu: 75m
               memory: 325Mi
@@ -401,6 +401,8 @@ spec:
             - name: FBIT_TAIL_BUFFER_MAX_SIZE
               value: "1"
             # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
+            - name: AKS_CLUSTER_NAME
+              value: "VALUE_AKS_CLUSTER_NAME"
             - name: AKS_RESOURCE_ID
               value: "VALUE_AKS_RESOURCE_ID_VALUE"
             - name: AKS_REGION
@@ -427,6 +429,10 @@ spec:
             # Uncomment below lines for MSI Auth Mode  testing
             # - name: USING_AAD_MSI_AUTH
             #   value: "true"
+            - name: HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
           securityContext:
             privileged: true
           ports:
@@ -435,6 +441,8 @@ spec:
             - containerPort: 25224
               protocol: UDP
           volumeMounts:
+            - mountPath: /var/run/mdsd-PrometheusSidecar
+              name: mdsd-prometheus-sock
             - mountPath: /hostfs
               name: host-root
               readOnly: true
@@ -475,7 +483,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: ama-logs-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12032022-c9f3dc30"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12112022-preview"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -514,6 +522,8 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
+            - mountPath: /var/run/mdsd-PrometheusSidecar
+              name: mdsd-prometheus-sock
             - mountPath: /etc/kubernetes/host
               name: azure-json-path
             - mountPath: /etc/ama-logs-secret
@@ -558,6 +568,8 @@ spec:
         - operator: "Exists"
           effect: "PreferNoSchedule"
       volumes:
+        - name: mdsd-prometheus-sock
+          emptyDir: {}
         - name: host-root
           hostPath:
             path: /
@@ -699,7 +711,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12032022-c9f3dc30"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12112022-preview"
           imagePullPolicy: IfNotPresent
           # comment resources if VPA configured since the VPA will set these values
           resources:
@@ -886,7 +898,7 @@ spec:
             value: "3"
      containers:
        - name: ama-logs-windows
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod12032022-c9f3dc30"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod12112022-preview"
          imagePullPolicy: IfNotPresent
          resources:
           limits:

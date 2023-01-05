@@ -362,6 +362,26 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		if strings.Compare(strings.ToLower(os.Getenv("CONTAINER_TYPE")), "prometheussidecar") == 0 {
 			CommonProperties["ContainerType"] = "prometheussidecar"
+		} else {
+			genevaLogsIntegration := os.Getenv("GENEVA_LOGS_INTEGRATION")
+			if genevaLogsIntegration != "" && strings.Compare(strings.ToLower(genevaLogsIntegration), "true") == 0 {
+				CommonProperties["IsGenevaLogsIntegrationEnabled"] = "true"
+				genevaLogsMultitenancy := os.Getenv("GENEVA_LOGS_MULTI_TENANCY")
+				if genevaLogsMultitenancy != "" && strings.Compare(strings.ToLower(genevaLogsMultitenancy), "true") == 0 {
+					CommonProperties["IsGenevaLogsMultiTenancyEnabled"] = "true"
+					genevaLogsTenantNamespaces := os.Getenv("GENEVA_LOGS_TENANT_NAMESPACES")
+					if genevaLogsMultitenancy != "" {
+						CommonProperties["GenevaLogsTenantNamespaces"] = genevaLogsTenantNamespaces
+					}
+					genevaLogsInfraNamespaces := os.Getenv("GENEVA_LOGS_INFRA_NAMESPACES")
+					if genevaLogsInfraNamespaces != "" {
+						CommonProperties["GenevaLogsInfraNamespaces"] = genevaLogsInfraNamespaces
+					}
+				} else {
+					genevaLogsConfigVersion := os.Getenv("MONITORING_CONFIG_VERSION")
+					CommonProperties["GENEVA_LOGS_CONFIG_VERSION"] = genevaLogsConfigVersion
+				}
+			}
 		}
 	}
 

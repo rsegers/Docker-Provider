@@ -63,6 +63,10 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailBufferMaxSizeMBs = 0
 @fbitTailMemBufLimitMBs = 0
 @fbitTailIgnoreOlder = ""
+@storageTotalLimitSizeMB = 100
+@outputForwardWorkers = 10
+@outputForwardRetryLimit = 3
+@requireAckResponse = "false"
 
 # configmap settings related to mdsd
 @mdsdMonitoringMaxEventRate = 0
@@ -78,8 +82,8 @@ require_relative "ConfigParseErrorLogger"
 @promFbitMemBufLimit = 0
 
 @promFbitChunkSizeDefault = "32k" #kb
-@promFbitBufferSizeDefault  = "64k" #kb
-@promFbitMemBufLimitDefault  = "10m" #mb
+@promFbitBufferSizeDefault = "64k" #kb
+@promFbitMemBufLimitDefault = "10m" #mb
 
 def is_number?(value)
   true if Integer(value) rescue false
@@ -203,6 +207,36 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         end
       end
 
+      # fbit forward plugins geneva settings per tenant
+      fbit_config = parsedConfig[:agent_settings][:geneva_tenant_fbit_settings]
+      if !fbit_config.nil?
+        storageTotalLimitSizeMB = fbit_config[:storage_total_limit_size_mb]
+        if !storageTotalLimitSizeMB.nil? && is_number?(storageTotalLimitSizeMB) && storageTotalLimitSizeMB.to_i > 0
+          @storageTotalLimitSizeMB = storageTotalLimitSizeMB.to_i
+          puts "Using config map value: storage_total_limit_size_mb = #{@storageTotalLimitSizeMB}"
+        end
+        outputForwardWorkers = fbit_config[:output_forward_workers]
+        if !outputForwardWorkers.nil? && is_number?(outputForwardWorkers) && outputForwardWorkers.to_i > 0
+          @outputForwardWorkers = outputForwardWorkers.to_i
+          puts "Using config map value: output_forward_workers = #{@outputForwardWorkers}"
+        end
+        #Ref https://docs.fluentbit.io/manual/administration/scheduling-and-retries
+        outputForwardRetryLimit = fbit_config[:output_forward_retry_limit]
+        if !outputForwardRetryLimit.nil?
+          if is_number?(outputForwardRetryLimit) && outputForwardRetryLimit.to_i > 0
+            @outputForwardRetryLimit = outputForwardRetryLimit.to_i
+            puts "Using config map value: output_forward_retry_limit = #{@outputForwardRetryLimit}"
+          elsif ["False", "no_limits", "no_retries"].include?(outputForwardRetryLimit)
+            @outputForwardRetryLimit = outputForwardRetryLimit
+            puts "Using config map value: output_forward_retry_limit = #{@outputForwardRetryLimit}"
+          end
+        end
+        requireAckResponse = fbit_config[:require_ack_response]
+        if !requireAckResponse.nil? && requireAckResponse.downcase == "true"
+          @requireAckResponse = requireAckResponse
+          puts "Using config map value: require_ack_response = #{@requireAckResponse}"
+        end
+      end
       # ama-logs daemonset only settings
       if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
         # mdsd settings
@@ -215,7 +249,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           end
         end
       end
-    
+
       prom_fbit_config = nil
       if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
         prom_fbit_config = parsedConfig[:agent_settings][:node_prometheus_fbit_settings]
@@ -290,6 +324,17 @@ if !file.nil?
   if !@fbitTailIgnoreOlder.nil? && !@fbitTailIgnoreOlder.empty?
     file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
   end
+
+  if @storageTotalLimitSizeMB > 0
+    file.write("export STORAGE_TOTAL_LIMIT_SIZE_MB=#{@storageTotalLimitSizeMB.to_s + "M"}\n")
+  end
+
+  if @outputForwardWorkers > 0
+    file.write("export OUTPUT_FORWARD_WORKERS_COUNT=#{@outputForwardWorkers}\n")
+  end
+
+  file.write("export OUTPUT_FORWARD_RETRY_LIMIT=#{@outputForwardRetryLimit}\n")
+  file.write("export REQUIRE_ACK_RESPONSE=#{@requireAckResponse}\n")
 
   #mdsd settings
   if @mdsdMonitoringMaxEventRate > 0
@@ -371,6 +416,23 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       commands = get_command_windows("AZMON_FBIT_MEM_BUF_LIMIT", @promFbitMemBufLimitDefault)
       file.write(commands)
     end
+
+    if @storageTotalLimitSizeMB > 0
+      commands = get_command_windows("STORAGE_TOTAL_LIMIT_SIZE_MB", @storageTotalLimitSizeMB.to_s + "M")
+      file.write(commands)
+    end
+
+    if @outputForwardWorkers > 0
+      commands = get_command_windows("OUTPUT_FORWARD_WORKERS_COUNT", @outputForwardWorkers)
+      file.write(commands)
+    end
+
+    commands = get_command_windows("OUTPUT_FORWARD_RETRY_LIMIT", @outputForwardRetryLimit)
+    file.write(commands)
+
+    commands = get_command_windows("REQUIRE_ACK_RESPONSE", @requireAckResponse)
+    file.write(commands)
+
     # Close file after writing all environment variables
     file.close
     puts "****************End Config Processing********************"

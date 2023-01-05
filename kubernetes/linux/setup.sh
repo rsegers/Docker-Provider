@@ -33,7 +33,7 @@ sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
 
 #install oneagent - Official bits (3/14/2022)
 if [ "${ARCH}" != "arm64" ]; then
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/1.17.0/azure-mdsd_1.17.0-build.master.354_x86_64.deb" -O azure-mdsd.deb
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/1.17.0-arm64-dev/azure-mdsd_1.17.1-build.master.366_x86_64.deb" -O azure-mdsd.deb
 else
     wget "https://github.com/microsoft/Docker-Provider/releases/download/1.17.1-arm64-master/azure-mdsd_1.17.1-build.master.366_aarch64.deb" -O azure-mdsd.deb
 fi
@@ -71,6 +71,7 @@ chmod 544 /opt/telegraf
 wget -qO - https://packages.fluentbit.io/fluentbit.key | sudo apt-key add -
 sudo echo "deb https://packages.fluentbit.io/ubuntu/bionic bionic main" >> /etc/apt/sources.list
 sudo apt-get update
+# gangams - this version fixes this issue - https://github.com/fluent/fluent-bit/issues/4511
 sudo apt-get install fluent-bit=2.0.5 -y
 
 # fluentd v1 gem
