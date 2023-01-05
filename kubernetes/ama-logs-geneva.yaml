@@ -34,7 +34,7 @@ spec:
     hostNetwork: true
     containers:
      - name: geneva-logs-windows
-       image: "VALUE_IMAGE_NAME"
+       image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:sky-dev-0.1.0-win-12152022-9bd368f"
        imagePullPolicy: IfNotPresent
        resources:
         limits:
@@ -43,9 +43,9 @@ spec:
        env:
         # azure devops pipeline uses AKS_RESOURCE_ID and AKS_REGION hence ensure to uncomment these
         - name: AKS_RESOURCE_ID
-          value: "VALUE_AKS_RESOURCE_ID_VALUE"
+          value: "/subscriptions/b69f1a40-5210-4769-a3cd-23b5b9655470/resourceGroups/cosmic-infra-d01-00-nam-southcentralus/providers/Microsoft.ContainerService/managedClusters/cosmic-infra-d01-00-nam-southcentralus-aks"
         - name: AKS_REGION
-          value: "VALUE_AKS_RESOURCE_REGION_VALUE"
+          value: "southcentralus"
         - name: CONTROLLER_TYPE
           value: "DaemonSet"
         - name: HOSTNAME

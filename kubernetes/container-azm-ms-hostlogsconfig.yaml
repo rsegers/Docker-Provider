@@ -9,11 +9,11 @@ data:
     ver1
   hostlogs-settings: |-
     [hostlogs_settings.geneva_logs_config]
-      authid =  "VALUE_AUTH_ID"         # object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>
-      environment = "VALUE_ENVIRONMENT"                # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
-      account = "VALUE_ACCOUNT"       # name of the Geneva Logs account
-      namespace = "VALUE_ACCOUNT_NAMESPACE"     # name of the Geneva Logs account namespace
-      configversion = "VALUE_CONFIG_VERSION"               # config version of the agent xml config.
+      authid =  "object_id#3beb2688-3470-4139-8762-0d3e642b4598"         # object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>
+      environment = "Test"                # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
+      account = "cosmicplatform"       # name of the Geneva Logs account
+      namespace = "CosmicInfraRing"     # name of the Geneva Logs account namespace
+      configversion = "1.1"               # config version of the agent xml config.
 metadata:
   name: container-azm-ms-hostlogsconfig
   namespace: kube-system

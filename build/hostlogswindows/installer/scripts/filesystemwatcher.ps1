@@ -3,7 +3,8 @@ Write-Host "Removing Existing Event Subscribers"
 Get-EventSubscriber -Force | ForEach-Object { $_.SubscriptionId } | ForEach-Object { Unregister-Event -SubscriptionId $_ }
 Write-Host "Starting File System Watcher for config map updates"
 
-$Paths = @(".\etc\config\settings")
+$currentDir = Resolve-Path ~
+$Paths = @($currentDir.Path + "\etc\config\settings")
 
 foreach ($path in $Paths)
 {
@@ -13,13 +14,13 @@ foreach ($path in $Paths)
     $EventName = 'Changed', 'Created', 'Deleted', 'Renamed'
 
     $Action = {
-        $fileSystemWatcherStatusPath = ".\etc\hostlogswindows\filesystemwatcher.txt"
+        $fileSystemWatcherStatusPath = $currentDir.Path + "\etc\hostlogswindows\filesystemwatcher.txt"
         $fileSystemWatcherLog = "{0} was  {1} at {2}" -f $Event.SourceEventArgs.FullPath,
         $Event.SourceEventArgs.ChangeType,
         $Event.TimeGenerated
         Write-Host $fileSystemWatcherLog
         Add-Content -Path $fileSystemWatcherStatusPath -Value $fileSystemWatcherLog
-    }
+    }s
 
     $ObjectEventParams = @{
         InputObject = $FileSystemWatcher
