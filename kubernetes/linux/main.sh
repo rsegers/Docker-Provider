@@ -264,7 +264,7 @@ if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSide
 fi
 
 #Parse the configmap to set the right environment variables for agent config.
-#Note > tomlparser-agent-config.rb has to be parsed first before td-agent-bit-conf-customizer.rb for fbit agent settings
+#Note > tomlparser-agent-config.rb has to be parsed first before fluent-bit-conf-customizer.rb for fbit agent settings
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       ruby tomlparser-agent-config.rb
 
@@ -497,7 +497,7 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       source config_env_var
 fi
 
-#Replace the placeholders in td-agent-bit.conf file for fluentbit with custom/default values in daemonset
+#Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       ruby fluent-bit-conf-customizer.rb
 fi
