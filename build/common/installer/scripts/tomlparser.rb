@@ -23,6 +23,7 @@ require_relative "ConfigParseErrorLogger"
 @collectAllKubeEvents = false
 @containerLogsRoute = "v2" # default for linux
 @adxDatabaseName = "containerinsights" # default for all configurations
+@logEnableMultiline = "false"
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
   # This path format is necessary for fluent-bit in windows
@@ -150,6 +151,21 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       ConfigParseErrorLogger.logError("Exception while reading config map settings for container log schema version - #{errorStr}, using defaults, please check config map for errors")
     end
 
+    # Get multiline log enabling setting
+    begin
+      if !parsedConfig[:log_collection_settings][:enable_multiline_logs].nil? && !parsedConfig[:log_collection_settings][:enable_multiline_logs][:enabled].nil?
+        @logEnableMultiline = parsedConfig[:log_collection_settings][:enable_multiline_logs][:enabled]
+        puts "config::Using config map setting for multiline logging"
+
+        if @containerLogSchemaVersion.strip.casecmp("v2") !=0
+          puts "config:: WARN: container logs V2 is disabled and is required for multiline logging. Disabling multiline logging"
+          @logEnableMultiline = "false"
+        end
+      end
+    rescue => errorStr
+      ConfigParseErrorLogger.logError("Exception while reading config map settings for enabling multiline logs - #{errorStr}, using defaults, please check config map for errors")
+    end
+
     #Get kube events enrichment setting
     begin
       if !parsedConfig[:log_collection_settings][:collect_all_kube_events].nil? && !parsedConfig[:log_collection_settings][:collect_all_kube_events][:enabled].nil?
@@ -235,6 +251,7 @@ if !file.nil?
   file.write("export AZMON_CONTAINER_LOGS_ROUTE=#{@containerLogsRoute}\n")
   file.write("export AZMON_CONTAINER_LOG_SCHEMA_VERSION=#{@containerLogSchemaVersion}\n")
   file.write("export AZMON_ADX_DATABASE_NAME=#{@adxDatabaseName}\n")
+  file.write("export AZMON_MULTILINE_ENABLED=#{@logEnableMultiline}\n")
   # Close file after writing all environment variables
   file.close
   puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "
@@ -296,6 +313,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows("AZMON_CONTAINER_LOG_SCHEMA_VERSION", @containerLogSchemaVersion)
     file.write(commands)
     commands = get_command_windows("AZMON_ADX_DATABASE_NAME", @adxDatabaseName)
+    file.write(commands)
+    commands = get_command_windows('AZMON_MULTILINE_ENABLED', @logEnableMultiline)
     file.write(commands)
 
     # Close file after writing all environment variables

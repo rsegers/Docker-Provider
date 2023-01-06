@@ -60,6 +60,7 @@ COPY ./amalogswindows/out_oms.so /opt/amalogswindows/out_oms.so
 COPY ./amalogswindows/installer/conf/fluent.conf /etc/fluent/
 COPY ./amalogswindows/installer/conf/fluent-bit.conf /etc/fluent-bit
 COPY ./amalogswindows/installer/conf/azm-containers-parser.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/azm-containers-parser-multiline.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/out_oms.conf /etc/amalogswindows
 COPY ./amalogswindows/installer/conf/fluent-bit-geneva-logs_tenant.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/fluent-bit-geneva.conf /etc/fluent-bit/

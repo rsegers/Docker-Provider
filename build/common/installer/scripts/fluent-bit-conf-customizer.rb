@@ -25,6 +25,7 @@ def substituteFluentBitPlaceHolders
     bufferMaxSize = ENV["FBIT_TAIL_BUFFER_MAX_SIZE"]
     memBufLimit = ENV["FBIT_TAIL_MEM_BUF_LIMIT"]
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
+    multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
 
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
@@ -59,6 +60,17 @@ def substituteFluentBitPlaceHolders
       new_contents = new_contents.gsub("${TAIL_IGNORE_OLDER}", "Ignore_Older " + ignoreOlder)
     else
       new_contents = new_contents.gsub("\n    ${TAIL_IGNORE_OLDER}\n", "\n")
+    end
+
+    if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true"
+      new_contents = new_contents.gsub("#${MultilineEnabled}", "")
+      new_contents = new_contents.gsub("azm-containers-parser.conf", "azm-containers-parser-multiline.conf")
+      # replace parser with multiline version. ensure running script multiple times does not have negative impact
+      if (/[^\.]Parser\s{1,}docker/).match(text)
+        new_contents = new_contents.gsub(/[^\.]Parser\s{1,}docker/, " Multiline.Parser docker")
+      else
+        new_contents = new_contents.gsub(/[^\.]Parser\s{1,}cri/, " Multiline.Parser cri")
+      end
     end
 
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
