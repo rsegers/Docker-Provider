@@ -223,7 +223,7 @@ if !file.nil?
   file.write("export AZMON_COLLECT_STDOUT_LOGS=#{@collectStdoutLogs}\n")
   file.write("export AZMON_LOG_TAIL_PATH=#{@logTailPath}\n")
   logTailPathDir = File.dirname(@logTailPath)
-  file.write("export AZMON_LOG_TAIL_PATH_DIR=#{File.dirname(logTailPathDir)}\n")
+  file.write("export AZMON_LOG_TAIL_PATH_DIR=#{logTailPathDir}\n")
   file.write("export AZMON_LOG_EXCLUSION_REGEX_PATTERN=\"#{@logExclusionRegexPattern}\"\n")
   file.write("export AZMON_STDOUT_EXCLUDED_NAMESPACES=#{@stdoutExcludeNamespaces}\n")
   file.write("export AZMON_COLLECT_STDERR_LOGS=#{@collectStderrLogs}\n")
