@@ -1138,10 +1138,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
 
-        // gangams - debug logs to validate the graceful shutdown
-		if IsGenevaLogsTelemetryServiceMode == true {
-			Log("MDSD::Received LogEntry: %s with TimeGenerated: %s", logEntry, logEntryTimeStamp)
-		}
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
 		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
@@ -1537,7 +1533,7 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 	if start >= end || start == -1 || end == -1 {
 		podName = ""
 	} else {
-		podName = filename[(start + len(pattern)): end]
+		podName = filename[(start + len(pattern)):end]
 	}
 
 	return id, ns, podName, containerName
