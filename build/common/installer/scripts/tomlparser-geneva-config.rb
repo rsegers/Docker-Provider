@@ -237,6 +237,7 @@ if (@containerType.nil? || @containerType.empty?)
     file.write("export MONITORING_GCS_REGION=#{@geneva_gcs_region}\n")
     file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
     file.write("export MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}\n")
+    file.write("export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken")
 
     file.write("export GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}\n")
     file.write("export GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}\n")
@@ -268,6 +269,10 @@ if (@containerType.nil? || @containerType.empty?)
       commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
       file.write(commands)
       commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version)
+      file.write(commands)
+      commands = get_command_windows("MONITORING_GCS_REGION", @geneva_gcs_region)
+      file.write(commands)
+      commands = get_command_windows("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken")
       file.write(commands)
 
       #Windows AMA expects these and these are different from Linux AMA

@@ -39,7 +39,7 @@ function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\filesystemwatcher.ps1
 }
 
-function Set-AMAEnvironmentVariables-Geneva {
+function Set-GenevaAMAEnvironmentVariables {
 
     [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Process")
     [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Machine")
@@ -61,13 +61,7 @@ function Set-AMAEnvironmentVariables-Geneva {
 
     $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Machine
-    ")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_GCS_REGION", $aksRegion, "Machine")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_GCS_REGION", $aksRegion, "Process")
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken", "Machine")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Machine")
 
     $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Process")
@@ -358,6 +352,13 @@ function Set-EnvironmentVariables {
     }
     else {
         Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
+    }
+
+    $isGenevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION")
+    if (![string]::IsNullOrEmpty($isGenevaLogsIntegration) -and $isGenevaLogsIntegration.ToLower() -eq 'true') {
+        Write-Host "Setting Geneva Windows AMA Environment variables"
+        #start Windows AMA
+        Set-GenevaAMAEnvironmentVariables
     }
 
     # run config parser
