@@ -39,6 +39,41 @@ function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\filesystemwatcher.ps1
 }
 
+function Set-AMAEnvironmentVariables-Geneva {
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Machine")
+
+    $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Machine
+    ")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_GCS_REGION", $aksRegion, "Machine")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_GCS_REGION", $aksRegion, "Process")
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken", "Machine")
+
+    $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Machine")
+}
+
 function Generate-GenevaTenantNameSpaceConfig {
      $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")
     if (![string]::IsNullOrEmpty($genevaLogsTenantNameSpaces)) {
@@ -658,6 +693,14 @@ if (![string]::IsNullOrEmpty($requiresCertBootstrap) -and `
         $aksResourceId.ToLower().Contains("/microsoft.containerservice/managedclusters/")) {
     Bootstrap-CACertificates
 }
+
+$isGenevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION")
+if (![string]::IsNullOrEmpty($isGenevaLogsIntegration) -and $isGenevaLogsIntegration.ToLower() -eq 'true') {
+    Write-Host "Starting Windows AMA"
+    #start Windows AMA
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
+}
+
 
 $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
 if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
