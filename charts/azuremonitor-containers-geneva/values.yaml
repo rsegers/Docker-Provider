@@ -14,8 +14,8 @@ genevaLogsConfig:
  configversion: "<your_geneva_config_version>"                                               # config version of the agent xml config.
 
 image:
-  repository: mcr.microsoft.com/azuremonitor/containerinsights/cidev
-  tag: "01062023-46b94b5d"
+  repository: mcr.microsoft.com/azuremonitor/containerinsights/ciprod
+  tag: "ciprod01062023-preview"
   pullPolicy: IfNotPresent
   agentVersion: "azure-mdsd-1.17.1"
 nameOverride: ""
