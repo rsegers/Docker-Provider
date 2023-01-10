@@ -1307,7 +1307,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				} else {
 					datatype = ContainerLogDataType
 				}
-				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
+				if IsGenevaLogsIntegrationEnabled {
+					CreateWindowsNamedPipesClient(getGenevaWindowsNamedPipeName())
+				} else {
+					CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
+				}
 			}
 			if ContainerLogNamedPipe == nil {
 				Log("Error::AMA::Cannot create the named pipe connection")
@@ -1829,6 +1833,10 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		ContainerLogsRouteV2 = true
 		Log("Routing container logs thru %s route...", ContainerLogsV2Route)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsV2Route)
+	} else if IsGenevaLogsIntegrationEnabled {
+		ContainerLogsRouteV2 = true
+		Log("Routing container logs thru %s route...", ContainerLogsV2Route)
+		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsV2Route)
 	}
 
 	EnvContainerLogSchemaVersion := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOG_SCHEMA_VERSION")))
@@ -1850,7 +1858,11 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 			} else {
 				datatype = ContainerLogDataType
 			}
-			CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
+			if IsGenevaLogsIntegrationEnabled {
+				CreateWindowsNamedPipesClient(getGenevaWindowsNamedPipeName())
+			} else {
+				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
+			}
 		} else {
 			CreateMDSDClient(ContainerLogV2, ContainerType)
 		}
@@ -1866,8 +1878,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		CreateMDSDClient(KubeMonAgentEvents, ContainerType)
 		CreateMDSDClient(InsightsMetrics, ContainerType)
 	}
-
-
 
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		populateExcludedStdoutNamespaces()

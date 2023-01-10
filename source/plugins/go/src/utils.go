@@ -268,3 +268,14 @@ func convertMsgPackEntriesToMsgpBytes(fluentForwardTag string, msgPackEntries []
 
 	return msgpBytes
 }
+
+func getGenevaWindowsNamedPipeName() string {
+	gcsNameSpace := os.Getenv("MONITORING_GCS_NAMESPACE")
+	var namedPipeName string
+	if gcsNameSpace == "" {
+		Log("GetWindowsNamedPipeName: gcsNameSpace is empty")
+	} else {
+		namedPipeName = "CAgentStream_ContainerLogV2Pipe" + gcsNameSpace
+	}
+	return namedPipeName
+}
