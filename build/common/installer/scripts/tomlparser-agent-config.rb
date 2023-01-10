@@ -78,8 +78,10 @@ require_relative "ConfigParseErrorLogger"
 @promFbitMemBufLimit = 0
 
 @promFbitChunkSizeDefault = "32k" #kb
-@promFbitBufferSizeDefault  = "64k" #kb
-@promFbitMemBufLimitDefault  = "10m" #mb
+@promFbitBufferSizeDefault = "64k" #kb
+@promFbitMemBufLimitDefault = "10m" #mb
+
+@ignoreProxySettings = false
 
 def is_number?(value)
   true if Integer(value) rescue false
@@ -215,7 +217,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           end
         end
       end
-    
+
       prom_fbit_config = nil
       if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
         prom_fbit_config = parsedConfig[:agent_settings][:node_prometheus_fbit_settings]
@@ -242,6 +244,14 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         if !mem_buf_limit.nil? && is_number?(mem_buf_limit) && mem_buf_limit.to_i > 0
           @promFbitMemBufLimit = mem_buf_limit.to_i
           puts "Using config map value: AZMON_FBIT_MEM_BUF_LIMIT = #{@promFbitMemBufLimit.to_s + "m"}"
+        end
+      end
+      proxy_config = parseConfigMap[:agent_settings][:proxy_config]
+      if !proxy_config.nil?
+        ignoreProxySettings = proxy_config[:ignore_proxy_settings]
+        if !ignoreProxySettings.nil? && ignoreProxySettings.downcase == "true"
+          @ignoreProxySettings = true
+          puts "Using config map value: ignoreProxySettings = #{@ignoreProxySettings}"
         end
       end
     end
@@ -314,6 +324,10 @@ if !file.nil?
     file.write("export AZMON_FBIT_MEM_BUF_LIMIT=#{@promFbitMemBufLimitDefault}\n")
   end
 
+  if @ignoreProxySettings
+    file.write("export IGNORE_PROXY_SETTINGS=#{@ignoreProxySettings}\n")
+  end
+
   # Close file after writing all environment variables
   file.close
 else
@@ -369,6 +383,10 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       file.write(commands)
     else
       commands = get_command_windows("AZMON_FBIT_MEM_BUF_LIMIT", @promFbitMemBufLimitDefault)
+      file.write(commands)
+    end
+    if @ignoreProxySettings
+      commands = get_command_windows("IGNORE_PROXY_SETTINGS", @ignoreProxySettings)
       file.write(commands)
     end
     # Close file after writing all environment variables
