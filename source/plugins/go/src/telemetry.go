@@ -44,6 +44,10 @@ var (
 	ContainerLogsSendErrorsToMDSDFromFluent float64
 	//Tracks the number of mdsd client create errors for containerlogs (uses ContainerLogTelemetryTicker)
 	ContainerLogsMDSDClientCreateErrors float64
+	//Tracks the number of write/send errors to windows ama for containerlogs (uses ContainerLogTelemetryTicker)
+	ContainerLogsSendErrorsToWindowsAMAFromFluent float64
+	//Tracks the number of windows ama client create errors for containerlogs (uses ContainerLogTelemetryTicker)
+	ContainerLogsWindowsAMAClientCreateErrors float64
 	//Tracks the number of mdsd client create errors for insightsmetrics (uses ContainerLogTelemetryTicker)
 	InsightsMetricsMDSDClientCreateErrors float64
 	//Tracks the number of mdsd client create errors for kubemonevents (uses ContainerLogTelemetryTicker)
@@ -67,27 +71,29 @@ var (
 )
 
 const (
-	clusterTypeACS                                              = "ACS"
-	clusterTypeAKS                                              = "AKS"
-	envAKSResourceID                                            = "AKS_RESOURCE_ID"
-	envACSResourceName                                          = "ACS_RESOURCE_NAME"
-	envAppInsightsAuth                                          = "APPLICATIONINSIGHTS_AUTH"
-	envAppInsightsEndpoint                                      = "APPLICATIONINSIGHTS_ENDPOINT"
-	metricNameAvgFlushRate                                      = "ContainerLogAvgRecordsFlushedPerSec"
-	metricNameAvgLogGenerationRate                              = "ContainerLogsGeneratedPerSec"
-	metricNameLogSize                                           = "ContainerLogsSize"
-	metricNameAgentLogProcessingMaxLatencyMs                    = "ContainerLogsAgentSideLatencyMs"
-	metricNameNumberofTelegrafMetricsSentSuccessfully           = "TelegrafMetricsSentCount"
-	metricNameNumberofSendErrorsTelegrafMetrics                 = "TelegrafMetricsSendErrorCount"
-	metricNameNumberofSend429ErrorsTelegrafMetrics              = "TelegrafMetricsSend429ErrorCount"
-	metricNameNumberofWinTelegrafMetricsWithTagsSize64KBorMore  = "WinTelegrafMetricsCountWithTagsSize64KBorMore"
-	metricNameErrorCountContainerLogsSendErrorsToMDSDFromFluent = "ContainerLogs2MdsdSendErrorCount"
-	metricNameErrorCountContainerLogsMDSDClientCreateError      = "ContainerLogsMdsdClientCreateErrorCount"
-	metricNameErrorCountInsightsMetricsMDSDClientCreateError    = "InsightsMetricsMDSDClientCreateErrorsCount"
-	metricNameErrorCountKubeMonEventsMDSDClientCreateError      = "KubeMonEventsMDSDClientCreateErrorsCount"
-	metricNameErrorCountContainerLogsSendErrorsToADXFromFluent  = "ContainerLogs2ADXSendErrorCount"
-	metricNameErrorCountContainerLogsADXClientCreateError       = "ContainerLogsADXClientCreateErrorCount"
-	metricNameContainerLogRecordCountWithEmptyTimeStamp         = "ContainerLogRecordCountWithEmptyTimeStamp"
+	clusterTypeACS                                                    = "ACS"
+	clusterTypeAKS                                                    = "AKS"
+	envAKSResourceID                                                  = "AKS_RESOURCE_ID"
+	envACSResourceName                                                = "ACS_RESOURCE_NAME"
+	envAppInsightsAuth                                                = "APPLICATIONINSIGHTS_AUTH"
+	envAppInsightsEndpoint                                            = "APPLICATIONINSIGHTS_ENDPOINT"
+	metricNameAvgFlushRate                                            = "ContainerLogAvgRecordsFlushedPerSec"
+	metricNameAvgLogGenerationRate                                    = "ContainerLogsGeneratedPerSec"
+	metricNameLogSize                                                 = "ContainerLogsSize"
+	metricNameAgentLogProcessingMaxLatencyMs                          = "ContainerLogsAgentSideLatencyMs"
+	metricNameNumberofTelegrafMetricsSentSuccessfully                 = "TelegrafMetricsSentCount"
+	metricNameNumberofSendErrorsTelegrafMetrics                       = "TelegrafMetricsSendErrorCount"
+	metricNameNumberofSend429ErrorsTelegrafMetrics                    = "TelegrafMetricsSend429ErrorCount"
+	metricNameNumberofWinTelegrafMetricsWithTagsSize64KBorMore        = "WinTelegrafMetricsCountWithTagsSize64KBorMore"
+	metricNameErrorCountContainerLogsSendErrorsToMDSDFromFluent       = "ContainerLogs2MdsdSendErrorCount"
+	metricNameErrorCountContainerLogsMDSDClientCreateError            = "ContainerLogsMdsdClientCreateErrorCount"
+	metricNameErrorCountContainerLogsSendErrorsToWindowsAMAFromFluent = "ContainerLogsSendErrorsToWindowsAMAFromFluent"
+	metricNameErrorCountContainerLogsWindowsAMAClientCreateError      = "ContainerLogsWindowsAMAClientCreateErrors"
+	metricNameErrorCountInsightsMetricsMDSDClientCreateError          = "InsightsMetricsMDSDClientCreateErrorsCount"
+	metricNameErrorCountKubeMonEventsMDSDClientCreateError            = "KubeMonEventsMDSDClientCreateErrorsCount"
+	metricNameErrorCountContainerLogsSendErrorsToADXFromFluent        = "ContainerLogs2ADXSendErrorCount"
+	metricNameErrorCountContainerLogsADXClientCreateError             = "ContainerLogsADXClientCreateErrorCount"
+	metricNameContainerLogRecordCountWithEmptyTimeStamp               = "ContainerLogRecordCountWithEmptyTimeStamp"
 
 	defaultTelemetryPushIntervalSeconds = 300
 
@@ -123,6 +129,8 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		winTelegrafMetricsCountWithTagsSize64KBorMore := WinTelegrafMetricsCountWithTagsSize64KBorMore
 		containerLogsSendErrorsToMDSDFromFluent := ContainerLogsSendErrorsToMDSDFromFluent
 		containerLogsMDSDClientCreateErrors := ContainerLogsMDSDClientCreateErrors
+		containerLogsSendErrorsToWindowsAMAFromFluent := ContainerLogsSendErrorsToWindowsAMAFromFluent
+		containerLogsWindowsAMAClientCreateErrors := ContainerLogsWindowsAMAClientCreateErrors
 		containerLogsSendErrorsToADXFromFluent := ContainerLogsSendErrorsToADXFromFluent
 		containerLogsADXClientCreateErrors := ContainerLogsADXClientCreateErrors
 		insightsMetricsMDSDClientCreateErrors := InsightsMetricsMDSDClientCreateErrors
@@ -147,6 +155,8 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		AgentLogProcessingMaxLatencyMsContainer = ""
 		ContainerLogsSendErrorsToMDSDFromFluent = 0.0
 		ContainerLogsMDSDClientCreateErrors = 0.0
+		ContainerLogsSendErrorsToWindowsAMAFromFluent = 0.0
+		ContainerLogsWindowsAMAClientCreateErrors = 0.0
 		ContainerLogsSendErrorsToADXFromFluent = 0.0
 		ContainerLogsADXClientCreateErrors = 0.0
 		InsightsMetricsMDSDClientCreateErrors = 0.0
@@ -227,6 +237,12 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		}
 		if containerLogsMDSDClientCreateErrors > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountContainerLogsMDSDClientCreateError, containerLogsMDSDClientCreateErrors))
+		}
+		if containerLogsSendErrorsToWindowsAMAFromFluent > 0.0 {
+			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountContainerLogsSendErrorsToWindowsAMAFromFluent, containerLogsSendErrorsToWindowsAMAFromFluent))
+		}
+		if containerLogsWindowsAMAClientCreateErrors > 0.0 {
+			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountContainerLogsWindowsAMAClientCreateError, containerLogsWindowsAMAClientCreateErrors))
 		}
 		if containerLogsSendErrorsToADXFromFluent > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountContainerLogsSendErrorsToADXFromFluent, containerLogsSendErrorsToADXFromFluent))

@@ -39,13 +39,22 @@ function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\filesystemwatcher.ps1
 }
 
-function Set-GenevaAMAEnvironmentVariables {
+function Set-AMAEnvironmentVariables {
 
     [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Process")
     [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Machine")
 
+    [System.Environment]::SetEnvironmentVariable("MONITORING_MCS_MODE", "1", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_MCS_MODE", "1", "Machine")
+
     [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Process")
     [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Process")
+    [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MCS_GLOBAL_ENDPOINT", "https://global.handler.control.monitor.azure.com", "Process")
+    [System.Environment]::SetEnvironmentVariable("MCS_GLOBAL_ENDPOINT", "https://global.handler.control.monitor.azure.com", "Machine")
 
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Process")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Machine")
@@ -62,24 +71,16 @@ function Set-GenevaAMAEnvironmentVariables {
     $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Process")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Machine")
+    [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Process")
+    [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Machine")
 
     $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Process")
     [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Machine")
-}
-
-function Generate-GenevaTenantNameSpaceConfig {
-     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")
-    if (![string]::IsNullOrEmpty($genevaLogsTenantNameSpaces)) {
-        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", $genevaLogsTenantNameSpaces, "machine")
-        $genevaLogsTenantNameSpacesArray = $genevaLogsTenantNameSpaces.Split(",")
-        for ($i = 0; $i -lt $genevaLogsTenantNameSpacesArray.Length; $i = $i + 1) {
-          $tenantName = $genevaLogsTenantNameSpacesArray[$i]
-          Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
-          (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
-        }
-    }
-    Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf
+    [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Process")
+    [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Machine")
+    [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Process")
+    [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Machine")
 }
 
 #register fluentd as a windows service
@@ -359,6 +360,8 @@ function Set-EnvironmentVariables {
         Write-Host "Setting Geneva Windows AMA Environment variables"
         #start Windows AMA
         Set-GenevaAMAEnvironmentVariables
+    if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+        Set-AMAEnvironmentVariables
     }
 
     # run config parser
@@ -706,11 +709,17 @@ if (![string]::IsNullOrEmpty($isGenevaLogsIntegration) -and $isGenevaLogsIntegra
 $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
 if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
     Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
+
+    #start Windows AMA
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
 }
 else {
+    Write-Host "skipping starting windows ama agent"
+
     Generate-Certificates
     Test-CertificatePath
 }
+
 
 Start-Fluent-Telegraf
 

@@ -82,6 +82,7 @@ catch {
 }
 Write-Host ('Finished downloading Windows Azure Monitor Agent')
 
+
 Write-Host ("Removing Install folder")
 
 Remove-Item /installation -Recurse
