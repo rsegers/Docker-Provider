@@ -83,6 +83,49 @@ function Set-AMAEnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Machine")
 }
 
+function Set-GenevaAMAEnvironmentVariables {
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Machine")
+
+    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Process")
+    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Machine")
+
+    $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Machine")
+
+    $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Process")
+    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Machine")
+}
+
+function Generate-GenevaTenantNameSpaceConfig {
+     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsTenantNameSpaces)) {
+        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", $genevaLogsTenantNameSpaces, "machine")
+        $genevaLogsTenantNameSpacesArray = $genevaLogsTenantNameSpaces.Split(",")
+        for ($i = 0; $i -lt $genevaLogsTenantNameSpacesArray.Length; $i = $i + 1) {
+          $tenantName = $genevaLogsTenantNameSpacesArray[$i]
+          Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
+          (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
+        }
+    }
+    Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf
+}
+
 #register fluentd as a windows service
 
 function Set-EnvironmentVariables {
@@ -360,7 +403,7 @@ function Set-EnvironmentVariables {
         Write-Host "Setting Geneva Windows AMA Environment variables"
         #start Windows AMA
         Set-GenevaAMAEnvironmentVariables
-    if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+    } elseif (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
         Set-AMAEnvironmentVariables
     }
 
