@@ -98,35 +98,33 @@ amalogs:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
-            - labelSelector:
-              matchExpressions:
-                - key: kubernetes.io/os
-                  operator: In
-                  values:
-                    - linux
-                - key: type
-                  operator: NotIn
-                  values:
-                    - virtual-kubelet
-                - key: kubernetes.io/arch
-                  operator: In
-                  values:
-                    - amd64
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: type
+              operator: NotIn
+              values:
+                - virtual-kubelet
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
           nodeSelectorTerms:
-            - labelSelector:
-              matchExpressions:
-                - key: kubernetes.io/os
-                  operator: In
-                  values:
-                    - linux
-                - key: type
-                  operator: NotIn
-                  values:
-                    - virtual-kubelet
-                - key: kubernetes.io/arch
-                  operator: In
-                  values:
-                    - amd64
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: type
+              operator: NotIn
+              values:
+                - virtual-kubelet
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
   deployment:
     affinity:
       nodeAffinity:
@@ -141,43 +139,41 @@ amalogs:
                 - managed
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
-            - labelSelector:
-              matchExpressions:
-                - key: kubernetes.io/os
-                  operator: In
-                  values:
-                    - linux
-                - key: type
-                  operator: NotIn
-                  values:
-                    - virtual-kubelet
-                - key: kubernetes.io/role
-                  operator: NotIn
-                  values:
-                    - master
-                - key: kubernetes.io/arch
-                  operator: In
-                  values:
-                    - amd64
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: type
+              operator: NotIn
+              values:
+                - virtual-kubelet
+            - key: kubernetes.io/role
+              operator: NotIn
+              values:
+                - master
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
           nodeSelectorTerms:
-            - labelSelector:
-              matchExpressions:
-                - key: kubernetes.io/os
-                  operator: In
-                  values:
-                    - linux
-                - key: type
-                  operator: NotIn
-                  values:
-                    - virtual-kubelet
-                - key: kubernetes.io/role
-                  operator: NotIn
-                  values:
-                    - master
-                - key: kubernetes.io/arch
-                  operator: In
-                  values:
-                    - amd64
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: type
+              operator: NotIn
+              values:
+                - virtual-kubelet
+            - key: kubernetes.io/role
+              operator: NotIn
+              values:
+                - master
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
   ## Configure resource requests and limits
   ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
   ##
