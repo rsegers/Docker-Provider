@@ -22,6 +22,7 @@ Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate
   - Added the config option to ignore proxy settings for the AMPLS + Proxy environment
   - Changes to the MSI Onboarding ARM templates for handling DCR naming and handling the scenario where DCR name is more than 64 characters and also removing the spaces in the workspace region if user inputs the workspace region name with spaces
   - Add specific master/control-plane toleration key to fix the node upgrade issue in Arc extension. 
+  - AKS, Arc K8s and Provisioned cluster template updates for Data collection settings. Implementation of data collection settings. Telemetry to track data collection settings enablement and settings
 
 ### 12/03/2022 -
 ##### Version microsoft/oms:ciprod12032022-c9f3dc30 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12032022-c9f3dc30 (linux)
