@@ -11,8 +11,8 @@
       "workspaceResourceId": {
         "value": "/subscriptions/<SubscriptionId>/resourceGroups/<ResourceGroup>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName>"
       },
-      "workspaceLocation": {
-        "value": "<workspaceLocation>"
+      "workspaceRegion": {
+        "value": "<workspaceRegion>"
       },
       "enableSyslog": {
         "value": false
