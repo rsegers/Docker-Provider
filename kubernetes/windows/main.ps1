@@ -126,6 +126,20 @@ function Generate-GenevaTenantNameSpaceConfig {
     Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf
 }
 
+function Generate-GenevaInfraNameSpaceConfig {
+   $genevaLogsInfraNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", "process")
+   if (![string]::IsNullOrEmpty($genevaLogsInfraNameSpaces)) {
+       [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", $genevaLogsInfraNameSpaces, "machine")
+       $genevaLogsInfraNameSpacesArray = $genevaLogsInfraNameSpaces.Split(",")
+       for ($i = 0; $i -lt $genevaLogsInfraNameSpacesArray.Length; $i = $i + 1) {
+         $infraNameSpaceName = $genevaLogsInfraNameSpacesArray[$i]
+         Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNameSpaceName.conf
+         (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNameSpaceName.conf  -Raw) -replace '<INFRA_NAMESPACE>', $infraNameSpaceName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNameSpaceName.conf
+       }
+   }
+   Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf
+}
+
 #register fluentd as a windows service
 
 function Set-EnvironmentVariables {
@@ -441,6 +455,7 @@ function Set-EnvironmentVariables {
         ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb
         ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-tenant-conf-customizer.rb
         Generate-GenevaTenantNameSpaceConfig
+        Generate-GenevaInfraNameSpaceConfig
     }
 
 
