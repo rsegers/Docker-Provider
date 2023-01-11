@@ -20,6 +20,8 @@ Write-Host ('Creating folder structure')
     New-Item -Type Directory -Path /etc/config/settings/
     New-Item -Type Directory -Path /etc/config/adx/
 
+    New-Item -Type Directory -Path /var/opt/microsoft/docker-cimprov/state/ContainerInventory/
+
 Write-Host ('Installing Fluent Bit');
 
     try {
