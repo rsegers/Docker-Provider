@@ -290,7 +290,11 @@ module Fluent::Plugin
       emitTime = Fluent::Engine.now
       #batchTime = currentTime.utc.iso8601
       eventStream = Fluent::MultiEventStream.new
-      # containerInventoryStream = Fluent::MultiEventStream.new
+
+      if !ExtensionUtils.isAADMSIAuthMode()
+        containerInventoryStream = Fluent::MultiEventStream.new
+      end
+
       kubePerfEventStream = Fluent::MultiEventStream.new
       insightsMetricsEventStream = Fluent::MultiEventStream.new
       @@istestvar = ENV["ISTEST"]
@@ -308,39 +312,41 @@ module Fluent::Plugin
           end
           # Setting this flag to true so that we can send ContainerInventory records for containers
           # on windows nodes and parse environment variables for these containers
-          # nodeName = ""
-          # if !item["spec"]["nodeName"].nil?
-          #   nodeName = item["spec"]["nodeName"]
-          # end
-          # if (!item["isWindows"].nil? && !item["isWindows"].empty? && item["isWindows"].downcase == "true")
-          #   clusterCollectEnvironmentVar = ENV["AZMON_CLUSTER_COLLECT_ENV_VAR"]
-          #   #Generate ContainerInventory records for windows nodes so that we can get image and image tag in property panel
-          #   containerInventoryRecords = KubernetesContainerInventory.getContainerInventoryRecords(item, batchTime, clusterCollectEnvironmentVar, true)
-          #   if KubernetesApiClient.isEmitCacheTelemetry()
-          #     @windowsContainerRecordsCacheSizeBytes += containerInventoryRecords.to_s.length
-          #   end
-          #   # Send container inventory records for containers on windows nodes
-          #   @winContainerCount += containerInventoryRecords.length
-          #   containerInventoryRecords.each do |cirecord|
-          #     if !cirecord.nil?
-          #       containerInventoryStream.add(emitTime, cirecord) if cirecord
-          #       ciRecordSize = cirecord.to_s.length
-          #       @winContainerInventoryTotalSizeBytes += ciRecordSize
-          #       if ciRecordSize >= Constants::MAX_RECORD_OR_FIELD_SIZE_FOR_TELEMETRY
-          #         @winContainerCountWithInventoryRecordSize64KBOrMore += 1
-          #       end
-          #       if !cirecord["EnvironmentVar"].nil? && !cirecord["EnvironmentVar"].empty? && cirecord["EnvironmentVar"].length >= Constants::MAX_RECORD_OR_FIELD_SIZE_FOR_TELEMETRY
-          #         @winContainerCountWithEnvVarSize64KBOrMore += 1
-          #       end
-          #       if !cirecord["Ports"].nil? && !cirecord["Ports"].empty? && cirecord["Ports"].length >= Constants::MAX_RECORD_OR_FIELD_SIZE_FOR_TELEMETRY
-          #         @winContainerCountWithPortsSize64KBOrMore += 1
-          #       end
-          #       if !cirecord["Command"].nil? && !cirecord["Command"].empty? && cirecord["Command"].length >= Constants::MAX_RECORD_OR_FIELD_SIZE_FOR_TELEMETRY
-          #         @winContainerCountWithCommandSize64KBOrMore += 1
-          #       end
-          #     end
-          #   end
-          # end
+          if !ExtensionUtils.isAADMSIAuthMode()
+            nodeName = ""
+            if !item["spec"]["nodeName"].nil?
+              nodeName = item["spec"]["nodeName"]
+            end
+            if (!item["isWindows"].nil? && !item["isWindows"].empty? && item["isWindows"].downcase == "true")
+              clusterCollectEnvironmentVar = ENV["AZMON_CLUSTER_COLLECT_ENV_VAR"]
+              #Generate ContainerInventory records for windows nodes so that we can get image and image tag in property panel
+              containerInventoryRecords = KubernetesContainerInventory.getContainerInventoryRecords(item, batchTime, clusterCollectEnvironmentVar, true)
+              if KubernetesApiClient.isEmitCacheTelemetry()
+                @windowsContainerRecordsCacheSizeBytes += containerInventoryRecords.to_s.length
+              end
+              # Send container inventory records for containers on windows nodes
+              @winContainerCount += containerInventoryRecords.length
+              containerInventoryRecords.each do |cirecord|
+                if !cirecord.nil?
+                  containerInventoryStream.add(emitTime, cirecord) if cirecord
+                  ciRecordSize = cirecord.to_s.length
+                  @winContainerInventoryTotalSizeBytes += ciRecordSize
+                  if ciRecordSize >= Constants::MAX_RECORD_OR_FIELD_SIZE_FOR_TELEMETRY
+                    @winContainerCountWithInventoryRecordSize64KBOrMore += 1
+                  end
+                  if !cirecord["EnvironmentVar"].nil? && !cirecord["EnvironmentVar"].empty? && cirecord["EnvironmentVar"].length >= Constants::MAX_RECORD_OR_FIELD_SIZE_FOR_TELEMETRY
+                    @winContainerCountWithEnvVarSize64KBOrMore += 1
+                  end
+                  if !cirecord["Ports"].nil? && !cirecord["Ports"].empty? && cirecord["Ports"].length >= Constants::MAX_RECORD_OR_FIELD_SIZE_FOR_TELEMETRY
+                    @winContainerCountWithPortsSize64KBOrMore += 1
+                  end
+                  if !cirecord["Command"].nil? && !cirecord["Command"].empty? && cirecord["Command"].length >= Constants::MAX_RECORD_OR_FIELD_SIZE_FOR_TELEMETRY
+                    @winContainerCountWithCommandSize64KBOrMore += 1
+                  end
+                end
+              end
+            end
+          end
 
           if @PODS_EMIT_STREAM_BATCH_SIZE > 0 && eventStream.count >= @PODS_EMIT_STREAM_BATCH_SIZE
             $log.info("in_kube_podinventory::parse_and_emit_records: number of pod inventory records emitted #{eventStream.count} @ #{Time.now.utc.iso8601}")
@@ -361,14 +367,16 @@ module Fluent::Plugin
           eventStream = nil
         end
 
-        # if containerInventoryStream.count > 0
-        #   $log.info("in_kube_podinventory::parse_and_emit_records: number of windows container inventory records emitted #{containerInventoryStream.count} @ #{Time.now.utc.iso8601}")
-        #   router.emit_stream(@containerInventoryTag, containerInventoryStream) if containerInventoryStream
-        #   if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
-        #     $log.info("kubeWindowsContainerInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
-        #   end
-        #   containerInventoryStream = nil
-        # end
+        if !ExtensionUtils.isAADMSIAuthMode()
+          if containerInventoryStream.count > 0
+            $log.info("in_kube_podinventory::parse_and_emit_records: number of windows container inventory records emitted #{containerInventoryStream.count} @ #{Time.now.utc.iso8601}")
+            router.emit_stream(@containerInventoryTag, containerInventoryStream) if containerInventoryStream
+            if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
+              $log.info("kubeWindowsContainerInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+            end
+            containerInventoryStream = nil
+          end
+        end
 
         if continuationToken.nil? #no more chunks in this batch to be sent, write all mdm pod inventory records to send
           if CustomMetricsUtils.check_custom_metrics_availability
