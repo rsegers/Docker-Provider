@@ -106,6 +106,5 @@ func getExtensionDataTypeMapping(isNamedPipe bool) (map[string]string, error) {
 	}
 	logger.Printf("Info::mdsd/AMA::build the datatype and streamid map -- end")
 
-
 	return datatypeMap, nil
 }
