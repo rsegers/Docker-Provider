@@ -65,3 +65,4 @@ if [ $? -eq 0 ]; then
 else
   echo "-e error failed to register arc extension"
   exit 1
+fi
