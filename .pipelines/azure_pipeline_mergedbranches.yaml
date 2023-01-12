@@ -106,7 +106,7 @@ jobs:
     name: Azure-Pipelines-CI-Test-EO
   variables:
     linuxImagetag: $[ dependencies.common.outputs['setup.linuxImagetag'] ]
-    linuxTelemetryTag: $[ dependencies.common.outputs['setup.linuxImagetag'] ]
+    linuxTelemetryTag: $[ dependencies.common.outputs['setup.linuxTelemetryTag'] ]
 
   steps:
   - task: AzureCLI@2
@@ -130,15 +130,17 @@ jobs:
         az acr login -n ${{ variables.containerRegistry }}
 
         if [ "$(Build.Reason)" != "PullRequest" ]; then
-          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --push .
+          docker buildx build --progress=plain --no-cache --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg TELEMETRY_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --push .
 
           docker pull ${{ variables.repoImageName }}:$(linuxImagetag)
         else
-          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) .
+          docker buildx build --progress=plain --no-cache --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg TELEMETRY_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) .
 
           # load the multi-arch image to run tests
-          docker buildx build --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --load .
+          docker buildx build --progress=plain --no-cache --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg TELEMETRY_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --load .
         fi
+
+        echo "tag ${linuxTelemetryTag}"
 
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
