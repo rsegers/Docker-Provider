@@ -19,6 +19,6 @@
     <AgentMetrics mdmMonitoringAccount="containerlogsstage" />
   </Management>
   <Sources>
-    <Source name="ContainerLog.*" eventName="ContainerLogV2" type="Pipe" streamName="ContainerLogV2Pipe" />
+    <Source name="ContainerLog.*" eventName="ContainerLogV2" type="Pipe" streamName="ContainerLogV2Pipe" storeType="CentralBond"/>
   </Sources>
 </MonitoringManagement>

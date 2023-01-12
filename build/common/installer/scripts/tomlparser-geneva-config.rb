@@ -15,6 +15,7 @@ GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "Firstparty
 @geneva_account_environment = "" # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
 @geneva_account_name = ""
 @geneva_account_namespace = ""
+@geneva_account_namespace_windows = ""
 @geneva_logs_config_version = "1.0"
 @geneva_gcs_region = ""
 @infra_namespaces = ""
@@ -80,6 +81,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           if !@multi_tenancy || (@multi_tenancy && !@infra_namespaces.empty?)
             geneva_account_environment = parsedConfig[:integrations][:geneva_logs][:environment].to_s
             geneva_account_namespace = parsedConfig[:integrations][:geneva_logs][:namespace].to_s
+            geneva_account_namespace_windows = parsedConfig[:integrations][:geneva_logs][:namespacewindows].to_s
             geneva_account_name = parsedConfig[:integrations][:geneva_logs][:account].to_s
             geneva_logs_config_version = parsedConfig[:integrations][:geneva_logs][:configversion].to_s
             geneva_gcs_region = parsedConfig[:integrations][:geneva_logs][:region].to_s
@@ -105,9 +107,10 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 puts "failed to get user assigned client id with an error: #{errorStr}"
               end
             end
-            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_name, geneva_gcs_authid, geneva_gcs_region)
+            if isValidGenevaConfig(geneva_account_environment, geneva_account_namespace, geneva_account_namespace_windows, geneva_account_name, geneva_gcs_authid, geneva_gcs_region)
               @geneva_account_environment = geneva_account_environment
               @geneva_account_namespace = geneva_account_namespace
+              @geneva_account_namespace_windows = geneva_account_namespace_windows
               @geneva_account_name = geneva_account_name
               @geneva_gcs_region = geneva_gcs_region
               @geneva_gcs_authid = geneva_gcs_authid
@@ -120,6 +123,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
               end
               puts "using environment for geneva integration: #{@geneva_account_environment}"
               puts "using namespace for geneva integration: #{@geneva_account_namespace}"
+              puts "using namespace for windows for geneva integration: #{@geneva_account_namespace_windows}"
               puts "using account for geneva integration: #{@geneva_account_name}"
               puts "using authid for geneva integration: #{@geneva_gcs_authid}"
               puts "using config version for geneva integration: #{@geneva_logs_config_version}"
@@ -169,7 +173,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
   end
 end
 
-def isValidGenevaConfig(environment, namespace, account, authid, region)
+def isValidGenevaConfig(environment, namespace, namespacewindows, account, authid, region)
   isValid = false
   begin
     if environment.nil? || environment.empty?
@@ -191,6 +195,11 @@ def isValidGenevaConfig(environment, namespace, account, authid, region)
       puts "config::geneva_logs::error:geneva GCS AuthID MUST be valid"
       return isValid
     end
+    ## namespacewindows is optional hence we dont need this validation
+    # if namespacewindows.nil? || namespacewindows.empty?
+    #   puts "config::geneva_logs::error:geneva account namespace for windows MUST be valid"
+    #   return isValid
+    # end
     # TODO - add the validation once we figured out the environment for airgap clouds
     # GENEVA_SUPPORTED_ENVIRONMENTS.map(&:downcase).include?(environment.downcase)
     isValid = true
@@ -264,7 +273,7 @@ if (@containerType.nil? || @containerType.empty?)
 
       commands = get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment)
       file.write(commands)
-      commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace)
+      commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace_windows)
       file.write(commands)
       commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
       file.write(commands)
