@@ -413,7 +413,7 @@ function Set-EnvironmentVariables {
         Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
     }
 
-    $isGenevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION")
+    $isGenevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
     if (![string]::IsNullOrEmpty($isGenevaLogsIntegration) -and $isGenevaLogsIntegration.ToLower() -eq 'true') {
         Write-Host "Setting Geneva Windows AMA Environment variables"
         #start Windows AMA
