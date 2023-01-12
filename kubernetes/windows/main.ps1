@@ -413,15 +413,6 @@ function Set-EnvironmentVariables {
         Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
     }
 
-    $isGenevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
-    if (![string]::IsNullOrEmpty($isGenevaLogsIntegration) -and $isGenevaLogsIntegration.ToLower() -eq 'true') {
-        Write-Host "Setting Geneva Windows AMA Environment variables"
-        #start Windows AMA
-        Set-GenevaAMAEnvironmentVariables
-    } elseif (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
-        Set-AMAEnvironmentVariables
-    }
-
     # run config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
     .\setenv.ps1
@@ -460,6 +451,12 @@ function Set-EnvironmentVariables {
         Generate-GenevaInfraNameSpaceConfig
     }
 
+    if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true') {
+        Write-Host "Setting Geneva Windows AMA Environment variables"
+        Set-GenevaAMAEnvironmentVariables
+    } elseif (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+        Set-AMAEnvironmentVariables
+    }
 
     # run mdm config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
