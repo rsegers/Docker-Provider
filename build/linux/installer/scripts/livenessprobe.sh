@@ -74,7 +74,7 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
 fi
 
 #test to exit non zero value if fluentbit is not running
-(ps -ef | grep td-agent-bit | grep -v "grep")
+(ps -ef | grep fluent-bit | grep -v "grep")
 if [ $? -ne 0 ]
 then
  echo "Fluentbit is not running" > /dev/termination-log
