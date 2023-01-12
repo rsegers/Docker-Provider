@@ -5,12 +5,6 @@
 # These are plain pipeline variable which can be modified anyone in the team
 # AGENT_RELEASE=cidev
 # AGENT_IMAGE_TAG_SUFFIX=3.0.0
-
-#Name of the ACR for ciprod & cidev images
-ACR_NAME=containerinsightsprod.azurecr.io
-AGENT_IMAGE_FULL_PATH=${ACR_NAME}/public/azuremonitor/containerinsights/${AGENT_RELEASE}:${AGENT_IMAGE_TAG_SUFFIX}
-AGENT_IMAGE_TAR_FILE_NAME=agentimage.tar.gz
-
 if [ -z $AGENT_IMAGE_TAG_SUFFIX ]; then
   echo "-e error value of AGENT_RELEASE variable shouldnt be empty"
   exit 1
@@ -20,6 +14,11 @@ if [ -z $AGENT_RELEASE ]; then
   echo "-e error AGENT_RELEASE shouldnt be empty"
   exit 1
 fi
+
+#Name of the ACR for ciprod & cidev images
+ACR_NAME=containerinsightsprod.azurecr.io
+AGENT_IMAGE_FULL_PATH=${ACR_NAME}/public/azuremonitor/containerinsights/${AGENT_RELEASE}:${AGENT_IMAGE_TAG_SUFFIX}
+AGENT_IMAGE_TAR_FILE_NAME=agentimage.tar.gz
 
 echo "ACR NAME - ${ACR_NAME}"
 echo "AGENT RELEASE -  ${AGENT_RELEASE}"

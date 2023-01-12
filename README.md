@@ -342,8 +342,8 @@ Integrated to Azure DevOps release pipeline for the ci_prod branch. With this, f
 
 When releasing the agent, we have a separate Azure DevOps pipeline which needs to be run to publish the image to prod MCR and our PROD AKS clusters. 
 
-For development, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:`Major.Minor.Patch`-CommitAheadCount-<git-commit-id>.
-For releases, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:`Major.Minor.Patch`.
+For development, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:`Major.Minor.Patch`-CommitAheadCount-<git-commit-id>. Image tag for windows will be win-`Major.Minor.Patch`-CommitAheadCount-<git-commit-id>.
+For releases, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:`Major.Minor.Patch`. Image tag for windows will be win-`Major.Minor.Patch`.
 
 Navigate to https://github-private.visualstudio.com/microsoft/_release?_a=releases&view=all to see the release pipelines.
 
