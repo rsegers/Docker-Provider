@@ -19,7 +19,7 @@ RUN /usr/bin/apt-get update && /usr/bin/apt-get install -y libc-bin wget openssl
 COPY setup.sh main.sh defaultpromenvvariables defaultpromenvvariables-rs defaultpromenvvariables-sidecar mdsd.xml envmdsd logrotate.conf $tmpdir/
 
 ARG IMAGE_TAG=
-ENV AGENT_VERSION=${IMAGE_TAG}
+ENV AGENT_VERSION "3.1.1"
 
 WORKDIR ${tmpdir}
 
