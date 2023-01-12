@@ -5,8 +5,6 @@ MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
-ARG IMAGE_TAG=win-ciprod12032022-c9f3dc30
-
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
 RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
@@ -71,8 +69,9 @@ COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluen
 #Copy fluentd ruby plugins
 COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
 
-ARG TELEMETRY_TAG=${IMAGE_TAG}
-ENV AGENT_VERSION ${TELEMETRY_TAG}
+ARG IMAGE_TAG=
+ENV AGENT_VERSION=${IMAGE_TAG}
+
 ENV OS_TYPE "windows"
 ENV APPLICATIONINSIGHTS_AUTH "NzAwZGM5OGYtYTdhZC00NThkLWI5NWMtMjA3ZjM3NmM3YmRi"
 ENV AZMON_COLLECT_ENV False
