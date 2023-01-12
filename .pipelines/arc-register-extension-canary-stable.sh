@@ -1,15 +1,17 @@
 #!/bin/bash
 # Register azuremonitor-containers extension with Arc Registration API
 
-REGISTER_REGIONS=${REGISTER_REGIONS:-eastus2euap}
-RELEASE_TRAINS=${RELEASE_TRAIN:-stable}
+REGISTER_REGION_CANARY=${REGISTER_REGION_CANARY:-eastus2euap}
+RELEASE_TRAINS_PREVIEW=${RELEASE_TRAIN:-preview}
+RELEASE_TRAINS_STABLE=${RELEASE_TRAIN:-stable}
 
 PACKAGE_CONFIG_NAME="${PACKAGE_CONFIG_NAME:-microsoft.azuremonitor.containers-pkg022022}"
 API_VERSION="${API_VERSION:-2021-05-01}"
 METHOD="${METHOD:-put}"
-REGISTRY_PATH="https://mcr.microsoft.com/azuremonitor/containerinsights/canary/${RELEASE_TRAINS}/azuremonitor-containers"
+REGISTRY_PATH_CANARY_PREVIEW="https://mcr.microsoft.com/azuremonitor/containerinsights/canary/preview/azuremonitor-containers"
+REGISTRY_PATH_CANARY_STABLE="https://mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
 
-echo "Start arc extension registration, REGISTER_REGIONS are $REGISTER_REGIONS, RELEASE_TRAINS are $RELEASE_TRAINS, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
+echo "Start arc extension registration, REGISTER_REGION is $REGISTER_REGION_CANARY, RELEASE_TRAINS are $RELEASE_TRAINS_PREVIEW; $RELEASE_TRAINS_STABLE, RELEASE_TRAINS_STABLE are $RELEASE_TRAINS_STABLE, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
 
 # Create JSON request body
 cat <<EOF > "request.json"
@@ -17,12 +19,31 @@ cat <<EOF > "request.json"
     "artifactEndpoints": [
         {
             "Regions": [
-                "$REGISTER_REGIONS"
+                "$REGISTER_REGION_CANARY"
             ],
             "Releasetrains": [
-                "$RELEASE_TRAINS"
+                "$RELEASE_TRAINS_PREVIEW"
             ],
-            "FullPathToHelmChart": "$REGISTRY_PATH",
+            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
+            "ExtensionUpdateFrequencyInMinutes": 60,
+            "IsCustomerHidden": false,
+            "ReadyforRollout": true,
+            "RollbackVersion": null,
+            "PackageConfigName": "$PACKAGE_CONFIG_NAME"
+        },
+EOF
+
+cat <<EOF >> "request.json"
+{
+    "artifactEndpoints": [
+        {
+            "Regions": [
+                "$REGISTER_REGION_CANARY"
+            ],
+            "Releasetrains": [
+                "$RELEASE_TRAINS_STABLE"
+            ],
+            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_STABLE",
             "ExtensionUpdateFrequencyInMinutes": 60,
             "IsCustomerHidden": false,
             "ReadyforRollout": true,
