@@ -69,8 +69,8 @@ COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluen
 #Copy fluentd ruby plugins
 COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
 
-ARG IMAGE_TAG=
-ENV AGENT_VERSION "3.1.1"
+ARG IMAGE_TAG
+ENV AGENT_VERSION ${IMAGE_TAG}
 
 ENV OS_TYPE "windows"
 ENV APPLICATIONINSIGHTS_AUTH "NzAwZGM5OGYtYTdhZC00NThkLWI5NWMtMjA3ZjM3NmM3YmRi"
