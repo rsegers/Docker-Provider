@@ -14,7 +14,7 @@ REGISTRY_PATH_PROD_PREVIEW="https://mcr.microsoft.com/azuremonitor/containerinsi
 
 REGISTER_REGION_BATCH=($REGISTER_REGION_BATCH)
 
-echo "Start arc extension registration, REGISTER_REGION is $REGISTER_REGION_CANARY, RELEASE_TRAINS are $RELEASE_TRAINS_PREVIEW; $RELEASE_TRAINS_STABLE, RELEASE_TRAINS_STABLE are $RELEASE_TRAINS_STABLE, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
+echo "Start arc extension registration, REGISTER_REGION is $REGISTER_REGION_CANARY, RELEASE_TRAINS are $RELEASE_TRAINS_PREVIEW; $RELEASE_TRAINS_STABLE, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
 
 # Create JSON request body
 cat <<EOF > "request.json"
@@ -55,8 +55,6 @@ cat <<EOF >> "request.json"
         },
 EOF
 
-for i in ${!RELEASE_TRAINS_PROD[@]}
-do
 cat <<EOF >> "request.json"
 {
     "artifactEndpoints": [
@@ -75,7 +73,6 @@ cat <<EOF >> "request.json"
             "PackageConfigName": "$PACKAGE_CONFIG_NAME"
         },
 EOF
-done
 
 sed -i '$ s/.$//' request.json
 

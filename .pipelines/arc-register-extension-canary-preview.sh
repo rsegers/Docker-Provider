@@ -2,7 +2,7 @@
 # Register azuremonitor-containers extension with Arc Registration API
 
 REGISTER_REGION_CANARY=${REGISTER_REGION_CANARY:-eastus2euap}
-RELEASE_TRAINS_PREVIEW=${RELEASE_TRAIN:-preview}
+RELEASE_TRAINS_PREVIEW=$RELEASE_TRAINS_PREVIEW
 
 PACKAGE_CONFIG_NAME="${PACKAGE_CONFIG_NAME:-microsoft.azuremonitor.containers-pkg022022}"
 API_VERSION="${API_VERSION:-2021-05-01}"
