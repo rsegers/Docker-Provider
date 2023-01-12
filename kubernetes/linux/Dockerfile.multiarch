@@ -1,7 +1,6 @@
 # Default base images. If you update them don't forgot to update variables in our build pipelines. Default values can be found in internal wiki. External can use ubuntu 18.04 and golang 1.18.3
 ARG GOLANG_BASE_IMAGE=
 ARG CI_BASE_IMAGE=
-ARG TELEMETRY_TAG=
 
 FROM --platform=$BUILDPLATFORM ${GOLANG_BASE_IMAGE} AS builder
 ARG TARGETOS TARGETARCH
@@ -34,6 +33,7 @@ RUN /usr/bin/apt-get update && /usr/bin/apt-get install -y libc-bin wget openssl
 COPY --from=builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-cimprov-*.*.*-*.*.sh $tmpdir/
 COPY kubernetes/linux/setup.sh kubernetes/linux/main.sh kubernetes/linux/defaultpromenvvariables kubernetes/linux/defaultpromenvvariables-rs kubernetes/linux/defaultpromenvvariables-sidecar kubernetes/linux/mdsd.xml kubernetes/linux/envmdsd kubernetes/linux/logrotate.conf $tmpdir/
 
+ARG TELEMETRY_TAG
 ARG IMAGE_TAG
 RUN echo "TELE: ${TELEMETRY_TAG}"
 RUN echo "IMG: ${IMAGE_TAG}"
