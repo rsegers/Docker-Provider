@@ -107,9 +107,17 @@ function Set-EnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("WSID", $wsID, "Machine")
 
     # Don't store WSKEY as environment variable
-
-    $proxy = ""
-    if (Test-Path /etc/ama-logs-secret/PROXY) {
+    $isIgnoreProxySettings = [System.Environment]::GetEnvironmentVariable("IGNORE_PROXY_SETTINGS", "process")
+    if (![string]::IsNullOrEmpty($isIgnoreProxySettings)) {
+        [System.Environment]::SetEnvironmentVariable("IGNORE_PROXY_SETTINGS", $isIgnoreProxySettings, "Process")
+        [System.Environment]::SetEnvironmentVariable("IGNORE_PROXY_SETTINGS", $isIgnoreProxySettings, "Machine")
+        Write-Host "Successfully set environment variable IGNORE_PROXY_SETTINGS - $($isIgnoreProxySettings) for target 'machine'..."
+    }
+    if (![string]::IsNullOrEmpty($isIgnoreProxySettings) -and $isIgnoreProxySettings.ToLower() -eq 'true') {
+        Write-Host "Ignoring Proxy Setttings since IGNORE_PROXY_SETTINGS is - $($isIgnoreProxySettings)"
+    } else {
+      $proxy = ""
+      if (Test-Path /etc/ama-logs-secret/PROXY) {
         # TODO: Change to ama-logs-secret before merging
         $proxy = Get-Content /etc/ama-logs-secret/PROXY
         Write-Host "Validating the proxy configuration since proxy configuration provided"
@@ -136,18 +144,19 @@ function Set-EnvironmentVariables {
 
             }
         }
+       Write-Host "Provided Proxy configuration is valid"
+      }
 
-        Write-Host "Provided Proxy configuration is valid"
+
+       if (Test-Path /etc/ama-logs-secret/PROXYCERT.crt) {
+            Write-Host "Importing Proxy CA cert since Proxy CA cert configured"
+            Import-Certificate -FilePath /etc/ama-logs-secret/PROXYCERT.crt -CertStoreLocation 'Cert:\LocalMachine\Root' -Verbose
+        }
+
+        # Set PROXY
+        [System.Environment]::SetEnvironmentVariable("PROXY", $proxy, "Process")
+        [System.Environment]::SetEnvironmentVariable("PROXY", $proxy, "Machine")
     }
-
-    if (Test-Path /etc/ama-logs-secret/PROXYCERT.crt) {
-        Write-Host "Importing Proxy CA cert since Proxy CA cert configured"
-        Import-Certificate -FilePath /etc/ama-logs-secret/PROXYCERT.crt -CertStoreLocation 'Cert:\LocalMachine\Root' -Verbose
-    }
-
-    # Set PROXY
-    [System.Environment]::SetEnvironmentVariable("PROXY", $proxy, "Process")
-    [System.Environment]::SetEnvironmentVariable("PROXY", $proxy, "Machine")
     #set agent config schema version
     $schemaVersionFile = '/etc/config/settings/schema-version'
     if (Test-Path $schemaVersionFile) {
@@ -310,7 +319,9 @@ function Set-EnvironmentVariables {
     else {
         Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
     }
+}
 
+function Read-Configs {
     # run config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
     .\setenv.ps1
@@ -319,7 +330,7 @@ function Set-EnvironmentVariables {
     .\setagentenv.ps1
 
     #Replace placeholders in fluent-bit.conf
-    ruby /opt/amalogswindows/scripts/ruby/td-agent-bit-conf-customizer.rb
+    ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
     # run mdm config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
@@ -591,6 +602,7 @@ function Bootstrap-CACertificates {
 Start-Transcript -Path main.txt
 
 Remove-WindowsServiceIfItExists "fluentdwinaks"
+Read-Configs
 Set-EnvironmentVariables
 Start-FileSystemWatcher
 
