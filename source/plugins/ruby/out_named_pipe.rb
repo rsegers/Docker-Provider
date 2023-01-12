@@ -8,14 +8,13 @@ module Fluent::Plugin
 
     config_param :datatype, :string
 
-    unless method_defined?(:log)
-      define_method(:log) { $log }
-    end
-
     def initialize
         super
         require_relative "extension_utils"
-    
+
+        @pipe_name = ""
+        @pipe_handle = nil
+
     end
 
     def configure(conf)
@@ -25,7 +24,6 @@ module Fluent::Plugin
     end
 
     def getNamedPipeFromExtension()
-        @pipe_name = ""
         pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
         if !pipe_suffix.nil? && !pipe_suffix.empty?
           @pipe_name = "\\\\.\\pipe\\" + pipe_suffix
@@ -55,51 +53,20 @@ module Fluent::Plugin
         end
     end
 
-        # This method is called every flush interval. Send the buffer chunk to MDM.
-    # 'chunk' is a buffer chunk that includes multiple formatted records
     def write(chunk)
-        if @pipe_name.nil? || @pipe_name.empty?
-          getNamedPipeFromExtension()
-        end
-        begin
-          @pipe = File.open(@pipe_name, File::WRONLY)
-          chunk.write_to(@pipe)
-          @pipe.flush
-          @pipe.close
-        #   chunk.extend Fluent::ChunkMessagePackEventStreamer
-        #   chunk.msgpack_each { |(tag, record)|
-        #       bytes = @pipe.write [tag, [record]].to_msgpack
-        #       @log.info "Data bytes sent: #{bytes}"
-        #       @pipe.flush
-        #   }
-         
-        rescue Exception => e
-          @log.info "Exception when writing to named pipe: #{e}"
-          raise e
-        end
+      if @pipe_name.nil? || @pipe_name.empty?
+        getNamedPipeFromExtension()
       end
-
-#     def format(tag, time, record)
-#       # 3. Call `format` method to format `record`
-#       @formatter.format(tag, time, record)
-#     end
-
-#   def process(tag, es)
-#     @pipe = File.open(@pipe_name, File::WRONLY)
-#     es.each do |time, record|
-#       recordArray = [time, record]
-#       fluentMessage = [tag]
-#       fluentMessage.append([recordArray])
-#       @log.info "Formatted message is: #{fluentMessage}"
-#       bytes = @pipe.write @formatter.format(tag, time, fluentMessage)
-#       @log.info "Data bytes sent: #{bytes}"
-#       @pipe.flush
-#     end
-  
-#   rescue => e
-#     log.error "out_named_pipe: unexpected error", :error_class => e.class, :error => e.to_s
-#     log.error_backtrace
-#   end
+      begin
+        @pipe_handle = File.open(@pipe_name, File::WRONLY)
+        chunk.write_to(@pipe_handle)
+        @pipe_handle.flush
+        @pipe_handle.close
+      rescue Exception => e
+        @log.info "Exception when writing to named pipe: #{e}"
+        raise e
+      end
+    end
 
   end
 end
