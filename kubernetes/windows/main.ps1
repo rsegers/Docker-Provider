@@ -133,8 +133,9 @@ function Generate-GenevaInfraNameSpaceConfig {
        $genevaLogsInfraNameSpacesArray = $genevaLogsInfraNameSpaces.Split(",")
        for ($i = 0; $i -lt $genevaLogsInfraNameSpacesArray.Length; $i = $i + 1) {
          $infraNameSpaceName = $genevaLogsInfraNameSpacesArray[$i]
-         Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNameSpaceName.conf
-         (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNameSpaceName.conf  -Raw) -replace '<INFRA_NAMESPACE>', $infraNameSpaceName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNameSpaceName.conf
+         $infraNamespaceWithoutSuffix = $infraNameSpaceName.TrimEnd("_*")
+         Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
+         (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf  -Raw) -replace '<INFRA_NAMESPACE>', $infraNameSpaceName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
        }
    }
    Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf
@@ -454,6 +455,7 @@ function Set-EnvironmentVariables {
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
         ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb
         ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-tenant-conf-customizer.rb
+        ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-infra-conf-customizer.rb
         Generate-GenevaTenantNameSpaceConfig
         Generate-GenevaInfraNameSpaceConfig
     }

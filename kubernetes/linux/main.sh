@@ -548,6 +548,7 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidec
       if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
          ruby fluent-bit-geneva-conf-customizer.rb
          ruby fluent-bit-geneva-tenant-conf-customizer.rb
+         ruby fluent-bit-geneva-infra-conf-customizer.rb
          # generate genavaconfig for each tenant
          generateGenevaTenantNamespaceConfig
          # generate genavaconfig for infra namespace
