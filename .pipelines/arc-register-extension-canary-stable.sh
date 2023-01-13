@@ -34,8 +34,6 @@ cat <<EOF > "request.json"
 EOF
 
 cat <<EOF >> "request.json"
-{
-    "artifactEndpoints": [
         {
             "Regions": [
                 "$REGISTER_REGION_CANARY"
