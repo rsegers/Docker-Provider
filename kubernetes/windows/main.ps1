@@ -690,6 +690,8 @@ if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'tr
 
     #start Windows AMA 
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
+    $version = Get-Content -Path "C:\opt\windowsazuremonitoragent\version.txt"
+    Write-Host $version
 }
 else {
     Write-Host "skipping starting windows ama agent"

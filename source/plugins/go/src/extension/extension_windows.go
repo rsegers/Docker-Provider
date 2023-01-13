@@ -3,12 +3,11 @@
 package extension
 
 import (
-
 	winio "github.com/Microsoft/go-winio"
 )
 
 func getExtensionConfigResponse(jsonBytes []byte) (string, error) {
-	pipePath := `\\.\\pipe\\CAgentStream_CloudAgentInfo_AzureMonitorAgent`
+	pipePath := "\\\\.\\\\pipe\\\\CAgentStream_CloudAgentInfo_AzureMonitorAgent"
 	config_namedpipe, err := winio.DialPipe(pipePath, nil)
 	if err != nil {
 		logger.Printf("AMA::extensionconfig::getExtensionConfigResponse:: error opening pipe %s: %v", pipePath, err)

@@ -73,6 +73,7 @@ try {
     Invoke-WebRequest -Uri $windowsazuremonitoragent -OutFile /installation/windowsazuremonitoragent.zip
     Expand-Archive -Path /installation/windowsazuremonitoragent.zip -Destination /installation/windowsazuremonitoragent
     Move-Item -Path /installation/windowsazuremonitoragent -Destination /opt/windowsazuremonitoragent/ -ErrorAction SilentlyContinue
+    echo "Monitoring Agent Version - 46.2.1" > /opt/windowsazuremonitoragent/version.txt
 }
 catch {
     $ex = $_.Exception
