@@ -185,7 +185,19 @@ data:
     # in such scenarios, use the following config to ignore proxy settings
     # [agent_settings.proxy_config]
     #    ignore_proxy_settings = "true"  # if this is not applied, default value is false
-
+  
+  hostlogs-settings: |-
+   [hostlogs_settings.geneva_logs_config]
+      # Auth for Geneva Account object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>
+      authid =  "VALUE_AUTH_ID"         
+      # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
+      environment = "VALUE_ENVIRONMENT"
+      # Name of the Geneva Logs account                
+      account = "VALUE_ACCOUNT"       
+      # Name of the Geneva Logs account namespace
+      namespace = "VALUE_ACCOUNT_NAMESPACE"  
+      # Config version of the agent xml config.  
+      configversion = "VALUE_CONFIG_VERSION"               
 metadata:
   name: container-azm-ms-agentconfig
   namespace: kube-system
