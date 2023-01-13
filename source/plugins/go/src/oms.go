@@ -89,7 +89,6 @@ const IPName = "ContainerInsights"
 const defaultContainerInventoryRefreshInterval = 60
 
 const kubeMonAgentConfigEventFlushInterval = 60
-const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
 
 //Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -207,10 +206,6 @@ var (
 	EventHashUpdateMutex = &sync.Mutex{}
 	// parent context used by ADX uploader
 	ParentContext = context.Background()
-	// IngestionAuthTokenUpdateMutex read and write mutex access for ODSIngestionAuthToken
-	IngestionAuthTokenUpdateMutex = &sync.Mutex{}
-	// ODSIngestionAuthToken for windows agent AAD MSI Auth
-	ODSIngestionAuthToken string
 )
 
 var (
@@ -786,16 +781,6 @@ func flushKubeMonAgentEventRecords() {
 						req.Header.Set("x-ms-AzureResourceId", ResourceID)
 					}
 
-					if IsAADMSIAuthMode == true {
-						IngestionAuthTokenUpdateMutex.Lock()
-						ingestionAuthToken := ODSIngestionAuthToken
-						IngestionAuthTokenUpdateMutex.Unlock()
-						if ingestionAuthToken == "" {
-							Log("Error::ODS Ingestion Auth Token is empty. Please check error log.")
-						}
-						req.Header.Set("Authorization", "Bearer "+ingestionAuthToken)
-					}
-
 					resp, err := HTTPClient.Do(req)
 					elapsed = time.Since(start)
 
@@ -1025,18 +1010,6 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		if ResourceCentric == true {
 			req.Header.Set("x-ms-AzureResourceId", ResourceID)
 		}
-		if IsAADMSIAuthMode == true {
-			IngestionAuthTokenUpdateMutex.Lock()
-			ingestionAuthToken := ODSIngestionAuthToken
-			IngestionAuthTokenUpdateMutex.Unlock()
-			if ingestionAuthToken == "" {
-				message := "Error::ODS Ingestion Auth Token is empty. Please check error log."
-				Log(message)
-				return output.FLB_RETRY
-			}
-			// add authorization header to the req
-			req.Header.Set("Authorization", "Bearer "+ingestionAuthToken)
-		}
 
 		start := time.Now()
 		resp, err := HTTPClient.Do(req)
@@ -1255,7 +1228,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogDataType)
 			}
 			Log("Info::mdsd/ama:: using mdsdsource name: %s", MdsdContainerLogTagName)
-			
+
 		}
 
 		fluentForward := MsgPackForward{
@@ -1293,7 +1266,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				} else {
 					datatype = ContainerLogDataType
 				}
-				CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
+				CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
 			}
 			if ContainerLogNamedPipe == nil {
 				Log("Error::AMA::Cannot create the named pipe connection")
@@ -1450,18 +1423,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		//expensive to do string len for every request, so use a flag
 		if ResourceCentric == true {
 			req.Header.Set("x-ms-AzureResourceId", ResourceID)
-		}
-
-		if IsAADMSIAuthMode == true {
-			IngestionAuthTokenUpdateMutex.Lock()
-			ingestionAuthToken := ODSIngestionAuthToken
-			IngestionAuthTokenUpdateMutex.Unlock()
-			if ingestionAuthToken == "" {
-				Log("Error::ODS Ingestion Auth Token is empty. Please check error log.")
-				return output.FLB_RETRY
-			}
-			// add authorization header to the req
-			req.Header.Set("Authorization", "Bearer "+ingestionAuthToken)
 		}
 
 		resp, err := HTTPClient.Do(req)
@@ -1801,7 +1762,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("Routing container logs thru %s route...", ContainerLogsRoute)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsRoute)
 	} else if IsAADMSIAuthMode { //for windows, check if MSI Auth mode, then send through AMA
-		ContainerLogsRouteV2 = true 
+		ContainerLogsRouteV2 = true
 		Log("Routing container logs thru %s route...", ContainerLogsV2Route)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsV2Route)
 	}
@@ -1816,7 +1777,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
 	}
-	
+
 	if ContainerLogsRouteV2 == true {
 		if IsWindows {
 			var datatype string
@@ -1825,7 +1786,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 			} else {
 				datatype = ContainerLogDataType
 			}
-			CreateWindowsNamedPipesClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
+			CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
 		} else {
 			CreateMDSDClient(ContainerLogV2, ContainerType)
 		}
@@ -1841,8 +1802,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		CreateMDSDClient(KubeMonAgentEvents, ContainerType)
 		CreateMDSDClient(InsightsMetrics, ContainerType)
 	}
-
-	
 
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		populateExcludedStdoutNamespaces()
@@ -1870,9 +1829,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	MdsdInsightsMetricsTagName = MdsdInsightsMetricsSourceName
 	MdsdKubeMonAgentEventsTagName = MdsdKubeMonAgentEventsSourceName
 	Log("ContainerLogsRouteADX: %v, IsWindows: %v, IsAADMSIAuthMode = %v \n", ContainerLogsRouteADX, IsWindows, IsAADMSIAuthMode)
-	if !ContainerLogsRouteADX && IsWindows && IsAADMSIAuthMode {
-		Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)
-		IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
-		go refreshIngestionAuthToken()
-	}
+	// if !ContainerLogsRouteADX && IsWindows && IsAADMSIAuthMode {
+	// 	Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)
+	// 	IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
+	// 	go refreshIngestionAuthToken()
+	// }
 }

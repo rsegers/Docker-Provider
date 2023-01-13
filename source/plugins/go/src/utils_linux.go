@@ -2,9 +2,9 @@
 
 package main
 
-func CreateWindowsNamedPipesClient(namedPipe string) {
+func CreateWindowsNamedPipeClient(namedPipe string) {
 	//function unimplemented
-	Log("Error::CreateWindowsNamedPipesClient not implemented for Linux")
+	Log("Error::CreateWindowsNamedPipeClient not implemented for Linux")
 
 }
 
