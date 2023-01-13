@@ -26,11 +26,11 @@ spec:
       dnsConfig:
         options:
           - name: ndots
-            value: '3'
+            value: "3"
       securityContext:
         windowsOptions:
           hostProcess: true
-          runAsUserName: 'NT AUTHORITY\SYSTEM'
+          runAsUserName: "NT AUTHORITY\\SYSTEM"
       hostNetwork: true
       containers:
         - name: host-logs-windows
@@ -52,8 +52,7 @@ spec:
                 fieldRef:
                   fieldPath: spec.nodeName
           volumeMounts:
-            -
-              mountPath: \etc\config\settings
+            - mountPath: \etc\config\settings
               name: settings-vol-config
               readOnly: true
           livenessProbe:
@@ -62,7 +61,7 @@ spec:
                 - cmd
                 - /c
                 - .\opt\hostlogswindows\scripts\cmd\livenessprobe.exe
-                - .\etc\hostlogswindows\filesystemwatcher.txt
+                - ".\\etc\\hostlogswindows\\filesystemwatcher.txt"
       affinity:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -73,7 +72,7 @@ spec:
                     values:
                       - windows
       tolerations:
-        - key: CriticalAddonsOnly
+        - key: "CriticalAddonsOnly"
           operator: "Exists"
         - operator: "Exists"
           effect: NoExecute
@@ -82,8 +81,7 @@ spec:
         - operator: "Exists"
           effect: PreferNoSchedule
       volumes:
-        -
-          name: settings-vol-config
+        - name: settings-vol-config
           configMap:
             name: container-azm-ms-agentconfig
             optional: true
