@@ -74,7 +74,7 @@ def substituteFluentBitPlaceHolders
     end
 
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
-    puts "config::Successfully substituted the placeholders in fluent-bit.conf file"
+    puts "config::Successfully substituted the placeholders in fluent-bit-geneva-logs_tenant.conf file"
   rescue => errorStr
     ConfigParseErrorLogger.logError("fluent-bit-geneva-tenant-conf-customizer: error while substituting values in fluent-bit-geneva-logs_tenant.conf file: #{errorStr}")
   end
