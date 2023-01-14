@@ -1,9 +1,9 @@
 #!/bin/bash
 # Register azuremonitor-containers extension with Arc Registration API
 
-REGISTER_REGION_CANARY=${REGISTER_REGION_CANARY:-eastus2euap}
-RELEASE_TRAINS_PREVIEW=${RELEASE_TRAIN:-preview}
-RELEASE_TRAINS_STABLE=${RELEASE_TRAIN:-stable}
+REGISTER_REGIONS_CANARY=$REGISTER_REGIONS_CANARY
+RELEASE_TRAINS_PREVIEW_PATH=${RELEASE_TRAINS_PREVIEW_PATH}
+RELEASE_TRAINS_STABLE_PATH=${RELEASE_TRAINS_STABLE_PATH}
 
 PACKAGE_CONFIG_NAME="${PACKAGE_CONFIG_NAME:-microsoft.azuremonitor.containers-pkg022022}"
 API_VERSION="${API_VERSION:-2021-05-01}"
@@ -13,9 +13,9 @@ REGISTRY_PATH_CANARY_STABLE="https://mcr.microsoft.com/azuremonitor/containerins
 REGISTRY_PATH_PROD_PREVIEW="https://mcr.microsoft.com/azuremonitor/containerinsights/prod1/preview/azuremonitor-containers"
 REGISTRY_PATH_PROD_STABLE="https://mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
 
-REGISTER_REGION_BATCH=($REGISTER_REGION_BATCH)
+REGISTER_REGIONS_BATCH=($REGISTER_REGIONS_BATCH)
 
-echo "Start arc extension registration, REGISTER_REGION is $REGISTER_REGION_CANARY, RELEASE_TRAINS are $RELEASE_TRAINS_PREVIEW; $RELEASE_TRAINS_STABLE, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
+echo "Start arc extension registration, REGISTER_REGIONS is $REGISTER_REGIONS_CANARY, RELEASE_TRAINS are $RELEASE_TRAINS_PREVIEW_PATH; $RELEASE_TRAINS_STABLE_PATH, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
 
 # Create JSON request body
 cat <<EOF > "request.json"
@@ -23,10 +23,10 @@ cat <<EOF > "request.json"
     "artifactEndpoints": [
         {
             "Regions": [
-                "$REGISTER_REGION_CANARY"
+                $REGISTER_REGIONS_CANARY
             ],
             "Releasetrains": [
-                "$RELEASE_TRAINS_PREVIEW"
+                $RELEASE_TRAINS_PREVIEW_PATH
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
             "ExtensionUpdateFrequencyInMinutes": 60,
@@ -40,10 +40,10 @@ EOF
 cat <<EOF >> "request.json"
         {
             "Regions": [
-                "$REGISTER_REGION_CANARY"
+                $REGISTER_REGIONS_CANARY
             ],
             "Releasetrains": [
-                "$RELEASE_TRAINS_STABLE"
+                $RELEASE_TRAINS_STABLE_PATH
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_STABLE",
             "ExtensionUpdateFrequencyInMinutes": 60,
@@ -57,10 +57,10 @@ EOF
 cat <<EOF >> "request.json"
         {
             "Regions": [
-                "$REGISTER_REGION_BATCH"
+                $REGISTER_REGIONS_BATCH
             ],
             "Releasetrains": [
-                "$RELEASE_TRAINS_PREVIEW"
+                $RELEASE_TRAINS_PREVIEW_PATH
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_PROD_PREVIEW",
             "ExtensionUpdateFrequencyInMinutes": 60,
@@ -74,10 +74,10 @@ EOF
 cat <<EOF >> "request.json"
         {
             "Regions": [
-                "$REGISTER_REGION_BATCH"
+                $REGISTER_REGIONS_BATCH
             ],
             "Releasetrains": [
-                "$RELEASE_TRAINS_STABLE"
+                $RELEASE_TRAINS_STABLE_PATH
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_PROD_STABLE",
             "ExtensionUpdateFrequencyInMinutes": 60,

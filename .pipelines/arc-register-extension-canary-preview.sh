@@ -1,15 +1,15 @@
 #!/bin/bash
 # Register azuremonitor-containers extension with Arc Registration API
 
-REGISTER_REGION_CANARY=${REGISTER_REGION_CANARY:-eastus2euap}
-RELEASE_TRAIN=$RELEASE_TRAIN
+REGISTER_REGIONS_CANARY=$REGISTER_REGIONS_CANARY
+RELEASE_TRAINS=$RELEASE_TRAINS
 
 PACKAGE_CONFIG_NAME="${PACKAGE_CONFIG_NAME:-microsoft.azuremonitor.containers-pkg022022}"
 API_VERSION="${API_VERSION:-2021-05-01}"
 METHOD="${METHOD:-put}"
 REGISTRY_PATH_CANARY_PREVIEW="https://mcr.microsoft.com/azuremonitor/containerinsights/canary/preview/azuremonitor-containers"
 
-echo "Start arc extension registration, REGISTER_REGION is $REGISTER_REGION_CANARY, RELEASE_TRAIN are $RELEASE_TRAIN, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
+echo "Start arc extension registration, REGISTER_REGIONS is $REGISTER_REGIONS_CANARY, RELEASE_TRAINS are $RELEASE_TRAINS, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
 
 # Create JSON request body
 cat <<EOF > "request.json"
@@ -17,10 +17,10 @@ cat <<EOF > "request.json"
     "artifactEndpoints": [
         {
             "Regions": [
-                "$REGISTER_REGION_CANARY"
+                $REGISTER_REGIONS_CANARY
             ],
             "Releasetrains": [
-                "$RELEASE_TRAIN"
+                $RELEASE_TRAINS
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
             "ExtensionUpdateFrequencyInMinutes": 60,
