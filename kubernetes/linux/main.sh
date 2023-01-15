@@ -305,7 +305,7 @@ fi
 
 #Parse the configmap to set the right environment variables for agent config.
 #Note > tomlparser-agent-config.rb has to be parsed first before fluent-bit-conf-customizer.rb for fbit agent settings
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       ruby tomlparser-agent-config.rb
 
       cat agent_config_env_var | while read line; do
@@ -535,25 +535,6 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATIO
             echo $line >>~/.bashrc
       done
       source config_env_var
-
-
-      #Parse the configmap to set the right environment variables for agent config.
-      #Note > tomlparser-agent-config.rb has to be parsed first before fluent-bit-conf-customizer.rb for fbit agent settings
-
-      ruby tomlparser-agent-config.rb
-
-      cat agent_config_env_var | while read line; do
-            echo $line >> ~/.bashrc
-      done
-      source agent_config_env_var
-
-      #Parse the configmap to set the right environment variables for network policy manager (npm) integration.
-      ruby tomlparser-npm-config.rb
-
-      cat integration_npm_config_env_var | while read line; do
-            echo $line >> ~/.bashrc
-      done
-      source integration_npm_config_env_var
 fi
 
 #Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
@@ -575,9 +556,6 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidec
          # generate genavaconfig for infra namespace
          generateGenevaInfraNamespaceConfig
       fi
-#Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
-if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
-      ruby fluent-bit-conf-customizer.rb
 fi
 
 #Parse the prometheus configmap to create a file with new custom settings.
@@ -968,12 +946,6 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}
                   sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf
                   /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
-                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit.conf -e /opt/fluent-bit/bin/out_oms.so &
-                  telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
-            else
-                  echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
-                  sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/fluent-bit.conf
-                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit.conf -e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             fi
       fi
