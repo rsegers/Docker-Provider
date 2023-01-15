@@ -1,24 +1,28 @@
-<MonitoringManagement eventVersion="1" version="1.0" timestamp="2015-12-07T00:00:00Z" namespace="wincilogspreview">
+<MonitoringManagement eventVersion="1" version="1.0" timestamp="2018-05-07T00:00:00Z" namespace="wincilogspreview">
   <Accounts>
-    <Account moniker="wincilogspreviewdiag" isDefault="true" />
-    <Account moniker="wincilogspreviewsecurity" alias="AzSecurityStore" />
-    <Account moniker="wincilogspreviewaudit" alias="AuditStore" />
+    <Account moniker="wincilogspreview" isDefault="true" />
   </Accounts>
-  <!-- Management documentation: https://jarvis.dc.ad.msft.net/?page=documents&section=9c95f4eb-8689-4c9f-81bf-82d688e860fd&id=8794f47e-d1b2-4538-8f31-839c41c1710a  -->
-  <Management onDemandRequestFlags="tablesearch,process" defaultRetentionInDays="29">
-    <!--
-      The identity TenantRole means MONITORING_IDENTITY, MONITORING_ROLE, and MONITORING_ROLE_INSTANCE will
-      uniquely identify any of your instances
-    -->
-    <Identity type="TenantRole" />
-    <!--
-      The diskQuotaInMB is a required parameter.  For 10,000 MB there should be 15,000 MB available on the disk  The CPU, memory and network can also be limited in the
-      AgentResourceUsage element's attributes.
-    -->
-    <AgentResourceUsage diskQuotaInMB="10000" cpuPercentUsage="50" />
-    <AgentMetrics mdmMonitoringAccount="containerlogsstage" />
+   <Management eventVolume="Large" defaultRetentionInDays="90">
+    <Identity>
+      <IdentityComponent name="Tenant">TENANT_ID</IdentityComponent>
+      <IdentityComponent name="Role">ROLE_ID</IdentityComponent>
+      <IdentityComponent name="RoleInstance">ROLEINSTANCE_ID</IdentityComponent>
+    </Identity>
+    <AgentResourceUsage diskQuotaInMB="50000" />
   </Management>
+  <!-- Events documentation: https://jarvis.dc.ad.msft.net/?page=documents&section=9c95f4eb-8689-4c9f-81bf-82d688e860fd&id=ac0084ad-5065-4b16-8f7d-0a5193143378   -->
+  <!--
+      Events can contain one or more Event elements.  The Event elements each describe a different kind of collector.
+      Events must be defined in the order of the mds2.xsd.
+    -->
   <Sources>
-    <Source name="ContainerLog.*" eventName="ContainerLogV2" type="Pipe" streamName="ContainerLogV2Pipe" storeType="CentralBond"/>
+    <Source name="ContainerLogV2" eventName="ContainerLogV2" type="Pipe" streamName="ContainerLogV2Pipe" storeType="CentralBond" />
   </Sources>
+  <!-- Events documentation: https://jarvis.dc.ad.msft.net/?page=documents&section=9c95f4eb-8689-4c9f-81bf-82d688e860fd&id=ac0084ad-5065-4b16-8f7d-0a5193143378   -->
+  <!--
+      Events can contain one or more Event elements.  The Event elements each describe a different kind of collector.
+      Events must be defined in the order of the mds2.xsd.
+    -->
+  <Events>
+  </Events>
 </MonitoringManagement>

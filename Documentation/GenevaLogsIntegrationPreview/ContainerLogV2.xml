@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<MonitoringManagement version="1.0" namespace="akscilogs" eventVersion="1" timestamp="2016-01-20T00:00:00.000">
+<MonitoringManagement version="1.0" namespace="cilogspreview" eventVersion="1" timestamp="2016-01-20T00:00:00.000">
   <Accounts>
-    <Account moniker="akscilogsfp" isDefault="true" />
+    <Account moniker="cilogspreview" isDefault="true" />
   </Accounts>
   <Management eventVolume="Large" defaultRetentionInDays="90">
     <Identity>
@@ -30,7 +30,7 @@
   <Events>
     <MdsdEvents>
      <MdsdEventSource source="ContainerLogV2Source">
-        <RouteEvent eventName="ContainerLogV2Event" duration="PT10S" priority="High" storeType="CentralBond" account="akscilogsfp" immutable="true">
+        <RouteEvent eventName="ContainerLogV2Event" duration="PT10S" priority="High" storeType="CentralBond" account="cilogspreview" immutable="true">
         </RouteEvent>
     </MdsdEventSource>
     <MdsdEventSource source="MaQosEvent">
