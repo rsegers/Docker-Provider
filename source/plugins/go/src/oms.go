@@ -1662,19 +1662,24 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		} else {
 			Computer = strings.TrimSuffix(ToString(containerHostName), "\n")
 		}
-		// read proxyendpoint if proxy configured
-		ProxyEndpoint = ""
-		proxySecretPath := pluginConfig["amalogsproxy_secret_path"]
-		if _, err := os.Stat(proxySecretPath); err == nil {
-			Log("Reading proxy configuration for Linux from %s", proxySecretPath)
-			proxyConfig, err := ioutil.ReadFile(proxySecretPath)
-			if err != nil {
-				message := fmt.Sprintf("Error Reading omsproxy configuration %s\n", err.Error())
-				Log(message)
-				// if we fail to read proxy secret, AI telemetry might not be working as well
-				SendException(message)
-			} else {
-				ProxyEndpoint = strings.TrimSpace(string(proxyConfig))
+		ignoreProxySettings := os.Getenv("IGNORE_PROXY_SETTINGS")
+		if strings.Compare(strings.ToLower(ignoreProxySettings), "true") == 0 {
+			Log("Ignoring reading of proxy configuration since ignoreProxySettings %v\n", ignoreProxySettings)
+		} else {
+			// read proxyendpoint if proxy configured
+			ProxyEndpoint = ""
+			proxySecretPath := pluginConfig["amalogsproxy_secret_path"]
+			if _, err := os.Stat(proxySecretPath); err == nil {
+				Log("Reading proxy configuration for Linux from %s", proxySecretPath)
+				proxyConfig, err := ioutil.ReadFile(proxySecretPath)
+				if err != nil {
+					message := fmt.Sprintf("Error Reading omsproxy configuration %s\n", err.Error())
+					Log(message)
+					// if we fail to read proxy secret, AI telemetry might not be working as well
+					SendException(message)
+				} else {
+					ProxyEndpoint = strings.TrimSpace(string(proxyConfig))
+				}
 			}
 		}
 	} else {

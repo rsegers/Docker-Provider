@@ -316,6 +316,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     file.write(commands)
     commands = get_command_windows('AZMON_MULTILINE_ENABLED', @logEnableMultiline)
     file.write(commands)
+    commands = get_command_windows('AZMON_MULTILINE_ENABLED', @logEnableMultiline)
+    file.write(commands)
 
     # Close file after writing all environment variables
     file.close

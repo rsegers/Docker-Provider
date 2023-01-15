@@ -303,6 +303,24 @@ if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSide
       fi
 fi
 
+#Parse the configmap to set the right environment variables for agent config.
+#Note > tomlparser-agent-config.rb has to be parsed first before fluent-bit-conf-customizer.rb for fbit agent settings
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+      ruby tomlparser-agent-config.rb
+
+      cat agent_config_env_var | while read line; do
+            echo $line >> ~/.bashrc
+      done
+      source agent_config_env_var
+
+      #Parse the configmap to set the right environment variables for network policy manager (npm) integration.
+      ruby tomlparser-npm-config.rb
+
+      cat integration_npm_config_env_var | while read line; do
+            echo $line >> ~/.bashrc
+      done
+      source integration_npm_config_env_var
+fi
 if [ -e "/etc/ama-logs-secret/DOMAIN" ]; then
       domain=$(cat /etc/ama-logs-secret/DOMAIN)
 else
@@ -330,51 +348,54 @@ export PROXY_ENDPOINT=""
 # Check for internet connectivity or workspace deletion
 if [ -e "/etc/ama-logs-secret/WSID" ]; then
       workspaceId=$(cat /etc/ama-logs-secret/WSID)
+      if [ ! -z "${IGNORE_PROXY_SETTINGS}" ] && [ ${IGNORE_PROXY_SETTINGS} == "true" ]; then
+              echo "ignore proxy settings since IGNORE_PROXY_SETTINGS is set to true"
+      elif [ -e "/etc/ama-logs-secret/PROXY" ]; then
+            if [ -e "/etc/ama-logs-secret/PROXY" ]; then
+                  export PROXY_ENDPOINT=$(cat /etc/ama-logs-secret/PROXY)
+                  # Validate Proxy Endpoint URL
+                  # extract the protocol://
+                  proto="$(echo $PROXY_ENDPOINT | grep :// | sed -e's,^\(.*://\).*,\1,g')"
+                  # convert the protocol prefix in lowercase for validation
+                  proxyprotocol=$(echo $proto | tr "[:upper:]" "[:lower:]")
+                  if [ "$proxyprotocol" != "http://" -a "$proxyprotocol" != "https://" ]; then
+                      echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
+                  fi
+                  # remove the protocol
+                  url="$(echo ${PROXY_ENDPOINT/$proto/})"
+                  # extract the creds
+                  creds="$(echo $url | grep @ | cut -d@ -f1)"
+                  user="$(echo $creds | cut -d':' -f1)"
+                  pwd="$(echo $creds | cut -d':' -f2)"
+                  # extract the host and port
+                  hostport="$(echo ${url/$creds@/} | cut -d/ -f1)"
+                  # extract host without port
+                  host="$(echo $hostport | sed -e 's,:.*,,g')"
+                  # extract the port
+                  port="$(echo $hostport | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
 
-      if [ -e "/etc/ama-logs-secret/PROXY" ]; then
-            export PROXY_ENDPOINT=$(cat /etc/ama-logs-secret/PROXY)
-            # Validate Proxy Endpoint URL
-            # extract the protocol://
-            proto="$(echo $PROXY_ENDPOINT | grep :// | sed -e's,^\(.*://\).*,\1,g')"
-            # convert the protocol prefix in lowercase for validation
-            proxyprotocol=$(echo $proto | tr "[:upper:]" "[:lower:]")
-            if [ "$proxyprotocol" != "http://" -a "$proxyprotocol" != "https://" ]; then
-               echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
-            fi
-            # remove the protocol
-            url="$(echo ${PROXY_ENDPOINT/$proto/})"
-            # extract the creds
-            creds="$(echo $url | grep @ | cut -d@ -f1)"
-            user="$(echo $creds | cut -d':' -f1)"
-            pwd="$(echo $creds | cut -d':' -f2)"
-            # extract the host and port
-            hostport="$(echo ${url/$creds@/} | cut -d/ -f1)"
-            # extract host without port
-            host="$(echo $hostport | sed -e 's,:.*,,g')"
-            # extract the port
-            port="$(echo $hostport | sed -e 's,^.*:,:,g' -e 's,.*:\([0-9]*\).*,\1,g' -e 's,[^0-9],,g')"
+                  if [ -z "$host" -o -z "$port" ]; then
+                       echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
+                  else
+                       echo "successfully validated provided proxy endpoint is valid and expected format"
+                  fi
 
-            if [ -z "$host" -o -z "$port" ]; then
-               echo "-e error proxy endpoint should be in this format http(s)://<hostOrIP>:<port> or http(s)://<user>:<pwd>@<hostOrIP>:<port>"
-            else
-                  echo "successfully validated provided proxy endpoint is valid and expected format"
-            fi
+                  echo $pwd >/opt/microsoft/docker-cimprov/proxy_password
 
-            echo $pwd >/opt/microsoft/docker-cimprov/proxy_password
-
-            export MDSD_PROXY_MODE=application
-            echo "export MDSD_PROXY_MODE=$MDSD_PROXY_MODE" >>~/.bashrc
-            export MDSD_PROXY_ADDRESS=$proto$hostport
-            echo "export MDSD_PROXY_ADDRESS=$MDSD_PROXY_ADDRESS" >> ~/.bashrc
-            if [ ! -z "$user" -a ! -z "$pwd" ]; then
-               export MDSD_PROXY_USERNAME=$user
-               echo "export MDSD_PROXY_USERNAME=$MDSD_PROXY_USERNAME" >> ~/.bashrc
-               export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
-               echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
-            fi
-            if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-               export PROXY_CA_CERT=/etc/ama-logs-secret/PROXYCERT.crt
-               echo "export PROXY_CA_CERT=$PROXY_CA_CERT" >> ~/.bashrc
+                  export MDSD_PROXY_MODE=application
+                  echo "export MDSD_PROXY_MODE=$MDSD_PROXY_MODE" >>~/.bashrc
+                  export MDSD_PROXY_ADDRESS=$proto$hostport
+                  echo "export MDSD_PROXY_ADDRESS=$MDSD_PROXY_ADDRESS" >> ~/.bashrc
+                  if [ ! -z "$user" -a ! -z "$pwd" ]; then
+                        export MDSD_PROXY_USERNAME=$user
+                        echo "export MDSD_PROXY_USERNAME=$MDSD_PROXY_USERNAME" >> ~/.bashrc
+                        export MDSD_PROXY_PASSWORD_FILE=/opt/microsoft/docker-cimprov/proxy_password
+                        echo "export MDSD_PROXY_PASSWORD_FILE=$MDSD_PROXY_PASSWORD_FILE" >> ~/.bashrc
+                  fi
+                  if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+                        export PROXY_CA_CERT=/etc/ama-logs-secret/PROXYCERT.crt
+                        echo "export PROXY_CA_CERT=$PROXY_CA_CERT" >> ~/.bashrc
+                  fi
             fi
       fi
 
@@ -554,6 +575,9 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidec
          # generate genavaconfig for infra namespace
          generateGenevaInfraNamespaceConfig
       fi
+#Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
+if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+      ruby fluent-bit-conf-customizer.rb
 fi
 
 #Parse the prometheus configmap to create a file with new custom settings.
@@ -944,6 +968,12 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}
                   sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf
                   /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
+                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit.conf -e /opt/fluent-bit/bin/out_oms.so &
+                  telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
+            else
+                  echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
+                  sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/fluent-bit.conf
+                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit.conf -e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             fi
       fi

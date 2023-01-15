@@ -71,7 +71,6 @@ chmod 544 /opt/telegraf
 wget -qO - https://packages.fluentbit.io/fluentbit.key | sudo apt-key add -
 sudo echo "deb https://packages.fluentbit.io/ubuntu/bionic bionic main" >> /etc/apt/sources.list
 sudo apt-get update
-# gangams - this version fixes this issue - https://github.com/fluent/fluent-bit/issues/4511
 sudo apt-get install fluent-bit=2.0.5 -y
 
 # fluentd v1 gem

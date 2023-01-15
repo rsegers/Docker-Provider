@@ -209,6 +209,12 @@ data:
       output_forward_workers = "20"                 # default is 10
       output_forward_retry_limit = "no_limits"      # default is 3, use no_limits to retry infinetly
 
+    # On both AKS & Arc K8s enviornments, if Cluster has configured with Forward Proxy then Proxy settings automatically applied and used for the agent
+    # Certain configurations, proxy config should be ignored for example Cluster with AMPLS + Proxy
+    # in such scenarios, use the following config to ignore proxy settings
+    # [agent_settings.proxy_config]
+    #    ignore_proxy_settings = "true"  # if this is not applied, default value is false
+
 metadata:
   name: container-azm-ms-agentconfig
   namespace: kube-system
