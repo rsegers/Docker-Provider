@@ -386,17 +386,19 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 				if genevaLogsMultitenancy != "" && strings.Compare(strings.ToLower(genevaLogsMultitenancy), "true") == 0 {
 					CommonProperties["IsGenevaLogsMultiTenancyEnabled"] = "true"
 					genevaLogsTenantNamespaces := os.Getenv("GENEVA_LOGS_TENANT_NAMESPACES")
-					if genevaLogsMultitenancy != "" {
+					if genevaLogsTenantNamespaces != "" {
 						CommonProperties["GenevaLogsTenantNamespaces"] = genevaLogsTenantNamespaces
 					}
 					genevaLogsInfraNamespaces := os.Getenv("GENEVA_LOGS_INFRA_NAMESPACES")
 					if genevaLogsInfraNamespaces != "" {
 						CommonProperties["GenevaLogsInfraNamespaces"] = genevaLogsInfraNamespaces
 					}
-				} else {
-					genevaLogsConfigVersion := os.Getenv("MONITORING_CONFIG_VERSION")
+				}
+				genevaLogsConfigVersion := os.Getenv("MONITORING_CONFIG_VERSION")
+				if genevaLogsConfigVersion != "" {
 					CommonProperties["GENEVA_LOGS_CONFIG_VERSION"] = genevaLogsConfigVersion
 				}
+
 			}
 		}
 	}

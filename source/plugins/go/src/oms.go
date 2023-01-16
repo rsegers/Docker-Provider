@@ -182,7 +182,7 @@ var (
 	IsAADMSIAuthMode bool
 	// flag to check whether Geneva Logs Integration enabled or not
 	IsGenevaLogsIntegrationEnabled bool
-	// flag to check whether Geneva Logs Integration enabled or not
+	// flag to check whether Geneva Logs ServiceMode enabled or not
 	IsGenevaLogsTelemetryServiceMode bool
 	// named pipe connection to ContainerLog for AMA
 	ContainerLogNamedPipe net.Conn
@@ -1834,11 +1834,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		ContainerLogsRouteV2 = true //default is mdsd route
 		Log("Routing container logs thru %s route...", ContainerLogsRoute)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsRoute)
-	} else if IsAADMSIAuthMode { //for windows, check if MSI Auth mode, then send through AMA
-		ContainerLogsRouteV2 = true
-		Log("Routing container logs thru %s route...", ContainerLogsV2Route)
-		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsV2Route)
-	} else if IsGenevaLogsIntegrationEnabled {
+	} else if IsAADMSIAuthMode || IsGenevaLogsIntegrationEnabled { //for windows, check if MSI Auth mode, then send through AMA
 		ContainerLogsRouteV2 = true
 		Log("Routing container logs thru %s route...", ContainerLogsV2Route)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsV2Route)

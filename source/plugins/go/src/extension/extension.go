@@ -10,7 +10,7 @@ import (
 )
 
 type Extension struct {
-	datatypeStreamIdMap map[string]string
+	datatypeStreamIdMap  map[string]string
 	datatypeNamedPipeMap map[string]string
 }
 
@@ -105,7 +105,6 @@ func getExtensionDataTypeMapping(isNamedPipe bool) (map[string]string, error) {
 		}
 	}
 	logger.Printf("Info::mdsd/AMA::build the datatype and streamid map -- end")
-
 
 	return datatypeMap, nil
 }

@@ -165,7 +165,7 @@ func CreateMDSDClient(dataType DataType, containerType string) {
 			MdsdKubeMonMsgpUnixSocketClient = conn
 		}
 	case InsightsMetrics:
-		// incase of geneva logs integration mode, KubeMonAgentEvents ingested via sidecar container socket
+		// incase of geneva logs integration mode, InsightsMetrics ingested via sidecar container socket
 		if IsGenevaLogsIntegrationEnabled {
 			mdsdfluentSocket = "/var/run/mdsd-PrometheusSidecar/default_fluent.socket"
 		}
@@ -274,7 +274,7 @@ func getGenevaWindowsNamedPipeName() string {
 	gcsNameSpace := os.Getenv("MONITORING_GCS_NAMESPACE")
 	var namedPipeName string
 	if gcsNameSpace == "" {
-		Log("GetWindowsNamedPipeName: gcsNameSpace is empty")
+		Log("Error:GetWindowsNamedPipeName: gcsNameSpace is empty")
 	} else {
 		namedPipeName = "CAgentStream_ContainerLogV2Pipe_" + gcsNameSpace
 	}
