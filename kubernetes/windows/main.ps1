@@ -259,16 +259,6 @@ function Set-EnvironmentVariables {
         [System.Environment]::SetEnvironmentVariable("PROXY", $proxy, "Process")
         [System.Environment]::SetEnvironmentVariable("PROXY", $proxy, "Machine")
     }
-    #set agent config schema version
-    $schemaVersionFile = '/etc/config/settings/schema-version'
-    if (Test-Path $schemaVersionFile) {
-        $schemaVersion = Get-Content $schemaVersionFile | ForEach-Object { $_.TrimEnd() }
-        if ($schemaVersion.GetType().Name -eq 'String') {
-            [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Process")
-            [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Machine")
-        }
-        $env:AZMON_AGENT_CFG_SCHEMA_VERSION
-    }
 
     # Need to do this before the SA fetch for AI key for airgapped clouds so that it is not overwritten with defaults.
     $appInsightsAuth = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", "process")
@@ -474,6 +464,18 @@ function Read-Configs {
     .\setmdmenv.ps1
 }
 
+function Set-AgentConfigSchemaVersion {
+      #set agent config schema version
+      $schemaVersionFile = '/etc/config/settings/schema-version'
+      if (Test-Path $schemaVersionFile) {
+          $schemaVersion = Get-Content $schemaVersionFile | ForEach-Object { $_.TrimEnd() }
+          if ($schemaVersion.GetType().Name -eq 'String') {
+              [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Process")
+              [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Machine")
+          }
+          $env:AZMON_AGENT_CFG_SCHEMA_VERSION
+      }
+}
 function Get-ContainerRuntime {
     # containerd is the default runtime on AKS windows
     $containerRuntime = "containerd"
@@ -753,6 +755,7 @@ function Bootstrap-CACertificates {
 Start-Transcript -Path main.txt
 
 Remove-WindowsServiceIfItExists "fluentdwinaks"
+Set-AgentConfigSchemaVersion
 Read-Configs
 Set-EnvironmentVariables
 Start-FileSystemWatcher
