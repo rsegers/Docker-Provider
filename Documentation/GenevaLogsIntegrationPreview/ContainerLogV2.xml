@@ -30,7 +30,7 @@
   <Events>
     <MdsdEvents>
      <MdsdEventSource source="ContainerLogV2Source">
-        <RouteEvent eventName="ContainerLogV2Event" duration="PT10S" priority="High" storeType="CentralBond" account="cilogspreview" immutable="true">
+        <RouteEvent eventName="ContainerLogV2" duration="PT10S" priority="High" storeType="CentralBond" account="cilogspreview" immutable="true">
         </RouteEvent>
     </MdsdEventSource>
     <MdsdEventSource source="MaQosEvent">
