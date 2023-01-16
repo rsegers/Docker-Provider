@@ -384,7 +384,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01092023-864ecd78"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:01162023-c703d8f1"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -483,7 +483,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: ama-logs-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01092023-864ecd78"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:01162023-c703d8f1"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -711,7 +711,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01092023-864ecd78"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:01162023-c703d8f1"
           imagePullPolicy: IfNotPresent
           # comment resources if VPA configured since the VPA will set these values
           resources:
@@ -898,7 +898,7 @@ spec:
             value: "3"
      containers:
        - name: ama-logs-windows
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod01092023-864ecd78"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/cidev:win-01162023-c703d8f1"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
