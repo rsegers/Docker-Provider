@@ -35,23 +35,25 @@ jobs:
       linuxImagetag="$commit"
       windowsImageTag=win-"$commit"
 
-      tagConnector="-"
-      telemetryTag=${commit%%$tagConnector*}
+      telemetryTag=$commit
+      if [ -z "$TELEMETRY_TAG" ]
+        then
+          echo "\$TELEMETRY_TAG variable is not set"
+        else
+          telemetryTag=$TELEMETRY_TAG
+          echo "\$TELEMETRY_TAG is $TELEMETRY_TAG"
+      fi
+
       linuxTelemetryTag="$telemetryTag"
       windowsTelemetryTag=win-"$telemetryTag"
 
-      if [ -z "$TELEMETRY_TAG" ]
-        then
-          echo "\$TELEMETRY_TAG is empty"
-        else
-          echo "\$TELEMETRY_TAG is NOT empty"
-      fi
-
-      echo $TELEMETRY_TAG
+      echo "linuxImagetag is $linuxImagetag"
+      echo "windowsImageTag is $windowsImageTag"
+      echo "linuxTelemetryTag is $linuxTelemetryTag"
+      echo "windowsTelemetryTag is $windowsTelemetryTag"
 
       echo "##vso[task.setvariable variable=linuxImagetag;isOutput=true]$linuxImagetag"
       echo "##vso[task.setvariable variable=windowsImageTag;isOutput=true]$windowsImageTag"
-
       echo "##vso[task.setvariable variable=linuxTelemetryTag;isOutput=true]$linuxTelemetryTag"
       echo "##vso[task.setvariable variable=windowsTelemetryTag;isOutput=true]$windowsTelemetryTag"
 
