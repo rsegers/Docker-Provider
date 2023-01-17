@@ -22,8 +22,8 @@ Azure:
 amalogs:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod12032022-c9f3dc30"
-    tagWindows: "win-ciprod12032022-c9f3dc30"
+    tag: "ciprod01092023-864ecd78"
+    tagWindows: "win-ciprod01092023-864ecd78"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "18.0.1-0"
     agentVersion: "azure-mdsd-1.17.0"
@@ -81,13 +81,26 @@ amalogs:
 
   ## Configure node tolerations for scheduling onto nodes with taints
   ## Ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/
+  ## https://kubernetes.io/blog/2022/04/07/upcoming-changes-in-kubernetes-1-24/
   ##
   tolerations:
-    - operator: "Exists"
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
       effect: "NoSchedule"
-    - operator: "Exists"
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
       effect: "NoExecute"
-    - operator: "Exists"
+    - key: "node-role.kubernetes.io/control-plane"
+      operator: "Exists"
+      effect: "PreferNoSchedule"
+    - key: "node-role.kubernetes.io/master"
+      operator: "Exists"
+      effect: "NoSchedule"
+    - key: "node-role.kubernetes.io/master"
+      operator: "Exists"
+      effect: "NoExecute"
+    - key: "node-role.kubernetes.io/master"
+      operator: "Exists"
       effect: "PreferNoSchedule"
 
   ## Pod scheduling preferences.

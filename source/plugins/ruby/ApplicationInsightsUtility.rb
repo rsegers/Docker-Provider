@@ -33,7 +33,10 @@ class ApplicationInsightsUtility
   end
   @@CustomProperties = {}
   @@Tc = nil
-  @@proxy = (ProxyUtils.getProxyConfiguration)
+  @@proxy = {}
+  if !ProxyUtils.isIgnoreProxySettings()
+    @@proxy = (ProxyUtils.getProxyConfiguration)
+  end
 
   def initialize
   end
@@ -86,6 +89,10 @@ class ApplicationInsightsUtility
         else
           @@CustomProperties["IsProxyConfigured"] = "false"
           isProxyConfigured = false
+          if ProxyUtils.isIgnoreProxySettings()
+            $log.info("proxy configuration ignored since ignoreProxyConfig is true")
+            @@CustomProperties["IsProxyConfigurationIgnored"] = "true"
+          end
           $log.info("proxy is not configured")
         end
         aadAuthMSIMode = ENV[@@EnvAADMSIAuthMode]

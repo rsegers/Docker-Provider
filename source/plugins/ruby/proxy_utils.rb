@@ -20,7 +20,6 @@ class ProxyUtils
         $log.warn("Failed to parse the proxy configuration in '#{amalogsproxy_secret_path}'")
         return {}
       end
-
       return proxy_config
     end
 
@@ -60,6 +59,10 @@ class ProxyUtils
         $log.warn("Failed to check the existence of Proxy CA cert '#{proxy_cert_path}'")
       end
       return isProxyCACertExist
+    end
+
+    def isIgnoreProxySettings()
+      return !ENV["IGNORE_PROXY_SETTINGS"].nil? && !ENV["IGNORE_PROXY_SETTINGS"].empty? && ENV["IGNORE_PROXY_SETTINGS"].downcase == "true"
     end
   end
 end
