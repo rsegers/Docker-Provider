@@ -58,6 +58,7 @@ COPY ./amalogswindows/out_oms.so /opt/amalogswindows/out_oms.so
 
 # copy fluent, fluent-bit and out_oms conf files
 COPY ./amalogswindows/installer/conf/fluent.conf /etc/fluent/
+COPY ./amalogswindows/installer/conf/fluent-win-ama.conf /etc/fluent/
 COPY ./amalogswindows/installer/conf/fluent-bit.conf /etc/fluent-bit
 COPY ./amalogswindows/installer/conf/azm-containers-parser.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/azm-containers-parser-multiline.conf /etc/fluent-bit/
