@@ -102,7 +102,7 @@ module Fluent::Plugin
           end
 
           # If CUSTOM_METRICS_ENDPOINT provided, the url format shall be validated before emitting metrics into given endpoint.
-          custom_metrics_endpoint = ENV['CUSTOM_METRICS_ENDPOINT']
+          custom_metrics_endpoint = ENV["CUSTOM_METRICS_ENDPOINT"]
           if !custom_metrics_endpoint.to_s.empty?
             metrics_endpoint = custom_metrics_endpoint.strip
             URI.parse(metrics_endpoint)
@@ -111,7 +111,10 @@ module Fluent::Plugin
           end
           @@post_request_url = @@post_request_url_template % { metrics_endpoint: metrics_endpoint, aks_resource_id: aks_resource_id }
           @post_request_uri = URI.parse(@@post_request_url)
-          @proxy = (ProxyUtils.getProxyConfiguration)
+          @proxy = {}
+          if !ProxyUtils.isIgnoreProxySettings()
+            @proxy = (ProxyUtils.getProxyConfiguration)
+          end
           @log.info "POST Request url: #{@@post_request_url}"
           ApplicationInsightsUtility.sendCustomEvent("AKSCustomMetricsMDMPluginStart", {})
 

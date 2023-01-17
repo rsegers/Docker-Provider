@@ -20,12 +20,13 @@ MAINTAINER:              'Microsoft Corporation'
 
 /etc/opt/microsoft/docker-cimprov/container.conf;			    build/linux/installer/conf/container.conf;                      644; root; root
 
-/opt/td-agent-bit/bin/out_oms.so;                                       intermediate/${{BUILD_CONFIGURATION}}/out_oms.so;  	755; root; root
+/opt/fluent-bit/bin/out_oms.so;                                       intermediate/${{BUILD_CONFIGURATION}}/out_oms.so;  	755; root; root
 /etc/opt/microsoft/docker-cimprov/prometheus-side-car.conf;		         build/linux/installer/conf/prometheus-side-car.conf;                    644; root; root
-/etc/opt/microsoft/docker-cimprov/td-agent-bit.conf;			            build/linux/installer/conf/td-agent-bit.conf;                    644; root; root
-/etc/opt/microsoft/docker-cimprov/td-agent-bit-prom-side-car.conf;	   build/linux/installer/conf/td-agent-bit-prom-side-car.conf;                    644; root; root
-/etc/opt/microsoft/docker-cimprov/td-agent-bit-rs.conf;			         build/linux/installer/conf/td-agent-bit-rs.conf;                    644; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit.conf;			            build/linux/installer/conf/fluent-bit.conf;                    644; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit-prom-side-car.conf;	   build/linux/installer/conf/fluent-bit-prom-side-car.conf;                    644; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit-rs.conf;			         build/linux/installer/conf/fluent-bit-rs.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/azm-containers-parser.conf;	         build/common/installer/conf/azm-containers-parser.conf;                    644; root; root
+/etc/opt/microsoft/docker-cimprov/azm-containers-parser-multiline.conf;	 build/common/installer/conf/azm-containers-parser-multiline.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/out_oms.conf;			                  build/linux/installer/conf/out_oms.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/test.json;			                     build/linux/installer/conf/test.json;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/telegraf.conf;			               build/linux/installer/conf/telegraf.conf;                    644; root; root
@@ -42,7 +43,7 @@ MAINTAINER:              'Microsoft Corporation'
 
 /opt/tomlparser-agent-config.rb;                                build/common/installer/scripts/tomlparser-agent-config.rb;     755; root; root
 /opt/tomlparser.rb;                                             build/common/installer/scripts/tomlparser.rb;     755; root; root
-/opt/td-agent-bit-conf-customizer.rb;                           build/common/installer/scripts/td-agent-bit-conf-customizer.rb;     755; root; root
+/opt/fluent-bit-conf-customizer.rb;                           build/common/installer/scripts/fluent-bit-conf-customizer.rb;     755; root; root
 /opt/ConfigParseErrorLogger.rb;                                 build/common/installer/scripts/ConfigParseErrorLogger.rb;           755; root; root
 /opt/tomlparser-npm-config.rb;                                  build/linux/installer/scripts/tomlparser-npm-config.rb;     755; root; root
 /opt/tomlparser-osm-config.rb;                                  build/linux/installer/scripts/tomlparser-osm-config.rb;     755; root; root
@@ -170,8 +171,8 @@ MAINTAINER:              'Microsoft Corporation'
 /var/opt/microsoft/docker-cimprov/log;                  755; root; root
 /var/opt/microsoft/linuxmonagent/log;                   755; root; root
 
-/opt/td-agent-bit;                          755; root; root;sysdir
-/opt/td-agent-bit/bin;                      755; root; root;sysdir
+/opt/fluent-bit;                          755; root; root;sysdir
+/opt/fluent-bit/bin;                      755; root; root;sysdir
 /etc/telegraf;                              755; root; root;sysdir
 
 /etc/fluent;                                                         755; root; root; sysdir
