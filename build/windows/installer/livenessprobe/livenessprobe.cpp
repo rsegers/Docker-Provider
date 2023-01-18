@@ -15,7 +15,7 @@
 #define FILESYSTEM_WATCHER_FILE_EXISTS 0x00000002
 #define CERTIFICATE_RENEWAL_REQUIRED 0x00000003
 #define FLUENTDWINAKS_SERVICE_NOT_RUNNING 0x00000004
-#define NO_WINDOWS_AMA_MONAGENTCORE_PROCESS 0x00000005
+// #define NO_WINDOWS_AMA_MONAGENTCORE_PROCESS 0x00000005
 #define UNEXPECTED_ERROR 0xFFFFFFFF
 
 /*
@@ -102,7 +102,7 @@ int GetServiceStatus(const wchar_t *const serivceName)
 **/
 int _tmain(int argc, wchar_t *argv[])
 {
-    if (argc < 6)
+    if (argc < 5)
     {
         wprintf_s(L"ERROR:unexpected number arguments and expected is 5");
         return UNEXPECTED_ERROR;
@@ -134,14 +134,11 @@ int _tmain(int argc, wchar_t *argv[])
         return CERTIFICATE_RENEWAL_REQUIRED;
     }
 
-    if (argc == 5) {
-        if (!IsProcessRunning(argv[5]))
-        {
-            wprintf_s(L"ERROR:Process:%s is not running\n", argv[5]);
-            return NO_WINDOWS_AMA_MONAGENTCORE_PROCESS;
-        }
-    }
-    
+    // if (!IsProcessRunning(argv[5]))
+    // {
+    //     wprintf_s(L"ERROR:Process:%s is not running\n", argv[5]);
+    //     return NO_WINDOWS_AMA_MONAGENTCORE_PROCESS;
+    // }
 
     return SUCCESS;
 }
