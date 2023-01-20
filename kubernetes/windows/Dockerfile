@@ -71,7 +71,7 @@ COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluen
 COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
 
 # default value will be overwritten by pipeline 
-ARG IMAGE_TAG=win-ciprod01092023-864ecd78
+ARG IMAGE_TAG=win-ciprod01182023-095c864a
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 ENV OS_TYPE "windows"
