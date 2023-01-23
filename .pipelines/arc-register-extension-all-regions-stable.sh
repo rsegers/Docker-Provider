@@ -10,7 +10,6 @@ API_VERSION="${API_VERSION:-2021-05-01}"
 METHOD="${METHOD:-put}"
 REGISTRY_PATH_CANARY_PREVIEW="https://mcr.microsoft.com/azuremonitor/containerinsights/canary/preview/azuremonitor-containers"
 REGISTRY_PATH_CANARY_STABLE="https://mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
-REGISTRY_PATH_PROD_PREVIEW="https://mcr.microsoft.com/azuremonitor/containerinsights/prod1/preview/azuremonitor-containers"
 REGISTRY_PATH_PROD_STABLE="https://mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
 
 REGISTER_REGIONS_BATCH=($REGISTER_REGIONS_BATCH)
@@ -46,23 +45,6 @@ cat <<EOF >> "request.json"
                 $RELEASE_TRAINS_STABLE_PATH
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_STABLE",
-            "ExtensionUpdateFrequencyInMinutes": 60,
-            "IsCustomerHidden": false,
-            "ReadyforRollout": true,
-            "RollbackVersion": null,
-            "PackageConfigName": "$PACKAGE_CONFIG_NAME"
-        },
-EOF
-
-cat <<EOF >> "request.json"
-        {
-            "Regions": [
-                $REGISTER_REGIONS_BATCH
-            ],
-            "Releasetrains": [
-                $RELEASE_TRAINS_PREVIEW_PATH
-            ],
-            "FullPathToHelmChart": "$REGISTRY_PATH_PROD_PREVIEW",
             "ExtensionUpdateFrequencyInMinutes": 60,
             "IsCustomerHidden": false,
             "ReadyforRollout": true,
