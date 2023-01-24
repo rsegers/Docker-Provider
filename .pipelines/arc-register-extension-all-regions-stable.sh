@@ -4,6 +4,7 @@
 REGISTER_REGIONS_CANARY=$REGISTER_REGIONS_CANARY
 RELEASE_TRAINS_PREVIEW_PATH=${RELEASE_TRAINS_PREVIEW_PATH}
 RELEASE_TRAINS_STABLE_PATH=${RELEASE_TRAINS_STABLE_PATH}
+IS_CUSTOMER_HIDDEN=$IS_CUSTOMER_HIDDEN
 
 PACKAGE_CONFIG_NAME="${PACKAGE_CONFIG_NAME:-microsoft.azuremonitor.containers-pkg022022}"
 API_VERSION="${API_VERSION:-2021-05-01}"
@@ -29,7 +30,7 @@ cat <<EOF > "request.json"
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
             "ExtensionUpdateFrequencyInMinutes": 60,
-            "IsCustomerHidden": false,
+            "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
             "ReadyforRollout": true,
             "RollbackVersion": null,
             "PackageConfigName": "$PACKAGE_CONFIG_NAME"
@@ -46,7 +47,7 @@ cat <<EOF >> "request.json"
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_STABLE",
             "ExtensionUpdateFrequencyInMinutes": 60,
-            "IsCustomerHidden": false,
+            "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
             "ReadyforRollout": true,
             "RollbackVersion": null,
             "PackageConfigName": "$PACKAGE_CONFIG_NAME"
@@ -63,7 +64,7 @@ cat <<EOF >> "request.json"
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_PROD_STABLE",
             "ExtensionUpdateFrequencyInMinutes": 60,
-            "IsCustomerHidden": false,
+            "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
             "ReadyforRollout": true,
             "RollbackVersion": null,
             "PackageConfigName": "$PACKAGE_CONFIG_NAME"
