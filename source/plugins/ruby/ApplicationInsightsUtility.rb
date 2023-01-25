@@ -33,7 +33,10 @@ class ApplicationInsightsUtility
   end
   @@CustomProperties = {}
   @@Tc = nil
-  @@proxy = (ProxyUtils.getProxyConfiguration)
+  @@proxy = {}
+  if !ProxyUtils.isIgnoreProxySettings()
+    @@proxy = (ProxyUtils.getProxyConfiguration)
+  end
 
   def initialize
   end
@@ -86,16 +89,25 @@ class ApplicationInsightsUtility
         else
           @@CustomProperties["IsProxyConfigured"] = "false"
           isProxyConfigured = false
+          if ProxyUtils.isIgnoreProxySettings()
+            $log.info("proxy configuration ignored since ignoreProxyConfig is true")
+            @@CustomProperties["IsProxyConfigurationIgnored"] = "true"
+          end
           $log.info("proxy is not configured")
         end
         aadAuthMSIMode = ENV[@@EnvAADMSIAuthMode]
         if !aadAuthMSIMode.nil? && !aadAuthMSIMode.empty? && aadAuthMSIMode.downcase == "true".downcase
           @@CustomProperties["aadAuthMSIMode"] = "true"
           begin
-            if Dir.exist?('/etc/mdsd.d/config-cache/configchunks')
-              Dir.glob('/etc/mdsd.d/config-cache/configchunks/*.json') { |file|
-                if File.file?(file) && File.exist?(file) && File.foreach(file).grep(/LINUX_SYSLOGS_BLOB/).any?
-                  @@CustomProperties["syslogEnabled"] = "true"
+            if Dir.exist?("/etc/mdsd.d/config-cache/configchunks")
+              Dir.glob("/etc/mdsd.d/config-cache/configchunks/*.json") { |file|
+                if File.file?(file) && File.exist?(file)
+                  if File.foreach(file).grep(/LINUX_SYSLOGS_BLOB/).any?
+                    @@CustomProperties["syslogEnabled"] = "true"
+                  end
+                  if File.foreach(file).grep(/ContainerInsightsExtension/).any? && File.foreach(file).grep(/dataCollectionSettings/).any?
+                    @@CustomProperties["dataCollectionSettingsEnabled"] = "true"
+                  end
                 end
               }
             end

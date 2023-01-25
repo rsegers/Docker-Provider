@@ -2,7 +2,7 @@
 
 # 1. Production agent image and automatic deployment to CIPROD cluster
 
-Here are the high-level instructions to get the CIPROD`<MM><DD><YYYY>` image for the production release
+Here are the high-level instructions to get the CIPROD:`MAJOR.MINOR.PATCH` image for the production release
 1. create feature branch from ci_dev and make the following updates
       > Note: This required since Azure Dev Ops pipeline doesnt support --build-arg yet to automate this.
    - Ensure IMAGE_TAG updated with release candiate image tag in the DockerFile under kubernetes/linux and kubernetes/windows directory
@@ -15,7 +15,7 @@ Here are the high-level instructions to get the CIPROD`<MM><DD><YYYY>` image for
 4. If everything validated in DEV, make merge PR from ci_dev and ci_prod and merge once this reviewed by dev team
 5. Once the PR to ci_prod approved, please go-ahead and merge, and wait for ci_prod build successfully completed
 6. Once the merged PR build successfully completed, update the value of AGENT_IMAGE_TAG_SUFFIX pipeline  variable by editing the Release [ci-prod-release](https://github-private.visualstudio.com/microsoft/_release?_a=releases&view=mine&definitionId=38)
-   > Note - value format of AGENT_IMAGE_TAG_SUFFIX pipeline should be in  `<MM><DD><YYYY>` for our releases
+   > Note - value format of AGENT_IMAGE_TAG_SUFFIX pipeline should be in `MAJOR.MINOR.PATCH` for our releases
 7. Create a release by selecting the targetted build version  of the _docker-provider_Official-ci_prod release
 8. Validate all the scenarios against clusters in build subscription and scale clusters
 

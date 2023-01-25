@@ -1,7 +1,7 @@
 #!/usr/local/bin/ruby
 # frozen_string_literal: true
 
-require 'fluent/plugin/input'
+require "fluent/plugin/input"
 
 module Fluent::Plugin
   class Kube_Kubestate_Deployments_Input < Input
@@ -12,7 +12,7 @@ module Fluent::Plugin
 
     def initialize
       super
-      require "json"      
+      require "json"
       require "date"
       require "time"
 
@@ -35,6 +35,8 @@ module Fluent::Plugin
       @NodeName = OMS::Common.get_hostname
       @ClusterId = KubernetesApiClient.getClusterId
       @ClusterName = KubernetesApiClient.getClusterName
+      @namespaces = []
+      @namespaceFilteringMode = "off"
     end
 
     config_param :run_interval, :time, :default => 60
@@ -88,6 +90,14 @@ module Fluent::Plugin
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
             @tag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
           end
+          if ExtensionUtils.isDataCollectionSettingsConfigured()
+            @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
+            $log.info("in_kubestate_deployments::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+            @namespaces = ExtensionUtils.getNamespacesForDataCollection()
+            $log.info("in_kubestate_deployments::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
+            @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
+            $log.info("in_kubestate_deployments::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
+          end
         end
         # Initializing continuation token to nil
         continuationToken = nil
@@ -140,6 +150,7 @@ module Fluent::Plugin
       begin
         metricInfo = deployments
         metricInfo["items"].each do |deployment|
+          next unless !KubernetesApiClient.isExcludeResourceItem(deployment["metadata"]["name"], deployment["metadata"]["namespace"], @namespaceFilteringMode, @namespaces)
           deploymentName = deployment["metadata"]["name"]
           deploymentNameSpace = deployment["metadata"]["namespace"]
           deploymentCreatedTime = ""

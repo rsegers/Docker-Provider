@@ -18,7 +18,8 @@ ENV RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR 0.9
 RUN /usr/bin/apt-get update && /usr/bin/apt-get install -y libc-bin wget openssl curl sudo python-ctypes init-system-helpers  net-tools rsyslog cron vim dmidecode apt-transport-https gnupg && rm -rf /var/lib/apt/lists/*
 COPY setup.sh main.sh defaultpromenvvariables defaultpromenvvariables-rs defaultpromenvvariables-sidecar mdsd.xml envmdsd logrotate.conf $tmpdir/
 
-ARG IMAGE_TAG=ciprod10042022-3c05dd1b
+# default value will be overwritten by pipeline 
+ARG IMAGE_TAG=ciprod01182023-095c864a
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 WORKDIR ${tmpdir}

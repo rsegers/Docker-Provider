@@ -11,6 +11,40 @@ additional questions or comments.
 
 Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate the agent build dates (not release dates)
 
+### 01/18/2023 -
+##### Version microsoft/oms:ciprod01182023-095c864a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01182023-095c864a (linux)
+##### Version microsoft/oms:win-ciprod01182023-095c864a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod01182023-095c864a (windows)
+##### Code change log
+- Linux Agent
+  - Replace ifconfig.co url with mcr.microsoft.com for network connectivity test
+  - Add xvda in devices so that telegraf can fetch the Disk IO data from xvda disk as well
+- Common
+  - Added the config option to ignore proxy settings for the AMPLS + Proxy environment
+  - Changes to the MSI Onboarding ARM templates for handling DCR naming and handling the scenario where DCR name is more than 64 characters and also removing the spaces in the workspace region if user inputs the workspace region name with spaces
+  - Add specific master/control-plane toleration key to fix the node upgrade issue in Arc extension.
+  - AKS, Arc K8s and Provisioned cluster template updates for Data collection settings.
+  - Implementation of Data collection settings for Cost optimization feature
+  - Telemetry to track data collection settings enablement and settings
+  - Agent rename changes for the Azure Arc Provisioned cluster onboarding templates
+  - Update for troubleshooting script for collecting syslog data
+
+### 12/03/2022 -
+##### Version microsoft/oms:ciprod12032022-c9f3dc30 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12032022-c9f3dc30 (linux)
+##### Version microsoft/oms:win-ciprod12032022-c9f3dc30 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod12032022-c9f3dc30 (windows)
+##### Code change log
+- Linux Agent
+  - Enable syslog support
+- Windows Agent
+  - Use ghrelease as gcc download path
+  - Move fluent-bit conf update before fluent-bit start
+  - Make containerd and secure port as default for windows same as linux
+- Common (Linux & Windows Agent)
+  - Add FluentBit Telegraf Plugin buffer and chunk config options to configmap
+  - Remove references to healthservice in troubleshooting script
+  - Add pods namespace label name for all telegraf conf
+  - Update telegraf version from 1.23.2 to 1.24.2
+  - Address Computer Name mismatch in KubeEvents
+
 ### 10/05/2022 -
 ##### Version microsoft/oms:ciprod10042022-3c05dd1b Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod10042022-3c05dd1b (linux)
 ##### Version microsoft/oms:win-ciprod10042022-3c05dd1b Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod10042022-3c05dd1b (windows)

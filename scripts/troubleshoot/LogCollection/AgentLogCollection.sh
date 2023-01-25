@@ -80,6 +80,7 @@ ds_logCollection()
         kubectl cp ${ds_pod}:/var/opt/microsoft/docker-cimprov/log ama-logs-prom-daemonset --namespace=kube-system --container ama-logs-prometheus > /dev/null
         kubectl cp ${ds_pod}:/var/opt/microsoft/linuxmonagent/log ama-logs-daemonset-mdsd --namespace=kube-system --container ama-logs > /dev/null
         kubectl cp ${ds_pod}:/var/opt/microsoft/linuxmonagent/log ama-logs-prom-daemonset-mdsd --namespace=kube-system --container ama-logs-prometheus > /dev/null
+        kubectl cp ${ds_pod}:/etc/mdsd.d/config-cache/configchunks/ ama-logs-daemonset-dcr --namespace=kube-system --container ama-logs >/dev/null 2>&1
     fi
 
     kubectl exec ${ds_pod} --namespace=kube-system -- ls /var/opt/microsoft/docker-cimprov/state/ContainerInventory > containerID_${ds_pod}.txt 2>&1
@@ -96,10 +97,10 @@ ds_logCollection()
     if [[ $cmd == *"cannot access"* ]];then
         echo -e "${Red}/etc/opt/microsoft/docker-cimprov not exist on ${ds_pod}${NC}" | tee -a Tool.log
     else
-        kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/td-agent-bit.conf ama-logs-daemonset/td-agent-bit.conf --namespace=kube-system --container ama-logs > /dev/null
+        kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/fluent-bit.conf ama-logs-daemonset/fluent-bit.conf --namespace=kube-system --container ama-logs > /dev/null
         kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/telegraf.conf ama-logs-daemonset/telegraf.conf --namespace=kube-system --container ama-logs > /dev/null
         kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/telegraf.conf ama-logs-prom-daemonset/telegraf.conf --namespace=kube-system --container ama-logs-prometheus > /dev/null
-        kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/td-agent-bit.conf ama-logs-prom-daemonset/td-agent-bit.conf --namespace=kube-system --container ama-logs-prometheus > /dev/null
+        kubectl cp ${ds_pod}:/etc/opt/microsoft/docker-cimprov/fluent-bit.conf ama-logs-prom-daemonset/fluent-bit.conf --namespace=kube-system --container ama-logs-prometheus > /dev/null
     fi
     echo -e "Complete log collection from ${ds_pod}!" | tee -a Tool.log
 }
@@ -160,7 +161,7 @@ rs_logCollection()
     if [[ $cmd == *"cannot access"* ]];then
         echo -e "${Red}/etc/opt/microsoft/docker-cimprov not exist on ${rs_pod}${NC}" | tee -a Tool.log
     else
-        kubectl cp ${rs_pod}:/etc/opt/microsoft/docker-cimprov/td-agent-bit-rs.conf ama-logs-replicaset/td-agent-bit.conf --namespace=kube-system --container ama-logs > /dev/null
+        kubectl cp ${rs_pod}:/etc/opt/microsoft/docker-cimprov/fluent-bit-rs.conf ama-logs-replicaset/fluent-bit.conf --namespace=kube-system --container ama-logs > /dev/null
         kubectl cp ${rs_pod}:/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf ama-logs-replicaset/telegraf-rs.conf --namespace=kube-system --container ama-logs > /dev/null
     fi
     echo -e "Complete log collection from ${rs_pod}!" | tee -a Tool.log
@@ -184,6 +185,12 @@ other_logCollection()
     fi
 
     kubectl get nodes > node.txt
+    # contains info regarding node image version, images present on disk, etc
+    # TODO: add syslog doc link
+    echo -e "If syslog collection is enabled please make sure that the node pool image is Nov 2022 or later.\
+        To check current version and upgrade: https://learn.microsoft.com/en-us/azure/aks/node-image-upgrade"
+    kubectl get nodes -o json > node-detailed.json
+
     echo -e "Complete onboard log collection!" | tee -a Tool.log
 }
 
