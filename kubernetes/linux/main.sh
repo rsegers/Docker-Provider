@@ -527,6 +527,13 @@ echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc
 
 source ~/.bashrc
 
+if [ "${ENABLE_FBIT_INTERNAL_METRICS}" == "true" ]; then
+    echo "Fluent-bit Internal metrics configured"
+else
+    # clear the conf file content
+    true > /etc/opt/microsoft/docker-cimprov/fluent-bit-internal-metrics.conf
+fi
+
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       #Parse the configmap to set the right environment variables.
       ruby tomlparser.rb
