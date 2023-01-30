@@ -64,9 +64,10 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailBufferMaxSizeMBs = 0
 @fbitTailMemBufLimitMBs = 0
 @fbitTailIgnoreOlder = ""
-@storageTotalLimitSizeMB = 100
+@storageTotalLimitSizeMB = 200
 @outputForwardWorkers = 10
-@outputForwardRetryLimit = 3
+# retries infinetly until it succeeds
+@outputForwardRetryLimit = "no_limits"
 @requireAckResponse = "false"
 
 # configmap settings related to mdsd
@@ -409,8 +410,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   file = File.open("setagentenv.ps1", "w")
 
   if !file.nil?
-      commands = get_command_windows("ENABLE_FBIT_INTERNAL_METRICS", @enableFbitInternalMetrics)
-      file.write(commands)
+    commands = get_command_windows("ENABLE_FBIT_INTERNAL_METRICS", @enableFbitInternalMetrics)
+    file.write(commands)
     if @fbitFlushIntervalSecs > 0
       commands = get_command_windows("FBIT_SERVICE_FLUSH_INTERVAL", @fbitFlushIntervalSecs)
       file.write(commands)

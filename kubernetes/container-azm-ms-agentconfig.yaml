@@ -204,12 +204,6 @@ data:
     #  tail_ignore_older = "5m"                      # default value same as fluent-bit default i.e.0m
     #  enable_internal_metrics = "true"              # default is false
 
-    # settings for geneva fluent-bit forward plugin settings per tenant
-    [agent_settings.geneva_tenant_fbit_settings]
-      storage_total_limit_size_mb = "500"           # default is 100 MB
-      output_forward_workers = "20"                 # default is 10
-      output_forward_retry_limit = "no_limits"      # default is 3, use no_limits to retry infinetly
-
     # On both AKS & Arc K8s enviornments, if Cluster has configured with Forward Proxy then Proxy settings automatically applied and used for the agent
     # Certain configurations, proxy config should be ignored for example Cluster with AMPLS + Proxy
     # in such scenarios, use the following config to ignore proxy settings
