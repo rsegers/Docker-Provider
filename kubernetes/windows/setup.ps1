@@ -71,7 +71,7 @@ Write-Host ('Finished Extracting Certificate Generator Package')
 
 Write-Host ('Installing Windows Azure Monitor Agent');
 try {
-    $windowsazuremonitoragent='https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/genevamonitoringagent.46.2.1.zip'
+    $windowsazuremonitoragent='https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/genevamonitoringagent.46.3.2.zip'
     Invoke-WebRequest -Uri $windowsazuremonitoragent -OutFile /installation/windowsazuremonitoragent.zip
     Expand-Archive -Path /installation/windowsazuremonitoragent.zip -Destination /installation/windowsazuremonitoragent
     Move-Item -Path /installation/windowsazuremonitoragent -Destination /opt/windowsazuremonitoragent/ -ErrorAction SilentlyContinue
