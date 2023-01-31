@@ -46,22 +46,22 @@ function Set-ProcessAndMachineEnvVariables($name, $value) {
 
 function Set-AMAEnvironmentVariables {
 
-    Set-ProcessAndMachineEnvVariables("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory")
-    Set-ProcessAndMachineEnvVariables("MONITORING_MCS_MODE", "1")
-    Set-ProcessAndMachineEnvVariables("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity")
-    Set-ProcessAndMachineEnvVariables("MA_RoleEnvironment_OsType", "Windows")
-    Set-ProcessAndMachineEnvVariables("MONITORING_VERSION", "2.0")
-    Set-ProcessAndMachineEnvVariables("MONITORING_ROLE", "cloudAgentRoleIdentity")
-    Set-ProcessAndMachineEnvVariables("MONITORING_IDENTITY", "use_ip_address")
+    Set-ProcessAndMachineEnvVariables "MONITORING_DATA_DIRECTORY" "C:\\opt\\windowsazuremonitoragent\\datadirectory"
+    Set-ProcessAndMachineEnvVariables "MONITORING_MCS_MODE" "1"
+    Set-ProcessAndMachineEnvVariables "MONITORING_ROLE_INSTANCE" "cloudAgentRoleInstanceIdentity"
+    Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_OsType" "Windows"
+    Set-ProcessAndMachineEnvVariables "MONITORING_VERSION" "2.0"
+    Set-ProcessAndMachineEnvVariables "MONITORING_ROLE" "cloudAgentRoleIdentity"
+    Set-ProcessAndMachineEnvVariables "MONITORING_IDENTITY" "use_ip_address"
 
     $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
-    Set-ProcessAndMachineEnvVariables("MA_RoleEnvironment_Location", $aksRegion)
-    Set-ProcessAndMachineEnvVariables("customRegion", $aksRegion)
+    Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_Location" $aksRegion
+    Set-ProcessAndMachineEnvVariables "customRegion" $aksRegion
 
     $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
-    Set-ProcessAndMachineEnvVariables("MA_RoleEnvironment_ResourceId", $aksResourceId)
-    Set-ProcessAndMachineEnvVariables("customResourceId", $aksResourceId)
-    Set-ProcessAndMachineEnvVariables("MCS_CUSTOM_RESOURCE_ID", $aksResourceId)
+    Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_ResourceId" $aksResourceId
+    Set-ProcessAndMachineEnvVariables "customResourceId" $aksResourceId
+    Set-ProcessAndMachineEnvVariables "MCS_CUSTOM_RESOURCE_ID" $aksResourceId
 
     $domain = "opinsights.azure.com"
     $mcs_endpoint = "https://monitor.azure.com/"
@@ -96,8 +96,8 @@ function Set-AMAEnvironmentVariables {
         }
     }
 
-    Set-ProcessAndMachineEnvVariables("MCS_AZURE_RESOURCE_ENDPOINT", $mcs_endpoint)
-    Set-ProcessAndMachineEnvVariables("MCS_GLOBAL_ENDPOINT", $mcs_globalendpoint)
+    Set-ProcessAndMachineEnvVariables "MCS_AZURE_RESOURCE_ENDPOINT" $mcs_endpoint
+    Set-ProcessAndMachineEnvVariables "MCS_GLOBAL_ENDPOINT" $mcs_globalendpoint
     
 }
 
