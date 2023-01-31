@@ -33,6 +33,8 @@ spec:
          resources:
           {{- toYaml .Values.resources | nindent 12 }}
          env:
+         - name: ENABLE_FBIT_INTERNAL_METRICS
+           value: {{ .Values.enableInternalMetrics | quote }}
          - name: FBIT_SERVICE_GRACE_INTERVAL_SECONDS
            value: "10"
          - name: GENEVA_LOGS_INTEGRATION_SERVICE_MODE
