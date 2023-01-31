@@ -15,7 +15,7 @@
       }
     ]
   },
-  "description": "This is a simple dashboard for Fluent-bit",
+  "description": "Azure Monitor for Containers - 1P",
   "editable": true,
   "fiscalYearStartMonth": 0,
   "gnetId": 11620,
@@ -1427,8 +1427,8 @@
     ]
   },
   "timezone": "",
-  "title": "FluentBit",
-  "uid": "bNn5LUtiz",
+  "title": "Azure Monitor for Containers (1P)",
+  "uid": "aNn5LUtiz",
   "version": 16,
   "weekStart": ""
 }
