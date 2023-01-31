@@ -134,7 +134,7 @@ fi
 ACCESS_TOKEN=$(echo $ACCESS_TOKEN | tr -d '"' | tr -d '"\r\n')
 ARC_API_URL="https://eastus2euap.dp.kubernetesconfiguration.azure.com"
 EXTENSION_NAME="microsoft.azuremonitor.containers"
-echo "Request parameter preparation, SUBSCRIPTION is $ADMIN_SUBSCRIPTION_ID, RESOURCE_AUDIENCE is $RESOURCE_AUDIENCE, SPN_CLIENT_ID is $SPN_CLIENT_ID, SPN_TENANT_ID is $SPN_TENANT_ID, CHART_VERSION is $CHART_VERSION"
+echo "Request parameter preparation, SUBSCRIPTION is $SUBSCRIPTION, RESOURCE_AUDIENCE is $RESOURCE_AUDIENCE, SPN_CLIENT_ID is $SPN_CLIENT_ID, SPN_TENANT_ID is $SPN_TENANT_ID, CHART_VERSION is $CHART_VERSION"
 
 echo "start send request"
 az rest --method $METHOD --headers "{\"Authorization\": \"Bearer $ACCESS_TOKEN\", \"Content-Type\": \"application/json\"}" --body @request.json --uri $ARC_API_URL/subscriptions/$SUBSCRIPTION/extensionTypeRegistrations/$EXTENSION_NAME/versions/$VERSION?api-version=$API_VERSION
