@@ -39,6 +39,68 @@ function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\filesystemwatcher.ps1
 }
 
+function Set-ProcessAndMachineEnvVariables($name, $value) {
+    [System.Environment]::SetEnvironmentVariable($name, $value, "Process")
+    [System.Environment]::SetEnvironmentVariable($name, $value, "Machine")
+}
+
+function Set-AMAEnvironmentVariables {
+
+    Set-ProcessAndMachineEnvVariables("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory")
+    Set-ProcessAndMachineEnvVariables("MONITORING_MCS_MODE", "1")
+    Set-ProcessAndMachineEnvVariables("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity")
+    Set-ProcessAndMachineEnvVariables("MA_RoleEnvironment_OsType", "Windows")
+    Set-ProcessAndMachineEnvVariables("MONITORING_VERSION", "2.0")
+    Set-ProcessAndMachineEnvVariables("MONITORING_ROLE", "cloudAgentRoleIdentity")
+    Set-ProcessAndMachineEnvVariables("MONITORING_IDENTITY", "use_ip_address")
+
+    $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
+    Set-ProcessAndMachineEnvVariables("MA_RoleEnvironment_Location", $aksRegion)
+    Set-ProcessAndMachineEnvVariables("customRegion", $aksRegion)
+
+    $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
+    Set-ProcessAndMachineEnvVariables("MA_RoleEnvironment_ResourceId", $aksResourceId)
+    Set-ProcessAndMachineEnvVariables("customResourceId", $aksResourceId)
+    Set-ProcessAndMachineEnvVariables("MCS_CUSTOM_RESOURCE_ID", $aksResourceId)
+
+    $domain = "opinsights.azure.com"
+    $mcs_endpoint = "https://monitor.azure.com/"
+    $mcs_globalendpoint = "https://global.handler.canary.control.monitor.azure.com"
+    if (Test-Path /etc/ama-logs-secret/DOMAIN) {
+        $domain = Get-Content /etc/ama-logs-secret/DOMAIN
+        if (![string]::IsNullOrEmpty($domain)) {
+            if ($domain -eq "opinsights.azure.cn") {
+                $mcs_globalendpoint = "https://global.handler.control.monitor.azure.cn"
+                $mcs_endpoint = "https://monitor.azure.cn/"
+            }
+            elseif ($domain -eq "opinsights.azure.us") {
+                $mcs_globalendpoint = "https://global.handler.control.monitor.azure.us"
+                $mcs_endpoint = "https://monitor.azure.us/"
+            }
+            elseif ($domain -eq "opinsights.azure.eaglex.ic.gov") {
+                $mcs_globalendpoint = "https://global.handler.control.monitor.azure.eaglex.ic.gov"
+                $mcs_endpoint = "https://monitor.azure.eaglex.ic.gov/"
+            }
+            elseif ($domain -eq "opinsights.azure.microsoft.scloud") {
+                $mcs_globalendpoint = "https://global.handler.control.monitor.azure.microsoft.scloud"
+                $mcs_endpoint = "https://monitor.azure.microsoft.scloud/"
+            }
+            else {
+                Write-Host "Invalid or Unsupported domain name $($domain). EXITING....."
+                exit 1
+            }
+        }
+        else {
+            Write-Host "Domain name either null or empty. EXITING....."
+            exit 1
+        }
+    }
+
+    Set-ProcessAndMachineEnvVariables("MCS_AZURE_RESOURCE_ENDPOINT", $mcs_endpoint)
+    Set-ProcessAndMachineEnvVariables("MCS_GLOBAL_ENDPOINT", $mcs_globalendpoint)
+    
+}
+
 #register fluentd as a windows service
 
 function Set-EnvironmentVariables {
@@ -320,42 +382,12 @@ function Set-EnvironmentVariables {
         Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
     }
 
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Process")
-    [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Process")
-    [System.Environment]::SetEnvironmentVariable("MCS_GLOBAL_ENDPOINT", "https://global.handler.control.monitor.azure.com", "Process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_TENANT", "cloudAgentTenantIdentity", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Process")
-
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksregion, "Process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Process")
-    # [System.Environment]::SetEnvironmentVariable("MCS_REGIONAL_ENDPOINT", "https://eastus2euap.handler.control.monitor.azure.com", "Process")
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_PROCESS_START_TIME", "2022-09-12T00:00:00.360Z", "Process")
-    [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Process")
-    [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Process")
-    [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Process")
-
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
-    [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Machine")
-    [System.Environment]::SetEnvironmentVariable("MCS_GLOBAL_ENDPOINT", "https://global.handler.control.monitor.azure.com", "Machine")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Machine")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Machine")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Machine")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_TENANT", "cloudAgentTenantIdentity", "Machine")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksregion, "Machine")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Machine")
-    # [System.Environment]::SetEnvironmentVariable("MCS_REGIONAL_ENDPOINT", "https://eastus2euap.handler.control.monitor.azure.com", "Machine")
-    # [System.Environment]::SetEnvironmentVariable("MONITORING_Machine_START_TIME", "2022-09-12T00:00:00.360Z", "Machine")
-    [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Machine")
-    [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Machine")
-    [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Machine") 
-
+    if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+        Set-AMAEnvironmentVariables
+    }
 }
+
+    
 
 function Read-Configs {
     # run config parser
@@ -660,14 +692,18 @@ if (![string]::IsNullOrEmpty($requiresCertBootstrap) -and `
 $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
 if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
     Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
+
+    #start Windows AMA 
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
+    $version = Get-Content -Path "C:\opt\windowsazuremonitoragent\version.txt"
+    Write-Host $version
 }
 else {
+    Write-Host "skipping starting windows ama agent"
+
     Generate-Certificates
     Test-CertificatePath
 }
-
-#start Windows AMA 
-Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
 
 
 Start-Fluent-Telegraf

@@ -8,14 +8,14 @@ Write-Host ('Creating folder structure')
     New-Item -Type Directory -Path /opt/fluent-bit
     New-Item -Type Directory -Path /opt/scripts/ruby
     New-Item -Type Directory -Path /opt/telegraf
-    New-Item -Type Directory -Path /opt/genevamonitoringagent
-    New-Item -Type Directory -Path /opt/genevamonitoringagent/datadirectory
+    New-Item -Type Directory -Path /opt/windowsazuremonitoragent
+    New-Item -Type Directory -Path /opt/windowsazuremonitoragent/datadirectory
 
     New-Item -Type Directory -Path /etc/fluent-bit
     New-Item -Type Directory -Path /etc/fluent
     New-Item -Type Directory -Path /etc/amalogswindows
     New-Item -Type Directory -Path /etc/telegraf
-    New-Item -Type Directory -Path /etc/genevamonitoringagent
+    New-Item -Type Directory -Path /etc/windowsazuremonitoragent
 
     New-Item -Type Directory -Path /etc/config/settings/
     New-Item -Type Directory -Path /etc/config/adx/
@@ -69,20 +69,26 @@ Write-Host ('Extracting Certificate Generator Package')
     Expand-Archive -Path /opt/amalogswindows/certificategenerator.zip -Destination /opt/amalogswindows/certgenerator/ -Force
 Write-Host ('Finished Extracting Certificate Generator Package')
 
-Write-Host ('Installing GenevaMonitoringAgent');
+Write-Host ('Installing Windows Azure Monitor Agent');
 try {
-    $genevamonitoringagentUri='https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/GenevaMonitoringAgent.46.2.89-jriego23938430.zip'
-    Invoke-WebRequest -Uri $genevamonitoringagentUri -OutFile /installation/genevamonitoringagent.zip
-    Expand-Archive -Path /installation/genevamonitoringagent.zip -Destination /installation/genevamonitoringagent
-    Move-Item -Path /installation/genevamonitoringagent -Destination /opt/genevamonitoringagent/ -ErrorAction SilentlyContinue
+    $windowsazuremonitoragent='https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/genevamonitoringagent.46.2.1.zip'
+    Invoke-WebRequest -Uri $windowsazuremonitoragent -OutFile /installation/windowsazuremonitoragent.zip
+    Expand-Archive -Path /installation/windowsazuremonitoragent.zip -Destination /installation/windowsazuremonitoragent
+    Move-Item -Path /installation/windowsazuremonitoragent -Destination /opt/windowsazuremonitoragent/ -ErrorAction SilentlyContinue
+    if ($windowsazuremonitoragent -match 'https://.*genevamonitoringagent.(.*).zip') {
+        $version = $matches[1]
+        echo "Monitoring Agent Version - $version" > /opt/windowsazuremonitoragent/version.txt
+    } else {
+        echo "Monitoring Agent Version not found" > /opt/windowsazuremonitoragent/version.txt
+    }
 }
 catch {
     $ex = $_.Exception
-    Write-Host "exception while downloading genevamonitoringagent for windows"
+    Write-Host "exception while downloading windowsazuremonitoragent"
     Write-Host $ex
     exit 1
 }
-Write-Host ('Finished downloading GenevaMonitoringAgent')
+Write-Host ('Finished downloading Windows Azure Monitor Agent')
 
 
 Write-Host ("Removing Install folder")
