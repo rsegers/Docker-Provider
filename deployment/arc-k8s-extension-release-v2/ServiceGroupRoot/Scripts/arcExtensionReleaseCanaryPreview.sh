@@ -73,6 +73,17 @@ cat request.json | jq
 # Send Request
 SUBSCRIPTION=${ADMIN_SUBSCRIPTION_ID}
 RESOURCE_AUDIENCE=${RESOURCE_AUDIENCE}
+
+#Login to az cli and authenticate to acr
+echo "Login cli using managed identity"
+az login --identity
+if [ $? -eq 0 ]; then
+  echo "Logged in successfully"
+else
+  echo "-e error az login with managed identity credentials failed. Please review the Ev2 pipeline logs for more details on the error."
+  exit 1
+fi
+
 az login --service-principal --username=${SPN_CLIENT_ID} --password=${SPN_SECRET} --tenant=${SPN_TENANT_ID}
 if [ $? -eq 0 ]; then
   echo "Logged in successfully"
