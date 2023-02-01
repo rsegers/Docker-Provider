@@ -65,7 +65,7 @@ function Set-AMAEnvironmentVariables {
 
     $domain = "opinsights.azure.com"
     $mcs_endpoint = "https://monitor.azure.com/"
-    $mcs_globalendpoint = "https://global.handler.canary.control.monitor.azure.com"
+    $mcs_globalendpoint = "https://global.handler.control.monitor.azure.com"
     if (Test-Path /etc/ama-logs-secret/DOMAIN) {
         $domain = Get-Content /etc/ama-logs-secret/DOMAIN
         if (![string]::IsNullOrEmpty($domain)) {
