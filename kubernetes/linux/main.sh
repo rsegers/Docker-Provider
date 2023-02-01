@@ -204,7 +204,11 @@ fi
 #resourceid override for loganalytics data.
 if [ -z $AKS_RESOURCE_ID ]; then
       echo "not setting customResourceId"
-else
+else if [! -z NAMESPACE_RESOURCE_ID ]; then
+      export customResourceId=$NAMESPACE_RESOURCE_ID
+      echo "export customResourceId=$NAMESPACE_RESOURCE_ID" >>~/.bashrc
+      source ~/.bashrc
+else 
       export customResourceId=$AKS_RESOURCE_ID
       echo "export customResourceId=$AKS_RESOURCE_ID" >>~/.bashrc
       source ~/.bashrc
