@@ -44,7 +44,11 @@
                 {
                     "find": "__SPN_TENANT_ID__",
                     "replaceWith": "$(SPN_TENANT_ID)"
-                }
+                },
+                {
+                    "find": "__MANAGED_IDENTITY__",
+                    "replaceWith": "$(MANAGED_IDENTITY)"
+                }   
             ]
         }                                                                                                                                    
     ]

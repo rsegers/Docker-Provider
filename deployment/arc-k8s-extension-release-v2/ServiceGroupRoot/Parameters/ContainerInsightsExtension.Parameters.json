@@ -67,7 +67,13 @@
             "name": "SPN_TENANT_ID",
             "value": "__SPN_TENANT_ID__"
           }
-        ]
+        ], 
+        "identity": {
+          "type": "userAssigned",
+          "userAssignedIdentities": [
+            "__MANAGED_IDENTITY__"
+          ]
+        }
       }
     }
   ]
