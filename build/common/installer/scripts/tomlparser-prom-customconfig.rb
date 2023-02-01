@@ -111,6 +111,7 @@ def createPrometheusPluginsWithNamespaceSetting(monitorKubernetesPods, monitorKu
           pluginConfigsWithNamespaces += "\n[[inputs.prometheus]]
   interval = \"#{interval}\"
   monitor_kubernetes_pods = true
+  pod_namespace_label_name = \"#{pod_namespace}\"
   pod_scrape_scope = \"#{(@controller.casecmp(@replicaset) == 0) ? "cluster" : "node"}\"
   monitor_kubernetes_pods_namespace = \"#{namespace}\"
   kubernetes_label_selector = \"#{kubernetesLabelSelectors}\"
