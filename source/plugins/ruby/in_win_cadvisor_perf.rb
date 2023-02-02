@@ -99,7 +99,7 @@ module Fluent::Plugin
           @@winNodeQueryTimeTracker = DateTime.now.to_time.to_i
         end
         @@winNodes.each do |winNode|
-          if @isWindows && ExtensionUtils.isAADMSIAuthMode()
+          if @isWindows && ExtensionUtils.isAADMSIAuthMode() || !ExtensionUtils.isAADMSIAuthMode()
             eventStream = Fluent::MultiEventStream.new
             metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
             metricData.each do |record|

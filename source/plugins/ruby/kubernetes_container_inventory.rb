@@ -198,7 +198,7 @@ class KubernetesContainerInventory
               cmdValue = container["command"]
               cmdValueString = (cmdValue.nil?) ? "" : "" + cmdValue.to_s
               containerInfoMap["Command"] = cmdValueString
-              if isWindows
+              if isWindows && !ExtensionUtils.isAADMSIAuthMode()
                 # For windows container inventory, we dont need to get envvars from pods response since its already taken care in KPI as part of pod optimized item
                 containerInfoMap["EnvironmentVar"] = container["env"]
               else
