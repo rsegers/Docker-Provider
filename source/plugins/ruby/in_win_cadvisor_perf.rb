@@ -94,40 +94,44 @@ module Fluent::Plugin
           @@winNodeQueryTimeTracker = DateTime.now.to_time.to_i
         end
         @@winNodes.each do |winNode|
-          eventStream = Fluent::MultiEventStream.new
-          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
-          metricData.each do |record|
-            if !record.empty?
-              eventStream.add(time, record) if record
+          if isWindows && ExtensionUtils.isAADMSIAuthMode()
+            eventStream = Fluent::MultiEventStream.new
+            metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
+            metricData.each do |record|
+              if !record.empty?
+                eventStream.add(time, record) if record
+              end
+            end
+            router.emit_stream(@tag, eventStream) if eventStream
+
+            if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
+              $log.info("winCAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
             end
           end
-          router.emit_stream(@tag, eventStream) if eventStream
 
-          if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
-            $log.info("winCAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
-          end
+          if !isWindows
+            #start GPU InsightsMetrics items
+            begin
+              containerGPUusageInsightsMetricsDataItems = []
+              containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601))
+              insightsMetricsEventStream = Fluent::MultiEventStream.new
 
-          #start GPU InsightsMetrics items
-          begin
-            containerGPUusageInsightsMetricsDataItems = []
-            containerGPUusageInsightsMetricsDataItems.concat(CAdvisorMetricsAPIClient.getInsightsMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601))
-            insightsMetricsEventStream = Fluent::MultiEventStream.new
+              containerGPUusageInsightsMetricsDataItems.each do |insightsMetricsRecord|
+                insightsMetricsEventStream.add(time, insightsMetricsRecord) if insightsMetricsRecord
+              end
 
-            containerGPUusageInsightsMetricsDataItems.each do |insightsMetricsRecord|
-              insightsMetricsEventStream.add(time, insightsMetricsRecord) if insightsMetricsRecord
+              router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream
+              router.emit_stream(@mdmtag, insightsMetricsEventStream) if insightsMetricsEventStream
+              if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)
+                $log.info("winCAdvisorInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+              end
+            rescue => errorStr
+              $log.warn "Failed when processing GPU Usage metrics in_win_cadvisor_perf : #{errorStr}"
+              $log.debug_backtrace(errorStr.backtrace)
+              ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
             end
-
-            router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream
-            router.emit_stream(@mdmtag, insightsMetricsEventStream) if insightsMetricsEventStream
-            if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)
-              $log.info("winCAdvisorInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
-            end
-          rescue => errorStr
-            $log.warn "Failed when processing GPU Usage metrics in_win_cadvisor_perf : #{errorStr}"
-            $log.debug_backtrace(errorStr.backtrace)
-            ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+            #end GPU InsightsMetrics items
           end
-          #end GPU InsightsMetrics items
 
         end
 
