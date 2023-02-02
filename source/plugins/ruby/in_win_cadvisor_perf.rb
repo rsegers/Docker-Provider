@@ -61,6 +61,11 @@ module Fluent::Plugin
         timeDifference = (DateTime.now.to_time.to_i - @@winNodeQueryTimeTracker).abs
         timeDifferenceInMinutes = timeDifference / 60
         @@istestvar = ENV["ISTEST"]
+        @isWindows = false
+        @os_type = ENV["OS_TYPE"]
+        if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+          @isWindows = true
+        end
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_win_cadvisor_perf::enumerate: AAD AUTH MSI MODE")
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
@@ -94,7 +99,7 @@ module Fluent::Plugin
           @@winNodeQueryTimeTracker = DateTime.now.to_time.to_i
         end
         @@winNodes.each do |winNode|
-          if isWindows && ExtensionUtils.isAADMSIAuthMode()
+          if @isWindows && ExtensionUtils.isAADMSIAuthMode()
             eventStream = Fluent::MultiEventStream.new
             metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
             metricData.each do |record|
@@ -109,7 +114,7 @@ module Fluent::Plugin
             end
           end
 
-          if !isWindows
+          if !@isWindows
             #start GPU InsightsMetrics items
             begin
               containerGPUusageInsightsMetricsDataItems = []
