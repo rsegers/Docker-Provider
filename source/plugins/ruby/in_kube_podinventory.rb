@@ -470,6 +470,7 @@ module Fluent::Plugin
 
       begin
         mdmPodRecord = {}
+        ##
         record["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
         record["Name"] = item["metadata"]["name"]
         podNameSpace = item["metadata"]["namespace"]

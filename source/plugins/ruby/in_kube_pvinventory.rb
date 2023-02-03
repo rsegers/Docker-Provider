@@ -144,6 +144,7 @@ module Fluent::Plugin
 
           next unless !KubernetesApiClient.isExcludeResourceItem(pvcName, pvcNamespace, @namespaceFilteringMode, @namespaces)
 
+          ##
           record["CollectionTime"] = batchTime
           record["ClusterId"] = KubernetesApiClient.getClusterId
           record["ClusterName"] = KubernetesApiClient.getClusterName

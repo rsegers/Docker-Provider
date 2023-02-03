@@ -29,6 +29,7 @@ class KubernetesContainerInventory
         if !podContainersStatuses.empty?
           podContainersStatuses.each do |containerStatus|
             containerInventoryRecord = {}
+            ##
             containerInventoryRecord["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
             containerName = containerStatus["name"]
             # containeId format is <containerRuntime>://<containerId>

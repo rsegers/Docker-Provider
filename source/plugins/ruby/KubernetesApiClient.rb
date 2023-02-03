@@ -876,6 +876,7 @@ class KubernetesApiClient
           @Log.info("KubernetesApiClient::getKubeServicesInventoryRecords : number of services in serviceList  #{servicesCount} @ #{Time.now.utc.iso8601}")
           serviceList["items"].each do |item|
             kubeServiceRecord = {}
+            ##
             kubeServiceRecord["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
             kubeServiceRecord["ServiceName"] = item["metadata"]["name"]
             kubeServiceRecord["Namespace"] = item["metadata"]["namespace"]

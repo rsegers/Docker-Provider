@@ -152,7 +152,7 @@ module Fluent::Plugin
         events["items"].each do |items|
           record = {}
           #<BUGBUG> - Not sure if ingestion has the below mapping for this custom type. Fix it as part of fixed type conversion
-          record["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
+          #record["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
           eventId = items["metadata"]["uid"] + "/" + items["count"].to_s
           newEventQueryState.push(eventId)
           if !eventQueryState.empty? && eventQueryState.include?(eventId)
@@ -178,7 +178,7 @@ module Fluent::Plugin
           record["Reason"] = items["reason"]
           record["Message"] = items["message"]
           record["KubeEventType"] = items["type"]
-          record["TimeGenerated"] = items["metadata"]["creationTimestamp"]
+          record["CollectionTime"] = items["metadata"]["creationTimestamp"]
           record["SourceComponent"] = ""
           if items.key?("source") && items["source"].key?("component")
             record["SourceComponent"] = items["source"]["component"]
