@@ -34,18 +34,6 @@
                     "replaceWith": "$(RESOURCE_AUDIENCE)"
                 },
                 {
-                    "find": "__SPN_CLIENT_ID__",
-                    "replaceWith": "$(SPN_CLIENT_ID)"
-                },
-                {
-                    "find": "__SPN_SECRET__",
-                    "replaceWith": "$(SPN_SECRET)"
-                },
-                {
-                    "find": "__SPN_TENANT_ID__",
-                    "replaceWith": "$(SPN_TENANT_ID)"
-                },
-                {
                     "find": "__MANAGED_IDENTITY__",
                     "replaceWith": "$(MANAGED_IDENTITY)"
                 }   

@@ -84,14 +84,6 @@ else
   exit 1
 fi
 
-#az login --service-principal --username=${SPN_CLIENT_ID} --password=${SPN_SECRET} --tenant=${SPN_TENANT_ID}
-#if [ $? -eq 0 ]; then
-#  echo "Logged in successfully with spn"
-#else
-#  echo "-e error failed to login to az with managed identity credentials"
-#  exit 1
-#fi    
-
 ACCESS_TOKEN=$(az account get-access-token --resource $RESOURCE_AUDIENCE --query accessToken -o json)
 if [ $? -eq 0 ]; then
   echo "get access token from resource:$RESOURCE_AUDIENCE successfully."
@@ -103,7 +95,7 @@ ACCESS_TOKEN=$(echo $ACCESS_TOKEN | tr -d '"' | tr -d '"\r\n')
 
 ARC_API_URL="https://eastus2euap.dp.kubernetesconfiguration.azure.com"
 EXTENSION_NAME="microsoft.azuremonitor.containers"
-echo "Request parameter preparation, SUBSCRIPTION is $SUBSCRIPTION, RESOURCE_AUDIENCE is $RESOURCE_AUDIENCE, SPN_CLIENT_ID is $SPN_CLIENT_ID, SPN_TENANT_ID is $SPN_TENANT_ID, CHART_VERSION is $CHART_VERSION"
+echo "Request parameter preparation, SUBSCRIPTION is $SUBSCRIPTION, RESOURCE_AUDIENCE is $RESOURCE_AUDIENCE, CHART_VERSION is $CHART_VERSION"
 
 echo "start send request"
 az rest --method $METHOD --headers "{\"Authorization\": \"Bearer $ACCESS_TOKEN\", \"Content-Type\": \"application/json\"}" --body @request.json --uri $ARC_API_URL/subscriptions/$SUBSCRIPTION/extensionTypeRegistrations/$EXTENSION_NAME/versions/$CHART_VERSION?api-version=$API_VERSION

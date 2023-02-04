@@ -54,18 +54,6 @@
           {
             "name": "RESOURCE_AUDIENCE",
             "value": "__RESOURCE_AUDIENCE__"
-          },
-          {
-            "name": "SPN_CLIENT_ID",
-            "value": "__SPN_CLIENT_ID__"
-          },
-          {
-            "name": "SPN_SECRET",
-            "value": "__SPN_SECRET__"
-          },
-          {
-            "name": "SPN_TENANT_ID",
-            "value": "__SPN_TENANT_ID__"
           }
         ], 
         "identity": {
