@@ -48,8 +48,16 @@
             "value": "__REGISTER_REGIONS_CANARY__"
           },
           {
-            "name": "RELEASE_TRAINS",
-            "value": "__RELEASE_TRAINS__"
+            "name": "RELEASE_TRAINS_PREVIEW_PATH",
+            "value": "__RELEASE_TRAINS_PREVIEW_PATH__"
+          },
+          {
+            "name": "RELEASE_TRAINS_STABLE_PATH",
+            "value": "__RELEASE_TRAINS_STABLE_PATH__"   
+          },
+          {
+            "name": "REGISTER_REGIONS_BATCH",
+            "value": "__REGISTER_REGIONS_BATCH__"
           },
           {
             "name": "RESOURCE_AUDIENCE",

@@ -3,7 +3,9 @@
 export HELM_EXPERIMENTAL_OCI=1
 
 REGISTER_REGIONS_CANARY=$REGISTER_REGIONS_CANARY
-RELEASE_TRAINS=$RELEASE_TRAINS
+RELEASE_TRAINS_PREVIEW_PATH=${RELEASE_TRAINS_PREVIEW_PATH}
+RELEASE_TRAINS_STABLE_PATH=${RELEASE_TRAINS_STABLE_PATH}
+REGISTER_REGIONS_BATCH=($REGISTER_REGIONS_BATCH)
 IS_CUSTOMER_HIDDEN=$IS_CUSTOMER_HIDDEN
 CHART_VERSION=${CHART_VERSION}
 
@@ -11,13 +13,11 @@ PACKAGE_CONFIG_NAME="${PACKAGE_CONFIG_NAME:-microsoft.azuremonitor.containers-pk
 API_VERSION="${API_VERSION:-2021-05-01}"
 METHOD="${METHOD:-put}"
 REGISTRY_PATH_CANARY_PREVIEW="https://mcr.microsoft.com/azuremonitor/containerinsights/canary/preview/azuremonitor-containers"
+REGISTRY_PATH_CANARY_STABLE="https://mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
+REGISTRY_PATH_PROD_STABLE="https://mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
 
 if [ -z "$REGISTER_REGIONS_CANARY" ]; then
     echo "-e error release region must be provided "
-    exit 1
-fi
-if [ -z "$RELEASE_TRAINS" ]; then
-    echo "-e error release train must be provided "
     exit 1
 fi
 if [ -z "$IS_CUSTOMER_HIDDEN" ]; then
@@ -39,8 +39,15 @@ else
   #exit 1
 fi   
 
-echo "Start arc extension release stage ${RELEASE_STAGE}, REGISTER_REGIONS is $REGISTER_REGIONS_CANARY, RELEASE_TRAINS are $RELEASE_TRAINS, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
+echo "Start arc extension release stage ${RELEASE_STAGE}, REGISTER_REGIONS is $REGISTER_REGIONS_CANARY, RELEASE_TRAINS are $RELEASE_TRAINS_PREVIEW_PATH, $RELEASE_TRAINS_STABLE_PATH, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
 
+case $RELEASE_STAGE in
+
+  CanaryPreview)
+if [ -z "$RELEASE_TRAINS_PREVIEW_PATH" ]; then
+    echo "-e error preview release train must be provided "
+    exit 1
+fi
 # Create JSON request body
 cat <<EOF > "request.json"
 {
@@ -50,7 +57,7 @@ cat <<EOF > "request.json"
                 $REGISTER_REGIONS_CANARY
             ],
             "Releasetrains": [
-                $RELEASE_TRAINS
+                $RELEASE_TRAINS_PREVIEW_PATH
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
             "ExtensionUpdateFrequencyInMinutes": 60,
@@ -60,13 +67,140 @@ cat <<EOF > "request.json"
             "PackageConfigName": "$PACKAGE_CONFIG_NAME"
         },
 EOF
-
 sed -i '$ s/.$//' request.json
-
 cat <<EOF >> "request.json"
     ]
 }
 EOF
+    ;;
+
+  CanaryStable)
+if [ -z "$RELEASE_TRAINS_PREVIEW_PATH" ]; then
+    echo "-e error preview release train must be provided "
+    exit 1
+fi
+if [ -z "$RELEASE_TRAINS_STABLE_PATH" ]; then
+    echo "-e error stable release train must be provided "
+    exit 1
+fi
+# Create JSON request body
+cat <<EOF > "request.json"
+{
+    "artifactEndpoints": [
+        {
+            "Regions": [
+                $REGISTER_REGIONS_CANARY
+            ],
+            "Releasetrains": [
+                $RELEASE_TRAINS_PREVIEW_PATH
+            ],
+            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
+            "ExtensionUpdateFrequencyInMinutes": 60,
+            "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
+            "ReadyforRollout": true,
+            "RollbackVersion": null,
+            "PackageConfigName": "$PACKAGE_CONFIG_NAME"
+        },
+EOF
+cat <<EOF >> "request.json"
+        {
+            "Regions": [
+                $REGISTER_REGIONS_CANARY
+            ],
+            "Releasetrains": [
+                $RELEASE_TRAINS_STABLE_PATH
+            ],
+            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_STABLE",
+            "ExtensionUpdateFrequencyInMinutes": 60,
+            "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
+            "ReadyforRollout": true,
+            "RollbackVersion": null,
+            "PackageConfigName": "$PACKAGE_CONFIG_NAME"
+        },
+EOF
+sed -i '$ s/.$//' request.json
+cat <<EOF >> "request.json"
+    ]
+}
+EOF
+    ;;
+
+  Stable)
+if [ -z "$RELEASE_TRAINS_PREVIEW_PATH" ]; then
+    echo "-e error preview release train must be provided "
+    exit 1
+fi
+if [ -z "$RELEASE_TRAINS_STABLE_PATH" ]; then
+    echo "-e error stable release train must be provided "
+    exit 1
+fi
+if [ -z "$REGISTER_REGIONS_BATCH" ]; then
+    echo "-e error stable release train must be provided "
+    exit 1
+fi
+# Create JSON request body
+cat <<EOF > "request.json"
+{
+    "artifactEndpoints": [
+        {
+            "Regions": [
+                $REGISTER_REGIONS_CANARY
+            ],
+            "Releasetrains": [
+                $RELEASE_TRAINS_PREVIEW_PATH
+            ],
+            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
+            "ExtensionUpdateFrequencyInMinutes": 60,
+            "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
+            "ReadyforRollout": true,
+            "RollbackVersion": null,
+            "PackageConfigName": "$PACKAGE_CONFIG_NAME"
+        },
+EOF
+cat <<EOF >> "request.json"
+        {
+            "Regions": [
+                $REGISTER_REGIONS_CANARY
+            ],
+            "Releasetrains": [
+                $RELEASE_TRAINS_STABLE_PATH
+            ],
+            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_STABLE",
+            "ExtensionUpdateFrequencyInMinutes": 60,
+            "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
+            "ReadyforRollout": true,
+            "RollbackVersion": null,
+            "PackageConfigName": "$PACKAGE_CONFIG_NAME"
+        },
+EOF
+cat <<EOF >> "request.json"
+        {
+            "Regions": [
+                $REGISTER_REGIONS_BATCH
+            ],
+            "Releasetrains": [
+                $RELEASE_TRAINS_STABLE_PATH
+            ],
+            "FullPathToHelmChart": "$REGISTRY_PATH_PROD_STABLE",
+            "ExtensionUpdateFrequencyInMinutes": 60,
+            "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
+            "ReadyforRollout": true,
+            "RollbackVersion": null,
+            "PackageConfigName": "$PACKAGE_CONFIG_NAME"
+        },
+EOF
+sed -i '$ s/.$//' request.json
+cat <<EOF >> "request.json"
+    ]
+}
+EOF
+    ;;
+    
+  *)
+    echo -n "unknown release stage"
+    exit 1
+    ;;
+esac
 
 cat request.json | jq
 

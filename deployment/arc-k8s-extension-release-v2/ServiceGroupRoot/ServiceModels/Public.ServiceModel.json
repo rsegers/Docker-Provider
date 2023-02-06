@@ -36,7 +36,7 @@
         "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
         "ScopeTags": [
           {
-            "Name": "Canary"
+            "Name": "CanaryPreview"
           }
         ],     
         "ServiceResources": [
@@ -46,6 +46,42 @@
             "RolloutParametersPath": "Parameters\\ContainerInsightsExtension.Parameters.json"
           }
         ]
-      }                                                                                            
+      },
+      {
+        "AzureResourceGroupName": "ContainerInsightsExtension-Canary-Release",
+        "Location": "eastus2",
+        "InstanceOf": "ARC-Extension-ServiceResourceGroupDefinition",
+        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
+        "ScopeTags": [
+          {
+            "Name": "CanaryStable"
+          }
+        ],     
+        "ServiceResources": [
+          {
+            "Name": "ArcExtensionReleaseCanaryStable",
+            "InstanceOf": "ShellExtension",
+            "RolloutParametersPath": "Parameters\\ContainerInsightsExtension.Parameters.json"
+          }
+        ]
+      },
+      {
+        "AzureResourceGroupName": "ContainerInsightsExtension-Canary-Release",
+        "Location": "eastus2",
+        "InstanceOf": "ARC-Extension-ServiceResourceGroupDefinition",
+        "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
+        "ScopeTags": [
+          {
+            "Name": "Stable"
+          }
+        ],     
+        "ServiceResources": [
+          {
+            "Name": "ArcExtensionReleaseStable",
+            "InstanceOf": "ShellExtension",
+            "RolloutParametersPath": "Parameters\\ContainerInsightsExtension.Parameters.json"
+          }
+        ]
+      }                                                                                              
     ]
   }

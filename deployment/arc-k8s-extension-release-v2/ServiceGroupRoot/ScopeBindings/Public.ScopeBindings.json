@@ -3,11 +3,11 @@
     "contentVersion": "0.0.0.1",
     "scopeBindings": [       
         {
-            "scopeTagName": "Canary",
+            "scopeTagName": "CanaryPreview",
             "bindings": [
                 {
                     "find": "__RELEASE_STAGE__",
-                    "replaceWith": "Canary Preview"
+                    "replaceWith": "CanaryPreview"
                 },
                 {
                     "find": "__ADMIN_SUBSCRIPTION_ID__",
@@ -26,8 +26,8 @@
                     "replaceWith": "$(REGISTER_REGIONS_CANARY)"
                 },
                 {
-                    "find": "__RELEASE_TRAINS__",
-                    "replaceWith": "$(RELEASE_TRAINS)"
+                    "find": "__RELEASE_TRAINS_PREVIEW_PATH__",
+                    "replaceWith": "$(RELEASE_TRAINS_PREVIEW_PATH)"
                 },
                 {
                     "find": "__RESOURCE_AUDIENCE__",
@@ -38,6 +38,92 @@
                     "replaceWith": "$(MANAGED_IDENTITY)"
                 }   
             ]
-        }                                                                                                                                    
+        },
+        {
+            "scopeTagName": "CanaryStable",
+            "bindings": [
+                {
+                    "find": "__RELEASE_STAGE__",
+                    "replaceWith": "CanaryStable"
+                },
+                {
+                    "find": "__ADMIN_SUBSCRIPTION_ID__",
+                    "replaceWith": "$(ADMIN_SUBSCRIPTION_ID)"
+                },
+                {
+                    "find": "__CHART_VERSION__",
+                    "replaceWith": "$(CHART_VERSION)"
+                },
+                {
+                    "find": "__IS_CUSTOMER_HIDDEN__",
+                    "replaceWith": "$(IS_CUSTOMER_HIDDEN)"
+                },
+                {
+                    "find": "__REGISTER_REGIONS_CANARY__",
+                    "replaceWith": "$(REGISTER_REGIONS_CANARY)"
+                },
+                {
+                    "find": "__RELEASE_TRAINS_PREVIEW_PATH__",
+                    "replaceWith": "$(RELEASE_TRAINS_PREVIEW_PATH)"
+                },
+                {
+                    "find": "__RELEASE_TRAINS_STABLE_PATH__",
+                    "replaceWith": "$(RELEASE_TRAINS_STABLE_PATH)"
+                },
+                {
+                    "find": "__RESOURCE_AUDIENCE__",
+                    "replaceWith": "$(RESOURCE_AUDIENCE)"
+                },
+                {
+                    "find": "__MANAGED_IDENTITY__",
+                    "replaceWith": "$(MANAGED_IDENTITY)"
+                }   
+            ]
+        },
+        {
+            "scopeTagName": "Stable",
+            "bindings": [
+                {
+                    "find": "__RELEASE_STAGE__",
+                    "replaceWith": "Stable"
+                },
+                {
+                    "find": "__ADMIN_SUBSCRIPTION_ID__",
+                    "replaceWith": "$(ADMIN_SUBSCRIPTION_ID)"
+                },
+                {
+                    "find": "__CHART_VERSION__",
+                    "replaceWith": "$(CHART_VERSION)"
+                },
+                {
+                    "find": "__IS_CUSTOMER_HIDDEN__",
+                    "replaceWith": "$(IS_CUSTOMER_HIDDEN)"
+                },
+                {
+                    "find": "__REGISTER_REGIONS_CANARY__",
+                    "replaceWith": "$(REGISTER_REGIONS_CANARY)"
+                },
+                {
+                    "find": "__RELEASE_TRAINS_PREVIEW_PATH__",
+                    "replaceWith": "$(RELEASE_TRAINS_PREVIEW_PATH)"
+                },
+                {
+                    "find": "__RELEASE_TRAINS_STABLE_PATH__",
+                    "replaceWith": "$(RELEASE_TRAINS_STABLE_PATH)"
+                },
+                {
+                    "find": "__REGISTER_REGIONS_BATCH__",
+                    "replaceWith": "$(REGISTER_REGIONS_BATCH)"
+                },
+                {
+                    "find": "__RESOURCE_AUDIENCE__",
+                    "replaceWith": "$(RESOURCE_AUDIENCE)"
+                },
+                {
+                    "find": "__MANAGED_IDENTITY__",
+                    "replaceWith": "$(MANAGED_IDENTITY)"
+                }   
+            ]
+        }                                                                                                                                         
     ]
 }

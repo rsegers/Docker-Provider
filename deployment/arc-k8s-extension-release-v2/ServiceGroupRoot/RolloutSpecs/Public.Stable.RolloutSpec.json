@@ -4,7 +4,7 @@
   "RolloutMetadata": {
     "ServiceModelPath": "ServiceModels//Public.ServiceModel.json",   
     "ScopeBindingsPath": "ScopeBindings//Public.ScopeBindings.json", 
-    "Name": "ContainerInsightsExtension-Canary",
+    "Name": "ContainerInsightsExtension-Stable",
     "RolloutType": "Major",
     "BuildSource": {
       "Parameters": {
@@ -19,9 +19,9 @@
   },
   "orchestratedSteps": [
     {
-      "name": "ArcExtensionReleaseCanaryPreview",
+      "name": "ArcExtensionReleaseStable",
       "targetType": "ServiceResource",
-      "targetName": "ArcExtensionReleaseCanaryPreview",
+      "targetName": "ArcExtensionReleaseStable",
       "actions": [ "Shell/ArcExtensionReleaseCanaryPreview" ],
       "dependsOn": [ ]
     }
