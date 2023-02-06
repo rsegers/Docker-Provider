@@ -22,7 +22,7 @@
       "name": "ArcExtensionReleaseCanaryPreview",
       "targetType": "ServiceResource",
       "targetName": "ArcExtensionReleaseCanaryPreview",
-      "actions": [ "Shell/ArcExtensionReleaseCanaryPreview" ],
+      "actions": [ "wait/waitSdpBakeTime", "Shell/ArcExtensionReleaseCanaryPreview" ],
       "dependsOn": [ ]
     }
   ]

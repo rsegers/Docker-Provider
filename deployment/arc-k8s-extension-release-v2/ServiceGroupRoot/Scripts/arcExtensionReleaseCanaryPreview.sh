@@ -5,7 +5,7 @@ export HELM_EXPERIMENTAL_OCI=1
 REGISTER_REGIONS_CANARY=$REGISTER_REGIONS_CANARY
 RELEASE_TRAINS=$RELEASE_TRAINS
 IS_CUSTOMER_HIDDEN=$IS_CUSTOMER_HIDDEN
-CHART_VERSION=${CHART_VERSION}
+CHART_VERSION=$CHART_VERSION
 
 PACKAGE_CONFIG_NAME="${PACKAGE_CONFIG_NAME:-microsoft.azuremonitor.containers-pkg022022}"
 API_VERSION="${API_VERSION:-2021-05-01}"
@@ -47,10 +47,10 @@ cat <<EOF > "request.json"
     "artifactEndpoints": [
         {
             "Regions": [
-                $REGISTER_REGIONS_CANARY
+                "$REGISTER_REGIONS_CANARY"
             ],
             "Releasetrains": [
-                $RELEASE_TRAINS
+                "$RELEASE_TRAINS"
             ],
             "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
             "ExtensionUpdateFrequencyInMinutes": 60,
