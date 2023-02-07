@@ -552,7 +552,6 @@ module Fluent::Plugin
     def getContainerNodeInventoryRecord(item, batchTime = Time.utc.iso8601)
       containerNodeInventoryRecord = {}
       begin
-        ##
         containerNodeInventoryRecord["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
         containerNodeInventoryRecord["Computer"] = item["metadata"]["name"]
         nodeInfo = item["status"]["nodeInfo"]
