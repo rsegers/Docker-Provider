@@ -70,12 +70,14 @@ module Fluent::Plugin
           $log.info("in_win_cadvisor_perf::enumerate: AAD AUTH MSI MODE")
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
             @tag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
+            $log.info("in_win_cadvisor_perf::enumerate: using perf tag -#{@tag} @ #{Time.now.utc.iso8601}")
           end
-          if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+          if !isWindows
+            if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+              @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+            end
+            $log.info("in_win_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
           end
-          $log.info("in_win_cadvisor_perf::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_win_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
 
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
@@ -87,19 +89,30 @@ module Fluent::Plugin
           end
         end
 
-        #Resetting this cache so that it is populated with the current set of containers with every call
-        CAdvisorMetricsAPIClient.resetWinContainerIdCache()
-        if (timeDifferenceInMinutes >= 5)
-          $log.info "in_win_cadvisor_perf: Getting windows nodes"
-          nodes = KubernetesApiClient.getWindowsNodes()
-          if !nodes.nil?
-            @@winNodes = nodes
+        if isWindows && ExtensionUtils.isAADMSIAuthMode()
+          eventStream = Fluent::MultiEventStream.new
+          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
+          metricData.each do |record|
+            if !record.empty?
+              eventStream.add(time, record) if record
+            end
           end
-          $log.info "in_win_cadvisor_perf : Successuly got windows nodes after 5 minute interval"
-          @@winNodeQueryTimeTracker = DateTime.now.to_time.to_i
+          router.emit_stream(@tag, eventStream) if eventStream
         end
-        @@winNodes.each do |winNode|
-          if @isWindows && ExtensionUtils.isAADMSIAuthMode() || !ExtensionUtils.isAADMSIAuthMode()
+
+        if !isWindows
+          #Resetting this cache so that it is populated with the current set of containers with every call
+          CAdvisorMetricsAPIClient.resetWinContainerIdCache()
+          if (timeDifferenceInMinutes >= 5)
+            $log.info "in_win_cadvisor_perf: Getting windows nodes"
+            nodes = KubernetesApiClient.getWindowsNodes()
+            if !nodes.nil?
+              @@winNodes = nodes
+            end
+            $log.info "in_win_cadvisor_perf : Successuly got windows nodes after 5 minute interval"
+            @@winNodeQueryTimeTracker = DateTime.now.to_time.to_i
+          end
+          @@winNodes.each do |winNode|
             eventStream = Fluent::MultiEventStream.new
             metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
             metricData.each do |record|
@@ -112,9 +125,7 @@ module Fluent::Plugin
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
               $log.info("winCAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
             end
-          end
 
-          if !@isWindows
             #start GPU InsightsMetrics items
             begin
               containerGPUusageInsightsMetricsDataItems = []
@@ -136,17 +147,17 @@ module Fluent::Plugin
               ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
             end
             #end GPU InsightsMetrics items
+
           end
 
-        end
-
-        # Cleanup routine to clear deleted containers from cache
-        cleanupTimeDifference = (DateTime.now.to_time.to_i - @@cleanupRoutineTimeTracker).abs
-        cleanupTimeDifferenceInMinutes = cleanupTimeDifference / 60
-        if (cleanupTimeDifferenceInMinutes >= 5)
-          $log.info "in_win_cadvisor_perf : Cleanup routine kicking in to clear deleted containers from cache"
-          CAdvisorMetricsAPIClient.clearDeletedWinContainersFromCache()
-          @@cleanupRoutineTimeTracker = DateTime.now.to_time.to_i
+          # Cleanup routine to clear deleted containers from cache
+          cleanupTimeDifference = (DateTime.now.to_time.to_i - @@cleanupRoutineTimeTracker).abs
+          cleanupTimeDifferenceInMinutes = cleanupTimeDifference / 60
+          if (cleanupTimeDifferenceInMinutes >= 5)
+            $log.info "in_win_cadvisor_perf : Cleanup routine kicking in to clear deleted containers from cache"
+            CAdvisorMetricsAPIClient.clearDeletedWinContainersFromCache()
+            @@cleanupRoutineTimeTracker = DateTime.now.to_time.to_i
+          end
         end
       rescue => errorStr
         $log.warn "Failed to retrieve cadvisor metric data for windows nodes: #{errorStr}"

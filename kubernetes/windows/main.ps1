@@ -697,20 +697,12 @@ if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'tr
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
     $version = Get-Content -Path "C:\opt\windowsazuremonitoragent\version.txt"
     Write-Host $version
-
-    Set-ProcessAndMachineEnvVariables "NUM_OF_WIN_FLUENTD_WORKERS" 3
-    Set-ProcessAndMachineEnvVariables "FLUENTD_CUSTOM_METRICS_WORKER" 0
-    Set-ProcessAndMachineEnvVariables "FLUENTD_CONTAINER_INVENTORY_WORKER" 1
-    Set-ProcessAndMachineEnvVariables "FLUENTD_PERF_WORKER" 2
-
 }
 else {
     Write-Host "skipping starting windows ama agent"
 
     Generate-Certificates
     Test-CertificatePath
-    Set-ProcessAndMachineEnvVariables "NUM_OF_WIN_FLUENTD_WORKERS" 1
-    Set-ProcessAndMachineEnvVariables "FLUENTD_CUSTOM_METRICS_WORKER" 0
 }
 
 
