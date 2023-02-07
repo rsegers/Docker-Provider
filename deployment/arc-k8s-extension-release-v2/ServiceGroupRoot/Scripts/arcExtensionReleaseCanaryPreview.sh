@@ -81,16 +81,16 @@ if [ $? -eq 0 ]; then
   echo "Logged in successfully with msi"
 else
   echo "-e error az login with managed identity credentials failed. Please review the Ev2 pipeline logs for more details on the error."
-  exit 1
+  #exit 1
 fi
 
-#az login --service-principal --username=${SPN_CLIENT_ID} --password=${SPN_SECRET} --tenant=${SPN_TENANT_ID}
-#if [ $? -eq 0 ]; then
-#  echo "Logged in successfully with spn"
-#else
-#  echo "-e error failed to login to az with managed identity credentials"
-#  exit 1
-#fi    
+az login --service-principal --username=${SPN_CLIENT_ID} --password=${SPN_SECRET} --tenant=${SPN_TENANT_ID}
+if [ $? -eq 0 ]; then
+  echo "Logged in successfully with spn"
+else
+  echo "-e error failed to login to az with managed identity credentials"
+  #exit 1
+fi    
 
 ACCESS_TOKEN=$(az account get-access-token --resource $RESOURCE_AUDIENCE --query accessToken -o json)
 if [ $? -eq 0 ]; then
