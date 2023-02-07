@@ -491,7 +491,6 @@ module Fluent::Plugin
     def getNodeInventoryRecord(item, batchTime = Time.utc.iso8601)
       record = {}
       begin
-        ##
         record["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
         record["Computer"] = item["metadata"]["name"]
         record["ClusterName"] = @kubernetesApiClient.getClusterName
