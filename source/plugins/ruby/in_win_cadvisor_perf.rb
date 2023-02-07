@@ -91,7 +91,7 @@ module Fluent::Plugin
 
         if isWindows && ExtensionUtils.isAADMSIAuthMode()
           eventStream = Fluent::MultiEventStream.new
-          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: winNode, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
+          metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
           metricData.each do |record|
             if !record.empty?
               eventStream.add(time, record) if record
