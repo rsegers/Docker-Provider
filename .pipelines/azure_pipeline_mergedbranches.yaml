@@ -62,6 +62,9 @@ jobs:
 
       cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz ../../../../charts/azuremonitor-containers/ pushChartToAcr.sh
+
+      cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension-release-v2/ServiceGroupRoot/Scripts
+      tar -czvf ../artifacts.tar.gz arcExtensionReleaseCanaryPreview.sh
     name: setup
 
   - task: CopyFiles@2
