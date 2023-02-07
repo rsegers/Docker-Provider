@@ -178,7 +178,7 @@ module Fluent::Plugin
           record["Message"] = items["message"]
           record["KubeEventType"] = items["type"]
           #use metadata time instead of batchTime when metadata time not empty
-          record["CollectionTime"] = items["metadata"].key?["creationTimestamp"] ? items["metadata"]["creationTimestamp"] : batchTime
+          record["CollectionTime"] = items["metadata"].key?("creationTimestamp") ? items["metadata"]["creationTimestamp"] : batchTime
           record["SourceComponent"] = ""
           if items.key?("source") && items["source"].key?("component")
             record["SourceComponent"] = items["source"]["component"]
