@@ -66,28 +66,6 @@ module Fluent::Plugin
         if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
           @isWindows = true
         end
-        if ExtensionUtils.isAADMSIAuthMode()
-          $log.info("in_win_cadvisor_perf::enumerate: AAD AUTH MSI MODE")
-          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @tag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
-            $log.info("in_win_cadvisor_perf::enumerate: using perf tag -#{@tag} @ #{Time.now.utc.iso8601}")
-          end
-          if !@isWindows
-            if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-              @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
-            end
-            $log.info("in_win_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
-          end
-
-          if ExtensionUtils.isDataCollectionSettingsConfigured()
-            @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
-            $log.info("in_win_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
-            @namespaces = ExtensionUtils.getNamespacesForDataCollection()
-            $log.info("in_win_cadvisor_perf::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
-            @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
-            $log.info("in_cadvisor_perf::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
-          end
-        end
 
         if @isWindows && ExtensionUtils.isAADMSIAuthMode()
           eventStream = Fluent::MultiEventStream.new
@@ -97,7 +75,7 @@ module Fluent::Plugin
               eventStream.add(time, record) if record
             end
           end
-          router.emit_stream(@tag, eventStream) if eventStream
+          router.emit_stream("dcr-d8d17057775949079414b0b1f57cb7a1:ContainerInsightsExtension:LINUX_PERF_BLOB", eventStream) if eventStream
         end
 
         if !@isWindows
@@ -120,7 +98,7 @@ module Fluent::Plugin
                 eventStream.add(time, record) if record
               end
             end
-            router.emit_stream(@tag, eventStream) if eventStream
+            router.emit_stream("dcr-d8d17057775949079414b0b1f57cb7a1:ContainerInsightsExtension:LINUX_PERF_BLOB", eventStream) if eventStream
 
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
               $log.info("winCAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
