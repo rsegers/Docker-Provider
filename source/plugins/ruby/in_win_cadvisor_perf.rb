@@ -72,7 +72,7 @@ module Fluent::Plugin
             @tag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
             $log.info("in_win_cadvisor_perf::enumerate: using perf tag -#{@tag} @ #{Time.now.utc.iso8601}")
           end
-          if !isWindows
+          if !@isWindows
             if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
               @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
             end
@@ -89,7 +89,7 @@ module Fluent::Plugin
           end
         end
 
-        if isWindows && ExtensionUtils.isAADMSIAuthMode()
+        if @isWindows && ExtensionUtils.isAADMSIAuthMode()
           eventStream = Fluent::MultiEventStream.new
           metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
           metricData.each do |record|
@@ -100,7 +100,7 @@ module Fluent::Plugin
           router.emit_stream(@tag, eventStream) if eventStream
         end
 
-        if !isWindows
+        if !@isWindows
           #Resetting this cache so that it is populated with the current set of containers with every call
           CAdvisorMetricsAPIClient.resetWinContainerIdCache()
           if (timeDifferenceInMinutes >= 5)
