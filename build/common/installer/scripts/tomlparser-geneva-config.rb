@@ -17,6 +17,7 @@ GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "Firstparty
 @geneva_account_namespace = ""
 @geneva_account_namespace_windows = ""
 @geneva_logs_config_version = "1.0"
+@geneva_logs_config_version_windows = "1.0"
 @geneva_gcs_region = ""
 @infra_namespaces = ""
 @tenant_namespaces = ""
@@ -84,6 +85,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             geneva_account_namespace_windows = parsedConfig[:integrations][:geneva_logs][:namespacewindows].to_s
             geneva_account_name = parsedConfig[:integrations][:geneva_logs][:account].to_s
             geneva_logs_config_version = parsedConfig[:integrations][:geneva_logs][:configversion].to_s
+            geneva_logs_config_version_windows = parsedConfig[:integrations][:geneva_logs][:windowsconfigversion].to_s
             geneva_gcs_region = parsedConfig[:integrations][:geneva_logs][:region].to_s
             geneva_gcs_authid = parsedConfig[:integrations][:geneva_logs][:authid].to_s
             if geneva_gcs_authid.nil? || geneva_gcs_authid.empty?
@@ -121,12 +123,21 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 @geneva_logs_config_version = "1.0"
                 puts "Since config version not specified so using default config version : #{@geneva_logs_config_version}"
               end
+
+              if !geneva_logs_config_version_windows.nil? && !geneva_logs_config_version_windows.empty?
+                @geneva_logs_config_version_windows = geneva_logs_config_version_windows
+              else
+                @geneva_logs_config_version_windows = "1.0"
+                puts "Since config version for windows not specified so using default config version : #{@geneva_logs_config_version_windows}"
+              end
+
               puts "using environment for geneva integration: #{@geneva_account_environment}"
               puts "using namespace for geneva integration: #{@geneva_account_namespace}"
               puts "using namespace for windows for geneva integration: #{@geneva_account_namespace_windows}"
               puts "using account for geneva integration: #{@geneva_account_name}"
               puts "using authid for geneva integration: #{@geneva_gcs_authid}"
-              puts "using config version for geneva integration: #{@geneva_logs_config_version}"
+              puts "using Linux config version for geneva integration: #{@geneva_logs_config_version}"
+              puts "using Windows config version for geneva integration: #{@geneva_logs_config_version_windows}"
             else
               puts "config::geneva_logs::error: provided geneva logs config is not valid"
             end
@@ -156,7 +167,11 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "Using config map value: MONITORING_GCS_ACCOUNT=#{@geneva_account_name}"
           puts "Using config map value: MONITORING_GCS_REGION=#{@geneva_gcs_region}"
           puts "Using config map value: MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}"
-          puts "Using config map value: MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}"
+          if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+            puts "Using config map value: MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version_windows}"
+          else
+            puts "Using config map value: MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}"
+          end
           puts "Using config map value: GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}"
           puts "Using config map value: GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}"
         end
@@ -277,7 +292,7 @@ if (@containerType.nil? || @containerType.empty?)
       file.write(commands)
       commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
       file.write(commands)
-      commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version)
+      commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version_windows)
       file.write(commands)
       commands = get_command_windows("MONITORING_GCS_REGION", @geneva_gcs_region)
       file.write(commands)
