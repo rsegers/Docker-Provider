@@ -225,6 +225,8 @@ cat request.json | jq
 SUBSCRIPTION=${ADMIN_SUBSCRIPTION_ID}
 RESOURCE_AUDIENCE=${RESOURCE_AUDIENCE}
 
+echo "Request parameter preparation, SUBSCRIPTION is $SUBSCRIPTION, RESOURCE_AUDIENCE is $RESOURCE_AUDIENCE, CHART_VERSION is $CHART_VERSION, SPN_CLIENT_ID is $SPN_CLIENT_ID, SPN_TENANT_ID is $SPN_TENANT_ID"
+
 # msi is not supported yet since msi always linked to an Azure Resource
 echo "Login cli using spn"
 az login --service-principal --username=${SPN_CLIENT_ID} --password=${SPN_SECRET} --tenant=${SPN_TENANT_ID}
@@ -246,7 +248,6 @@ ACCESS_TOKEN=$(echo $ACCESS_TOKEN | tr -d '"' | tr -d '"\r\n')
 
 ARC_API_URL="https://eastus2euap.dp.kubernetesconfiguration.azure.com"
 EXTENSION_NAME="microsoft.azuremonitor.containers"
-echo "Request parameter preparation, SUBSCRIPTION is $SUBSCRIPTION, RESOURCE_AUDIENCE is $RESOURCE_AUDIENCE, CHART_VERSION is $CHART_VERSION"
 
 echo "start send request"
 az rest --method $METHOD --headers "{\"Authorization\": \"Bearer $ACCESS_TOKEN\", \"Content-Type\": \"application/json\"}" --body @request.json --uri $ARC_API_URL/subscriptions/$SUBSCRIPTION/extensionTypeRegistrations/$EXTENSION_NAME/versions/$CHART_VERSION?api-version=$API_VERSION

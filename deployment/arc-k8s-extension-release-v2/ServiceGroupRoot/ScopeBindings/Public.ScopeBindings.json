@@ -34,15 +34,15 @@
                     "replaceWith": "$(RESOURCE_AUDIENCE)"
                 },
                 {
-                    "find": "SPN_CLIENT_ID",
+                    "find": "__SPN_CLIENT_ID__",
                     "replaceWith": "__SPN_CLIENT_ID__"
                 },
                 {
-                    "find": "SPN_SECRET",
+                    "find": "__SPN_SECRET__",
                     "replaceWith": "__SPN_SECRET__"
                 },
                 {
-                    "find": "SPN_TENANT_ID",
+                    "find": "__SPN_TENANT_ID__",
                     "replaceWith": "__SPN_TENANT_ID__"
                 },   
                 {
@@ -87,15 +87,15 @@
                     "replaceWith": "$(RESOURCE_AUDIENCE)"
                 },
                 {
-                    "find": "SPN_CLIENT_ID",
+                    "find": "__SPN_CLIENT_ID__",
                     "replaceWith": "__SPN_CLIENT_ID__"
                 },
                 {
-                    "find": "SPN_SECRET",
+                    "find": "__SPN_SECRET__",
                     "replaceWith": "__SPN_SECRET__"
                 },
                 {
-                    "find": "SPN_TENANT_ID",
+                    "find": "__SPN_TENANT_ID__",
                     "replaceWith": "__SPN_TENANT_ID__"
                 }, 
                 {
@@ -144,15 +144,15 @@
                     "replaceWith": "$(RESOURCE_AUDIENCE)"
                 },
                 {
-                    "find": "SPN_CLIENT_ID",
+                    "find": "__SPN_CLIENT_ID__",
                     "replaceWith": "__SPN_CLIENT_ID__"
                 },
                 {
-                    "find": "SPN_SECRET",
+                    "find": "__SPN_SECRET__",
                     "replaceWith": "__SPN_SECRET__"
                 },
                 {
-                    "find": "SPN_TENANT_ID",
+                    "find": "__SPN_TENANT_ID__",
                     "replaceWith": "__SPN_TENANT_ID__"
                 }, 
                 {
