@@ -80,6 +80,12 @@ data:
         # - prometheus.io/path: If the metrics path is not /metrics, define it with this annotation.
         # - prometheus.io/port: If port is not 9102 use this annotation
         monitor_kubernetes_pods = false
+        
+        ## Scrape Pods Method
+        ## annotations: default, looks for specific pod annotations documented below
+        ## settings: only look for pods matching the settings provided, not annotations
+        ## settings+annotations: looks at pods that match annotations using the user defined settings
+        # monitor_kubernetes_pods_method = "annotations"
 
         ## Restricts Kubernetes monitoring to namespaces for pods that have annotations set and are scraped using the monitor_kubernetes_pods setting.
         ## This will take effect when monitor_kubernetes_pods is set to true
