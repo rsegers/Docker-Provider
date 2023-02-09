@@ -143,7 +143,7 @@ if [ -z "$RELEASE_TRAINS_STABLE_PATH" ]; then
     exit 1
 fi
 if [ -z "$REGISTER_REGIONS_BATCH" ]; then
-    echo "-e error stable release train must be provided "
+    echo "-e error stable release regions must be provided "
     exit 1
 fi
 PROD_STABLE_MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
