@@ -19,10 +19,10 @@
   },
   "orchestratedSteps": [
     {
-      "name": "ArcExtensionReleaseCanaryPreview",
+      "name": "ArcExtensionRelease",
       "targetType": "ServiceResource",
       "targetName": "ArcExtensionReleaseCanaryPreview",
-      "actions": [ "Shell/ArcExtensionReleaseCanaryPreview" ],
+      "actions": [ "Shell/ArcExtensionRelease" ],
       "dependsOn": [ ]
     }
   ]

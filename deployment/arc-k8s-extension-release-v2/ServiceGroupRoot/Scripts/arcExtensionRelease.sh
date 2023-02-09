@@ -2,10 +2,10 @@
 # Register azuremonitor-containers extension with Arc Registration API
 export HELM_EXPERIMENTAL_OCI=1
 
-REGISTER_REGIONS_CANARY=$REGISTER_REGIONS_CANARY
-RELEASE_TRAINS_PREVIEW_PATH=${RELEASE_TRAINS_PREVIEW_PATH}
-RELEASE_TRAINS_STABLE_PATH=${RELEASE_TRAINS_STABLE_PATH}
-REGISTER_REGIONS_BATCH=($REGISTER_REGIONS_BATCH)
+REGISTER_REGIONS_CANARY='"'$(echo "$REGISTER_REGIONS_CANARY" | sed 's/,/","/g')'"'
+RELEASE_TRAINS_PREVIEW_PATH='"'$(echo "$RELEASE_TRAINS_PREVIEW_PATH" | sed 's/,/","/g')'"'
+RELEASE_TRAINS_STABLE_PATH='"'$(echo "$RELEASE_TRAINS_STABLE_PATH" | sed 's/,/","/g')'"'
+REGISTER_REGIONS_BATCH='"'$(echo "$REGISTER_REGIONS_BATCH" | sed 's/,/","/g')'"'
 IS_CUSTOMER_HIDDEN=$IS_CUSTOMER_HIDDEN
 CHART_VERSION=${CHART_VERSION}
 
@@ -29,16 +29,6 @@ if [ -z "$CHART_VERSION" ]; then
     exit 1
 fi
 
-MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/preview/azuremonitor-containers"
-echo "Pulling chart from MCR:${MCR_NAME_PATH}"
-helm chart pull ${MCR_NAME_PATH}:${CHART_VERSION}
-if [ $? -eq 0 ]; then
-  echo "Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} completed successfully."
-else
-  echo "-e error Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} failed. Please review Ev2 pipeline logs for more details on the error."
-  #exit 1
-fi   
-
 echo "Start arc extension release stage ${RELEASE_STAGE}, REGISTER_REGIONS is $REGISTER_REGIONS_CANARY, RELEASE_TRAINS are $RELEASE_TRAINS_PREVIEW_PATH, $RELEASE_TRAINS_STABLE_PATH, PACKAGE_CONFIG_NAME is $PACKAGE_CONFIG_NAME, API_VERSION is $API_VERSION, METHOD is $METHOD"
 
 case $RELEASE_STAGE in
@@ -48,6 +38,15 @@ if [ -z "$RELEASE_TRAINS_PREVIEW_PATH" ]; then
     echo "-e error preview release train must be provided "
     exit 1
 fi
+CANARY_PREVIEW_MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/preview/azuremonitor-containers"
+echo "Pulling chart from MCR:${MCR_NAME_PATH}"
+helm chart pull ${MCR_NAME_PATH}:${CHART_VERSION}
+if [ $? -eq 0 ]; then
+  echo "Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} completed successfully."
+else
+  echo "-e error Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} failed. Please review Ev2 pipeline logs for more details on the error."
+  #exit 1
+fi   
 # Create JSON request body
 cat <<EOF > "request.json"
 {
@@ -83,6 +82,15 @@ if [ -z "$RELEASE_TRAINS_STABLE_PATH" ]; then
     echo "-e error stable release train must be provided "
     exit 1
 fi
+CANARY_STABLE_MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
+echo "Pulling chart from MCR:${MCR_NAME_PATH}"
+helm chart pull ${MCR_NAME_PATH}:${CHART_VERSION}
+if [ $? -eq 0 ]; then
+  echo "Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} completed successfully."
+else
+  echo "-e error Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} failed. Please review Ev2 pipeline logs for more details on the error."
+  #exit 1
+fi   
 # Create JSON request body
 cat <<EOF > "request.json"
 {
@@ -138,6 +146,15 @@ if [ -z "$REGISTER_REGIONS_BATCH" ]; then
     echo "-e error stable release train must be provided "
     exit 1
 fi
+PROD_STABLE_MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
+echo "Pulling chart from MCR:${MCR_NAME_PATH}"
+helm chart pull ${MCR_NAME_PATH}:${CHART_VERSION}
+if [ $? -eq 0 ]; then
+  echo "Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} completed successfully."
+else
+  echo "-e error Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} failed. Please review Ev2 pipeline logs for more details on the error."
+  #exit 1
+fi   
 # Create JSON request body
 cat <<EOF > "request.json"
 {
@@ -208,15 +225,15 @@ cat request.json | jq
 SUBSCRIPTION=${ADMIN_SUBSCRIPTION_ID}
 RESOURCE_AUDIENCE=${RESOURCE_AUDIENCE}
 
-#Login to az cli and authenticate to acr
-echo "Login cli using managed identity"
-az login --identity
+# msi is not supported yet since msi always linked to an Azure Resource
+echo "Login cli using spn"
+az login --service-principal --username=${SPN_CLIENT_ID} --password=${SPN_SECRET} --tenant=${SPN_TENANT_ID}
 if [ $? -eq 0 ]; then
-  echo "Logged in successfully with msi"
+  echo "Logged in successfully with spn"
 else
-  echo "-e error az login with managed identity credentials failed. Please review the Ev2 pipeline logs for more details on the error."
+  echo "-e error failed to login to az with managed identity credentials"
   exit 1
-fi
+fi    
 
 ACCESS_TOKEN=$(az account get-access-token --resource $RESOURCE_AUDIENCE --query accessToken -o json)
 if [ $? -eq 0 ]; then
