@@ -30,7 +30,7 @@
     ],
     "ServiceResourceGroups": [     
       {
-        "AzureResourceGroupName": "ContainerInsightsExtension-Canary-Release",
+        "AzureResourceGroupName": "ContainerInsights-Agent-Release",
         "Location": "eastus2",
         "InstanceOf": "ARC-Extension-ServiceResourceGroupDefinition",
         "AzureSubscriptionId": "30c56c3a-54da-46ea-b004-06eb33432687",  
