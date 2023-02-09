@@ -24,8 +24,11 @@ module Fluent::Plugin
     end
 
     def getNamedPipeFromExtension()
-        @pipe_name = "\\\\.\\pipe\\" + "CAgentStream_ContainerInsights_c8654227078630313722_17122439705320844850_AzureMonitorAgent"
-        @log.info "Named pipe: #{@pipe_name}"
+        pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
+        if !pipe_suffix.nil? && !pipe_suffix.empty?
+          @pipe_name = "\\\\.\\pipe\\" + pipe_suffix
+          @log.info "Named pipe: #{@pipe_name}"
+        end
     end
 
     def start

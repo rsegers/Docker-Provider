@@ -66,6 +66,21 @@ module Fluent::Plugin
       if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
         @isWindows = true
       end
+      if ExtensionUtils.isAADMSIAuthMode()
+        $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
+        if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
+          @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
+        end
+        $log.info("in_container_inventory::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
+        if ExtensionUtils.isDataCollectionSettingsConfigured()
+          @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
+          $log.info("in_container_inventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
+          @namespaces = ExtensionUtils.getNamespacesForDataCollection()
+          $log.info("in_container_inventory::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
+          @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
+          $log.info("in_container_inventory::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
+        end
+      end
       begin
         containerRuntimeEnv = ENV["CONTAINER_RUNTIME"]
         $log.info("in_container_inventory::enumerate : container runtime : #{containerRuntimeEnv}")
@@ -115,7 +130,7 @@ module Fluent::Plugin
         containerInventory.each do |record|
           eventStream.add(emitTime, record) if record
         end
-        router.emit_stream("dcr-d8d17057775949079414b0b1f57cb7a1:ContainerInsightsExtension:CONTAINER_INVENTORY_BLOB", eventStream) if eventStream
+        router.emit_stream(@tag, eventStream) if eventStream
         @@istestvar = ENV["ISTEST"]
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
           $log.info("containerInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
