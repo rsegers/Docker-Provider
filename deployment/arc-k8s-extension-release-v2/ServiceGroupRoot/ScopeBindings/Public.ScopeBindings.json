@@ -34,21 +34,21 @@
                     "replaceWith": "$(RESOURCE_AUDIENCE)"
                 },
                 {
+                    "find": "SPN_CLIENT_ID",
+                    "replaceWith": "__SPN_CLIENT_ID__"
+                },
+                {
+                    "find": "SPN_SECRET",
+                    "replaceWith": "__SPN_SECRET__"
+                },
+                {
+                    "find": "SPN_TENANT_ID",
+                    "replaceWith": "__SPN_TENANT_ID__"
+                },   
+                {
                     "find": "__MANAGED_IDENTITY__",
                     "replaceWith": "$(MANAGED_IDENTITY)"
-                },
-                {
-                  "name": "SPN_CLIENT_ID",
-                  "value": "__SPN_CLIENT_ID__"
-                },
-                {
-                  "name": "SPN_SECRET",
-                  "value": "__SPN_SECRET__"
-                },
-                {
-                  "name": "SPN_TENANT_ID",
-                  "value": "__SPN_TENANT_ID__"
-                }   
+                }
             ]
         },
         {
@@ -87,20 +87,20 @@
                     "replaceWith": "$(RESOURCE_AUDIENCE)"
                 },
                 {
+                    "find": "SPN_CLIENT_ID",
+                    "replaceWith": "__SPN_CLIENT_ID__"
+                },
+                {
+                    "find": "SPN_SECRET",
+                    "replaceWith": "__SPN_SECRET__"
+                },
+                {
+                    "find": "SPN_TENANT_ID",
+                    "replaceWith": "__SPN_TENANT_ID__"
+                }, 
+                {
                     "find": "__MANAGED_IDENTITY__",
                     "replaceWith": "$(MANAGED_IDENTITY)"
-                },
-                {
-                  "name": "SPN_CLIENT_ID",
-                  "value": "__SPN_CLIENT_ID__"
-                },
-                {
-                  "name": "SPN_SECRET",
-                  "value": "__SPN_SECRET__"
-                },
-                {
-                  "name": "SPN_TENANT_ID",
-                  "value": "__SPN_TENANT_ID__"
                 }
             ]
         },
@@ -144,20 +144,20 @@
                     "replaceWith": "$(RESOURCE_AUDIENCE)"
                 },
                 {
+                    "find": "SPN_CLIENT_ID",
+                    "replaceWith": "__SPN_CLIENT_ID__"
+                },
+                {
+                    "find": "SPN_SECRET",
+                    "replaceWith": "__SPN_SECRET__"
+                },
+                {
+                    "find": "SPN_TENANT_ID",
+                    "replaceWith": "__SPN_TENANT_ID__"
+                }, 
+                {
                     "find": "__MANAGED_IDENTITY__",
                     "replaceWith": "$(MANAGED_IDENTITY)"
-                },
-                {
-                  "name": "SPN_CLIENT_ID",
-                  "value": "__SPN_CLIENT_ID__"
-                },
-                {
-                  "name": "SPN_SECRET",
-                  "value": "__SPN_SECRET__"
-                },
-                {
-                  "name": "SPN_TENANT_ID",
-                  "value": "__SPN_TENANT_ID__"
                 }
             ]
         }                                                                                                                                         
