@@ -259,9 +259,6 @@ module Fluent::Plugin
                   if File.foreach(file).grep(/LINUX_SYSLOGS_BLOB/).any?
                     telemetryProperties["syslogEnabled"] = "true"
                   end
-                  if File.foreach(file).grep(/ContainerInsightsExtension/).any? && File.foreach(file).grep(/dataCollectionSettings/).any?
-                    telemetryProperties["dataCollectionSettingsEnabled"] = "true"
-                  end
                 end
               }
             end
