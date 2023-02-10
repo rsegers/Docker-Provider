@@ -45,7 +45,7 @@ if [ $? -eq 0 ]; then
   echo "Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} completed successfully."
 else
   echo "-e error Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} failed. Please review Ev2 pipeline logs for more details on the error."
-  #exit 1
+  exit 1
 fi   
 # Create JSON request body
 cat <<EOF > "request.json"
@@ -89,7 +89,7 @@ if [ $? -eq 0 ]; then
   echo "Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} completed successfully."
 else
   echo "-e error Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} failed. Please review Ev2 pipeline logs for more details on the error."
-  #exit 1
+  exit 1
 fi   
 # Create JSON request body
 cat <<EOF > "request.json"
@@ -153,7 +153,7 @@ if [ $? -eq 0 ]; then
   echo "Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} completed successfully."
 else
   echo "-e error Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} failed. Please review Ev2 pipeline logs for more details on the error."
-  #exit 1
+  exit 1
 fi   
 # Create JSON request body
 cat <<EOF > "request.json"
