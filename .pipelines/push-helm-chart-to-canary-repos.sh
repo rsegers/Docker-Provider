@@ -36,7 +36,7 @@ echo "login to acr:${ACR} completed: ${ACR}"
 echo "start: push the chart version: ${CHARTVERSION} to acr repo: ${ACR}"
 
 echo "save the chart locally with acr full path"
-helm chart save . ${ACR}/${REPO_PATH}:${CHARTVERSION}
+helm chart save azuremonitor-containers/ ${ACR}/${REPO_PATH}:${CHARTVERSION}
 
 echo "pushing the helm chart to ACR: ${ACR}"
 helm chart push ${ACR}/${REPO_PATH}:${CHARTVERSION}
