@@ -263,7 +263,7 @@ module Fluent::Plugin
               }
             end
           rescue => errorStr
-            $log.warn("ApplicationInsights:: Exception in getting syslog status: #{errorStr}")
+            $log.warn("in_kube_podinventory::enumerate: Exception in getting syslog status: #{errorStr}")
           end
           ApplicationInsightsUtility.sendCustomEvent("KubePodInventoryHeartBeatEvent", telemetryProperties)
           ApplicationInsightsUtility.sendMetricTelemetry("PodCount", @podCount, {})
