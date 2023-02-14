@@ -72,6 +72,7 @@ module Fluent::Plugin
           pipe_handle.close
         else
           @log.error "File doesn't exist: #{pipe_name}"
+        end
       rescue Exception => e
         @log.info "Exception when writing to named pipe: #{e}"
         raise e
