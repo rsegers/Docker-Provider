@@ -2,7 +2,7 @@ require 'fluent/plugin/output'
 
 module Fluent::Plugin
   class NamedPipeOutput < Output
-    Fluent::Plugin.register_output('named_pipe', self)
+    Fluent::Plugin.register_output('named_pipe_perf', self)
 
     helpers :formatter
 
