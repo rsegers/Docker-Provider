@@ -1,3 +1,7 @@
 # telegraf vulnerabilities legacy MEDIUM Severity 
 CVE-2019-3826
 CVE-2022-23471
+
+# telegraf vulnerabilities
+GHSA-4xgv-j62q-h3rj
+GHSA-hxp2-xqf3-v83h
