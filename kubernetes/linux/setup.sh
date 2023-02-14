@@ -59,7 +59,7 @@ sudo apt-get install libcap2-bin -y
 
 TELEGRAF_VERSION=1.25.1
 wget https://dl.influxdata.com/telegraf/releases/telegraf-${TELEGRAF_VERSION}_linux_${ARCH}.tar.gz
-tar -zxvf telegraf-${TELEGRAF_VERSION}_linux_$ARCH.tar.gz
+tar -zxvf telegraf-${TELEGRAF_VERSION}_linux_${ARCH}.tar.gz
 
 mv /opt/telegraf-${TELEGRAF_VERSION}/usr/bin/telegraf /opt/telegraf
 
