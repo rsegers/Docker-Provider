@@ -581,8 +581,8 @@ fi
 
 # If the prometheus sidecar isn't doing anything then there's no need to run mdsd and telegraf in it.
 if [[ ( "${CONTAINER_TYPE}" == "PrometheusSidecar" ) &&
-      ( "${TELEMETRY_CUSTOM_PROM_MONITOR_PODS}" == "false" ) &&
-      ( "${TELEMETRY_OSM_CONFIGURATION_NAMESPACES_COUNT}" -eq 0 ) ]]; then
+      ( "${TELEMETRY_CUSTOM_PROM_MONITOR_PODS}" == "false"  || "${TELEMETRY_CUSTOM_PROM_MONITOR_PODS}" == "" ) &&
+      ( "${TELEMETRY_OSM_CONFIGURATION_NAMESPACES_COUNT}" -eq 0 || "${TELEMETRY_OSM_CONFIGURATION_NAMESPACES_COUNT}" == "" ) ]]; then
       setGlobalEnvVar MUTE_PROM_SIDECAR true
 else
       setGlobalEnvVar MUTE_PROM_SIDECAR false
