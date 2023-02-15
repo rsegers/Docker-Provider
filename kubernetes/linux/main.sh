@@ -90,6 +90,14 @@ checkAgentOnboardingStatus() {
 
 # setup paths for ruby
 [ -f /etc/profile.d/rvm.sh ] && source /etc/profile.d/rvm.sh
+
+arch=$(dpkg --print-architecture)
+if [ "$arch" == "arm64" ]; then
+      export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libjemalloc.so.1
+else
+      export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.1
+fi
+
 setReplicaSetSpecificConfig() {
       echo "num of fluentd workers:${NUM_OF_FLUENTD_WORKERS}"
       export FLUENTD_FLUSH_INTERVAL="20s"
