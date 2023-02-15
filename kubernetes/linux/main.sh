@@ -93,10 +93,11 @@ checkAgentOnboardingStatus() {
 
 arch=$(dpkg --print-architecture)
 if [ "$arch" == "arm64" ]; then
-      export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libjemalloc.so.1
+      echo "export LD_PRELOAD=/usr/lib/aarch64-linux-gnu/libjemalloc.so.1" >> ~/.bashrc
 else
-      export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.1
+      echo "export LD_PRELOAD=/usr/lib/x86_64-linux-gnu/libjemalloc.so.1" >> ~/.bashrc
 fi
+source ~/.bashrc
 
 setReplicaSetSpecificConfig() {
       echo "num of fluentd workers:${NUM_OF_FLUENTD_WORKERS}"
