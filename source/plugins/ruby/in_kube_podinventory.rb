@@ -252,6 +252,19 @@ module Fluent::Plugin
               telemetryProperties["DATA_COLLECTION_INTERVAL_MINUTES"] = @run_interval / 60
             end
           end
+          begin
+            if Dir.exist?("/etc/mdsd.d/config-cache/configchunks")
+              Dir.glob("/etc/mdsd.d/config-cache/configchunks/*.json") { |file|
+                if File.file?(file) && File.exist?(file)
+                  if File.foreach(file).grep(/LINUX_SYSLOGS_BLOB/).any?
+                    telemetryProperties["syslogEnabled"] = "true"
+                  end
+                end
+              }
+            end
+          rescue => errorStr
+            $log.warn("in_kube_podinventory::enumerate: Exception in getting syslog status: #{errorStr}")
+          end
           ApplicationInsightsUtility.sendCustomEvent("KubePodInventoryHeartBeatEvent", telemetryProperties)
           ApplicationInsightsUtility.sendMetricTelemetry("PodCount", @podCount, {})
           ApplicationInsightsUtility.sendMetricTelemetry("ContainerCount", @containerCount, {})

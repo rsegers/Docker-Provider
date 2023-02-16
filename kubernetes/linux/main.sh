@@ -531,6 +531,8 @@ if [ -e "telemetry_prom_config_env_var" ]; then
             echo $line >>~/.bashrc
       done
       source telemetry_prom_config_env_var
+else
+      setGlobalEnvVar TELEMETRY_CUSTOM_PROM_MONITOR_PODS false
 fi
 
 #Parse sidecar agent settings for custom configuration
@@ -576,6 +578,8 @@ if [[ ( ( ! -e "/etc/config/kube.conf" ) && ( "${CONTAINER_TYPE}" == "Prometheus
                   echo $line >>~/.bashrc
             done
             source integration_osm_config_env_var
+      else
+            setGlobalEnvVar TELEMETRY_OSM_CONFIGURATION_NAMESPACES_COUNT 0
       fi
 fi
 
