@@ -20,6 +20,12 @@
         "description": "Azure Monitor Log Analytics Resource ID"
       }
     },
+    "secondaryWorkspaceResourceId": {
+      "type": "string",
+      "metadata": {
+          "description": "Full Resource ID of the log analitycs workspace that will be used for data destination for Container Logs. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz"
+      }
+    },
     "workspaceRegion": {
       "type": "string",
       "metadata": {
@@ -118,7 +124,18 @@
                                     {
                                         "name": "ContainerInsightsExtension",
                                         "streams": [
-                                           "Microsoft-ContainerInsights-Group-Default"
+                                            "Microsoft-Perf",
+                                            "Microsoft-ContainerInventory",
+                                            "Microsoft-ContainerLog",
+                                            "Microsoft-ContainerLogV2",
+                                            "Microsoft-ContainerNodeInventory",
+                                            "Microsoft-KubeEvents",
+                                            "Microsoft-KubeMonAgentEvents",
+                                            "Microsoft-KubeNodeInventory",
+                                            "Microsoft-KubePodInventory",
+                                            "Microsoft-KubePVInventory",
+                                            "Microsoft-KubeServices",
+                                            "Microsoft-InsightsMetrics"
                                         ],
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
@@ -136,18 +153,42 @@
                                     {
                                         "workspaceResourceId": "[parameters('workspaceResourceId')]",
                                         "name": "ciworkspace"
+                                    },
+                                    {
+                                      "workspaceResourceId": "[parameters('secondaryWorkspaceResourceId')]",
+                                      "name": "secondaryciworkspace"
                                     }
                                 ]
                             },
                             "dataFlows": [
                                 {
                                     "streams": [
-                                        "Microsoft-ContainerInsights-Group-Default"
+                                      "Microsoft-Perf",
+                                      "Microsoft-ContainerInventory",
+                                      "Microsoft-ContainerLog",
+                                      "Microsoft-ContainerLogV2",
+                                      "Microsoft-ContainerNodeInventory",
+                                      "Microsoft-KubeEvents",
+                                      "Microsoft-KubeMonAgentEvents",
+                                      "Microsoft-KubeNodeInventory",
+                                      "Microsoft-KubePodInventory",
+                                      "Microsoft-KubePVInventory",
+                                      "Microsoft-KubeServices",
+                                      "Microsoft-InsightsMetrics"
                                     ],
                                     "destinations": [
                                         "ciworkspace"
                                     ]
-                                }
+                                },
+                                {
+                                  "streams": [
+                                    "Microsoft-ContainerLog",
+                                    "Microsoft-ContainerLogV2"
+                                  ],
+                                  "destinations": [
+                                      "secondaryciworkspace"
+                                  ]
+                              }
                             ]
                         }
                     }

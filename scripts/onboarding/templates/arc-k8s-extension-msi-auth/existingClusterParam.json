@@ -11,6 +11,9 @@
     "workspaceResourceId": {
       "value": "/subscriptions/<subscriptionId>/resourcegroups/<resourceGroupName>/providers/microsoft.operationalinsights/workspaces/<workspaceName>"
     },
+    "secondaryWorkspaceResourceId": {
+      "value": "/subscriptions/<SubscriptionId>/resourceGroups/<ResourceGroup>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName2>"
+    },
     "workspaceRegion": {
       "value": "<workspaceRegion>"
     },
