@@ -8,6 +8,7 @@ CVE-2022-27664
 CVE-2022-32149
 CVE-2022-23471
 CVE-2022-41721
+CVE-2023-25153
 
 #dpkg vulnerability in ubuntu
 CVE-2022-2526
@@ -17,3 +18,4 @@ CVE-2021-33621
 
 #https://avd.aquasec.com/nvd/2022/cve-2022-41717/
 CVE-2022-41717
+
