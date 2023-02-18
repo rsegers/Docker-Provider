@@ -21,12 +21,12 @@
     </MdsdEvents>
     </Events>
     <EventStreamingAnnotations>
-        <EventStreamingAnnotation name="ContainerLog">
+        <EventStreamingAnnotation name="ContainerLogV2">
             <OnBehalf>
                 <Content><![CDATA[<Config onBehalfFields="resourceId,category"
                         priority="Normal"
                         primaryPartitionField="resourceId"
-                        excludeFields="Tenant,Role,RoleInstance,PreciseTimeStamp,FluentdIngestTimestamp,TIMESTAMP"
+                        excludeFields="Tenant,Role,RoleInstance,PreciseTimeStamp,TIMESTAMP"
                         containerSuffix="$category"/>]]>
                 </Content>
             </OnBehalf>
