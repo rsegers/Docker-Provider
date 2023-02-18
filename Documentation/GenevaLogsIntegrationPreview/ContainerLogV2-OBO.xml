@@ -1,0 +1,35 @@
+<MonitoringManagement eventVersion="2" version="1.0" timestamp="2022-11-08T00:00:00Z" namespace="kubecilogsobo">
+<Accounts>
+   <Account moniker="kubecilogsobofp" isDefault="true" />
+</Accounts>
+<Management eventVolume="Medium" defaultRetentionInDays="29" serviceIdentity="Microsoft.KubernetesConfiguration.Namespaces">
+<Identity>
+    <IdentityComponent name="Tenant">TENANT_ID</IdentityComponent>
+    <IdentityComponent name="Role">ROLE_ID</IdentityComponent>
+    <IdentityComponent name="RoleInstance">ROLEINSTANCE_ID</IdentityComponent>
+</Identity>
+<AgentResourceUsage diskQuotaInMB="50000" cpuPercentUsage="50" />
+</Management>
+<Sources>
+   <Source name="ContainerLogV2Source" dynamic_schema="true" />
+</Sources>
+<Events>
+<MdsdEvents>
+    <MdsdEventSource source="ContainerLogV2Source">
+    <RouteEvent eventName="ContainerLogV2" priority="Normal" storeType="CentralBond" duration="PT1M" account="kubecilogsobofp" />
+    </MdsdEventSource>
+    </MdsdEvents>
+    </Events>
+    <EventStreamingAnnotations>
+        <EventStreamingAnnotation name="ContainerLog">
+            <OnBehalf>
+                <Content><![CDATA[<Config onBehalfFields="resourceId,category"
+                        priority="Normal"
+                        primaryPartitionField="resourceId"
+                        excludeFields="Tenant,Role,RoleInstance,PreciseTimeStamp,FluentdIngestTimestamp,TIMESTAMP"
+                        containerSuffix="$category"/>]]>
+                </Content>
+            </OnBehalf>
+        </EventStreamingAnnotation>
+    </EventStreamingAnnotations>
+</MonitoringManagement>

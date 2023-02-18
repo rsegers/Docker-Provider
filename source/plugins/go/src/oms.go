@@ -1134,7 +1134,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			Computer = ToString(record["Computer"])
 			stringMap["AzureResourceId"] = ToString(record["AzureResourceId"])
 		} else if IsGenevaLogsIntegrationEnabled == true {
-			stringMap["AzureResourceId"] = ResourceID
+			//For OBO path
+			stringMap["resourceId"] = ResourceID
+			stringMap["category"] = "containerlogs"
+			stringMap["operationName"] = "Operational"
+			stringMap["time"] = ToString(record["time"])
 		}
 
 		logEntry := ToString(record["log"])
