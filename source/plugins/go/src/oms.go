@@ -118,8 +118,8 @@ const ContainerTypeEnv = "CONTAINER_TYPE"
 const DefaultAdxDatabaseName = "containerinsights"
 
 //Default Logs category for OBO pipeline
-const LogsCategory = "containerlogs"
-const LogsOperationName = "operational"
+const LogsCategory = "ContainerLogs"
+const LogsOperationName = "ApplicationLogs"
 
 var (
 	// PluginConfiguration the plugins configuration
