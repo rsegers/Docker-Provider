@@ -1162,6 +1162,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			propertyMap["LogMessage"] = logEntry
 			propertyMap["LogSource"] = logEntrySource
 			propertyMap["TimeGenerated"] = logEntryTimeStamp
+			propertyMap["AzureResourceId"] = ResourceID
 
 			propertyMapJSON, err := json.Marshal(propertyMap)
 			if err != nil {
@@ -1171,12 +1172,20 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				return output.FLB_OK
 			}
 
-			stringMap["resourceId"] = ClusterResourceId
+			NamespaceResourceId := ClusterResourceId + "/providers/Microsoft.KubernetesConfiguration/namespaces/" + k8sNamespace
+			stringMap["resourceId"] = NamespaceResourceId
 			stringMap["location"] = ClusterResourceRegion
 			stringMap["category"] = LogsCategory
 			stringMap["operationName"] = LogsOperationName
-			stringMap["time"] = ToString(record["time"])
-
+			// gangams - validate this is valid format for OBO
+			time := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d",
+				time.Now().UTC().Year(),
+				time.Now().UTC().Month(),
+				time.Now().UTC().Day(),
+				time.Now().UTC().Hour(),
+				time.Now().UTC().Minute(),
+				time.Now().UTC().Second())
+			stringMap["time"] = time
 			stringMap["properties"] = string(propertyMapJSON)
 		} else if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
