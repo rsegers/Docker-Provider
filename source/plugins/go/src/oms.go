@@ -1178,10 +1178,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			stringMap["category"] = LogsCategory
 			stringMap["operationName"] = LogsOperationName
 			// gangams - validate this is valid format for OBO
-			time := fmt.Sprintf("%d-%02d-%02d %02d:%02d:%02d",
-				time.Now().UTC().Year(),
+			// sample format 02-15-2023 10:45:59
+			time := fmt.Sprintf("%02d-%02d-%2d %02d:%02d:%02d",
 				time.Now().UTC().Month(),
 				time.Now().UTC().Day(),
+				time.Now().UTC().Year(),
 				time.Now().UTC().Hour(),
 				time.Now().UTC().Minute(),
 				time.Now().UTC().Second())
