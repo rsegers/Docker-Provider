@@ -65,11 +65,13 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
           enable_shoebox_mode = parsedConfig[:integrations][:geneva_logs][:enable_shoebox_mode].to_s
           if !enable_shoebox_mode.nil? && enable_shoebox_mode.strip.casecmp("true") == 0
-            if @multi_tenancy
-              @enable_shoebox_mode = true
-            else
-              puts "warn:ignoring enable_shoebox_mode setting since its only applicable in Multi-tenancy mode"
-            end
+            @enable_shoebox_mode = true
+            # gangams - after testing, comment above line and uncomment below lines
+            # if @multi_tenancy
+            #   @enable_shoebox_mode = true
+            # else
+            #   puts "warn:ignoring enable_shoebox_mode setting since its only applicable in Multi-tenancy mode"
+            # end
           end
 
           if @multi_tenancy

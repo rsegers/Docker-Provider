@@ -1738,7 +1738,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ResourceID = os.Getenv(envAKSResourceID)
 	ClusterResourceId = strings.ToUpper(ResourceID)
 	ClusterResourceRegion = os.Getenv(envAKSResourceRegion)
-
+	ClusterResourceRegion = strings.ReplaceAll(strings.ToLower(ClusterResourceRegion), " ", "")
 	if len(ResourceID) > 0 {
 		//AKS Scenario
 		ResourceCentric = true
