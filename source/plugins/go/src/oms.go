@@ -117,6 +117,10 @@ const ContainerTypeEnv = "CONTAINER_TYPE"
 //Default ADX destination database name, can be overriden through configuration
 const DefaultAdxDatabaseName = "containerinsights"
 
+//Default Logs category for OBO pipeline
+const LogsCategory = "containerlogs"
+const LogsOperationName = "operational"
+
 var (
 	// PluginConfiguration the plugins configuration
 	PluginConfiguration map[string]string
@@ -140,6 +144,10 @@ var (
 	LogAnalyticsWorkspaceDomain string
 	// ResourceID for resource-centric log analytics data
 	ResourceID string
+	// resource ID of the cluster for OBO
+	ClusterResourceId string
+	// resource region of the cluster for OBO
+	ClusterResourceRegion string
 	// Resource-centric flag (will be true if we determine if above RseourceID is non-empty - default is false)
 	ResourceCentric bool
 	//ResourceName
@@ -184,6 +192,8 @@ var (
 	IsGenevaLogsIntegrationEnabled bool
 	// flag to check whether Geneva Logs ServiceMode enabled or not
 	IsGenevaLogsTelemetryServiceMode bool
+	// flag to check whether Geneva Logs ShoeBoxMode enabled or not
+	IsGenevaLogsShoeBoxMode bool
 	// named pipe connection to ContainerLog for AMA
 	ContainerLogNamedPipe net.Conn
 )
@@ -1091,6 +1101,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	var msgPackEntries []MsgPackEntry
 	var stringMap map[string]string
+	var propertyMap map[string]string
 	var elapsed time.Duration
 
 	var maxLatency float64
@@ -1134,18 +1145,40 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			Computer = ToString(record["Computer"])
 			stringMap["AzureResourceId"] = ToString(record["AzureResourceId"])
 		} else if IsGenevaLogsIntegrationEnabled == true {
-			//For OBO path
-			stringMap["resourceId"] = ResourceID
-			stringMap["category"] = "containerlogs"
-			stringMap["operationName"] = "Operational"
-			stringMap["time"] = ToString(record["time"])
+			stringMap["AzureResourceId"] = ResourceID
 		}
 
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
 
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
-		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
+		if IsGenevaLogsIntegrationEnabled && IsGenevaLogsShoeBoxMode {
+			propertyMap = make(map[string]string)
+			propertyMap["Computer"] = Computer
+			propertyMap["ContainerId"] = containerID
+			propertyMap["ContainerName"] = containerName
+			propertyMap["PodName"] = k8sPodName
+			propertyMap["PodNamespace"] = k8sNamespace
+			propertyMap["LogMessage"] = logEntry
+			propertyMap["LogSource"] = logEntrySource
+			propertyMap["TimeGenerated"] = logEntryTimeStamp
+
+			propertyMapJSON, err := json.Marshal(propertyMap)
+			if err != nil {
+				message := fmt.Sprintf("Error while Marshalling propertyMap: %s", err.Error())
+				Log(message)
+				SendException(message)
+				return output.FLB_OK
+			}
+
+			stringMap["resourceId"] = ClusterResourceId
+			stringMap["location"] = ClusterResourceRegion
+			stringMap["category"] = LogsCategory
+			stringMap["operationName"] = LogsOperationName
+			stringMap["time"] = ToString(record["time"])
+
+			stringMap["properties"] = string(propertyMapJSON)
+		} else if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
 			stringMap["ContainerId"] = containerID
 			stringMap["ContainerName"] = containerName
@@ -1703,6 +1736,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("AAD MSI Auth Mode Configured")
 	}
 	ResourceID = os.Getenv(envAKSResourceID)
+	ClusterResourceId = strings.ToUpper(ResourceID)
+	ClusterResourceRegion = os.Getenv(envAKSResourceRegion)
 
 	if len(ResourceID) > 0 {
 		//AKS Scenario
@@ -1788,6 +1823,12 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	if genevaLogsIntegrationEnabled != "" && strings.Compare(strings.ToLower(genevaLogsIntegrationEnabled), "true") == 0 {
 		IsGenevaLogsIntegrationEnabled = true
 		Log("Geneva Logs Integration Enabled")
+	}
+	genevaLogsShoeBoxMode := strings.TrimSpace(strings.ToLower(os.Getenv("GENEVA_LOGS_SHOEBOX_MODE")))
+	IsGenevaLogsShoeBoxMode = false
+	if genevaLogsShoeBoxMode != "" && strings.Compare(strings.ToLower(genevaLogsShoeBoxMode), "true") == 0 {
+		IsGenevaLogsShoeBoxMode = true
+		Log("Geneva Logs Shoebox Mode Enabled")
 	}
 
 	if strings.Compare(ContainerLogsRoute, ContainerLogsADXRoute) == 0 {

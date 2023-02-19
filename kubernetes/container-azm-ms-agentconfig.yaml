@@ -156,6 +156,8 @@ data:
         configversion = "<containerlogs geneva config version for linux>"
         windowsconfigversion = "<containerlogs geneva config version for windows>"
         namespacewindows = "<geneva logs account namespace for windows>"
+        # use the shoebox mode for the multi tenancy
+        enable_shoebox_mode = true
 
         # # when the multitenancy is true, container logs of the specific k8s namespace will be routed to corresponding geneva telemetry service endpoint
         # # logs of the infra namespaces if infra_namespaces_suffix specified, ingested to geneva account defined in this config

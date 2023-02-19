@@ -22,6 +22,8 @@ GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "Firstparty
 @infra_namespaces = ""
 @tenant_namespaces = ""
 @geneva_gcs_authid = ""
+# only applicable incase of multi-tenancy geneva mode
+@enable_shoebox_mode = false
 @containerType = ENV["CONTAINER_TYPE"]
 @azure_json_path = "/etc/kubernetes/host/azure.json"
 
@@ -59,6 +61,15 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           multi_tenancy = parsedConfig[:integrations][:geneva_logs][:multi_tenancy].to_s
           if !multi_tenancy.nil? && multi_tenancy.strip.casecmp("true") == 0
             @multi_tenancy = true
+          end
+
+          enable_shoebox_mode = parsedConfig[:integrations][:geneva_logs][:enable_shoebox_mode].to_s
+          if !enable_shoebox_mode.nil? && enable_shoebox_mode.strip.casecmp("true") == 0
+            if @multi_tenancy
+              @enable_shoebox_mode = true
+            else
+              puts "warn:ignoring enable_shoebox_mode setting since its only applicable in Multi-tenancy mode"
+            end
           end
 
           if @multi_tenancy
@@ -162,6 +173,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
           puts "Using config map value: GENEVA_LOGS_INTEGRATION=#{@geneva_logs_integration}"
           puts "Using config map value: GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}"
+          puts "Using config map value: GENEVA_LOGS_SHOEBOX_MODE=#{@enable_shoebox_mode}"
           puts "Using config map value: MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}"
           puts "Using config map value: MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}"
           puts "Using config map value: MONITORING_GCS_ACCOUNT=#{@geneva_account_name}"
@@ -254,6 +266,7 @@ if (@containerType.nil? || @containerType.empty?)
   if !file.nil?
     file.write("export GENEVA_LOGS_INTEGRATION=#{@geneva_logs_integration}\n")
     file.write("export GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}\n")
+    file.write("export GENEVA_LOGS_SHOEBOX_MODE=#{@enable_shoebox_mode}\n")
 
     file.write("export MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}\n")
     file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}\n")
@@ -286,6 +299,8 @@ if (@containerType.nil? || @containerType.empty?)
       commands = get_command_windows("GENEVA_LOGS_MULTI_TENANCY", @multi_tenancy)
       file.write(commands)
 
+      commands = get_command_windows("GENEVA_LOGS_SHOEBOX_MODE", @enable_shoebox_mode)
+      file.write(commands)
       commands = get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment)
       file.write(commands)
       commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace_windows)

@@ -74,6 +74,7 @@ const (
 	clusterTypeACS                                                    = "ACS"
 	clusterTypeAKS                                                    = "AKS"
 	envAKSResourceID                                                  = "AKS_RESOURCE_ID"
+	envAKSResourceRegion                                              = "AKS_REGION"
 	envACSResourceName                                                = "ACS_RESOURCE_NAME"
 	envAppInsightsAuth                                                = "APPLICATIONINSIGHTS_AUTH"
 	envAppInsightsEndpoint                                            = "APPLICATIONINSIGHTS_ENDPOINT"
