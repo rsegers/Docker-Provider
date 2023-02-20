@@ -1,6 +1,6 @@
 # Default base images. If you update them don't forgot to update variables in our build pipelines. Default values can be found in internal wiki. External can use ubuntu 18.04 and golang 1.18.3
 ARG GOLANG_BASE_IMAGE=
-ARG CI_BASE_IMAGE=mcr.microsoft.com/cbl-mariner/base/core:2.0
+ARG MARINER_IMAGE=mcr.microsoft.com/cbl-mariner/base/core:2.0
 
 FROM --platform=$BUILDPLATFORM ${GOLANG_BASE_IMAGE} AS golang-builder
 ARG TARGETOS TARGETARCH
@@ -11,7 +11,7 @@ COPY source /src/source
 RUN cd /src/build/linux && make arch=${TARGETARCH}
 
 
-FROM ${CI_BASE_IMAGE} AS base_image
+FROM ${MARINER_IMAGE} AS base_image
 ARG TARGETOS TARGETARCH
 MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
