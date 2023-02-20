@@ -29,8 +29,8 @@ ENV KUBE_CLIENT_BACKOFF_BASE 1
 ENV KUBE_CLIENT_BACKOFF_DURATION 0
 ENV RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR 0.9
 
-COPY logrotate /etc/cron.daily/logrotate
-COPY crontab /etc/crontab
+COPY kubernetes/linux/logrotate /etc/cron.daily/logrotate
+COPY kubernetes/linux/crontab /etc/crontab
 
 RUN tdnf install -y dnf && dnf clean expire-cache && dnf check-update
 RUN tdnf install -y wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk && rm -rf /var/lib/apt/lists/*
@@ -40,7 +40,7 @@ RUN chmod 775 /etc/cron.daily/logrotate
 
 COPY --from=golang-builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-cimprov-*.*.*-*.*.sh $tmpdir/
 COPY kubernetes/linux/setup.sh kubernetes/linux/main.sh kubernetes/linux/defaultpromenvvariables kubernetes/linux/defaultpromenvvariables-rs kubernetes/linux/defaultpromenvvariables-sidecar kubernetes/linux/mdsd.xml kubernetes/linux/envmdsd kubernetes/linux/logrotate.conf $tmpdir/
-COPY mariner-official-extras.repo /etc/yum.repos.d/
+COPY kubernetes/linux/mariner-official-extras.repo /etc/yum.repos.d/
 
 # default value will be overwritten by pipeline 
 ARG IMAGE_TAG=ciprod01182023-095c864a
