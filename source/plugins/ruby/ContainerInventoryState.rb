@@ -4,7 +4,7 @@
 class ContainerInventoryState
     require 'json'
     require_relative 'omslog'
-    
+    @@InventoryDirectory = ""
 
     def initialize
         os_type = ENV["OS_TYPE"]
