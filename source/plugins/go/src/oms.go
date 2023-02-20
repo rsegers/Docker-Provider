@@ -1172,7 +1172,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				return output.FLB_OK
 			}
 
-			NamespaceResourceId := ClusterResourceId + "/providers/Microsoft.KubernetesConfiguration/namespaces/" + k8sNamespace
+			NamespaceResourceId := strings.ToUpper(ClusterResourceId + "/providers/Microsoft.KubernetesConfiguration/namespaces/" + k8sNamespace)
 			stringMap["resourceId"] = NamespaceResourceId
 			stringMap["location"] = ClusterResourceRegion
 			stringMap["category"] = LogsCategory
@@ -1180,12 +1180,12 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			// gangams - validate this is valid format for OBO
 			// sample format 02-15-2023 10:45:59
 			time := fmt.Sprintf("%02d-%02d-%2d %02d:%02d:%02d",
-				time.Now().UTC().Month(),
-				time.Now().UTC().Day(),
-				time.Now().UTC().Year(),
-				time.Now().UTC().Hour(),
-				time.Now().UTC().Minute(),
-				time.Now().UTC().Second())
+				time.Now().Month(),
+				time.Now().Day(),
+				time.Now().Year(),
+				time.Now().Hour(),
+				time.Now().Minute(),
+				time.Now().Second())
 			stringMap["time"] = time
 			stringMap["properties"] = string(propertyMapJSON)
 		} else if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
@@ -1746,7 +1746,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("AAD MSI Auth Mode Configured")
 	}
 	ResourceID = os.Getenv(envAKSResourceID)
-	ClusterResourceId = strings.ToUpper(ResourceID)
+	ClusterResourceId = ResourceID
 	ClusterResourceRegion = os.Getenv(envAKSResourceRegion)
 	ClusterResourceRegion = strings.ReplaceAll(strings.ToLower(ClusterResourceRegion), " ", "")
 	if len(ResourceID) > 0 {

@@ -26,7 +26,7 @@
                 <Content><![CDATA[<Config onBehalfFields="resourceId,category"
                         priority="Normal"
                         primaryPartitionField="resourceId"
-                        excludeFields="Tenant,Role,RoleInstance,PreciseTimeStamp,TIMESTAMP"
+                        excludeFields="Tenant,Role,RoleInstance,PreciseTimeStamp,TIMESTAMP,AzureResourceId"
                         containerSuffix="$category"/>]]>
                 </Content>
             </OnBehalf>
