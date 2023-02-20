@@ -4,9 +4,15 @@
 class ContainerInventoryState
     require 'json'
     require_relative 'omslog'
-    @@InventoryDirectory = "/var/opt/microsoft/docker-cimprov/state/ContainerInventory/"
+    @@InventoryDirectory = ""
 
     def initialize
+        os_type = ENV["OS_TYPE"]
+        if !os_type.nil? && !os_type.empty? && os_type.strip.casecmp("windows") == 0
+            @@InventoryDirectory = "/opt/amalogswindows/state/ContainerInventory"
+        else
+            @@InventoryDirectory = "/var/opt/microsoft/docker-cimprov/state/ContainerInventory/"
+        end
     end
 
     class << self

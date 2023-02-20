@@ -37,6 +37,11 @@ module Fluent::Plugin
         @mutex = Mutex.new
         @thread = Thread.new(&method(:run_periodic))
         @@telemetryTimeTracker = DateTime.now.to_time.to_i
+        @isWindows = false
+        os_type = ENV["OS_TYPE"]
+        if !os_type.nil? && !os_type.empty? && os_type.strip.casecmp("windows") == 0
+          @isWindows = true
+        end
       end
     end
 
@@ -61,11 +66,6 @@ module Fluent::Plugin
       @namespaceFilteringMode = "off"
       @namespaces = []
       $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
-      @isWindows = false
-      @os_type = ENV["OS_TYPE"]
-      if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-        @isWindows = true
-      end
       if ExtensionUtils.isAADMSIAuthMode()
         $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
         if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
@@ -102,7 +102,8 @@ module Fluent::Plugin
                 if @addonTokenAdapterImageTag.empty? && ExtensionUtils.isAADMSIAuthMode()
                   if !containerRecord["ElementName"].nil? && !containerRecord["ElementName"].empty? &&
                      containerRecord["ElementName"].include?("_kube-system_") &&
-                     containerRecord["ElementName"].include?("addon-token-adapter_ama-logs")
+                     ( containerRecord["ElementName"].include?("addon-token-adapter_ama-logs") || 
+                     containerRecord["ElementName"].include?("addon-token-adapter-win_ama-logs"))
                     if !containerRecord["ImageTag"].nil? && !containerRecord["ImageTag"].empty?
                       @addonTokenAdapterImageTag = containerRecord["ImageTag"]
                     end
@@ -114,16 +115,18 @@ module Fluent::Plugin
             end
           end
         end
-        # Update the state for deleted containers
-        deletedContainers = ContainerInventoryState.getDeletedContainers(containerIds)
-        if !deletedContainers.nil? && !deletedContainers.empty?
-          deletedContainers.each do |deletedContainer|
-            container = ContainerInventoryState.readContainerState(deletedContainer)
-            if !container.nil?
-              container.each { |k, v| container[k] = v }
-              container["State"] = "Deleted"
-              KubernetesContainerInventory.deleteCGroupCacheEntryForDeletedContainer(container["InstanceID"])
-              containerInventory.push container
+        if !@isWindows
+          # Update the state for deleted containers
+          deletedContainers = ContainerInventoryState.getDeletedContainers(containerIds)
+          if !deletedContainers.nil? && !deletedContainers.empty?
+            deletedContainers.each do |deletedContainer|
+              container = ContainerInventoryState.readContainerState(deletedContainer)
+              if !container.nil?
+                container.each { |k, v| container[k] = v }
+                container["State"] = "Deleted"
+                KubernetesContainerInventory.deleteCGroupCacheEntryForDeletedContainer(container["InstanceID"])
+                containerInventory.push container
+              end
             end
           end
         end

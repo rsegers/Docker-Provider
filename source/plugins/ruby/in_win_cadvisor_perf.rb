@@ -42,6 +42,11 @@ module Fluent::Plugin
         @thread = Thread.new(&method(:run_periodic))
         @@winNodeQueryTimeTracker = DateTime.now.to_time.to_i
         @@cleanupRoutineTimeTracker = DateTime.now.to_time.to_i
+        @isWindows = false
+        os_type = ENV["OS_TYPE"]
+        if !os_type.nil? && !os_type.empty? && os_type.strip.casecmp("windows") == 0
+          @isWindows = true
+        end
       end
     end
 
@@ -61,11 +66,6 @@ module Fluent::Plugin
         timeDifference = (DateTime.now.to_time.to_i - @@winNodeQueryTimeTracker).abs
         timeDifferenceInMinutes = timeDifference / 60
         @@istestvar = ENV["ISTEST"]
-        @isWindows = false
-        @os_type = ENV["OS_TYPE"]
-        if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-          @isWindows = true
-        end
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_win_cadvisor_perf::enumerate: AAD AUTH MSI MODE")
           if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
@@ -98,6 +98,7 @@ module Fluent::Plugin
             end
           end
           router.emit_stream(@tag, eventStream) if eventStream
+          router.emit_stream(@mdmtag, eventStream) if eventStream
         end
 
         if !@isWindows
