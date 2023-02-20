@@ -193,11 +193,13 @@ mkdir -p /var/opt/microsoft/docker-cimprov/state
 echo "disabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
 
 #Run inotify as a daemon to track changes to the mounted configmap.
+touch /opt/inotifyoutput.txt
 inotifywait /etc/config/settings --daemon --recursive --outfile "/opt/inotifyoutput.txt" --event create,delete --format '%e : %T' --timefmt '+%s'
 
 #Run inotify as a daemon to track changes to the mounted configmap for OSM settings.
 if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSidecar")) ||
       ((-e "/etc/config/kube.conf") && ("${SIDECAR_SCRAPING_ENABLED}" == "false")) ]]; then
+      touch /opt/inotifyoutput-osm.txt
       inotifywait /etc/config/osm-settings --daemon --recursive --outfile "/opt/inotifyoutput-osm.txt" --event create,delete --format '%e : %T' --timefmt '+%s'
 fi
 
@@ -481,7 +483,7 @@ if [ ${#APPLICATIONINSIGHTS_AUTH_URL} -ge 1 ]; then # (check if APPLICATIONINSIG
       fi
 fi
 
-aikey=$(echo $APPLICATIONINSIGHTS_AUTH | base64 --decode)
+aikey=$(echo $APPLICATIONINSIGHTS_AUTH | base64 --d)
 export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey
 echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc
 
@@ -682,12 +684,15 @@ echo $NODE_NAME >/var/opt/microsoft/docker-cimprov/state/containerhostname
 cat /var/opt/microsoft/docker-cimprov/state/containerhostname
 
 #start cron daemon for logrotate
-service cron start
+# service cron start
+/usr/sbin/crond -n -s &
+
 #get  docker-provider versions
 
-dpkg -l | grep docker-cimprov | awk '{print $2 " " $3}'
+# dpkg -l | grep docker-cimprov | awk '{print $2 " " $3}'
 
-DOCKER_CIMPROV_VERSION=$(dpkg -l | grep docker-cimprov | awk '{print $3}')
+# DOCKER_CIMPROV_VERSION=$(dpkg -l | grep docker-cimprov | awk '{print $2}')
+DOCKER_CIMPROV_VERSION=$(cat /opt/dockercimprov_version.txt)
 echo "DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION"
 export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION
 echo "export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION" >>~/.bashrc
@@ -748,7 +753,8 @@ else
 fi
 source ~/.bashrc
 
-dpkg -l | grep mdsd | awk '{print $2 " " $3}'
+# dpkg -l | grep mdsd | awk '{print $2 " " $3}'
+echo "Azure mdsd version: $(mdsd --version)"
 
 if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
     if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
@@ -836,25 +842,25 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
             if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
                   echo "starting fluent-bit and setting telegraf conf file for prometheus sidecar"
-                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-prom-side-car.conf -e /opt/fluent-bit/bin/out_oms.so &
+                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-prom-side-car.conf -e /opt/fluent-bit/bin/out_oms.so &
             else
                   echo "not starting fluent-bit in prometheus sidecar (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
             fi
       else
             echo "starting fluent-bit and setting telegraf conf file for daemonset"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
-                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit.conf -e /opt/fluent-bit/bin/out_oms.so &
+                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit.conf -e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             else
                   echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
                   sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/fluent-bit.conf
-                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit.conf -e /opt/fluent-bit/bin/out_oms.so &
+                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit.conf -e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             fi
       fi
 else
       echo "starting fluent-bit and setting telegraf conf file for replicaset"
-      /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-rs.conf -e /opt/fluent-bit/bin/out_oms.so &
+      fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-rs.conf -e /opt/fluent-bit/bin/out_oms.so &
       telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf"
 fi
 
@@ -927,8 +933,9 @@ fi
 #start telegraf
 if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       /opt/telegraf --config $telegrafConfFile &
-      echo "telegraf version: $(/opt/telegraf --version)"
-      dpkg -l | grep fluent-bit | awk '{print $2 " " $3}'
+      echo "telegraf version: $(cat /opt/telegraf_version.txt)"
+      # dpkg -l | grep fluent-bit | awk '{print $2 " " $3}'
+      echo "$(fluent-bit --version)"
 else
       echo "not starting telegraf (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
 fi
@@ -939,10 +946,12 @@ fi
 touch /dev/write-to-traces
 
 echo "stopping rsyslog..."
-service rsyslog stop
+# service rsyslog stop
+systemctl stop rsyslog
 
 echo "getting rsyslog status..."
-service rsyslog status
+# service rsyslog status
+systemctl status rsyslog
 
 if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30

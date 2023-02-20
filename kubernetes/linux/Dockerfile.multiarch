@@ -1,8 +1,8 @@
 # Default base images. If you update them don't forgot to update variables in our build pipelines. Default values can be found in internal wiki. External can use ubuntu 18.04 and golang 1.18.3
 ARG GOLANG_BASE_IMAGE=
-ARG CI_BASE_IMAGE=
+ARG CI_BASE_IMAGE=mcr.microsoft.com/cbl-mariner/base/core:2.0
 
-FROM --platform=$BUILDPLATFORM ${GOLANG_BASE_IMAGE} AS builder
+FROM --platform=$BUILDPLATFORM ${GOLANG_BASE_IMAGE} AS golang-builder
 ARG TARGETOS TARGETARCH
 RUN /usr/bin/apt-get update && /usr/bin/apt-get install git g++ make pkg-config libssl-dev libpam0g-dev rpm librpm-dev uuid-dev libkrb5-dev python sudo gcc-aarch64-linux-gnu -y
 
@@ -28,10 +28,19 @@ ENV AZMON_COLLECT_ENV False
 ENV KUBE_CLIENT_BACKOFF_BASE 1
 ENV KUBE_CLIENT_BACKOFF_DURATION 0
 ENV RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR 0.9
-RUN /usr/bin/apt-get update && /usr/bin/apt-get install -y libc-bin wget openssl curl sudo python python-ctypes init-system-helpers  net-tools rsyslog cron vim dmidecode apt-transport-https gnupg make && rm -rf /var/lib/apt/lists/*
 
-COPY --from=builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-cimprov-*.*.*-*.*.sh $tmpdir/
+COPY logrotate /etc/cron.daily/logrotate
+COPY crontab /etc/crontab
+
+RUN tdnf install -y dnf && dnf clean expire-cache && dnf check-update
+RUN tdnf install -y wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk && rm -rf /var/lib/apt/lists/*
+RUN mkdir /busybin && busybox --install /busybin
+RUN chmod 775 /etc/cron.daily/logrotate
+# RUN /usr/bin/apt-get update && /usr/bin/apt-get install -y libc-bin wget openssl curl sudo python python-ctypes init-system-helpers  net-tools rsyslog cron vim dmidecode apt-transport-https gnupg make && rm -rf /var/lib/apt/lists/*
+
+COPY --from=golang-builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-cimprov-*.*.*-*.*.sh $tmpdir/
 COPY kubernetes/linux/setup.sh kubernetes/linux/main.sh kubernetes/linux/defaultpromenvvariables kubernetes/linux/defaultpromenvvariables-rs kubernetes/linux/defaultpromenvvariables-sidecar kubernetes/linux/mdsd.xml kubernetes/linux/envmdsd kubernetes/linux/logrotate.conf $tmpdir/
+COPY mariner-official-extras.repo /etc/yum.repos.d/
 
 # default value will be overwritten by pipeline 
 ARG IMAGE_TAG=ciprod01182023-095c864a
