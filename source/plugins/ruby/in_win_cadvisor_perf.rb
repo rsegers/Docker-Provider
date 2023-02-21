@@ -36,17 +36,17 @@ module Fluent::Plugin
 
     def start
       if @run_interval
+        @isWindows = false
+        os_type = ENV["OS_TYPE"]
+        if !os_type.nil? && !os_type.empty? && os_type.strip.casecmp("windows") == 0
+          @isWindows = true
+        end
         @finished = false
         @condition = ConditionVariable.new
         @mutex = Mutex.new
         @thread = Thread.new(&method(:run_periodic))
         @@winNodeQueryTimeTracker = DateTime.now.to_time.to_i
         @@cleanupRoutineTimeTracker = DateTime.now.to_time.to_i
-        @isWindows = false
-        os_type = ENV["OS_TYPE"]
-        if !os_type.nil? && !os_type.empty? && os_type.strip.casecmp("windows") == 0
-          @isWindows = true
-        end
       end
     end
 
