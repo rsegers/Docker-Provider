@@ -37,7 +37,6 @@ module Fluent::Plugin
         if !os_type.nil? && !os_type.empty? && os_type.strip.casecmp("windows") == 0
           @isWindows = true
         end
-        sleep 5
         @finished = false
         @condition = ConditionVariable.new
         @mutex = Mutex.new
@@ -116,18 +115,18 @@ module Fluent::Plugin
             end
           end
         end
-        if !@isWindows
-          # Update the state for deleted containers
-          deletedContainers = ContainerInventoryState.getDeletedContainers(containerIds)
-          if !deletedContainers.nil? && !deletedContainers.empty?
-            deletedContainers.each do |deletedContainer|
-              container = ContainerInventoryState.readContainerState(deletedContainer)
-              if !container.nil?
-                container.each { |k, v| container[k] = v }
-                container["State"] = "Deleted"
+        # Update the state for deleted containers
+        deletedContainers = ContainerInventoryState.getDeletedContainers(containerIds)
+        if !deletedContainers.nil? && !deletedContainers.empty?
+          deletedContainers.each do |deletedContainer|
+            container = ContainerInventoryState.readContainerState(deletedContainer)
+            if !container.nil?
+              container.each { |k, v| container[k] = v }
+              container["State"] = "Deleted"
+              if !@isWindows
                 KubernetesContainerInventory.deleteCGroupCacheEntryForDeletedContainer(container["InstanceID"])
-                containerInventory.push container
               end
+              containerInventory.push container
             end
           end
         end

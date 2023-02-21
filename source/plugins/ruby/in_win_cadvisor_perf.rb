@@ -61,6 +61,9 @@ module Fluent::Plugin
     end
 
     def enumerate()
+      if !@isWindows && ExtensionUtils.isAADMSIAuthMode()
+        return
+      end
       time = Fluent::Engine.now
       begin
         timeDifference = (DateTime.now.to_time.to_i - @@winNodeQueryTimeTracker).abs
