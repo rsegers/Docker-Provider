@@ -33,7 +33,6 @@ module Fluent::Plugin
     end
 
     def write(chunk)
-      end
       begin
         @semaphore.synchronize {
           pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
