@@ -1,4 +1,4 @@
-<MonitoringManagement eventVersion="2" version="1.0" timestamp="2022-11-08T00:00:00Z" namespace="kubecilogsobo">
+<MonitoringManagement eventVersion="1" version="1.0" timestamp="2022-11-08T00:00:00Z" namespace="kubecilogsobo">
 <Accounts>
    <Account moniker="kubecilogsobofp" isDefault="true" />
 </Accounts>
