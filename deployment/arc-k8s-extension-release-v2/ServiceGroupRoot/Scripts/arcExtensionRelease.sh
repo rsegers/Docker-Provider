@@ -12,7 +12,6 @@ CHART_VERSION=${CHART_VERSION}
 PACKAGE_CONFIG_NAME="${PACKAGE_CONFIG_NAME:-microsoft.azuremonitor.containers-pkg022022}"
 API_VERSION="${API_VERSION:-2021-05-01}"
 METHOD="${METHOD:-put}"
-REGISTRY_PATH_CANARY_PREVIEW="https://mcr.microsoft.com/azuremonitor/containerinsights/canary/preview/azuremonitor-containers"
 REGISTRY_PATH_CANARY_STABLE="https://mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
 REGISTRY_PATH_PROD_STABLE="https://mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
 
@@ -38,7 +37,7 @@ if [ -z "$RELEASE_TRAINS_PREVIEW_PATH" ]; then
     echo "-e error preview release train must be provided "
     exit 1
 fi
-CANARY_PREVIEW_MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/preview/azuremonitor-containers"
+MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
 echo "Pulling chart from MCR:${MCR_NAME_PATH}"
 helm chart pull ${MCR_NAME_PATH}:${CHART_VERSION}
 if [ $? -eq 0 ]; then
@@ -58,7 +57,7 @@ cat <<EOF > "request.json"
             "Releasetrains": [
                 $RELEASE_TRAINS_PREVIEW_PATH
             ],
-            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
+            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_STABLE",
             "ExtensionUpdateFrequencyInMinutes": 60,
             "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
             "ReadyforRollout": true,
@@ -82,7 +81,7 @@ if [ -z "$RELEASE_TRAINS_STABLE_PATH" ]; then
     echo "-e error stable release train must be provided "
     exit 1
 fi
-CANARY_STABLE_MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
+MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
 echo "Pulling chart from MCR:${MCR_NAME_PATH}"
 helm chart pull ${MCR_NAME_PATH}:${CHART_VERSION}
 if [ $? -eq 0 ]; then
@@ -102,7 +101,7 @@ cat <<EOF > "request.json"
             "Releasetrains": [
                 $RELEASE_TRAINS_PREVIEW_PATH
             ],
-            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
+            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_STABLE",
             "ExtensionUpdateFrequencyInMinutes": 60,
             "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
             "ReadyforRollout": true,
@@ -146,7 +145,7 @@ if [ -z "$REGISTER_REGIONS_BATCH" ]; then
     echo "-e error stable release regions must be provided "
     exit 1
 fi
-PROD_STABLE_MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
+MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
 echo "Pulling chart from MCR:${MCR_NAME_PATH}"
 helm chart pull ${MCR_NAME_PATH}:${CHART_VERSION}
 if [ $? -eq 0 ]; then
@@ -166,7 +165,7 @@ cat <<EOF > "request.json"
             "Releasetrains": [
                 $RELEASE_TRAINS_PREVIEW_PATH
             ],
-            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_PREVIEW",
+            "FullPathToHelmChart": "$REGISTRY_PATH_CANARY_STABLE",
             "ExtensionUpdateFrequencyInMinutes": 60,
             "IsCustomerHidden": $IS_CUSTOMER_HIDDEN,
             "ReadyforRollout": true,
