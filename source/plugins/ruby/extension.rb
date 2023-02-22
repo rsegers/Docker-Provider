@@ -160,6 +160,7 @@ class Extension
         clientNamedPipe.write(requestBodyJSON)
         resp = ''
         clientNamedPipe.sysread(Constants::CI_EXTENSION_CONFIG_MAX_BYTES, resp)
+        clientNamedPipe.close
       end
       if !resp.nil? && !resp.empty?
         respJSON = JSON.parse(resp)
