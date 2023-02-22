@@ -38,6 +38,7 @@ require "fileutils"
 @responseTimeout = "15s"
 @tlsCa = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 @insecureSkipVerify = true
+@podNamespace = "pod_namespace"
 
 # Checking to see if this is the daemonset or replicaset to parse config accordingly
 @controller = ENV["CONTROLLER_TYPE"]
@@ -111,6 +112,7 @@ def createPrometheusPluginsWithNamespaceSetting(monitorKubernetesPods, monitorKu
           pluginConfigsWithNamespaces += "\n[[inputs.prometheus]]
   interval = \"#{interval}\"
   monitor_kubernetes_pods = true
+  pod_namespace_label_name = \"#{@podNamespace}\"
   pod_scrape_scope = \"#{(@controller.casecmp(@replicaset) == 0) ? "cluster" : "node"}\"
   monitor_kubernetes_pods_namespace = \"#{namespace}\"
   kubernetes_label_selector = \"#{kubernetesLabelSelectors}\"

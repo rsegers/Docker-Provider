@@ -384,7 +384,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01182023-095c864a"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.2"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -475,7 +475,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: ama-logs-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01182023-095c864a"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.2"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -538,17 +538,16 @@ spec:
         nodeAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
-              - labelSelector:
-                matchExpressions:
-      # kubernetes.io/os label doesnt exist in k8s versions < 1.14  so make sure to choose label based on k8s version in aks yaml
-                  - key: kubernetes.io/os
-                    operator: In
-                    values:
-                    - linux
-                  - key: type
-                    operator: NotIn
-                    values:
-                      - virtual-kubelet
+            - matchExpressions:
+              # kubernetes.io/os label doesnt exist in k8s versions < 1.14  so make sure to choose label based on k8s version in aks yaml
+              - key: kubernetes.io/os
+                operator: In
+                values:
+                - linux
+              - key: type
+                operator: NotIn
+                values:
+                  - virtual-kubelet
       # Tolerate a NoSchedule taint on master that ACS Engine sets.
       tolerations:
         - operator: "Exists"
@@ -699,7 +698,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01182023-095c864a"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.2"
           imagePullPolicy: IfNotPresent
           # comment resources if VPA configured since the VPA will set these values
           resources:
@@ -794,21 +793,20 @@ spec:
                 - managed
           requiredDuringSchedulingIgnoredDuringExecution:
             nodeSelectorTerms:
-              - labelSelector:
-                matchExpressions:
-                  - key: kubernetes.io/os
-                    operator: In
-                    values:
-                    - linux
-                  - key: type
-                    operator: NotIn
-                    values:
-                      - virtual-kubelet
-      # The following label selector is removed for AKS, this is only required for non AKS
-                  - key: kubernetes.io/role
-                    operator: NotIn
-                    values:
-                      - master
+            - matchExpressions:
+                - key: kubernetes.io/os
+                  operator: In
+                  values:
+                  - linux
+                - key: type
+                  operator: NotIn
+                  values:
+                    - virtual-kubelet
+                # The following label selector is removed for AKS, this is only required for non AKS
+                - key: kubernetes.io/role
+                  operator: NotIn
+                  values:
+                    - master
       # The following tolerations are removed for AKS, this is only required for non AKS
       tolerations:
         - operator: "Exists"
@@ -886,7 +884,7 @@ spec:
             value: "3"
      containers:
        - name: ama-logs-windows
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod01182023-095c864a"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.2"
          imagePullPolicy: IfNotPresent
          resources:
           limits:

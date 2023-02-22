@@ -24,8 +24,8 @@ if [ -f /etc/profile.d/rvm.sh ]; then
     echo "[ -f /etc/profile.d/rvm.sh ] && source /etc/profile.d/rvm.sh" >> ~/.bashrc
 fi
 
-rvm install 3.1.1
-rvm --default use 3.1.1
+rvm install 3.1.3
+rvm --default use 3.1.3
 
 sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
@@ -33,9 +33,9 @@ sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
 
 #install oneagent - Official bits (3/14/2022)
 if [ "${ARCH}" != "arm64" ]; then
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/1.17.0/azure-mdsd_1.17.0-build.master.354_x86_64.deb" -O azure-mdsd.deb
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.25.0/azure-mdsd_1.25.0-build.master.476_x86_64.deb" -O azure-mdsd.deb
 else
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/1.17.1-arm64-master/azure-mdsd_1.17.1-build.master.366_aarch64.deb" -O azure-mdsd.deb
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.25.0/azure-mdsd_1.25.0-build.master.476_aarch64.deb" -O azure-mdsd.deb
 fi
 
 /usr/bin/dpkg -i $TMPDIR/azure-mdsd*.deb
@@ -57,10 +57,11 @@ sudo apt-get install jq=1.5+dfsg-2 -y
 #used to setcaps for ruby process to read /proc/env
 sudo apt-get install libcap2-bin -y
 
-wget https://dl.influxdata.com/telegraf/releases/telegraf-1.24.2_linux_$ARCH.tar.gz
-tar -zxvf telegraf-1.24.2_linux_$ARCH.tar.gz
+TELEGRAF_VERSION=1.25.2
+wget https://dl.influxdata.com/telegraf/releases/telegraf-${TELEGRAF_VERSION}_linux_${ARCH}.tar.gz
+tar -zxvf telegraf-${TELEGRAF_VERSION}_linux_${ARCH}.tar.gz
 
-mv /opt/telegraf-1.24.2/usr/bin/telegraf /opt/telegraf
+mv /opt/telegraf-${TELEGRAF_VERSION}/usr/bin/telegraf /opt/telegraf
 
 chmod 544 /opt/telegraf
 

@@ -111,6 +111,8 @@ spec:
        - name: CUSTOM_METRICS_ENDPOINT
          value: {{ .Values.amalogs.metricsEndpoint | quote }}
        {{- end }}
+       - name: IS_CUSTOM_CERT
+         value: {{ .Values.Azure.proxySettings.isCustomCert | quote }}
        securityContext:
          privileged: true
        ports:
