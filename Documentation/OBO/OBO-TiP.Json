@@ -1,0 +1,35 @@
+
+{
+    "incidentManagement": {
+       "incidentRoutingService": "Cluster Configuration",
+       "incidentRoutingTeam": "Cluster Configuration Triage"
+    },
+    "serviceTreeId": "2bbbdccc-fa4c-4f81-b9fd-12cd0234701c",
+    "manifestOwners": {
+      "claims": [
+        "ClusterConfiguration-PlatformServiceAdministrator"
+      ],
+      "reviewerAlias": [
+        "akubeconfig@microsoft.com"
+      ]
+    },
+    "displayName": "microsoft.kubernetesconfiguration/namespaces",
+    "name": "microsoft.kubernetesconfiguration/namespaces",
+    "getResourceApiVersion": "2021-12-01-preview",
+    "logs": {
+      "globalInfo": {
+        "serviceIdentity": "Microsoft.KubernetesConfiguration.Namespaces",
+        "version": "1.0",
+        "logsEnabled": true
+      },
+      "logCategories": [
+        {
+          "name": "ContainerLogs",
+          "displayName": "Container Stdout and Stderr Logs",
+          "categoryGroups": ["ContainerLogs"]
+        }
+      ]
+    }
+}
+
+
