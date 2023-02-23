@@ -36,14 +36,12 @@ class Extension
   end
 
   def get_output_named_pipe(datatypeId)
-    @cache_lock.synchronize {
-      if @datatype_to_named_pipe_mapping.has_key?(datatypeId)
-        return @datatype_to_named_pipe_mapping[datatypeId]
-      else
-        @datatype_to_named_pipe_mapping = get_namedpipe_mapping()
-        return @datatype_to_named_pipe_mapping[datatypeId]
-      end
-    }
+    if @datatype_to_named_pipe_mapping.has_key?(datatypeId)
+      return @datatype_to_named_pipe_mapping[datatypeId]
+    else
+      @datatype_to_named_pipe_mapping = get_namedpipe_mapping()
+      return @datatype_to_named_pipe_mapping[datatypeId]
+    end
   end
 
   def get_extension_settings()
