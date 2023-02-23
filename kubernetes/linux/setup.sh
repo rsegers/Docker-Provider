@@ -13,7 +13,7 @@ fi
 #upgrade apt to latest version
 # apt-get update && apt-get install -y apt && DEBIAN_FRONTEND=noninteractive apt-get install -y locales
 
-sudo tdnf install ruby-3.1.3
+sudo tdnf install ruby-3.1.3 -y
 
 # curl -sSL https://rvm.io/mpapis.asc | gpg --import -
 # curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
@@ -51,7 +51,7 @@ cp -f $TMPDIR/logrotate.conf /etc/logrotate.d/ci-agent
 #download inotify tools for watching configmap changes
 # sudo apt-get update
 # sudo apt-get install inotify-tools -y
-sudo tdnf check-update
+sudo tdnf check-update -y
 sudo tdnf install inotify-tools -y
 
 #used to parse response of kubelet apis
