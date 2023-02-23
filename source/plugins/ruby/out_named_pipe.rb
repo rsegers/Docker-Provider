@@ -3,7 +3,6 @@ require 'fluent/plugin/output'
 module Fluent::Plugin
   class NamedPipeOutput < Output
     Fluent::Plugin.register_output('named_pipe', self)
-    @@semaphore = Mutex.new
     helpers :formatter
 
     config_param :datatype, :string
@@ -25,28 +24,25 @@ module Fluent::Plugin
     end
 
     def format(tag, time, record)
-      if record != {}
-        return [tag, [[time, record]]].to_msgpack
-      else
-        return ""
-      end
+      @formatter.format(tag, time, record)
     end
 
-    def write(chunk)
+    def process(tag, es)
       begin
-        @@semaphore.synchronize {
-          pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
-          if !pipe_suffix.nil? && !pipe_suffix.empty?
-            pipe_name = "\\\\.\\pipe\\" + pipe_suffix
-            @log.info "Named pipe: #{pipe_name}"
-            pipe_handle = File.open(pipe_name, File::WRONLY)
-            chunk.write_to(pipe_handle)
+        pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
+        if !pipe_suffix.nil? && !pipe_suffix.empty?
+          pipe_name = "\\\\.\\pipe\\" + pipe_suffix
+          @log.info "out_named_pipe::Named pipe: #{pipe_name} for datatype: #{@datatype}"
+          pipe_handle = File.open(pipe_name, File::WRONLY)
+          es.each do |time, record|
+            bytes = pipe_handle.write @formatter.format(tag, time, [tag, [[time, record]]])
+            @log.info "out_named_pipe::Data bytes sent: #{bytes} for datatype: #{@datatype}"
             pipe_handle.flush
-            pipe_handle.close
-          else
-            @log.error "Couldn't get pipe name from extension config. will be retried."
           end
-        }
+          pipe_handle.close
+        else
+          @log.error "out_named_pipe::Couldn't get pipe name from extension config for datatype: #{@datatype}. will be retried."
+        end
       rescue Exception => e
         @log.info "Exception when writing to named pipe: #{e}"
         raise e
