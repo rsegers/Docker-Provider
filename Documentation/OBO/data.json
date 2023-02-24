@@ -1,0 +1,29 @@
+{
+    "id": "/subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.ContainerService/managedclusters/<clusterName>/providers/Microsoft.KubernetesConfiguration/Namespaces/kube-system/providers/microsoft.insights/diagnosticSettings/infra-logs",
+    "identity": null,
+    "kind": null,
+    "location": null,
+    "name": "infra-logs",
+    "properties": {
+      "eventHubAuthorizationRuleId": null,
+      "eventHubName": null,
+      "logAnalyticsDestinationType": null,
+      "logs": [
+        {
+          "category": "ContainerLogs",
+          "categoryGroup": null,
+          "enabled": true,
+          "retentionPolicy": {
+            "days": 0,
+            "enabled": false
+          }
+        }
+      ],
+      "metrics": [],
+      "serviceBusRuleId": null,
+      "storageAccountId": "/subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.Storage/storageAccounts/containerlogsinfra"
+
+    },
+    "tags": null,
+    "type": "Microsoft.Insights/diagnosticSettings"
+  }
