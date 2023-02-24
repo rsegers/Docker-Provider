@@ -32,8 +32,8 @@ ENV RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR 0.9
 COPY kubernetes/linux/logrotate /etc/cron.daily/logrotate
 COPY kubernetes/linux/crontab /etc/crontab
 
-RUN tdnf install -y dnf && dnf clean expire-cache && dnf check-update
-RUN tdnf install -y wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
+RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
+RUN tdnf install -y build-essential wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
 RUN mkdir /busybin && busybox --install /busybin
 RUN chmod 775 /etc/cron.daily/logrotate
 # RUN /usr/bin/apt-get update && /usr/bin/apt-get install -y libc-bin wget openssl curl sudo python python-ctypes init-system-helpers  net-tools rsyslog cron vim dmidecode apt-transport-https gnupg make && rm -rf /var/lib/apt/lists/*

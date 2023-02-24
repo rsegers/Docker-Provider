@@ -87,7 +87,7 @@ sudo tdnf install fluent-bit-1.9.6 -y
 # gem install fluentd -v "1.14.6" --no-document
 sudo tdnf install rubygem-fluentd-1.14.6 -y
 fluentd --setup ./fluent
-gem install gyoku iso8601 --no-doc
+gem install gyoku iso8601 bigdecimal --no-doc
 gem install tomlrb -v "2.0.1" --no-document
 
 

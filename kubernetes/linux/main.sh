@@ -6,6 +6,7 @@ setGlobalEnvVar() {
       export "$1"="$2"
       echo "export \"$1\"=\"$2\"" >> /opt/env_vars
 }
+touch /opt/env_vars
 echo "source /opt/env_vars" >> ~/.bashrc
 
 waitforlisteneronTCPport() {
