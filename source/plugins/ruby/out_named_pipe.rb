@@ -50,5 +50,27 @@ module Fluent::Plugin
       end
     end
 
+    def process(tag, es)
+      begin
+        pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
+        if !pipe_suffix.nil? && !pipe_suffix.empty?
+          pipe_name = "\\\\.\\pipe\\" + pipe_suffix
+          @log.info "out_named_pipe::Named pipe: #{pipe_name} for datatype: #{@datatype}"
+          pipe_handle = File.open(pipe_name, File::WRONLY)
+          es.each do |time, record|
+            bytes = pipe_handle.write @formatter.format(tag, time, record)
+            @log.info "out_named_pipe::Data bytes sent: #{bytes} for datatype: #{@datatype}"
+            pipe_handle.flush
+          end
+          pipe_handle.close
+        else
+          @log.error "out_named_pipe::Couldn't get pipe name from extension config for datatype: #{@datatype}. will be retried."
+        end
+      rescue Exception => e
+        @log.info "Exception when writing to named pipe: #{e}"
+        raise e
+      end
+    end
+
   end
 end
