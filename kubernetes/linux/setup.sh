@@ -71,6 +71,7 @@ sudo tdnf install libcap -y
 # chmod 544 /opt/telegraf
 sudo tdnf install telegraf-1.23.0 -y
 sudo tdnf list installed | grep telegraf | awk '{print $2}' > telegraf_version.txt
+mv /usr/bin/telegraf /opt/telegraf
 
 # Use wildcard version so that it doesnt require to touch this file
 /$TMPDIR/docker-cimprov-*.*.*-*.*.sh --install
