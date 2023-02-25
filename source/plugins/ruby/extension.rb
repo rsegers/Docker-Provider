@@ -21,6 +21,7 @@ class Extension
     @datatype_to_stream_id_mapping = {}
     @datatype_to_named_pipe_mapping = {}
     @cache_lock = Mutex.new
+    @clientNamedPipe = nil
     $log.info("Extension::initialize complete")
   end
 
@@ -153,12 +154,13 @@ class Extension
         clientSocket.flush
         resp = clientSocket.recv(Constants::CI_EXTENSION_CONFIG_MAX_BYTES)
       else
-        configPipe = "\\\\.\\pipe\\CAgentStream_CloudAgentInfo_AzureMonitorAgent"
-        clientNamedPipe = File.open(configPipe, "w+")
-        clientNamedPipe.write(requestBodyJSON)
+        if !@clientNamedPipe
+          configPipe = "\\\\.\\pipe\\CAgentStream_CloudAgentInfo_AzureMonitorAgent"
+          @clientNamedPipe = File.open(configPipe, "w+")
+        end
+        @clientNamedPipe.write(requestBodyJSON)
         resp = ''
-        clientNamedPipe.sysread(Constants::CI_EXTENSION_CONFIG_MAX_BYTES, resp)
-        clientNamedPipe.close
+        @clientNamedPipe.sysread(Constants::CI_EXTENSION_CONFIG_MAX_BYTES, resp)
       end
       if !resp.nil? && !resp.empty?
         respJSON = JSON.parse(resp)
