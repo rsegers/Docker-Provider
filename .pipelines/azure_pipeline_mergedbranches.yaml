@@ -27,20 +27,44 @@ jobs:
     name: Azure-Pipelines-CI-Test-EO
   steps:
   - task: ComponentGovernanceComponentDetection@0
-
+  ## dev builds are in format Major.Minor.Patch-CommitAheadCount-CommitId
+  ## prod release are in format Major.Minor.Patch
+  ## preview release are in format preview-Major.Minor.Patch
   - bash: |
-      commit=$(git rev-parse --short HEAD)
-      datetime=$(date +'%m%d%Y')
-      linuxImagetag="$datetime"-"$commit"
-      windowsImageTag=win-"$datetime"-"$commit"
+      commit=$(git describe) 
+      linuxImagetag="$commit"
+      windowsImageTag=win-"$commit"
+
+      telemetryTag=$commit
+      if [ -z "$TELEMETRY_TAG" ]
+        then
+          echo "\$TELEMETRY_TAG variable is not set"
+        else
+          telemetryTag=$TELEMETRY_TAG
+          echo "\$TELEMETRY_TAG is $TELEMETRY_TAG"
+      fi
+
+      linuxTelemetryTag="$telemetryTag"
+      windowsTelemetryTag=win-"$telemetryTag"
+
+      echo "linuxImagetag is $linuxImagetag"
+      echo "windowsImageTag is $windowsImageTag"
+      echo "linuxTelemetryTag is $linuxTelemetryTag"
+      echo "windowsTelemetryTag is $windowsTelemetryTag"
+
       echo "##vso[task.setvariable variable=linuxImagetag;isOutput=true]$linuxImagetag"
       echo "##vso[task.setvariable variable=windowsImageTag;isOutput=true]$windowsImageTag"
+      echo "##vso[task.setvariable variable=linuxTelemetryTag;isOutput=true]$linuxTelemetryTag"
+      echo "##vso[task.setvariable variable=windowsTelemetryTag;isOutput=true]$windowsTelemetryTag"
 
       cd $(Build.SourcesDirectory)/deployment/mergebranch-multiarch-agent-deployment/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz pushAgentToAcr.sh
 
       cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz ../../../../charts/azuremonitor-containers/ pushChartToAcr.sh
+    
+      cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension-release-v2/ServiceGroupRoot/Scripts
+      tar -czvf ../artifacts.tar.gz arcExtensionRelease.sh
     name: setup
 
   - task: CopyFiles@2
@@ -94,6 +118,7 @@ jobs:
     name: Azure-Pipelines-CI-Test-EO
   variables:
     linuxImagetag: $[ dependencies.common.outputs['setup.linuxImagetag'] ]
+    linuxTelemetryTag: $[ dependencies.common.outputs['setup.linuxTelemetryTag'] ]
 
   steps:
   - task: AzureCLI@2
@@ -117,14 +142,14 @@ jobs:
         az acr login -n ${{ variables.containerRegistry }}
 
         if [ "$(Build.Reason)" != "PullRequest" ]; then
-          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --push .
+          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --push .
 
           docker pull ${{ variables.repoImageName }}:$(linuxImagetag)
         else
-          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) .
+          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) .
 
           # load the multi-arch image to run tests
-          docker buildx build --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxImagetag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --load .
+          docker buildx build --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --load .
         fi
 
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
@@ -168,6 +193,7 @@ jobs:
     name: Azure-Pipelines-Windows-CI-Test-EO
   variables:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
+    windowsTelemetryTag: $[ dependencies.common.outputs['setup.windowsTelemetryTag'] ]
     windows2019BaseImageVersion: ltsc2019
   steps:
   - task: PowerShell@2
@@ -198,7 +224,7 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsImageTag) .
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
         if ("$(Build.Reason)" -ne "PullRequest") {
            docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
         }
@@ -210,6 +236,7 @@ jobs:
     name: Azure-Pipelines-Windows-CI-Test-EO
   variables:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
+    windowsTelemetryTag: $[ dependencies.common.outputs['setup.windowsTelemetryTag'] ]
     windows2022BaseImageVersion: ltsc2022
   steps:
   - task: PowerShell@2
@@ -240,7 +267,7 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsImageTag) .
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
         if ("$(Build.Reason)" -ne "PullRequest") {
            docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
         }
@@ -254,6 +281,7 @@ jobs:
     name: Azure-Pipelines-Windows-CI-Test-EO
   variables:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
+    windowsTelemetryTag: $[ dependencies.common.outputs['setup.windowsTelemetryTag'] ]
     windows2019BaseImageVersion: ltsc2019
     windows2022BaseImageVersion: ltsc2022
   steps:

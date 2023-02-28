@@ -433,11 +433,14 @@ fi
 # These need to be copied to a different location for Mariner vs Ubuntu containers.
 # OS_ID here is the container distro.
 # Adding Mariner now even though the elif will never currently evaluate.
-if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
+if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ $IS_CUSTOM_CERT == "true" ]; then
   OS_ID=$(cat /etc/os-release | grep ^ID= | cut -d '=' -f2 | tr -d '"' | tr -d "'")
   if [ $OS_ID == "mariner" ]; then
     cp /anchors/ubuntu/* /etc/pki/ca-trust/source/anchors
     cp /anchors/mariner/* /etc/pki/ca-trust/source/anchors
+    if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+      cp /etc/ama-logs-secret/PROXYCERT.crt /etc/pki/ca-trust/source/PROXYCERT.crt
+    fi
     update-ca-trust
   else
     if [ $OS_ID != "ubuntu" ]; then
@@ -445,6 +448,9 @@ if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ]; then
     fi
     cp /anchors/ubuntu/* /usr/local/share/ca-certificates/
     cp /anchors/mariner/* /usr/local/share/ca-certificates/
+    if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+      cp /etc/ama-logs-secret/PROXYCERT.crt /usr/local/share/ca-certificates/PROXYCERT.crt
+    fi
     update-ca-certificates
     cp /etc/ssl/certs/ca-certificates.crt /usr/lib/ssl/cert.pem
   fi
@@ -531,6 +537,8 @@ if [ -e "telemetry_prom_config_env_var" ]; then
             echo $line >>~/.bashrc
       done
       source telemetry_prom_config_env_var
+else
+      setGlobalEnvVar TELEMETRY_CUSTOM_PROM_MONITOR_PODS false
 fi
 
 #Parse sidecar agent settings for custom configuration
@@ -576,6 +584,8 @@ if [[ ( ( ! -e "/etc/config/kube.conf" ) && ( "${CONTAINER_TYPE}" == "Prometheus
                   echo $line >>~/.bashrc
             done
             source integration_osm_config_env_var
+      else
+            setGlobalEnvVar TELEMETRY_OSM_CONFIGURATION_NAMESPACES_COUNT 0
       fi
 fi
 

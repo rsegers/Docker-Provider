@@ -9,11 +9,31 @@ additional questions or comments.
 
 ## Release History
 
+Note: Starting 02/21/2023 we have moved to the semver versioning system for naming image tags with the release 3.1.2
+
+### 02/21/2023 -
+##### Version microsoft/oms:3.1.2 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.2 (linux)
+##### Version microsoft/oms:win-3.1.2 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.2 (windows)
+##### Code change log
+- Common
+  - Move to semver versioning system for naming imageTags
+  - Fix bug in overwriting prometheus namespace
+  - Fix kube events timestamp using metadata timestamp
+  - Moved syslog telemetry from AI to pod inventory
+  - Update telegraf to version 1.25.2
+  - Fix bug wherein sidecar container was not muted by default
+  - Removed labelSelector from ama-logs.yaml and helm charts
+  - Update fluent-bit to version 2.0.5
+  - Enabled multiline support for ContainerLogV2 via configmap
+- Linux Agent
+  - Update mdsd to version 1.25.0
+  - Update ruby to version 3.1.3
+
 Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate the agent build dates (not release dates)
 
-### 01/09/2023 -
-##### Version microsoft/oms:ciprod01092023-864ecd78 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01092023-864ecd78 (linux)
-##### Version microsoft/oms:win-ciprod01092023-864ecd78 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod01092023-864ecd78 (windows)
+### 01/18/2023 -
+##### Version microsoft/oms:ciprod01182023-095c864a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01182023-095c864a (linux)
+##### Version microsoft/oms:win-ciprod01182023-095c864a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod01182023-095c864a (windows)
 ##### Code change log
 - Linux Agent
   - Replace ifconfig.co url with mcr.microsoft.com for network connectivity test
@@ -21,9 +41,9 @@ Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate
 - Common
   - Added the config option to ignore proxy settings for the AMPLS + Proxy environment
   - Changes to the MSI Onboarding ARM templates for handling DCR naming and handling the scenario where DCR name is more than 64 characters and also removing the spaces in the workspace region if user inputs the workspace region name with spaces
-  - Add specific master/control-plane toleration key to fix the node upgrade issue in Arc extension. 
-  - AKS, Arc K8s and Provisioned cluster template updates for Data collection settings. 
-  - Implementation of Data collection settings for Cost optimization feature 
+  - Add specific master/control-plane toleration key to fix the node upgrade issue in Arc extension.
+  - AKS, Arc K8s and Provisioned cluster template updates for Data collection settings.
+  - Implementation of Data collection settings for Cost optimization feature
   - Telemetry to track data collection settings enablement and settings
   - Agent rename changes for the Azure Arc Provisioned cluster onboarding templates
   - Update for troubleshooting script for collecting syslog data

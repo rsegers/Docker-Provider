@@ -1,26 +1,10 @@
-# telegraf vulnerabilities
+# telegraf vulnerabilities legacy MEDIUM Severity
 CVE-2019-3826
-CVE-2022-29190
-CVE-2022-29222
-CVE-2022-29189
-CVE-2022-1996
-CVE-2022-27664
-CVE-2022-32149
 CVE-2022-23471
 
-#dpkg vulnerability in ubuntu
-CVE-2022-2526
-
-#https://avd.aquasec.com/nvd/cve-2021-33621
-CVE-2021-33621
-
-#https://avd.aquasec.com/nvd/2022/cve-2022-41717/
-CVE-2022-41717
-
-#https://avd.aquasec.com/nvd/cve-2022-41721 
-CVE-2022-41721
-
+# telegraf vulnerabilities
 GHSA-4xgv-j62q-h3rj
 GHSA-hxp2-xqf3-v83h
-CVE-2023-25173
 CVE-2023-25153
+CVE-2023-25173
+
