@@ -1,0 +1,3 @@
+{
+  "allow-nondistributable-artifacts": ["containerinsightsprod.azurecr.io"]
+}
