@@ -216,6 +216,9 @@ jobs:
       scriptType: ps
       scriptLocation: inlineScript
       inlineScript: |
+        cp $(System.DefaultWorkingDirectory)\.pipelines\daemon.json C:\ProgramData\docker\config\daemon.json
+        restart-service docker
+
         mkdir -p $(Build.ArtifactStagingDirectory)/windows
         cd kubernetes/windows
 
@@ -259,6 +262,9 @@ jobs:
       scriptType: ps
       scriptLocation: inlineScript
       inlineScript: |
+        cp $(System.DefaultWorkingDirectory)\.pipelines\daemon.json C:\ProgramData\docker\config\daemon.json
+        restart-service docker
+
         mkdir -p $(Build.ArtifactStagingDirectory)/windows
         cd kubernetes/windows
 
