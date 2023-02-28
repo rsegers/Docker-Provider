@@ -43,18 +43,18 @@ module Fluent::Plugin
           pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
           if !pipe_suffix.nil? && !pipe_suffix.empty?
             pipe_name = "\\\\.\\pipe\\" + pipe_suffix
-            @log.info "Named pipe: #{pipe_name}"
+            @log.info "out_named_pipe::Named pipe: #{pipe_name}"
             $pipe_handle = File.open(pipe_name, File::WRONLY)
-            @log.info "Pipe handle : #{$pipe_handle}"
+            @log.info "out_named_pipe::Pipe handle : #{$pipe_handle}"
           else
-            @log.info "No pipe_suffix found. will be retried"
+            @log.info "out_named_pipe::No pipe_suffix found. will be retried"
           end
         end
         if $pipe_handle
-          @log.info "Inside the write part ; #{@datatype}"
+          @log.info "out_named_pipe::Writing for datatype: #{@datatype}"
           chunk.write_to($pipe_handle)
         else
-            @log.info "No pipe handle"
+            @log.info "out_named_pipe::No pipe handle"
         end
       rescue Exception => e
         @log.info "Exception when writing to named pipe: #{e}"
