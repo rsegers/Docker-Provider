@@ -216,6 +216,7 @@ jobs:
       scriptType: ps
       scriptLocation: inlineScript
       inlineScript: |
+        New-Item -ItemType Directory -Force -Path C:\ProgramData\docker\config
         cp $(System.DefaultWorkingDirectory)\.pipelines\daemon.json C:\ProgramData\docker\config\daemon.json
         restart-service docker
 
@@ -262,6 +263,7 @@ jobs:
       scriptType: ps
       scriptLocation: inlineScript
       inlineScript: |
+        New-Item -ItemType Directory -Force -Path C:\ProgramData\docker\config
         cp $(System.DefaultWorkingDirectory)\.pipelines\daemon.json C:\ProgramData\docker\config\daemon.json
         restart-service docker
 
