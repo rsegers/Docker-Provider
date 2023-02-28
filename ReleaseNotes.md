@@ -11,7 +11,14 @@ additional questions or comments.
 
 Note: Starting 02/21/2023 we have moved to the semver versioning system for naming image tags with the release 3.1.2
 
-### 02/21/2023 -
+### 02/27/2023 - 
+##### Version microsoft/oms:3.1.3 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.3 (linux)
+##### Version microsoft/oms:win-3.1.3 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.3 (windows)
+##### Code change log
+- Refer to version 3.1.2
+- mdsd version reverted to 1.17.0 (Linux)
+
+### 02/21/2023 - (not released)
 ##### Version microsoft/oms:3.1.2 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.2 (linux)
 ##### Version microsoft/oms:win-3.1.2 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.2 (windows)
 ##### Code change log

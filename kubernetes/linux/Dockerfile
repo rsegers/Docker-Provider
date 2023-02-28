@@ -19,7 +19,7 @@ RUN /usr/bin/apt-get update && /usr/bin/apt-get install -y libc-bin wget openssl
 COPY setup.sh main.sh defaultpromenvvariables defaultpromenvvariables-rs defaultpromenvvariables-sidecar mdsd.xml envmdsd logrotate.conf $tmpdir/
 
 # default value will be overwritten by pipeline 
-ARG IMAGE_TAG=3.1.2
+ARG IMAGE_TAG=3.1.3
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 WORKDIR ${tmpdir}

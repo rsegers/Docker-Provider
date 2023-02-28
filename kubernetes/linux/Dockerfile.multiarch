@@ -34,7 +34,7 @@ COPY --from=builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-c
 COPY kubernetes/linux/setup.sh kubernetes/linux/main.sh kubernetes/linux/defaultpromenvvariables kubernetes/linux/defaultpromenvvariables-rs kubernetes/linux/defaultpromenvvariables-sidecar kubernetes/linux/mdsd.xml kubernetes/linux/envmdsd kubernetes/linux/logrotate.conf $tmpdir/
 
 # default value will be overwritten by pipeline 
-ARG IMAGE_TAG=3.1.2
+ARG IMAGE_TAG=3.1.3
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 WORKDIR ${tmpdir}
