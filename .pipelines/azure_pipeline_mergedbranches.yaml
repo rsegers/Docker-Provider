@@ -214,7 +214,9 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:win-foreign-$(windows2019BaseImageVersion) -f Dockerfile.foreignlayers .
+        docker pull mcr.microsoft.com/azuremonitor/containerinsights/ciprod@sha256:970a9579916772a39fff85bdcf5ac5e21a2c10851ffa39a48205880119da5a89
+        docker tag mcr.microsoft.com/azuremonitor/containerinsights/ciprod@sha256:970a9579916772a39fff85bdcf5ac5e21a2c10851ffa39a48205880119da5a89 ${{ variables.repoImageName }}:win-foreign-$(windows2019BaseImageVersion)
+
         docker push ${{ variables.repoImageName }}:win-foreign-$(windows2019BaseImageVersion)
 
 - job: build_windows_2022
@@ -245,7 +247,8 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:win-foreign-$(windows2022BaseImageVersion) -f Dockerfile.foreignlayers .
+        docker pull mcr.microsoft.com/azuremonitor/containerinsights/ciprod@sha256:ef22ce267432f13f38f49cf627ae2af06ee04899d9c252794df487b145a3d486
+        docker tag mcr.microsoft.com/azuremonitor/containerinsights/ciprod@sha256:ef22ce267432f13f38f49cf627ae2af06ee04899d9c252794df487b145a3d486 ${{ variables.repoImageName }}:win-foreign-$(windows2022BaseImageVersion)
         docker push ${{ variables.repoImageName }}:win-foreign-$(windows2022BaseImageVersion)
 
 - job: build_windows_multi_arc
