@@ -8,3 +8,6 @@ GHSA-hxp2-xqf3-v83h
 CVE-2023-25153
 CVE-2023-25173
 
+# ubuntu base vulnerabilities
+CVE-2022-48303
+
