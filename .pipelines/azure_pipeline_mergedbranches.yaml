@@ -187,8 +187,6 @@ jobs:
       artifactName: drop
 
 - job: build_windows_2019
-  dependsOn:
-  -  common
   pool:
     name: Azure-Pipelines-Windows-CI-Test-EO
   variables:
@@ -196,19 +194,6 @@ jobs:
     windowsTelemetryTag: $[ dependencies.common.outputs['setup.windowsTelemetryTag'] ]
     windows2019BaseImageVersion: ltsc2019
   steps:
-  - task: PowerShell@2
-    inputs:
-      targetType: 'filePath'
-      filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
-    displayName: 'install prereqs'
-
-  - script: |
-      setlocal enabledelayedexpansion
-      powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
-      endlocal
-      exit /B %ERRORLEVEL%
-    displayName: 'build base'
-
   - task: AzureCLI@2
     displayName: "Docker windows build for ltsc2019"
     inputs:
@@ -220,22 +205,19 @@ jobs:
         cp $(System.DefaultWorkingDirectory)\.pipelines\daemon.json C:\ProgramData\docker\config\daemon.json
         restart-service docker
 
-        mkdir -p $(Build.ArtifactStagingDirectory)/windows
-        cd kubernetes/windows
+        mkdir -p $(Build.ArtifactStagingDirectory)/temp
+        cp $(System.DefaultWorkingDirectory)\.pipelines\Dockerfile.foreignlayers $(Build.ArtifactStagingDirectory)\temp\Dockerfile.foreignlayers
+        cd $(Build.ArtifactStagingDirectory)/temp
 
         az --version
         az account show
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
-        if ("$(Build.Reason)" -ne "PullRequest") {
-           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
-        }
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:win-foreign-$(windows2019BaseImageVersion) -f Dockerfile.foreignlayers .
+        docker push ${{ variables.repoImageName }}:win-foreign-$(windows2019BaseImageVersion)
 
 - job: build_windows_2022
-  dependsOn:
-  -  common
   pool:
     name: Azure-Pipelines-Windows-CI-Test-EO
   variables:
@@ -243,19 +225,6 @@ jobs:
     windowsTelemetryTag: $[ dependencies.common.outputs['setup.windowsTelemetryTag'] ]
     windows2022BaseImageVersion: ltsc2022
   steps:
-  - task: PowerShell@2
-    inputs:
-      targetType: 'filePath'
-      filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
-    displayName: 'install prereqs'
-
-  - script: |
-      setlocal enabledelayedexpansion
-      powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
-      endlocal
-      exit /B %ERRORLEVEL%
-    displayName: 'build base'
-
   - task: AzureCLI@2
     displayName: "Docker windows build for ltsc2022"
     inputs:
@@ -267,18 +236,17 @@ jobs:
         cp $(System.DefaultWorkingDirectory)\.pipelines\daemon.json C:\ProgramData\docker\config\daemon.json
         restart-service docker
 
-        mkdir -p $(Build.ArtifactStagingDirectory)/windows
-        cd kubernetes/windows
+        mkdir -p $(Build.ArtifactStagingDirectory)/temp
+        cp $(System.DefaultWorkingDirectory)\.pipelines\Dockerfile.foreignlayers $(Build.ArtifactStagingDirectory)\temp\Dockerfile.foreignlayers
+        cd $(Build.ArtifactStagingDirectory)/temp
 
         az --version
         az account show
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
-        if ("$(Build.Reason)" -ne "PullRequest") {
-           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
-        }
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:win-foreign-$(windows2022BaseImageVersion) -f Dockerfile.foreignlayers .
+        docker push ${{ variables.repoImageName }}:win-foreign-$(windows2022BaseImageVersion)
 
 - job: build_windows_multi_arc
   dependsOn:
@@ -308,12 +276,10 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        @{"image.name"="${{ variables.repoImageName }}:$(windowsImageTag)"} | ConvertTo-Json -Compress | Out-File -Encoding ascii $(Build.ArtifactStagingDirectory)/windows/metadata.json
 
-        if ("$(Build.Reason)" -ne "PullRequest") {
-           docker manifest create ${{ variables.repoImageName }}:$(windowsImageTag) ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion) ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
-           docker manifest push ${{ variables.repoImageName }}:$(windowsImageTag)
-        }
+        docker manifest create ${{ variables.repoImageName }}:win-foreign ${{ variables.repoImageName }}:win-foreign-$(windows2019BaseImageVersion) ${{ variables.repoImageName }}:win-foreign-$(windows2022BaseImageVersion)
+        docker manifest push ${{ variables.repoImageName }}:win-foreign
+
   - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
     displayName: 'Generation Task'
     condition: eq(variables.IS_PR, true)
