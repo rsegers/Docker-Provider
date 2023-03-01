@@ -9,11 +9,11 @@ additional questions or comments.
 
 ## Release History
 
-Note: Starting 02/21/2023 we have moved to the semver versioning system for naming image tags with the release 3.1.2
+Note: Starting 03/01/2023 we have moved to the semver versioning system for naming image tags with the release 3.1.4
 
-### 02/21/2023 -
-##### Version microsoft/oms:3.1.2 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.2 (linux)
-##### Version microsoft/oms:win-3.1.2 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.2 (windows)
+### 03/01/2023 -
+##### Version microsoft/oms:3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4 (linux)
+##### Version microsoft/oms:win-3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.4 (windows)
 ##### Code change log
 - Common
   - Move to semver versioning system for naming imageTags
@@ -26,8 +26,9 @@ Note: Starting 02/21/2023 we have moved to the semver versioning system for nami
   - Update fluent-bit to version 2.0.5
   - Enabled multiline support for ContainerLogV2 via configmap
 - Linux Agent
-  - Update mdsd to version 1.25.0
   - Update ruby to version 3.1.3
+- Windows Agent
+  - Fix podName missing bug in ContainerLogV2
 
 Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate the agent build dates (not release dates)
 
