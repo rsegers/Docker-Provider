@@ -165,7 +165,7 @@ class Extension
             @clientNamedPipe.write(requestBodyJSON)
             @clientNamedPipe.sysread(Constants::CI_EXTENSION_CONFIG_MAX_BYTES, resp)
           rescue Exception => e
-            @log.info "Extension::get_extension_configs Exception when connecting to named pipe: #{e}"
+            $log.info "Extension::get_extension_configs Exception when connecting to named pipe: #{e}"
             if @clientNamedPipe
               @clientNamedPipe.close
               @clientNamedPipe = nil
