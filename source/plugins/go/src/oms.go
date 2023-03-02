@@ -326,8 +326,8 @@ type ContainerLogBlobLAv2 struct {
 
 // MsgPackEntry represents the object corresponding to a single messagepack event in the messagepack stream
 type MsgPackEntry struct {
-	Time   int64             `msg:"time"`
-	Record map[string]string `msg:"record"`
+	Time   int64                  `msg:"time"`
+	Record map[string]interface{} `msg:"record"`
 }
 
 //MsgPackForward represents a series of messagepack events in Forward Mode
@@ -630,7 +630,7 @@ func flushKubeMonAgentEventRecords() {
 							Tags:           fmt.Sprintf("%s", tagJson),
 						}
 						laKubeMonAgentEventsRecords = append(laKubeMonAgentEventsRecords, laKubeMonAgentEventsRecord)
-						var stringMap map[string]string
+						var stringMap map[string]interface{}
 						jsonBytes, err := json.Marshal(&laKubeMonAgentEventsRecord)
 						if err != nil {
 							message := fmt.Sprintf("Error while Marshalling laKubeMonAgentEventsRecord to json bytes: %s", err.Error())
@@ -669,7 +669,7 @@ func flushKubeMonAgentEventRecords() {
 							Tags:           fmt.Sprintf("%s", tagJson),
 						}
 						laKubeMonAgentEventsRecords = append(laKubeMonAgentEventsRecords, laKubeMonAgentEventsRecord)
-						var stringMap map[string]string
+						var stringMap map[string]interface{}
 						jsonBytes, err := json.Marshal(&laKubeMonAgentEventsRecord)
 						if err != nil {
 							message := fmt.Sprintf("Error while Marshalling laKubeMonAgentEventsRecord to json bytes: %s", err.Error())
@@ -718,7 +718,7 @@ func flushKubeMonAgentEventRecords() {
 						Tags:           fmt.Sprintf("%s", tagJson),
 					}
 					laKubeMonAgentEventsRecords = append(laKubeMonAgentEventsRecords, laKubeMonAgentEventsRecord)
-					var stringMap map[string]string
+					var stringMap map[string]interface{}
 					jsonBytes, err := json.Marshal(&laKubeMonAgentEventsRecord)
 					if err != nil {
 						message := fmt.Sprintf("Error while Marshalling laKubeMonAgentEventsRecord to json bytes: %s", err.Error())
@@ -928,7 +928,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 
 		for i = 0; i < len(laMetrics); i++ {
 			var interfaceMap map[string]interface{}
-			stringMap := make(map[string]string)
+			stringMap := make(map[string]interface{})
 			jsonBytes, err := json.Marshal(*laMetrics[i])
 			if err != nil {
 				message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:when marshalling json %q", err)
@@ -1100,7 +1100,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	var dataItemsADX []DataItemADX
 
 	var msgPackEntries []MsgPackEntry
-	var stringMap map[string]string
+	var stringMap map[string]interface{}
 	var propertyMap map[string]string
 	var elapsed time.Duration
 
@@ -1134,7 +1134,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 		}
 
-		stringMap = make(map[string]string)
+		stringMap = make(map[string]interface{})
 		//below id & name are used by latency telemetry in both v1 & v2 LA schemas
 		id := ""
 		name := ""
@@ -1177,16 +1177,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			stringMap["location"] = ClusterResourceRegion
 			stringMap["category"] = LogsCategory
 			stringMap["operationName"] = LogsOperationName
-			// gangams - validate this is valid format for OBO
-			// sample format 02-15-2023 10:45:59
-			time := fmt.Sprintf("%02d-%02d-%2d %02d:%02d:%02d",
-				time.Now().Month(),
-				time.Now().Day(),
-				time.Now().Year(),
-				time.Now().Hour(),
-				time.Now().Minute(),
-				time.Now().Second())
-			stringMap["time"] = time
+			stringMap["time"] = time.Now().UTC()
 			stringMap["properties"] = string(propertyMapJSON)
 		} else if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
@@ -1220,7 +1211,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		var dataItemADX DataItemADX
 		var msgPackEntry MsgPackEntry
 
-		FlushedRecordsSize += float64(len(stringMap["LogEntry"]))
+		FlushedRecordsSize += float64(len(stringMap["LogEntry"].(string)))
 
 		if ContainerLogsRouteV2 == true {
 			msgPackEntry = MsgPackEntry{
@@ -1237,50 +1228,50 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				stringMap["AzureResourceId"] = ""
 			}
 			dataItemADX = DataItemADX{
-				TimeGenerated:   stringMap["TimeGenerated"],
-				Computer:        stringMap["Computer"],
-				ContainerId:     stringMap["ContainerId"],
-				ContainerName:   stringMap["ContainerName"],
-				PodName:         stringMap["PodName"],
-				PodNamespace:    stringMap["PodNamespace"],
-				LogMessage:      stringMap["LogMessage"],
-				LogSource:       stringMap["LogSource"],
-				AzureResourceId: stringMap["AzureResourceId"],
+				TimeGenerated:   stringMap["TimeGenerated"].(string),
+				Computer:        stringMap["Computer"].(string),
+				ContainerId:     stringMap["ContainerId"].(string),
+				ContainerName:   stringMap["ContainerName"].(string),
+				PodName:         stringMap["PodName"].(string),
+				PodNamespace:    stringMap["PodNamespace"].(string),
+				LogMessage:      stringMap["LogMessage"].(string),
+				LogSource:       stringMap["LogSource"].(string),
+				AzureResourceId: stringMap["AzureResourceId"].(string),
 			}
 			//ADX
 			dataItemsADX = append(dataItemsADX, dataItemADX)
 		} else {
 			if ContainerLogSchemaV2 == true {
 				dataItemLAv2 = DataItemLAv2{
-					TimeGenerated: stringMap["TimeGenerated"],
-					Computer:      stringMap["Computer"],
-					ContainerId:   stringMap["ContainerId"],
-					ContainerName: stringMap["ContainerName"],
-					PodName:       stringMap["PodName"],
-					PodNamespace:  stringMap["PodNamespace"],
-					LogMessage:    stringMap["LogMessage"],
-					LogSource:     stringMap["LogSource"],
+					TimeGenerated: stringMap["TimeGenerated"].(string),
+					Computer:      stringMap["Computer"].(string),
+					ContainerId:   stringMap["ContainerId"].(string),
+					ContainerName: stringMap["ContainerName"].(string),
+					PodName:       stringMap["PodName"].(string),
+					PodNamespace:  stringMap["PodNamespace"].(string),
+					LogMessage:    stringMap["LogMessage"].(string),
+					LogSource:     stringMap["LogSource"].(string),
 				}
 				//ODS-v2 schema
 				dataItemsLAv2 = append(dataItemsLAv2, dataItemLAv2)
-				name = stringMap["ContainerName"]
-				id = stringMap["ContainerId"]
+				name = stringMap["ContainerName"].(string)
+				id = stringMap["ContainerId"].(string)
 			} else {
 				dataItemLAv1 = DataItemLAv1{
-					ID:                    stringMap["Id"],
-					LogEntry:              stringMap["LogEntry"],
-					LogEntrySource:        stringMap["LogEntrySource"],
-					LogEntryTimeStamp:     stringMap["LogEntryTimeStamp"],
-					LogEntryTimeOfCommand: stringMap["TimeOfCommand"],
-					SourceSystem:          stringMap["SourceSystem"],
-					Computer:              stringMap["Computer"],
-					Image:                 stringMap["Image"],
-					Name:                  stringMap["Name"],
+					ID:                    stringMap["Id"].(string),
+					LogEntry:              stringMap["LogEntry"].(string),
+					LogEntrySource:        stringMap["LogEntrySource"].(string),
+					LogEntryTimeStamp:     stringMap["LogEntryTimeStamp"].(string),
+					LogEntryTimeOfCommand: stringMap["TimeOfCommand"].(string),
+					SourceSystem:          stringMap["SourceSystem"].(string),
+					Computer:              stringMap["Computer"].(string),
+					Image:                 stringMap["Image"].(string),
+					Name:                  stringMap["Name"].(string),
 				}
 				//ODS-v1 schema
 				dataItemsLAv1 = append(dataItemsLAv1, dataItemLAv1)
-				name = stringMap["Name"]
-				id = stringMap["Id"]
+				name = stringMap["Name"].(string)
+				id = stringMap["Id"].(string)
 			}
 		}
 
@@ -1342,7 +1333,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		for entry := range fluentForward.Entries {
 			msgpBytes = append(msgpBytes, 0x92)
 			msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
-			msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
+			record := make(map[string]string)
+			for k, v := range fluentForward.Entries[entry].Record {
+				record[k] = v.(string)
+			}
+			msgpBytes = msgp.AppendMapStrStr(msgpBytes, record)
 		}
 
 		if IsWindows == true {
