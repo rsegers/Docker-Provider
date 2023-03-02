@@ -279,6 +279,7 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
+        @{"image.name"="${{ variables.repoImageName }}:win-foreign"} | ConvertTo-Json -Compress | Out-File -Encoding ascii $(Build.ArtifactStagingDirectory)/windows/metadata.json
 
         docker manifest create ${{ variables.repoImageName }}:win-foreign ${{ variables.repoImageName }}:win-foreign-$(windows2019BaseImageVersion) ${{ variables.repoImageName }}:win-foreign-$(windows2022BaseImageVersion)
         docker manifest push ${{ variables.repoImageName }}:win-foreign
