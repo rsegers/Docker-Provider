@@ -22,3 +22,5 @@ CVE-2021-33621
 #https://avd.aquasec.com/nvd/2022/cve-2022-41717/
 CVE-2022-41717
 
+# ubuntu base vulnerabilities
+CVE-2022-48303
