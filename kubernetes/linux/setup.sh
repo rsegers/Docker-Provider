@@ -24,8 +24,8 @@ if [ -f /etc/profile.d/rvm.sh ]; then
     echo "[ -f /etc/profile.d/rvm.sh ] && source /etc/profile.d/rvm.sh" >> ~/.bashrc
 fi
 
-rvm install 3.1.1
-rvm --default use 3.1.1
+rvm install 3.1.3
+rvm --default use 3.1.3
 
 sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
@@ -57,10 +57,11 @@ sudo apt-get install jq=1.5+dfsg-2 -y
 #used to setcaps for ruby process to read /proc/env
 sudo apt-get install libcap2-bin -y
 
-wget https://dl.influxdata.com/telegraf/releases/telegraf-1.24.2_linux_$ARCH.tar.gz
-tar -zxvf telegraf-1.24.2_linux_$ARCH.tar.gz
+TELEGRAF_VERSION=1.25.2
+wget https://dl.influxdata.com/telegraf/releases/telegraf-${TELEGRAF_VERSION}_linux_${ARCH}.tar.gz
+tar -zxvf telegraf-${TELEGRAF_VERSION}_linux_${ARCH}.tar.gz
 
-mv /opt/telegraf-1.24.2/usr/bin/telegraf /opt/telegraf
+mv /opt/telegraf-${TELEGRAF_VERSION}/usr/bin/telegraf /opt/telegraf
 
 chmod 544 /opt/telegraf
 

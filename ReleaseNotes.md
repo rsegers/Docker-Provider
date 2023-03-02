@@ -9,6 +9,27 @@ additional questions or comments.
 
 ## Release History
 
+Note: Starting 03/01/2023 we have moved to the semver versioning system for naming image tags with the release 3.1.4
+
+### 03/01/2023 -
+##### Version microsoft/oms:3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4 (linux)
+##### Version microsoft/oms:win-3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.4 (windows)
+##### Code change log
+- Common
+  - Move to semver versioning system for naming imageTags
+  - Fix bug in overwriting prometheus namespace
+  - Fix kube events timestamp using metadata timestamp
+  - Moved syslog telemetry from AI to pod inventory
+  - Update telegraf to version 1.25.2
+  - Fix bug wherein sidecar container was not muted by default
+  - Removed labelSelector from ama-logs.yaml and helm charts
+  - Update fluent-bit to version 2.0.5
+  - Enabled multiline support for ContainerLogV2 via configmap
+- Linux Agent
+  - Update ruby to version 3.1.3
+- Windows Agent
+  - Fix podName missing bug in ContainerLogV2
+
 Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate the agent build dates (not release dates)
 
 ### 01/18/2023 -
