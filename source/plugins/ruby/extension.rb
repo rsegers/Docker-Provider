@@ -22,6 +22,7 @@ class Extension
     @datatype_to_named_pipe_mapping = {}
     @cache_lock = Mutex.new
     @clientNamedPipe = nil
+    @clientNamedPipe_lock = Mutex.new
     $log.info("Extension::initialize complete")
   end
 
@@ -158,9 +159,20 @@ class Extension
           configPipe = "\\\\.\\pipe\\CAgentStream_CloudAgentInfo_AzureMonitorAgent"
           @clientNamedPipe = File.open(configPipe, "w+")
         end
-        @clientNamedPipe.write(requestBodyJSON)
         resp = ''
-        @clientNamedPipe.sysread(Constants::CI_EXTENSION_CONFIG_MAX_BYTES, resp)
+        @clientNamedPipe_lock.synchronize {
+          begin
+            @clientNamedPipe.write(requestBodyJSON)
+            @clientNamedPipe.sysread(Constants::CI_EXTENSION_CONFIG_MAX_BYTES, resp)
+          rescue Exception => e
+            @log.info "Extension::get_extension_configs Exception when connecting to named pipe: #{e}"
+            if @clientNamedPipe
+              @clientNamedPipe.close
+              @clientNamedPipe = nil
+            end
+            raise e
+          end
+        }
       end
       if !resp.nil? && !resp.empty?
         respJSON = JSON.parse(resp)

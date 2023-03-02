@@ -98,6 +98,7 @@ function Set-AMAEnvironmentVariables {
 
     Set-ProcessAndMachineEnvVariables "MCS_AZURE_RESOURCE_ENDPOINT" $mcs_endpoint
     Set-ProcessAndMachineEnvVariables "MCS_GLOBAL_ENDPOINT" $mcs_globalendpoint
+    Set-ProcessAndMachineEnvVariables "MA_ENABLE_LARGE_EVENTS" "1"
     
 }
 

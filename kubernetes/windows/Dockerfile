@@ -80,7 +80,5 @@ ENV APPLICATIONINSIGHTS_AUTH "NzAwZGM5OGYtYTdhZC00NThkLWI5NWMtMjA3ZjM3NmM3YmRi"
 ENV AZMON_COLLECT_ENV False
 ENV CI_CERT_LOCATION "C://oms.crt"
 ENV CI_KEY_LOCATION "C://oms.key"
-ENV MONITORING_DATA_DIRECTORY "C:\\opt\\genevamonitoringagent\\datadirectory"
-ENV MONITORING_MCS_MODE "1"
 
 ENTRYPOINT ["powershell", "C:\\opt\\amalogswindows\\scripts\\powershell\\main.ps1"]
