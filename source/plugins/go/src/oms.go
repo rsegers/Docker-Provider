@@ -1211,7 +1211,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		var dataItemADX DataItemADX
 		var msgPackEntry MsgPackEntry
 
-		FlushedRecordsSize += float64(len(stringMap["LogEntry"].(string)))
+		FlushedRecordsSize += float64(len(logEntry))
 
 		if ContainerLogsRouteV2 == true {
 			msgPackEntry = MsgPackEntry{
