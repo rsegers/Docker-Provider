@@ -1,3 +1,5 @@
+---
+name: Linting Check
 on:
   push:
     branches-ignore: [ci_prod]
