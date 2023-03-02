@@ -1512,13 +1512,18 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 		containerName = filename[start+1 : end]
 	}
 
-	start = strings.Index(filename, "/containers/")
+	pattern := "/containers/"
+	if strings.Contains(filename, "\\containers\\") { // for windows
+		pattern = "\\containers\\"
+	}
+
+	start = strings.Index(filename, pattern)
 	end = strings.Index(filename, "_")
 
 	if start >= end || start == -1 || end == -1 {
 		podName = ""
 	} else {
-		podName = filename[(start + len("/containers/")):end]
+		podName = filename[(start + len(pattern)):end]
 	}
 
 	return id, ns, podName, containerName
