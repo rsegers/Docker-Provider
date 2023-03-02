@@ -1281,6 +1281,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			n, err := ContainerLogNamedPipe.Write(msgpBytes)
 			if err != nil {
 				Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
+				if ContainerLogNamedPipe != nil {
+					ContainerLogNamedPipe.Close()
+					ContainerLogNamedPipe = nil
+				}
 				ContainerLogTelemetryMutex.Lock()
 				defer ContainerLogTelemetryMutex.Unlock()
 				ContainerLogsSendErrorsToWindowsAMAFromFluent += 1

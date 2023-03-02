@@ -58,6 +58,10 @@ module Fluent::Plugin
         end
       rescue Exception => e
         @log.info "Exception when writing to named pipe: #{e}"
+        if $pipe_handle
+          $pipe_handle.close
+          $pipe_handle = nil
+        end
         raise e
       end
     end
