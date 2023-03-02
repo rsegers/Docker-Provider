@@ -341,8 +341,8 @@ spec:
         agentVersion: "azure-mdsd-1.17.0"
         dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9102"
+        # prometheus.io/scrape: "true"
+        # prometheus.io/port: "9102"
     spec:
       serviceAccountName: ama-logs
       dnsConfig:
@@ -390,8 +390,8 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             limits:
-              cpu: 5
-              memory: 6Gi
+              cpu: 500m
+              memory: 750Mi
             requests:
               cpu: 75m
               memory: 325Mi
@@ -890,8 +890,8 @@ spec:
         agentVersion: "0.0.0-0"
         dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
-        prometheus.io/scrape: "true"
-        prometheus.io/port: "9102"
+        # prometheus.io/scrape: "true"
+        # prometheus.io/port: "9102"
     spec:
      serviceAccountName: ama-logs
      dnsConfig:
