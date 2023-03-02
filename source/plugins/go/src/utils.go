@@ -263,7 +263,11 @@ func convertMsgPackEntriesToMsgpBytes(fluentForwardTag string, msgPackEntries []
 	for entry := range fluentForward.Entries {
 		msgpBytes = append(msgpBytes, 0x92)
 		msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
-		msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
+		record := make(map[string]string)
+		for k, v := range fluentForward.Entries[entry].Record {
+			record[k] = v.(string)
+		}
+		msgpBytes = msgp.AppendMapStrStr(msgpBytes, record)
 	}
 
 	return msgpBytes
