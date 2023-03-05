@@ -113,13 +113,14 @@ int _tmain(int argc, wchar_t *argv[])
         return NO_FLUENT_BIT_PROCESS;
     }
 
-    DWORD dwStatus = GetServiceStatus(argv[2]);
+    //Write-Host "*** ignoring fluentd check for the investigation of fluent-bit OOM issue ... ***"
+    // DWORD dwStatus = GetServiceStatus(argv[2]);
 
-    if (dwStatus != SERVICE_RUNNING)
-    {
-        wprintf_s(L"ERROR:Service:%s is not running\n", argv[2]);
-        return FLUENTDWINAKS_SERVICE_NOT_RUNNING;
-    }
+    // if (dwStatus != SERVICE_RUNNING)
+    // {
+    //     wprintf_s(L"ERROR:Service:%s is not running\n", argv[2]);
+    //     return FLUENTDWINAKS_SERVICE_NOT_RUNNING;
+    // }
 
     if (IsFileExists(argv[3]))
     {
