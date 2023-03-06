@@ -12,6 +12,8 @@ fi
 #Download utf-8 encoding capability on the ama-logs container.
 #upgrade apt to latest version
 # apt-get update && apt-get install -y apt && DEBIAN_FRONTEND=noninteractive apt-get install -y locales
+sudo tdnf install ca-certificates-microsoft -y
+sudo update-ca-trust
 
 sudo tdnf install ruby-3.1.3 -y
 
