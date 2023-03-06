@@ -734,6 +734,8 @@ if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
    echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
    export ENABLE_MCS="true"
    echo "export ENABLE_MCS=$ENABLE_MCS" >> ~/.bashrc
+   export SSL_CERT_FILE="/etc/pki/tls/certs/ca-bundle.crt"
+   echo "export SSL_CERT_FILE=$SSL_CERT_FILE" >> ~/.bashrc
    export MONITORING_USE_GENEVA_CONFIG_SERVICE="false"
    echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
    export MDSD_USE_LOCAL_PERSISTENCY="false"
