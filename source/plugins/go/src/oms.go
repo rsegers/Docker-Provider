@@ -1333,11 +1333,15 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		for entry := range fluentForward.Entries {
 			msgpBytes = append(msgpBytes, 0x92)
 			msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
-			record := make(map[string]string)
-			for k, v := range fluentForward.Entries[entry].Record {
-				record[k] = v.(string)
+			// record := make(map[string]string)
+			// for k, v := range fluentForward.Entries[entry].Record {
+			// 	record[k] = v.(string)
+			// }
+			var err error
+			msgpBytes, err = msgp.AppendMapStrIntf(msgpBytes, fluentForward.Entries[entry].Record)
+			if err != nil {
+				Log("Error::AMA::PostDataHelper failed while appending AppendMapStrIntf with an error: %s", err.Error())
 			}
-			msgpBytes = msgp.AppendMapStrStr(msgpBytes, record)
 		}
 
 		if IsWindows == true {
