@@ -1177,7 +1177,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			stringMap["location"] = ClusterResourceRegion
 			stringMap["category"] = LogsCategory
 			stringMap["operationName"] = LogsOperationName
-			stringMap["time"] = time.Now().UTC()
+			// stringMap["time"] = time.Now().UTC()
+			stringMap["time"] = time.Now().UTC().Format(time.RFC3339)
 			stringMap["properties"] = string(propertyMapJSON)
 		} else if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
