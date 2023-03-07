@@ -108,7 +108,6 @@ COPY --from=builder /usr/bin/vim /usr/bin/vim
 COPY --from=builder /usr/share/vim /usr/share/vim
 COPY --from=builder /usr/sbin/mdsd /usr/sbin/mdsd
 COPY --from=builder /usr/sbin/logrotate /usr/sbin/logrotate
-COPY --from=builder /usr/bin/logger /usr/bin/logger
 COPY --from=builder /usr/sbin/setcap /usr/sbin/setcap
 COPY --from=builder /usr/bin/curl /usr/bin/curl
 COPY --from=builder /usr/bin/jq /usr/bin/jq
