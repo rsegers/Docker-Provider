@@ -43,7 +43,7 @@ COPY kubernetes/linux/setup.sh kubernetes/linux/main.sh kubernetes/linux/default
 COPY kubernetes/linux/mariner-official-extras.repo /etc/yum.repos.d/
 
 # default value will be overwritten by pipeline 
-ARG IMAGE_TAG=3.1.2
+ARG IMAGE_TAG=3.1.4
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 WORKDIR ${tmpdir}
