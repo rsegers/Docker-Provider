@@ -436,7 +436,7 @@ fi
 # These need to be copied to a different location for Mariner vs Ubuntu containers.
 # OS_ID here is the container distro.
 # Adding Mariner now even though the elif will never currently evaluate.
-if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ $IS_CUSTOM_CERT == "true" ]; then
+if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ "$IS_CUSTOM_CERT" == "true" ]; then
   OS_ID=$(cat /etc/os-release | grep ^ID= | cut -d '=' -f2 | tr -d '"' | tr -d "'")
   if [ $OS_ID == "mariner" ]; then
     cp /anchors/ubuntu/* /etc/pki/ca-trust/source/anchors
@@ -490,7 +490,7 @@ if [ ${#APPLICATIONINSIGHTS_AUTH_URL} -ge 1 ]; then # (check if APPLICATIONINSIG
       fi
 fi
 
-aikey=$(echo $APPLICATIONINSIGHTS_AUTH | base64 --d)
+aikey=$(echo $APPLICATIONINSIGHTS_AUTH | base64 -d)
 export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey
 echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc
 
@@ -680,7 +680,7 @@ fi
 
 echo "set caps for ruby process to read container env from proc"
 RUBY_PATH=$(which ruby)
-sudo setcap cap_sys_ptrace,cap_dac_read_search+ep "$RUBY_PATH"
+setcap cap_sys_ptrace,cap_dac_read_search+ep "$RUBY_PATH"
 echo "export KUBELET_RUNTIME_OPERATIONS_METRIC="$KUBELET_RUNTIME_OPERATIONS_METRIC >> ~/.bashrc
 echo "export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="$KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC >> ~/.bashrc
 
