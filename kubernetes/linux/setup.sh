@@ -71,7 +71,7 @@ sudo tdnf install libcap -y
 # mv /opt/telegraf-1.24.2/usr/bin/telegraf /opt/telegraf
 
 # chmod 544 /opt/telegraf
-sudo tdnf install telegraf-1.23.0 -y
+sudo tdnf install telegraf-1.25.2 -y
 sudo tdnf list installed | grep telegraf | awk '{print $2}' > telegraf_version.txt
 mv /usr/bin/telegraf /opt/telegraf
 
@@ -84,7 +84,7 @@ sudo tdnf list installed | grep docker-cimprov | awk '{print $2}' > dockercimpro
 # sudo echo "deb https://packages.fluentbit.io/ubuntu/bionic bionic main" >> /etc/apt/sources.list
 # sudo apt-get update
 # sudo apt-get install fluent-bit=2.0.5 -y
-sudo tdnf install fluent-bit-1.9.6 -y
+sudo tdnf install fluent-bit-2.0.9 -y
 
 # fluentd v1 gem
 # gem install fluentd -v "1.14.6" --no-document
