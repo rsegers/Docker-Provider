@@ -17,6 +17,9 @@
       "enableSyslog": {
         "value": false
       },
+      "enableContainerLogV2": {
+        "value": true
+      },
       "syslogLevels": {
         "value": [
           "Debug",

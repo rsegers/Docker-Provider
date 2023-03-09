@@ -38,6 +38,12 @@
                 "description": "Enable Syslog in Data Collection Rule"
             }
         },
+        "enableContainerLogV2": {
+            "type": "bool",
+            "metadata": {
+                "description": "Enable ContainerLogV2 in Data Collection Rule"
+            }
+        },
         "syslogLevels": {
             "type": "array",
             "metadata": {
@@ -109,8 +115,9 @@
                                         "extensionSettings": {
                                             "dataCollectionSettings" : {
                                                 "interval": "[parameters('dataCollectionInterval')]",
-                                                 "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-                                                 "namespaces": "[parameters('namespacesForDataCollection')]"
+                                                "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                                                "namespaces": "[parameters('namespacesForDataCollection')]",
+                                                "containerLogV2": "[parameters('enableContainerLogV2')]"
                                             }
                                         },
                                         "extensionName": "ContainerInsights"
