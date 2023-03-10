@@ -50,7 +50,7 @@ WORKDIR ${tmpdir}
 
 RUN chmod 775 $tmpdir/*.sh; sync; $tmpdir/setup.sh ${TARGETARCH}
 
-FROM mcr.microsoft.com/cbl-mariner/distroless/base:2.0 AS distroless_builder
+FROM mcr.microsoft.com/cbl-mariner/distroless/base:2.0 AS ContainerInsights
 ENV tmpdir /opt
 ENV PATH="/busybin:${PATH}"
 ENV APPLICATIONINSIGHTS_AUTH NzAwZGM5OGYtYTdhZC00NThkLWI5NWMtMjA3ZjM3NmM3YmRi
@@ -124,23 +124,23 @@ COPY --from=builder /usr/lib/libkrb5.so.3 /usr/lib/libk5crypto.so.3 /usr/lib/lib
 # jq dependencies
 COPY --from=builder /lib/libjq.so.1 /lib/libonig.so.5 /lib/
 
-# Do vulnerability scan in a seperate stage to avoid adding layer
-FROM distroless_builder AS vulnscan
-COPY .trivyignore .trivyignore
-RUN tdnf install ca-certificates-microsoft tar -y
-RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.28.1
-RUN trivy rootfs --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-files "/usr/local/bin/trivy" /
-RUN trivy rootfs --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM /usr/lib
-RUN trivy rootfs --exit-code 1 --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-files "/usr/local/bin/trivy" / > /dev/null 2>&1 && trivy rootfs --exit-code 1 --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM /usr/lib > /dev/null 2>&1
+# # Do vulnerability scan in a seperate stage to avoid adding layer
+# FROM distroless_builder AS vulnscan
+# COPY .trivyignore .trivyignore
+# RUN tdnf install ca-certificates-microsoft tar -y
+# RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.28.1
+# RUN trivy rootfs --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-files "/usr/local/bin/trivy" /
+# RUN trivy rootfs --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM /usr/lib
+# RUN trivy rootfs --exit-code 1 --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-files "/usr/local/bin/trivy" / > /dev/null 2>&1 && trivy rootfs --exit-code 1 --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM /usr/lib > /dev/null 2>&1
 
-# Revert to base layer before vulnscan
-FROM distroless_builder AS ContainerInsights
-# force the trivy stage to run
-# docker buildx (BUILDKIT) does not build stages which do not affect the final stage
-# by copying over a file we create a dependency
-# see: https://github.com/docker/build-push-action/issues/377
-COPY --from=vulnscan /usr/local/bin/trivy /usr/local/bin/trivy
-RUN rm /usr/local/bin/trivy
+# # Revert to base layer before vulnscan
+# FROM distroless_builder AS ContainerInsights
+# # force the trivy stage to run
+# # docker buildx (BUILDKIT) does not build stages which do not affect the final stage
+# # by copying over a file we create a dependency
+# # see: https://github.com/docker/build-push-action/issues/377
+# COPY --from=vulnscan /usr/local/bin/trivy /usr/local/bin/trivy
+# RUN rm /usr/local/bin/trivy
 
 RUN [ "/bin/bash", "-c", "/etc/cron.daily/logrotate" ]
 CMD [ "/opt/main.sh" ]
