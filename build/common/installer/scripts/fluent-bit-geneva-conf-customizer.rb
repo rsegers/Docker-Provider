@@ -1,12 +1,18 @@
 #!/usr/local/bin/ruby
 require_relative "ConfigParseErrorLogger"
 
-@fluent_bit_conf_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva.conf"
+LINUX_CONFIG_PATHS = {
+  "common" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva.conf",
+  "infra" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf",
+  "tenant" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf",
+}
 
-@os_type = ENV["OS_TYPE"]
-if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-  @fluent_bit_conf_path = "/etc/fluent-bit/fluent-bit-geneva.conf"
-end
+WINDOWS_CONFIG_PATHS = {
+  "common" => "/etc/fluent-bit/fluent-bit-geneva.conf",
+  "infra" => "/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf",
+  "tenant" => "/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf",
+}
+SUPPORTED_CONFIG_TYPES = ["common", "infra", "tenant"]
 
 @default_service_interval = "15"
 @default_mem_buf_limit = "10"
@@ -15,10 +21,11 @@ def is_number?(value)
   true if Integer(value) rescue false
 end
 
-def substituteFluentBitPlaceHolders
+def substituteFluentBitPlaceHolders(configFilePath)
   begin
     # Replace the fluentbit config file with custom values if present
-    puts "config::Starting to substitute the placeholders in fluent-bit-geneva.conf file for log collection"
+    configFileName = File.basename(configFilePath)
+    puts "config::Starting to substitute the placeholders in #{configFileName} file for geneva log collection"
 
     interval = ENV["FBIT_SERVICE_FLUSH_INTERVAL"]
     bufferChunkSize = ENV["FBIT_TAIL_BUFFER_CHUNK_SIZE"]
@@ -73,11 +80,32 @@ def substituteFluentBitPlaceHolders
       end
     end
 
-    File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
-    puts "config::Successfully substituted the placeholders in fluent-bit.conf file"
+    File.open(configFilePath, "w") { |file| file.puts new_contents }
+    puts "config::Successfully substituted the placeholders in #{configFileName} file"
   rescue => errorStr
-    ConfigParseErrorLogger.logError("fluent-bit-geneva-conf-customizer: error while substituting values in fluent-bit-geneva.conf file: #{errorStr}")
+    ConfigParseErrorLogger.logError("fluent-bit-geneva-conf-customizer: error while substituting values in #{configFilePath} file: #{errorStr}")
   end
 end
 
-substituteFluentBitPlaceHolders
+begin
+  isWindows = false
+  os_type = ENV["OS_TYPE"]
+  if os_type.nil? && !os_type.empty? && os_type.strip.casecmp("windows") == 0
+    isWindows = true
+  end
+
+  configType = ARG[0] # supported config type are common or infra or tenant
+  if configType.nil?
+    puts "config:error: fluent-bit-geneva-conf-customizer.rb file MUST be invoked with argument"
+  elsif SUPPORTED_CONFIG_TYPES.include?(configType)
+    configFilePath = LINUX_CONFIG_PATHS[configType]
+    if isWindows
+      configFilePath = WINDOWS_CONFIG_PATHS[configType]
+    end
+    substituteFluentBitPlaceHolders(configFilePath)
+  else
+    puts "config:error: argument passed to fluent-bit-geneva-conf-customizer.rb file MUST be either common or infra or tenant"
+  end
+rescue => errorStr
+  ConfigParseErrorLogger.logError("error while substituting values in fluent-bit-geneva.conf file: #{errorStr}")
+end

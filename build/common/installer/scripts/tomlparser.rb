@@ -157,7 +157,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         @logEnableMultiline = parsedConfig[:log_collection_settings][:enable_multiline_logs][:enabled]
         puts "config::Using config map setting for multiline logging"
 
-        if @containerLogSchemaVersion.strip.casecmp("v2") !=0
+        if @containerLogSchemaVersion.strip.casecmp("v2") != 0
           puts "config:: WARN: container logs V2 is disabled and is required for multiline logging. Disabling multiline logging"
           @logEnableMultiline = "false"
         end
@@ -314,11 +314,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     file.write(commands)
     commands = get_command_windows("AZMON_ADX_DATABASE_NAME", @adxDatabaseName)
     file.write(commands)
-    commands = get_command_windows('AZMON_MULTILINE_ENABLED', @logEnableMultiline)
+    commands = get_command_windows("AZMON_MULTILINE_ENABLED", @logEnableMultiline)
     file.write(commands)
-    commands = get_command_windows('AZMON_MULTILINE_ENABLED', @logEnableMultiline)
-    file.write(commands)
-
     # Close file after writing all environment variables
     file.close
     puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "

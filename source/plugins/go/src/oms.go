@@ -1269,7 +1269,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogDataType)
 			}
 			Log("Info::mdsd/ama:: using mdsdsource name: %s", MdsdContainerLogTagName)
-
 		}
 
 		fluentForward := MsgPackForward{

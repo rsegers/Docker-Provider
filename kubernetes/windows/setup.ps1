@@ -81,11 +81,7 @@ catch {
     exit 1
 }
 Write-Host ('Finished downloading Windows Azure Monitor Agent')
-
-
 Write-Host ("Removing Install folder")
-
 Remove-Item /installation -Recurse
-
 #Remove gemfile.lock for http_parser gem 0.6.0
 #see  - https://github.com/fluent/fluentd/issues/3374 https://github.com/tmm1/http_parser.rb/issues/70

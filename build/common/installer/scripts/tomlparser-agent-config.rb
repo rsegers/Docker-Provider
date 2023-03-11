@@ -95,6 +95,11 @@ def is_number?(value)
   true if Integer(value) rescue false
 end
 
+# check if its number and greater than 0
+def is_valid_number(value)
+  return !value.nil? && is_number?(value) && value.to_i > 0
+end
+
 # Use parser to parse the configmap toml file to a ruby structure
 def parseConfigMap
   begin
@@ -167,19 +172,19 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       fbit_config = parsedConfig[:agent_settings][:fbit_config]
       if !fbit_config.nil?
         fbitFlushIntervalSecs = fbit_config[:log_flush_interval_secs]
-        if !fbitFlushIntervalSecs.nil? && is_number?(fbitFlushIntervalSecs) && fbitFlushIntervalSecs.to_i > 0
+        if is_valid_number?(fbitFlushIntervalSecs)
           @fbitFlushIntervalSecs = fbitFlushIntervalSecs.to_i
           puts "Using config map value: log_flush_interval_secs = #{@fbitFlushIntervalSecs}"
         end
 
         fbitTailBufferChunkSizeMBs = fbit_config[:tail_buf_chunksize_megabytes]
-        if !fbitTailBufferChunkSizeMBs.nil? && is_number?(fbitTailBufferChunkSizeMBs) && fbitTailBufferChunkSizeMBs.to_i > 0
+        if is_valid_number?(fbitTailBufferChunkSizeMBs)
           @fbitTailBufferChunkSizeMBs = fbitTailBufferChunkSizeMBs.to_i
           puts "Using config map value: tail_buf_chunksize_megabytes  = #{@fbitTailBufferChunkSizeMBs}"
         end
 
         fbitTailBufferMaxSizeMBs = fbit_config[:tail_buf_maxsize_megabytes]
-        if !fbitTailBufferMaxSizeMBs.nil? && is_number?(fbitTailBufferMaxSizeMBs) && fbitTailBufferMaxSizeMBs.to_i > 0
+        if is_valid_number?(fbitTailBufferMaxSizeMBs)
           if fbitTailBufferMaxSizeMBs.to_i >= @fbitTailBufferChunkSizeMBs
             @fbitTailBufferMaxSizeMBs = fbitTailBufferMaxSizeMBs.to_i
             puts "Using config map value: tail_buf_maxsize_megabytes = #{@fbitTailBufferMaxSizeMBs}"
@@ -196,7 +201,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         end
 
         fbitTailMemBufLimitMBs = fbit_config[:tail_mem_buf_limit_megabytes]
-        if !fbitTailMemBufLimitMBs.nil? && is_number?(fbitTailMemBufLimitMBs) && fbitTailMemBufLimitMBs.to_i > 0
+        if is_valid_number?(fbitTailMemBufLimitMBs)
           @fbitTailMemBufLimitMBs = fbitTailMemBufLimitMBs.to_i
           puts "Using config map value: tail_mem_buf_limit_megabytes  = #{@fbitTailMemBufLimitMBs}"
         end
@@ -223,12 +228,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       fbit_config = parsedConfig[:agent_settings][:geneva_tenant_fbit_settings]
       if !fbit_config.nil?
         storageTotalLimitSizeMB = fbit_config[:storage_total_limit_size_mb]
-        if !storageTotalLimitSizeMB.nil? && is_number?(storageTotalLimitSizeMB) && storageTotalLimitSizeMB.to_i > 0
+        if is_valid_number?(storageTotalLimitSizeMB)
           @storageTotalLimitSizeMB = storageTotalLimitSizeMB.to_i
           puts "Using config map value: storage_total_limit_size_mb = #{@storageTotalLimitSizeMB}"
         end
         outputForwardWorkers = fbit_config[:output_forward_workers]
-        if !outputForwardWorkers.nil? && is_number?(outputForwardWorkers) && outputForwardWorkers.to_i > 0
+        if is_valid_number?(outputForwardWorkers)
           @outputForwardWorkers = outputForwardWorkers.to_i
           puts "Using config map value: output_forward_workers = #{@outputForwardWorkers}"
         end
@@ -255,7 +260,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         mdsd_config = parsedConfig[:agent_settings][:mdsd_config]
         if !mdsd_config.nil?
           mdsdMonitoringMaxEventRate = mdsd_config[:monitoring_max_event_rate]
-          if !mdsdMonitoringMaxEventRate.nil? && is_number?(mdsdMonitoringMaxEventRate) && mdsdMonitoringMaxEventRate.to_i > 0
+          if is_valid_number?(mdsdMonitoringMaxEventRate)
             @mdsdMonitoringMaxEventRate = mdsdMonitoringMaxEventRate.to_i
             puts "Using config map value: monitoring_max_event_rate  = #{@mdsdMonitoringMaxEventRate}"
           end
@@ -271,12 +276,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
       if !prom_fbit_config.nil?
         chunk_size = prom_fbit_config[:tcp_listener_chunk_size]
-        if !chunk_size.nil? && is_number?(chunk_size) && chunk_size.to_i > 0
+        if is_valid_number?(chunk_size)
           @promFbitChunkSize = chunk_size.to_i
           puts "Using config map value: AZMON_FBIT_CHUNK_SIZE = #{@promFbitChunkSize.to_s + "m"}"
         end
         buffer_size = prom_fbit_config[:tcp_listener_buffer_size]
-        if !buffer_size.nil? && is_number?(buffer_size) && buffer_size.to_i > 0
+        if is_valid_number?(buffer_size)
           @promFbitBufferSize = buffer_size.to_i
           puts "Using config map value: AZMON_FBIT_BUFFER_SIZE = #{@promFbitBufferSize.to_s + "m"}"
           if @promFbitBufferSize < @promFbitChunkSize
@@ -285,7 +290,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           end
         end
         mem_buf_limit = prom_fbit_config[:tcp_listener_mem_buf_limit]
-        if !mem_buf_limit.nil? && is_number?(mem_buf_limit) && mem_buf_limit.to_i > 0
+        if is_valid_number?(mem_buf_limit)
           @promFbitMemBufLimit = mem_buf_limit.to_i
           puts "Using config map value: AZMON_FBIT_MEM_BUF_LIMIT = #{@promFbitMemBufLimit.to_s + "m"}"
         end

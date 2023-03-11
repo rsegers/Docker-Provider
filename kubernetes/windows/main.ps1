@@ -460,9 +460,9 @@ function Read-Configs {
         Write-Host "Failed to set environment variable GENEVA_LOGS_MULTI_TENANCY for target 'machine' since it is either null or empty"
     }
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
-        ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb
-        ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-tenant-conf-customizer.rb
-        ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-infra-conf-customizer.rb
+        ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "common"
+        ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "tenant"
+        ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "infra"
         Generate-GenevaTenantNameSpaceConfig
         Generate-GenevaInfraNameSpaceConfig
     }
