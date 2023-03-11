@@ -21,6 +21,11 @@ def is_number?(value)
   true if Integer(value) rescue false
 end
 
+# check if it is number and greater than 0
+def is_valid_number?(value)
+  return !value.nil? && is_number?(value) && value.to_i > 0
+end
+
 def substituteFluentBitPlaceHolders(configFilePath)
   begin
     # Replace the fluentbit config file with custom values if present
@@ -34,19 +39,19 @@ def substituteFluentBitPlaceHolders(configFilePath)
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
 
-    serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
+    serviceInterval = is_valid_number?(interval) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
 
-    tailBufferChunkSize = (!bufferChunkSize.nil? && is_number?(bufferChunkSize) && bufferChunkSize.to_i > 0) ? bufferChunkSize : nil
+    tailBufferChunkSize = is_valid_number?(bufferChunkSize) ? bufferChunkSize : nil
 
-    tailBufferMaxSize = (!bufferMaxSize.nil? && is_number?(bufferMaxSize) && bufferMaxSize.to_i > 0) ? bufferMaxSize : nil
+    tailBufferMaxSize = is_valid_number?(bufferMaxSize) ? bufferMaxSize : nil
 
     if ((!tailBufferChunkSize.nil? && tailBufferMaxSize.nil?) || (!tailBufferChunkSize.nil? && !tailBufferMaxSize.nil? && tailBufferChunkSize.to_i > tailBufferMaxSize.to_i))
       puts "config:warn buffer max size must be greater or equal to chunk size"
       tailBufferMaxSize = tailBufferChunkSize
     end
 
-    tailMemBufLimit = (!memBufLimit.nil? && is_number?(memBufLimit) && memBufLimit.to_i > 10) ? memBufLimit : @default_mem_buf_limit
+    tailMemBufLimit = is_valid_number?(memBufLimit) ? memBufLimit : @default_mem_buf_limit
     tailMemBufLimitSetting = "Mem_Buf_Limit " + tailMemBufLimit + "m"
 
     text = File.read(@fluent_bit_conf_path)

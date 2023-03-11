@@ -95,8 +95,8 @@ def is_number?(value)
   true if Integer(value) rescue false
 end
 
-# check if its number and greater than 0
-def is_valid_number(value)
+# check if it is number and greater than 0
+def is_valid_number?(value)
   return !value.nil? && is_number?(value) && value.to_i > 0
 end
 
