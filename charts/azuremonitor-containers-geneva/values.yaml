@@ -36,7 +36,8 @@ autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 10
-  targetMemoryUtilizationPercentage: 70
+  # hpa calculates the % usage against requests not limits
+  targetMemoryUtilizationPercentage: 150
   # targetCPUUtilizationPercentage: 80
 affinity:
   nodeAffinity:
