@@ -15,14 +15,6 @@
 
 {{- end }}
 
-{{- if and (ne (.Values.genevaLogsConfig.environment | lower) "test") (ne (.Values.genevaLogsConfig.environment | lower)  "stage") (ne (.Values.genevaLogsConfig.environment | lower)  "diagnosticsprod") (ne (.Values.genevaLogsConfig.environment | lower)  "diagnosticsprod") (ne (.Values.genevaLogsConfig.environment | lower)  "firstpartyprod") (ne (.Values.genevaLogsConfig.environment | lower)  "billingprod") (ne (.Values.genevaLogsConfig.environment | lower)  "externalprod") (ne (.Values.genevaLogsConfig.environment | lower)  "camooncake") (ne (.Values.genevaLogsConfig.environment | lower)  "cafairfax") (ne (.Values.genevaLogsConfig.environment | lower)  "cablackforest") }}
-
-##############################################################################
-####   ERROR: Provided environment name for Geneva Logs environment is not valid. The supported values are Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest  .       ####
-##############################################################################
-
-{{- end }}
-
 {{- if eq .Values.genevaLogsConfig.account "<your_geneva_account_name>" }}
 
 ##############################################################################

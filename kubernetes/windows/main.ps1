@@ -39,77 +39,22 @@ function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\filesystemwatcher.ps1
 }
 
-function Set-AMAEnvironmentVariables {
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_MCS_MODE", "1", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_MCS_MODE", "1", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Process")
-    [System.Environment]::SetEnvironmentVariable("MCS_AZURE_RESOURCE_ENDPOINT", "https://monitor.azure.com/", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MCS_GLOBAL_ENDPOINT", "https://global.handler.control.monitor.azure.com", "Process")
-    [System.Environment]::SetEnvironmentVariable("MCS_GLOBAL_ENDPOINT", "https://global.handler.control.monitor.azure.com", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Machine")
-
-    $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Machine")
-    [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Process")
-    [System.Environment]::SetEnvironmentVariable("customRegion", $aksRegion, "Machine")
-
-    $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Machine")
-    [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Process")
-    [System.Environment]::SetEnvironmentVariable("customResourceId", $aksResourceId, "Machine")
-    [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Process")
-    [System.Environment]::SetEnvironmentVariable("MCS_CUSTOM_RESOURCE_ID", $aksResourceId, "Machine")
+function Set-ProcessAndMachineEnvVariables($name, $value) {
+    [System.Environment]::SetEnvironmentVariable($name, $value, "Process")
+    [System.Environment]::SetEnvironmentVariable($name, $value, "Machine")
 }
 
 function Set-GenevaAMAEnvironmentVariables {
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "C:\\opt\\windowsazuremonitoragent\\datadirectory", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE_INSTANCE", "cloudAgentRoleInstanceIdentity", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_OsType", "Windows", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_VERSION", "2.0", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_ROLE", "cloudAgentRoleIdentity", "Machine")
-
-    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Process")
-    [System.Environment]::SetEnvironmentVariable("MONITORING_IDENTITY", "use_ip_address", "Machine")
-
+    Set-ProcessAndMachineEnvVariables "MONITORING_DATA_DIRECTORY" "C:\\opt\\windowsazuremonitoragent\\datadirectory"
+    Set-ProcessAndMachineEnvVariables "MONITORING_ROLE_INSTANCE" "MONITORING_ROLE_INSTANCE"
+    Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_OsType" "Windows"
+    Set-ProcessAndMachineEnvVariables "MONITORING_VERSION" "2.0"
+    Set-ProcessAndMachineEnvVariables "MONITORING_ROLE" "cloudAgentRoleIdentity"
+    Set-ProcessAndMachineEnvVariables "MONITORING_IDENTITY" "use_ip_address"
     $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_Location", $aksRegion, "Machine")
-
+    Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_Location" $aksRegion
     $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Process")
-    [System.Environment]::SetEnvironmentVariable("MA_RoleEnvironment_ResourceId", $aksResourceId, "Machine")
+    Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_ResourceId" $aksResourceId
 }
 
 function Generate-GenevaTenantNameSpaceConfig {
@@ -470,8 +415,6 @@ function Read-Configs {
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true') {
         Write-Host "Setting Geneva Windows AMA Environment variables"
         Set-GenevaAMAEnvironmentVariables
-    } elseif (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
-        Set-AMAEnvironmentVariables
     }
 
     # run mdm config parser
