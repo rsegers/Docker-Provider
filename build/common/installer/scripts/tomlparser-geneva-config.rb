@@ -129,15 +129,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
               else
                 @geneva_logs_config_version_windows = "1.0"
                 puts "Since config version for windows not specified so using default config version : #{@geneva_logs_config_version_windows}"
-              end
-
-              puts "using environment for geneva integration: #{@geneva_account_environment}"
-              puts "using namespace for geneva integration: #{@geneva_account_namespace}"
-              puts "using namespace for windows for geneva integration: #{@geneva_account_namespace_windows}"
-              puts "using account for geneva integration: #{@geneva_account_name}"
-              puts "using authid for geneva integration: #{@geneva_gcs_authid}"
-              puts "using Linux config version for geneva integration: #{@geneva_logs_config_version}"
-              puts "using Windows config version for geneva integration: #{@geneva_logs_config_version_windows}"
+              end             
             else
               puts "config::geneva_logs::error: provided geneva logs config is not valid"
             end
