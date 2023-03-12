@@ -99,7 +99,7 @@ begin
     isWindows = true
   end
 
-  configType = ARG[0] # supported config type are common or infra or tenant
+  configType = ARGV[0] # supported config type are common or infra or tenant
   if configType.nil?
     puts "config:error: fluent-bit-geneva-conf-customizer.rb file MUST be invoked with argument"
   elsif SUPPORTED_CONFIG_TYPES.include?(configType)
