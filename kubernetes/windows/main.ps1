@@ -55,6 +55,7 @@ function Set-GenevaAMAEnvironmentVariables {
     Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_Location" $aksRegion
     $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
     Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_ResourceId" $aksResourceId
+    Set-ProcessAndMachineEnvVariables "MA_ENABLE_LARGE_EVENTS" "1"
 }
 
 function Generate-GenevaTenantNameSpaceConfig {
