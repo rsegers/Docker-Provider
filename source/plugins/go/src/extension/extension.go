@@ -4,14 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 
 	uuid "github.com/google/uuid"
+	"github.com/ugorji/go/codec"
 )
 
 type Extension struct {
-	datatypeStreamIdMap  map[string]string
-	datatypeNamedPipeMap map[string]string
+	datatypeStreamIdMap map[string]string
 }
 
 var singleton *Extension
@@ -22,7 +23,7 @@ var containerType string
 
 func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 	once.Do(func() {
-		singleton = &Extension{make(map[string]string), make(map[string]string)}
+		singleton = &Extension{make(map[string]string)}
 		flbLogger.Println("Extension Instance created")
 	})
 	logger = flbLogger
@@ -39,7 +40,7 @@ func (e *Extension) GetOutputStreamId(datatype string) string {
 		return e.datatypeStreamIdMap[datatype]
 	}
 	var err error
-	e.datatypeStreamIdMap, err = getExtensionDataTypeMapping(false)
+	e.datatypeStreamIdMap, err = getDataTypeToStreamIdMapping()
 	if err != nil {
 		message := fmt.Sprintf("Error getting datatype to streamid mapping: %s", err.Error())
 		logger.Printf(message)
@@ -47,64 +48,56 @@ func (e *Extension) GetOutputStreamId(datatype string) string {
 	return e.datatypeStreamIdMap[datatype]
 }
 
-func (e *Extension) GetOutputNamedPipe(datatype string) string {
-	extensionconfiglock.Lock()
-	defer extensionconfiglock.Unlock()
-	if len(e.datatypeNamedPipeMap) > 0 && e.datatypeNamedPipeMap[datatype] != "" {
-		message := fmt.Sprintf("Named Pipe: %s for the datatype: %s", e.datatypeNamedPipeMap[datatype], datatype)
-		logger.Printf(message)
-		return e.datatypeNamedPipeMap[datatype]
-	}
-	var err error
-	e.datatypeNamedPipeMap, err = getExtensionDataTypeMapping(true)
-	if err != nil {
-		message := fmt.Sprintf("Error getting datatype to named pipe mapping: %s", err.Error())
-		logger.Printf(message)
-	}
-	return e.datatypeNamedPipeMap[datatype]
-}
-
-func getExtensionDataTypeMapping(isNamedPipe bool) (map[string]string, error) {
+func getDataTypeToStreamIdMapping() (map[string]string, error) {
+	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension config from fluent socket - start")
 	guid := uuid.New()
-	datatypeMap := make(map[string]string)
+	datatypeOutputStreamMap := make(map[string]string)
 
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerInsights", "Version": "1"}
 	jsonBytes, err := json.Marshal(taggedData)
 	// TODO: this error is unhandled
 
-	response, err := getExtensionConfigResponse(jsonBytes)
-	if err != nil {
-		return datatypeMap, err
+	var data []byte
+	enc := codec.NewEncoderBytes(&data, new(codec.MsgpackHandle))
+	if err := enc.Encode(string(jsonBytes)); err != nil {
+		return datatypeOutputStreamMap, err
 	}
 
-	var responseObject AgentTaggedDataResponse
-	err = json.Unmarshal([]byte(response), &responseObject)
+	fs := &FluentSocket{}
+	fs.sockAddress = "/var/run/mdsd-ci/default_fluent.socket"
+	if containerType != "" && strings.Compare(strings.ToLower(containerType), "prometheussidecar") == 0 {
+		fs.sockAddress = fmt.Sprintf("/var/run/mdsd-%s/default_fluent.socket", containerType)
+	}
+	responseBytes, err := FluentSocketWriter.writeAndRead(fs, data)
+	defer FluentSocketWriter.disconnect(fs)
+	logger.Printf("Info::mdsd::Making call to FluentSocket: %s to write and read the config data", fs.sockAddress)
 	if err != nil {
-		logger.Printf("Error::mdsd/AMA::Failed to unmarshal config data. Error message: %s", string(err.Error()))
-		return datatypeMap, err
+		return datatypeOutputStreamMap, err
+	}
+	response := string(responseBytes) // TODO: why is this converted to a string then back into a []byte?
+
+	var responseObjet AgentTaggedDataResponse
+	err = json.Unmarshal([]byte(response), &responseObjet)
+	if err != nil {
+		logger.Printf("Error::mdsd::Failed to unmarshal config data. Error message: %s", string(err.Error()))
+		return datatypeOutputStreamMap, err
 	}
 
 	var extensionData TaggedData
-	json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
+	json.Unmarshal([]byte(responseObjet.TaggedData), &extensionData)
 
 	extensionConfigs := extensionData.ExtensionConfigs
-	outputStreamDefinitions := make(map[string]StreamDefinition)
-	if isNamedPipe == true {
-		outputStreamDefinitions = extensionData.OutputStreamDefinitions
-	}
-	logger.Printf("Info::mdsd/AMA::build the datatype and streamid map -- start")
+	logger.Printf("Info::mdsd::build the datatype and streamid map -- start")
 	for _, extensionConfig := range extensionConfigs {
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
 			logger.Printf("Info::mdsd::datatype: %s, outputstreamId: %s", dataType, outputStreamID)
-			if isNamedPipe {
-				datatypeMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
-			} else {
-				datatypeMap[dataType] = outputStreamID.(string)
-			}
+			datatypeOutputStreamMap[dataType] = outputStreamID.(string)
 		}
 	}
-	logger.Printf("Info::mdsd/AMA::build the datatype and streamid map -- end")
+	logger.Printf("Info::mdsd::build the datatype and streamid map -- end")
 
-	return datatypeMap, nil
+	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension config from fluent socket-end")
+
+	return datatypeOutputStreamMap, nil
 }
