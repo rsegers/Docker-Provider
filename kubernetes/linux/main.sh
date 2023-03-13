@@ -495,6 +495,7 @@ export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey
 echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc
 
 source ~/.bashrc
+cat packages_version.txt
 
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
       #Parse the configmap to set the right environment variables.
@@ -695,12 +696,7 @@ cat /var/opt/microsoft/docker-cimprov/state/containerhostname
 /usr/sbin/crond -n -s &
 
 #get  docker-provider versions
-
-# dpkg -l | grep docker-cimprov | awk '{print $2 " " $3}'
-
-# DOCKER_CIMPROV_VERSION=$(dpkg -l | grep docker-cimprov | awk '{print $2}')
-DOCKER_CIMPROV_VERSION=$(cat /opt/dockercimprov_version.txt)
-echo "DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION"
+DOCKER_CIMPROV_VERSION=$(cat packages_version.txt | grep "DOCKER_CIMPROV_VERSION" | awk -F= '{print $2}')
 export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION
 echo "export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION" >>~/.bashrc
 
@@ -734,6 +730,8 @@ if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
    echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
    export ENABLE_MCS="true"
    echo "export ENABLE_MCS=$ENABLE_MCS" >> ~/.bashrc
+   export SSL_CERT_FILE="/etc/pki/tls/certs/ca-bundle.crt"
+   echo "export SSL_CERT_FILE=$SSL_CERT_FILE" >> ~/.bashrc
    export MONITORING_USE_GENEVA_CONFIG_SERVICE="false"
    echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
    export MDSD_USE_LOCAL_PERSISTENCY="false"
@@ -759,9 +757,6 @@ else
   cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
 fi
 source ~/.bashrc
-
-# dpkg -l | grep mdsd | awk '{print $2 " " $3}'
-echo "Azure mdsd version: $(mdsd --version)"
 
 if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
     if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
@@ -940,14 +935,9 @@ fi
 #start telegraf
 if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       /opt/telegraf --config $telegrafConfFile &
-      echo "telegraf version: $(cat /opt/telegraf_version.txt)"
-      # dpkg -l | grep fluent-bit | awk '{print $2 " " $3}'
-      echo "$(fluent-bit --version)"
 else
       echo "not starting telegraf (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
 fi
-
-#dpkg -l | grep telegraf | awk '{print $2 " " $3}'
 
 # Write messages from the liveness probe to stdout (so telemetry picks it up)
 touch /dev/write-to-traces
