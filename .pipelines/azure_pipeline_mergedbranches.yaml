@@ -126,8 +126,11 @@ jobs:
   variables:
     linuxImagetag: $[ dependencies.common.outputs['setup.linuxImagetag'] ]
     linuxTelemetryTag: $[ dependencies.common.outputs['setup.linuxTelemetryTag'] ]
+    Codeql.Enabled: true
 
   steps:
+  - task: CodeQL3000Init@0
+    displayName: CodeQL Initialize
   - task: AzureCLI@2
     displayName: "Multi-arch Linux build and Vulnerability Scan"
     inputs:
@@ -162,6 +165,8 @@ jobs:
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
         trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
+  - task: CodeQL3000Finalize@0
+    displayName: CodeQL Finalize
 
 
   - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
