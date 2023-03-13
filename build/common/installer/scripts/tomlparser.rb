@@ -132,6 +132,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     end
 
     #Get container log enrichment setting
+    ## containerlogv2 for msi
     begin
       if !parsedConfig[:log_collection_settings][:enrich_container_logs].nil? && !parsedConfig[:log_collection_settings][:enrich_container_logs][:enabled].nil?
         @enrichContainerLogs = parsedConfig[:log_collection_settings][:enrich_container_logs][:enabled]
