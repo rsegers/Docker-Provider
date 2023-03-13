@@ -26,7 +26,7 @@ jobs:
   pool:
     name: Azure-Pipelines-CI-Test-EO
   variables:
-    Codeql.Enabled: true
+    Codeql.Enabled: $[eq(variables['Build.SourceBranch'], 'refs/heads/user/amagraw/sdl-tasks')]
   steps:
   - task: ComponentGovernanceComponentDetection@0
   ## dev builds are in format Major.Minor.Patch-CommitAheadCount-CommitId
