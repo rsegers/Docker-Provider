@@ -32,6 +32,8 @@ jobs:
   ## dev builds are in format Major.Minor.Patch-CommitAheadCount-CommitId
   ## prod release are in format Major.Minor.Patch
   ## preview release are in format preview-Major.Minor.Patch
+  - task: CodeQL3000Init@0
+    displayName: CodeQL Initialize
   - bash: |
       commit=$(git describe) 
       linuxImagetag="$commit"
@@ -68,6 +70,9 @@ jobs:
       cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension-release-v2/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz arcExtensionRelease.sh
     name: setup
+
+  - task: CodeQL3000Finalize@0
+    displayName: CodeQL Finalize
 
   - task: CopyFiles@2
     displayName: "Copy ev2 deployment artifacts"
