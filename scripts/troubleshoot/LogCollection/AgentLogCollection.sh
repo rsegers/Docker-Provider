@@ -50,7 +50,7 @@ init()
     echo -e "Prerequistes check is done, all good" | tee -a Tool.log
 
     echo -e "Saving cluster information" | tee -a Tool.log
-
+    
     cmd=`kubectl cluster-info 2>&1`
     if [[ $cmd == *"refused"* ]];then
         echo -e "${Red}Fail to get cluster info, please check your AKS status fistly, exit...${NC}"
@@ -92,7 +92,7 @@ ds_logCollection()
         kubectl cp ${ds_pod}:/etc/fluent/container.conf ama-logs-daemonset/container_${ds_pod}.conf --namespace=kube-system --container ama-logs > /dev/null
         kubectl cp ${ds_pod}:/etc/fluent/container.conf ama-logs-prom-daemonset/container_${ds_pod}_prom.conf --namespace=kube-system --container ama-logs-prometheus > /dev/null
     fi
-
+    
     cmd=`kubectl exec ${ds_pod} -n kube-system -- ls /etc/opt/microsoft/docker-cimprov 2>&1`
     if [[ $cmd == *"cannot access"* ]];then
         echo -e "${Red}/etc/opt/microsoft/docker-cimprov not exist on ${ds_pod}${NC}" | tee -a Tool.log
