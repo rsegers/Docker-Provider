@@ -80,8 +80,7 @@
         "clusterResourceGroup": "[split(parameters('aksResourceId'),'/')[4]]",
         "clusterName": "[split(parameters('aksResourceId'),'/')[8]]",
         "clusterLocation": "[replace(parameters('aksResourceLocation'),' ', '')]",
-        "workspaceLocation":"[replace(parameters('workspaceRegion'),' ', '')]",
-        "dcrNameFull": "[Concat('MSCI', '-', variables('workspaceLocation'), '-', variables('clusterName'))]",
+        "dcrNameFull": "[Concat('MSCI', '-', parameters('workspaceRegion'), '-', variables('clusterName'))]",
         "dcrName":"[if(greater(length(variables('dcrNameFull')), 64), substring(variables('dcrNameFull'), 0, 64), variables('dcrNameFull'))]",
         "associationName":  "ContainerInsightsExtension",
         "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]",
@@ -109,8 +108,8 @@
                                         "extensionSettings": {
                                             "dataCollectionSettings" : {
                                                 "interval": "[parameters('dataCollectionInterval')]",
-                                                 "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-                                                 "namespaces": "[parameters('namespacesForDataCollection')]"
+                                                "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                                                "namespaces": "[parameters('namespacesForDataCollection')]"
                                             }
                                         },
                                         "extensionName": "ContainerInsights"
@@ -138,7 +137,7 @@
                         }
                     }
                 ]
-              },
+        },
         "syslogAndCITemplate": {
                 "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
                 "contentVersion": "1.0.0.0",
@@ -196,7 +195,7 @@
                         }
                     }
                 ]
-              }
+        }
     },
     "resources": [
         {
@@ -207,7 +206,73 @@
             "resourceGroup": "[variables('clusterResourceGroup')]",
             "properties": {
               "mode": "Incremental",
-              "template": "[if(parameters('enableSyslog'), variables('syslogAndCITemplate'), variables('ciOnlyTemplate'))]",
+              "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.Insights/dataCollectionRules",
+                            "apiVersion": "2021-04-01",
+                            "name": "[variables('dcrName')]",
+                            "location": "[parameters('workspaceRegion')]",
+                            "tags": "[parameters('resourceTagValues')]",
+                            "kind": "Linux",
+                            "properties": {
+                                "dataSources": {
+                                    "extensions": [
+                                        {
+                                            "name": "ContainerInsightsExtension",
+                                            "streams": [
+                                                "Microsoft-ContainerInsights-Group-Default"
+                                            ],
+                                            "extensionName": "ContainerInsights",
+                                            "extensionSettings": {
+                                                "condition": "[not(parameters('enableSyslog'))]",
+                                                "dataCollectionSettings" : {
+                                                    "interval": "[parameters('dataCollectionInterval')]",
+                                                    "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                                                    "namespaces": "[parameters('namespacesForDataCollection')]"
+                                                }
+                                            }
+                                        }
+                                    ],
+                                    "syslog": [
+                                        {
+                                            "condition": "[parameters('enableSyslog')]",
+                                            "streams": [
+                                                "Microsoft-Syslog"
+                                            ],
+                                            "facilityNames": "[parameters('syslogFacilities')]",
+                                            "logLevels": "[parameters('syslogLevels')]",
+                                            "name": "sysLogsDataSource"
+                                        }
+                                    ]
+                                },
+                                "destinations": {
+                                    "logAnalytics": [
+                                        {
+                                            "workspaceResourceId": "[parameters('workspaceResourceId')]",
+                                            "name": "ciworkspace"
+                                        }
+                                    ]
+                                },
+                                "dataFlows": [
+                                    {
+                                        "streams": [
+                                            "Microsoft-ContainerInsights-Group-Default",
+                                            "[if(parameters('enableSyslog'), 'Microsoft-Syslog', '')]"
+                                        ],
+                                        "destinations": [
+                                            "ciworkspace"
+                                        ]
+                                    }
+                                ]
+                            }
+                        }
+                    ]
+                },      
               "parameters": {}
             }
         },
