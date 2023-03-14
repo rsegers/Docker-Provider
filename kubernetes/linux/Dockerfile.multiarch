@@ -21,7 +21,6 @@ ENV tmpdir /opt
 RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
 RUN tdnf install -y build-essential wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
 RUN mkdir /busybin && busybox --install /busybin
-RUN chmod 775 /etc/cron.daily/logrotate
 # RUN /usr/bin/apt-get update && /usr/bin/apt-get install -y libc-bin wget openssl curl sudo python python-ctypes init-system-helpers  net-tools rsyslog cron vim dmidecode apt-transport-https gnupg make && rm -rf /var/lib/apt/lists/*
 
 COPY --from=golang-builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-cimprov-*.*.*-*.*.sh $tmpdir/
