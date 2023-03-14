@@ -21,7 +21,8 @@ cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d
 rm /usr/sbin/telegraf
 
-echo "Azure mdsd version: $(mdsd --version)" >> packages_version.txt
+mdsd_version=$(sudo tdnf list installed | grep mdsd | awk '{print $2}')
+echo "Azure mdsd: $mdsd_version" >> packages_version.txt
 
 # log rotate conf for mdsd and can be extended for other log files as well
 cp -f $TMPDIR/logrotate.conf /etc/logrotate.d/ci-agent

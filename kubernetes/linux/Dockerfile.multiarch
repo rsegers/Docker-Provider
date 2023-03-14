@@ -18,9 +18,6 @@ LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 ENV tmpdir /opt
 
-COPY kubernetes/linux/logrotate /etc/cron.daily/logrotate
-COPY kubernetes/linux/crontab /etc/crontab
-
 RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
 RUN tdnf install -y build-essential wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
 RUN mkdir /busybin && busybox --install /busybin
@@ -134,5 +131,4 @@ COPY --from=builder /usr/lib/libkrb5.so.3 /usr/lib/libk5crypto.so.3 /usr/lib/lib
 # jq dependencies
 COPY --from=builder /lib/libjq.so.1 /lib/libonig.so.5 /lib/
 
-RUN [ "/bin/bash", "-c", "/etc/cron.daily/logrotate" ]
 CMD [ "/opt/main.sh" ]
