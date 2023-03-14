@@ -206,73 +206,7 @@
             "resourceGroup": "[variables('clusterResourceGroup')]",
             "properties": {
               "mode": "Incremental",
-              "template": {
-                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                    "contentVersion": "1.0.0.0",
-                    "parameters": {},
-                    "variables": {},
-                    "resources": [
-                        {
-                            "type": "Microsoft.Insights/dataCollectionRules",
-                            "apiVersion": "2021-04-01",
-                            "name": "[variables('dcrName')]",
-                            "location": "[parameters('workspaceRegion')]",
-                            "tags": "[parameters('resourceTagValues')]",
-                            "kind": "Linux",
-                            "properties": {
-                                "dataSources": {
-                                    "extensions": [
-                                        {
-                                            "name": "ContainerInsightsExtension",
-                                            "streams": [
-                                                "Microsoft-ContainerInsights-Group-Default"
-                                            ],
-                                            "extensionName": "ContainerInsights",
-                                            "extensionSettings": {
-                                                "condition": "[not(parameters('enableSyslog'))]",
-                                                "dataCollectionSettings" : {
-                                                    "interval": "[parameters('dataCollectionInterval')]",
-                                                    "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-                                                    "namespaces": "[parameters('namespacesForDataCollection')]"
-                                                }
-                                            }
-                                        }
-                                    ],
-                                    "syslog": [
-                                        {
-                                            "condition": "[parameters('enableSyslog')]",
-                                            "streams": [
-                                                "Microsoft-Syslog"
-                                            ],
-                                            "facilityNames": "[parameters('syslogFacilities')]",
-                                            "logLevels": "[parameters('syslogLevels')]",
-                                            "name": "sysLogsDataSource"
-                                        }
-                                    ]
-                                },
-                                "destinations": {
-                                    "logAnalytics": [
-                                        {
-                                            "workspaceResourceId": "[parameters('workspaceResourceId')]",
-                                            "name": "ciworkspace"
-                                        }
-                                    ]
-                                },
-                                "dataFlows": [
-                                    {
-                                        "streams": [
-                                            "Microsoft-ContainerInsights-Group-Default",
-                                            "[if(parameters('enableSyslog'), 'Microsoft-Syslog', '')]"
-                                        ],
-                                        "destinations": [
-                                            "ciworkspace"
-                                        ]
-                                    }
-                                ]
-                            }
-                        }
-                    ]
-                },      
+              "template": "[if(parameters('enableSyslog'), variables('syslogAndCITemplate'), variables('ciOnlyTemplate'))]",     
               "parameters": {}
             }
         },
