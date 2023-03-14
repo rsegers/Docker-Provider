@@ -130,7 +130,7 @@ jobs:
 
   steps:
   - task: CodeQL3000Init@0
-    displayName: CodeQL Initialize
+    target: ${{ variables.repoImageName }}:$(linuxImagetag)
   - task: AzureCLI@2
     displayName: "Multi-arch Linux build and Vulnerability Scan"
     inputs:
@@ -166,7 +166,7 @@ jobs:
 
         trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
   - task: CodeQL3000Finalize@0
-    displayName: CodeQL Finalize
+    target: ${{ variables.repoImageName }}:$(linuxImagetag)
 
 
   - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
