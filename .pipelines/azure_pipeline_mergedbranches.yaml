@@ -121,6 +121,7 @@ jobs:
   variables:
     linuxImagetag: $[ dependencies.common.outputs['setup.linuxImagetag'] ]
     linuxTelemetryTag: $[ dependencies.common.outputs['setup.linuxTelemetryTag'] ]
+    Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
 
   steps:
@@ -199,6 +200,7 @@ jobs:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windowsTelemetryTag: $[ dependencies.common.outputs['setup.windowsTelemetryTag'] ]
     windows2019BaseImageVersion: ltsc2019
+    Codeql.Enabled: true
     Codeql.BuildIdentifier: 'windowsbuild'
   steps:
   - task: PowerShell@2
