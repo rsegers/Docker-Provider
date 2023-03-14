@@ -206,7 +206,7 @@
             "resourceGroup": "[variables('clusterResourceGroup')]",
             "properties": {
               "mode": "Incremental",
-              "template": "[if(parameters('enableSyslog'), variables('syslogAndCITemplate'), variables('ciOnlyTemplate'))]",     
+              "template": "[if(parameters('enableSyslog'), variables('syslogAndCITemplate'), variables('ciOnlyTemplate'))]",
               "parameters": {}
             }
         },
