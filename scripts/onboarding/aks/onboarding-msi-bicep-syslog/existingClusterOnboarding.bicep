@@ -13,19 +13,11 @@ param workspaceRegion string
 @description('Full Resource ID of the log analitycs workspace that will be used for data destination. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz')
 param workspaceResourceId string
 
-@description('Data collection interval e.g. "5m" for metrics and inventory. Supported value range from 1m to 30m')
-param dataCollectionInterval string
+@description('Array of allowed syslog levels')
+param syslogLevels array
 
-@description('Data collection Filtering Mode for the namespaces')
-@allowed([
-  'Off'
-  'Include'
-  'Exclude'
-])
-param namespaceFilteringModeForDataCollection string = 'Off'
-
-@description('An array of Kubernetes namespaces for the data collection of inventory, events and metrics')
-param namespacesForDataCollection array
+@description('Array of allowed syslog facilities')
+param syslogFacilities array
 
 var clusterSubscriptionId = split(aksResourceId, '/')[2]
 var clusterResourceGroup = split(aksResourceId, '/')[4]
@@ -42,9 +34,8 @@ module aks_monitoring_msi_dcr_dcr './nested_aks_monitoring_msi_dcr_dcr.bicep' = 
     dcrName: dcrName
     workspaceRegion: workspaceRegion
     resourceTagValues: resourceTagValues
-    dataCollectionInterval: dataCollectionInterval
-    namespaceFilteringModeForDataCollection: namespaceFilteringModeForDataCollection
-    namespacesForDataCollection: namespacesForDataCollection
+    syslogFacilities: syslogFacilities
+    syslogLevels: syslogLevels
     workspaceResourceId: workspaceResourceId
   }
 }
