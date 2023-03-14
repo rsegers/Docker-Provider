@@ -95,7 +95,7 @@ end
 begin
   isWindows = false
   os_type = ENV["OS_TYPE"]
-  if os_type.nil? && !os_type.empty? && os_type.strip.casecmp("windows") == 0
+  if !os_type.nil? && !os_type.empty? && os_type.strip.casecmp("windows") == 0
     isWindows = true
   end
 
@@ -112,5 +112,5 @@ begin
     puts "config:error: argument passed to fluent-bit-geneva-conf-customizer.rb file MUST be either common or infra or tenant"
   end
 rescue => errorStr
-  ConfigParseErrorLogger.logError("error while substituting values in fluent-bit-geneva.conf file: #{errorStr}")
+  ConfigParseErrorLogger.logError("error while substituting values in fluent-bit-geneva conf file: #{errorStr}")
 end
