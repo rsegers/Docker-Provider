@@ -560,13 +560,13 @@ function Start-Fluent-Telegraf {
     $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
 
     $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit.conf"
-    $fluentProcessArgs = "-c C:/etc/fluent-bit/fluent-bit.conf -e C:\opt\amalogswindows\out_oms.so"
+    $fluentProcessArgs = @("-c", "C:/etc/fluent-bit/fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so")
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
         $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit-geneva.conf"
-        $fluentProcessArgs = "-c C:/etc/fluent-bit/fluent-bit-geneva.conf -e C:\opt\amalogswindows\out_oms.so"
+        $fluentProcessArgs = @("-c", "C:/etc/fluent-bit/fluent-bit-geneva.conf", "-e", "C:\opt\amalogswindows\out_oms.so")
     }
     Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
-    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList $fluentProcessArgs }
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" } -ArgumentList $fluentProcessArgs
 
     # Start telegraf only in sidecar scraping mode
     $sidecarScrapingEnabled = [System.Environment]::GetEnvironmentVariable('SIDECAR_SCRAPING_ENABLED')
