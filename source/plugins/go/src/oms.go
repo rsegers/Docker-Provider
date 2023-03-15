@@ -1821,7 +1821,13 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	}
 
 	if ContainerLogsRouteV2 == true {
-		CreateMDSDClient(ContainerLogV2, ContainerType)
+		if IsWindows {
+			if IsGenevaLogsIntegrationEnabled {
+				CreateWindowsNamedPipesClient(getGenevaWindowsNamedPipeName())
+			}
+		} else {
+			CreateMDSDClient(ContainerLogV2, ContainerType)
+		}
 	} else if ContainerLogsRouteADX == true {
 		CreateADXClient()
 	} else { // v1 or windows
