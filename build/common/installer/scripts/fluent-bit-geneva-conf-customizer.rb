@@ -54,7 +54,7 @@ def substituteFluentBitPlaceHolders(configFilePath)
     tailMemBufLimit = is_valid_number?(memBufLimit) ? memBufLimit : @default_mem_buf_limit
     tailMemBufLimitSetting = "Mem_Buf_Limit " + tailMemBufLimit + "m"
 
-    text = File.read(@fluent_bit_conf_path)
+    text = File.read(configFilePath)
     new_contents = text.gsub("${SERVICE_FLUSH_INTERVAL}", serviceIntervalSetting)
     new_contents = new_contents.gsub("${TAIL_MEM_BUF_LIMIT}", tailMemBufLimitSetting)
     if !tailBufferChunkSize.nil?
@@ -101,7 +101,7 @@ begin
 
   configType = ARGV[0] # supported config type are common or infra or tenant
   if configType.nil?
-    puts "config:error: fluent-bit-geneva-conf-customizer.rb file MUST be invoked with argument"
+    puts "config:error: fluent-bit-geneva-conf-customizer.rb file MUST be invoked with an argument"
   elsif SUPPORTED_CONFIG_TYPES.include?(configType)
     configFilePath = LINUX_CONFIG_PATHS[configType]
     if isWindows

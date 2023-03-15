@@ -76,6 +76,10 @@ checkAgentOnboardingStatus() {
                         successMessage="Loaded data sources"
                         failureMessage="Failed to load data sources into config"
                   fi
+                  if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+                        successMessage="Config downloaded and parsed"
+                        failureMessage="failed to download start up config"
+                  fi
                   while true; do
                         if [ $totalsleptsecs -gt $waittimesecs ]; then
                               echo "${FUNCNAME[0]} giving up checking agent onboarding status after $totalsleptsecs secs"
@@ -473,7 +477,7 @@ fi
 # These need to be copied to a different location for Mariner vs Ubuntu containers.
 # OS_ID here is the container distro.
 # Adding Mariner now even though the elif will never currently evaluate.
-if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ $IS_CUSTOM_CERT == "true" ]; then
+if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ "$IS_CUSTOM_CERT" == "true" ]; then
   OS_ID=$(cat /etc/os-release | grep ^ID= | cut -d '=' -f2 | tr -d '"' | tr -d "'")
   if [ $OS_ID == "mariner" ]; then
     cp /anchors/ubuntu/* /etc/pki/ca-trust/source/anchors
@@ -1063,7 +1067,7 @@ echo "getting rsyslog status..."
 service rsyslog status
 
 if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
-  echo "not checking onboarding status since agent running Geneva Logs Mode is true"
+     checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
 elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
 else
@@ -1071,7 +1075,7 @@ else
 fi
 
 shutdown() {
-     if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+     if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
          echo "graceful shutdown"
          gracefulShutdown
       else
