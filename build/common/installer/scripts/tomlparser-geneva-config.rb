@@ -22,7 +22,6 @@ GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "Firstparty
 @infra_namespaces = ""
 @tenant_namespaces = ""
 @geneva_gcs_authid = ""
-@containerType = ENV["CONTAINER_TYPE"]
 @azure_json_path = "/etc/kubernetes/host/azure.json"
 
 # Use parser to parse the configmap toml file to a ruby structure
@@ -129,7 +128,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
               else
                 @geneva_logs_config_version_windows = "1.0"
                 puts "Since config version for windows not specified so using default config version : #{@geneva_logs_config_version_windows}"
-              end             
+              end
             else
               puts "config::geneva_logs::error: provided geneva logs config is not valid"
             end
@@ -220,96 +219,94 @@ def get_command_windows(env_variable_name, env_variable_value)
   return "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n" + "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
 end
 
-if (@containerType.nil? || @containerType.empty?)
-  @configSchemaVersion = ENV["AZMON_AGENT_CFG_SCHEMA_VERSION"]
-  puts "****************Start Geneva logs Config Processing********************"
-  if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @configSchemaVersion.strip.casecmp("v1") == 0 #note v1 is the only supported schema version , so hardcoding it
-    configMapSettings = parseConfigMap
-    if !configMapSettings.nil?
-      populateSettingValuesFromConfigMap(configMapSettings)
-    end
-  else
-    if (File.file?(@configMapMountPath))
-      ConfigParseErrorLogger.logError("config::integrations::unsupported/missing config schema version - '#{@configSchemaVersion}' , using defaults, please use supported schema version")
-    end
-    @geneva_logs_integration = false
-    @multi_tenancy = false
-    @geneva_account_environment = ""
-    @geneva_account_name = ""
-    @geneva_account_namespace = ""
-    @geneva_gcs_region = ""
+@configSchemaVersion = ENV["AZMON_AGENT_CFG_SCHEMA_VERSION"]
+puts "****************Start Agent Integrations Config Processing********************"
+if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @configSchemaVersion.strip.casecmp("v1") == 0 #note v1 is the only supported schema version , so hardcoding it
+  configMapSettings = parseConfigMap
+  if !configMapSettings.nil?
+    populateSettingValuesFromConfigMap(configMapSettings)
   end
+else
+  if (File.file?(@configMapMountPath))
+    ConfigParseErrorLogger.logError("config::integrations::unsupported/missing config schema version - '#{@configSchemaVersion}' , using defaults, please use supported schema version")
+  end
+  @geneva_logs_integration = false
+  @multi_tenancy = false
+  @geneva_account_environment = ""
+  @geneva_account_name = ""
+  @geneva_account_namespace = ""
+  @geneva_gcs_region = ""
+end
 
+# Write the settings to file, so that they can be set as environment variables
+file = File.open("geneva_config_env_var", "w")
+
+if !file.nil?
+  file.write("export GENEVA_LOGS_INTEGRATION=#{@geneva_logs_integration}\n")
+  file.write("export GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}\n")
+
+  file.write("export MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}\n")
+  file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}\n")
+  file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
+  file.write("export MONITORING_GCS_REGION=#{@geneva_gcs_region}\n")
+  file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
+  file.write("export MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}\n")
+  file.write("export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken")
+
+  file.write("export GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}\n")
+  file.write("export GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}\n")
+
+  # This required environment variable in geneva mode
+  file.write("export MDSD_MSGPACK_SORT_COLUMNS=1\n")
+
+  # Close file after writing all environment variables
+  file.close
+else
+  puts "Exception while opening file for writing  geneva config environment variables"
+  puts "****************End Config Processing********************"
+end
+
+if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   # Write the settings to file, so that they can be set as environment variables
-  file = File.open("geneva_config_env_var", "w")
+  file = File.open("setgenevaconfigenv.ps1", "w")
 
   if !file.nil?
-    file.write("export GENEVA_LOGS_INTEGRATION=#{@geneva_logs_integration}\n")
-    file.write("export GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}\n")
+    commands = get_command_windows("GENEVA_LOGS_INTEGRATION", @geneva_logs_integration)
+    file.write(commands)
+    commands = get_command_windows("GENEVA_LOGS_MULTI_TENANCY", @multi_tenancy)
+    file.write(commands)
 
-    file.write("export MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}\n")
-    file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}\n")
-    file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
-    file.write("export MONITORING_GCS_REGION=#{@geneva_gcs_region}\n")
-    file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
-    file.write("export MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}\n")
-    file.write("export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken")
+    commands = get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment)
+    file.write(commands)
+    commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace_windows)
+    file.write(commands)
+    commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
+    file.write(commands)
+    commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version_windows)
+    file.write(commands)
+    commands = get_command_windows("MONITORING_GCS_REGION", @geneva_gcs_region)
+    file.write(commands)
+    commands = get_command_windows("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken")
+    file.write(commands)
 
-    file.write("export GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}\n")
-    file.write("export GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}\n")
+    #Windows AMA expects these and these are different from Linux AMA
+    authIdParts = @geneva_gcs_authid.split("#", 2)
+    if authIdParts.length == 2
+      file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
+      file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
+    else
+      puts "Invalid GCS Auth Id: #{@geneva_gcs_authid}"
+    end
 
-    # This required environment variable in geneva mode
-    file.write("export MDSD_MSGPACK_SORT_COLUMNS=1\n")
-
+    commands = get_command_windows("GENEVA_LOGS_INFRA_NAMESPACES", @infra_namespaces)
+    file.write(commands)
+    commands = get_command_windows("GENEVA_LOGS_TENANT_NAMESPACES", @tenant_namespaces)
+    file.write(commands)
     # Close file after writing all environment variables
     file.close
-  else
-    puts "Exception while opening file for writing  geneva config environment variables"
     puts "****************End Config Processing********************"
-  end
-
-  if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-    # Write the settings to file, so that they can be set as environment variables
-    file = File.open("setgenevaconfigenv.ps1", "w")
-
-    if !file.nil?
-      commands = get_command_windows("GENEVA_LOGS_INTEGRATION", @geneva_logs_integration)
-      file.write(commands)
-      commands = get_command_windows("GENEVA_LOGS_MULTI_TENANCY", @multi_tenancy)
-      file.write(commands)
-
-      commands = get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment)
-      file.write(commands)
-      commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace_windows)
-      file.write(commands)
-      commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
-      file.write(commands)
-      commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version_windows)
-      file.write(commands)
-      commands = get_command_windows("MONITORING_GCS_REGION", @geneva_gcs_region)
-      file.write(commands)
-      commands = get_command_windows("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken")
-      file.write(commands)
-
-      #Windows AMA expects these and these are different from Linux AMA
-      authIdParts = @geneva_gcs_authid.split("#", 2)
-      if authIdParts.length == 2
-        file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
-        file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
-      else
-        puts "Invalid GCS Auth Id: #{@geneva_gcs_authid}"
-      end
-
-      commands = get_command_windows("GENEVA_LOGS_INFRA_NAMESPACES", @infra_namespaces)
-      file.write(commands)
-      commands = get_command_windows("GENEVA_LOGS_TENANT_NAMESPACES", @tenant_namespaces)
-      file.write(commands)
-      # Close file after writing all environment variables
-      file.close
-      puts "****************End Config Processing********************"
-    else
-      puts "Exception while opening file for writing config environment variables for WINDOWS LOG"
-      puts "****************End Config Processing********************"
-    end
+  else
+    puts "Exception while opening file for writing config environment variables for WINDOWS LOG"
+    puts "****************End Config Processing********************"
   end
 end

@@ -557,22 +557,20 @@ fi
 #Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
 if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       ruby fluent-bit-conf-customizer.rb
-      if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ]; then
-           #Parse geneva config
-           ruby tomlparser-geneva-config.rb
-           cat geneva_config_env_var | while read line; do
-                 echo $line >> ~/.bashrc
-           done
-           source geneva_config_env_var
-           if [ "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-                 ruby fluent-bit-geneva-conf-customizer.rb  "common"
-                 ruby fluent-bit-geneva-conf-customizer.rb  "tenant"
-                 ruby fluent-bit-geneva-conf-customizer.rb  "infra"
-                 # generate genavaconfig for each tenant
-                 generateGenevaTenantNamespaceConfig
-                 # generate genavaconfig for infra namespace
-                 generateGenevaInfraNamespaceConfig
-            fi
+      #Parse geneva config
+      ruby tomlparser-geneva-config.rb
+      cat geneva_config_env_var | while read line; do
+            echo $line >> ~/.bashrc
+      done
+      source geneva_config_env_var
+      if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
+            ruby fluent-bit-geneva-conf-customizer.rb  "common"
+            ruby fluent-bit-geneva-conf-customizer.rb  "tenant"
+            ruby fluent-bit-geneva-conf-customizer.rb  "infra"
+            # generate genavaconfig for each tenant
+            generateGenevaTenantNamespaceConfig
+            # generate genavaconfig for infra namespace
+            generateGenevaInfraNamespaceConfig
       fi
 fi
 
