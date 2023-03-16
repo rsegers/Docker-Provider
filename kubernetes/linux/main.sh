@@ -766,7 +766,7 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
       export MDSD_ROLE_PREFIX=/var/run/mdsd-${CONTAINER_TYPE}/default
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
       source ~/.bashrc
-      mkdir /var/run/mdsd-${CONTAINER_TYPE}
+      mkdir -p /var/run/mdsd-${CONTAINER_TYPE}
       # add -T 0xFFFF for full traces
       mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
     else
@@ -778,7 +778,7 @@ else
       export MDSD_ROLE_PREFIX=/var/run/mdsd-ci/default
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
       source ~/.bashrc
-      mkdir /var/run/mdsd-ci
+      mkdir -p /var/run/mdsd-ci
       mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
 fi
 
