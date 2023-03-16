@@ -51,7 +51,7 @@ def substituteFluentBitPlaceHolders(configFilePath)
       tailBufferMaxSize = tailBufferChunkSize
     end
 
-    tailMemBufLimit = is_valid_number?(memBufLimit) ? memBufLimit : @default_mem_buf_limit
+    tailMemBufLimit = (is_valid_number?(memBufLimit) && memBufLimit.to_i > 10) ? memBufLimit : @default_mem_buf_limit
     tailMemBufLimitSetting = "Mem_Buf_Limit " + tailMemBufLimit + "m"
 
     text = File.read(configFilePath)
