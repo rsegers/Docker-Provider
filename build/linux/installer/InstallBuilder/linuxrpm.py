@@ -62,6 +62,8 @@ class LinuxRPMFile:
 
         specfile.write('%define __find_requires %{nil}\n')
         specfile.write('%define _use_internal_dependency_generator 0\n')
+        if self.variables["PFARCH"] == "arm64":
+            specfile.write('%define _target_cpu aarch64\n')
 
         if self.variables["PFDISTRO"] == "REDHAT":
             specfile.write('%%define dist el%(DISTNUM)d\n\n' % {'DISTNUM': int(self.variables["PFMAJOR"]) } )
@@ -75,7 +77,6 @@ class LinuxRPMFile:
 
         specfile.write('Name: ' + self.variables["SHORT_NAME"] + '\n')
         specfile.write('Version: ' + self.variables["VERSION"] + '\n')
-        specfile.write('BuildArch: ' + self.variables["PFARCH"] + '\n')
 
         if "RELEASE" in self.variables:
             if self.variables["PFDISTRO"] == "REDHAT":
@@ -136,6 +137,7 @@ class LinuxRPMFile:
         specfile.close()
 
     def StageAndProperlyNameRPM(self):
+        print("Inside StageAndProperlyNameRPM")
         if 'OUTPUTFILE' in self.variables:
             rpmNewFileName = self.variables['OUTPUTFILE'] + '.rpm'
         elif self.variables['PFDISTRO'] == 'SUSE':
