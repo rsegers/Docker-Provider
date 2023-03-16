@@ -58,12 +58,17 @@ class LinuxRPMFile:
         return script
 
     def GenerateSpecFile(self):
+        archType = self.variables["PFARCH"]
+        if archType == 'arm64':
+            archType = 'aarch64'
+        elif archType == 'amd64':
+            archType = 'x86_64'
+
         specfile = open(self.intermediateDir + "/" + "rpm.spec", 'w')
 
         specfile.write('%define __find_requires %{nil}\n')
         specfile.write('%define _use_internal_dependency_generator 0\n')
-        if self.variables["PFARCH"] == "arm64":
-            specfile.write('%define _target_cpu aarch64\n')
+        specfile.write('%define _target_cpu ' + archType + '\n')
 
         if self.variables["PFDISTRO"] == "REDHAT":
             specfile.write('%%define dist el%(DISTNUM)d\n\n' % {'DISTNUM': int(self.variables["PFMAJOR"]) } )
@@ -90,6 +95,7 @@ class LinuxRPMFile:
         specfile.write('Group: ' + self.variables["GROUP"] + '\n')
         specfile.write('License: ' + self.variables["LICENSE"] + '\n')
         specfile.write('Vendor: '+ self.variables["VENDOR"] + '\n')
+        specfile.write('BuildArch: ' + archType + '\n')
 
         if len(self.sections["Dependencies"]) > 0:
             specfile.write('Requires: ')
