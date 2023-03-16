@@ -75,6 +75,7 @@ class LinuxRPMFile:
 
         specfile.write('Name: ' + self.variables["SHORT_NAME"] + '\n')
         specfile.write('Version: ' + self.variables["VERSION"] + '\n')
+        specfile.write('BuildArch: ' + self.variables["PFARCH"] + '\n')
 
         if "RELEASE" in self.variables:
             if self.variables["PFDISTRO"] == "REDHAT":
