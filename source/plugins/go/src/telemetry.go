@@ -399,6 +399,10 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 					CommonProperties["GENEVA_LOGS_CONFIG_VERSION"] = genevaLogsConfigVersion
 				}
 			}
+            genevaLogsIntegrationServiceMode := os.Getenv("GENEVA_LOGS_INTEGRATION_SERVICE_MODE")
+			if genevaLogsIntegrationServiceMode != "" && strings.Compare(strings.ToLower(genevaLogsIntegrationServiceMode), "true") == 0 {
+				CommonProperties["IsGenevaLogsIntegrationServiceMode"] = "true"
+			}
 		}
 	}
 
