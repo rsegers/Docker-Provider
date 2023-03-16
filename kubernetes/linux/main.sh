@@ -555,23 +555,24 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATIO
 fi
 
 #Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
-if [ ! -e "/etc/config/kube.conf" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
+if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       ruby fluent-bit-conf-customizer.rb
-      #Parse geneva config
-      ruby tomlparser-geneva-config.rb
-      cat geneva_config_env_var | while read line; do
-            echo $line >> ~/.bashrc
-      done
-      source geneva_config_env_var
-
-      if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-         ruby fluent-bit-geneva-conf-customizer.rb  "common"
-         ruby fluent-bit-geneva-conf-customizer.rb  "tenant"
-         ruby fluent-bit-geneva-conf-customizer.rb  "infra"
-         # generate genavaconfig for each tenant
-         generateGenevaTenantNamespaceConfig
-         # generate genavaconfig for infra namespace
-         generateGenevaInfraNamespaceConfig
+      if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ]; then
+           #Parse geneva config
+           ruby tomlparser-geneva-config.rb
+           cat geneva_config_env_var | while read line; do
+                 echo $line >> ~/.bashrc
+           done
+           source geneva_config_env_var
+           if [ "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
+                 ruby fluent-bit-geneva-conf-customizer.rb  "common"
+                 ruby fluent-bit-geneva-conf-customizer.rb  "tenant"
+                 ruby fluent-bit-geneva-conf-customizer.rb  "infra"
+                 # generate genavaconfig for each tenant
+                 generateGenevaTenantNamespaceConfig
+                 # generate genavaconfig for infra namespace
+                 generateGenevaInfraNamespaceConfig
+            fi
       fi
 fi
 
@@ -790,7 +791,7 @@ source /etc/mdsd.d/envmdsd
 MDSD_AAD_MSI_AUTH_ARGS=""
 # check if its AAD Auth MSI mode via USING_AAD_MSI_AUTH
 export AAD_MSI_AUTH_MODE=false
-if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "false" ] || [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" -a ! -z "${GENEVA_LOGS_INFRA_NAMESPACES}" ]  || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION}" == "true"  -o "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
     echo "Runnning AMA in Geneva Logs Integration Mode"
     export MONITORING_USE_GENEVA_CONFIG_SERVICE=true
     echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=true" >> ~/.bashrc
