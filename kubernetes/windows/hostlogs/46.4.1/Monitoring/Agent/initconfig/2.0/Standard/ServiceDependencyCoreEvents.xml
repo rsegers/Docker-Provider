@@ -1,0 +1,518 @@
+<MonitoringManagement version="1.0" timestamp="2019-10-21T22:14:29.905Z">
+  <Events>
+
+    <TextLogSubscriptions>
+      <Subscription 
+          eventName="SvcDepPortsRaw"
+          format="W3c"
+          path="%ProgramFiles%\Microsoft Dependency Agent\storage"
+          nameFilter=".*-ports-v1\.dacsv"
+          storeType="Local"
+          account="ServiceDependency"
+          duration="PT1M"
+          directoryQuotaInMB="50">
+        <Delimiters>
+          <Delimiter>,</Delimiter>
+        </Delimiters>
+        <Schema textQualifier="&quot;" />
+      </Subscription>
+
+      <Subscription 
+          eventName="SvcDepConnectionsRaw"
+          format="W3c" 
+          path="%ProgramFiles%\Microsoft Dependency Agent\storage"
+          nameFilter=".*-connections-v1\.dacsv"
+          storeType="Local"
+          account="ServiceDependency"
+          duration="PT1M"
+          directoryQuotaInMB="50">
+        <Delimiters>
+          <Delimiter>,</Delimiter>
+        </Delimiters>
+        <Schema textQualifier="&quot;" />
+      </Subscription>
+
+      <Subscription 
+          eventName="SvcDepEndpointsRaw"
+          format="W3c"
+          path="%ProgramFiles%\Microsoft Dependency Agent\storage"
+          nameFilter=".*-endpoints-v1\.dacsv"
+          storeType="Local"
+          account="ServiceDependency"
+          duration="PT1M"
+          directoryQuotaInMB="50">
+        <Delimiters>
+          <Delimiter>,</Delimiter>
+        </Delimiters>
+        <Schema textQualifier="&quot;" />
+      </Subscription>
+
+      <Subscription 
+          eventName="SvcDepHeartbeatsRaw"
+          format="W3c"
+          path="%ProgramFiles%\Microsoft Dependency Agent\storage"
+          nameFilter=".*-heartbeats-v1\.dacsv"
+          storeType="Local"
+          account="ServiceDependency"
+          duration="PT1M"
+          directoryQuotaInMB="50">
+        <Delimiters>
+          <Delimiter>,</Delimiter>
+        </Delimiters>
+        <Schema textQualifier="&quot;" />
+      </Subscription>
+
+      <Subscription 
+          eventName="SvcDepInterfacesRaw"
+          format="W3c"
+          path="%ProgramFiles%\Microsoft Dependency Agent\storage"
+          nameFilter=".*-interfaces-v1\.dacsv"
+          storeType="Local"
+          account="ServiceDependency"
+          duration="PT1M"
+          directoryQuotaInMB="50">
+        <Delimiters>
+          <Delimiter>,</Delimiter>
+        </Delimiters>
+        <Schema textQualifier="&quot;" />
+      </Subscription>
+
+      <Subscription 
+          eventName="SvcDepAgentStatisticsRaw" 
+          format="W3c" 
+          path="%ProgramFiles%\Microsoft Dependency Agent\storage"
+          nameFilter=".*-agent-statistics-v1\.dacsv" 
+          storeType="Local" 
+          account="ServiceDependency" 
+          duration="PT5M"
+          directoryQuotaInMB="50">
+        <Delimiters>
+          <Delimiter>,</Delimiter>
+        </Delimiters>
+        <Schema textQualifier="&quot;" />
+      </Subscription>
+
+    </TextLogSubscriptions>
+
+    <DerivedEvents>
+      <DerivedEvent 
+          source="SvcDepConnectionsRaw"
+          eventName="SvcDepConnections"
+          storeType="CentralBond"
+          account="ServiceDependency" 
+          duration="PT1M">
+        <Query>
+          <![CDATA[
+            var rawRows =
+              let TcpHandshakesComplete = TcpHandshakesComplete ?? ""
+              let TcpHandshakeLatencySum = TcpHandshakeLatencySum ?? ""
+              select
+                EndTime as TimeGenerated,
+
+                Direction,
+                SourceIp,
+                DestinationIp,
+                DestinationPort,
+                Protocol,
+                LocalIp,
+                RemoteIp,
+                RemoteEndpoint,
+
+                RemoteDnsQuestions,
+                RemoteDnsCanonicalNames,
+
+                RemoteClassificationPart1,
+                RemoteClassificationPart2,
+                RemoteClassificationPart3,
+                RemoteClassificationPart4,
+                RemoteClassificationPart5,
+
+                LinksFailed,
+                LinksLive,
+                LinksEstablished,
+                LinksTerminated,
+
+                BytesSent,
+                BytesReceived,
+
+                TcpHandshakesComplete,
+                TcpHandshakeLatencySum,
+
+                Responses,
+                ResponseTimeMin,
+                ResponseTimeMax,
+                ResponseTimeSum,
+
+                TlsHandshakesComplete,
+                TlsHandshakesFailed,
+                TlsHandshakeLatencySum,
+                TlsVersions,
+                TlsCipherSuites,
+
+                MachineId,
+                Computer,
+                VirtualMachineNativeName as ContainerId,
+
+                ProcessId,
+                ProcessName,
+                ProcessUser;
+            
+            from rawRows
+              let TimeGenerated = (TimeGenerated != null && TimeGenerated != "_n/a_" && TimeGenerated != "_Unknown_") ? ToUtc(TimeGenerated) : ToUtc("1981-01-01:00:00:00")
+
+              let Computer = (Computer != null && Computer != "_n/a_" && Computer != "_Unknown_") ? Computer : ""
+              let ProcessId = (ProcessId != null && ProcessId != "_n/a_" && ProcessId != "_Unknown_") ? ProcessId : ""
+
+              let Direction = (Direction != null && Direction != "_n/a_" && Direction != "_Unknown_") ? Direction : ""
+              let SourceIp = (SourceIp != null && SourceIp != "_n/a_" && SourceIp != "_Unknown_") ? SourceIp : ""
+              let DestinationIp = (DestinationIp != null && DestinationIp != "_n/a_" && DestinationIp != "_Unknown_") ? DestinationIp : ""
+              let DestinationPort = (DestinationPort != null && DestinationPort != "_n/a_" && DestinationPort != "_Unknown_") ? ToInt32(DestinationPort) : 0
+              let Protocol = (Protocol != null && Protocol != "_n/a_" && Protocol != "_Unknown_") ? Protocol : ""
+              let LocalIp = (LocalIp != null && LocalIp != "_n/a_" && LocalIp != "_Unknown_") ? LocalIp : ""
+              let RemoteIp = (RemoteIp != null && RemoteIp != "_n/a_" && RemoteIp != "_Unknown_") ? RemoteIp : ""
+              let RemoteEndpoint = (RemoteEndpoint != null && RemoteEndpoint != "_n/a_" && RemoteEndpoint != "_Unknown_") ? RemoteEndpoint : ""
+
+              let RemoteDnsQuestions = (RemoteDnsQuestions != null && RemoteDnsQuestions != "_n/a_" && RemoteDnsQuestions != "_Unknown_") ? RemoteDnsQuestions : ""
+              let RemoteDnsCanonicalNames = (RemoteDnsCanonicalNames != null && RemoteDnsCanonicalNames != "_n/a_" && RemoteDnsCanonicalNames != "_Unknown_") ? RemoteDnsCanonicalNames : ""
+
+              let RemoteClassificationPart1 = (RemoteClassificationPart1 != null && RemoteClassificationPart1 != "_n/a_" && RemoteClassificationPart1 != "_Unknown_") ? RemoteClassificationPart1 : ""
+              let RemoteClassificationPart2 = (RemoteClassificationPart2 != null && RemoteClassificationPart2 != "_n/a_" && RemoteClassificationPart2 != "_Unknown_") ? RemoteClassificationPart2 : ""
+              let RemoteClassificationPart3 = (RemoteClassificationPart3 != null && RemoteClassificationPart3 != "_n/a_" && RemoteClassificationPart3 != "_Unknown_") ? RemoteClassificationPart3 : ""
+              let RemoteClassificationPart4 = (RemoteClassificationPart4 != null && RemoteClassificationPart4 != "_n/a_" && RemoteClassificationPart4 != "_Unknown_") ? RemoteClassificationPart4 : ""
+              let RemoteClassificationPart5 = (RemoteClassificationPart5 != null && RemoteClassificationPart5 != "_n/a_" && RemoteClassificationPart5 != "_Unknown_") ? RemoteClassificationPart5 : ""
+
+              let LinksFailed = (LinksFailed != null && LinksFailed != "_n/a_" && LinksFailed != "_Unknown_") ? ToInt32(LinksFailed) : 0
+              let LinksLive = (LinksLive != null && LinksLive != "_n/a_" && LinksLive != "_Unknown_") ? ToInt32(LinksLive) : 0
+              let LinksEstablished = (LinksEstablished != null && LinksEstablished != "_n/a_" && LinksEstablished != "_Unknown_") ? ToInt32(LinksEstablished) : 0
+              let LinksTerminated = (LinksTerminated != null && LinksTerminated != "_n/a_" && LinksTerminated != "_Unknown_") ? ToInt32(LinksTerminated) : 0
+
+              let BytesSent = (BytesSent != null && BytesSent != "_n/a_" && BytesSent != "_Unknown_") ? ToInt64(BytesSent) : 0L
+              let BytesReceived = (BytesReceived != null && BytesReceived != "_n/a_" && BytesReceived != "_Unknown_") ? ToInt64(BytesReceived) : 0L
+
+              let TcpHandshakesComplete = (TcpHandshakesComplete != null && TcpHandshakesComplete != "_n/a_" && TcpHandshakesComplete != "_Unknown_" && TcpHandshakesComplete != "") ? ToInt32(TcpHandshakesComplete) : 0
+              let TcpHandshakeLatencySum = (TcpHandshakeLatencySum != null && TcpHandshakeLatencySum != "_n/a_" && TcpHandshakeLatencySum != "_Unknown_" && TcpHandshakeLatencySum != "") ? ToInt64(TcpHandshakeLatencySum) : 0L
+
+              let Responses = (Responses != null && Responses != "_n/a_" && Responses != "_Unknown_") ? ToInt32(Responses) : 0
+              let ResponseTimeMin = (ResponseTimeMin != null && ResponseTimeMin != "_n/a_" && ResponseTimeMin != "_Unknown_") ? ToInt32(ResponseTimeMin) : 0
+              let ResponseTimeMax = (ResponseTimeMax != null && ResponseTimeMax != "_n/a_" && ResponseTimeMax != "_Unknown_") ? ToInt32(ResponseTimeMax) : 0
+              let ResponseTimeSum = (ResponseTimeSum != null && ResponseTimeSum != "_n/a_" && ResponseTimeSum != "_Unknown_") ? ToInt64(ResponseTimeSum) : 0L
+
+              let TlsHandshakesComplete = (TlsHandshakesComplete != null && TlsHandshakesComplete != "_n/a_" && TlsHandshakesComplete != "_Unknown_") ? ToInt32(TlsHandshakesComplete) : 0
+              let TlsHandshakesFailed = (TlsHandshakesFailed != null && TlsHandshakesFailed != "_n/a_" && TlsHandshakesFailed != "_Unknown_") ? ToInt32(TlsHandshakesFailed) : 0
+              let TlsHandshakeLatencySum = (TlsHandshakeLatencySum != null && TlsHandshakeLatencySum != "_n/a_" && TlsHandshakeLatencySum != "_Unknown_") ? ToInt64(TlsHandshakeLatencySum) : 0L
+              let TlsVersions = (TlsVersions != null && TlsVersions != "_n/a_" && TlsVersions != "_Unknown_") ? TlsVersions : ""
+              let TlsCipherSuites = (TlsCipherSuites != null && TlsCipherSuites != "_n/a_" && TlsCipherSuites != "_Unknown_") ? TlsCipherSuites : ""
+
+              let MachineId = (MachineId != null && MachineId != "_n/a_" && MachineId != "_Unknown_") ? MachineId : ""
+              let ContainerId = (ContainerId != null && ContainerId != "_n/a_" && ContainerId != "_Unknown_") ? ContainerId : ""
+
+              let ProcessName = (ProcessName != null && ProcessName != "_n/a_" && ProcessName != "_Unknown_") ? ProcessName : ""
+              let ProcessUser = (ProcessUser != null && ProcessUser != "_n/a_" && ProcessUser != "_Unknown_") ? ProcessUser : ""
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+      <DerivedEvent 
+          source="SvcDepEndpointsRaw"
+          eventName="SvcDepEndpoints"
+          storeType="CentralBond"
+          account="ServiceDependency" 
+          duration="PT1M">
+        <Query>
+          <![CDATA[
+            var rawRows =
+              select
+                EndTime as TimeGenerated,
+                
+                LoadBalancerEndpoint,
+                LoadBalancerIp,
+                LoadBalancerPort,
+                Endpoint,
+                Ip,
+                Port,
+
+                MachineId,
+                Computer,
+                VirtualMachineNativeName as ContainerId;
+            
+            from rawRows
+              let TimeGenerated = (TimeGenerated != null && TimeGenerated != "_n/a_" && TimeGenerated != "_Unknown_") ?  ToUtc(TimeGenerated) : ToUtc("1981-01-01:00:00:00")
+
+              let Computer = (Computer != null && Computer != "_n/a_" && Computer != "_Unknown_") ? Computer : ""
+
+              let LoadBalancerEndpoint = (LoadBalancerEndpoint != null && LoadBalancerEndpoint != "_n/a_" && LoadBalancerEndpoint != "_Unknown_") ? LoadBalancerEndpoint : ""
+              let LoadBalancerIp = (LoadBalancerIp != null && LoadBalancerIp != "_n/a_" && LoadBalancerIp != "_Unknown_") ? LoadBalancerIp : ""
+              let LoadBalancerPort = (LoadBalancerPort != null && LoadBalancerPort != "_n/a_" && LoadBalancerPort != "_Unknown_") ? ToInt32(LoadBalancerPort) : 0
+              let Endpoint = (Endpoint != null && Endpoint != "_n/a_" && Endpoint != "_Unknown_") ? Endpoint : ""
+              let Ip = (Ip != null && Ip != "_n/a_" && Ip != "_Unknown_") ? Ip : ""
+              let Port = (Port != null && Port != "_n/a_" && Port != "_Unknown_") ? ToInt32(Port) : 0
+
+              let MachineId = (MachineId != null && MachineId != "_n/a_" && MachineId != "_Unknown_") ? MachineId : ""
+              let ContainerId = (ContainerId != null && ContainerId != "_n/a_" && ContainerId != "_Unknown_") ? ContainerId : ""
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+      <DerivedEvent 
+          source="SvcDepPortsRaw"
+          eventName="SvcDepPorts"
+          storeType="CentralBond"
+          account="ServiceDependency" 
+          duration="PT1M">
+        <Query>
+          <![CDATA[
+            var rawRows =
+              let LinksFailed = LinksFailed ?? ""
+              let TcpHandshakesComplete = TcpHandshakesComplete ?? ""
+              let TcpHandshakeLatencySum = TcpHandshakeLatencySum ?? ""
+              select
+                EndTime as TimeGenerated,
+
+                Endpoint,
+                Ip,
+                Port,
+                Protocol,
+
+                LinksFailed,
+                LinksLive,
+                LinksEstablished,
+                LinksTerminated,
+
+                BytesSent,
+                BytesReceived,
+
+                TcpHandshakesComplete,
+                TcpHandshakeLatencySum,
+
+                Responses,
+                ResponseTimeMin,
+                ResponseTimeMax,
+                ResponseTimeSum,
+
+                TlsHandshakesComplete,
+                TlsHandshakesFailed,
+                TlsHandshakeLatencySum,
+                TlsVersions,
+                TlsCipherSuites,
+
+                MachineId,
+                Computer,
+                VirtualMachineNativeName as ContainerId,
+
+                ProcessId,
+                ProcessName,
+                ProcessUser;
+
+            from rawRows
+              let TimeGenerated = (TimeGenerated != null && TimeGenerated != "_n/a_" && TimeGenerated != "_Unknown_") ? ToUtc(TimeGenerated) : ToUtc("1981-01-01:00:00:00")
+
+              let Computer = (Computer != null && Computer != "_n/a_" && Computer != "_Unknown_") ? Computer : ""
+              let ProcessId = (ProcessId != null && ProcessId != "_n/a_" && ProcessId != "_Unknown_") ? ProcessId : ""
+
+              let Endpoint = (Endpoint != null && Endpoint != "_n/a_" && Endpoint != "_Unknown_") ? Endpoint : ""
+              let Ip = (Ip != null && Ip != "_n/a_" && Ip != "_Unknown_") ? Ip : ""
+              let Port = (Port != null && Port != "_n/a_" && Port != "_Unknown_") ? ToInt32(Port) : 0
+              let Protocol = (Protocol != null && Protocol != "_n/a_" && Protocol != "_Unknown_") ? Protocol : ""
+
+              let LinksFailed = (LinksFailed != null && LinksFailed != "_n/a_" && LinksFailed != "_Unknown_" && LinksFailed != "") ? ToInt32(LinksFailed) : 0
+              let LinksLive = (LinksLive != null && LinksLive != "_n/a_" && LinksLive != "_Unknown_") ? ToInt32(LinksLive) : 0
+              let LinksEstablished = (LinksEstablished != null && LinksEstablished != "_n/a_" && LinksEstablished != "_Unknown_") ? ToInt32(LinksEstablished) : 0
+              let LinksTerminated = (LinksTerminated != null && LinksTerminated != "_n/a_" && LinksTerminated != "_Unknown_") ? ToInt32(LinksTerminated) : 0
+
+              let BytesSent = (BytesSent != null && BytesSent != "_n/a_" && BytesSent != "_Unknown_") ? ToInt64(BytesSent) : 0L
+              let BytesReceived = (BytesReceived != null && BytesReceived != "_n/a_" && BytesReceived != "_Unknown_") ? ToInt64(BytesReceived) : 0L
+
+              let TcpHandshakesComplete = (TcpHandshakesComplete != null && TcpHandshakesComplete != "_n/a_" && TcpHandshakesComplete != "_Unknown_" && TcpHandshakesComplete != "") ? ToInt32(TcpHandshakesComplete) : 0
+              let TcpHandshakeLatencySum = (TcpHandshakeLatencySum != null && TcpHandshakeLatencySum != "_n/a_" && TcpHandshakeLatencySum != "_Unknown_" && TcpHandshakeLatencySum != "") ? ToInt64(TcpHandshakeLatencySum) : 0L
+
+              let Responses = (Responses != null && Responses != "_n/a_" && Responses != "_Unknown_") ? ToInt32(Responses) : 0
+              let ResponseTimeMin = (ResponseTimeMin != null && ResponseTimeMin != "_n/a_" && ResponseTimeMin != "_Unknown_") ? ToInt32(ResponseTimeMin) : 0
+              let ResponseTimeMax = (ResponseTimeMax != null && ResponseTimeMax != "_n/a_" && ResponseTimeMax != "_Unknown_") ? ToInt32(ResponseTimeMax) : 0
+              let ResponseTimeSum = (ResponseTimeSum != null && ResponseTimeSum != "_n/a_" && ResponseTimeSum != "_Unknown_") ? ToInt64(ResponseTimeSum) : 0L
+
+              let TlsHandshakesComplete = (TlsHandshakesComplete != null && TlsHandshakesComplete != "_n/a_" && TlsHandshakesComplete != "_Unknown_") ? ToInt32(TlsHandshakesComplete) : 0
+              let TlsHandshakesFailed = (TlsHandshakesFailed != null && TlsHandshakesFailed != "_n/a_" && TlsHandshakesFailed != "_Unknown_") ? ToInt32(TlsHandshakesFailed) : 0
+              let TlsHandshakeLatencySum = (TlsHandshakeLatencySum != null && TlsHandshakeLatencySum != "_n/a_" && TlsHandshakeLatencySum != "_Unknown_") ? ToInt64(TlsHandshakeLatencySum) : 0L
+              let TlsVersions = (TlsVersions != null && TlsVersions != "_n/a_" && TlsVersions != "_Unknown_") ? TlsVersions : ""
+              let TlsCipherSuites = (TlsCipherSuites != null && TlsCipherSuites != "_n/a_" && TlsCipherSuites != "_Unknown_") ? TlsCipherSuites : ""
+
+              let MachineId = (MachineId != null && MachineId != "_n/a_" && MachineId != "_Unknown_") ? MachineId : ""
+              let ContainerId = (ContainerId != null && ContainerId != "_n/a_" && ContainerId != "_Unknown_") ? ContainerId : ""
+
+              let ProcessName = (ProcessName != null && ProcessName != "_n/a_" && ProcessName != "_Unknown_") ? ProcessName : ""
+              let ProcessUser = (ProcessUser != null && ProcessUser != "_n/a_" && ProcessUser != "_Unknown_") ? ProcessUser : ""
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+      <DerivedEvent 
+          source="SvcDepHeartbeatsRaw"
+          eventName="SvcDepHeartbeats"
+          storeType="CentralBond"
+          account="ServiceDependency" 
+          duration="PT1M">
+        <Query>
+          <![CDATA[
+            var rawRows =
+              select
+                AgentVersion,
+
+                StartTime,
+                EndTime,
+
+                InboundConnectionsTruncated,
+                OutboundConnectionsTruncated,
+                PortsTruncated,
+                DnsErrorsTruncated,
+                DnsTransactionsTruncated,
+                HttpTransactionsTruncated,
+                Ipv4InterfacesTruncated,
+
+                CollectorAlerts,
+
+                IsHypervisor,
+                IsVirtualMachine,
+                VirtualMachineNativeMachineId,
+
+                MachineId,
+                Computer,
+                HypervisorId,
+                VirtualMachineNativeName as ContainerId,
+                AzureResourceId,
+                AzureSubscriptionId,
+                AzureResourceGroup,
+                AzureLocation,
+                AzureDataCenter,
+                AzureVmId,
+                AzureDeploymentId;
+
+            from rawRows
+              let TimeGenerated = (EndTime != null && EndTime != "_n/a_" && EndTime != "_Unknown_") ? ToUtc(EndTime) : ToUtc("1981-01-01:00:00:00")
+
+              let Computer = (Computer != null && Computer != "_n/a_" && Computer != "_Unknown_") ? Computer : ""
+
+              let StartTime = (StartTime != null && StartTime != "_n/a_" && StartTime != "_Unknown_") ? ToUtc(StartTime) : ToUtc("1981-01-01:00:00:00")
+              let EndTime = TimeGenerated
+
+              let AgentVersion = (AgentVersion != null && AgentVersion != "_n/a_" && AgentVersion != "_Unknown_") ? AgentVersion : ""
+
+              let InboundConnectionsTruncated = (InboundConnectionsTruncated != null && InboundConnectionsTruncated != "_n/a_" && InboundConnectionsTruncated != "_Unknown_") ? ToInt32(InboundConnectionsTruncated) : 0
+              let OutboundConnectionsTruncated = (OutboundConnectionsTruncated != null && OutboundConnectionsTruncated != "_n/a_" && OutboundConnectionsTruncated != "_Unknown_") ? ToInt32(OutboundConnectionsTruncated) : 0
+              let PortsTruncated = (PortsTruncated != null && PortsTruncated != "_n/a_" && PortsTruncated != "_Unknown_") ? ToInt32(PortsTruncated) : 0
+              let DnsErrorsTruncated = (DnsErrorsTruncated != null && DnsErrorsTruncated != "_n/a_" && DnsErrorsTruncated != "_Unknown_") ? ToInt32(DnsErrorsTruncated) : 0
+              let DnsTransactionsTruncated = (DnsTransactionsTruncated != null && DnsTransactionsTruncated != "_n/a_" && DnsTransactionsTruncated != "_Unknown_") ? ToInt32(DnsTransactionsTruncated) : 0
+              let HttpTransactionsTruncated = (HttpTransactionsTruncated != null && HttpTransactionsTruncated != "_n/a_" && HttpTransactionsTruncated != "_Unknown_") ? ToInt32(HttpTransactionsTruncated) : 0
+              let Ipv4InterfacesTruncated = (Ipv4InterfacesTruncated != null && Ipv4InterfacesTruncated != "_n/a_" && Ipv4InterfacesTruncated != "_Unknown_") ? ToInt32(Ipv4InterfacesTruncated) : 0
+
+              let CollectorAlerts = (CollectorAlerts != null && CollectorAlerts != "_n/a_" && CollectorAlerts != "_Unknown_") ? CollectorAlerts : ""
+
+              let IsHypervisor = (IsHypervisor != null && IsHypervisor != "_n/a_" && IsHypervisor != "_Unknown_") ? ToInt32(IsHypervisor) : 0
+              let IsVirtualMachine = (IsVirtualMachine != null && IsVirtualMachine != "_n/a_" && IsVirtualMachine != "_Unknown_") ? ToInt32(IsVirtualMachine) : 0
+              let VirtualMachineNativeMachineId = (VirtualMachineNativeMachineId != null && VirtualMachineNativeMachineId != "_n/a_" && VirtualMachineNativeMachineId != "_Unknown_") ? VirtualMachineNativeMachineId : ""
+
+              let MaMachineId = GetStaticEnvironmentVariable("MA_HEARTBEAT_IDENTITY")
+              let MachineId = (MachineId != null && MachineId != "_n/a_" && MachineId != "_Unknown_") ? MachineId : ""
+              let HypervisorId = (HypervisorId != null && HypervisorId != "_n/a_" && HypervisorId != "_Unknown_") ? HypervisorId : ""
+              let ContainerId = (ContainerId != null && ContainerId != "_n/a_" && ContainerId != "_Unknown_") ? ContainerId : ""
+              let AzureResourceId = (AzureResourceId != null && AzureResourceId != "_n/a_" && AzureResourceId != "_Unknown_") ? AzureResourceId : ""
+              let AzureSubscriptionId = (AzureSubscriptionId != null && AzureSubscriptionId != "_n/a_" && AzureSubscriptionId != "_Unknown_") ? AzureSubscriptionId : ""
+              let AzureResourceGroup = (AzureResourceGroup != null && AzureResourceGroup != "_n/a_" && AzureResourceGroup != "_Unknown_") ? AzureResourceGroup : ""
+              let AzureLocation = (AzureLocation != null && AzureLocation != "_n/a_" && AzureLocation != "_Unknown_") ? AzureLocation : ""
+              let AzureDataCenter = (AzureDataCenter != null && AzureDataCenter != "_n/a_" && AzureDataCenter != "_Unknown_") ? AzureDataCenter : ""
+              let AzureVmId = (AzureVmId != null && AzureVmId != "_n/a_" && AzureVmId != "_Unknown_") ? AzureVmId : ""
+              let AzureDeploymentId = (AzureDeploymentId != null && AzureDeploymentId != "_n/a_" && AzureDeploymentId != "_Unknown_") ? AzureDeploymentId : ""
+
+              let AzureVmIdentity = GetStaticEnvironmentVariable("MA_AZURE_VM_NAME")
+              let AzureVmIdentity = AzureVmIdentity ?? "_n/a" 
+              let AzureNodeIdentity = GetStaticEnvironmentVariable("MA_AZURE_NODE_IDENTITY")
+              let AzureNodeIdentity = AzureNodeIdentity ?? "_n/a"
+              let AzureIdentity = GetStaticEnvironmentVariable("MA_AZURE_IDENTITY")
+              let AzureIdentity = AzureIdentity ?? "_n/a"
+              let MonitoringAccount = GetStaticEnvironmentVariable("MA_AGENT_METRICS_ACCOUNT")
+          ]]>
+        </Query>
+      </DerivedEvent>
+      
+      <DerivedEvent 
+        source="SvcDepInterfacesRaw"
+        eventName="SvcDepInterfaces"
+        storeType="CentralBond"
+        account="ServiceDependency" 
+        duration="PT1M">
+        <Query>
+          <![CDATA[
+            var rawRows =
+              select 
+                EndTime as TimeGenerated,
+
+                Protocol,
+                Address,
+                SubnetMask,
+                PublicIp,
+
+                MachineId,
+                Computer,
+                VirtualMachineNativeName as ContainerId;
+
+            from rawRows
+              let TimeGenerated = (TimeGenerated != null && TimeGenerated != "_n/a_" && TimeGenerated != "_Unknown_") ? ToUtc(TimeGenerated) : ToUtc("1981-01-01:00:00:00")
+
+              let Computer = (Computer != null && Computer != "_n/a_" && Computer != "_Unknown_") ? Computer : ""
+
+              let Protocol = (Protocol != null && Protocol != "_n/a_" && Protocol != "_Unknown_") ? Protocol : ""
+              let Address = (Address != null && Address != "_n/a_" && Address != "_Unknown_") ? Address : ""
+              let SubnetMask = (SubnetMask != null && SubnetMask != "_n/a_" && SubnetMask != "_Unknown_") ? SubnetMask : ""
+              let PublicIp = (PublicIp != null && PublicIp != "_n/a_" && PublicIp != "_Unknown_") ? PublicIp : ""
+              
+              let MachineId = (MachineId != null && MachineId != "_n/a_" && MachineId != "_Unknown_") ? MachineId : ""
+              let ContainerId = (ContainerId != null && ContainerId != "_n/a_" && ContainerId != "_Unknown_") ? ContainerId : ""
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+      <DerivedEvent 
+          source="SvcDepAgentStatisticsRaw"
+          eventName="SvcDepAgentStatistics"
+          storeType="CentralBond"
+          account="ServiceDependency" 
+          duration="PT5M">
+        <Query>
+          <![CDATA[
+            var rawRows =
+              select
+                AgentVersion,
+                
+                TimeGenerated,
+                StartTime,
+                EndTime,
+
+                Category,
+                Message,
+
+                MachineId,
+                Computer,
+                VirtualMachineNativeName as ContainerId;
+
+            from rawRows
+              let TimeGenerated = (TimeGenerated != null && TimeGenerated != "_n/a_" && TimeGenerated != "_Unknown_") ? ToUtc(TimeGenerated) : ToUtc("1981-01-01:00:00:00")
+
+              let Computer = (Computer != null && Computer != "_n/a_" && Computer != "_Unknown_") ? Computer : ""
+
+              let StartTime = (StartTime != null && StartTime != "_n/a_" && StartTime != "_Unknown_") ? ToUtc(StartTime) : ToUtc("1981-01-01:00:00:00")
+              let EndTime = (EndTime != null && EndTime != "_n/a_" && EndTime != "_Unknown_") ? ToUtc(EndTime) : ToUtc("1981-01-01:00:00:00")
+
+              let AgentVersion = (AgentVersion != null && AgentVersion != "_n/a_" && AgentVersion != "_Unknown_") ? AgentVersion : ""
+
+              let Category = (Category != null && Category != "_n/a_" && Category != "_Unknown_") ? Category : ""
+              let Message = (Message != null && Message != "_n/a_" && Message != "_Unknown_") ? Message : ""
+
+              let MachineId = (MachineId != null && MachineId != "_n/a_" && MachineId != "_Unknown_") ? MachineId : ""
+              let ContainerId = (ContainerId != null && ContainerId != "_n/a_" && ContainerId != "_Unknown_") ? ContainerId : ""
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+    </DerivedEvents>
+
+  </Events>
+</MonitoringManagement>

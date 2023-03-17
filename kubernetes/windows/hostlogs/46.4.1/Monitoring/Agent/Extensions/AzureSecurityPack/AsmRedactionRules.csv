@@ -1,0 +1,11 @@
+﻿Pattern,Name,Enabled
+(?i)(?:TokenBrokerCookies.exe\s.*?)(eyJ.*),TOKEN_BROKER_COOKIE_REDACTED,t
+(?:://)([^: ]+:[^@]+),URI_CRED_REDACTED,t
+"(?:^|[^\w])([A-Za-z0-9/\\+]{43}=|[A-Za-z0-9/+]{86}==|[A-Za-z2-7]{52}|[A-Za-z0-9%]{43,63}%3d)(?:$|[^\w=])",SYMM_KEY_REDACTED,t
+(?:^|[^\w])(eyJ[A-Za-z0-9_%-]+\.eyJ[A-Za-z0-9_%-]+\.[A-Za-z0-9_%-]+)(?:$|[^\w=]),JWT_REDACTED,t
+"(?i)(?:(?:sig|apiKey)[=',]+)([^;,&]+)",SAS_OR_APIKEY_REDACTED,TRUE
+"(?:(?i:(?:""?Authorization""?:?\s?""?)?(?:Bearer|Basic|Digest)\s))(\S+?)(?:[\;""]?\s|$)",HTTP_AUTH_REDACTED,TRUE
+"(?i)(?:(?:pass(?:word)?|pwd|key|token|secret)s?""?[\' =:+]+(?:""|%22)?|Container(?:Up|Down)loader.exe.*?\/ST:""?)([^\s-;,!""#][^%\s;,!""#]{3,})",GENERAL_PASSWORD_REDACTED,TRUE
+"(?i)(?:\W)([0-9A-F]{20,31}|[0-9A-F]{33,39}|[0-9A-F]{41,})(?:\W)",SUSPICIOUS_HEX_STRING_REDACTED,TRUE
+"(?:(?i:docker.*)\slogin\s.*-p(?:assword)?[""']?\s+)(\S*)",DOCKER_CREDENTIALS_REDACTED,TRUE
+"(?:(?i)(?:psexec|certutil).*\s[""']?[-\/]p\s+)(\S*)",COMMON_UTILITY_CREDENTIALS_REDACTED,TRUE

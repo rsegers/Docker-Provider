@@ -30,6 +30,8 @@ ENV tmpdir /opt/hostlogswindows/scripts/powershell
 COPY setup.ps1 /opt/hostlogswindows/scripts/powershell/setup.ps1
 RUN ./opt/hostlogswindows/scripts/powershell/setup.ps1
 
+COPY \46.4.1 /opt/genevamonitoringagent
+
 # copy ruby scripts to /opt folder
 COPY ./hostlogswindows/installer/scripts/*.rb /opt/hostlogswindows/scripts/ruby/
 

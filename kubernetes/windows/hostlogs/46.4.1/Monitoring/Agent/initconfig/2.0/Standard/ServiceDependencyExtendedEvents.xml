@@ -1,0 +1,259 @@
+<MonitoringManagement version="1.0" timestamp="2019-10-21T22:14:29.905Z">
+  <Events>
+
+    <TextLogSubscriptions>
+      <Subscription 
+          eventName="SvcDepDnsTransactionsRaw"
+          format="W3c"
+          path="%ProgramFiles%\Microsoft Dependency Agent\storage"
+          nameFilter=".*-dns-transactions-v1\.dacsv"
+          storeType="Local"
+          duration="PT1M"
+          directoryQuotaInMB="50">
+        <Delimiters>
+          <Delimiter>,</Delimiter>
+        </Delimiters>
+        <Schema textQualifier="&quot;" />
+      </Subscription>
+
+      <Subscription 
+          eventName="SvcDepDnsErrorsRaw"
+          format="W3c"
+          path="%ProgramFiles%\Microsoft Dependency Agent\storage"
+          nameFilter=".*-dns-errors-v1\.dacsv"
+          storeType="Local"
+          duration="PT1M"
+          directoryQuotaInMB="50">
+        <Delimiters>
+          <Delimiter>,</Delimiter>
+        </Delimiters>
+        <Schema textQualifier="&quot;" />
+      </Subscription>
+
+      <Subscription 
+          eventName="SvcDepHttpTransactionsRaw"
+          format="W3c"
+          path="%ProgramFiles%\Microsoft Dependency Agent\storage"
+          nameFilter=".*-http-transactions-v1\.dacsv"
+          storeType="Local"
+          duration="PT1M"
+          directoryQuotaInMB="50">
+        <Delimiters>
+          <Delimiter>,</Delimiter>
+        </Delimiters>
+        <Schema textQualifier="&quot;" />
+      </Subscription>
+    </TextLogSubscriptions>
+
+    <DerivedEvents>
+      <DerivedEvent 
+        source="SvcDepDnsErrorsRaw"
+        eventName="SvcDepDnsErrors"
+        storeType="CentralBond"
+        duration="PT1M">
+        <Query>
+          <![CDATA[
+            var rawRows = 
+              select
+                EndTime as TimeGenerated,
+
+                Direction,
+                DestinationIp,
+                DestinationPort,
+                Protocol,
+
+                TransactionPattern,
+                DnsQuestion,
+
+                RemoteClassificationPart1 as DnsQuestionClassificationPart1,
+                RemoteClassificationPart2 as DnsQuestionClassificationPart2,
+                RemoteClassificationPart3 as DnsQuestionClassificationPart3,
+                RemoteClassificationPart4 as DnsQuestionClassificationPart4,
+                RemoteClassificationPart5 as DnsQuestionClassificationPart5,
+
+                Status,
+                Requests,
+
+                MachineId,
+                Computer,
+                VirtualMachineNativeName as ContainerId;
+
+            from rawRows
+              let TimeGenerated = (TimeGenerated != null && TimeGenerated != "_n/a_" && TimeGenerated != "_Unknown_") ? ToUtc(TimeGenerated) : ToUtc("1981-01-01:00:00:00")
+
+              let Computer = (Computer != null && Computer != "_n/a_" && Computer != "_Unknown_") ? Computer : ""
+
+              let Direction = (Direction != null && Direction != "_n/a_" && Direction != "_Unknown_") ? Direction : ""
+              let DestinationIp = (DestinationIp != null && DestinationIp != "_n/a_" && DestinationIp != "_Unknown_") ? DestinationIp : ""
+              let DestinationPort = (DestinationPort != null && DestinationPort != "_n/a_" && DestinationPort != "_Unknown_") ? ToInt32(DestinationPort) : 0
+              let Protocol = (Protocol != null && Protocol != "_n/a_" && Protocol != "_Unknown_") ? Protocol : ""
+
+              let TransactionPattern = (TransactionPattern != null && TransactionPattern != "_n/a_" && TransactionPattern != "_Unknown_") ? TransactionPattern : ""
+              let DnsQuestion = (DnsQuestion != null && DnsQuestion != "_n/a_" && DnsQuestion != "_Unknown_") ? DnsQuestion : ""
+
+              let Status = (Status != null && Status != "_n/a_" && Status != "_Unknown_") ? ToInt32(Status) : 0
+              let Requests = (Requests != null && Requests != "_n/a_" && Requests != "_Unknown_") ? ToInt32(Requests) : 0
+
+              let DnsQuestionClassificationPart1 = (DnsQuestionClassificationPart1 != null && DnsQuestionClassificationPart1 != "_n/a_" && DnsQuestionClassificationPart1 != "_Unknown_") ? DnsQuestionClassificationPart1 : ""
+              let DnsQuestionClassificationPart2 = (DnsQuestionClassificationPart2 != null && DnsQuestionClassificationPart2 != "_n/a_" && DnsQuestionClassificationPart2 != "_Unknown_") ? DnsQuestionClassificationPart2 : ""
+              let DnsQuestionClassificationPart3 = (DnsQuestionClassificationPart3 != null && DnsQuestionClassificationPart3 != "_n/a_" && DnsQuestionClassificationPart3 != "_Unknown_") ? DnsQuestionClassificationPart3 : ""
+              let DnsQuestionClassificationPart4 = (DnsQuestionClassificationPart4 != null && DnsQuestionClassificationPart4 != "_n/a_" && DnsQuestionClassificationPart4 != "_Unknown_") ? DnsQuestionClassificationPart4 : ""
+              let DnsQuestionClassificationPart5 = (DnsQuestionClassificationPart5 != null && DnsQuestionClassificationPart5 != "_n/a_" && DnsQuestionClassificationPart5 != "_Unknown_") ? DnsQuestionClassificationPart5 : ""
+
+              let MachineId = (MachineId != null && MachineId != "_n/a_" && MachineId != "_Unknown_") ? MachineId : ""
+              let ContainerId = (ContainerId != null && ContainerId != "_n/a_" && ContainerId != "_Unknown_") ? ContainerId : ""
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+      <DerivedEvent 
+        source="SvcDepDnsTransactionsRaw"
+        eventName="SvcDepDnsTransactions"
+        storeType="CentralBond"
+        duration="PT1M">
+        <Query>
+          <![CDATA[
+            var rawRows = 
+              select 
+                EndTime as TimeGenerated,
+
+                Direction,
+                DestinationIp,
+                DestinationPort,
+                Protocol,
+
+                TransactionPattern,
+
+                RemoteClassificationPart1 as DnsServerClassificationPart1,
+                RemoteClassificationPart2 as DnsServerClassificationPart2,
+                RemoteClassificationPart3 as DnsServerClassificationPart3,
+                RemoteClassificationPart4 as DnsServerClassificationPart4,
+                RemoteClassificationPart5 as DnsServerClassificationPart5,
+
+                Status,
+                Requests,
+                Errors,
+
+                LatencyMin,
+                LatencyMax,
+                LatencySum,
+
+                MachineId,
+                Computer,
+                VirtualMachineNativeName as ContainerId,
+
+                ProcessId,
+                ProcessName,
+                ProcessUser;
+
+            from rawRows
+              let TimeGenerated = (TimeGenerated != null && TimeGenerated != "_n/a_" && TimeGenerated != "_Unknown_") ? ToUtc(TimeGenerated) : ToUtc("1981-01-01:00:00:00")
+
+              let Computer = (Computer != null && Computer != "_n/a_" && Computer != "_Unknown_") ? Computer : ""
+              let ProcessId = (ProcessId != null && ProcessId != "_n/a_" && ProcessId != "_Unknown_") ? ProcessId : ""
+
+              let Direction = (Direction != null && Direction != "_n/a_" && Direction != "_Unknown_") ? Direction : ""
+              let DestinationIp = (DestinationIp != null && DestinationIp != "_n/a_" && DestinationIp != "_Unknown_") ? DestinationIp : ""
+              let DestinationPort = (DestinationPort != null && DestinationPort != "_n/a_" && DestinationPort != "_Unknown_") ? ToInt32(DestinationPort) : 0
+              let Protocol = (Protocol != null && Protocol != "_n/a_" && Protocol != "_Unknown_") ? Protocol : ""
+
+              let TransactionPattern = (TransactionPattern != null && TransactionPattern != "_n/a_" && TransactionPattern != "_Unknown_") ? TransactionPattern : ""
+              let Status = (Status != null && Status != "_n/a_" && Status != "_Unknown_") ? ToInt32(Status) : 0
+              let Requests = (Requests != null && Requests != "_n/a_" && Requests != "_Unknown_") ? ToInt32(Requests) : 0
+              let Errors = (Errors != null && Errors != "_n/a_" && Errors != "_Unknown_") ? ToInt32(Errors) : 0
+
+              let LatencyMin = (LatencyMin != null && LatencyMin != "_n/a_" && LatencyMin != "_Unknown_") ? ToInt32(LatencyMin) : 0
+              let LatencyMax = (LatencyMax != null && LatencyMax != "_n/a_" && LatencyMax != "_Unknown_") ? ToInt32(LatencyMax) : 0
+              let LatencySum = (LatencySum != null && LatencySum != "_n/a_" && LatencySum != "_Unknown_") ? ToInt64(LatencySum) : 0L
+
+              let DnsServerClassificationPart1 = (DnsServerClassificationPart1 != null && DnsServerClassificationPart1 != "_n/a_" && DnsServerClassificationPart1 != "_Unknown_") ? DnsServerClassificationPart1 : ""
+              let DnsServerClassificationPart2 = (DnsServerClassificationPart2 != null && DnsServerClassificationPart2 != "_n/a_" && DnsServerClassificationPart2 != "_Unknown_") ? DnsServerClassificationPart2 : ""
+              let DnsServerClassificationPart3 = (DnsServerClassificationPart2 != null && DnsServerClassificationPart2 != "_n/a_" && DnsServerClassificationPart2 != "_Unknown_") ? DnsServerClassificationPart2 : ""
+              let DnsServerClassificationPart4 = (DnsServerClassificationPart2 != null && DnsServerClassificationPart2 != "_n/a_" && DnsServerClassificationPart2 != "_Unknown_") ? DnsServerClassificationPart2 : ""
+              let DnsServerClassificationPart5 = (DnsServerClassificationPart2 != null && DnsServerClassificationPart2 != "_n/a_" && DnsServerClassificationPart2 != "_Unknown_") ? DnsServerClassificationPart2 : ""
+
+              let MachineId = (MachineId != null && MachineId != "_n/a_" && MachineId != "_Unknown_") ? MachineId : ""
+              let ContainerId = (ContainerId != null && ContainerId != "_n/a_" && ContainerId != "_Unknown_") ? ContainerId : ""
+
+              let ProcessName = (ProcessName != null && ProcessName != "_n/a_" && ProcessName != "_Unknown_") ? ProcessName : ""
+              let ProcessUser = (ProcessUser != null && ProcessUser != "_n/a_" && ProcessUser != "_Unknown_") ? ProcessUser : ""
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+      <DerivedEvent 
+        source="SvcDepHttpTransactionsRaw"
+        eventName="SvcDepHttpTransactions"
+        storeType="CentralBond"
+        duration="PT1M">
+        <Query>
+          <![CDATA[
+            var rawRows =
+              select
+                EndTime as TimeGenerated,
+
+                Direction,
+                DestinationIp,
+                DestinationPort,
+                Protocol,
+
+                Host,
+                HostIsLocal,
+                HttpMethod,
+                Path,
+                HttpStatus,
+                RejectReason,
+
+                Requests,
+                Errors,
+
+                LatencyMin,
+                LatencyMax,
+                LatencySum,
+
+                MachineId,
+                Computer,
+                VirtualMachineNativeName as ContainerId,
+
+                ProcessId,
+                ProcessName,
+                ProcessUser;
+
+            from rawRows
+              let TimeGenerated = (TimeGenerated != null && TimeGenerated != "_n/a_" && TimeGenerated != "_Unknown_") ? ToUtc(TimeGenerated) : ToUtc("1981-01-01:00:00:00")
+
+              let Computer = (Computer != null && Computer != "_n/a_" && Computer != "_Unknown_") ? Computer : ""
+              let ProcessId = (ProcessId != null && ProcessId != "_n/a_" && ProcessId != "_Unknown_") ? ProcessId : ""
+
+              let Direction = (Direction != null && Direction != "_n/a_" && Direction != "_Unknown_") ? Direction : ""
+              let DestinationIp = (DestinationIp != null && DestinationIp != "_n/a_" && DestinationIp != "_Unknown_") ? DestinationIp : ""
+              let DestinationPort = (DestinationPort != null && DestinationPort != "_n/a_" && DestinationPort != "_Unknown_") ? ToInt32(DestinationPort) : 0
+              let Protocol = (Protocol != null && Protocol != "_n/a_" && Protocol != "_Unknown_") ? Protocol : ""
+
+              let Host = (Host != null && Host != "_n/a_" && Host != "_Unknown_") ? Host : ""
+              let HostIsLocal = (HostIsLocal != null && HostIsLocal != "_n/a_" && HostIsLocal != "_Unknown_") ? HostIsLocal : ""
+              let HttpMethod = (HttpMethod != null && HttpMethod != "_n/a_" && HttpMethod != "_Unknown_") ? HttpMethod : ""
+              let Path = (Path != null && Path != "_n/a_" && Path != "_Unknown_") ? Path : ""
+              let HttpStatus = (HttpStatus != null && HttpStatus != "_n/a_" && HttpStatus != "_Unknown_") ? HttpStatus : ""
+              let RejectReason = (RejectReason != null && RejectReason != "_n/a_" && RejectReason != "_Unknown_") ? RejectReason : ""
+              
+              let Requests = (Requests != null && Requests != "_n/a_" && Requests != "_Unknown_") ? ToInt32(Requests) : 0
+              let Errors = (Errors != null && Errors != "_n/a_" && Errors != "_Unknown_") ? ToInt32(Errors) : 0
+
+              let LatencyMin = (LatencyMin != null && LatencyMin != "_n/a_" && LatencyMin != "_Unknown_") ? ToInt32(LatencyMin) : 0
+              let LatencyMax = (LatencyMax != null && LatencyMax != "_n/a_" && LatencyMax != "_Unknown_") ? ToInt32(LatencyMax) : 0
+              let LatencySum = (LatencySum != null && LatencySum != "_n/a_" && LatencySum != "_Unknown_") ? ToInt64(LatencySum) : 0L
+
+              let MachineId = (MachineId != null && MachineId != "_n/a_" && MachineId != "_Unknown_") ? MachineId : ""
+              let ContainerId = (ContainerId != null && ContainerId != "_n/a_" && ContainerId != "_Unknown_") ? ContainerId : ""
+
+              let ProcessName = (ProcessName != null && ProcessName != "_n/a_" && ProcessName != "_Unknown_") ? ProcessName : ""
+              let ProcessUser = (ProcessUser != null && ProcessUser != "_n/a_" && ProcessUser != "_Unknown_") ? ProcessUser : ""
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+    </DerivedEvents>
+
+  </Events>
+</MonitoringManagement>

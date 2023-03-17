@@ -1,0 +1,48 @@
+<MonitoringManagement version="1.0" timestamp="2019-10-21T22:14:29.905Z">
+
+  <!--
+    To use this file, define an account in your main configuration file's <accounts> called "ServiceDependency".
+
+    This file enables the core and extended Service Dependency events. 
+    
+    The core events provide visibility into network related operations
+    and metadata.
+
+    The extended set of events provide visibility into DNS and HTTP transactions.
+    The collection of HTTP transactions is disabled by default. See comment below
+    about how to enable HTTP transactions collection if required.
+  -->
+
+  <Imports>
+    <Import file="ServiceDependencyCoreEvents.xml"/>
+    <Import file="ServiceDependencyExtendedEvents2.xml"/>
+  </Imports>
+
+  <Events>
+    <EventDeclarations storeType="CentralBond">
+      <Declaration eventName="SvcDepConnections" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepEndpoints" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepPorts" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepHeartbeats" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepInterfaces" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepAgentStatistics" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepDnsErrors" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepDnsTransactions" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepHttpTransactions" account="ServiceDependency"/>
+    </EventDeclarations>
+
+    <Extensions>
+      <Extension extensionName="DependencyAgentExtension">
+        <!-- 
+            To enable the HTTP dataset, you can either set the MA_DA_AGENT_OPTIONS environment variable when starting MA
+            as described here: https://genevamondocs.azurewebsites.net/alerts/AdvancedTopics/DependencyMonitoring/CustomizingDA.html#http-transactions-collection,
+            or you can modify the command line of the extension to:
+            <CommandLine><![CDATA[DAExtension.exe -http-transactions on ]]></CommandLine>
+        -->
+        <CommandLine><![CDATA[DAExtension.exe -http-transactions on ]]></CommandLine>
+        <ResourceUsage cpuPercentUsage="2" cpuThrottling="true" memoryLimitInMB="100" memoryThrottling="true" recycleOnMemory="false" />
+      </Extension>
+    </Extensions>
+  </Events>
+
+</MonitoringManagement>

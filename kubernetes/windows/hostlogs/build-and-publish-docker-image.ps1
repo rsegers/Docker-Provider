@@ -64,13 +64,13 @@ if ([string]::IsNullOrEmpty($windowsBaseImageVersion)) {
     $WINDOWS_VERSION="ltsc2019"
     $updateImageLTSC2019 = ${imagerepo} + ":" + ${imageTag} + "-" + ${WINDOWS_VERSION}
     Write-Host "START:Triggering docker image build for ltsc2019: $updateImageLTSC2019"
-    docker build --isolation=hyperv -t $updateImageLTSC2019  --build-arg WINDOWS_VERSION=$WINDOWS_VERSION --build-arg IMAGE_TAG=$imageTag  .
+    docker build --isolation=hyperv -t $updateImageLTSC2019  --build-arg WINDOWS_VERSION=$WINDOWS_VERSION --build-arg IMAGE_TAG=$imageTag  . --network "Default Switch"
     Write-Host "END:Triggering docker image build for ltsc2019: $updateImageLTSC2019"
 
     $WINDOWS_VERSION="ltsc2022"
     $updateImageLTSC2022 = ${imagerepo} + ":" + ${imageTag} + "-" + ${WINDOWS_VERSION}
     Write-Host "START:Triggering docker image build for ltsc2022: $updateImageLTSC2022"
-    docker build --isolation=hyperv -t $updateImageLTSC2022  --build-arg WINDOWS_VERSION=$WINDOWS_VERSION --build-arg IMAGE_TAG=$imageTag  .
+    docker build --isolation=hyperv -t $updateImageLTSC2022  --build-arg WINDOWS_VERSION=$WINDOWS_VERSION --build-arg IMAGE_TAG=$imageTag  . --network "Default Switch"
     Write-Host "END:Triggering docker image build for ltsc2022: $updateImageLTSC2022"
 
     Write-Host "START:pushing docker image with base image ltsc2019 : $updateImageLTSC2019"
@@ -96,7 +96,7 @@ if ([string]::IsNullOrEmpty($windowsBaseImageVersion)) {
     }
 
     Write-Host "START:Triggering docker image build: $image with baseImage version: ${windowsBaseImageVersion}"
-    docker build --isolation=hyperv -t $updateImage  --build-arg WINDOWS_VERSION=$windowsBaseImageVersion  --build-arg IMAGE_TAG=$imageTag  .
+    docker build --isolation=hyperv -t $updateImage  --build-arg WINDOWS_VERSION=$windowsBaseImageVersion  --build-arg IMAGE_TAG=$imageTag  . --network "Default Switch"
     Write-Host "END:Triggering docker image build: $updateImage"
 
     Write-Host "START:pushing docker image : $updateImage"

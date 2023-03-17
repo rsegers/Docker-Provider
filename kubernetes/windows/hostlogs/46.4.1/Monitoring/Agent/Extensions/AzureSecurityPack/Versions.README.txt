@@ -1,0 +1,27 @@
+AzureSecurityPack Version 4.25.0.11
+Component package versions:
+<?xml version="1.0" encoding="utf-8"?>
+<packages>
+<package id="AzSecMdsACMSEventsConfig" version="3.13.1441" />
+<package id="Dsts.AzSecEventsConfig" version="2.0.2.595" />
+<package id="Microsoft.WindowsAzure.EngSys.Internal.rd_security_n.Auditing_Redist" version="17.2.12.13" targetFramework="net45" />
+<package id="AsmScannersUtilities" version="1.0.0.40" />
+<package id="AsmAntimalwareInternal" version="1.8.0.1" targetFramework="net45" />
+<package id="AsmScannersInternal" version="4.25.0.18" targetFramework="net45" />
+<package id="AsmScannersInternal.arm64" version="4.25.0.18" targetFramework="net45" />
+<package id="AsmSlamAzSecPack" version="4.25.0.1" targetFramework="net45" />
+<package id="Microsoft.EngSys.SystemLockdown.AppLocker" version="1.0.1.58" targetFramework="net45" />
+<package id="Microsoft.Internal.ACS.AzCertInstaller" version="2.2.2" targetFramework="net45" />
+<package id="Microsoft.EngSys.SystemLockdown.CodeIntegrity" version="2.0.0.62" targetFramework="net45" />
+<package id="EngSys.SystemLockdown.Syslockscanner" version="1.0.2.5" targetFramework="native"/>
+<package id="NetIsoScanner" version="2019.9.20.1" targetFramework="native"/>
+<package id="NetIsoScanner.arm64" version="2019.9.20.1" targetFramework="native"/>
+<package id="Microsoft.Wcd.Sense.MsSenseS" version="10.3720.16299.2017" targetFramework="native"/>
+<package id="Microsoft.Wcd.Sense.MsSenseS" version="10.3720.16299.2002" targetFramework="native"/>
+<package id="Microsoft.Wcd.Sense.WDATPLauncher" version="1.0.0.11" targetFramework="native"/>
+<package id="Microsoft.MDEClientAnalyzer" version="19072021.0.0" targetFramework="native"/>
+<package id="ProcessInvestigator.Native.AzSecPack" version="1.22.0720.0002" targetFramework="native"/>
+<package id="ProcessInvestigator.Native.AzSecPack.arm64" version="1.22.0720.0002" targetFramework="native"/>
+<package id="ShaVsa.OffNode.AzSecPack" version="1.2.5.11" targetFramework="native"/>
+<package id="ShaVsa.OffNode.AzSecPack.arm64" version="1.2.5.11" targetFramework="native"/>
+</packages>

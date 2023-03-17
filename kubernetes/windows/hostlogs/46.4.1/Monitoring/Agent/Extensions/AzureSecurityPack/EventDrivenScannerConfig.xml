@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!-- AsmInventoryConfiguration indicates this is a Inventory schema [Required] -->
+<AsmExtendedScannerConfiguration>
+  <!-- Each Item is a EventDriven Scan Scenario; lists the details of the Inventory to be collected-->
+  <!--
+		<ExtendedScannerInfo librarypath = <Path to the Native Dll to be loaded that exports the function to be called.>
+				   functionname = <Name of the function that returns the packed inventory data>
+		</ExtendedScannerInfo>
+	-->
+  
+  <ExtendedScannerInfo scenarioname="SystemTimeChange"
+            librarypath = "SystemTimeEvents.dll"
+			queryfunctionname="getSystemTimeEventQuery"
+            callbackfunctionname="processSystemTimeEvent" >
+  </ExtendedScannerInfo>
+  <ExtendedScannerInfo scenarioname="CIExeViolation"
+            librarypath = "syslockeventscanner.dll"
+            queryfunctionname="getCIExeEventQuery"
+            callbackfunctionname="processCIALEvent" >
+  </ExtendedScannerInfo>
+  <ExtendedScannerInfo scenarioname="AlExeViolation"
+            librarypath = "syslockeventscanner.dll"
+            queryfunctionname="getALExeEventQuery"
+            callbackfunctionname="processCIALEvent" >
+  </ExtendedScannerInfo>
+  <ExtendedScannerInfo scenarioname="CIALScrViolation"
+            librarypath = "syslockeventscanner.dll"
+            queryfunctionname="getCIALScrEventQuery"
+            callbackfunctionname="processCIALEvent" >
+  </ExtendedScannerInfo>
+  <ExtendedScannerInfo scenarioname="CertInUseEvent"
+  		  librarypath = "CertInUseScanner.dll"
+  		  queryfunctionname="getCertInUseEventQuery"
+  		  callbackfunctionname="processCertInUseEvent" >
+  </ExtendedScannerInfo>
+  <ExtendedScannerInfo scenarioname="CertInUseError"
+  		  librarypath = "CertInUseScanner.dll"
+  		  queryfunctionname="getCertInUseErrorQuery"
+  		  callbackfunctionname="processCertInUseEvent" >
+  </ExtendedScannerInfo>
+  <ExtendedScannerInfo scenarioname="ProcessCreateEvents"
+            librarypath = "ProcessCreateEvents.dll"
+						queryfunctionname="getProcessCreateEventQuery"
+            callbackfunctionname="handleProcessCreateEvent">
+  </ExtendedScannerInfo>
+  <!--Dll for Testing purposes-->
+  <!--<ExtendedScannerInfo scenarioname="Testing"
+            librarypath = "EventDriven-Test.dll"
+			queryfunctionname="getTestEventQuery"
+            callbackfunctionname="processTestEvents" 
+              isPilotScenario="true">
+  </ExtendedScannerInfo>-->
+  <ExtendedScannerInfo scenarioname="PowershellModuleLoggingEvents"
+            librarypath = "PowershellEvents.dll"
+						queryfunctionname="getPowershellModuleLoggingEventQuery"
+            callbackfunctionname="handlePowershellModuleLoggingEvent">
+  </ExtendedScannerInfo>
+  <ExtendedScannerInfo scenarioname="PowershellScriptBlockLoggingEvents"
+            librarypath = "PowershellEvents.dll"
+						queryfunctionname="getPowershellScriptBlockLoggingEventQuery"
+            callbackfunctionname="handlePowershellScriptBlockLoggingEvent">
+  </ExtendedScannerInfo>
+</AsmExtendedScannerConfiguration>

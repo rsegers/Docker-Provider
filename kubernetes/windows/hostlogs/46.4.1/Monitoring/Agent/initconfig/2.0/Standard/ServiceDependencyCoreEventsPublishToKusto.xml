@@ -1,0 +1,41 @@
+<MonitoringManagement version="1.0" timestamp="2019-09-27T03:42:39.223Z">
+  <EventStreamingAnnotations>
+
+    <EventStreamingAnnotation name="^SvcDepConnections$">
+      <LogAnalytics>
+        <Content>LogAnalyticsContent</Content>
+      </LogAnalytics>
+    </EventStreamingAnnotation>
+
+    <EventStreamingAnnotation name="^SvcDepEndpoints$">
+      <LogAnalytics>
+        <Content>LogAnalyticsContent</Content>
+      </LogAnalytics>
+    </EventStreamingAnnotation>
+
+    <EventStreamingAnnotation name="^SvcDepPorts$">
+      <LogAnalytics>
+        <Content>LogAnalyticsContent</Content>
+      </LogAnalytics>
+    </EventStreamingAnnotation>
+
+    <EventStreamingAnnotation name="^SvcDepHeartbeats$">
+      <LogAnalytics>
+        <Content>LogAnalyticsContent</Content>
+      </LogAnalytics>
+    </EventStreamingAnnotation>
+
+    <EventStreamingAnnotation name="^SvcDepInterfaces$">
+      <LogAnalytics>
+        <Content>LogAnalyticsContent</Content>
+      </LogAnalytics>
+    </EventStreamingAnnotation>
+
+    <EventStreamingAnnotation name="^SvcDepAgentStatistics$">
+      <LogAnalytics>
+        <Content>LogAnalyticsContent</Content>
+      </LogAnalytics>
+    </EventStreamingAnnotation>
+
+  </EventStreamingAnnotations>
+</MonitoringManagement>

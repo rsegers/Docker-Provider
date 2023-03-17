@@ -1,32 +1,32 @@
 #!/usr/local/bin/ruby
 
 require "tomlrb"
+require "json"
 
 require_relative "ConfigParseErrorLogger"
 
-@configMapMountPath = "./etc/config/settings/agent-settings"
+@configMapMountPath = "./etc/config/settings/hostlogs-settings"
 @configSchemaVersion = ""
 
 # configmap settings related to geneva logs config
-GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "FirstpartyProd", "BillingProd", "ExternalProd", "CaMooncake", "CaFairfax", "CaBlackforest"]
 @geneva_account_environment = ""
 @geneva_account_name = ""
 @geneva_account_namespace = ""
 @geneva_logs_config_version = ""
 @geneva_gcs_authid = ""
-@azure_json_path = "/etc/kubernetes/host/azure.json"
+@azure_json_path = "C:\\k\\azure.json"
 
 # Use parser to parse the configmap toml file to a ruby structure
 def parseConfigMap
   begin
     # Check to see if config map is created
     if (File.file?(@configMapMountPath))
-      puts "config::configmap container-azm-ms-agentconfig for agent settings mounted, parsing values"
+      puts "config::configmap container-azm-ms-hostlogsconfig for agent settings mounted, parsing values"
       parsedConfig = Tomlrb.load_file(@configMapMountPath, symbolize_keys: true)
       puts "config::Successfully parsed mounted config map"
       return parsedConfig
     else
-      puts "config::configmap container-azm-ms-agentconfig for agent settings not mounted, using defaults"
+      puts "config::configmap container-azm-ms-hostlogsconfig for agent settings not mounted, using defaults"
       return nil
     end
   rescue => errorStr
@@ -38,9 +38,8 @@ end
 # Use the ruby structure created after config parsing to set the right values to be used as environment variables
 def populateSettingValuesFromConfigMap(parsedConfig)
   begin
-    if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil?
-      
-      geneva_logs_config = parsedConfig[:agent_settings][:geneva_logs_config]
+    if !parsedConfig.nil? && !parsedConfig[:hostlogs_settings].nil?
+      geneva_logs_config = parsedConfig[:hostlogs_settings][:geneva_logs_config]
       if !geneva_logs_config.nil?
         puts "config: parsing geneva_logs_config settings"
         geneva_account_environment = geneva_logs_config[:environment]
@@ -48,14 +47,10 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         geneva_account_namespace = geneva_logs_config[:namespace]
         geneva_logs_config_version = geneva_logs_config[:configversion]
         if !geneva_account_environment.nil? && !geneva_account_name.nil? && !geneva_account_namespace.nil? && !geneva_logs_config_version.nil?
-          if GENEVA_SUPPORTED_ENVIRONMENTS.include?(geneva_account_environment)
-            @geneva_account_environment = geneva_account_environment
-            @geneva_account_name = geneva_account_name
-            @geneva_account_namespace = geneva_account_namespace
-            @geneva_logs_config_version = geneva_logs_config_version
-          else
-            puts "config::error:unsupported geneva config environment"
-          end
+          @geneva_account_environment = geneva_account_environment
+          @geneva_account_name = geneva_account_name
+          @geneva_account_namespace = geneva_account_namespace
+          @geneva_logs_config_version = geneva_logs_config_version
         else
           puts "config::error:invalid geneva logs config"
         end
@@ -65,9 +60,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           begin
             file = File.read(@azure_json_path)
             data_hash = JSON.parse(file)
-            # Check to see if SP exists, if it does use SP. Else, use msi
             sp_client_id = data_hash["aadClientId"]
-            sp_client_secret = data_hash["aadClientSecret"]
             user_assigned_client_id = data_hash["userAssignedIdentityID"]
             if (!sp_client_id.nil? &&
                 !sp_client_id.empty? &&
@@ -75,15 +68,17 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 !user_assigned_client_id.nil? &&
                 !user_assigned_client_id.empty?)
               geneva_gcs_authid = "client_id##{user_assigned_client_id}"
-
               puts "using authid for geneva integration: #{geneva_gcs_authid}"
+              @geneva_gcs_authid = geneva_gcs_authid
             end
           rescue => errorStr
             puts "failed to get user assigned client id with an error: #{errorStr}"
           end
+        elsif !geneva_gcs_authid.start_with?("client_id#") && !geneva_gcs_authid.start_with?("object_id#") && !geneva_gcs_authid.start_with?("mi_res_id#")
+            puts "config::error:auth id must be in one of the suppported formats: object_id#<guid> or client_id#<guid> or mi_res_id#<identity resource id>"
+        else
+          @geneva_gcs_authid = geneva_gcs_authid
         end
-        @geneva_gcs_authid = geneva_gcs_authid
-        puts "config::info:successfully parsed geneva_logs_config settings"
       end
     end
   rescue => errorStr
@@ -102,20 +97,19 @@ def writeEnvScript(filepath)
       file.write(get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name))
       file.write(get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace))
       file.write(get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version))
-      file.write(get_command_windows("MONITORING_GCS_AUTH_ID", @geneva_gcs_authid))
-
-      #authIdParts =  @geneva_gcs_authid.split('#', 2)
-      #file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
-      #file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
+      
+      authIdParts =  @geneva_gcs_authid.split('#', 2)
+      file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
+      file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
 
       puts "Using config map value: MONITORING_GCS_ENVIRONMENT = #{@geneva_account_environment}"
       puts "Using config map value: MONITORING_GCS_ACCOUNT = #{@geneva_account_name}"
       puts "Using config map value: MONITORING_GCS_NAMESPACE = #{@geneva_account_namespace}"
       puts "Using config map value: MONITORING_CONFIG_VERSION = #{@geneva_logs_config_version}"
-      puts "Using config map value: MONITORING_GCS_AUTH_ID= #{@geneva_gcs_authid}"
-      #puts "Using config map value: MONITORING_MANAGED_ID_IDENTIFIER = #{authIdParts[0]}"
-      #puts "Using config map value: MONITORING_MANAGED_ID_VALUE= #{authIdParts[1]}"
+      puts "Using config map value: MONITORING_MANAGED_ID_IDENTIFIER = #{authIdParts[0]}"
+      puts "Using config map value: MONITORING_MANAGED_ID_VALUE= #{authIdParts[1]}"
 
+      puts "config::info:successfully parsed geneva_logs_config settings"
     end
 
     # Close file after writing all environment variables
@@ -144,6 +138,3 @@ end
 
 writeEnvScript("setagentenv.ps1")
 puts "****************End Config Processing********************"
-
-
-

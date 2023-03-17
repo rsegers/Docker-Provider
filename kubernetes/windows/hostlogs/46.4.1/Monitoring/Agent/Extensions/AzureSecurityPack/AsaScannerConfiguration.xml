@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<AsmScannerConfiguration>
+  <ScanManager
+    heartbeatFrequency="PT1H">
+    <Resources>
+      <!-- TBD. A placeholder for providing job constraints, working directory, and session parameters -->
+    </Resources>
+  </ScanManager>
+    <Scanners>
+        <ScannerInfo name="AsmBaselineScanner"
+                     path="DSCLauncher.exe"
+                     persistent="false"
+                     frequency="P1D"
+                     firstRunDelay="PT16M"
+                     featureName="baseline"
+                     maxRuns="0">
+            <Arguments>-scenario:AzOsBaseline</Arguments>
+        </ScannerInfo>
+        <ScannerInfo name="ProcessInvestigator"
+                    path="PILauncher.exe"
+                    persistent="false"
+                    frequency="PT1H"
+                    firstRunDelay="PT3M"
+                    priority="normal"
+                    maxRuns="0"
+                    featureName="processinvestigator">
+            <Arguments>-asa</Arguments>
+        </ScannerInfo>
+        <ScannerInfo name="AsmAntimalwareScanner"
+                     path="AntimalwareStatus.exe"
+                     persistent="false"
+                     frequency="PT1H"
+                     firstRunDelay="PT1M"
+                     featureName="antimalware"
+                     maxRuns="0">
+        </ScannerInfo>
+    </Scanners>
+</AsmScannerConfiguration>

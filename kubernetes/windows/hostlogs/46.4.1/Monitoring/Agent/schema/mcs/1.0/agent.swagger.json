@@ -1,0 +1,895 @@
+{
+    "openapi": "3.0.1",
+    "info": {
+      "title": "Azure Monitor Data Collection Rules API",
+      "description": "Provides operations for working with Azure Monitor data collection rules",
+      "version": "2019-11-02-preview",
+      "x-ms-code-generation-settings": {
+        "name": "MonitorManagementClient"
+      }
+    },
+    "paths": {
+      "/{resourceId}/agentConfiguration": {
+        "get": {
+          "tags": [
+            "AgentConfigurations"
+          ],
+          "summary": "Gets agent configuration for the resource on which the agent is running.",
+          "operationId": "AgentConfigurations_GetAgentConfigurationDiff",
+          "parameters": [
+            {
+              "name": "resourceId",
+              "in": "path",
+              "description": "The ARM ID of the resource (e.g. VM)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "If-None-Match",
+              "in": "header",
+              "description": "A comma-separated list of eTags of config agent currently runs. \r\nIf the list is long (over 8 kB) it can be split into multiple \"If-None-Match\" headers.",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "api-version",
+              "in": "query",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "User-Agent",
+              "in": "header",
+              "description": "Specifies the version of the agent making the requet and the operating system it is running on.",
+              "schema": {
+                "type": "string"
+              },
+              "example": "<agent-version>-<os>"
+            },
+            {
+              "name": "x-ms-client-request-id",
+              "in": "header",
+              "description": "Client-generated ID for tracking request end-to-end.",
+              "schema": {
+                "type": "string"
+              },
+              "example": "1f38442f-2f4b-4d8f-b821-00b473bec23b"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Request completed successfully",
+              "headers": {
+                "Cache-Control": {
+                  "description": "Specifies how long the response should be considered fresh and when it should be refreshed by re-querying the API. If not returned the agent should use it's default caching/expiry settings. It should also impose a reasonable upper bound on it (e.g. 3h).",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "max-age=600"
+                },
+                "x-ms-request-id": {
+                  "description": "Server-generated ID for tracking request end-to-end.",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "7d75a902-0211-47d7-80e3-ec2348450402"
+                }
+              },
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AgentConfigurationResult"
+                  }
+                }
+              }
+            },
+            "304": {
+              "description": "No changes in configuration",
+              "headers": {
+                "Cache-Control": {
+                  "description": "Specifies how long the response should be considered fresh and when it should be refreshed by re-querying the API. If not returned the agent should use it's default caching/expiry settings. It should also impose a reasonable upper bound on it (e.g. 3h).",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "max-age=600"
+                },
+                "x-ms-request-id": {
+                  "description": "Server-generated ID for tracking request end-to-end.",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "7d75a902-0211-47d7-80e3-ec2348450402"
+                }
+              }
+            },
+            "400": {
+              "description": "Request is not valid",
+              "headers": {
+                "x-ms-request-id": {
+                  "description": "Server-generated ID for tracking request end-to-end.",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "7d75a902-0211-47d7-80e3-ec2348450402"
+                }
+              },
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            },
+            "404": {
+              "description": "No configuration found for specified resource",
+              "headers": {
+                "Cache-Control": {
+                  "description": "Specifies how long the response should be considered fresh and when it should be refreshed by re-querying the API. If not returned the agent should use it's default caching/expiry settings. It should also impose a reasonable upper bound on it (e.g. 3h).",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "max-age=600"
+                },
+                "x-ms-request-id": {
+                  "description": "Server-generated ID for tracking request end-to-end.",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "7d75a902-0211-47d7-80e3-ec2348450402"
+                }
+              },
+              "content": {
+                "application/json": { }
+              }
+            },
+            "429": {
+              "description": "Request cannot be processed due to high traffic, <code>retry-after</code> header should be inspected to check when to retry",
+              "headers": {
+                "Retry-After": {
+                  "description": "Specifies number of seconds to retry the request aftrer.",
+                  "schema": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "example": "120"
+                },
+                "x-ms-request-id": {
+                  "description": "Server-generated ID for tracking request end-to-end.",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "7d75a902-0211-47d7-80e3-ec2348450402"
+                }
+              },
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            },
+            "default": {
+              "description": "Error",
+              "headers": {
+                "x-ms-request-id": {
+                  "description": "Server-generated ID for tracking request end-to-end.",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "7d75a902-0211-47d7-80e3-ec2348450402"
+                }
+              },
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/{resourceId}/ingestionToken/{configurationId}": {
+        "get": {
+          "tags": [
+            "AgentConfigurations"
+          ],
+          "summary": "Gets ingestion token for agent to use when sending data to ingestion endpoint for given configuration.",
+          "operationId": "AgentConfigurations_GetIngestionToken",
+          "parameters": [
+            {
+              "name": "resourceId",
+              "in": "path",
+              "description": "The ARM ID of the resource (e.g. VM)",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "configurationId",
+              "in": "path",
+              "description": "The ID of the configuration the token is for",
+              "required": true,
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "api-version",
+              "in": "query",
+              "schema": {
+                "type": "string"
+              }
+            },
+            {
+              "name": "User-Agent",
+              "in": "header",
+              "description": "Specifies the version of the agent making the requet and the operating system it is running on.",
+              "schema": {
+                "type": "string"
+              },
+              "example": "<agent-version>-<os>"
+            },
+            {
+              "name": "x-ms-client-request-id",
+              "in": "header",
+              "description": "Client-generated ID for tracking request end-to-end.",
+              "schema": {
+                "type": "string"
+              },
+              "example": "1f38442f-2f4b-4d8f-b821-00b473bec23b"
+            }
+          ],
+          "responses": {
+            "200": {
+              "description": "Request completed successfully",
+              "headers": {
+                "Cache-Control": {
+                  "description": "Specifies how long the response should be considered fresh and when it should be refreshed by re-querying the API. If not returned the agent should use it's default caching/expiry settings. It should also impose a reasonable upper bound on it (e.g. 12h).",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "max-age=1800"
+                },
+                "x-ms-request-id": {
+                  "description": "Server-generated ID for tracking request end-to-end.",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "7d75a902-0211-47d7-80e3-ec2348450402"
+                }
+              },
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/AgentIngestionTokenResult"
+                  }
+                }
+              }
+            },
+            "400": {
+              "description": "Request is not valid",
+              "headers": {
+                "x-ms-request-id": {
+                  "description": "Server-generated ID for tracking request end-to-end.",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "7d75a902-0211-47d7-80e3-ec2348450402"
+                }
+              },
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            },
+            "429": {
+              "description": "Request cannot be processed due to high traffic, <code>retry-after</code> header should be inspected to check when to retry",
+              "headers": {
+                "Retry-After": {
+                  "description": "Specifies number of seconds to retry the request aftrer.",
+                  "schema": {
+                    "type": "integer",
+                    "format": "int32"
+                  },
+                  "example": "120"
+                },
+                "x-ms-request-id": {
+                  "description": "Server-generated ID for tracking request end-to-end.",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "7d75a902-0211-47d7-80e3-ec2348450402"
+                }
+              },
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            },
+            "default": {
+              "description": "Error",
+              "headers": {
+                "x-ms-request-id": {
+                  "description": "Server-generated ID for tracking request end-to-end.",
+                  "schema": {
+                    "type": "string"
+                  },
+                  "example": "7d75a902-0211-47d7-80e3-ec2348450402"
+                }
+              },
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "$ref": "#/components/schemas/ErrorResponse"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "components": {
+      "schemas": {
+        "DiffOperation": {
+          "enum": [
+            "added",
+            "updated",
+            "removed"
+          ],
+          "type": "string",
+          "description": "The type of diff operation.",
+          "x-ms-enum": {
+            "name": "DiffOperation",
+            "modelAsString": true
+          }
+        },
+        "IngestionProtocol": {
+          "enum": [
+            "gig",
+            "ods"
+          ],
+          "type": "string",
+          "description": "The types of protocol to use when sending data to the endpoint.",
+          "x-ms-enum": {
+            "name": "IngestionProtocol",
+            "modelAsString": true
+          }
+        },
+        "DataSourceKind": {
+          "enum": [
+            "perfCounter",
+            "winEventLog",
+            "syslog",
+            "extension"
+          ],
+          "type": "string",
+          "x-ms-enum": {
+            "name": "DataSourceKind",
+            "modelAsString": true
+          }
+        },
+        "ExtensionAgentDataSourceConfig": {
+          "required": [
+            "extensionName"
+          ],
+          "type": "object",
+          "properties": {
+            "extensionName": {
+              "type": "string",
+              "description": "The name of the VM extension.",
+              "example": "Security-Baseline"
+            },
+            "extensionSettings": {
+              "type": "object",
+              "description": "The extension settings. The format is specific for particular extension.",
+              "nullable": true
+            }
+          },
+          "additionalProperties": false,
+          "description": "Configuration of VM extension agent data source."
+        },
+        "ExtensionAgentDataSource": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AgentDataSource"
+            },
+            {
+              "required": [
+                "configuration"
+              ],
+              "type": "object",
+              "properties": {
+                "configuration": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ExtensionAgentDataSourceConfig"
+                    }
+                  ],
+                  "description": "The type-specific configuration. \r\nThis field is used to determine a concrete type of data source and determines the condiguration schema."
+                }
+              }
+            }
+          ]
+        },
+        "PerfCounterGroup": {
+          "required": [
+            "counterSpecifiers",
+            "samplingFrequencyInSeconds"
+          ],
+          "type": "object",
+          "properties": {
+            "samplingFrequencyInSeconds": {
+              "type": "integer",
+              "description": "The number of seconds between consecutive counter measurements (samples).",
+              "format": "int32",
+              "example": 15
+            },
+            "counterSpecifiers": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The list of counter specifiers."
+            }
+          },
+          "additionalProperties": false
+        },
+        "PerfCounterAgentDataSourceConfig": {
+          "required": [
+            "counters",
+            "scheduledTransferPeriod"
+          ],
+          "type": "object",
+          "properties": {
+            "scheduledTransferPeriod": {
+              "type": "string",
+              "description": "The interval between scheduled transfers for this data.",
+              "example": "PT1M"
+            },
+            "counters": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/PerfCounterGroup"
+              },
+              "description": "A list of counters groupped by sampling frequency."
+            }
+          },
+          "additionalProperties": false,
+          "description": "Configuration of Performance counters agent data source."
+        },
+        "PerfCounterAgentDataSource": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AgentDataSource"
+            },
+            {
+              "required": [
+                "configuration"
+              ],
+              "type": "object",
+              "properties": {
+                "configuration": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/PerfCounterAgentDataSourceConfig"
+                    }
+                  ],
+                  "description": "The type-specific configuration. \r\nThis field is used to determine a concrete type of data source and determines the condiguration schema."
+                }
+              }
+            }
+          ]
+        },
+        "SyslogAgentDataSourceConfig": {
+          "required": [
+            "facilityName"
+          ],
+          "type": "object",
+          "properties": {
+            "facilityName": {
+              "type": "string",
+              "description": "The facility name.",
+              "example": "cron"
+            },
+            "logLevels": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "The log levels to collect.",
+              "nullable": true
+            }
+          },
+          "additionalProperties": false,
+          "description": "Configuration of Syslog agent data source."
+        },
+        "SyslogAgentDataSource": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AgentDataSource"
+            },
+            {
+              "required": [
+                "configuration"
+              ],
+              "type": "object",
+              "properties": {
+                "configuration": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/SyslogAgentDataSourceConfig"
+                    }
+                  ],
+                  "description": "The type-specific configuration. \r\nThis field is used to determine a concrete type of data source and determines the configuration schema."
+                }
+              }
+            }
+          ]
+        },
+        "WindowsEventLogAgentDataSourceConfig": {
+          "required": [
+            "scheduledTransferPeriod",
+            "xPathQueries"
+          ],
+          "type": "object",
+          "properties": {
+            "scheduledTransferPeriod": {
+              "type": "string",
+              "description": "The interval between scheduled data transfers.",
+              "example": "PT2M"
+            },
+            "xPathQueries": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "description": "A list of log queries in xpath format."
+            }
+          },
+          "additionalProperties": false,
+          "description": "Configuration of Windows Event Log agent data source."
+        },
+        "WindowsEventLogAgentDataSource": {
+          "allOf": [
+            {
+              "$ref": "#/components/schemas/AgentDataSource"
+            },
+            {
+              "required": [
+                "configuration"
+              ],
+              "type": "object",
+              "properties": {
+                "configuration": {
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/WindowsEventLogAgentDataSourceConfig"
+                    }
+                  ],
+                  "description": "The type-specific configuration. \r\nThis field is used to determine a concrete type of data source and determines the condiguration schema."
+                }
+              }
+            }
+          ]
+        },
+        "AgentDataSource": {
+          "required": [
+            "id",
+            "kind",
+            "stream"
+          ],
+          "type": "object",
+          "properties": {
+            "kind": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/DataSourceKind"
+                }
+              ],
+              "description": "The kind of the data source. \r\nThis field is used to determine a concrete type of data source and determines the condiguration schema."
+            },
+            "id": {
+              "type": "string",
+              "description": "The ID of the data source. \r\nThis ID should be unique across all data sources (regardless of type) within the connection.",
+              "example": "myDataSource1"
+            },
+            "stream": {
+              "type": "string",
+              "description": "The stream ID.",
+              "example": "Microsoft-WindowsEvent"
+            },
+            "solution": {
+              "type": "string",
+              "description": "The solution (legacy).",
+              "nullable": true,
+              "example": "LogManagement"
+            }
+          },
+          "additionalProperties": false,
+          "discriminator": {
+            "propertyName": "kind",
+            "mapping": {
+              "Extension": "#/definitions/ExtensionAgentDataSource",
+              "PerfCounter": "#/definitions/PerfCounterAgentDataSource",
+              "Syslog": "#/definitions/SyslogAgentDataSource",
+              "WinEventLog": "#/definitions/WindowsEventLogAgentDataSource"
+            }
+          }
+        },
+        "ConfigurationContent": {
+          "required": [
+            "dataSources",
+            "endpoint"
+          ],
+          "type": "object",
+          "properties": {
+            "endpoint": {
+              "type": "string",
+              "description": "The URL of the endpoint which should be used to send data to.",
+              "example": "https://myconnection.eastus.ingestion.monitor.azure.com"
+            },
+            "protocol": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/IngestionProtocol"
+                }
+              ],
+              "description": "The protocol to use when sending data to the endpoint. If not pecified then \"gig\" should be presumed."
+            },
+            "dataSources": {
+              "type": "array",
+              "items": {
+                "anyOf": [
+                  {
+                    "$ref": "#/components/schemas/ExtensionAgentDataSource"
+                  },
+                  {
+                    "$ref": "#/components/schemas/PerfCounterAgentDataSource"
+                  },
+                  {
+                    "$ref": "#/components/schemas/SyslogAgentDataSource"
+                  },
+                  {
+                    "$ref": "#/components/schemas/WindowsEventLogAgentDataSource"
+                  }
+                ]
+              },
+              "description": "The specification of data sources."
+            }
+          },
+          "additionalProperties": false
+        },
+        "ConfigurationDiff": {
+          "required": [
+            "configurationId",
+            "op"
+          ],
+          "type": "object",
+          "properties": {
+            "configurationId": {
+              "type": "string",
+              "description": "The unique identity of the configuration.\r\nThe format is internal and can change over time so it should be treated as opaque.",
+              "example": "cn:4af1ff43d40a495aa0afb80dd494b03f"
+            },
+            "eTag": {
+              "type": "string",
+              "description": "The ETag of the modified configuration. If there were any changes to configuration then the ETag would change\r\nThe format is internal and can change over time so it should be treated as opaque.\r\nThis value will be specified for 'added' and 'updated' operations but not for 'removed'.",
+              "nullable": true,
+              "example": "cn:4af1ff43d40a495aa0afb80dd494b03f:0a52f708baa44c9e85234605713770b8"
+            },
+            "op": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/DiffOperation"
+                }
+              ],
+              "description": "The diff operation to perform on this configuration. Thi will indicate whether it should be \r\nThe format is internal and can change over time so it should be treated as opaque."
+            },
+            "content": {
+              "allOf": [
+                {
+                  "$ref": "#/components/schemas/ConfigurationContent"
+                }
+              ],
+              "description": "The full content of the configuration."
+            }
+          },
+          "additionalProperties": false,
+          "description": "Decription of configuration change (diff)."
+        },
+        "ApiLink": {
+          "required": [
+            "requestPath"
+          ],
+          "type": "object",
+          "properties": {
+            "requestPath": {
+              "type": "string",
+              "description": "The request path to call. This is an absolute path which should be called against the constructed AMC host name.",
+              "example": "/agentConfiguration/cn:4af1ff43d40a495aa0afb80dd494b03f?api-version=2019-12-01"
+            },
+            "location": {
+              "type": "string",
+              "description": "The location of the endpoint to call. This should be used to construct the regional AMCS host name. \r\nIf this value is not specified then the \"local\" location should be used.",
+              "nullable": true,
+              "example": "westus"
+            },
+            "authToken": {
+              "type": "string",
+              "description": "The auth token to use when making the call. This would not include the \"Bearer\" header prefix. \r\nIf this value is not specified then the agent should use its own token.",
+              "nullable": true,
+              "example": "{token-without-bearer}"
+            }
+          },
+          "additionalProperties": false,
+          "description": "An API link to call to get additional information. E.g. can be used for paging or querying across regions."
+        },
+        "AgentConfigurationResult": {
+          "type": "object",
+          "properties": {
+            "configurations": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ConfigurationDiff"
+              },
+              "description": "The list of configuration changes. If no configuration changed this can be empty.",
+              "nullable": true
+            },
+            "nextLinks": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ApiLink"
+              },
+              "description": "The list of links to other configuration queries that should be called to get remaining parts of configuration.",
+              "nullable": true
+            }
+          },
+          "additionalProperties": false,
+          "description": "Agent configuration result, which can contain a mix of configuration changes (diffs) and links to call to get more configuration parts."
+        },
+        "ErrorAdditionalInfo": {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "The additional info type.",
+              "nullable": true,
+              "readOnly": true,
+              "x-ms-mutability": [
+                "read"
+              ]
+            },
+            "info": {
+              "type": "object",
+              "description": "The additional info.",
+              "nullable": true,
+              "readOnly": true,
+              "x-ms-mutability": [
+                "read"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "description": "Additional information for common error response."
+        },
+        "ErrorResponse": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string",
+              "description": "Error code which can be used to programmatically identify the class of error.",
+              "nullable": true,
+              "readOnly": true,
+              "example": "BadArgument",
+              "x-ms-mutability": [
+                "read"
+              ]
+            },
+            "message": {
+              "type": "string",
+              "description": "Describes the error in detail and provides debugging information.",
+              "nullable": true,
+              "readOnly": true,
+              "x-ms-mutability": [
+                "read"
+              ]
+            },
+            "target": {
+              "type": "string",
+              "description": "The target of the particular error (for example, the name of the property in error).",
+              "nullable": true,
+              "readOnly": true,
+              "example": "properties.provisioningState",
+              "x-ms-mutability": [
+                "read"
+              ]
+            },
+            "details": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ErrorResponse"
+              },
+              "description": "Additional nested error response objects.",
+              "nullable": true,
+              "readOnly": true,
+              "x-ms-mutability": [
+                "read"
+              ]
+            },
+            "additionalInfo": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/ErrorAdditionalInfo"
+              },
+              "description": "Additional error information.",
+              "nullable": true,
+              "readOnly": true,
+              "x-ms-mutability": [
+                "read"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "description": "Common error response."
+        },
+        "AgentIngestionTokenResult": {
+          "required": [
+            "configurationId",
+            "ingestionAuthToken"
+          ],
+          "type": "object",
+          "properties": {
+            "configurationId": {
+              "type": "string",
+              "description": "The unique identity of the configuration.\r\nThe format is internal and can change over time so it should be treated as opaque.",
+              "example": "cn:4af1ff43d40a495aa0afb80dd494b03f"
+            },
+            "ingestionAuthToken": {
+              "type": "string",
+              "description": "The auth token for agent to use when sending data for given configuration. \r\nThis would not include the \"Bearer\" header prefix.",
+              "example": "{token-without-bearer}"
+            }
+          },
+          "additionalProperties": false,
+          "description": "Agent ingestion token result."
+        }
+      },
+      "securitySchemes": {
+        "azure_auth": {
+          "type": "oauth2",
+          "description": "Azure Active Directory OAuth2 Flow",
+          "flows": {
+            "implicit": {
+              "authorizationUrl": "https://login.microsoftonline.com/common/oauth2/authorize",
+              "scopes": {
+                "user_impersonation": "impersonate your user account"
+              }
+            }
+          }
+        }
+      }
+    },
+    "security": [
+      {
+        "azure_auth": [
+          "user_impersonation"
+        ]
+      }
+    ]
+  }

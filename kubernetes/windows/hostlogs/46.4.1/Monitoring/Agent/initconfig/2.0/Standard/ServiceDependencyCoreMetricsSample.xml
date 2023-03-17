@@ -1,0 +1,321 @@
+<MonitoringManagement version="1.0" timestamp="2019-10-21T22:14:29.905Z">
+  <Events>
+    <DerivedEvents>
+      <!--
+        Please see:
+        - https://genevamondocs.azurewebsites.net/collect/advanced/derivedintro.html for information on writing derived events
+        - https://genevamondocs.azurewebsites.net/alerts/AdvancedTopics/DependencyMonitoring/DependencyData.html for information on
+           available Dependency Monitoring fields
+      -->
+
+      <!--
+        The sample below shows how to emit a number of metrics based on the underlying Connection records.
+        The sample is intended as a demonstration. Please review the metrics being emitted and the dimensions for
+        each metric prior to enabling this in production. Due to the large number of dimensions and the potentially
+        high cardinality of each dimension, your MDM costs may increase significantly. Only emit metrics you require,
+        for your monitoring scenarios, as the logs data is available in MDS.
+
+          General dependency information
+          - ServiceDependency/Network/Dependency        - indicates that a depedency exists/existed
+
+          Connection activity
+          - ServiceDependency/Network/LinksEstablished  - number of established connections
+          - ServiceDependency/Network/LinksTerminated   - number of terminated connections
+          - ServiceDependency/Network/LinksLive         - number of live connections
+          - ServiceDependency/Network/LinksFailed       - number of failed connections
+
+          Data transfer
+          - ServiceDependency/Network/BytesSent         - bytes sent
+          - ServiceDependency/Network/BytesReceived     - bytes received
+
+          Response time latency (approximation)
+          - ServiceDependency/Network/Responses         - number of responses
+          - ServiceDependency/Network/ResponseTimeMin   - min response time
+          - ServiceDependency/Network/ResponseTimeMax   - max response time
+          - ServiceDependency/Network/ResponseTimeSum   - response time sum
+                                                          divide by Responses to obtain average
+
+          Tls operations
+          - ServiceDependency/Tls/HandshakesComplete    - number of successful tls handshakes
+          - ServiceDependency/Tls/HandshakesFailed      - number of failed tls handshakes
+          - ServiceDependency/Tls/HandshakeLatencySum   - sum of latency of the successful TLS handshakes
+                                                          divide by HandshakesComplete to obtain average 
+
+          All metrics are emitted with the following dimensions:
+              - Tenant
+              - Role
+              - RoleInstance
+              - Direction
+              - DestinationIp
+              - DestinationPort
+              - Protocol
+              - ProcessId
+              - RemoteClassification
+
+      -->
+      <DerivedEvent 
+        source="SvcDepConnectionsRaw"
+        eventName="SvcDepConnectionMetrics"
+        storeType="Local"
+        duration="PT1M">
+        <Query>
+          <![CDATA[
+            let Direction = (Direction != null && Direction != "_n/a_" && Direction != "_Unknown_") ? Direction : "unknown"
+            let DestinationIp = (DestinationIp != null && DestinationIp != "_n/a_" && DestinationIp != "_Unknown_") ? DestinationIp : "unknown"
+            let DestinationPort = (DestinationPort != null && DestinationPort != "_n/a_" && DestinationPort != "_Unknown_") ? ToString(DestinationPort) : "unknown"
+            let Protocol = (Protocol != null && Protocol != "_n/a_" && Protocol != "_Unknown_") ? Protocol : "unknown"
+            let ProcessId = (ProcessId != null && ProcessId != "_n/a_" && ProcessId != "_Unknown_") ? ProcessId : "unknown"
+            let RemoteClassification = (RemoteClassificationPart3 != null && RemoteClassificationPart3 != "_n/a_" && RemoteClassificationPart3 != "_Unknown_") ? RemoteClassificationPart3 : "unknown"
+   
+            let LinksEstablished = (LinksEstablished != null && LinksEstablished != "_n/a_" && LinksEstablished != "_Unknown_") ? ToInt32(LinksEstablished) : 0
+            let LinksTerminated = (LinksTerminated != null && LinksTerminated != "_n/a_" && LinksTerminated != "_Unknown_") ? ToInt32(LinksTerminated) : 0
+            let LinksFailed = (LinksFailed != null && LinksFailed != "_n/a_" && LinksFailed != "_Unknown_") ? ToInt32(LinksFailed) : 0
+            let LinksLive = (LinksLive != null && LinksLive != "_n/a_" && LinksLive != "_Unknown_") ? ToInt32(LinksLive) : 0
+
+            let BytesSent = (BytesSent != null && BytesSent != "_n/a_" && BytesSent != "_Unknown_") ? ToInt64(BytesSent) : 0L
+            let BytesReceived = (BytesReceived != null && BytesReceived != "_n/a_" && BytesReceived != "_Unknown_") ? ToInt64(BytesReceived) : 0L
+
+            let Responses = (Responses != null && Responses != "_n/a_" && Responses != "_Unknown_") ? ToInt32(Responses) : 0
+            let ResponseTimeMin = (ResponseTimeMin != null && ResponseTimeMin != "_n/a_" && ResponseTimeMin != "_Unknown_") ? ToInt32(ResponseTimeMin) : 0
+            let ResponseTimeMax = (ResponseTimeMax != null && ResponseTimeMax != "_n/a_" && ResponseTimeMax != "_Unknown_") ? ToInt32(ResponseTimeMax) : 0
+            let ResponseTimeSum = (ResponseTimeSum != null && ResponseTimeSum != "_n/a_" && ResponseTimeSum != "_Unknown_") ? ToInt64(ResponseTimeSum) : 0L
+
+            let TlsHandshakesComplete = (TlsHandshakesComplete != null && TlsHandshakesComplete != "_n/a_" && TlsHandshakesComplete != "_Unknown_") ? ToInt32(TlsHandshakesComplete) : 0
+            let TlsHandshakesFailed = (TlsHandshakesFailed != null && TlsHandshakesFailed != "_n/a_" && TlsHandshakesFailed != "_Unknown_") ? ToInt32(TlsHandshakesFailed) : 0
+            let TlsHandshakeLatencySum = (TlsHandshakeLatencySum != null && TlsHandshakeLatencySum != "_n/a_" && TlsHandshakeLatencySum != "_Unknown_") ? ToInt64(TlsHandshakeLatencySum) : 0L
+
+            groupby Direction, DestinationIp, DestinationPort, Protocol, ProcessId, RemoteClassification
+
+            let Account = GetEnvironmentVariable("MA_AGENT_METRICS_ACCOUNT")
+            let Tenant = GetStaticEnvironmentVariable("MA_TENANT_IDENTITY")
+            let Role = GetStaticEnvironmentVariable("MA_ROLE_IDENTITY")
+            let RoleInstance = GetStaticEnvironmentVariable("MA_ROLEINSTANCE_IDENTITY")
+
+            let BasicDependencyMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/Dependency",
+              1,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let LinksEstablishedAgg = Sum(LinksEstablished)
+            let LinksEstablishedMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/LinksEstablished",
+              LinksEstablishedAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let LinksTerminatedAgg = Sum(LinksTerminated)
+            let LinksTerminatedMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/LinksTerminated",
+              LinksTerminatedAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let LinksFailedAgg = Sum(LinksFailed)
+            let LinksFailedMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/LinksFailed",
+              LinksFailedAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let LinksLiveAgg = Sum(LinksLive)
+            let LinksLiveMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/LinksLive",
+              LinksLiveAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let BytesSentAgg = Sum(BytesSent)
+            let BytesSentMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/BytesSent",
+              BytesSentAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let BytesReceivedAgg = Sum(BytesReceived)
+            let BytesReceivedMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/BytesReceived",
+              BytesReceivedAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let ResponsesAgg = Sum(Responses)
+            let ResponsesMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/Responses",
+              ResponsesAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let ResponseTimeMinAgg = Min(ResponseTimeMin)
+            let ResponseTimeMinMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/ResponseTimeMin",
+              ResponseTimeMinAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let ResponseTimeMaxAgg = Max(ResponseTimeMax)
+            let ResponseTimeMaxMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/ResponseTimeMax",
+              ResponseTimeMaxAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let ResponseTimeSumAgg = Sum(ResponseTimeSum)
+            let ResponseTimeSumMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Network/ResponseTimeSum",
+              ResponseTimeSumAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let TlsHandshakesCompleteAgg = Sum(TlsHandshakesComplete)
+            let TlsHandshakesCompleteMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Tls/HandshakesComplete",
+              TlsHandshakesCompleteAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let TlsHandshakesFailedAgg = Sum(TlsHandshakesFailed)
+            let TlsHandshakesFailedMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Tls/HandshakesFailed",
+              TlsHandshakesFailedAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+
+            let TlsHandshakeLatencySumAgg = Sum(TlsHandshakeLatencySum)
+            let TlsHandshakeLatencySumMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Tls/HandshakeLatencySum",
+              TlsHandshakeLatencySumAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "Direction", Direction,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Protocol", Protocol,
+              "ProcessId", ProcessId,
+              "RemoteClassification", RemoteClassification)
+          ]]>
+        </Query>
+      </DerivedEvent>
+    </DerivedEvents>
+  </Events> 
+</MonitoringManagement>

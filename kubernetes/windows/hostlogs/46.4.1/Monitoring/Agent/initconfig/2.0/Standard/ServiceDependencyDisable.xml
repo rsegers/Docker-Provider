@@ -1,0 +1,10 @@
+<MonitoringManagement version="1.0" timestamp="2019-10-21T22:14:29.905Z">
+  <Events>
+    <Extensions>
+      <Extension extensionName="DependencyAgentExtension">
+        <CommandLine><![CDATA[DAExtension.exe -uninstall ]]></CommandLine>
+        <ResourceUsage cpuPercentUsage="2" cpuThrottling="true" memoryLimitInMB="100" memoryThrottling="true" recycleOnMemory="false" />
+      </Extension>
+    </Extensions>
+  </Events>
+</MonitoringManagement>

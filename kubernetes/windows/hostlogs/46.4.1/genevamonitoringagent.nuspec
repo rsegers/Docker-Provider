@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>GenevaMonitoringAgent</id>
+    <version>46.4.1</version>
+    <title>Geneva Monitoring Agent (MA)</title>
+    <authors>Geneva Monitoring Agent Team</authors>
+    <owners>Azure;Microsoft</owners>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <licenseUrl>http://cbt-userguide/NugetCanUseInLabs.html</licenseUrl>
+    <projectUrl>http://aka.ms/genevawarmpath</projectUrl>
+    <description>This package contains tools from Geneva Monitoring Agent Team</description>
+    <releaseNotes>https://microsoft.sharepoint.com/teams/SPS-AzMon/MonWiki/Wiki Pages/Release Notes.aspx</releaseNotes>
+    <copyright>Copyright 2016</copyright>
+    <language>en-US</language>
+    <tags>Azure Geneva Cloud Monitoring Agent MDS MDM MA MS;_Origin:https://msazure.visualstudio.com/One/_git/EngSys-MDA-CloudAgent _Repository:C:\__w\1\s _Head:HEAD _Project:GenevaMonitoringAgent.nuproj _ProjectDirectoryPath:\nuget\GenevaMonitoringAgent _AssemblyName: _OutputType: _User:ContainerAdministrator</tags>
+  </metadata>
+</package>

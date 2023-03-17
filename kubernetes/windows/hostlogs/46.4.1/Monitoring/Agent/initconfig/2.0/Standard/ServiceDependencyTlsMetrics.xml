@@ -1,0 +1,192 @@
+<MonitoringManagement version="1.0" timestamp="2019-10-21T22:14:29.905Z">
+  <Events>
+    <DerivedEvents>
+      <!--
+        Emits the following metrics:
+          - ServiceDependency/Tls/ConnectionActivity
+
+        Emitted every minute to represent whether tls traffic of a specific version has been observed.
+        The default version of this metric emits the bare minimum of dimensions:
+          - Tenant, Role, RoleInstance
+          - Direction
+          - TLSVersion
+
+        More dimensions can be added (see below), but doing that will increase the cost of ingesting the data and may
+        require increasing your MDM quotas.
+
+        Please see:
+        - https://genevamondocs.azurewebsites.net/collect/advanced/derivedintro.html for information on writing derived events
+        - https://genevamondocs.azurewebsites.net/alerts/AdvancedTopics/DependencyMonitoring/DependencyData.html for information on
+           available Dependency Monitoring fields
+
+        The Connections event is used to monitor activity for outbound connections, while the Ports event is used to monitor activity 
+         for inbound connections.
+
+        To add additional dimensions to the metrics you emit, do the following (though it is strongly recommended you do not exceed
+          10 dimensions total)
+        - identify the set of fields of the Connections and/or Ports table that you want to add dimensions for
+        - add them to the select and groupby clauses of the sourceData temporary table (the section under "var sourceData")
+        - add them to the groupby claue of the output table (the section under "from sourceData")
+        - add them to each of the SetMdmMeasureMetric() function calls which is accomplished by adding two new parameters to the end 
+           of the call in the form of ["<dimensionName>", <dimensionValueVariable>]
+      -->
+      <DerivedEvent 
+        source="SvcDepConnectionsRaw"
+        eventName="SvcDepTlsOutMetric"
+        storeType="Local"
+        duration="PT1M">
+        <Query>
+          <![CDATA[
+            var sourceData =
+              select TlsVersions, Direction
+              where Direction == "outbound"
+              groupby TlsVersions
+
+              let GroupByConst = 1
+
+              let HasTLS10Raw = Contains(TlsVersions, "TLS1.0") ? 1 : 0
+              let HasTLS11Raw = Contains(TlsVersions, "TLS1.1") ? 1 : 0
+              let HasTLS12Raw = Contains(TlsVersions, "TLS1.2") ? 1 : 0
+              let HasTLS13Raw = Contains(TlsVersions, "TLS1.3") ? 1 : 0;
+
+            from sourceData
+              groupby GroupByConst
+
+              let Account = GetEnvironmentVariable("MA_AGENT_METRICS_ACCOUNT")
+              let Tenant = GetStaticEnvironmentVariable("MA_TENANT_IDENTITY")
+              let Role = GetStaticEnvironmentVariable("MA_ROLE_IDENTITY")
+              let RoleInstance = GetStaticEnvironmentVariable("MA_ROLEINSTANCE_IDENTITY")
+
+              let HasTLS10Max = Max(HasTLS10Raw)
+              let HasTLS11Max = Max(HasTLS11Raw)
+              let HasTLS12Max = Max(HasTLS12Raw)
+              let HasTLS13Max = Max(HasTLS13Raw)
+
+              let HasTLS10Metric = SetMdmMeasureMetric(
+                Account,
+                "ServiceDependency",
+                "Tls/ConnectionActivity",
+                HasTLS10Max,
+                "Tenant", Tenant,
+                "Role", Role,
+                "RoleInstance", RoleInstance,
+                "Direction", "outbound",
+                "TLSVersion", "1.0")
+
+              let HasTLS11Metric = SetMdmMeasureMetric(
+                Account,
+                "ServiceDependency",
+                "Tls/ConnectionActivity",
+                HasTLS11Max,
+                "Tenant", Tenant,
+                "Role", Role,
+                "RoleInstance", RoleInstance,
+                "Direction", "outbound",
+                "TLSVersion", "1.1")
+
+              let HasTLS12Metric = SetMdmMeasureMetric(
+                Account,
+                "ServiceDependency",
+                "Tls/ConnectionActivity",
+                HasTLS12Max,
+                "Tenant", Tenant,
+                "Role", Role,
+                "RoleInstance", RoleInstance,
+                "Direction", "outbound",
+                "TLSVersion", "1.2")
+
+              let HasTLS13Metric = SetMdmMeasureMetric(
+                Account,
+                "ServiceDependency",
+                "Tls/ConnectionActivity",
+                HasTLS13Max,
+                "Tenant", Tenant,
+                "Role", Role,
+                "RoleInstance", RoleInstance,
+                "Direction", "outbound",
+                "TLSVersion", "1.3")
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+      <DerivedEvent 
+        source="SvcDepPortsRaw"
+        eventName="SvcDepTlsInMetric"
+        storeType="Local"
+        duration="PT1M">
+        <Query>
+          <![CDATA[
+            var sourceData =
+              select TlsVersions
+              groupby TlsVersions
+
+              let GroupByConst = 1
+
+              let HasTLS10Raw = Contains(TlsVersions, "TLS1.0") ? 1 : 0
+              let HasTLS11Raw = Contains(TlsVersions, "TLS1.1") ? 1 : 0
+              let HasTLS12Raw = Contains(TlsVersions, "TLS1.2") ? 1 : 0
+              let HasTLS13Raw = Contains(TlsVersions, "TLS1.3") ? 1 : 0;
+
+            from sourceData
+              groupby GroupByConst
+              
+              let Account = GetEnvironmentVariable("MA_AGENT_METRICS_ACCOUNT")
+              let Tenant = GetStaticEnvironmentVariable("MA_TENANT_IDENTITY")
+              let Role = GetStaticEnvironmentVariable("MA_ROLE_IDENTITY")
+              let RoleInstance = GetStaticEnvironmentVariable("MA_ROLEINSTANCE_IDENTITY")
+
+              let HasTLS10Max = Max(HasTLS10Raw)
+              let HasTLS11Max = Max(HasTLS11Raw)
+              let HasTLS12Max = Max(HasTLS12Raw)
+              let HasTLS13Max = Max(HasTLS13Raw)
+
+              let HasTLS10Metric = SetMdmMeasureMetric(
+                Account,
+                "ServiceDependency",
+                "Tls/ConnectionActivity",
+                HasTLS10Max,
+                "Tenant", Tenant,
+                "Role", Role,
+                "RoleInstance", RoleInstance,
+                "Direction", "inbound",
+                "TLSVersion", "1.0")
+
+              let HasTLS11Metric = SetMdmMeasureMetric(
+                Account,
+                "ServiceDependency",
+                "Tls/ConnectionActivity",
+                HasTLS11Max,
+                "Tenant", Tenant,
+                "Role", Role,
+                "RoleInstance", RoleInstance,
+                "Direction", "inbound",
+                "TLSVersion", "1.1")
+
+              let HasTLS12Metric = SetMdmMeasureMetric(
+                Account,
+                "ServiceDependency",
+                "Tls/ConnectionActivity",
+                HasTLS12Max,
+                "Tenant", Tenant,
+                "Role", Role,
+                "RoleInstance", RoleInstance,
+                "Direction", "inbound",
+                "TLSVersion", "1.2")
+
+              let HasTLS13Metric = SetMdmMeasureMetric(
+                Account,
+                "ServiceDependency",
+                "Tls/ConnectionActivity",
+                HasTLS13Max,
+                "Tenant", Tenant,
+                "Role", Role,
+                "RoleInstance", RoleInstance,
+                "Direction", "inbound",
+                "TLSVersion", "1.3")
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+    </DerivedEvents>
+  </Events> 
+</MonitoringManagement>

@@ -1,0 +1,271 @@
+<MonitoringManagement version="1.0" timestamp="2019-10-21T22:14:29.905Z">
+  <Events>
+    <DerivedEvents>
+      <!--
+        Please see:
+        - https://genevamondocs.azurewebsites.net/collect/advanced/derivedintro.html for information on writing derived events
+        - https://genevamondocs.azurewebsites.net/alerts/AdvancedTopics/DependencyMonitoring/DependencyData.html for information on
+           available Dependency Monitoring fields
+      -->
+
+      <!--
+        The sample below shows how to emit a number of metrics based on the underlying HttpTransactions records.
+        The sample is intended as a demonstration. Please review the metrics being emitted and the dimensions for
+        each metric prior to enabling this in production. Due to the large number of dimensions and the potentially
+        high cardinality of each dimension, your MDM costs may increase significantly. Only emit metrics you require,
+        for your monitoring scenarios, as the logs data is available in MDS.
+
+        Emitted metrics:
+          - ServiceDependency/Http/Requests     - number of http requests
+          - ServiceDependency/Http/Errors       - number of http requests that resulted in an error
+          - ServiceDependency/Http/LatencyMin   - min request latency
+          - ServiceDependency/Http/LatencyMax   - max request latency
+          - ServiceDependency/Http/LatencySum   - sum of request latency
+                                                  divide by Requests to obtain average latency
+      -->
+      <DerivedEvent 
+        source="SvcDepHttpTransactionsRaw"
+        eventName="SvcDepHttpTransactionsMetrics"
+        storeType="Local"
+        duration="PT1M">
+        <Query>
+          <![CDATA[
+            let DestinationIp = (DestinationIp != null && DestinationIp != "_n/a_" && DestinationIp != "_Unknown_") ? DestinationIp : "unknown"
+            let DestinationPort = (DestinationPort != null && DestinationPort != "_n/a_" && DestinationPort != "_Unknown_") ? ToString(DestinationPort) : "unknown"
+            let Direction = (Direction != null && Direction != "_n/a_" && Direction != "_Unknown_") ? Direction : "unknown"
+            let ProcessId = (ProcessId != null && ProcessId != "_n/a_" && ProcessId != "_Unknown_") ? ProcessId : "unknown"
+            let Host = (Host != null && Host != "_n/a_" && Host != "_Unknown_") ? Host : "unknown"
+            let Path = (Path != null && Path != "_n/a_" && Path != "_Unknown_") ? Path : "unknown"
+            let HttpMethod = (HttpMethod != null && HttpMethod != "_n/a_" && HttpMethod != "_Unknown_") ? HttpMethod : "unknown"
+            let Status = (HttpStatus != null && HttpStatus != "_n/a_" && HttpStatus != "_Unknown_") ? HttpStatus : "unknown"
+
+            let Requests = (Requests != null && Requests != "_n/a_" && Requests != "_Unknown_") ? ToInt32(Requests) : 0
+            let LatencyMin = (LatencyMin != null && LatencyMin != "_n/a_" && LatencyMin != "_Unknown_") ? ToInt32(LatencyMin) : 0
+            let LatencyMax = (LatencyMax != null && LatencyMax != "_n/a_" && LatencyMax != "_Unknown_") ? ToInt32(LatencyMax) : 0
+            let LatencySum = (LatencySum != null && LatencySum != "_n/a_" && LatencySum != "_Unknown_") ? ToInt64(LatencySum) : 0L
+            let Errors = (Errors != null && Errors != "_n/a_" && Errors != "_Unknown_") ? ToInt32(Errors) : 0
+
+            groupby DestinationIp, DestinationPort, Direction, ProcessId, Host, Path, HttpMethod, Status
+
+            let Account = GetEnvironmentVariable("MA_AGENT_METRICS_ACCOUNT")
+            let Tenant = GetStaticEnvironmentVariable("MA_TENANT_IDENTITY")
+            let Role = GetStaticEnvironmentVariable("MA_ROLE_IDENTITY")
+            let RoleInstance = GetStaticEnvironmentVariable("MA_ROLEINSTANCE_IDENTITY")
+
+            let RequestsAgg = Sum(Requests)
+            let RequestsMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Http/Requests",
+              RequestsAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Direction", Direction,
+              "ProcessId", ProcessId,
+              "Host", Host,
+              "Path", Path,
+              "HttpMethod", HttpMethod,
+              "Status", Status)
+
+            let ErrorsAgg = Sum(Errors)
+            let ErrorsMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Http/Errors",
+              ErrorsAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Direction", Direction,
+              "ProcessId", ProcessId,
+              "Host", Host,
+              "Path", Path,
+              "HttpMethod", HttpMethod,
+              "Status", Status)
+
+            let LatencyMinAgg = Min(LatencyMin)
+            let LatencyMinMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Http/LatencyMin",
+              LatencyMinAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Direction", Direction,
+              "ProcessId", ProcessId,
+              "Host", Host,
+              "Path", Path,
+              "HttpMethod", HttpMethod,
+              "Status", Status)
+
+            let LatencyMaxAgg = Max(LatencyMax)
+            let LatencyMaxMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Http/LatencyMax",
+              LatencyMaxAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Direction", Direction,
+              "ProcessId", ProcessId,
+              "Host", Host,
+              "Path", Path,
+              "HttpMethod", HttpMethod,
+              "Status", Status)
+
+            let LatencySumAgg = Sum(LatencySum)
+            let LatencySumMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Http/LatencySum",
+              LatencySumAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Direction", Direction,
+              "ProcessId", ProcessId,
+              "Host", Host,
+              "Path", Path,
+              "HttpMethod", HttpMethod,
+              "Status", Status)
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+
+      <!--
+        The sample below shows how to emit a number of metrics based on the underlying DnsTransactions records.
+        The sample is intended as a demonstration. Please review the metrics being emitted and the dimensions for
+        each metric prior to enabling this in production. Due to the large number of dimensions and the potentially
+        high cardinality of each dimension, your MDM costs may increase significantly. Only emit metrics you require,
+        for your monitoring scenarios, as the logs data will is available in MDS.
+
+        Emitted metrics:
+          - ServiceDependency/Dns/Requests     - number of dns requests
+          - ServiceDependency/Dns/Errors       - number of dns requests that resulted in an error
+          - ServiceDependency/Dns/LatencyMin   - min request latency
+          - ServiceDependency/Dns/LatencyMax   - max request latency
+          - ServiceDependency/Dns/LatencySum   - sum of request latency
+                                                  divide by Requests to obtain average latency
+      -->
+      <DerivedEvent 
+        source="SvcDepDnsTransactionsRaw"
+        eventName="SvcDepDnsTransactionsMetrics"
+        storeType="Local"
+        duration="PT1M">
+        <Query>
+          <![CDATA[
+            let Direction = (Direction != null && Direction != "_n/a_" && Direction != "_Unknown_") ? Direction : "unknown"
+            let DestinationIp = (DestinationIp != null && DestinationIp != "_n/a_" && DestinationIp != "_Unknown_") ? DestinationIp : "unknown"
+            let DestinationPort = (DestinationPort != null && DestinationPort != "_n/a_" && DestinationPort != "_Unknown_") ? ToString(DestinationPort) : "unknown"
+            let ProcessId = (ProcessId != null && ProcessId != "_n/a_" && ProcessId != "_Unknown_") ? ProcessId : "unknown"
+            let TransactionPattern = (TransactionPattern != null && TransactionPattern != "_n/a_" && TransactionPattern != "_Unknown_") ? TransactionPattern : "unknown"
+            let Status = (Status != null && Status != "_n/a_" && Status != "_Unknown_") ? Status : "unknown"
+
+            let Requests = (Requests != null && Requests != "_n/a_" && Requests != "_Unknown_") ? ToInt32(Requests) : 0
+            let LatencyMin = (LatencyMin != null && LatencyMin != "_n/a_" && LatencyMin != "_Unknown_") ? ToInt32(LatencyMin) : 0
+            let LatencyMax = (LatencyMax != null && LatencyMax != "_n/a_" && LatencyMax != "_Unknown_") ? ToInt32(LatencyMax) : 0
+            let LatencySum = (LatencySum != null && LatencySum != "_n/a_" && LatencySum != "_Unknown_") ? ToInt64(LatencySum) : 0L
+            let Errors = (Errors != null && Errors != "_n/a_" && Errors != "_Unknown_") ? ToInt32(Errors) : 0
+
+            groupby DestinationIp, DestinationPort, ProcessId, Direction, TransactionPattern, Status
+
+            let Account = GetEnvironmentVariable("MA_AGENT_METRICS_ACCOUNT")
+            let Tenant = GetStaticEnvironmentVariable("MA_TENANT_IDENTITY")
+            let Role = GetStaticEnvironmentVariable("MA_ROLE_IDENTITY")
+            let RoleInstance = GetStaticEnvironmentVariable("MA_ROLEINSTANCE_IDENTITY")
+
+            let RequestsAgg = Sum(Requests)
+            let RequestsMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Dns/Requests",
+              RequestsAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Direction", Direction,
+              "TransactionPattern", TransactionPattern,
+              "Status", Status)
+
+            let ErrorsAgg = Sum(Errors)
+            let ErrorsMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Dns/Errors",
+              ErrorsAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Direction", Direction,
+              "TransactionPattern", TransactionPattern,
+              "Status", Status)
+
+            let LatencyMinAgg = Min(LatencyMin)
+            let LatencyMinMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Dns/LatencyMin",
+              LatencyMinAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Direction", Direction,
+              "TransactionPattern", TransactionPattern,
+              "Status", Status)
+
+            let LatencyMaxAgg = Max(LatencyMax)
+            let LatencyMaxMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Dns/LatencyMax",
+              LatencyMaxAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Direction", Direction,
+              "TransactionPattern", TransactionPattern,
+              "Status", Status)
+
+            let LatencySumAgg = Sum(LatencySum)
+            let LatencySumMetric = SetMdmMeasureMetric(
+              Account,
+              "ServiceDependency",
+              "Dns/LatencySum",
+              LatencySumAgg,
+              "Tenant", Tenant,
+              "Role", Role,
+              "RoleInstance", RoleInstance,
+              "DestinationIp", DestinationIp,
+              "DestinationPort", DestinationPort,
+              "Direction", Direction,
+              "TransactionPattern", TransactionPattern,
+              "Status", Status)
+          ]]>
+        </Query>
+      </DerivedEvent>
+
+    </DerivedEvents>
+  </Events> 
+</MonitoringManagement>

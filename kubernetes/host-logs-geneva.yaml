@@ -34,7 +34,7 @@ spec:
     hostNetwork: true
     containers:
      - name: host-logs-windows
-       image: "VALUE_IMAGE_NAME"
+       image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod0.1.0-hostlogs-preview"
        imagePullPolicy: IfNotPresent
        resources:
         limits:
@@ -42,9 +42,9 @@ spec:
          memory: 2Gi
        env:
         - name: AKS_CLUSTER_NAME
-          value: "VALUE_AKS_CLUSTER_NAME"
+          value: "cacarlttestaks"
         - name: AKS_REGION
-          value: "VALUE_AKS_RESOURCE_REGION_VALUE"
+          value: "westus2"
         - name: HOSTNAME
           valueFrom:
              fieldRef:

@@ -1,0 +1,44 @@
+<MonitoringManagement version="1.0" timestamp="2019-10-21T22:14:29.905Z">
+
+  <!-- 
+    NOTE: this file has been deprecated and should no longer be used. Please use ServiceDependencyAll2.xml instead.
+  -->
+
+  <!--
+    To use this file, define an account in your main configuration file's <accounts> called "ServiceDependency".
+
+    This file enables the core and extended Service Dependency events. 
+    
+    The core events provide visibility into network related operations
+    and metadata.
+
+    The extended set of events provide visibility into DNS and HTTP transactions.
+  -->
+
+  <Imports>
+    <Import file="ServiceDependencyCoreEvents.xml"/>
+    <Import file="ServiceDependencyExtendedEvents.xml"/>
+  </Imports>
+
+  <Events>
+    <EventDeclarations storeType="CentralBond">
+      <Declaration eventName="SvcDepConnections" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepEndpoints" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepPorts" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepHeartbeats" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepInterfaces" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepAgentStatistics" account="ServiceDependency"/>
+      <Declaration eventName="SvcDepDnsErrors"/>
+      <Declaration eventName="SvcDepDnsTransactions"/>
+      <Declaration eventName="SvcDepHttpTransactions"/>
+    </EventDeclarations>
+
+    <Extensions>
+      <Extension extensionName="DependencyAgentExtension">
+        <CommandLine><![CDATA[DAExtension.exe -http-transactions on ]]></CommandLine>
+        <ResourceUsage cpuPercentUsage="2" cpuThrottling="true" memoryLimitInMB="100" memoryThrottling="true" recycleOnMemory="false" />
+      </Extension>
+    </Extensions>
+  </Events>
+
+</MonitoringManagement>
