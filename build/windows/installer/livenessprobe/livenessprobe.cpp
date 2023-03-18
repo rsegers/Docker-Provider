@@ -15,7 +15,7 @@
 #define FILESYSTEM_WATCHER_FILE_EXISTS 0x00000002
 #define CERTIFICATE_RENEWAL_REQUIRED 0x00000003
 #define FLUENTDWINAKS_SERVICE_NOT_RUNNING 0x00000004
-// #define NO_WINDOWS_AMA_MONAGENTCORE_PROCESS 0x00000005
+#define NO_WINDOWS_AMA_MONAGENTCORE_PROCESS 0x00000005
 #define UNEXPECTED_ERROR 0xFFFFFFFF
 
 /*
@@ -134,11 +134,13 @@ int _tmain(int argc, wchar_t *argv[])
         return CERTIFICATE_RENEWAL_REQUIRED;
     }
 
-    // if (!IsProcessRunning(argv[5]))
-    // {
-    //     wprintf_s(L"ERROR:Process:%s is not running\n", argv[5]);
-    //     return NO_WINDOWS_AMA_MONAGENTCORE_PROCESS;
-    // }
+    if (argc >= 5) {
+        if (!IsProcessRunning(argv[5]))
+        {
+            wprintf_s(L"ERROR:Process:%s is not running\n", argv[5]);
+            return NO_WINDOWS_AMA_MONAGENTCORE_PROCESS;
+        }
+    }
 
     return SUCCESS;
 }

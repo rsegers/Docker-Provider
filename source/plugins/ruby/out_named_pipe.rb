@@ -54,10 +54,10 @@ module Fluent::Plugin
           @log.info "out_named_pipe::Writing for datatype: #{@datatype}"
           chunk.write_to($pipe_handle)
         else
-            @log.info "out_named_pipe::No pipe handle"
+          @log.error "out_named_pipe::No pipe handle"
         end
       rescue Exception => e
-        @log.info "Exception when writing to named pipe: #{e}"
+        @log.error "out_named_pipe::Exception when writing to named pipe: #{e}"
         if $pipe_handle
           $pipe_handle.close
           $pipe_handle = nil
@@ -83,7 +83,7 @@ module Fluent::Plugin
           @log.error "out_named_pipe::Couldn't get pipe name from extension config for datatype: #{@datatype}. will be retried."
         end
       rescue Exception => e
-        @log.info "Exception when writing to named pipe: #{e}"
+        @log.info "out_named_pipe::Exception when writing to named pipe: #{e}"
         raise e
       end
     end
