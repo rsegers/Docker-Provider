@@ -133,6 +133,8 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		containerLogsWindowsAMAClientCreateErrors := ContainerLogsWindowsAMAClientCreateErrors
 		containerLogsSendErrorsToADXFromFluent := ContainerLogsSendErrorsToADXFromFluent
 		containerLogsADXClientCreateErrors := ContainerLogsADXClientCreateErrors
+		containerLogsSendErrorsToWindowsAMAFromFluent := ContainerLogsSendErrorsToWindowsAMAFromFluent
+		containerLogsWindowsAMAClientCreateErrors := ContainerLogsWindowsAMAClientCreateErrors
 		insightsMetricsMDSDClientCreateErrors := InsightsMetricsMDSDClientCreateErrors
 		kubeMonEventsMDSDClientCreateErrors := KubeMonEventsMDSDClientCreateErrors
 		osmNamespaceCount := OSMNamespaceCount
@@ -158,6 +160,8 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		ContainerLogsSendErrorsToWindowsAMAFromFluent = 0.0
 		ContainerLogsWindowsAMAClientCreateErrors = 0.0
 		ContainerLogsSendErrorsToADXFromFluent = 0.0
+		ContainerLogsSendErrorsToWindowsAMAFromFluent = 0.0
+		ContainerLogsWindowsAMAClientCreateErrors = 0.0
 		ContainerLogsADXClientCreateErrors = 0.0
 		InsightsMetricsMDSDClientCreateErrors = 0.0
 		KubeMonEventsMDSDClientCreateErrors = 0.0
@@ -378,6 +382,31 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		if strings.Compare(strings.ToLower(os.Getenv("CONTAINER_TYPE")), "prometheussidecar") == 0 {
 			CommonProperties["ContainerType"] = "prometheussidecar"
+		} else {
+			genevaLogsIntegration := os.Getenv("GENEVA_LOGS_INTEGRATION")
+			if genevaLogsIntegration != "" && strings.Compare(strings.ToLower(genevaLogsIntegration), "true") == 0 {
+				CommonProperties["IsGenevaLogsIntegrationEnabled"] = "true"
+				genevaLogsMultitenancy := os.Getenv("GENEVA_LOGS_MULTI_TENANCY")
+				if genevaLogsMultitenancy != "" && strings.Compare(strings.ToLower(genevaLogsMultitenancy), "true") == 0 {
+					CommonProperties["IsGenevaLogsMultiTenancyEnabled"] = "true"
+					genevaLogsTenantNamespaces := os.Getenv("GENEVA_LOGS_TENANT_NAMESPACES")
+					if genevaLogsTenantNamespaces != "" {
+						CommonProperties["GenevaLogsTenantNamespaces"] = genevaLogsTenantNamespaces
+					}
+					genevaLogsInfraNamespaces := os.Getenv("GENEVA_LOGS_INFRA_NAMESPACES")
+					if genevaLogsInfraNamespaces != "" {
+						CommonProperties["GenevaLogsInfraNamespaces"] = genevaLogsInfraNamespaces
+					}
+				}
+				genevaLogsConfigVersion := os.Getenv("MONITORING_CONFIG_VERSION")
+				if genevaLogsConfigVersion != "" {
+					CommonProperties["GENEVA_LOGS_CONFIG_VERSION"] = genevaLogsConfigVersion
+				}
+			}
+            genevaLogsIntegrationServiceMode := os.Getenv("GENEVA_LOGS_INTEGRATION_SERVICE_MODE")
+			if genevaLogsIntegrationServiceMode != "" && strings.Compare(strings.ToLower(genevaLogsIntegrationServiceMode), "true") == 0 {
+				CommonProperties["IsGenevaLogsIntegrationServiceMode"] = "true"
+			}
 		}
 	}
 

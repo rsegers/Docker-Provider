@@ -179,6 +179,10 @@ var (
 	ContainerType string
 	// flag to check whether LA AAD MSI Auth Enabled or not
 	IsAADMSIAuthMode bool
+	// flag to check whether Geneva Logs Integration enabled or not
+	IsGenevaLogsIntegrationEnabled bool
+	// flag to check whether Geneva Logs ServiceMode enabled or not
+	IsGenevaLogsTelemetryServiceMode bool
 	// named pipe connection to ContainerLog for AMA
 	ContainerLogNamedPipe net.Conn
 )
@@ -1096,6 +1100,14 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		//below id & name are used by latency telemetry in both v1 & v2 LA schemas
 		id := ""
 		name := ""
+		if IsGenevaLogsTelemetryServiceMode == true {
+			//Incase of GenevaLogs Service mode, use the source Computer name from which log line originated
+			// And the ClusterResourceId in the receiving record
+			Computer = ToString(record["Computer"])
+			stringMap["AzureResourceId"] = ToString(record["AzureResourceId"])
+		} else if IsGenevaLogsIntegrationEnabled == true {
+			stringMap["AzureResourceId"] = ResourceID
+		}
 
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
@@ -1220,7 +1232,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
-		if IsAADMSIAuthMode == true && strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) == false {
+		if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled && strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) == false {
 			Log("Info::mdsd/ama::obtaining output stream id")
 			if ContainerLogSchemaV2 == true {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogV2DataType)
@@ -1260,13 +1272,17 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		if IsWindows == true {
 			if ContainerLogNamedPipe == nil {
 				Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
-				var datatype string
-				if ContainerLogSchemaV2 {
-					datatype = ContainerLogV2DataType
+				if IsGenevaLogsIntegrationEnabled {
+					CreateWindowsNamedPipesClient(getGenevaWindowsNamedPipeName())
 				} else {
-					datatype = ContainerLogDataType
+					var datatype string
+					if ContainerLogSchemaV2 {
+						datatype = ContainerLogV2DataType
+					} else {
+						datatype = ContainerLogDataType
+					}
+					CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
 				}
-				CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
 			}
 			if ContainerLogNamedPipe == nil {
 				Log("Error::AMA::Cannot create the named pipe connection")
@@ -1574,8 +1590,12 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	osType := os.Getenv("OS_TYPE")
 	IsWindows = false
-	// Linux
-	if strings.Compare(strings.ToLower(osType), "windows") != 0 {
+	IsGenevaLogsTelemetryServiceMode = false
+	genevaLogsIntegrationServiceMode := os.Getenv("GENEVA_LOGS_INTEGRATION_SERVICE_MODE")
+	if strings.Compare(strings.ToLower(genevaLogsIntegrationServiceMode), "true") == 0 {
+		IsGenevaLogsTelemetryServiceMode = true
+		Log("IsGenevaLogsTelemetryServiceMode %v", IsGenevaLogsTelemetryServiceMode)
+	} else if strings.Compare(strings.ToLower(osType), "windows") != 0 {
 		Log("Reading configuration for Linux from %s", pluginConfPath)
 		WorkspaceID = os.Getenv("WSID")
 		if WorkspaceID == "" {
@@ -1721,7 +1741,13 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	ContainerLogsRouteV2 = false
 	ContainerLogsRouteADX = false
-
+	IsGenevaLogsIntegrationEnabled = false
+	genevaLogsIntegrationEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("GENEVA_LOGS_INTEGRATION")))
+	if genevaLogsIntegrationEnabled != "" && strings.Compare(strings.ToLower(genevaLogsIntegrationEnabled), "true") == 0 {
+		IsGenevaLogsIntegrationEnabled = true
+		Log("Geneva Logs Integration Enabled")
+		ContainerLogsRouteV2 = true // AMA route for geneva logs integration
+	}
 	if strings.Compare(ContainerLogsRoute, ContainerLogsADXRoute) == 0 {
 		// Try to read the ADX database name from environment variables. Default to DefaultAdsDatabaseName if not set.
 		// This SHOULD be set by tomlparser.rb so it's a highly unexpected event if it isn't.
@@ -1789,13 +1815,17 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	if ContainerLogsRouteV2 == true {
 		if IsWindows {
-			var datatype string
-			if ContainerLogSchemaV2 {
-				datatype = ContainerLogV2DataType
+			if IsGenevaLogsIntegrationEnabled {
+				CreateWindowsNamedPipesClient(getGenevaWindowsNamedPipeName())
 			} else {
-				datatype = ContainerLogDataType
+				var datatype string
+				if ContainerLogSchemaV2 {
+					datatype = ContainerLogV2DataType
+				} else {
+					datatype = ContainerLogDataType
+				}
+				CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
 			}
-			CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
 		} else {
 			CreateMDSDClient(ContainerLogV2, ContainerType)
 		}

@@ -1,4 +1,4 @@
-# speed up Invoke-WebRequest 
+# speed up Invoke-WebRequest
 # https://stackoverflow.com/questions/28682642/powershell-why-is-using-invoke-webrequest-much-slower-than-a-browser-download
 $ProgressPreference = 'SilentlyContinue'
 
@@ -91,10 +91,7 @@ catch {
 }
 Write-Host ('Finished downloading Windows Azure Monitor Agent')
 
-
 Write-Host ("Removing Install folder")
-
 Remove-Item /installation -Recurse
-
 #Remove gemfile.lock for http_parser gem 0.6.0
 #see  - https://github.com/fluent/fluentd/issues/3374 https://github.com/tmm1/http_parser.rb/issues/70
