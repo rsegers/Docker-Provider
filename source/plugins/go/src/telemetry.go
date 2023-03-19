@@ -133,8 +133,6 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		containerLogsWindowsAMAClientCreateErrors := ContainerLogsWindowsAMAClientCreateErrors
 		containerLogsSendErrorsToADXFromFluent := ContainerLogsSendErrorsToADXFromFluent
 		containerLogsADXClientCreateErrors := ContainerLogsADXClientCreateErrors
-		containerLogsSendErrorsToWindowsAMAFromFluent := ContainerLogsSendErrorsToWindowsAMAFromFluent
-		containerLogsWindowsAMAClientCreateErrors := ContainerLogsWindowsAMAClientCreateErrors
 		insightsMetricsMDSDClientCreateErrors := InsightsMetricsMDSDClientCreateErrors
 		kubeMonEventsMDSDClientCreateErrors := KubeMonEventsMDSDClientCreateErrors
 		osmNamespaceCount := OSMNamespaceCount

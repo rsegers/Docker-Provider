@@ -1273,7 +1273,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			if ContainerLogNamedPipe == nil {
 				Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
 				if IsGenevaLogsIntegrationEnabled {
-					CreateWindowsNamedPipesClient(getGenevaWindowsNamedPipeName())
+					CreateWindowsNamedPipeClient(getGenevaWindowsNamedPipeName())
 				} else {
 					var datatype string
 					if ContainerLogSchemaV2 {
@@ -1816,7 +1816,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	if ContainerLogsRouteV2 == true {
 		if IsWindows {
 			if IsGenevaLogsIntegrationEnabled {
-				CreateWindowsNamedPipesClient(getGenevaWindowsNamedPipeName())
+				CreateWindowsNamedPipeClient(getGenevaWindowsNamedPipeName())
 			} else {
 				var datatype string
 				if ContainerLogSchemaV2 {
