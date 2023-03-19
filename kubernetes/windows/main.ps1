@@ -804,6 +804,7 @@ if (![string]::IsNullOrEmpty($isGenevaLogsIntegration) -and $isGenevaLogsIntegra
 } elseif (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
     Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
 
+    Set-ProcessAndMachineEnvVariables "MONITORING_GCS_AUTH_ID_TYPE" ""
     #start Windows AMA 
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
     $version = Get-Content -Path "C:\opt\windowsazuremonitoragent\version.txt"
