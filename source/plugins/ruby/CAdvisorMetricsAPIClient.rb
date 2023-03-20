@@ -14,6 +14,7 @@ class CAdvisorMetricsAPIClient
   require_relative "KubernetesApiClient"
   require_relative "ApplicationInsightsUtility"
   require_relative "constants"
+  require_relative "extension_utils"
 
   @configMapMountPath = "/etc/config/settings/log-data-collection-settings"
   @promConfigMountPath = "/etc/config/settings/prometheus-data-collection-settings"
@@ -150,11 +151,15 @@ class CAdvisorMetricsAPIClient
           else
             hostName = (OMS::Common.get_hostname)
           end
-          operatingSystem = "Linux"
+          if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0 && ExtensionUtils.isAADMSIAuthMode()
+            operatingSystem = "Windows"
+          else
+            operatingSystem = "Linux"
+          end
         end
         if !metricInfo.nil?
           # Checking if we are in windows daemonset and sending only few metrics that are needed for MDM
-          if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+          if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0 && !ExtensionUtils.isAADMSIAuthMode()
             # Container metrics
             metricDataItems.concat(getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", Constants::MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem, namespaceFilteringMode, namespaces))
             containerCpuUsageNanoSecondsRate = getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", Constants::CPU_USAGE_NANO_CORES, metricTime, namespaceFilteringMode, namespaces)
