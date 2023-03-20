@@ -245,14 +245,15 @@ if !file.nil?
   file.write("export GENEVA_LOGS_INTEGRATION=#{@geneva_logs_integration}\n")
   file.write("export GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}\n")
 
-  file.write("export MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}\n")
-  file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}\n")
-  file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
-  file.write("export MONITORING_GCS_REGION=#{@geneva_gcs_region}\n")
-  file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
-  file.write("export MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}\n")
-  file.write("export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken")
-
+  if @geneva_logs_integration
+    file.write("export MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}\n")
+    file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}\n")
+    file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
+    file.write("export MONITORING_GCS_REGION=#{@geneva_gcs_region}\n")
+    file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
+    file.write("export MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}\n")
+    file.write("export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken")
+  end
   file.write("export GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}\n")
   file.write("export GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}\n")
 
@@ -276,26 +277,27 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows("GENEVA_LOGS_MULTI_TENANCY", @multi_tenancy)
     file.write(commands)
 
-    commands = get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment)
-    file.write(commands)
-    commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace_windows)
-    file.write(commands)
-    commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
-    file.write(commands)
-    commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version_windows)
-    file.write(commands)
-    commands = get_command_windows("MONITORING_GCS_REGION", @geneva_gcs_region)
-    file.write(commands)
-    commands = get_command_windows("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken")
-    file.write(commands)
-
-    #Windows AMA expects these and these are different from Linux AMA
-    authIdParts = @geneva_gcs_authid.split("#", 2)
-    if authIdParts.length == 2
-      file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
-      file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
-    else
-      puts "Invalid GCS Auth Id: #{@geneva_gcs_authid}"
+    if @geneva_logs_integration
+      commands = get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment)
+      file.write(commands)
+      commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace_windows)
+      file.write(commands)
+      commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
+      file.write(commands)
+      commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version_windows)
+      file.write(commands)
+      commands = get_command_windows("MONITORING_GCS_REGION", @geneva_gcs_region)
+      file.write(commands)
+      commands = get_command_windows("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken")
+      file.write(commands)
+      #Windows AMA expects these and these are different from Linux AMA
+      authIdParts = @geneva_gcs_authid.split("#", 2)
+      if authIdParts.length == 2
+        file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
+        file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
+      else
+        puts "Invalid GCS Auth Id: #{@geneva_gcs_authid}"
+      end
     end
 
     commands = get_command_windows("GENEVA_LOGS_INFRA_NAMESPACES", @infra_namespaces)
