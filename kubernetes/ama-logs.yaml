@@ -1,3 +1,60 @@
+---
+apiVersion: "autoscaling.k8s.io/v1"
+kind: VerticalPodAutoscaler
+metadata:
+  name: ama-logs-windows-vpa
+  namespace: kube-system
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: DaemonSet
+    name: ama-logs-windows
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "ama-logs-windows"
+        minAllowed:
+         cpu: 500m
+         memory: 700Mi
+        maxAllowed:
+         cpu: 1
+         memory: 1.5Gi
+        controlledResources: ["cpu", "memory"]
+---
+apiVersion: "autoscaling.k8s.io/v1"
+kind: VerticalPodAutoscaler
+metadata:
+  name: ama-logs-vpa
+  namespace: kube-system
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: DaemonSet
+    name: ama-logs
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "ama-logs"
+      - containerName: "ama-logs-prometheus"
+---
+apiVersion: "autoscaling.k8s.io/v1"
+kind: VerticalPodAutoscaler
+metadata:
+  name: ama-logs-rs-vpa
+  namespace: kube-system
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: ama-logs-rs
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "ama-logs"
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
