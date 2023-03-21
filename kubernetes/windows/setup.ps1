@@ -38,7 +38,7 @@ Write-Host ('Finished Installing Fluentbit')
 
 Write-Host ('Installing Telegraf');
 try {
-    $telegrafUri='https://dl.influxdata.com/telegraf/releases/telegraf-1.25.3_windows_amd64.zip'
+    $telegrafUri='https://dl.influxdata.com/telegraf/releases/telegraf-1.25.1_windows_amd64.zip'
     Invoke-WebRequest -Uri $telegrafUri -OutFile /installation/telegraf.zip
     Expand-Archive -Path /installation/telegraf.zip -Destination /installation/telegraf
     Move-Item -Path /installation/telegraf/*/* -Destination /opt/telegraf/ -ErrorAction SilentlyContinue
