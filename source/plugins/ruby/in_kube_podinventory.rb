@@ -564,7 +564,7 @@ module Fluent::Plugin
         mdmPodRecord["Namespace"] = record["Namespace"]
         mdmPodRecord["PodStatus"] = record["PodStatus"]
         mdmPodRecord["ControllerKind"] = record["ControllerKind"]
-        mdmPodRecord["PodReadyCondition"] = KubernetesApiClient.getPodReadyCondition(record["ControllerKind"], item["status"]["conditions"])
+        mdmPodRecord["PodReadyCondition"] = KubernetesApiClient.getPodReadyCondition(item["status"]["conditions"], record["ControllerKind"], record["PodStatus"])
         mdmPodRecord["containerRecords"] = []
 
         podContainers = []

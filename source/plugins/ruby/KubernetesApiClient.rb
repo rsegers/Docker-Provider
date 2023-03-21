@@ -1382,7 +1382,7 @@ class KubernetesApiClient
       return item
     end
 
-    def getPodReadyCondition(controllerKind, podStatusConditions)
+    def getPodReadyCondition(podStatusConditions, controllerKind, podStatus)
       podReadyCondition = false
       begin
         if !podStatusConditions.nil? && !podStatusConditions.empty?
@@ -1390,7 +1390,9 @@ class KubernetesApiClient
             if condition["type"] == "Ready"
               if condition["status"].downcase == "true"
                 podReadyCondition = true
-              elsif !controllerKind.nil? & !controllerKind.empty? && controllerKind.downcase == Constants::CONTROLLER_KIND_JOB
+              elsif !controllerKind.nil? & !controllerKind.empty? &&
+                    !podStatus.nil? && !podStatus.empty? &&
+                    controllerKind.downcase == Constants::CONTROLLER_KIND_JOB && podStatus == "Succeeded"
                 podReadyCondition = true # This is for completed Job pods
               end
               break #Exit the for loop since we found the ready condition
