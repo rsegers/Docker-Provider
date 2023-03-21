@@ -881,9 +881,14 @@ class CAdvisorMetricsAPIClient
 
         metricCollection = {}
         metricCollection["CounterName"] = metricNametoReturn
-        #Read it from /proc/uptime
-        metricCollection["Value"] = DateTime.parse(metricTime).to_time.to_i - IO.read("/proc/uptime").split[0].to_f
-
+        if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0 && ExtensionUtils.isAADMSIAuthMode()
+          #Read from the windowsnodereset.log for Windows daemonset with MSI auth mode using Windows AMA
+          metricValStr = IO.readlines("C:\\etc\\kubernetes\\host\\windowsnodereset.log")[0].split[0]
+          metricCollection["Value"] = DateTime.parse(metricValStr).to_time.to_i
+        else
+          #Read it from /proc/uptime for Linux and windows nodes being reported from replicaset in Legacy Auth
+          metricCollection["Value"] = DateTime.parse(metricTime).to_time.to_i - IO.read("/proc/uptime").split[0].to_f
+        end
         metricItem["json_Collections"] = []
         metricCollections = []
         metricCollections.push(metricCollection)
