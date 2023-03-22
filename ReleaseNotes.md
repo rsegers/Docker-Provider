@@ -9,8 +9,14 @@ additional questions or comments.
 
 ## Release History
 
-Note: Starting 03/01/2023 we have moved to the semver versioning system for naming image tags with the release 3.1.4
+### 03/21/2023 -
+##### Version microsoft/oms:3.1.5 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.5 (linux)
+##### Version microsoft/oms:win-3.1.5 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.5 (windows)
+##### Code change log
+- Windows Agent
+  - Downgrade telegraf to version 1.24.2 due to Telegraf Data Collector Service error
 
+Note: Starting 03/01/2023 we have moved to the semver versioning system for naming image tags with the release 3.1.4
 ### 03/01/2023 -
 ##### Version microsoft/oms:3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4 (linux)
 ##### Version microsoft/oms:win-3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.4 (windows)
