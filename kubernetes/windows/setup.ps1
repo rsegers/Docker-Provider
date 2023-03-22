@@ -18,7 +18,6 @@ Write-Host ('Creating folder structure')
     New-Item -Type Directory -Path /etc/config/adx/
 
 Write-Host ('Installing Fluent Bit');
-
     try {
         $fluentBitUri='https://fluentbit.io/releases/2.0/fluent-bit-2.0.5-win64.zip'
         Invoke-WebRequest -Uri $fluentBitUri -OutFile /installation/fluent-bit.zip
