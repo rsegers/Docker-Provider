@@ -185,6 +185,10 @@ var (
 	IsGenevaLogsTelemetryServiceMode bool
 	// named pipe connection to ContainerLog for AMA
 	ContainerLogNamedPipe net.Conn
+	// named pipe connection to KubeMonAgentEvent for AMA
+	KubeMonAgentEventNamedPipe net.Conn
+	// named pipe connection to InsightsMetrics for AMA
+	InsightsMetricsNamedPipe net.Conn
 )
 
 var (
@@ -723,46 +727,81 @@ func flushKubeMonAgentEventRecords() {
 					}
 				}
 			}
-			if IsWindows == false && len(msgPackEntries) > 0 { //for linux, mdsd route
+			if (IsWindows == false || IsAADMSIAuthMode) && len(msgPackEntries) > 0 { //for linux: mdsd route and windows msi auth: win ama route
 				if IsAADMSIAuthMode == true && strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) == false {
-					Log("Info::mdsd::obtaining output stream id for data type: %s", KubeMonAgentEventDataType)
+					Log("Info::mdsd/ama::obtaining output stream id for data type: %s", KubeMonAgentEventDataType)
 					MdsdKubeMonAgentEventsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(KubeMonAgentEventDataType)
 				}
-				Log("Info::mdsd:: using mdsdsource name for KubeMonAgentEvents: %s", MdsdKubeMonAgentEventsTagName)
+				Log("Info::mdsd/ama:: using mdsdsource name for KubeMonAgentEvents: %s", MdsdKubeMonAgentEventsTagName)
 				msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdKubeMonAgentEventsTagName, msgPackEntries)
-				if MdsdKubeMonMsgpUnixSocketClient == nil {
-					Log("Error::mdsd::mdsd connection for KubeMonAgentEvents does not exist. re-connecting ...")
-					CreateMDSDClient(KubeMonAgentEvents, ContainerType)
-					if MdsdKubeMonMsgpUnixSocketClient == nil {
-						Log("Error::mdsd::Unable to create mdsd client for KubeMonAgentEvents. Please check error log.")
+
+				if IsWindows == true {
+					if KubeMonAgentEventNamedPipe == nil {
+						Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
+						CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(KubeMonAgentEventDataType))
+					}
+					if KubeMonAgentEventNamedPipe == nil {
+						Log("Error::AMA::Cannot create the named pipe connection for KubeMonAgentEvents. Please check error log.")
 						ContainerLogTelemetryMutex.Lock()
 						defer ContainerLogTelemetryMutex.Unlock()
-						KubeMonEventsMDSDClientCreateErrors += 1
+						KubeMonEventsWindowsAMAClientCreateErrors += 1
 					}
-				}
-				if MdsdKubeMonMsgpUnixSocketClient != nil {
-					deadline := 10 * time.Second
-					MdsdKubeMonMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-					bts, er := MdsdKubeMonMsgpUnixSocketClient.Write(msgpBytes)
-					elapsed = time.Since(start)
-					if er != nil {
-						message := fmt.Sprintf("Error::mdsd::Failed to write to kubemonagent mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
-						Log(message)
-						if MdsdKubeMonMsgpUnixSocketClient != nil {
-							MdsdKubeMonMsgpUnixSocketClient.Close()
-							MdsdKubeMonMsgpUnixSocketClient = nil
+					if KubeMonAgentEventNamedPipe != nil {
+						Log("Info::AMA::Starting to write KubeMonAgentEvents to named pipe")
+						deadline := 10 * time.Second
+						KubeMonAgentEventNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
+						n, err := KubeMonAgentEventNamedPipe.Write(msgpBytes)
+						if err != nil {
+							message := fmt.Sprintf("Error::AMA::Failed to write to kubemonagent ama %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, err.Error())
+							if KubeMonAgentEventNamedPipe != nil {
+								KubeMonAgentEventNamedPipe.Close()
+								KubeMonAgentEventNamedPipe = nil
+							}
+							SendException(message)
+						} else {
+							numRecords := len(msgPackEntries)
+							Log("FlushKubeMonAgentEventRecords::Info::Successfully flushed %d records that was %d bytes in %s", numRecords, n, elapsed)
+							// Send telemetry to AppInsights resource
+							SendEvent(KubeMonAgentEventsFlushedEvent, telemetryDimensions)
 						}
-						SendException(message)
 					} else {
-						numRecords := len(msgPackEntries)
-						Log("FlushKubeMonAgentEventRecords::Info::Successfully flushed %d records that was %d bytes in %s", numRecords, bts, elapsed)
-						// Send telemetry to AppInsights resource
-						SendEvent(KubeMonAgentEventsFlushedEvent, telemetryDimensions)
+						Log("Error::AMA::Unable to create ama client for KubeMonAgentEvents. Please check error log.")
 					}
 				} else {
-					Log("Error::mdsd::Unable to create mdsd client for KubeMonAgentEvents. Please check error log.")
+					if MdsdKubeMonMsgpUnixSocketClient == nil {
+						Log("Error::mdsd::mdsd connection for KubeMonAgentEvents does not exist. re-connecting ...")
+						CreateMDSDClient(KubeMonAgentEvents, ContainerType)
+						if MdsdKubeMonMsgpUnixSocketClient == nil {
+							Log("Error::mdsd::Unable to create mdsd client for KubeMonAgentEvents. Please check error log.")
+							ContainerLogTelemetryMutex.Lock()
+							defer ContainerLogTelemetryMutex.Unlock()
+							KubeMonEventsMDSDClientCreateErrors += 1
+						}
+					}
+					if MdsdKubeMonMsgpUnixSocketClient != nil {
+						deadline := 10 * time.Second
+						MdsdKubeMonMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+						bts, er := MdsdKubeMonMsgpUnixSocketClient.Write(msgpBytes)
+						elapsed = time.Since(start)
+						if er != nil {
+							message := fmt.Sprintf("Error::mdsd::Failed to write to kubemonagent mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
+							Log(message)
+							if MdsdKubeMonMsgpUnixSocketClient != nil {
+								MdsdKubeMonMsgpUnixSocketClient.Close()
+								MdsdKubeMonMsgpUnixSocketClient = nil
+							}
+							SendException(message)
+						} else {
+							numRecords := len(msgPackEntries)
+							Log("FlushKubeMonAgentEventRecords::Info::Successfully flushed %d records that was %d bytes in %s", numRecords, bts, elapsed)
+							// Send telemetry to AppInsights resource
+							SendEvent(KubeMonAgentEventsFlushedEvent, telemetryDimensions)
+						}
+					} else {
+						Log("Error::mdsd::Unable to create mdsd client for KubeMonAgentEvents. Please check error log.")
+					}
 				}
-			} else if len(laKubeMonAgentEventsRecords) > 0 { //for windows, ODS direct
+			} else if len(laKubeMonAgentEventsRecords) > 0 { //for windows legacy auth, ODS direct
 				kubeMonAgentEventEntry := KubeMonAgentEventBlob{
 					DataType:  KubeMonAgentEventDataType,
 					IPName:    IPName,
@@ -895,7 +934,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		Log(message)
 	}
 
-	if IsWindows == false { //for linux, mdsd route
+	if IsWindows == false || IsAADMSIAuthMode { //for linux: mdsd route and for windows with MSI AUTH: amaroute
 		var msgPackEntries []MsgPackEntry
 		var i int
 		start := time.Now()
@@ -935,44 +974,80 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 				MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType)
 			}
 			msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdInsightsMetricsTagName, msgPackEntries)
-			if MdsdInsightsMetricsMsgpUnixSocketClient == nil {
-				Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
-				CreateMDSDClient(InsightsMetrics, ContainerType)
+			if IsWindows == true {
+				if InsightsMetricsNamedPipe == nil {
+					Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
+					CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(InsightsMetricsDataType))
+				}
+				if InsightsMetricsNamedPipe == nil {
+					Log("Error::AMA::Cannot create the named pipe connection for InsightsMetricsEvent. Please check error log.")
+					ContainerLogTelemetryMutex.Lock()
+					defer ContainerLogTelemetryMutex.Unlock()
+					InsightsMetricsWindowsAMAClientCreateErrors += 1
+					return output.FLB_RETRY
+				}
+				if InsightsMetricsNamedPipe != nil {
+					Log("Info::AMA::Starting to write InsightsMetricsEvent to named pipe")
+					deadline := 10 * time.Second
+					InsightsMetricsNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
+					n, err := InsightsMetricsNamedPipe.Write(msgpBytes)
+					if err != nil {
+						Log("Error::AMA::Failed to write to insightsmetrics ama %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, err.Error())
+						UpdateNumTelegrafMetricsSentTelemetry(0, 1, 0, 0)
+						if InsightsMetricsNamedPipe != nil {
+							InsightsMetricsNamedPipe.Close()
+							InsightsMetricsNamedPipe = nil
+						}
+						ContainerLogTelemetryMutex.Lock()
+						defer ContainerLogTelemetryMutex.Unlock()
+						InsightsMetricsWindowsAMAClientCreateErrors += 1
+						return output.FLB_RETRY
+					} else {
+						numRecords := len(msgPackEntries)
+						UpdateNumTelegrafMetricsSentTelemetry(numRecords, 0, 0, 0)
+						Log("Success::mdsd::Successfully flushed %d telegraf metrics records that was %d bytes to mdsd in %s ", numRecords, n, elapsed)
+					}
+				}
+			} else {
 				if MdsdInsightsMetricsMsgpUnixSocketClient == nil {
-					Log("Error::mdsd::Unable to create mdsd client for insights metrics. Please check error log.")
+					Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
+					CreateMDSDClient(InsightsMetrics, ContainerType)
+					if MdsdInsightsMetricsMsgpUnixSocketClient == nil {
+						Log("Error::mdsd::Unable to create mdsd client for insights metrics. Please check error log.")
+						ContainerLogTelemetryMutex.Lock()
+						defer ContainerLogTelemetryMutex.Unlock()
+						InsightsMetricsMDSDClientCreateErrors += 1
+						return output.FLB_RETRY
+					}
+				}
+	
+				deadline := 10 * time.Second
+				MdsdInsightsMetricsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+				bts, er := MdsdInsightsMetricsMsgpUnixSocketClient.Write(msgpBytes)
+	
+				elapsed = time.Since(start)
+	
+				if er != nil {
+					Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
+					UpdateNumTelegrafMetricsSentTelemetry(0, 1, 0, 0)
+					if MdsdInsightsMetricsMsgpUnixSocketClient != nil {
+						MdsdInsightsMetricsMsgpUnixSocketClient.Close()
+						MdsdInsightsMetricsMsgpUnixSocketClient = nil
+					}
+	
 					ContainerLogTelemetryMutex.Lock()
 					defer ContainerLogTelemetryMutex.Unlock()
 					InsightsMetricsMDSDClientCreateErrors += 1
 					return output.FLB_RETRY
+				} else {
+					numTelegrafMetricsRecords := len(msgPackEntries)
+					UpdateNumTelegrafMetricsSentTelemetry(numTelegrafMetricsRecords, 0, 0, 0)
+					Log("Success::mdsd::Successfully flushed %d telegraf metrics records that was %d bytes to mdsd in %s ", numTelegrafMetricsRecords, bts, elapsed)
 				}
-			}
-
-			deadline := 10 * time.Second
-			MdsdInsightsMetricsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-			bts, er := MdsdInsightsMetricsMsgpUnixSocketClient.Write(msgpBytes)
-
-			elapsed = time.Since(start)
-
-			if er != nil {
-				Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
-				UpdateNumTelegrafMetricsSentTelemetry(0, 1, 0, 0)
-				if MdsdInsightsMetricsMsgpUnixSocketClient != nil {
-					MdsdInsightsMetricsMsgpUnixSocketClient.Close()
-					MdsdInsightsMetricsMsgpUnixSocketClient = nil
-				}
-
-				ContainerLogTelemetryMutex.Lock()
-				defer ContainerLogTelemetryMutex.Unlock()
-				InsightsMetricsMDSDClientCreateErrors += 1
-				return output.FLB_RETRY
-			} else {
-				numTelegrafMetricsRecords := len(msgPackEntries)
-				UpdateNumTelegrafMetricsSentTelemetry(numTelegrafMetricsRecords, 0, 0, 0)
-				Log("Success::mdsd::Successfully flushed %d telegraf metrics records that was %d bytes to mdsd in %s ", numTelegrafMetricsRecords, bts, elapsed)
 			}
 		}
 
-	} else { // for windows, ODS direct
+	} else { // for windows legacy auth, ODS direct
 
 		var metrics []laTelegrafMetric
 		var i int
@@ -1240,7 +1315,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogDataType)
 			}
 			Log("Info::mdsd/ama:: using mdsdsource name: %s", MdsdContainerLogTagName)
-
 		}
 
 		fluentForward := MsgPackForward{
@@ -1840,6 +1914,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("Creating MDSD clients for KubeMonAgentEvents & InsightsMetrics")
 		CreateMDSDClient(KubeMonAgentEvents, ContainerType)
 		CreateMDSDClient(InsightsMetrics, ContainerType)
+	} else if IsWindows && IsAADMSIAuthMode { //Windows MSI AUTH, send data using AMA
+		CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(KubeMonAgentEventDataType))
+		CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(InsightsMetricsDataType))
 	}
 
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
