@@ -1388,10 +1388,8 @@ class KubernetesApiClient
         if !podStatusConditions.nil? && !podStatusConditions.empty?
           podStatusConditions.each do |condition|
             if condition["type"] == "Ready"
-              if condition["status"].downcase == "true"
+              if condition["status"].downcase == "true" || isCompletedJobPod(controllerKind, podStatus)
                 podReadyCondition = true
-              elsif isCompletedJobPod(controllerKind, podStatus)
-                podReadyCondition = true # This is for completed Job pods
               end
               break #Exit the for loop since we found the ready condition
             end
