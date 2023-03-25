@@ -29,7 +29,7 @@ spec:
       image: mcr.microsoft.com/windows/servercore:ltsc2019
       command: ["powershell", "-c"]
       args:
-        - "$counter = 1; For(;;) { echo $counter; $counter++; Start-Sleep -Seconds 1; }"
+        - "$counter = 1; For(;;) { echo $counter; Start-Sleep -Seconds 0.01; }"
       env:
       - name: RANOMD_ENV_VAR_1
         value: "#123312'@$98"
