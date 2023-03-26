@@ -900,7 +900,7 @@ spec:
             value: "3"
      containers:
        - name: ama-logs-windows
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.4"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.5"
          imagePullPolicy: IfNotPresent
          resources:
           limits:

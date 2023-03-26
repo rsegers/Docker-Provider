@@ -1382,13 +1382,13 @@ class KubernetesApiClient
       return item
     end
 
-    def getPodReadyCondition(podStatusConditions)
+    def getPodReadyCondition(podStatusConditions, controllerKind, podStatus)
       podReadyCondition = false
       begin
         if !podStatusConditions.nil? && !podStatusConditions.empty?
           podStatusConditions.each do |condition|
             if condition["type"] == "Ready"
-              if condition["status"].downcase == "true"
+              if condition["status"].downcase == "true" || isCompletedJobPod(controllerKind, podStatus)
                 podReadyCondition = true
               end
               break #Exit the for loop since we found the ready condition
@@ -1399,6 +1399,20 @@ class KubernetesApiClient
         @Log.warn "in_kube_podinventory::getPodReadyCondition failed with an error: #{err}"
       end
       return podReadyCondition
+    end
+
+    def isCompletedJobPod(controllerKind, podStatus)
+      isCompletedPod = false
+      begin
+        if !controllerKind.nil? & !controllerKind.empty? &&
+           !podStatus.nil? && !podStatus.empty? &&
+           controllerKind.downcase == Constants::CONTROLLER_KIND_JOB && podStatus == "Succeeded"
+          isCompletedPod = true
+        end
+      rescue => error
+        @Log.warn "in_kube_podinventory::isCompletedJobPod failed with an error: #{err}"
+      end
+      return isCompletedPod
     end
 
     def isEmitCacheTelemetry
