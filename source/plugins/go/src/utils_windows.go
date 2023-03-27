@@ -37,7 +37,7 @@ func CheckIfNamedPipeCreated(namedPipeConnection *net.Conn, datatype string, err
 	if *namedPipeConnection == nil {
 		Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
 		if isGenevaLogsIntegrationEnabled {
-			CreateWindowsNamedPipeClient(getGenevaWindowsNamedPipeName(), &namedPipeConnection)
+			CreateWindowsNamedPipeClient(getGenevaWindowsNamedPipeName(), namedPipeConnection)
 		} else {
 			CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype), namedPipeConnection)
 		}
