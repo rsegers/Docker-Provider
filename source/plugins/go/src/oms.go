@@ -34,7 +34,7 @@ import (
 // DataType for Container Log
 const ContainerLogDataType = "CONTAINER_LOG_BLOB"
 
-//DataType for Container Log v2
+// DataType for Container Log v2
 const ContainerLogV2DataType = "CONTAINERINSIGHTS_CONTAINERLOGV2"
 
 // DataType for Insights metric
@@ -43,13 +43,13 @@ const InsightsMetricsDataType = "INSIGHTS_METRICS_BLOB"
 // DataType for KubeMonAgentEvent
 const KubeMonAgentEventDataType = "KUBE_MON_AGENT_EVENTS_BLOB"
 
-//env variable which has ResourceId for LA
+// env variable which has ResourceId for LA
 const ResourceIdEnv = "AKS_RESOURCE_ID"
 
-//env variable which has ResourceName for NON-AKS
+// env variable which has ResourceName for NON-AKS
 const ResourceNameEnv = "ACS_RESOURCE_NAME"
 
-//env variable which has container run time name
+// env variable which has container run time name
 const ContainerRuntimeEnv = "CONTAINER_RUNTIME"
 
 // Origin prefix for telegraf Metrics (used as prefix for origin field & prefix for azure monitor specific tags and also for custom-metrics telemetry )
@@ -88,32 +88,32 @@ const IPName = "ContainerInsights"
 
 const defaultContainerInventoryRefreshInterval = 60
 
-const kubeMonAgentConfigEventFlushInterval = 60
+const kubeMonAgentConfigEventFlushInterval = 1
 
-//Eventsource name in mdsd
+// Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
 const MdsdContainerLogV2SourceName = "ContainerLogV2Source"
 const MdsdKubeMonAgentEventsSourceName = "KubeMonAgentEventsSource"
 const MdsdInsightsMetricsSourceName = "InsightsMetricsSource"
 
-//container logs route (v2=flush to oneagent, adx= flush to adx ingestion, v1 for ODS Direct)
+// container logs route (v2=flush to oneagent, adx= flush to adx ingestion, v1 for ODS Direct)
 const ContainerLogsV2Route = "v2"
 
 const ContainerLogsADXRoute = "adx"
 
-//container logs schema (v2=ContainerLogsV2 table in LA, anything else ContainerLogs table in LA. This is applicable only if Container logs route is NOT ADX)
+// container logs schema (v2=ContainerLogsV2 table in LA, anything else ContainerLogs table in LA. This is applicable only if Container logs route is NOT ADX)
 const ContainerLogV2SchemaVersion = "v2"
 
-//env variable for AAD MSI Auth mode
+// env variable for AAD MSI Auth mode
 const AADMSIAuthMode = "AAD_MSI_AUTH_MODE"
 
 // Tag prefix of mdsd output streamid for AMA in MSI auth mode
 const MdsdOutputStreamIdTagPrefix = "dcr-"
 
-//env variable to container type
+// env variable to container type
 const ContainerTypeEnv = "CONTAINER_TYPE"
 
-//Default ADX destination database name, can be overriden through configuration
+// Default ADX destination database name, can be overriden through configuration
 const DefaultAdxDatabaseName = "containerinsights"
 
 var (
@@ -319,7 +319,7 @@ type MsgPackEntry struct {
 	Record map[string]string `msg:"record"`
 }
 
-//MsgPackForward represents a series of messagepack events in Forward Mode
+// MsgPackForward represents a series of messagepack events in Forward Mode
 type MsgPackForward struct {
 	Tag     string         `msg:"tag"`
 	Entries []MsgPackEntry `msg:"entries"`
@@ -490,7 +490,7 @@ func populateExcludedStderrNamespaces() {
 	}
 }
 
-//Azure loganalytics metric values have to be numeric, so string values are dropped
+// Azure loganalytics metric values have to be numeric, so string values are dropped
 func convert(in interface{}) (float64, bool) {
 	switch v := in.(type) {
 	case int64:
@@ -738,7 +738,7 @@ func flushKubeMonAgentEventRecords() {
 				if IsWindows == true {
 					if KubeMonAgentEventNamedPipe == nil {
 						Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
-						CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(KubeMonAgentEventDataType))
+						CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(KubeMonAgentEventDataType), &KubeMonAgentEventNamedPipe)
 					}
 					if KubeMonAgentEventNamedPipe == nil {
 						Log("Error::AMA::Cannot create the named pipe connection for KubeMonAgentEvents. Please check error log.")
@@ -856,7 +856,7 @@ func flushKubeMonAgentEventRecords() {
 	}
 }
 
-//Translates telegraf time series to one or more Azure loganalytics metric(s)
+// Translates telegraf time series to one or more Azure loganalytics metric(s)
 func translateTelegrafMetrics(m map[interface{}]interface{}) ([]*laTelegrafMetric, error) {
 
 	var laMetrics []*laTelegrafMetric
@@ -977,7 +977,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 			if IsWindows == true {
 				if InsightsMetricsNamedPipe == nil {
 					Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
-					CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(InsightsMetricsDataType))
+					CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(InsightsMetricsDataType), &InsightsMetricsNamedPipe)
 				}
 				if InsightsMetricsNamedPipe == nil {
 					Log("Error::AMA::Cannot create the named pipe connection for InsightsMetricsEvent. Please check error log.")
@@ -1020,13 +1020,13 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 						return output.FLB_RETRY
 					}
 				}
-	
+
 				deadline := 10 * time.Second
 				MdsdInsightsMetricsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
 				bts, er := MdsdInsightsMetricsMsgpUnixSocketClient.Write(msgpBytes)
-	
+
 				elapsed = time.Since(start)
-	
+
 				if er != nil {
 					Log("Error::mdsd::Failed to write to mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
 					UpdateNumTelegrafMetricsSentTelemetry(0, 1, 0, 0)
@@ -1034,7 +1034,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 						MdsdInsightsMetricsMsgpUnixSocketClient.Close()
 						MdsdInsightsMetricsMsgpUnixSocketClient = nil
 					}
-	
+
 					ContainerLogTelemetryMutex.Lock()
 					defer ContainerLogTelemetryMutex.Unlock()
 					InsightsMetricsMDSDClientCreateErrors += 1
@@ -1347,7 +1347,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			if ContainerLogNamedPipe == nil {
 				Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
 				if IsGenevaLogsIntegrationEnabled {
-					CreateWindowsNamedPipeClient(getGenevaWindowsNamedPipeName())
+					CreateWindowsNamedPipeClient(getGenevaWindowsNamedPipeName(), &ContainerLogNamedPipe)
 				} else {
 					var datatype string
 					if ContainerLogSchemaV2 {
@@ -1355,7 +1355,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					} else {
 						datatype = ContainerLogDataType
 					}
-					CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
+					CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype), &ContainerLogNamedPipe)
 				}
 			}
 			if ContainerLogNamedPipe == nil {
@@ -1890,7 +1890,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	if ContainerLogsRouteV2 == true {
 		if IsWindows {
 			if IsGenevaLogsIntegrationEnabled {
-				CreateWindowsNamedPipeClient(getGenevaWindowsNamedPipeName())
+				CreateWindowsNamedPipeClient(getGenevaWindowsNamedPipeName(), &ContainerLogNamedPipe)
 			} else {
 				var datatype string
 				if ContainerLogSchemaV2 {
@@ -1898,7 +1898,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 				} else {
 					datatype = ContainerLogDataType
 				}
-				CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype))
+				CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype), &ContainerLogNamedPipe)
 			}
 		} else {
 			CreateMDSDClient(ContainerLogV2, ContainerType)
@@ -1915,8 +1915,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		CreateMDSDClient(KubeMonAgentEvents, ContainerType)
 		CreateMDSDClient(InsightsMetrics, ContainerType)
 	} else if IsWindows && IsAADMSIAuthMode { //Windows MSI AUTH, send data using AMA
-		CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(KubeMonAgentEventDataType))
-		CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(InsightsMetricsDataType))
+		CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(KubeMonAgentEventDataType), &KubeMonAgentEventNamedPipe)
+		CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(InsightsMetricsDataType), &InsightsMetricsNamedPipe)
 	}
 
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {

@@ -4,13 +4,14 @@ package main
 
 import (
 	"context"
+	"net"
 	"syscall"
 	"time"
 
 	"github.com/Microsoft/go-winio"
 )
 
-func CreateWindowsNamedPipeClient(namedPipe string) {
+func CreateWindowsNamedPipeClient(namedPipe string, namedPipeConnection *net.Conn) {
 	if namedPipe == "" {
 		Log("Error::AMA::CreateWindowsNamedPipeClient::namedPipe is empty")
 		return
@@ -26,8 +27,7 @@ func CreateWindowsNamedPipeClient(namedPipe string) {
 		Log("Error::AMA::Unable to open Named Pipe %s", err.Error())
 	} else {
 		Log("Windows Named Pipe opened without any errors")
-		ContainerLogNamedPipe = conn
+		*namedPipeConnection = conn
 	}
 
 }
-
