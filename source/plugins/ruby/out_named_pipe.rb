@@ -1,12 +1,12 @@
 require 'fluent/plugin/output'
 
-$pipe_handle = nil
+
 module Fluent::Plugin
   class NamedPipeOutput < Output
     Fluent::Plugin.register_output('named_pipe', self)
     helpers :formatter
     config_param :datatype, :string
-
+    @pipe_handle = nil
     def initialize
         super
         require_relative "extension_utils"
@@ -31,33 +31,33 @@ module Fluent::Plugin
 
     def shutdown
       super
-      $pipe_handle.close
+      @pipe_handle.close
     end
 
     def write(chunk)
       begin
-        if !$pipe_handle
+        if !@pipe_handle
           pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
           if !pipe_suffix.nil? && !pipe_suffix.empty?
             pipe_name = "\\\\.\\pipe\\" + pipe_suffix
             @log.info "out_named_pipe::Named pipe: #{pipe_name}"
-            $pipe_handle = File.open(pipe_name, File::WRONLY)
-            @log.info "out_named_pipe::Pipe handle : #{$pipe_handle}"
+            @pipe_handle = File.open(pipe_name, File::WRONLY)
+            @log.info "out_named_pipe::Pipe handle : #{@pipe_handle}"
           else
             @log.info "out_named_pipe::No pipe_suffix found. will be retried"
           end
         end
-        if $pipe_handle
+        if @pipe_handle
           @log.info "out_named_pipe::Writing for datatype: #{@datatype}"
-          chunk.write_to($pipe_handle)
+          chunk.write_to(@pipe_handle)
         else
           @log.error "out_named_pipe::No pipe handle"
         end
       rescue Exception => e
         @log.error "out_named_pipe::Exception when writing to named pipe: #{e}"
-        if $pipe_handle
-          $pipe_handle.close
-          $pipe_handle = nil
+        if @pipe_handle
+          @pipe_handle.close
+          @pipe_handle = nil
         end
         raise e
       end
