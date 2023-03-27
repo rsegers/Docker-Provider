@@ -45,7 +45,6 @@ function Set-ProcessAndMachineEnvVariables($name, $value) {
 }
 
 function Set-AMAEnvironmentVariables {
-
     Set-ProcessAndMachineEnvVariables "MONITORING_DATA_DIRECTORY" "C:\\opt\\windowsazuremonitoragent\\datadirectory"
     Set-ProcessAndMachineEnvVariables "MONITORING_MCS_MODE" "1"
     Set-ProcessAndMachineEnvVariables "MONITORING_ROLE_INSTANCE" "cloudAgentRoleInstanceIdentity"
@@ -95,11 +94,9 @@ function Set-AMAEnvironmentVariables {
             exit 1
         }
     }
-
     Set-ProcessAndMachineEnvVariables "MCS_AZURE_RESOURCE_ENDPOINT" $mcs_endpoint
     Set-ProcessAndMachineEnvVariables "MCS_GLOBAL_ENDPOINT" $mcs_globalendpoint
     Set-ProcessAndMachineEnvVariables "MA_ENABLE_LARGE_EVENTS" "1"
-
 }
 
 function Set-GenevaAMAEnvironmentVariables {
@@ -415,10 +412,6 @@ function Set-EnvironmentVariables {
     else {
         Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
     }
-
-    if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
-        Set-AMAEnvironmentVariables
-    }
 }
 
     
@@ -434,9 +427,8 @@ function Read-Configs {
     #Replace placeholders in fluent-bit.conf
     ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
-    # ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
-    # .\setgenevaconfigenv.ps1
-    Set-ProcessAndMachineEnvVariables "GENEVA_LOGS_INTEGRATION" "false"
+    ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
+    .\setgenevaconfigenv.ps1
 
     $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
     if (![string]::IsNullOrEmpty($genevaLogsIntegration)) {
@@ -479,6 +471,11 @@ function Read-Configs {
             ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "infra"
             Generate-GenevaTenantNameSpaceConfig
             Generate-GenevaInfraNameSpaceConfig
+        }
+    } else {
+        $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH", "process")
+        if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+            Set-AMAEnvironmentVariables
         }
     }
 

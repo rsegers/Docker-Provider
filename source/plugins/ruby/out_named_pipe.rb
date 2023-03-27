@@ -5,18 +5,15 @@ module Fluent::Plugin
   class NamedPipeOutput < Output
     Fluent::Plugin.register_output('named_pipe', self)
     helpers :formatter
-
     config_param :datatype, :string
 
     def initialize
         super
         require_relative "extension_utils"
-        
     end
 
     def configure(conf)
       super
-
       @formatter = formatter_create(usage: 'msgpack_formatter', type: 'msgpack' )
     end
 
@@ -87,6 +84,5 @@ module Fluent::Plugin
         raise e
       end
     end
-
   end
 end
