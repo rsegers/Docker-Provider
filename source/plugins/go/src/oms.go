@@ -88,7 +88,7 @@ const IPName = "ContainerInsights"
 
 const defaultContainerInventoryRefreshInterval = 60
 
-const kubeMonAgentConfigEventFlushInterval = 1
+const kubeMonAgentConfigEventFlushInterval = 60
 
 // Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -736,17 +736,7 @@ func flushKubeMonAgentEventRecords() {
 				msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdKubeMonAgentEventsTagName, msgPackEntries)
 
 				if IsWindows == true {
-					if KubeMonAgentEventNamedPipe == nil {
-						Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
-						CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(KubeMonAgentEventDataType), &KubeMonAgentEventNamedPipe)
-					}
-					if KubeMonAgentEventNamedPipe == nil {
-						Log("Error::AMA::Cannot create the named pipe connection for KubeMonAgentEvents. Please check error log.")
-						ContainerLogTelemetryMutex.Lock()
-						defer ContainerLogTelemetryMutex.Unlock()
-						KubeMonEventsWindowsAMAClientCreateErrors += 1
-					}
-					if KubeMonAgentEventNamedPipe != nil {
+					if CheckIfNamedPipeCreated(&KubeMonAgentEventNamedPipe, KubeMonAgentEventDataType, &KubeMonEventsWindowsAMAClientCreateErrors, false) {
 						Log("Info::AMA::Starting to write KubeMonAgentEvents to named pipe")
 						deadline := 10 * time.Second
 						KubeMonAgentEventNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
@@ -765,7 +755,7 @@ func flushKubeMonAgentEventRecords() {
 							SendEvent(KubeMonAgentEventsFlushedEvent, telemetryDimensions)
 						}
 					} else {
-						Log("Error::AMA::Unable to create ama client for KubeMonAgentEvents. Please check error log.")
+						Log("Error::AMA::Unable to create ama client for KubeMonAgentEvents.")
 					}
 				} else {
 					if MdsdKubeMonMsgpUnixSocketClient == nil {
@@ -975,18 +965,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 			}
 			msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdInsightsMetricsTagName, msgPackEntries)
 			if IsWindows == true {
-				if InsightsMetricsNamedPipe == nil {
-					Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
-					CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(InsightsMetricsDataType), &InsightsMetricsNamedPipe)
-				}
-				if InsightsMetricsNamedPipe == nil {
-					Log("Error::AMA::Cannot create the named pipe connection for InsightsMetricsEvent. Please check error log.")
-					ContainerLogTelemetryMutex.Lock()
-					defer ContainerLogTelemetryMutex.Unlock()
-					InsightsMetricsWindowsAMAClientCreateErrors += 1
-					return output.FLB_RETRY
-				}
-				if InsightsMetricsNamedPipe != nil {
+				if CheckIfNamedPipeCreated(&InsightsMetricsNamedPipe, InsightsMetricsDataType, &InsightsMetricsWindowsAMAClientCreateErrors, false) {
 					Log("Info::AMA::Starting to write InsightsMetricsEvent to named pipe")
 					deadline := 10 * time.Second
 					InsightsMetricsNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
@@ -1007,6 +986,8 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 						UpdateNumTelegrafMetricsSentTelemetry(numRecords, 0, 0, 0)
 						Log("Success::mdsd::Successfully flushed %d telegraf metrics records that was %d bytes to mdsd in %s ", numRecords, n, elapsed)
 					}
+				} else {
+					return output.FLB_RETRY
 				}
 			} else {
 				if MdsdInsightsMetricsMsgpUnixSocketClient == nil {
@@ -1344,46 +1325,34 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		if IsWindows == true {
-			if ContainerLogNamedPipe == nil {
-				Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
-				if IsGenevaLogsIntegrationEnabled {
-					CreateWindowsNamedPipeClient(getGenevaWindowsNamedPipeName(), &ContainerLogNamedPipe)
-				} else {
-					var datatype string
-					if ContainerLogSchemaV2 {
-						datatype = ContainerLogV2DataType
-					} else {
-						datatype = ContainerLogDataType
-					}
-					CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype), &ContainerLogNamedPipe)
-				}
-			}
-			if ContainerLogNamedPipe == nil {
-				Log("Error::AMA::Cannot create the named pipe connection")
-				ContainerLogTelemetryMutex.Lock()
-				defer ContainerLogTelemetryMutex.Unlock()
-				ContainerLogsWindowsAMAClientCreateErrors += 1
-				return output.FLB_RETRY
-			}
-			Log("Info::AMA::Starting to write container logs to named pipe")
-			deadline := 10 * time.Second
-			ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
-			n, err := ContainerLogNamedPipe.Write(msgpBytes)
-			if err != nil {
-				Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
-				if ContainerLogNamedPipe != nil {
-					ContainerLogNamedPipe.Close()
-					ContainerLogNamedPipe = nil
-				}
-				ContainerLogTelemetryMutex.Lock()
-				defer ContainerLogTelemetryMutex.Unlock()
-				ContainerLogsSendErrorsToWindowsAMAFromFluent += 1
-				return output.FLB_RETRY
+			var datatype string
+			if ContainerLogSchemaV2 {
+				datatype = ContainerLogV2DataType
 			} else {
-				numContainerLogRecords = len(msgPackEntries)
-				Log("Success::AMA::Successfully flushed %d container log records that was %d bytes to AMA ", numContainerLogRecords, n)
+				datatype = ContainerLogDataType
 			}
-
+			if CheckIfNamedPipeCreated(&ContainerLogNamedPipe, datatype, &ContainerLogsWindowsAMAClientCreateErrors, IsGenevaLogsIntegrationEnabled) {
+				Log("Info::AMA::Starting to write container logs to named pipe")
+				deadline := 10 * time.Second
+				ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
+				n, err := ContainerLogNamedPipe.Write(msgpBytes)
+				if err != nil {
+					Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
+					if ContainerLogNamedPipe != nil {
+						ContainerLogNamedPipe.Close()
+						ContainerLogNamedPipe = nil
+					}
+					ContainerLogTelemetryMutex.Lock()
+					defer ContainerLogTelemetryMutex.Unlock()
+					ContainerLogsSendErrorsToWindowsAMAFromFluent += 1
+					return output.FLB_RETRY
+				} else {
+					numContainerLogRecords = len(msgPackEntries)
+					Log("Success::AMA::Successfully flushed %d container log records that was %d bytes to AMA ", numContainerLogRecords, n)
+				}
+			} else {
+				return output.FLB_RETRY
+			}
 		} else {
 			if MdsdMsgpUnixSocketClient == nil {
 				Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")

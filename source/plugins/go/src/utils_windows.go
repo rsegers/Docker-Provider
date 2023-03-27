@@ -3,6 +3,7 @@
 package main
 
 import (
+	"Docker-Provider/source/plugins/go/src/extension"
 	"context"
 	"net"
 	"syscall"
@@ -30,4 +31,23 @@ func CreateWindowsNamedPipeClient(namedPipe string, namedPipeConnection *net.Con
 		*namedPipeConnection = conn
 	}
 
+}
+
+func CheckIfNamedPipeCreated(namedPipeConnection *net.Conn, datatype string, errorCount *float64, isGenevaLogsIntegrationEnabled bool) bool {
+	if *namedPipeConnection == nil {
+		Log("Error::AMA:: The connection to named pipe was nil. re-connecting...")
+		if isGenevaLogsIntegrationEnabled {
+			CreateWindowsNamedPipeClient(getGenevaWindowsNamedPipeName(), &namedPipeConnection)
+		} else {
+			CreateWindowsNamedPipeClient(extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype), namedPipeConnection)
+		}
+		if namedPipeConnection == nil {
+			Log("Error::AMA::Cannot create the named pipe connection for %s.", datatype)
+			ContainerLogTelemetryMutex.Lock()
+			defer ContainerLogTelemetryMutex.Unlock()
+			*errorCount += 1
+			return false
+		}
+	}
+	return true
 }
