@@ -155,24 +155,24 @@ class Extension
         clientSocket.flush
         resp = clientSocket.recv(Constants::CI_EXTENSION_CONFIG_MAX_BYTES)
       else
-        if !@clientNamedPipe
-          configPipe = "\\\\.\\pipe\\CAgentStream_CloudAgentInfo_AzureMonitorAgent"
-          @clientNamedPipe = File.open(configPipe, "w+")
-        end
-        resp = ''
-        @clientNamedPipe_lock.synchronize {
-          begin
-            @clientNamedPipe.write(requestBodyJSON)
-            @clientNamedPipe.sysread(Constants::CI_EXTENSION_CONFIG_MAX_BYTES, resp)
-          rescue Exception => e
-            $log.info "Extension::get_extension_configs Exception when connecting to named pipe: #{e}"
-            if @clientNamedPipe
-              @clientNamedPipe.close
-              @clientNamedPipe = nil
-            end
-            raise e
+        begin
+          if !@clientNamedPipe
+            configPipe = "\\\\.\\pipe\\CAgentStream_CloudAgentInfo_AzureMonitorAgent"
+              @clientNamedPipe = File.open(configPipe, "w+")
           end
-        }
+          resp = ''
+          @clientNamedPipe_lock.synchronize {
+              @clientNamedPipe.write(requestBodyJSON)
+              @clientNamedPipe.sysread(Constants::CI_EXTENSION_CONFIG_MAX_BYTES, resp)
+          }
+        rescue Exception => e
+          $log.info "Extension::get_extension_configs Exception when connecting to named pipe: #{e}"
+          if @clientNamedPipe
+            @clientNamedPipe.close
+            @clientNamedPipe = nil
+          end
+          raise e
+        end
       end
       if !resp.nil? && !resp.empty?
         respJSON = JSON.parse(resp)

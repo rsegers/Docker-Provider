@@ -43,6 +43,7 @@ class CAdvisorMetricsAPIClient
   @os_type = ENV["OS_TYPE"]
   if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     @LogPath = Constants::WINDOWS_LOG_PATH + "kubernetes_perf_log.txt"
+    @windowsNodeResetFilePath = "C:\\etc\\kubernetes\\host\\windowsnodereset.log"
   else
     @LogPath = Constants::LINUX_LOG_PATH + "kubernetes_perf_log.txt"
   end
@@ -882,9 +883,14 @@ class CAdvisorMetricsAPIClient
         metricCollection = {}
         metricCollection["CounterName"] = metricNametoReturn
         if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0 && ExtensionUtils.isAADMSIAuthMode()
-          #Read from the windowsnodereset.log for Windows daemonset with MSI auth mode using Windows AMA
-          metricValStr = IO.readlines("C:\\etc\\kubernetes\\host\\windowsnodereset.log")[0].split[0]
-          metricCollection["Value"] = DateTime.parse(metricValStr).to_time.to_i
+          if File.exist?(@windowsNodeResetFilePath)
+            #Read from the windowsnodereset.log for Windows daemonset with MSI auth mode using Windows AMA
+            metricValStr = IO.readlines(@windowsNodeResetFilePath)[0].split[0]
+            metricCollection["Value"] = DateTime.parse(metricValStr).to_time.to_i
+          else
+            @Log.warn("windowsNodeResetFile not present")
+            return metricItem
+          end
         else
           #Read it from /proc/uptime for Linux and windows nodes being reported from replicaset in Legacy Auth
           metricCollection["Value"] = DateTime.parse(metricTime).to_time.to_i - IO.read("/proc/uptime").split[0].to_f
