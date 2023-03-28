@@ -102,9 +102,7 @@ module Fluent::Plugin
           end
           router.emit_stream(@tag, eventStream) if eventStream
           router.emit_stream(@mdmtag, eventStream) if eventStream
-        end
-
-        if !@isWindows
+        else
           #Resetting this cache so that it is populated with the current set of containers with every call
           CAdvisorMetricsAPIClient.resetWinContainerIdCache()
           if (timeDifferenceInMinutes >= 5)
