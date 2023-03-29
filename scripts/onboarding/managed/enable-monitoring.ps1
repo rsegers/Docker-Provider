@@ -506,7 +506,7 @@ try {
 }
 catch {
     Write-Host ("Template deployment failed with an error: '" + $Error[0] + "' ") -ForegroundColor Red
-    Write-Host("Please contact us by emailing askcoin@microsoft.com for help") -ForegroundColor Red
+    Write-Host("Please contact us by creating a support ticket in Azure for help") -ForegroundColor Red
 }
 
 $workspaceGUID = "";
