@@ -69,7 +69,7 @@ class KubeletUtils
 
         begin
           kubereserved_memory = "0.0"
-          if parsed_responsee.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("kubeReserved") && parsed_response["kubeletconfig"]["kubeReserved"].key?("memory")
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("kubeReserved") && parsed_response["kubeletconfig"]["kubeReserved"].key?("memory")
             kubereserved_memory = parsed_response["kubeletconfig"]["kubeReserved"]["memory"]  
           end
           @log.info "get_node_allocatable::kubereserved_memory #{kubereserved_memory}"
