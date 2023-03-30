@@ -436,7 +436,7 @@ else {
             Write-Host("Pricing tier of the configured LogAnalytics workspace is Free so you may need to upgrade to pricing tier to non-Free") -ForegroundColor Red
         }
         else {
-            Write-Host("Everything looks good according to this script. Please contact us by creating a support ticket in Azure for help") -ForegroundColor Green
+            Write-Host("Everything looks good according to this script. Please contact us by creating a support ticket in Azure for help. Use this link: https://azure.microsoft.com/en-us/support/create-ticket") -ForegroundColor Green
         }
     }
     else {
@@ -477,11 +477,11 @@ else {
             }
             catch {
                 Write-Host ("Template deployment failed with an error: '" + $Error[0] + "' ") -ForegroundColor Red
-                Write-Host("Please contact us by creating a support ticket in Azure for help") -ForegroundColor Red
+                Write-Host("Please contact us by creating a support ticket in Azure for help. Use this link: https://azure.microsoft.com/en-us/support/create-ticket") -ForegroundColor Red
             }
         }
         else {
-            Write-Host("The container health solution isn't onboarded to your cluster. This required for the monitoring to work. Please contact us by creating a support ticket in Azure if you need any help on this") -ForegroundColor Red
+            Write-Host("The container health solution isn't onboarded to your cluster. This required for the monitoring to work. Please contact us by creating a support ticket in Azure if you need any help on this. Use this link: https://azure.microsoft.com/en-us/support/create-ticket") -ForegroundColor Red
         }
     }
 }

@@ -23,7 +23,7 @@ $AksOptOutLink = "https://docs.microsoft.com/en-us/azure/azure-monitor/insights/
 $AksOptInLink = "https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-onboard"
 $AroOptOutLink = "https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-optout-openshift"
 $AroOptInLink = "https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-azure-redhat-setup"
-$contactUSMessage = "Please contact us by creating a support ticket in Azure if you need any help"
+$contactUSMessage = "Please contact us by creating a support ticket in Azure if you need any help. Use this link: https://azure.microsoft.com/en-us/support/create-ticket"
 
 $MonitoringMetricsRoleDefinitionName = "Monitoring Metrics Publisher"
 
@@ -459,7 +459,7 @@ if (("AKS" -eq $ClusterType ) -and ($false -eq $UseAADAuth)) {
                 }
                 if ($null -eq $clusterSpnMsiObjectID) {
                     Write-Host("Couldn't convert Client ID to Object ID or msi for ama-logs is not present") -ForegroundColor Red
-                    Write-Host("Please contact us by creating a support ticket in Azure for help") -ForegroundColor Red
+                    Write-Host("Please contact us by creating a support ticket in Azure for help. Use this link: https://azure.microsoft.com/en-us/support/create-ticket") -ForegroundColor Red
                     Write-Host("");
                 }
 
@@ -789,11 +789,11 @@ else {
                 }
                 catch {
                     Write-Host ("Template deployment failed with an error: '" + $Error[0] + "' ") -ForegroundColor Red
-                    Write-Host("Please contact us by creating a support ticket in Azure for help") -ForegroundColor Red
+                    Write-Host("Please contact us by creating a support ticket in Azure for help. Use this link: https://azure.microsoft.com/en-us/support/create-ticket") -ForegroundColor Red
                 }
             }
             else {
-                Write-Host("The container health solution isn't onboarded to your cluster. This required for the monitoring to work. Please contact us by creating a support ticket in Azure if you need any help on this") -ForegroundColor Red
+                Write-Host("The container health solution isn't onboarded to your cluster. This required for the monitoring to work. Please contact us by creating a support ticket in Azure if you need any help on this. Use this link: https://azure.microsoft.com/en-us/support/create-ticket") -ForegroundColor Red
             }
         }
     }
@@ -970,6 +970,6 @@ if ("AKS" -eq $ClusterType ) {
     }
 }
 
-Write-Host("Everything looks good according to this script. Please contact us by creating a support ticket in Azure for help") -ForegroundColor Green
+Write-Host("Everything looks good according to this script. Please contact us by creating a support ticket in Azure for help. Use this link: https://azure.microsoft.com/en-us/support/create-ticket") -ForegroundColor Green
 Write-Host("")
 Stop-Transcript

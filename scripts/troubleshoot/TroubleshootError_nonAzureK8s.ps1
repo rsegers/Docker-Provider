@@ -40,7 +40,7 @@ param(
 $ErrorActionPreference = "Stop";
 $OptInLink = "https://docs.microsoft.com/en-us/azure/azure-monitor/insights/container-insights-hybrid-setup"
 Start-Transcript -path .\TroubleshootDumpForNonAzureK8s.txt -Force
-$contactUSMessage = "Please contact us by creating a support ticket for help"
+$contactUSMessage = "Please contact us by creating a support ticket for help. Use this link: https://azure.microsoft.com/en-us/support/create-ticket"
 
 Write-Host("LogAnalyticsWorkspaceResourceId: : '" + $azureLogAnalyticsWorkspaceResourceId + "' ")
 if (($azureLogAnalyticsWorkspaceResourceId.ToLower().Contains("microsoft.operationalinsights/workspaces") -ne $true) -or ($azureLogAnalyticsWorkspaceResourceId.Split("/").Length -ne 9)) {
@@ -489,7 +489,7 @@ Write-Host("Performance charts (CPU or Memory) blank indicates that cAdvisor on 
 Write-Host("Please refer the cluster creation tool how to configure cAdvisor on the Kubelet to secure port:10250 or unsecure port: 10255") -ForegroundColor Yellow
 Write-Host("On all the nodes cAdvisor on the Kubelet MUST be configured either secure port:10250 or unsecure port:10255 to get the perfomance metrics") -ForegroundColor Yellow
 
-Write-Host("If you still have problem getting Azure Monitor for containers working for your K8s cluster. Please reach out us by creating a support ticket") -ForegroundColor Yellow
+Write-Host("If you still have problem getting Azure Monitor for containers working for your K8s cluster. Please reach out us by creating a support ticket. Use this link: https://azure.microsoft.com/en-us/support/create-ticket") -ForegroundColor Yellow
 
 Write-Host("")
 Stop-Transcript
