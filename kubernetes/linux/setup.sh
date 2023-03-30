@@ -14,7 +14,12 @@ sudo update-ca-trust
 
 sudo tdnf install ruby-3.1.3 -y
 
-sudo tdnf install azure-mdsd-1.25.1 -y
+if [ "${ARCH}" != "arm64" ]; then
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.17.1%2Frpm/azure-mdsd_1.17.1-build.master.377_x86_64.rpm" -O azure-mdsd.rpm
+else
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.17.1%2Frpm/azure-mdsd_1.17.1-build.master.377_aarch64.rpm" -O azure-mdsd.rpm
+fi
+sudo tdnf install -y azure-mdsd.rpm
 
 # /usr/bin/dpkg -i $TMPDIR/azure-mdsd*.deb
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d

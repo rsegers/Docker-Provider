@@ -95,7 +95,6 @@ class LinuxRPMFile:
         specfile.write('Group: ' + self.variables["GROUP"] + '\n')
         specfile.write('License: ' + self.variables["LICENSE"] + '\n')
         specfile.write('Vendor: '+ self.variables["VENDOR"] + '\n')
-        specfile.write('BuildArch: ' + archType + '\n')
 
         if len(self.sections["Dependencies"]) > 0:
             specfile.write('Requires: ')
@@ -143,7 +142,6 @@ class LinuxRPMFile:
         specfile.close()
 
     def StageAndProperlyNameRPM(self):
-        print("Inside StageAndProperlyNameRPM")
         if 'OUTPUTFILE' in self.variables:
             rpmNewFileName = self.variables['OUTPUTFILE'] + '.rpm'
         elif self.variables['PFDISTRO'] == 'SUSE':
