@@ -57,7 +57,7 @@ class KubeletUtils
 
         begin
           kubereserved_cpu = "0.0"
-          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("kubeReserved") && parsed_response["kubeletconfig"]["kubeReserved"].key?("cpu")
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("kubeReserved") && parsed_response["kubeletconfig"]["kubeReserved"].key?("cpu") && parsed_response["kubeletconfig"]["kubeReserved"]["cpu"] != ""
             kubereserved_cpu = parsed_response["kubeletconfig"]["kubeReserved"]["cpu"]
           end
           @log.info "get_node_allocatable::kubereserved_cpu  #{kubereserved_cpu}"
@@ -69,7 +69,7 @@ class KubeletUtils
 
         begin
           kubereserved_memory = "0.0"
-          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("kubeReserved") && parsed_response["kubeletconfig"]["kubeReserved"].key?("memory")
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("kubeReserved") && parsed_response["kubeletconfig"]["kubeReserved"].key?("memory") && parsed_response["kubeletconfig"]["kubeReserved"]["memory"] != ""
             kubereserved_memory = parsed_response["kubeletconfig"]["kubeReserved"]["memory"]  
           end
           @log.info "get_node_allocatable::kubereserved_memory #{kubereserved_memory}"
@@ -80,7 +80,7 @@ class KubeletUtils
         end
         begin
           systemReserved_cpu = "0.0"
-          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("systemReserved") && parsed_response["kubeletconfig"]["systemReserved"].key?("cpu")
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("systemReserved") && parsed_response["kubeletconfig"]["systemReserved"].key?("cpu") && parsed_response["kubeletconfig"]["systemReserved"]["cpu"] != ""
             systemReserved_cpu = parsed_response["kubeletconfig"]["systemReserved"]["cpu"]
           end
           @log.info "get_node_allocatable::systemReserved_cpu  #{systemReserved_cpu}"
@@ -93,7 +93,7 @@ class KubeletUtils
 
         begin
           explicitlyReserved_cpu = "0.0"
-          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("reservedCPUs")
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("reservedCPUs") && parsed_response["kubeletconfig"]["reservedCPUs"] != ""
             explicitlyReserved_cpu = parsed_response["kubeletconfig"]["reservedCPUs"]
           end
           @log.info "get_node_allocatable::explicitlyReserved_cpu  #{explicitlyReserved_cpu}"
@@ -106,7 +106,7 @@ class KubeletUtils
 
         begin
           systemReserved_memory = "0.0"
-          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("systemReserved") && parsed_response["kubeletconfig"]["systemReserved"].key?("memory")
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("systemReserved") && parsed_response["kubeletconfig"]["systemReserved"].key?("memory") && parsed_response["kubeletconfig"]["systemReserved"]["memory"] != ""
             systemReserved_memory = parsed_response["kubeletconfig"]["systemReserved"]["memory"]
           end
           @log.info "get_node_allocatable::systemReserved_memory #{systemReserved_memory}"
@@ -118,7 +118,7 @@ class KubeletUtils
 
         begin
           evictionHard_memory = "0.0"
-          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("evictionHard") && parsed_response["kubeletconfig"]["evictionHard"].key?("memory.available")
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("evictionHard") && parsed_response["kubeletconfig"]["evictionHard"].key?("memory.available") && parsed_response["kubeletconfig"]["evictionHard"]["memory.available"] != ""
             evictionHard_memory = parsed_response["kubeletconfig"]["evictionHard"]["memory.available"]
           end
           @log.info "get_node_allocatable::evictionHard_memory #{evictionHard_memory}"
