@@ -23,6 +23,7 @@ variables:
 
 jobs:
 - job: common
+  timeoutInMinutes: 0
   variables:
     Codeql.SkipTaskAutoInjection: true
   pool:
