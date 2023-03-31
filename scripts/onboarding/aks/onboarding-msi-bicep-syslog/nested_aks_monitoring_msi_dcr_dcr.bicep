@@ -16,7 +16,7 @@ param syslogLevels array
 @description('Full Resource ID of the log analitycs workspace that will be used for data destination. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz')
 param workspaceResourceId string
 
-resource variables_dcr 'Microsoft.Insights/dataCollectionRules@2021-04-01' = {
+resource dcr 'Microsoft.Insights/dataCollectionRules@2021-04-01' = {
   name: dcrName
   location: workspaceRegion
   tags: resourceTagValues

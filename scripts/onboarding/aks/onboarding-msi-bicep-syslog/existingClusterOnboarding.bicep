@@ -44,7 +44,6 @@ module aks_monitoring_msi_dcra_aksResourceId './nested_aks_monitoring_msi_dcra_a
   name: 'aks-monitoring-msi-dcra-${uniqueString(aksResourceId)}'
   scope: resourceGroup(clusterSubscriptionId, clusterResourceGroup)
   params: {
-    clusterName: clusterName
     associationName: associationName
     dataCollectionRuleId: dataCollectionRuleId
   }
@@ -60,7 +59,6 @@ module aks_monitoring_msi_addon_aksResourceId './nested_aks_monitoring_msi_addon
     clusterName: clusterName
     aksResourceLocation: aksResourceLocation
     resourceTagValues: resourceTagValues
-    aksResourceId: aksResourceId
     workspaceResourceId: workspaceResourceId
   }
   dependsOn: [

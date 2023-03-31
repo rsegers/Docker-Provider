@@ -94,8 +94,7 @@
     "clusterResourceGroup": "[split(parameters('clusterResourceId'),'/')[4]]",
     "clusterName": "[split(parameters('clusterResourceId'),'/')[8]]",
     "clusterLocation": "[replace(parameters('clusterRegion'),' ', '')]",
-    "workspaceLocation":"[replace(parameters('workspaceRegion'),' ', '')]",
-    "dcrNameFull": "[Concat('MSCI', '-', variables('workspaceLocation'), '-', variables('clusterName'))]",
+    "dcrNameFull": "[Concat('MSCI', '-', parameters('workspaceRegion'), '-', variables('clusterName'))]",
     "dcrName":"[if(greater(length(variables('dcrNameFull')), 64), substring(variables('dcrNameFull'), 0, 64), variables('dcrNameFull'))]",
     "associationName": "ContainerInsightsExtension",
     "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]",
@@ -260,8 +259,8 @@
       "type": "Microsoft.Resources/deployments",
       "name": "[Concat('arc-k8s-ci-extension', '-',  uniqueString(parameters('clusterResourceId')))]",
       "apiVersion": "2019-05-01",
-      "subscriptionId": "[split(parameters('clusterResourceId'),'/')[2]]",
-      "resourceGroup": "[split(parameters('clusterResourceId'),'/')[4]]",
+      "subscriptionId": "[variables('clusterSubscriptionId')]",
+      "resourceGroup": "[variables('clusterResourceGroup')]",
       "dependsOn": [
         "[Concat('arc-k8s-monitoring-msi-dcra', '-',  uniqueString(parameters('clusterResourceId')))]"
       ],
@@ -300,7 +299,7 @@
                   }
                 }
               },
-              "scope": "[concat('Microsoft.Kubernetes/connectedClusters/', split(parameters('clusterResourceId'),'/')[8])]"
+              "scope": "[concat('Microsoft.Kubernetes/connectedClusters/', variables('clusterName'))]"
             }
           ]
         }
