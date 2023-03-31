@@ -23,7 +23,6 @@ variables:
 
 jobs:
 - job: common
-  timeoutInMinutes: 0
   variables:
     Codeql.SkipTaskAutoInjection: true
   pool:
@@ -116,6 +115,7 @@ jobs:
       artifactName: drop
   
 - job: build_linux
+  timeoutInMinutes: 0
   dependsOn: common
   pool:
     name: Azure-Pipelines-CI-Test-EO
