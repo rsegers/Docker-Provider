@@ -160,7 +160,7 @@ jobs:
 
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
-        trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-dirs usr/local/rvm/src/ruby-3.2.1 --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
+        trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-dirs usr/local/rvm/src/ruby-3.2.2 --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
   - task: CodeQL3000Finalize@0
 
   - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
