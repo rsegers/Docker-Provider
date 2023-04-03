@@ -477,28 +477,35 @@ fi
 # These need to be copied to a different location for Mariner vs Ubuntu containers.
 # OS_ID here is the container distro.
 # Adding Mariner now even though the elif will never currently evaluate.
-if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ "$IS_CUSTOM_CERT" == "true" ]; then
-  OS_ID=$(cat /etc/os-release | grep ^ID= | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+OS_ID=$(cat /etc/os-release | grep ^ID= | cut -d '=' -f2 | tr -d '"' | tr -d "'")
+if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ "$IS_CUSTOM_CERT" == "true" ]; then  
   if [ $OS_ID == "mariner" ]; then
     cp /anchors/ubuntu/* /etc/pki/ca-trust/source/anchors
     cp /anchors/mariner/* /etc/pki/ca-trust/source/anchors
-    if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-      cp /etc/ama-logs-secret/PROXYCERT.crt /etc/pki/ca-trust/source/PROXYCERT.crt
-    fi
-    update-ca-trust
   else
-    if [ $OS_ID != "ubuntu" ]; then
-      echo "Error: The ID in /etc/os-release is not ubuntu or mariner. Defaulting to ubuntu."
-    fi
     cp /anchors/ubuntu/* /usr/local/share/ca-certificates/
     cp /anchors/mariner/* /usr/local/share/ca-certificates/
-    if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-      cp /etc/ama-logs-secret/PROXYCERT.crt /usr/local/share/ca-certificates/PROXYCERT.crt
-    fi
-    update-ca-certificates
-    cp /etc/ssl/certs/ca-certificates.crt /usr/lib/ssl/cert.pem
   fi
 fi
+
+# Copying the PROXYCERT.crt and updating certificates for all the cloud environments.
+if [ $OS_ID == "mariner" ]; then
+  if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+    cp /etc/ama-logs-secret/PROXYCERT.crt /etc/pki/ca-trust/source/PROXYCERT.crt
+  fi
+    update-ca-trust
+else
+  if [ $OS_ID != "ubuntu" ]; then
+    echo "Error: The ID in /etc/os-release is not ubuntu or mariner. Defaulting to ubuntu."
+  fi
+  if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+    cp /etc/ama-logs-secret/PROXYCERT.crt /usr/local/share/ca-certificates/PROXYCERT.crt
+  fi
+    update-ca-certificates
+    cp /etc/ssl/certs/ca-certificates.crt /usr/lib/ssl/cert.pem
+fi
+
+
 
 #consisten naming conventions with the windows
 export DOMAIN=$domain
