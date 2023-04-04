@@ -148,13 +148,16 @@ jobs:
         az acr login -n ${{ variables.containerRegistry }}
 
         if [ "$(Build.Reason)" != "PullRequest" ]; then
+          echo "longwtest start build"
           docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) .
           
           az --version
           az account show
           az account set -s ${{ variables.subscription }}
           az acr login -n ${{ variables.containerRegistry }}
+          echo "longwtest start push"
           docker push ${{ variables.repoImageName }}:$(linuxImagetag)
+          echo "longwtest finish push"
           docker pull ${{ variables.repoImageName }}:$(linuxImagetag)
         else
           docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --provenance=false .
@@ -165,6 +168,7 @@ jobs:
 
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
+        echo "longwtest trivy scan"
         trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-dirs /usr/local/rvm/src/ruby-3.2.2 --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
 
         az login --identity
@@ -172,6 +176,7 @@ jobs:
         az account show
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
+        echo "longwtest end"
 
   - task: CodeQL3000Finalize@0
 
