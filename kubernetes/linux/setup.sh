@@ -24,8 +24,8 @@ if [ -f /etc/profile.d/rvm.sh ]; then
     echo "[ -f /etc/profile.d/rvm.sh ] && source /etc/profile.d/rvm.sh" >> ~/.bashrc
 fi
 
-rvm install 3.1.3
-rvm --default use 3.1.3
+rvm install 3.2.0
+rvm --default use 3.2.0
 
 sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
