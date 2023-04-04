@@ -162,6 +162,7 @@ jobs:
 
         trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-dirs /usr/local/rvm/src/ruby-3.2.2 --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
 
+        az login --identity
         az --version
         az account show
         az account set -s ${{ variables.subscription }}
