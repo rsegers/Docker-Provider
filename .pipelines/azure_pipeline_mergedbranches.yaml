@@ -163,7 +163,6 @@ jobs:
         echo "Multi-arch Linux trivy scan"
         trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
         echo "Multi-arch Linux trivy scan end"
-
   - task: CodeQL3000Finalize@0
 
   - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
