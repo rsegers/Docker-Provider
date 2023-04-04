@@ -24,8 +24,8 @@ if [ -f /etc/profile.d/rvm.sh ]; then
     echo "[ -f /etc/profile.d/rvm.sh ] && source /etc/profile.d/rvm.sh" >> ~/.bashrc
 fi
 
-rvm install 3.2.0
-rvm --default use 3.2.0
+rvm install 3.1.3
+rvm --default use 3.1.3
 
 sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
@@ -80,6 +80,8 @@ fluentd --setup ./fluent
 gem install gyoku iso8601 --no-doc
 gem install tomlrb -v "2.0.1" --no-document
 
+# open ssl
+gem install openssl -v 3.1.0
 
 rm -f $TMPDIR/docker-cimprov*.sh
 rm -f $TMPDIR/azure-mdsd*.deb
