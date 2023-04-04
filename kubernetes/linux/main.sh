@@ -822,6 +822,15 @@ else
             echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
             export MDSD_USE_LOCAL_PERSISTENCY="false"
             echo "export MDSD_USE_LOCAL_PERSISTENCY=$MDSD_USE_LOCAL_PERSISTENCY" >> ~/.bashrc
+            if [[ $MDSD_PROXY_ADDRESS = https* ]]; then 
+                  # set the libcurl specific env and configuration
+                  export ENABLE_CURL_UPLOAD=true
+                  echo "export ENABLE_CURL_UPLOAD=$ENABLE_CURL_UPLOAD" >> ~/.bashrc
+                  export CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+                  echo "export CURL_CA_BUNDLE=$CURL_CA_BUNDLE" >> ~/.bashrc
+                  mkdir -p /etc/pki/tls/certs
+                  cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+            fi
       else
             echo "*** setting up oneagent in legacy auth mode ***"
             CIWORKSPACE_id="$(cat /etc/ama-logs-secret/WSID)"
