@@ -477,35 +477,28 @@ fi
 # These need to be copied to a different location for Mariner vs Ubuntu containers.
 # OS_ID here is the container distro.
 # Adding Mariner now even though the elif will never currently evaluate.
-OS_ID=$(cat /etc/os-release | grep ^ID= | cut -d '=' -f2 | tr -d '"' | tr -d "'")
-if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ "$IS_CUSTOM_CERT" == "true" ]; then  
+if [ $CLOUD_ENVIRONMENT == "usnat" ] || [ $CLOUD_ENVIRONMENT == "ussec" ] || [ "$IS_CUSTOM_CERT" == "true" ]; then
+  OS_ID=$(cat /etc/os-release | grep ^ID= | cut -d '=' -f2 | tr -d '"' | tr -d "'")
   if [ $OS_ID == "mariner" ]; then
     cp /anchors/ubuntu/* /etc/pki/ca-trust/source/anchors
     cp /anchors/mariner/* /etc/pki/ca-trust/source/anchors
+    if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+      cp /etc/ama-logs-secret/PROXYCERT.crt /etc/pki/ca-trust/source/PROXYCERT.crt
+    fi
+    update-ca-trust
   else
+    if [ $OS_ID != "ubuntu" ]; then
+      echo "Error: The ID in /etc/os-release is not ubuntu or mariner. Defaulting to ubuntu."
+    fi
     cp /anchors/ubuntu/* /usr/local/share/ca-certificates/
     cp /anchors/mariner/* /usr/local/share/ca-certificates/
-  fi
-fi
-
-# Copying the PROXYCERT.crt and updating certificates for all the cloud environments.
-if [ $OS_ID == "mariner" ]; then
-  if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-    cp /etc/ama-logs-secret/PROXYCERT.crt /etc/pki/ca-trust/source/PROXYCERT.crt
-  fi
-    update-ca-trust
-else
-  if [ $OS_ID != "ubuntu" ]; then
-    echo "Error: The ID in /etc/os-release is not ubuntu or mariner. Defaulting to ubuntu."
-  fi
-  if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
-    cp /etc/ama-logs-secret/PROXYCERT.crt /usr/local/share/ca-certificates/PROXYCERT.crt
-  fi
+    if [ -e "/etc/ama-logs-secret/PROXYCERT.crt" ]; then
+      cp /etc/ama-logs-secret/PROXYCERT.crt /usr/local/share/ca-certificates/PROXYCERT.crt
+    fi
     update-ca-certificates
     cp /etc/ssl/certs/ca-certificates.crt /usr/lib/ssl/cert.pem
+  fi
 fi
-
-
 
 #consisten naming conventions with the windows
 export DOMAIN=$domain
@@ -825,6 +818,15 @@ else
             echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
             export MDSD_USE_LOCAL_PERSISTENCY="false"
             echo "export MDSD_USE_LOCAL_PERSISTENCY=$MDSD_USE_LOCAL_PERSISTENCY" >> ~/.bashrc
+            if [[ $MDSD_PROXY_ADDRESS = https* ]]; then 
+                  # set the libcurl specific env and configuration
+                  export ENABLE_CURL_UPLOAD=true
+                  echo "export ENABLE_CURL_UPLOAD=$ENABLE_CURL_UPLOAD" >> ~/.bashrc
+                  export CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+                  echo "export CURL_CA_BUNDLE=$CURL_CA_BUNDLE" >> ~/.bashrc
+                  mkdir -p /etc/pki/tls/certs
+                  cp /etc/ssl/certs/ca-certificates.crt /etc/pki/tls/certs/ca-bundle.crt
+            fi
       else
             echo "*** setting up oneagent in legacy auth mode ***"
             CIWORKSPACE_id="$(cat /etc/ama-logs-secret/WSID)"
