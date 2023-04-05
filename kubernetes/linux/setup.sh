@@ -24,6 +24,7 @@ if [ -f /etc/profile.d/rvm.sh ]; then
     echo "[ -f /etc/profile.d/rvm.sh ] && source /etc/profile.d/rvm.sh" >> ~/.bashrc
 fi
 
+# don't use binary since the binary is not available for arm64
 rvm install 3.2.2 --binary
 rvm --default use 3.2.2
 

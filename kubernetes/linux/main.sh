@@ -1036,7 +1036,7 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE
             echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
             waitforlisteneronTCPport 25226 30
             echo "checking for listener on tcp #25228 and waiting for 30 secs if not.."
-            waitforlisteneronTCPport 25228 30
+            waitforlisteneronTCPport 25228 60 #add more time for test telegraf issue
       fi
 elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
         echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
