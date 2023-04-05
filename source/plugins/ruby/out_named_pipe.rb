@@ -9,12 +9,13 @@ module Fluent::Plugin
     @pipe_handle = nil
     @file_open_lock = Mutex.new
     @chunk_write_lock = Mutex.new
-    @properties = {}
+    @@namedPipeEventTelemetryTracker = DateTime.now.to_time.to_i
+    @@properties = {}
     def initialize
         super
         require_relative "extension_utils"
         require_relative "ApplicationInsightsUtility"
-        @properties["datatype"] = @datatype
+        @@properties[@datatype] = 0
     end
 
     def configure(conf)
@@ -61,7 +62,19 @@ module Fluent::Plugin
           @chunk_write_lock.synchronize {
             chunk.write_to(@pipe_handle)
           }
-          ApplicationInsightsUtility.sendCustomEvent("WindowsAMANamedPipeWriteEvent", @properties)
+
+          # Adding telemetry to send total events written to named pipe telemetry every 10 minutes
+          timeDifference = (DateTime.now.to_time.to_i - @@namedPipeEventTelemetryTracker).abs
+          telemetryFlush = false
+          timeDifferenceInMinutes = timeDifference / 60
+          if (timeDifferenceInMinutes >= 10)
+            telemetryFlush = true
+          end
+          if telemetryFlush
+            ApplicationInsightsUtility.sendCustomEvent("WindowsAMANamedPipeWriteEvent", @@properties)
+            @@namedPipeEventTelemetryTracker = DateTime.now.to_time.to_i
+          else
+            @@properties[@datatype] += 1
         else
           @log.error "out_named_pipe::No pipe handle"
         end
