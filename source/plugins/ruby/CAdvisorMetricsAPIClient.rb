@@ -43,6 +43,7 @@ class CAdvisorMetricsAPIClient
   @os_type = ENV["OS_TYPE"]
   if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     @LogPath = Constants::WINDOWS_LOG_PATH + "kubernetes_perf_log.txt"
+    @windowsNodeResetFilePath = "C:\\etc\\kubernetes\\host\\windowsnodereset.log"
   else
     @LogPath = Constants::LINUX_LOG_PATH + "kubernetes_perf_log.txt"
   end
@@ -58,7 +59,7 @@ class CAdvisorMetricsAPIClient
   @@winContainerCpuUsageNanoSecondsLast = {}
   @@winContainerCpuUsageNanoSecondsTimeLast = {}
   @@winContainerPrevMetricRate = {}
-  @@linuxNodePrevMetricRate = nil
+  @@nodePrevMetricRate = nil
   @@winNodePrevMetricRate = {}
   @@telemetryCpuMetricTimeTracker = DateTime.now.to_time.to_i
   @@telemetryMemoryMetricTimeTracker = DateTime.now.to_time.to_i
@@ -151,7 +152,7 @@ class CAdvisorMetricsAPIClient
           else
             hostName = (OMS::Common.get_hostname)
           end
-          if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0 && ExtensionUtils.isAADMSIAuthMode()
+          if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
             operatingSystem = "Windows"
           else
             operatingSystem = "Linux"
@@ -786,7 +787,7 @@ class CAdvisorMetricsAPIClient
             #       metricValue = metricRateValue
             #     end
           else
-            if operatingSystem == "Linux"
+            if operatingSystem == "Linux" || ExtensionUtils.isAADMSIAuthMode() #Linux DS, RS and Windows with MSIAuthMode
               if @@nodeCpuUsageNanoSecondsLast.nil? || @@nodeCpuUsageNanoSecondsTimeLast.nil? || @@nodeCpuUsageNanoSecondsLast > metricValue #when kubelet is restarted the last condition will be true
                 @@nodeCpuUsageNanoSecondsLast = metricValue
                 @@nodeCpuUsageNanoSecondsTimeLast = metricTime
@@ -798,9 +799,9 @@ class CAdvisorMetricsAPIClient
                 if timeDifference != 0 && nodeCpuUsageDifference != 0
                   metricRateValue = (nodeCpuUsageDifference * 1.0) / timeDifference
                 else
-                  @Log.info "linux node - cpu usage difference / time difference is 0, hence using previous cached value"
-                  if !@@linuxNodePrevMetricRate.nil?
-                    metricRateValue = @@linuxNodePrevMetricRate
+                  @Log.info "#{operatingSystem} node - cpu usage difference / time difference is 0, hence using previous cached value"
+                  if !@@nodePrevMetricRate.nil?
+                    metricRateValue = @@nodePrevMetricRate
                   else
                     # This can happen when the metric value returns same values for subsequent calls when the plugin first starts
                     metricRateValue = 0
@@ -808,10 +809,10 @@ class CAdvisorMetricsAPIClient
                 end
                 @@nodeCpuUsageNanoSecondsLast = metricValue
                 @@nodeCpuUsageNanoSecondsTimeLast = metricTime
-                @@linuxNodePrevMetricRate = metricRateValue
+                @@nodePrevMetricRate = metricRateValue
                 metricValue = metricRateValue
               end
-            elsif operatingSystem == "Windows"
+            elsif operatingSystem == "Windows" #Windows non-MSI auth from replicaset
               # Using the hash for windows nodes since this is running in replica set and there can be multiple nodes
               if @@winNodeCpuUsageNanoSecondsLast[hostName].nil? || @@winNodeCpuUsageNanoSecondsTimeLast[hostName].nil? || @@winNodeCpuUsageNanoSecondsLast[hostName] > metricValue #when kubelet is restarted the last condition will be true
                 @@winNodeCpuUsageNanoSecondsLast[hostName] = metricValue
@@ -882,9 +883,14 @@ class CAdvisorMetricsAPIClient
         metricCollection = {}
         metricCollection["CounterName"] = metricNametoReturn
         if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0 && ExtensionUtils.isAADMSIAuthMode()
-          #Read from the windowsnodereset.log for Windows daemonset with MSI auth mode using Windows AMA
-          metricValStr = IO.readlines("C:\\etc\\kubernetes\\host\\windowsnodereset.log")[0].split[0]
-          metricCollection["Value"] = DateTime.parse(metricValStr).to_time.to_i
+          if File.exist?(@windowsNodeResetFilePath)
+            #Read from the windowsnodereset.log for Windows daemonset with MSI auth mode using Windows AMA
+            metricValStr = IO.readlines(@windowsNodeResetFilePath)[0].split[0]
+            metricCollection["Value"] = DateTime.parse(metricValStr).to_time.to_i
+          else
+            @Log.warn("windowsNodeResetFile not present")
+            return metricItem
+          end
         else
           #Read it from /proc/uptime for Linux and windows nodes being reported from replicaset in Legacy Auth
           metricCollection["Value"] = DateTime.parse(metricTime).to_time.to_i - IO.read("/proc/uptime").split[0].to_f

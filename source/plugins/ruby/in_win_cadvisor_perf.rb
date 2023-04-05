@@ -92,7 +92,7 @@ module Fluent::Plugin
           end
         end
 
-        if @isWindows && ExtensionUtils.isAADMSIAuthMode()
+        if @isWindows
           eventStream = Fluent::MultiEventStream.new
           metricData = CAdvisorMetricsAPIClient.getMetrics(winNode: nil, namespaceFilteringMode: @namespaceFilteringMode, namespaces: @namespaces, metricTime: Time.now.utc.iso8601)
           metricData.each do |record|
@@ -102,9 +102,7 @@ module Fluent::Plugin
           end
           router.emit_stream(@tag, eventStream) if eventStream
           router.emit_stream(@mdmtag, eventStream) if eventStream
-        end
-
-        if !@isWindows
+        else
           #Resetting this cache so that it is populated with the current set of containers with every call
           CAdvisorMetricsAPIClient.resetWinContainerIdCache()
           if (timeDifferenceInMinutes >= 5)

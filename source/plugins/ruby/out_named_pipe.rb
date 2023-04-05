@@ -80,7 +80,7 @@ module Fluent::Plugin
           @log.error "out_named_pipe::Couldn't get pipe name from extension config for datatype: #{@datatype}. will be retried."
         end
       rescue Exception => e
-        @log.info "out_named_pipe::Exception when writing to named pipe: #{e}"
+        @log.error "out_named_pipe::Exception when writing to named pipe: #{e}"
         raise e
       end
     end

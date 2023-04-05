@@ -641,9 +641,11 @@ function Start-Fluent-Telegraf {
         Start-Telegraf
     }
 
-    $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
-    if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
-        Add-Content -Path "C:/etc/fluent/fluent.conf"  -Value (Get-Content -Path "C:/etc/fluent/fluent-win-ama.conf")
+    if ([string]::IsNullOrEmpty($genevaLogsIntegration) -or $genevaLogsIntegration.ToLower() -eq 'false') {
+        $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
+        if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+            Add-Content -Path "C:/etc/fluent/fluent.conf"  -Value (Get-Content -Path "C:/etc/fluent/fluent-win-ama.conf")
+        }
     }
 
     fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'  --log-rotate-age 5 --log-rotate-size 20971520
