@@ -7,9 +7,14 @@ module Fluent::Plugin
     helpers :formatter
     config_param :datatype, :string
     @pipe_handle = nil
+    @file_open_lock = Mutex.new
+    @chunk_write_lock = Mutex.new
+    @properties = {}
     def initialize
         super
         require_relative "extension_utils"
+        require_relative "ApplicationInsightsUtility"
+        @properties["datatype"] = @datatype
     end
 
     def configure(conf)
@@ -37,24 +42,32 @@ module Fluent::Plugin
     def write(chunk)
       begin
         if !@pipe_handle
-          pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
-          if !pipe_suffix.nil? && !pipe_suffix.empty?
-            pipe_name = "\\\\.\\pipe\\" + pipe_suffix
-            @log.info "out_named_pipe::Named pipe: #{pipe_name}"
-            @pipe_handle = File.open(pipe_name, File::WRONLY)
-            @log.info "out_named_pipe::Pipe handle : #{@pipe_handle}"
-          else
-            @log.info "out_named_pipe::No pipe_suffix found. will be retried"
-          end
+          @file_open_lock.synchronize {
+            if !@pipe_handle #At the beginning, some other flush thread might have already got the handle so checking again if still not available. 
+              pipe_suffix = ExtensionUtils.getOutputNamedPipe(@datatype)
+              if !pipe_suffix.nil? && !pipe_suffix.empty?
+                pipe_name = "\\\\.\\pipe\\" + pipe_suffix
+                @log.info "out_named_pipe::Named pipe: #{pipe_name}"
+                @pipe_handle = File.open(pipe_name, File::WRONLY)
+                @log.info "out_named_pipe::Pipe handle : #{@pipe_handle}"
+              else
+                @log.info "out_named_pipe::No pipe_suffix found. will be retried"
+              end
+            end
+          }
         end
         if @pipe_handle
           @log.info "out_named_pipe::Writing for datatype: #{@datatype}"
-          chunk.write_to(@pipe_handle)
+          @chunk_write_lock.synchronize {
+            chunk.write_to(@pipe_handle)
+          }
+          ApplicationInsightsUtility.sendCustomEvent("WindowsAMANamedPipeWriteEvent", @properties)
         else
           @log.error "out_named_pipe::No pipe handle"
         end
       rescue Exception => e
         @log.error "out_named_pipe::Exception when writing to named pipe: #{e}"
+        ApplicationInsightsUtility.sendExceptionTelemetry(e, { "FeatureArea" => "NamedPipe" })
         if @pipe_handle
           @pipe_handle.close
           @pipe_handle = nil
