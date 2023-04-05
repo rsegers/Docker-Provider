@@ -6,16 +6,16 @@ module Fluent::Plugin
     Fluent::Plugin.register_output('named_pipe', self)
     helpers :formatter
     config_param :datatype, :string
-    @pipe_handle = nil
-    @file_open_lock = Mutex.new
-    @chunk_write_lock = Mutex.new
-    @@namedPipeEventTelemetryTracker = DateTime.now.to_time.to_i
-    @@properties = {}
+  
     def initialize
         super
         require_relative "extension_utils"
         require_relative "ApplicationInsightsUtility"
-        @@properties[@datatype] = 0
+        @pipe_handle = nil
+        @file_open_lock = Mutex.new
+        @chunk_write_lock = Mutex.new
+        @@namedPipeEventTelemetryTracker = DateTime.now.to_time.to_i
+        @@properties = {}
     end
 
     def configure(conf)
@@ -25,6 +25,7 @@ module Fluent::Plugin
 
     def start
       super
+      @@properties[@datatype] = 0
     end
 
     def format(tag, time, record)
@@ -75,6 +76,7 @@ module Fluent::Plugin
             @@namedPipeEventTelemetryTracker = DateTime.now.to_time.to_i
           else
             @@properties[@datatype] += 1
+          end
         else
           @log.error "out_named_pipe::No pipe handle"
         end
