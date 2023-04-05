@@ -149,14 +149,7 @@ jobs:
 
         if [ "$(Build.Reason)" != "PullRequest" ]; then
           echo "start Multi-arch Linux build and push"
-          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --provenance=false .
-
-          az --version
-          az account show
-          az account set -s ${{ variables.subscription }}
-          az acr login -n ${{ variables.containerRegistry }}
-          echo "Multi-arch Linux build push"
-          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) --push .
+          docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --push --provenance=false .
           echo "Multi-arch Linux build pull"
           docker pull ${{ variables.repoImageName }}:$(linuxImagetag)
         else
