@@ -83,7 +83,7 @@ install_python()
   echo "installing python ..."
   sudo apt-get update -y
   sudo apt-get install python -y
-  echo "installation of python completed."
+  echo "installation of python completed." 
 }
 
 register_microsoft_gpg_keys()
