@@ -33,7 +33,7 @@ jobs:
   ## prod release are in format Major.Minor.Patch
   ## preview release are in format preview-Major.Minor.Patch
   - bash: |
-      commit=$(git describe) 
+      commit=$(git describe)
       linuxImagetag="$commit"
       windowsImageTag=win-"$commit"
 
@@ -64,7 +64,7 @@ jobs:
 
       cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz ../../../../charts/azuremonitor-containers/ pushChartToAcr.sh
-    
+
       cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension-release-v2/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz arcExtensionRelease.sh
     name: setup
@@ -113,8 +113,9 @@ jobs:
     inputs:
       pathToPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: drop
-  
+
 - job: build_linux
+  timeoutInMinutes: 0
   dependsOn: common
   pool:
     name: Azure-Pipelines-CI-Test-EO
