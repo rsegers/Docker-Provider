@@ -48,7 +48,13 @@ Some naming conventions or package names are different for RPM packages. For exa
 
 `dnf` has a command called `whatprovides` to help with this as explained [here](https://eng.ms/docs/products/mariner-linux/onboarding/packaging/packagemanagement#finding-the-right-package), but usually a quick internet search will also work.
 
-### Distroless Image
+## Our Current Package Dependencies
+* All Mariner packages are supported for both AMD64 and ARM64.
+* `telegraf`, `fluent-bit`, `ruby` and `rubygem-fluentd` are built and published by the Mariner team in the [Mariner base repository](https://packages.microsoft.com/cbl-mariner/2.0/preview/base/x86_64/). [ARM64 versions](https://packages.microsoft.com/cbl-mariner/2.0/preview/base/aarch64/) are available also.
+* `azure-mdsd` is published by their team to the Mariner extras repository. [Release notes](https://eng.ms/docs/products/geneva/collect/instrument/linux/releasenotes). The package for [Mariner 2.0](https://packages.microsoft.com/cbl-mariner/2.0/prod/extras/x86_64/) is now available.
+* When updating any package, make sure to check the dependencies and add if any changes. (Avoid removing unless you are completely sure that non other packages have those dependencies as some dependencies in the list may also be used by some other package.)
+
+### Get dependencies for the distroless image
 To get the .so file dependencies, run:
   * `which <executable>` to get the executable path
   * `ldd <executable path>` to get the list of dependencies
@@ -71,8 +77,3 @@ In the Dockerfile in the distroless stage:
   * Copy over the executable file path
   * Copy over the full path of all `.so` files that have `=>`
   * If not all necssary `.so` files are available, there will be an error saying that file is missing during runtime
-
-## Our Current Package Dependencies
-* All Mariner packages are supported for both AMD64 and ARM64.
-* `telegraf`, `fluent-bit`, `ruby` and `rubygem-fluentd` are built and published by the Mariner team in the [Mariner base repository](https://packages.microsoft.com/cbl-mariner/2.0/preview/base/x86_64/). [ARM64 versions](https://packages.microsoft.com/cbl-mariner/2.0/preview/base/aarch64/) are available also.
-* `azure-mdsd` is published by their team to the Mariner extras repository. [Release notes](https://eng.ms/docs/products/geneva/collect/instrument/linux/releasenotes). The package for [Mariner 2.0](https://packages.microsoft.com/cbl-mariner/2.0/prod/extras/x86_64/) is now available.

@@ -770,7 +770,7 @@ fi
 # service cron start
 /usr/sbin/crond -n -s &
 
-#get  docker-provider versions
+#get docker-provider version
 DOCKER_CIMPROV_VERSION=$(cat packages_version.txt | grep "DOCKER_CIMPROV_VERSION" | awk -F= '{print $2}')
 export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION
 echo "export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION" >>~/.bashrc
