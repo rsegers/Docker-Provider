@@ -1062,14 +1062,6 @@ fi
 # Write messages from the liveness probe to stdout (so telemetry picks it up)
 touch /dev/write-to-traces
 
-# echo "stopping rsyslog..."
-# # service rsyslog stop
-# systemctl stop rsyslog
-
-# echo "getting rsyslog status..."
-# # service rsyslog status
-# systemctl status rsyslog
-
 if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
      checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
 elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then

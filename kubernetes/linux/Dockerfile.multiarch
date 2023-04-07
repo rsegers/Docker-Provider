@@ -1,6 +1,7 @@
 # Default base images. If you update them don't forgot to update variables in our build pipelines. Default values can be found in internal wiki. External can use ubuntu 18.04 and golang 1.18.3
 ARG GOLANG_BASE_IMAGE=
-ARG MARINER_IMAGE=mcr.microsoft.com/cbl-mariner/base/core:2.0
+ARG MARINER_BASE_IMAGE=mcr.microsoft.com/cbl-mariner/base/core:2.0
+ARG MARINER_DISTROLESS_IMAGE=mcr.microsoft.com/cbl-mariner/distroless/base:2.0
 
 FROM --platform=$BUILDPLATFORM ${GOLANG_BASE_IMAGE} AS golang-builder
 ARG TARGETOS TARGETARCH
@@ -11,7 +12,7 @@ COPY source /src/source
 RUN cd /src/build/linux && make arch=${TARGETARCH}
 
 
-FROM ${MARINER_IMAGE} AS builder
+FROM ${MARINER_BASE_IMAGE} AS builder
 ARG TARGETOS TARGETARCH
 MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
@@ -21,7 +22,6 @@ ENV tmpdir /opt
 RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
 RUN tdnf install -y build-essential wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
 RUN mkdir /busybin && busybox --install /busybin
-# RUN /usr/bin/apt-get update && /usr/bin/apt-get install -y libc-bin wget openssl curl sudo python python-ctypes init-system-helpers  net-tools rsyslog cron vim dmidecode apt-transport-https gnupg make && rm -rf /var/lib/apt/lists/*
 COPY kubernetes/linux/crontab /etc/crontab
 
 COPY --from=golang-builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-cimprov-*.*.*-*.*.sh $tmpdir/
@@ -36,9 +36,7 @@ WORKDIR ${tmpdir}
 
 RUN chmod 775 $tmpdir/*.sh; sync; $tmpdir/setup.sh ${TARGETARCH}
 
-FROM builder AS distroless_image
-
-FROM mcr.microsoft.com/cbl-mariner/distroless/base:2.0 AS ContainerInsights
+FROM ${MARINER_DISTROLESS_IMAGE} AS distroless_image
 MAINTAINER OMSContainers@microsoft.com
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
@@ -82,6 +80,7 @@ COPY --from=builder /usr/sbin/busybox /usr/sbin/busybox
 COPY --from=builder /usr/bin/fluent-bit /usr/bin/fluent-bit
 COPY --from=builder /opt/telegraf /opt/telegraf
 COPY --from=builder /usr/sbin/crond /usr/sbin/crond
+#vim is kept for debugging. If it seems like it is not needed, we cam remove it later
 COPY --from=builder /usr/bin/vim /usr/bin/vim
 COPY --from=builder /usr/share/vim /usr/share/vim
 COPY --from=builder /usr/sbin/mdsd /usr/sbin/mdsd
