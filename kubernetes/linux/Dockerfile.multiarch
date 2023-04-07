@@ -60,9 +60,6 @@ ENV AGENT_VERSION ${IMAGE_TAG}
 
 WORKDIR ${tmpdir}
 
-#copy .trivyignore
-COPY --from=builder .trivyignore .trivyignore
-
 # files
 COPY --from=builder /opt /opt
 COPY --from=builder /etc /etc
