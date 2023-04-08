@@ -22,7 +22,6 @@ ENV tmpdir /opt
 RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
 RUN tdnf install -y build-essential wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
 RUN mkdir /busybin && busybox --install /busybin
-RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.39.0
 COPY kubernetes/linux/crontab /etc/crontab
 
 COPY --from=golang-builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-cimprov-*.*.*-*.*.sh $tmpdir/
@@ -69,8 +68,8 @@ COPY --from=builder /var/opt/microsoft /var/opt/microsoft
 COPY --from=builder /var/lib/logrotate /var/lib/logrotate
 COPY --from=builder /var/spool/cron /var/spool/cron
 
-#copy trivy
-COPY --from=builder /usr/local/bin/trivy /usr/local/bin/trivy
+#install trivy
+RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.39.0
 
 # executables
 COPY --from=builder /usr/bin/bash /usr/bin/bash
