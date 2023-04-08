@@ -767,7 +767,6 @@ else
 fi
 
 #start cron daemon for logrotate
-# service cron start
 /usr/sbin/crond -n -s &
 
 #get docker-provider version
@@ -872,10 +871,10 @@ else
 fi
 
 # # Set up a cron job for logrotation
-# if [ ! -f /etc/cron.d/ci-agent ]; then
-#       echo "setting up cronjob for ci agent log rotation"
-#       echo "*/5 * * * * root /usr/sbin/logrotate -s /var/lib/logrotate/ci-agent-status /etc/logrotate.d/ci-agent >/dev/null 2>&1" >/etc/cron.d/ci-agent
-# fi
+if [ ! -f /etc/cron.d/ci-agent ]; then
+      echo "setting up cronjob for ci agent log rotation"
+      echo "*/5 * * * * root /usr/sbin/logrotate -s /var/lib/logrotate/ci-agent-status /etc/logrotate.d/ci-agent >/dev/null 2>&1" >/etc/cron.d/ci-agent
+fi
 
 # no dependency on fluentd for prometheus side car container
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
