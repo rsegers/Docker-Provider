@@ -14,14 +14,14 @@ additional questions or comments.
 ##### Code change log
 - Common
   - Update prometheus.io/scheme default description in configmap
-  - Add support to specify resource endpoint for metrics 
+  - Add support to specify azure autonomous resource endpoint parameter for the Extension chart for custom metrics
   - Add autonomous fqdn to endpoint for metrics 
   - Add devskim as github action and codeql as enabled in ADO pipeline
   - AgentLogCollection.sh update for collecting more detailed logs
   - Fix pod ready condition issue for pods that are job ready 
   - Updating packages for go vulnerabilities
   - Remove the necessary askcoin references in troubleshooter and readme
-  - Change md5 to sha256
+  - Change md5 to sha256 for the omslogger
   - Log message and yaml to sync with AKS RP
 - Linux Agent
   - Geneva logs integration for single and multi tenancy
