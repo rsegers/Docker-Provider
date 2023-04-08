@@ -117,7 +117,7 @@ COPY --from=builder /lib/libjq.so.1 /lib/libonig.so.5 /lib/
 # Do vulnerability scan in a seperate stage to avoid adding layer
 FROM distroless_image AS vulnscan
 COPY .trivyignore .trivyignore
-RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.39.0
+RUN curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.28.1
 RUN trivy rootfs --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-files "/usr/local/bin/trivy" /
 RUN trivy rootfs --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM /usr/lib
 RUN trivy rootfs --exit-code 1 --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-files "/usr/local/bin/trivy" / > /dev/null 2>&1 && trivy rootfs --exit-code 1 --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM /usr/lib > /dev/null 2>&1
