@@ -837,14 +837,18 @@ func translateTelegrafMetrics(m map[interface{}]interface{}) ([]*laTelegrafMetri
 
 	var laMetrics []*laTelegrafMetric
 	var tags map[interface{}]interface{}
-	tags = m["tags"].(map[interface{}]interface{})
 	tagMap := make(map[string]string)
-	for k, v := range tags {
-		key := fmt.Sprintf("%s", k)
-		if key == "" {
-			continue
+	if m["tags"] == nil {
+		Log("PostTelegrafMetricsToLA: Missing tags")
+	} else {
+		tags = m["tags"].(map[interface{}]interface{})
+		for k, v := range tags {
+			key := fmt.Sprintf("%s", k)
+			if key == "" {
+				continue
+			}
+			tagMap[key] = fmt.Sprintf("%s", v)
 		}
-		tagMap[key] = fmt.Sprintf("%s", v)
 	}
 
 	//add azure monitor tags
