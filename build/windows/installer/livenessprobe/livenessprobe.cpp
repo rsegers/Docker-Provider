@@ -134,7 +134,7 @@ int _tmain(int argc, wchar_t *argv[])
         return CERTIFICATE_RENEWAL_REQUIRED;
     }
 
-    if (argc >= 5) {
+    if (argc > 5) {
         if (!IsProcessRunning(argv[5]))
         {
             wprintf_s(L"ERROR:Process:%s is not running\n", argv[5]);
