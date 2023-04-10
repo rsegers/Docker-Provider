@@ -839,7 +839,7 @@ func translateTelegrafMetrics(m map[interface{}]interface{}) ([]*laTelegrafMetri
 	var tags map[interface{}]interface{}
 	tagMap := make(map[string]string)
 	if m["tags"] == nil {
-		Log("PostTelegrafMetricsToLA: Missing tags")
+		Log("translateTelegrafMetrics: Missing tags")
 	} else {
 		tags = m["tags"].(map[interface{}]interface{})
 		for k, v := range tags {
