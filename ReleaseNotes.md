@@ -23,17 +23,15 @@ additional questions or comments.
   - Remove the necessary askcoin references in troubleshooter and readme
   - Change md5 to sha256 for the omslogger
   - Log message and yaml to sync with AKS RP
+  - Add nil check in kubelet
 - Linux Agent
   - Geneva logs integration for single and multi tenancy
-  - Add gcs region support in config
   - Change output fwd plugin settings configurable
   - Add multiline logs feature with configmap
   - Config AMA specific envvars only if 1p mode is configured
   - Use -p when creating dirs in main.sh
-  - Disable telegraf on replicaset by default
+  - Disable telegraf on replicaset by default. For resource optimization, telegraf in replicaset only enabled either the cluster level Prometheus Scraping or NPM configured
   - Remove unused default gem openssl & python
-- Windows Agent
-  - Add nil check in kubelet
 
 ### 03/21/2023 -
 ##### Version microsoft/oms:3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4 (linux)
