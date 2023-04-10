@@ -608,7 +608,7 @@ else
       setGlobalEnvVar TELEMETRY_CUSTOM_PROM_MONITOR_PODS false
 fi
 
-# If Azure NPM metrics is enabled turn telegraf on RS on
+# If Azure NPM metrics is enabled turn telegraf on in RS
 if [[ ( "${TELEMETRY_NPM_INTEGRATION_METRICS_BASIC}" -eq 1 ) ||
       ( "${TELEMETRY_NPM_INTEGRATION_METRICS_ADVANCED}" -eq 1 ) ]]; then
       setGlobalEnvVar TELEMETRY_RS_TELEGRAF_DISABLED false
