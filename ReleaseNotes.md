@@ -31,7 +31,7 @@ additional questions or comments.
 - Linux Agent
   - Use -p when creating dirs in main.sh
   - Disable telegraf on replicaset by default. For resource optimization, telegraf in replicaset only enabled either the cluster level Prometheus Scraping or NPM configured
-  - Remove unused default gem openssl & python
+  - Remove unused default gem openssl, gem find, gem rvm & python installed
 
 ### 03/21/2023 -
 ##### Version microsoft/oms:3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4 (linux)
