@@ -28,6 +28,8 @@ rvm install 3.1.3
 rvm --default use 3.1.3
 # remove unused default openssl 3.0.1 gem as it has some known vulns
 rm /usr/local/rvm/rubies/ruby-3.1.3/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec
+rm /usr/local/rvm/rubies/ruby-3.1.3/lib/ruby/gems/3.1.0/specifications/default/find-0.1.1.gemspec
+rm /usr/local/rvm/rubies/ruby-3.1.3/lib/ruby/gems/3.1.0/specifications/rvm-1.11.3.9.gemspec
 
 sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
