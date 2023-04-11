@@ -13,6 +13,10 @@ additional questions or comments.
 ##### Version microsoft/oms:win-3.1.6 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.6 (windows)
 ##### Code change log
 - Common
+  - Geneva logs integration for single and multi tenancy
+  - Change output fwd plugin settings configurable
+  - Add multiline logs feature with configmap
+  - Config AMA specific envvars only if 1p mode is configured
   - Update prometheus.io/scheme default description in configmap
   - Add support to specify azure autonomous resource endpoint parameter for the Extension chart for custom metrics
   - Add autonomous fqdn to endpoint for metrics 
@@ -25,10 +29,6 @@ additional questions or comments.
   - Log message and yaml to sync with AKS RP
   - Add nil check in kubelet
 - Linux Agent
-  - Geneva logs integration for single and multi tenancy
-  - Change output fwd plugin settings configurable
-  - Add multiline logs feature with configmap
-  - Config AMA specific envvars only if 1p mode is configured
   - Use -p when creating dirs in main.sh
   - Disable telegraf on replicaset by default. For resource optimization, telegraf in replicaset only enabled either the cluster level Prometheus Scraping or NPM configured
   - Remove unused default gem openssl & python
