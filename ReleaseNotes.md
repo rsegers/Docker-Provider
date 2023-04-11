@@ -28,6 +28,7 @@ additional questions or comments.
   - Change md5 to sha256 for the omslogger
   - Log message and yaml to sync with AKS RP
   - Add nil check in kubelet
+  - Fix fluent-bit output plugin crash when the tags are missing for the telegraf metrics
 - Linux Agent
   - Use -p when creating dirs in main.sh
   - Disable telegraf on replicaset by default. For resource optimization, telegraf in replicaset only enabled either the cluster level Prometheus Scraping or NPM configured
