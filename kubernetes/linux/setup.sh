@@ -35,11 +35,11 @@ sed -i -e 's/# en_US.UTF-8 UTF-8/en_US.UTF-8 UTF-8/' /etc/locale.gen && \
     dpkg-reconfigure --frontend=noninteractive locales && \
     update-locale LANG=en_US.UTF-8
 
-#install oneagent - Official bits (3/14/2022)
+#install oneagent - Official bits (04/14/2023)
 if [ "${ARCH}" != "arm64" ]; then
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/1.17.1-arm64-master/azure-mdsd_1.17.1-build.master.366_x86_64.deb" -O azure-mdsd.deb
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.26.0/azure-mdsd_1.26.0-build.master.71_x86_64.deb" -O azure-mdsd.deb
 else
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/1.17.1-arm64-master/azure-mdsd_1.17.1-build.master.366_aarch64.deb" -O azure-mdsd.deb
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.26.0/azure-mdsd_1.26.0-build.master.71_aarch64.deb" -O azure-mdsd.deb
 fi
 
 /usr/bin/dpkg -i $TMPDIR/azure-mdsd*.deb
