@@ -91,13 +91,19 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	for _, extensionConfig := range extensionConfigs {
 		logger.Printf("extensionConfig value %s", extensionConfig)
 		outputStreams := extensionConfig.OutputStreams
-		extensionSettings := extensionConfig.ExtensionSettings
-		logger.Printf("ExtensionSettings: %s", extensionSettings)
 		for dataType, outputStreamID := range outputStreams {
 			logger.Printf("Info::mdsd::datatype: %s, outputstreamId: %s", dataType, outputStreamID)
 			logger.Printf("outputStreams value %s", outputStreams[dataType])
 			datatypeOutputStreamMap[dataType] = outputStreamID.(string)
 		}
+		
+		//featch dataCollectionSettings from ContainerInsightsExtension dataCollectionRules
+		logger.Printf("ExtensionSettings: %s", extensionSettings)
+		extensionSettings := extensionConfig.ExtensionSettings
+		dataCollectionSettings := extensionSettings["dataCollectionSettings"]
+		logger.Printf("dataCollectionSettings value %s", dataCollectionSettings)
+		containerLogV2Flag := dataCollectionSettings["containerLogV2"]
+		logger.Printf("containerLogV2 value %s", containerLogV2Flag)
 	}
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- end")
 
