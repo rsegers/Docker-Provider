@@ -28,7 +28,7 @@ type StreamDefinition struct {
 type ExtensionConfig struct {
 	ID                string                 `json:"id"`
 	OriginIds         []string               `json:"originIds"`
-	ExtensionSettings map[string]interface{} `json:"extensionSettings"`
+	ExtensionSettings map[string]map[string]interface{} `json:"extensionSettings"`
 	InputStreams      map[string]interface{} `json:"inputStreams"`
 	OutputStreams     map[string]interface{} `json:"outputStreams"`
 }
