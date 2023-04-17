@@ -89,10 +89,13 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	extensionConfigs := extensionData.ExtensionConfigs
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- start")
 	for _, extensionConfig := range extensionConfigs {
+		logger.Printf("extensionConfig value %s", extensionConfig)
 		outputStreams := extensionConfig.OutputStreams
+		extensionSettings := extensionConfig.ExtensionSettings
+		logger.Printf("ExtensionSettings: %s", extensionSettings)
 		for dataType, outputStreamID := range outputStreams {
 			logger.Printf("Info::mdsd::datatype: %s, outputstreamId: %s", dataType, outputStreamID)
-			logger.Printf("Info::mdsd:: outputStreams value %s", outputStreams[dataType])
+			logger.Printf("outputStreams value %s", outputStreams[dataType])
 			datatypeOutputStreamMap[dataType] = outputStreamID.(string)
 		}
 	}
