@@ -1,0 +1,27 @@
+{
+    "azureMonitorProfile": {
+        "metrics": {
+          "enabled": true,
+          "kubeStateMetrics": {
+            "metricAnnotationsAllowList": "pods=[k8s-annotation-1,k8s-annotation-n]",
+            "metricLabelsAllowlist": "namespaces=[k8s-label-1,k8s-label-n]"
+          }
+        },
+        "logs": {
+            "enabled": true,
+            "config" : {
+                "disableCustomMetricsCollection": false,
+                "disableLogAnalyticsMetricsIngestion": false,
+                "useManagedIdentityAuth": false,
+                "logAnalyticsWorkspaceResourceID": "<workspaceResourceId>"
+            }
+        },
+        "appMonitoring": {
+            "enabled": true,
+            "appMonitoringConfig" : {
+              "autoInstrumentation": "<AzureNative | OTELNative | None>",
+              "aiInstrumentationKey": "<aiInstrumentationKey>"
+            }
+        }
+    }
+}
