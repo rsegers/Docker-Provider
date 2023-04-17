@@ -24,7 +24,8 @@ if [ -f /etc/profile.d/rvm.sh ]; then
     echo "[ -f /etc/profile.d/rvm.sh ] && source /etc/profile.d/rvm.sh" >> ~/.bashrc
 fi
 
-rvm install 3.1.3
+# only for testing purpose
+rvm install 3.1.3 --binary
 rvm --default use 3.1.3
 # remove unused default gem openssl, find and rvm as they have some known vulns
 rm /usr/local/rvm/rubies/ruby-3.1.3/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec

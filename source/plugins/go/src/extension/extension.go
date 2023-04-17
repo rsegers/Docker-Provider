@@ -85,13 +85,14 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 
 	var extensionData TaggedData
 	json.Unmarshal([]byte(responseObjet.TaggedData), &extensionData)
-
+	//fluent-bit-out-oms-runtime.log
 	extensionConfigs := extensionData.ExtensionConfigs
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- start")
 	for _, extensionConfig := range extensionConfigs {
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
 			logger.Printf("Info::mdsd::datatype: %s, outputstreamId: %s", dataType, outputStreamID)
+			logger.Printf("Info::mdsd:: outputStreams value %s", outputStreams[dataType])
 			datatypeOutputStreamMap[dataType] = outputStreamID.(string)
 		}
 	}
