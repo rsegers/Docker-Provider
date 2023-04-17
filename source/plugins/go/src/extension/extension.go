@@ -98,8 +98,8 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 		}
 		
 		//featch dataCollectionSettings from ContainerInsightsExtension dataCollectionRules
-		logger.Printf("ExtensionSettings: %s", extensionSettings)
 		extensionSettings := extensionConfig.ExtensionSettings
+		logger.Printf("ExtensionSettings: %s", extensionSettings)
 		dataCollectionSettings := extensionSettings["dataCollectionSettings"]
 		logger.Printf("dataCollectionSettings value %s", dataCollectionSettings)
 		containerLogV2Flag := dataCollectionSettings["containerLogV2"]
