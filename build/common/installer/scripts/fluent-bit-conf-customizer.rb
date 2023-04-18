@@ -21,7 +21,7 @@ def substituteMultiline(multilineLogging, new_contents)
       new_contents = new_contents.gsub("#${MultilineEnabled}", "")
       new_contents = new_contents.gsub("azm-containers-parser.conf", "azm-containers-parser-multiline.conf")
       # replace parser with multiline version. ensure running script multiple times does not have negative impact
-      if (/[^\.]Parser\s{1,}docker/).match(text)
+      if (/[^\.]Parser\s{1,}docker/).match(new_contents)
         new_contents = new_contents.gsub(/[^\.]Parser\s{1,}docker/, " Multiline.Parser docker")
       else
         new_contents = new_contents.gsub(/[^\.]Parser\s{1,}cri/, " Multiline.Parser cri")
