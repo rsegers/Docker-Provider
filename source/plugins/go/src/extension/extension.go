@@ -62,8 +62,7 @@ func (e *Extension) GetContainerLogV2Flag() bool {
 		message := fmt.Sprintf("Error getting datatype to streamid mapping: %s", err.Error())
 		logger.Printf(message)
 	}
-	return e.datatypeStreamIdMap["containerLogV2Flag"] == "true"? true : false
-}
+	return e.datatypeStreamIdMap["containerLogV2Flag"] == "true"
 
 func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension config from fluent socket - start")
