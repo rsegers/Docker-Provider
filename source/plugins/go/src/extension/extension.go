@@ -51,15 +51,15 @@ func (e *Extension) GetOutputStreamId(datatype string) string {
 func (e *Extension) GetContainerLogV2Flag() bool {
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
-	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap[datatype] != "" {
-		message := fmt.Sprintf("OutputstreamId: %s for the datatype: %s", e.datatypeStreamIdMap[datatype], datatype)
+	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap["containerLogV2Flag"] != "" {
+		message := fmt.Sprintf("ContainerLogV2Flag: %s", e.datatypeStreamIdMap["containerLogV2Flag"])
 		logger.Printf(message)
-		return e.datatypeStreamIdMap[datatype]
+		return e.datatypeStreamIdMap["containerLogV2Flag"] == "true"
 	}
 	var err error
 	e.datatypeStreamIdMap, err = getDataTypeToStreamIdMapping()
 	if err != nil {
-		message := fmt.Sprintf("Error getting datatype to streamid mapping: %s", err.Error())
+		message := fmt.Sprintf("Error getting containerLogV2Flag: %s", err.Error())
 		logger.Printf(message)
 	}
 	return e.datatypeStreamIdMap["containerLogV2Flag"] == "true"
@@ -119,7 +119,7 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 		logger.Printf("ExtensionSettings: %s", extensionSettings)
 		dataCollectionSettings := extensionSettings["dataCollectionSettings"]
 		logger.Printf("dataCollectionSettings value %s", dataCollectionSettings)
-		containerLogV2Flag := dataCollectionSettings["containerLogV2"]
+		containerLogV2Flag := dataCollectionSettings["containerLogV2"].(bool)
 		logger.Printf("containerLogV2 value %s", containerLogV2Flag)
 		if containerLogV2Flag {
 			datatypeOutputStreamMap["containerLogV2Flag"] = "true"

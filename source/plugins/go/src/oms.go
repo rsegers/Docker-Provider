@@ -186,6 +186,8 @@ var (
 	IsGenevaLogsTelemetryServiceMode bool
 	// named pipe connection to ContainerLog for AMA
 	ContainerLogNamedPipe net.Conn
+	// flag to check the ContainerLogV2 from DCR
+	ContainerLogV2Flag bool
 )
 
 var (
