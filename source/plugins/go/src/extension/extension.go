@@ -62,7 +62,7 @@ func (e *Extension) GetContainerLogV2Flag() bool {
 		message := fmt.Sprintf("Error getting datatype to streamid mapping: %s", err.Error())
 		logger.Printf(message)
 	}
-	return e.datatypeStreamIdMap["containerLogV2Flag"]
+	return e.datatypeStreamIdMap["containerLogV2Flag"] == "true"? true : false
 }
 
 func getDataTypeToStreamIdMapping() (map[string]string, error) {
@@ -121,7 +121,9 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 		logger.Printf("dataCollectionSettings value %s", dataCollectionSettings)
 		containerLogV2Flag := dataCollectionSettings["containerLogV2"]
 		logger.Printf("containerLogV2 value %s", containerLogV2Flag)
-		datatypeOutputStreamMap["containerLogV2Flag"] = containerLogV2Flag
+		if containerLogV2Flag {
+			datatypeOutputStreamMap["containerLogV2Flag"] = "true"
+		}
 		logger.Printf("containerLogV2 value in map %s", datatypeOutputStreamMap["containerLogV2Flag"])
 	}
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- end")
