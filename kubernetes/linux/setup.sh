@@ -65,7 +65,13 @@ echo "$(fluent-bit --version)" >> packages_version.txt
 # sudo tdnf install rubygem-fluentd-1.14.6 -y
 gem install fluentd -v "1.14.6" --no-document
 echo "$(fluentd --version)" >> packages_version.txt
-fluentd --setup ./fluent
+wget https://github.com/jemalloc/jemalloc/releases/download/3.6.0/jemalloc-3.6.0.tar.bz2
+tar xvf jemalloc-3.6.0.tar.bz2
+cd jemalloc-3.6.0
+./configure --prefix=/opt/jemalloc-3.6.0
+make
+sudo make install
+LD_PRELOAD=/opt/jemalloc-3.6.0/lib/libjemalloc.so fluentd --setup ./fluent
 
 gem install gyoku iso8601 bigdecimal --no-doc
 gem install tomlrb -v "2.0.1" --no-document
