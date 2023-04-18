@@ -1848,14 +1848,21 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	ContainerLogSchemaVersion := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOG_SCHEMA_VERSION")))
 	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", ContainerLogSchemaVersion)
-	//here set the v2
+
 	ContainerLogSchemaV2 = false //default is v1 schema
+	//get container log V2 from DCR in MSI mode
+	ContainerLogV2Flag = extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2Flag()
+	//move down later
+	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
 
 	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
 	//else READ from DCR agent config
+	} else if ContainerLogV2Flag && IsAADMSIAuthMode {
+		ContainerLogSchemaV2 = true
+		Log("longwTest:%s", ContainerLogV2Flag)
 	}
 
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {

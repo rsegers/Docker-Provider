@@ -48,6 +48,23 @@ func (e *Extension) GetOutputStreamId(datatype string) string {
 	return e.datatypeStreamIdMap[datatype]
 }
 
+func (e *Extension) GetContainerLogV2Flag() bool {
+	extensionconfiglock.Lock()
+	defer extensionconfiglock.Unlock()
+	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap[datatype] != "" {
+		message := fmt.Sprintf("OutputstreamId: %s for the datatype: %s", e.datatypeStreamIdMap[datatype], datatype)
+		logger.Printf(message)
+		return e.datatypeStreamIdMap[datatype]
+	}
+	var err error
+	e.datatypeStreamIdMap, err = getDataTypeToStreamIdMapping()
+	if err != nil {
+		message := fmt.Sprintf("Error getting datatype to streamid mapping: %s", err.Error())
+		logger.Printf(message)
+	}
+	return e.datatypeStreamIdMap["containerLogV2Flag"]
+}
+
 func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension config from fluent socket - start")
 	guid := uuid.New()
@@ -97,13 +114,15 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 			datatypeOutputStreamMap[dataType] = outputStreamID.(string)
 		}
 		
-		//featch dataCollectionSettings from ContainerInsightsExtension dataCollectionRules
+		//fetch dataCollectionSettings from ContainerInsightsExtension dataCollectionRules
 		extensionSettings := extensionConfig.ExtensionSettings
 		logger.Printf("ExtensionSettings: %s", extensionSettings)
 		dataCollectionSettings := extensionSettings["dataCollectionSettings"]
 		logger.Printf("dataCollectionSettings value %s", dataCollectionSettings)
 		containerLogV2Flag := dataCollectionSettings["containerLogV2"]
 		logger.Printf("containerLogV2 value %s", containerLogV2Flag)
+		datatypeOutputStreamMap["containerLogV2Flag"] = containerLogV2Flag
+		logger.Printf("containerLogV2 value in map %s", datatypeOutputStreamMap["containerLogV2Flag"])
 	}
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- end")
 
