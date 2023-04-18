@@ -612,6 +612,12 @@ else
       setGlobalEnvVar TELEMETRY_CUSTOM_PROM_MONITOR_PODS false
 fi
 
+# If Azure NPM metrics is enabled turn telegraf on in RS
+if [[ ( "${TELEMETRY_NPM_INTEGRATION_METRICS_BASIC}" -eq 1 ) ||
+      ( "${TELEMETRY_NPM_INTEGRATION_METRICS_ADVANCED}" -eq 1 ) ]]; then
+      setGlobalEnvVar TELEMETRY_RS_TELEGRAF_DISABLED false
+fi
+
 #Parse sidecar agent settings for custom configuration
 if [ ! -e "/etc/config/kube.conf" ]; then
       if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
@@ -767,10 +773,9 @@ else
 fi
 
 #start cron daemon for logrotate
-# service cron start
 /usr/sbin/crond -n -s &
 
-#get  docker-provider versions
+#get docker-provider version
 DOCKER_CIMPROV_VERSION=$(cat packages_version.txt | grep "DOCKER_CIMPROV_VERSION" | awk -F= '{print $2}')
 export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION
 echo "export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION" >>~/.bashrc
@@ -881,10 +886,10 @@ else
 fi
 
 # # Set up a cron job for logrotation
-# if [ ! -f /etc/cron.d/ci-agent ]; then
-#       echo "setting up cronjob for ci agent log rotation"
-#       echo "*/5 * * * * root /usr/sbin/logrotate -s /var/lib/logrotate/ci-agent-status /etc/logrotate.d/ci-agent >/dev/null 2>&1" >/etc/cron.d/ci-agent
-# fi
+if [ ! -f /etc/cron.d/ci-agent ]; then
+      echo "setting up cronjob for ci agent log rotation"
+      echo "*/5 * * * * root /usr/sbin/logrotate -s /var/lib/logrotate/ci-agent-status /etc/logrotate.d/ci-agent >/dev/null 2>&1" >/etc/cron.d/ci-agent
+fi
 
 # no dependency on fluentd for prometheus side car container
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
@@ -1070,14 +1075,6 @@ fi
 
 # Write messages from the liveness probe to stdout (so telemetry picks it up)
 touch /dev/write-to-traces
-
-# echo "stopping rsyslog..."
-# # service rsyslog stop
-# systemctl stop rsyslog
-
-# echo "getting rsyslog status..."
-# # service rsyslog status
-# systemctl status rsyslog
 
 if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
      checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30

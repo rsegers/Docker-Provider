@@ -8,6 +8,31 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 04/07/2023 -
+##### Version microsoft/oms:3.1.6 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.6 (linux)
+##### Version microsoft/oms:win-3.1.6 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.6 (windows)
+##### Code change log
+- Common
+  - Geneva logs integration for single and multi tenancy
+  - Change output fwd plugin settings configurable
+  - Add multiline logs feature with configmap
+  - Config AMA specific envvars only if 1p mode is configured
+  - Update prometheus.io/scheme default description in configmap
+  - Add support to specify azure autonomous resource endpoint parameter for the Extension chart for custom metrics
+  - Add autonomous fqdn to endpoint for metrics 
+  - Add devskim as github action and codeql as enabled in ADO pipeline
+  - AgentLogCollection.sh update for collecting more detailed logs
+  - Fix pod ready condition issue for pods that are job ready 
+  - Updating packages for go vulnerabilities
+  - Remove the necessary askcoin references in troubleshooter and readme
+  - Change md5 to sha256 for the omslogger
+  - Log message and yaml to sync with AKS RP
+  - Add nil check in kubelet
+  - Fix fluent-bit output plugin crash when the tags are missing for the telegraf metrics
+- Linux Agent
+  - Use -p when creating dirs in main.sh
+  - Disable telegraf on replicaset by default. For resource optimization, telegraf in replicaset only enabled either the cluster level Prometheus Scraping or NPM configured
+  - Remove unused default gem openssl, gem find, gem rvm & python installed
 
 ### 03/21/2023 -
 ##### Version microsoft/oms:3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4 (linux)

@@ -13,6 +13,11 @@ sudo tdnf install ca-certificates-microsoft -y
 sudo update-ca-trust
 
 sudo tdnf install ruby-3.1.3 -y
+# remove unused default gem openssl, find as they have some known vulns
+rm /usr/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec
+rm -rf /usr/lib/ruby/gems/3.1.0/gems/openssl-3.0.1
+rm /usr/lib/ruby/gems/3.1.0/specifications/default/find-0.1.1.gemspec
+rm -rf /usr/lib/ruby/gems/3.1.0/gems/find-0.1.1
 
 if [ "${ARCH}" != "arm64" ]; then
     wget "https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.26/azure-mdsd-1.26.0-build.master.801.x86_64.rpm" -O azure-mdsd.rpm
@@ -20,11 +25,10 @@ else
     wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.17.1%2Frpm/azure-mdsd_1.17.1-build.master.377_aarch64.rpm" -O azure-mdsd.rpm
 fi
 sudo tdnf install -y azure-mdsd.rpm
-
-# /usr/bin/dpkg -i $TMPDIR/azure-mdsd*.deb
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d
 rm /usr/sbin/telegraf
+rm azure-mdsd.rpm
 
 mdsd_version=$(sudo tdnf list installed | grep mdsd | awk '{print $2}')
 echo "Azure mdsd: $mdsd_version" >> packages_version.txt
@@ -57,8 +61,7 @@ echo "DOCKER_CIMPROV_VERSION=$docker_cimprov_version" >> packages_version.txt
 sudo tdnf install fluent-bit-2.0.9 -y
 echo "$(fluent-bit --version)" >> packages_version.txt
 
-# fluentd v1 gem
-# gem install fluentd -v "1.14.6" --no-document
+# install fluentd using the mariner package
 sudo tdnf install rubygem-fluentd-1.14.6 -y
 echo "$(fluentd --version)" >> packages_version.txt
 fluentd --setup ./fluent
@@ -70,9 +73,6 @@ gem install tomlrb -v "2.0.1" --no-document
 rm -f $TMPDIR/docker-cimprov*.sh
 rm -f $TMPDIR/mdsd.xml
 rm -f $TMPDIR/envmdsd
-
-# remove build dependencies
-sudo tdnf remove gcc make -y
 
 # Remove settings for cron.daily that conflict with the node's cron.daily. Since both are trying to rotate the same files
 # in /var/log at the same time, the rotation doesn't happen correctly and then the *.1 file is forever logged to.

@@ -131,7 +131,7 @@ After you successfully deploy the chart, you will be able to see your data in
 - [azure china cloud portal](https://aka.ms/azmon-containers-mooncake) for the clusters in Azure China Cloud
 - [azure us government cloud portal](https://aka.ms/azmon-containers-fairfax) for the clusters in Azure US Government Cloud
 
-If you need help with this chart, please reach us out through [this](mailto:askcoin@microsoft.com) email.
+If you need help with this chart, please reach us out by [creating a support ticket](https://azure.microsoft.com/en-us/support/create-ticket) in Azure.
 
 ## Custom resource
 
@@ -177,4 +177,4 @@ Once the Azure Monitor for containers chart successfully onboarded, you should b
 
 # Contact
 
-If you have any questions or feedback regarding the container monitoring addon, please reach us out through [this](askcoin@microsoft.com) email.
+If you have any questions or feedback regarding the container monitoring addon, please reach us by [creating a support ticket](https://azure.microsoft.com/en-us/support/create-ticket) in Azure.
