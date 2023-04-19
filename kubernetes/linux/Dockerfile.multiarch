@@ -48,7 +48,7 @@ ENV AZMON_COLLECT_ENV False
 ENV KUBE_CLIENT_BACKOFF_BASE 1
 ENV KUBE_CLIENT_BACKOFF_DURATION 0
 ENV RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR 0.9
-ENV LD_PRELOAD=/opt/jemalloc-3.6.0/lib/libjemalloc.so
+ENV LD_PRELOAD=/usr/lib/libjemalloc.so.2
 
 # default value will be overwritten by pipeline
 ARG IMAGE_TAG=3.1.6
@@ -84,6 +84,8 @@ COPY --from=builder /usr/bin/jq /usr/bin/jq
 COPY --from=builder /usr/bin/base64 /usr/bin/base64
 COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd 
 
+#fluentd dependencies
+COPY --from=builder /usr/lib/libjemalloc.so.2 /usr/lib/
 # bash dependencies
 COPY --from=builder /lib/libreadline.so.8 /lib/
 COPY --from=builder /usr/lib/libncursesw.so.6 /usr/lib/libtinfo.so.6 /usr/lib/
