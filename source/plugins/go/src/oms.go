@@ -1090,17 +1090,6 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
 func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
-	Log("longwTest2 start")
-	Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
-	ext := extension.GetInstance(FLBLogger, ContainerType)
-	Log("extension: %v", ext)
-	if ext == nil {
-		Log("GetInstance() returned nil")
-	}
-	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
-	Log("longwTest2 end")
-	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
-	
 	start := time.Now()
 	var dataItemsLAv1 []DataItemLAv1
 	var dataItemsLAv2 []DataItemLAv2
@@ -1125,6 +1114,29 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		nameIDMap[k] = v
 	}
 	DataUpdateMutex.Unlock()
+
+	//read ContainerLogV2Flag from DCR, socket call only works after FLBPluginFlush
+	Log("longwTest start")
+	Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
+	ext := extension.GetInstance(FLBLogger, ContainerType)
+	Log("extension: %v", ext)
+	if ext == nil {
+		Log("GetInstance() returned nil")
+	}
+	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
+	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
+	Log("longwTest end")
+	
+	if ContainerLogV2Flag && IsAADMSIAuthMode {
+		ContainerLogSchemaV2 = true
+		Log("longwTest SUC:%s", ContainerLogV2Flag)
+	}
+
+	if ContainerLogSchemaV2 == true {
+		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
+	} else {
+		MdsdContainerLogTagName = MdsdContainerLogSourceName
+	}
 
 	for _, record := range tailPluginRecords {
 		containerID, k8sNamespace, k8sPodName, containerName := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
@@ -1584,7 +1596,6 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 	return id, ns, podName, containerName
 }
 
-// for containerv2 go plugin
 // InitializePlugin reads and populates plugin configuration
 func InitializePlugin(pluginConfPath string, agentVersion string) {
 	go func() {
@@ -1862,29 +1873,15 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ContainerLogSchemaVersion := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOG_SCHEMA_VERSION")))
 	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", ContainerLogSchemaVersion)
 
+	//dealing with ContainerLogSchemaVersion from configMap
 	ContainerLogSchemaV2 = false //default is v1 schema
 
-	//global variabile with goroutines
-	Log("longwTest1 start")
-	Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
-	ext := extension.GetInstance(FLBLogger, ContainerType)
-	Log("extension: %v", ext)
-	if ext == nil {
-		Log("GetInstance() returned nil")
-	}
-	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
-	Log("longwTest1 end")
-	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
-
+	//this is from configmap
 	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
-	//else READ from DCR agent config
-	} else if ContainerLogV2Flag && IsAADMSIAuthMode {
-		ContainerLogSchemaV2 = true
-		Log("longwTest:%s", ContainerLogV2Flag)
-	}
+	} 
 
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		populateExcludedStdoutNamespaces()
@@ -1901,12 +1898,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		go flushKubeMonAgentEventRecords()
 	} else {
 		Log("Running in replicaset. Disabling container enrichment caching & updates \n")
-	}
-
-	if ContainerLogSchemaV2 == true {
-		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
-	} else {
-		MdsdContainerLogTagName = MdsdContainerLogSourceName
 	}
 
 	MdsdInsightsMetricsTagName = MdsdInsightsMetricsSourceName
