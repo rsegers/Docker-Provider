@@ -1090,14 +1090,13 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
 func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
-	Log("longwTest postDataHelper")
 	Log("longwTest2 start")
-	log.Printf("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
-	ext = extension.GetInstance(FLBLogger, ContainerType)
+	Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
+	ext := extension.GetInstance(FLBLogger, ContainerType)
+	Log("extension: %v", ext)
 	if ext == nil {
-		log.Printf("GetInstance() returned nil")
+		Log("GetInstance() returned nil")
 	}
-	log.Printf("len(e.datatypeStreamIdMap): %d", len(ext.datatypeStreamIdMap))
 	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
 	Log("longwTest2 end")
 	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
@@ -1868,13 +1867,11 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	//global variabile with goroutines
 	Log("longwTest1 start")
 	Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
-	ext = extension.GetInstance(FLBLogger, ContainerType)
+	ext := extension.GetInstance(FLBLogger, ContainerType)
 	Log("extension: %v", ext)
 	if ext == nil {
 		Log("GetInstance() returned nil")
 	}
-
-	Log("len(e.datatypeStreamIdMap): %d", len(ext.datatypeStreamIdMap))
 	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
 	Log("longwTest1 end")
 	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
