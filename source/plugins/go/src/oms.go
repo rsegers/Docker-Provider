@@ -1857,14 +1857,13 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	//global variabile with goroutines
 	Log("lwTest start")
 	log.Printf("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
-	ext = extension.GetInstance(FLBLogger, ContainerType)
+	ext := extension.GetInstance(FLBLogger, ContainerType)
 	if ext == nil {
 		log.Printf("GetInstance() returned nil")
 	}
-	log.Printf("len(e.datatypeStreamIdMap): %d", len(ext.datatypeStreamIdMap))
 	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
-	Log("lwTest end")
 	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
+	Log("lwTest end")
 
 	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true
