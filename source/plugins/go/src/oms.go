@@ -1873,6 +1873,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	if ext == nil {
 		Log("GetInstance() returned nil")
 	}
+
 	Log("len(e.datatypeStreamIdMap): %d", len(ext.datatypeStreamIdMap))
 	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
 	Log("longwTest1 end")
