@@ -49,6 +49,8 @@ func (e *Extension) GetOutputStreamId(datatype string) string {
 }
 
 func (e *Extension) GetContainerLogV2Flag() bool {
+	log.Printf("logger: %v", logger)
+	logger.Printf("longwTest extensionconfig::getContainerLogV2Flag:: getting containerLogV2Flag config from fluent socket")
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
 	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap["containerLogV2Flag"] != "" {

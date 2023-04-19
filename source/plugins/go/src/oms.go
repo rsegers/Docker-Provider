@@ -1090,6 +1090,7 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
 func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
+	Log("longwTest postDataHelper")
 	start := time.Now()
 	var dataItemsLAv1 []DataItemLAv1
 	var dataItemsLAv2 []DataItemLAv2
@@ -1853,8 +1854,16 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	ContainerLogSchemaV2 = false //default is v1 schema
 	//get container log V2 from DCR in MSI mode
-	ContainerLogV2Flag = extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2Flag()
-	//move down later
+	//global variabile with goroutines
+	Log("lwTest start")
+	log.Printf("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
+	ext = extension.GetInstance(FLBLogger, ContainerType)
+	if ext == nil {
+		log.Printf("GetInstance() returned nil")
+	}
+	log.Printf("len(e.datatypeStreamIdMap): %d", len(ext.datatypeStreamIdMap))
+	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
+	Log("lwTest end")
 	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
 
 	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
@@ -1877,7 +1886,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		} else {
 			Log("ContainerLogEnrichment=false \n")
 		}
-
+		// ticker
 		// Flush config error records every hour
 		go flushKubeMonAgentEventRecords()
 	} else {
@@ -1897,5 +1906,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)
 		IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
 		go refreshIngestionAuthToken()
+		//go function pull every 5mintues
 	}
 }
