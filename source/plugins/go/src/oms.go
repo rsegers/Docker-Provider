@@ -188,6 +188,8 @@ var (
 	ContainerLogNamedPipe net.Conn
 	// flag to check the ContainerLogV2 from DCR
 	ContainerLogV2Flag bool
+
+	LongwanTestGlobal bool
 )
 
 var (
@@ -589,6 +591,25 @@ func populateKubeMonAgentEventHash(record map[interface{}]interface{}, errType K
 // Function to get config error log records after iterating through the two hashes
 func flushKubeMonAgentEventRecords() {
 	for ; true; <-KubeMonAgentConfigEventsSendTicker.C {
+		
+		Log("longwTest2 start")
+		Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
+		ext := extension.GetInstance(FLBLogger, ContainerType)
+		Log("extension: %v", ext)
+		if ext == nil {
+			Log("GetInstance() returned nil")
+		}
+		ContainerLogV2Flag = ext.GetContainerLogV2Flag()
+		Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
+		LongwanTestGlobal = !LongwanTestGlobal
+		Log("LongwanTestGlobal:%s", LongwanTestGlobal)
+		Log("longwTest2 end")
+		
+		if ContainerLogV2Flag && IsAADMSIAuthMode {
+			ContainerLogSchemaV2 = true
+			Log("longwTest2 SUC:%s", ContainerLogV2Flag)
+		}
+
 		if skipKubeMonEventsFlush != true {
 			Log("In flushConfigErrorRecords\n")
 			start := time.Now()
