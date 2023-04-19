@@ -1091,6 +1091,17 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
 func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	Log("longwTest postDataHelper")
+	Log("longwTest2 start")
+	log.Printf("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
+	ext = extension.GetInstance(FLBLogger, ContainerType)
+	if ext == nil {
+		log.Printf("GetInstance() returned nil")
+	}
+	log.Printf("len(e.datatypeStreamIdMap): %d", len(ext.datatypeStreamIdMap))
+	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
+	Log("longwTest2 end")
+	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
+	
 	start := time.Now()
 	var dataItemsLAv1 []DataItemLAv1
 	var dataItemsLAv2 []DataItemLAv2
@@ -1853,17 +1864,18 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", ContainerLogSchemaVersion)
 
 	ContainerLogSchemaV2 = false //default is v1 schema
-	//get container log V2 from DCR in MSI mode
+
 	//global variabile with goroutines
-	Log("lwTest start")
-	log.Printf("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
+	Log("longwTest1 start")
+	Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
 	ext = extension.GetInstance(FLBLogger, ContainerType)
+	Log("extension: %v", ext)
 	if ext == nil {
-		log.Printf("GetInstance() returned nil")
+		Log("GetInstance() returned nil")
 	}
-	log.Printf("len(e.datatypeStreamIdMap): %d", len(ext.datatypeStreamIdMap))
+	Log("len(e.datatypeStreamIdMap): %d", len(ext.datatypeStreamIdMap))
 	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
-	Log("lwTest end")
+	Log("longwTest1 end")
 	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
 
 	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
