@@ -87,9 +87,9 @@ const WindowsContainerLogPluginConfFilePath = "/etc/amalogswindows/out_oms.conf"
 const IPName = "ContainerInsights"
 
 const defaultContainerInventoryRefreshInterval = 60
-
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
+const containerLogV2DCRInterval = 30
 
 //Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -228,6 +228,7 @@ var (
 	KubeMonAgentConfigEventsSendTicker *time.Ticker
 	// IngestionAuthTokenRefreshTicker to refresh ingestion token
 	IngestionAuthTokenRefreshTicker *time.Ticker
+	ContainerLogV2DCRTicker *time.Ticker
 )
 
 var (
@@ -469,6 +470,28 @@ func updateContainerImageNameMaps() {
 	}
 }
 
+func fetchContainerLogV2FromDCR() {
+	for ; true; <-ContainerLogV2DCRTicker.C {
+		Log("longwTest2 start")
+		Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
+		ext := extension.GetInstance(FLBLogger, ContainerType)
+		Log("extension: %v", ext)
+		if ext == nil {
+			Log("GetInstance() returned nil")
+		}
+		ContainerLogV2Flag = ext.GetContainerLogV2Flag()
+		Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
+		LongwanTestGlobal = !LongwanTestGlobal
+		Log("LongwanTestGlobal:%s", LongwanTestGlobal)
+		Log("longwTest2 end")
+
+		if ContainerLogV2Flag && IsAADMSIAuthMode {
+			ContainerLogSchemaV2 = true
+			Log("longwTest2 SUC:%s", ContainerLogV2Flag)
+		}
+	}
+}
+
 func populateExcludedStdoutNamespaces() {
 	collectStdoutLogs := os.Getenv("AZMON_COLLECT_STDOUT_LOGS")
 	var stdoutNSExcludeList []string
@@ -591,25 +614,6 @@ func populateKubeMonAgentEventHash(record map[interface{}]interface{}, errType K
 // Function to get config error log records after iterating through the two hashes
 func flushKubeMonAgentEventRecords() {
 	for ; true; <-KubeMonAgentConfigEventsSendTicker.C {
-		
-		Log("longwTest2 start")
-		Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
-		ext := extension.GetInstance(FLBLogger, ContainerType)
-		Log("extension: %v", ext)
-		if ext == nil {
-			Log("GetInstance() returned nil")
-		}
-		ContainerLogV2Flag = ext.GetContainerLogV2Flag()
-		Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
-		LongwanTestGlobal = !LongwanTestGlobal
-		Log("LongwanTestGlobal:%s", LongwanTestGlobal)
-		Log("longwTest2 end")
-		
-		if ContainerLogV2Flag && IsAADMSIAuthMode {
-			ContainerLogSchemaV2 = true
-			Log("longwTest2 SUC:%s", ContainerLogV2Flag)
-		}
-
 		if skipKubeMonEventsFlush != true {
 			Log("In flushConfigErrorRecords\n")
 			start := time.Now()
@@ -1782,6 +1786,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("kubeMonAgentConfigEventFlushInterval = %d \n", kubeMonAgentConfigEventFlushInterval)
 	KubeMonAgentConfigEventsSendTicker = time.NewTicker(time.Minute * time.Duration(kubeMonAgentConfigEventFlushInterval))
 
+	Log("containerLogV2DCRInterval = %d \n", containerLogV2DCRInterval)
+	ContainerLogV2DCRTicker = time.NewTicker(time.Second * time.Duration(containerLogV2DCRInterval))
+
 	Log("Computer == %s \n", Computer)
 
 	ret, err := InitializeTelemetryClient(agentVersion)
@@ -1902,7 +1909,10 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		ContainerLogSchemaV2 = true
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
-	} 
+	} else {
+		Log("fetchContainerLogV2FromDCR go routine")
+		go fetchContainerLogV2FromDCR()
+	}
 
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		populateExcludedStdoutNamespaces()
