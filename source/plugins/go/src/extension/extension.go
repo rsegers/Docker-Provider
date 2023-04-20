@@ -68,6 +68,7 @@ func (e *Extension) GetContainerLogV2Flag() bool {
 func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension config from fluent socket - start")
 	guid := uuid.New()
+	//TODO rename to OutputStreamMap?
 	datatypeOutputStreamMap := make(map[string]string)
 
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerInsights", "Version": "1"}
