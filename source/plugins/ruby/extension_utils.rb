@@ -65,7 +65,6 @@ class ExtensionUtils
       return collectionIntervalSeconds
     end
 
-    ## add a new method for getting the containerlogv2 
     def getNamespacesForDataCollection
       namespaces = []
       begin

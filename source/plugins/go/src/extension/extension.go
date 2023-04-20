@@ -49,8 +49,6 @@ func (e *Extension) GetOutputStreamId(datatype string) string {
 }
 
 func (e *Extension) GetContainerLogV2Flag() bool {
-	log.Printf("logger: %v", logger)
-	logger.Printf("longwTest extensionconfig::getContainerLogV2Flag:: getting containerLogV2Flag config from fluent socket")
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
 	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap["containerLogV2Flag"] != "" {
@@ -104,7 +102,6 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 
 	var extensionData TaggedData
 	json.Unmarshal([]byte(responseObjet.TaggedData), &extensionData)
-	//fluent-bit-out-oms-runtime.log
 	extensionConfigs := extensionData.ExtensionConfigs
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- start")
 	for _, extensionConfig := range extensionConfigs {
@@ -112,21 +109,18 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
 			logger.Printf("Info::mdsd::datatype: %s, outputstreamId: %s", dataType, outputStreamID)
-			logger.Printf("outputStreams value %s", outputStreams[dataType])
 			datatypeOutputStreamMap[dataType] = outputStreamID.(string)
 		}
 		
-		//fetch dataCollectionSettings from ContainerInsightsExtension dataCollectionRules
+		//fetch dataCollectionSettings from extensionSettings and set to datatypeOutputStreamMap
 		extensionSettings := extensionConfig.ExtensionSettings
-		logger.Printf("ExtensionSettings: %s", extensionSettings)
+		//TODO need to check if is map or bool?
 		dataCollectionSettings := extensionSettings["dataCollectionSettings"]
-		logger.Printf("dataCollectionSettings value %s", dataCollectionSettings)
 		containerLogV2Flag := dataCollectionSettings["containerLogV2"].(bool)
-		logger.Printf("containerLogV2 value %s", containerLogV2Flag)
+		logger.Printf("containerLogV2Flag value in DCR: %s", containerLogV2Flag)
 		if containerLogV2Flag {
 			datatypeOutputStreamMap["containerLogV2Flag"] = "true"
 		}
-		logger.Printf("containerLogV2 value in map %s", datatypeOutputStreamMap["containerLogV2Flag"])
 	}
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- end")
 

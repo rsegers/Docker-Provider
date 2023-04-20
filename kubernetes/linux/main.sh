@@ -80,8 +80,6 @@ checkAgentOnboardingStatus() {
                         successMessage="Config downloaded and parsed"
                         failureMessage="failed to download start up config"
                   fi
-                  # if is msi  then check the path to see if containerlogv2 config exist or not
-                  # if it is set   set eriornment variable for contianerlogv2
                   while true; do
                         if [ $totalsleptsecs -gt $waittimesecs ]; then
                               echo "${FUNCNAME[0]} giving up checking agent onboarding status after $totalsleptsecs secs"

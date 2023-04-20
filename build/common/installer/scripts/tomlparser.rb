@@ -132,7 +132,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     end
 
     #Get container log enrichment setting
-    ## containerlogv2 for msi
     begin
       if !parsedConfig[:log_collection_settings][:enrich_container_logs].nil? && !parsedConfig[:log_collection_settings][:enrich_container_logs][:enabled].nil?
         @enrichContainerLogs = parsedConfig[:log_collection_settings][:enrich_container_logs][:enabled]
@@ -143,8 +142,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     end
 
     #Get container log schema version setting
-    # set container log schema version
-    # existing already v2   if come from dcr then need to take that one
     begin
       if !parsedConfig[:log_collection_settings][:schema].nil? && !parsedConfig[:log_collection_settings][:schema][:containerlog_schema_version].nil?
         @containerLogSchemaVersion = parsedConfig[:log_collection_settings][:schema][:containerlog_schema_version]

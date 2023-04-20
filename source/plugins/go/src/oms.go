@@ -89,7 +89,7 @@ const IPName = "ContainerInsights"
 const defaultContainerInventoryRefreshInterval = 60
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
-const containerLogV2DCRInterval = 30
+const containerLogV2DCRInterval = 5
 
 //Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -188,8 +188,6 @@ var (
 	ContainerLogNamedPipe net.Conn
 	// flag to check the ContainerLogV2 from DCR
 	ContainerLogV2Flag bool
-
-	LongwanTestGlobal bool
 )
 
 var (
@@ -228,6 +226,7 @@ var (
 	KubeMonAgentConfigEventsSendTicker *time.Ticker
 	// IngestionAuthTokenRefreshTicker to refresh ingestion token
 	IngestionAuthTokenRefreshTicker *time.Ticker
+	// ContainerLogV2DCRTicker to refresh containerLogV2 flag from DCR
 	ContainerLogV2DCRTicker *time.Ticker
 )
 
@@ -472,22 +471,14 @@ func updateContainerImageNameMaps() {
 
 func fetchContainerLogV2FromDCR() {
 	for ; true; <-ContainerLogV2DCRTicker.C {
-		Log("longwTest2 start")
-		Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
 		ext := extension.GetInstance(FLBLogger, ContainerType)
-		Log("extension: %v", ext)
 		if ext == nil {
 			Log("GetInstance() returned nil")
 		}
 		ContainerLogV2Flag = ext.GetContainerLogV2Flag()
-		Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
-		LongwanTestGlobal = !LongwanTestGlobal
-		Log("LongwanTestGlobal:%s", LongwanTestGlobal)
-		Log("longwTest2 end")
-
 		if ContainerLogV2Flag && IsAADMSIAuthMode {
 			ContainerLogSchemaV2 = true
-			Log("longwTest2 SUC:%s", ContainerLogV2Flag)
+			Log("ContainerLog Schema set to v2")
 		}
 	}
 }
@@ -1140,23 +1131,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	}
 	DataUpdateMutex.Unlock()
 
-	//read ContainerLogV2Flag from DCR, socket call only works after FLBPluginFlush
-	Log("longwTest start")
-	Log("FLBLogger: %v, ContainerType: %s", FLBLogger, ContainerType)
-	ext := extension.GetInstance(FLBLogger, ContainerType)
-	Log("extension: %v", ext)
-	if ext == nil {
-		Log("GetInstance() returned nil")
-	}
-	ContainerLogV2Flag = ext.GetContainerLogV2Flag()
-	Log("ContainerLogV2Flag:%s", ContainerLogV2Flag)
-	Log("longwTest end")
-	
-	if ContainerLogV2Flag && IsAADMSIAuthMode {
-		ContainerLogSchemaV2 = true
-		Log("longwTest SUC:%s", ContainerLogV2Flag)
-	}
-
+	Log("ContainerLogV2Flag in PostDataHelper:%s", ContainerLogV2Flag)
 	if ContainerLogSchemaV2 == true {
 		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
 	} else {
@@ -1787,7 +1762,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	KubeMonAgentConfigEventsSendTicker = time.NewTicker(time.Minute * time.Duration(kubeMonAgentConfigEventFlushInterval))
 
 	Log("containerLogV2DCRInterval = %d \n", containerLogV2DCRInterval)
-	ContainerLogV2DCRTicker = time.NewTicker(time.Second * time.Duration(containerLogV2DCRInterval))
+	ContainerLogV2DCRTicker = time.NewTicker(time.Minute * time.Duration(containerLogV2DCRInterval))
 
 	Log("Computer == %s \n", Computer)
 
@@ -1901,16 +1876,15 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ContainerLogSchemaVersion := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_CONTAINER_LOG_SCHEMA_VERSION")))
 	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", ContainerLogSchemaVersion)
 
-	//dealing with ContainerLogSchemaVersion from configMap
-	ContainerLogSchemaV2 = false //default is v1 schema
+	//dealing with ContainerLogSchemaVersion from configMap, default is v1 schema
+	ContainerLogSchemaV2 = false 
 
-	//this is from configmap
 	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
 	} else {
-		Log("fetchContainerLogV2FromDCR go routine")
+		//if the configMap not set the ContainerLogV2 then fetch from DCR every 5 mins
 		go fetchContainerLogV2FromDCR()
 	}
 
@@ -1924,7 +1898,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		} else {
 			Log("ContainerLogEnrichment=false \n")
 		}
-		// ticker
 		// Flush config error records every hour
 		go flushKubeMonAgentEventRecords()
 	} else {
@@ -1938,6 +1911,5 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)
 		IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
 		go refreshIngestionAuthToken()
-		//go function pull every 5mintues
 	}
 }
