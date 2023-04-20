@@ -17,6 +17,8 @@ wget https://github.com/rbenv/ruby-build/archive/refs/tags/v20230330.tar.gz -O r
 tar -xzf ruby-build.tar.gz
 PREFIX=/usr/local ./ruby-build-*/install.sh
 ruby-build 3.1.3 /usr/lib/ruby-3.1.3
+export PATH="/usr/lib/ruby-3.1.3/bin:${PATH}"
+
 # sudo tdnf install ruby-3.1.3 -y
 # remove unused default gem openssl, find as they have some known vulns
 rm /usr/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec
