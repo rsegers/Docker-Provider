@@ -96,7 +96,7 @@ module Fluent::Plugin
             @namespaces = ExtensionUtils.getNamespacesForDataCollection()
             $log.info("in_kubestate_deployments::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
             @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
-            $log.info("in_kubestate_deployments::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")         
+            $log.info("in_kubestate_deployments::enumerate: using data collection filtering mode for namespaces: #{@namespaceFilteringMode} @ #{Time.now.utc.iso8601}")
           end
         end
         # Initializing continuation token to nil
