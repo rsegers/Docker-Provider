@@ -66,8 +66,8 @@ COPY --from=builder /var/spool/cron /var/spool/cron
 
 # executables
 COPY --from=builder /usr/bin/bash /usr/bin/bash
-COPY --from=builder /usr/bin/ruby /usr/bin/ruby
-COPY --from=builder /usr/lib/ruby /usr/lib/ruby
+COPY --from=builder /usr/lib/ruby-3.1.3/bin/ruby /usr/lib/ruby-3.1.3/bin/ruby
+COPY --from=builder /usr/lib/ruby-3.1.3/lib/ruby /usr/lib/ruby-3.1.3/lib/ruby
 COPY --from=builder /usr/bin/inotifywait /usr/bin/inotifywait
 COPY --from=builder /usr/sbin/busybox /usr/sbin/busybox
 COPY --from=builder /usr/bin/fluent-bit /usr/bin/fluent-bit
