@@ -83,7 +83,7 @@ COPY --from=builder /usr/sbin/setcap /usr/sbin/setcap
 COPY --from=builder /usr/bin/curl /usr/bin/curl
 COPY --from=builder /usr/bin/jq /usr/bin/jq
 COPY --from=builder /usr/bin/base64 /usr/bin/base64
-COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd 
+# COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd 
 
 # bash dependencies
 COPY --from=builder /lib/libreadline.so.8 /lib/
