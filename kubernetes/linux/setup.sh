@@ -12,7 +12,12 @@ fi
 sudo tdnf install ca-certificates-microsoft -y
 sudo update-ca-trust
 
-sudo tdnf install ruby-3.1.3 -y
+tdnf install -y gcc patch bzip2 openssl-devel libyaml-devel libffi-devel readline-devel zlib-devel gdbm-devel ncurses-devel
+wget https://github.com/rbenv/ruby-build/archive/refs/tags/v20230330.tar.gz -o ruby-build.tar.gz
+tar -xzf ruby-build.tar.gz && cd ruby-build-20230330/
+PREFIX=/usr/local ./ruby-build-*/install.sh
+ruby-build 3.1.3 ~/usr/lib/ruby-3.1.3
+# sudo tdnf install ruby-3.1.3 -y
 # remove unused default gem openssl, find as they have some known vulns
 rm /usr/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/openssl-3.0.1
@@ -65,12 +70,7 @@ echo "$(fluent-bit --version)" >> packages_version.txt
 # sudo tdnf install rubygem-fluentd-1.14.6 -y
 gem install fluentd -v "1.14.6" --no-document
 echo "$(fluentd --version)" >> packages_version.txt
-wget -O /tmp/jemalloc-4.3.0.tar.bz2 https://github.com/jemalloc/jemalloc/releases/download/4.3.0/jemalloc-4.3.0.tar.bz2
-cd /tmp && tar -xjf jemalloc-4.3.0.tar.bz2  && cd jemalloc-4.3.0/
-./configure && make
-mv lib/libjemalloc.so.2 /usr/lib
-LD_PRELOAD=/usr/lib/libjemalloc.so.2 fluentd --setup ./fluent
-cd $TMPDIR
+fluentd --setup ./fluent
 
 gem install gyoku iso8601 bigdecimal --no-doc
 gem install tomlrb -v "2.0.1" --no-document
