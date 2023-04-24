@@ -20,10 +20,10 @@ PREFIX=/usr/local ./ruby-build-*/install.sh
 ruby-build 3.1.3 /usr
 
 # remove unused default gem openssl, find as they have some known vulns
-# rm /usr/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec
-# rm -rf /usr/lib/ruby/gems/3.1.0/gems/openssl-3.0.1
-# rm /usr/lib/ruby/gems/3.1.0/specifications/default/find-0.1.1.gemspec
-# rm -rf /usr/lib/ruby/gems/3.1.0/gems/find-0.1.1
+rm /usr/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec
+rm -rf /usr/lib/ruby/gems/3.1.0/gems/openssl-3.0.1
+rm /usr/lib/ruby/gems/3.1.0/specifications/default/find-0.1.1.gemspec
+rm -rf /usr/lib/ruby/gems/3.1.0/gems/find-0.1.1
 
 if [ "${ARCH}" != "arm64" ]; then
     wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.17.1%2Frpm/azure-mdsd_1.17.1-build.master.377_x86_64.rpm" -O azure-mdsd.rpm
