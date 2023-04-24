@@ -19,6 +19,10 @@ tar -xzf ruby-build.tar.gz
 PREFIX=/usr/local ./ruby-build-*/install.sh
 ruby-build 3.1.3 /usr
 
+# clean up the ruby-build files
+rm ruby-build.tar.gz
+rm -rf ruby-build-*
+
 # remove unused default gem openssl, find as they have some known vulns
 rm /usr/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/openssl-3.0.1
@@ -68,8 +72,7 @@ sudo tdnf install fluent-bit-2.0.9 -y
 echo "$(fluent-bit --version)" >> packages_version.txt
 
 # install fluentd using the mariner package
-# sudo tdnf install rubygem-fluentd-1.14.6 -y
-gem install fluentd -v "1.14.6" --no-document
+sudo tdnf install rubygem-fluentd-1.14.6 -y
 echo "$(fluentd --version)" >> packages_version.txt
 fluentd --setup ./fluent
 
