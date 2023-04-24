@@ -21,7 +21,6 @@ ENV tmpdir /opt
 
 RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
 RUN tdnf install -y build-essential wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
-RUN mkdir /busybin && busybox --install /busybin
 
 COPY --from=golang-builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-cimprov-*.*.*-*.*.sh $tmpdir/
 COPY kubernetes/linux/setup.sh kubernetes/linux/main.sh kubernetes/linux/defaultpromenvvariables kubernetes/linux/defaultpromenvvariables-rs kubernetes/linux/defaultpromenvvariables-sidecar kubernetes/linux/mdsd.xml kubernetes/linux/envmdsd kubernetes/linux/logrotate.conf $tmpdir/
@@ -30,6 +29,7 @@ COPY kubernetes/linux/mariner-official-extras.repo /etc/yum.repos.d/
 WORKDIR ${tmpdir}
 
 RUN chmod 775 $tmpdir/*.sh; sync; $tmpdir/setup.sh ${TARGETARCH}
+RUN mkdir /busybin && busybox --install /busybin
 
 FROM ${MARINER_DISTROLESS_IMAGE} AS distroless_image
 MAINTAINER OMSContainers@microsoft.com
@@ -62,11 +62,12 @@ COPY --from=builder /busybin /busybin
 COPY --from=builder /var/opt/microsoft /var/opt/microsoft
 COPY --from=builder /var/lib/logrotate /var/lib/logrotate
 COPY --from=builder /var/spool/cron /var/spool/cron
+COPY --from=builder /usr/local/rvm/rubies/ruby-3.1.3 /usr/local/rvm/rubies/ruby-3.1.3
 
 # executables
 COPY --from=builder /usr/bin/bash /usr/bin/bash
-COPY --from=builder /usr/bin/ruby /usr/bin/ruby
-COPY --from=builder /usr/lib/ruby /usr/lib/ruby
+# COPY --from=builder /usr/bin/ruby /usr/bin/ruby
+# COPY --from=builder /usr/lib/ruby /usr/lib/ruby
 COPY --from=builder /usr/bin/inotifywait /usr/bin/inotifywait
 COPY --from=builder /usr/sbin/busybox /usr/sbin/busybox
 COPY --from=builder /usr/bin/fluent-bit /usr/bin/fluent-bit
@@ -81,7 +82,7 @@ COPY --from=builder /usr/sbin/setcap /usr/sbin/setcap
 COPY --from=builder /usr/bin/curl /usr/bin/curl
 COPY --from=builder /usr/bin/jq /usr/bin/jq
 COPY --from=builder /usr/bin/base64 /usr/bin/base64
-COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd 
+# COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd 
 
 # bash dependencies
 COPY --from=builder /lib/libreadline.so.8 /lib/
@@ -93,7 +94,8 @@ COPY --from=builder /lib/libselinux.so.1 /lib/libpam.so.0 /lib/libc.so.6 /lib/li
 # vim dependencies
 COPY --from=builder /lib/libm.so.6 /lib/libtinfo.so.6 /lib/
 # ruby dependencies
-COPY --from=builder /usr/lib/libruby.so.3.1 /usr/lib/libz.so.1 /usr/lib/libgmp.so.10 /usr/lib/libcrypt.so.1 /usr/lib/libm.so.6 /usr/lib/
+COPY --from=builder /lib/libz.so.1 /lib/libgmp.so.10 /lib/libcrypt.so.1 /lib/libm.so.6 /lib/libc.so.6 /lib/
+COPY --from=builder /usr/local/rvm/rubies/ruby-3.1.3/lib/libruby.so.3.1 /usr/local/rvm/rubies/ruby-3.1.3/lib/
 # fluent-bit dependencies
 COPY --from=builder /lib/libssl.so.1.1 /lib/libcrypto.so.1.1 /lib/libyaml-0.so.2 /lib/libsystemd.so.0 /lib/libm.so.6 /lib/libgcc_s.so.1 /lib/liblzma.so.5 /lib/liblz4.so.1 /lib/libcap.so.2 /lib/libgcrypt.so.20 /lib/libgpg-error.so.0 /lib/
 # telegraf dependencies
