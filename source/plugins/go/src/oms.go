@@ -1762,8 +1762,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("kubeMonAgentConfigEventFlushInterval = %d \n", kubeMonAgentConfigEventFlushInterval)
 	KubeMonAgentConfigEventsSendTicker = time.NewTicker(time.Minute * time.Duration(kubeMonAgentConfigEventFlushInterval))
 
-	Log("containerLogV2PollingIntervalSeconds = %d \n", containerLogV2DCRInterval)
-	ContainerLogV2DCRTicker = time.NewTicker(time.Minute * time.Duration(containerLogV2DCRInterval))
+	Log("containerLogV2PollingIntervalSeconds = %d \n", containerLogV2PollingIntervalSeconds)
+	ContainerLogV2DCRTicker = time.NewTicker(time.Minute * time.Duration(containerLogV2PollingIntervalSeconds))
 
 	Log("Computer == %s \n", Computer)
 
