@@ -106,7 +106,6 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	extensionConfigs := extensionData.ExtensionConfigs
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- start")
 	for _, extensionConfig := range extensionConfigs {
-		logger.Printf("extensionConfig value %s", extensionConfig)
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
 			logger.Printf("Info::mdsd::datatype: %s, outputstreamId: %s", dataType, outputStreamID)
@@ -115,12 +114,13 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 		
 		//fetch dataCollectionSettings from extensionSettings and set to datatypeOutputStreamMap
 		extensionSettings := extensionConfig.ExtensionSettings
-		//TODO need to check if is map or bool?
 		dataCollectionSettings := extensionSettings["dataCollectionSettings"]
-		containerLogV2Flag := dataCollectionSettings["containerLogV2"].(bool)
-		logger.Printf("containerLogV2Flag value in DCR: %s", containerLogV2Flag)
-		if containerLogV2Flag {
+		containerLogV2Flag, isContainerLogV2FlagExists := dataCollectionSettings["containerLogV2"]
+		if isContainerLogV2FlagExists && containerLogV2Flag.(bool) {
+			logger.Printf("containerLogV2Flag value in DCR settings: %s", containerLogV2Flag)
 			datatypeOutputStreamMap["containerLogV2Flag"] = "true"
+		} else {
+			logger.Printf("containerLogV2Flag not set in DCR settings")
 		}
 	}
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- end")

@@ -89,7 +89,7 @@ const IPName = "ContainerInsights"
 const defaultContainerInventoryRefreshInterval = 60
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
-const containerLogV2DCRInterval = 5
+const containerLogV2PollingIntervalSeconds = 5
 
 //Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -477,8 +477,8 @@ func fetchContainerLogV2FromDCR() {
 		}
 		ContainerLogV2Flag = ext.GetContainerLogV2Flag()
 		if ContainerLogV2Flag && IsAADMSIAuthMode {
+			Log("ContainerLogSchemaV2 set to true since ContainerLogV2Flag is true with MSI")
 			ContainerLogSchemaV2 = true
-			Log("ContainerLog Schema set to v2")
 		}
 	}
 }
@@ -1131,7 +1131,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	}
 	DataUpdateMutex.Unlock()
 
-	Log("ContainerLogV2Flag in PostDataHelper:%s", ContainerLogV2Flag)
+	//TODO can remove this log
+	Log("ContainerLogSchemaV2:%s", ContainerLogSchemaV2)
 	if ContainerLogSchemaV2 == true {
 		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
 	} else {
@@ -1761,7 +1762,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("kubeMonAgentConfigEventFlushInterval = %d \n", kubeMonAgentConfigEventFlushInterval)
 	KubeMonAgentConfigEventsSendTicker = time.NewTicker(time.Minute * time.Duration(kubeMonAgentConfigEventFlushInterval))
 
-	Log("containerLogV2DCRInterval = %d \n", containerLogV2DCRInterval)
+	Log("containerLogV2PollingIntervalSeconds = %d \n", containerLogV2DCRInterval)
 	ContainerLogV2DCRTicker = time.NewTicker(time.Minute * time.Duration(containerLogV2DCRInterval))
 
 	Log("Computer == %s \n", Computer)
