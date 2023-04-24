@@ -1884,7 +1884,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		ContainerLogSchemaV2 = true
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
-	} else {
+	} else !IsWindows {
 		//if the configMap not set the ContainerLogV2 then fetch from DCR every 5 mins
 		go fetchContainerLogV2FromDCR()
 	}
