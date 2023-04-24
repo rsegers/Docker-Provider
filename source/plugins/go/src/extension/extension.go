@@ -52,8 +52,6 @@ func (e *Extension) GetContainerLogV2Flag() bool {
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
 	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap["containerLogV2Flag"] != "" {
-		message := fmt.Sprintf("ContainerLogV2Flag: %s", e.datatypeStreamIdMap["containerLogV2Flag"])
-		logger.Printf(message)
 		return e.datatypeStreamIdMap["containerLogV2Flag"] == "true"
 	}
 	var err error

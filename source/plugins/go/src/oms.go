@@ -477,7 +477,6 @@ func fetchContainerLogV2FromDCR() {
 		}
 		ContainerLogV2Flag = ext.GetContainerLogV2Flag()
 		if ContainerLogV2Flag && IsAADMSIAuthMode {
-			Log("ContainerLogSchemaV2 set to true since ContainerLogV2Flag is true with MSI")
 			ContainerLogSchemaV2 = true
 		}
 	}
