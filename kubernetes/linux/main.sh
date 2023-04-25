@@ -58,6 +58,34 @@ waitforlisteneronTCPport() {
       fi
 }
 
+wait_for_token_adapter() {
+      local tokenAdapterWaitsecs=45
+      local waitedSecsSoFar=1
+
+      while true; do
+      if [ $waitedSecsSoFar -gt $tokenAdapterWaitsecs ]; then
+            wget -T 2 -S http://localhost:9999/healthz 2>&1
+            echo "giving up waiting for token adapter to become healthy after $waitedSecsSoFar secs"
+            # log telemetry about failure after waiting for waitedSecsSoFar and break
+            echo "export tokenadapterUnhealthyAfterSecs=$waitedSecsSoFar" >> ~/.bashrc
+            break
+      else
+            echo "checking health of token adapter after $waitedSecsSoFar secs"
+            tokenAdapterResult=$(wget -T 2 -S http://localhost:9999/healthz 2>&1 | grep HTTP/ | awk '{print $2}' | grep 200)
+            if [ ! -z $tokenAdapterResult ]; then
+            echo "found token adapter to be healthy after $waitedSecsSoFar secs"
+            # log telemetry about success after waiting for waitedSecsSoFar and break
+            echo "export tokenadapterHealthyAfterSecs=$waitedSecsSoFar" >> ~/.bashrc
+            break
+            fi
+            sleep 1
+            waitedSecsSoFar=$(($waitedSecsSoFar + 1))
+      fi
+      done
+
+      source ~/.bashrc
+}
+
 checkAgentOnboardingStatus() {
       local sleepdurationsecs=1
       local totalsleptsecs=0
@@ -1050,6 +1078,7 @@ elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
         waitforlisteneronTCPport 25226 30
 fi
 
+wait_for_token_adapter
 
 #start telegraf
 if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
