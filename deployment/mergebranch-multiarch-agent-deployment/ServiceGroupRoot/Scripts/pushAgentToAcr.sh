@@ -20,15 +20,17 @@ if [ $? -ne 0 ]; then
    exit 1
 fi
 
+TAG_EXISTS_STATUS=0 #Default value for the condition when the echo fails below
+
 if [[ "$AGENT_IMAGE_FULL_PATH" == *"win-"* ]]; then
   echo "checking windows tags"
-  echo $MCR_TAG_RESULT | jq '.tags' | grep -q \"win-"$AGENT_IMAGE_TAG_SUFFIX"\"
+  echo $MCR_TAG_RESULT | jq '.tags' | grep -q \"win-"$AGENT_IMAGE_TAG_SUFFIX"\" || TAG_EXISTS_STATUS=$?
 else
   echo "checking linux tags"
-  echo $MCR_TAG_RESULT | jq '.tags' | grep -q \""$AGENT_IMAGE_TAG_SUFFIX"\"
+  echo $MCR_TAG_RESULT | jq '.tags' | grep -q \""$AGENT_IMAGE_TAG_SUFFIX"\" || TAG_EXISTS_STATUS=$?
 fi
 
-TAG_EXISTS_STATUS=$?
+echo "TAG_EXISTS_STATUS = $TAG_EXISTS_STATUS; OVERRIDE_TAG = $OVERRIDE_TAG"
 
 if [[ "$OVERRIDE_TAG" == "true" ]]; then
   echo "OverrideTag set to true. Will override ${AGENT_IMAGE_TAG_SUFFIX} image"
