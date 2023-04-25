@@ -14,8 +14,7 @@
       "name": "PushAgentToACR",
       "type": "ShellExtensionType",
       "properties": {
-        "maxexecutiontime": "PT1H",
-        "skipDeleteAfterExecution": true
+        "maxexecutiontime": "PT1H"
       },
       "package": {
         "reference": {
