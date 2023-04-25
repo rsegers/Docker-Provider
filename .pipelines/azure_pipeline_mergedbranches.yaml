@@ -115,13 +115,17 @@ jobs:
       artifactName: drop
   
 - job: build_linux
+  timeoutInMinutes: 120
   dependsOn: common
   pool:
     name: Azure-Pipelines-CI-Test-EO
   variables:
     linuxImagetag: $[ dependencies.common.outputs['setup.linuxImagetag'] ]
     linuxTelemetryTag: $[ dependencies.common.outputs['setup.linuxTelemetryTag'] ]
+    Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
+    # This is necessary because of: https://github.com/moby/moby/issues/37965
+    DOCKER_BUILDKIT: 1
 
   steps:
   - task: CodeQL3000Init@0
@@ -199,6 +203,7 @@ jobs:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windowsTelemetryTag: $[ dependencies.common.outputs['setup.windowsTelemetryTag'] ]
     windows2019BaseImageVersion: ltsc2019
+    Codeql.Enabled: true
     Codeql.BuildIdentifier: 'windowsbuild'
   steps:
   - task: PowerShell@2
