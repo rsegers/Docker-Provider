@@ -8,6 +8,32 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 04/26/2023 -
+##### Version microsoft/oms:3.1.7 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.7 (linux)
+##### Version microsoft/oms:win-3.1.7 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.7 (windows)
+##### Current dependencies
+- Linux
+  - CBL-Mariner 2.0
+  - Golang - 1.20.3
+  - Ruby - 3.1.3
+  - MDSD - 1.17.1-build.master.377
+  - Telegraf - 1.25.2
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.5
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.3.2
+##### Code change log
+- Common
+  - Adding the multiline changes in fluent-bit-common
+- Linux
+  - Migration of base image Ubuntu 18.04 to CBL-Mariner 2.0
+  - Update goland version from 1.18.3 to 1.20.3
+
+## Release History
 ### 04/07/2023 -
 ##### Version microsoft/oms:3.1.6 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.6 (linux)
 ##### Version microsoft/oms:win-3.1.6 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.6 (windows)
