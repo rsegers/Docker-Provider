@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Get the start time of the setup in seconds
+startTime=$(date +%s)
+
 gracefulShutdown() {
       echo "gracefulShutdown start @ `date --rfc-3339=seconds`"
       echo "gracefulShutdown fluent-bit process start @ `date --rfc-3339=seconds`"
@@ -1074,6 +1077,11 @@ elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
 else
       echo "not checking onboarding status (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
 fi
+
+# Get the end time of the setup in seconds
+endTime=$(date +%s)
+elapsed=$((endTime-startTime))
+echo "setup script took: $elapsed seconds"
 
 shutdown() {
      if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then

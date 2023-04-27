@@ -91,9 +91,9 @@ require_relative "ConfigParseErrorLogger"
 
 @multiline_enabled = "false"
 
-@waittime_port_25226 = 30
-@waittime_port_25228 = 30
-@waittime_port_25229 = 30
+@waittime_port_25226 = 45
+@waittime_port_25228 = 60
+@waittime_port_25229 = 45
 
 def is_number?(value)
   true if Integer(value) rescue false
@@ -102,6 +102,11 @@ end
 # check if it is number and greater than 0
 def is_valid_number?(value)
   return !value.nil? && is_number?(value) && value.to_i > 0
+end
+
+# check if it is a valid waittime
+def is_valid_waittime?(value, default)
+  return !value.nil? && is_number?(value) && value.to_i >= default/2 and value.to_i <= 3*default
 end
 
 # Use parser to parse the configmap toml file to a ruby structure
@@ -317,19 +322,19 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       network_listener_waittime_config = parsedConfig[:agent_settings][:network_listener_waittime]
       if !network_listener_waittime_config.nil?
         waittime = network_listener_waittime_config[:tcp_port_25226]
-        if is_valid_number?(waittime)
+        if is_valid_waittime?(waittime, @waittime_port_25226)
           @waittime_port_25226 = waittime.to_i
           puts "Using config map value: WAITTIME_PORT_25226 = #{@waittime_port_25226}"
         end
 
         waittime = network_listener_waittime_config[:tcp_port_25228]
-        if is_valid_number?(waittime)
+        if is_valid_waittime?(waittime, @waittime_port_25228)
           @waittime_port_25228 = waittime.to_i
           puts "Using config map value: WAITTIME_PORT_25228 = #{@waittime_port_25228}"
         end
 
         waittime = network_listener_waittime_config[:tcp_port_25229]
-        if is_valid_number?(waittime)
+        if is_valid_waittime?(waittime, @waittime_port_25229)
           @waittime_port_25229 = waittime.to_i
           puts "Using config map value: WAITTIME_PORT_25229 = #{@waittime_port_25229}"
         end
