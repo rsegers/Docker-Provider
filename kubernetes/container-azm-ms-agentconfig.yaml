@@ -189,6 +189,12 @@ data:
     # [agent_settings.proxy_config]
     #    ignore_proxy_settings = "true"  # if this is not applied, default value is false
 
+    #Configuration settings for the waittime for the network listeners to be available
+    [agent_settings.network_listener_waittime] 
+      tcp_port_25226 = 30
+      tcp_port_25228 = 30
+      tcp_port_25229 = 30
+
 metadata:
   name: container-azm-ms-agentconfig
   namespace: kube-system

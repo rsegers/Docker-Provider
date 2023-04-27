@@ -91,6 +91,10 @@ require_relative "ConfigParseErrorLogger"
 
 @multiline_enabled = "false"
 
+@waittime_port_25226 = 30
+@waittime_port_25228 = 30
+@waittime_port_25229 = 30
+
 def is_number?(value)
   true if Integer(value) rescue false
 end
@@ -309,6 +313,25 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         @multiline_enabled = multiline_config[:enabled]
         puts "Using config map value: AZMON_MULTILINE_ENABLED = #{@multiline_enabled}"
       end
+
+      network_listener_waittime_config = parsedConfig[:agent_settings][:network_listener_waittime]
+      if !network_listener_waittime_config.nil?
+        waittime = network_listener_waittime_config[:tcp_port_25226]
+        if is_valid_number?(waittime)
+          @waittime_port_25226 = waittime.to_i
+        end
+
+        waittime = network_listener_waittime_config[:tcp_port_25228]
+        if is_valid_number?(waittime)
+          @waittime_port_25228 = waittime.to_i
+        end
+
+        waittime = network_listener_waittime_config[:tcp_port_25229]
+        if is_valid_number?(waittime)
+          @waittime_port_25229 = waittime.to_i
+        end
+      end
+
     end
   rescue => errorStr
     puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
@@ -398,6 +421,10 @@ if !file.nil?
   if @multiline_enabled.strip.casecmp("true") == 0
     file.write("export AZMON_MULTILINE_ENABLED=#{@multiline_enabled}\n")
   end
+
+  file.write("export WAITTIME_PORT_25226=#{@waittime_port_25226}\n")
+  file.write("export WAITTIME_PORT_25228=#{@waittime_port_25228}\n")
+  file.write("export WAITTIME_PORT_25229=#{@waittime_port_25229}\n")
 
   # Close file after writing all environment variables
   file.close
