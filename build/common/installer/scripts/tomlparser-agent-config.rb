@@ -106,7 +106,7 @@ end
 
 # check if it is a valid waittime
 def is_valid_waittime?(value, default)
-  return !value.nil? && is_number?(value) && value.to_i >= default/2 and value.to_i <= 3*default
+  return !value.nil? && is_number?(value) && value.to_i >= default/2 && value.to_i <= 3*default
 end
 
 # Use parser to parse the configmap toml file to a ruby structure

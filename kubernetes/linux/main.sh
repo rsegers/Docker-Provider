@@ -1081,7 +1081,7 @@ fi
 # Get the end time of the setup in seconds
 endTime=$(date +%s)
 elapsed=$((endTime-startTime))
-echo "setup script took: $elapsed seconds"
+echo "startup script took: $elapsed seconds"
 
 shutdown() {
      if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
