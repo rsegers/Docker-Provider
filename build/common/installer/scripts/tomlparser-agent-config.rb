@@ -319,16 +319,19 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         waittime = network_listener_waittime_config[:tcp_port_25226]
         if is_valid_number?(waittime)
           @waittime_port_25226 = waittime.to_i
+          puts "Using config map value: WAITTIME_PORT_25226 = #{@waittime_port_25226}"
         end
 
         waittime = network_listener_waittime_config[:tcp_port_25228]
         if is_valid_number?(waittime)
           @waittime_port_25228 = waittime.to_i
+          puts "Using config map value: WAITTIME_PORT_25228 = #{@waittime_port_25228}"
         end
 
         waittime = network_listener_waittime_config[:tcp_port_25229]
         if is_valid_number?(waittime)
           @waittime_port_25229 = waittime.to_i
+          puts "Using config map value: WAITTIME_PORT_25229 = #{@waittime_port_25229}"
         end
       end
 
