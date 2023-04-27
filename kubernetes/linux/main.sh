@@ -1034,19 +1034,19 @@ echo "export HOST_VAR=/hostfs/var" >>~/.bashrc
 if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
             if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
-                  echo "checking for listener on tcp #25229 and waiting for 30 secs if not.."
+                  echo "checking for listener on tcp #25229 and waiting for $WAITTIME_PORT_25229 secs if not.."
                   waitforlisteneronTCPport 25229 $WAITTIME_PORT_25229
             else
                   echo "no metrics to scrape since MUTE_PROM_SIDECAR is true, not checking for listener on tcp #25229"
             fi
       else
-            echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
+            echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
             waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
-            echo "checking for listener on tcp #25228 and waiting for 30 secs if not.."
+            echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
             waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
       fi
 elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
-        echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
+        echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
         waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
 fi
 
