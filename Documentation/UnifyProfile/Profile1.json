@@ -2,13 +2,13 @@
     "azureMonitorProfile": {
         "metrics": {
             "enabled": true,
-            "appOtlpMetrics": false,
+            "appMonitoringMetricsEnabled": false,
             "kubeStateMetrics": {
                 "metricAnnotationsAllowList": "pods=[k8s-annotation-1,k8s-annotation-n]",
                 "metricLabelsAllowlist": "namespaces=[k8s-label-1,k8s-label-n]"
             }
         },
-        "logs": {
+        "logsAndTraces": {
             "enabled": true,
             "appMonitoringEnabled": false,
             "logsConfig": {
