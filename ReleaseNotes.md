@@ -26,13 +26,14 @@ additional questions or comments.
   - Telegraf - 1.24.2
   - Fluentd - 1.14.6
   - Windows AMA - 46.3.2
+  - Golang - 1.20.3
 ##### Code change log
 - Common
   - Adding the multiline changes in fluent-bit-common
 - Linux
   - Migration of base image Ubuntu 18.04 to CBL-Mariner 2.0
   - Update golang version from 1.18.3 to 1.20.3
-  - Updated the wait times for the telegraf network port listeners
+  - Updated the default wait times for the telegraf network port listeners
   - Exposed the wait times through config maps for testing and support
 
 ## Release History
