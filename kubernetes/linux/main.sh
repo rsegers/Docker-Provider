@@ -810,6 +810,8 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATIO
     # except logs, all other data types ingested via sidecar container MDSD port
     export MDSD_FLUENT_SOCKET_PORT="26230"
     echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
+    export SSL_CERT_FILE="/etc/pki/tls/certs/ca-bundle.crt"
+    echo "export SSL_CERT_FILE=$SSL_CERT_FILE" >> ~/.bashrc
 else
       if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
             echo "*** setting up oneagent in aad auth msi mode ***"
