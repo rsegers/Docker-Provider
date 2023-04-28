@@ -31,7 +31,9 @@ additional questions or comments.
   - Adding the multiline changes in fluent-bit-common
 - Linux
   - Migration of base image Ubuntu 18.04 to CBL-Mariner 2.0
-  - Update goland version from 1.18.3 to 1.20.3
+  - Update golang version from 1.18.3 to 1.20.3
+  - Updated the wait times for the telegraf network port listeners
+  - Exposed the wait times through config maps for testing and support
 
 ## Release History
 ### 04/07/2023 -
