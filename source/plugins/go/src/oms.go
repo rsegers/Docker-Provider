@@ -187,7 +187,7 @@ var (
 	// named pipe connection to ContainerLog for AMA
 	ContainerLogNamedPipe net.Conn
 	// flag to check the ContainerLogV2 from DCR
-	ContainerLogV2Flag bool
+	IsContainerLogV2 bool
 )
 
 var (
@@ -475,9 +475,9 @@ func fetchContainerLogV2FromDCR() {
 		if ext == nil {
 			Log("GetInstance() returned nil")
 		}
-		ContainerLogV2Flag = ext.GetContainerLogV2Flag()
-		if ContainerLogV2Flag && IsAADMSIAuthMode {
-			Log("ContainerLogSchemaV2 set to true since ContainerLogV2Flag is true with MSI")
+		IsContainerLogV2 = ext.IsContainerLogV2()
+		if IsContainerLogV2 && IsAADMSIAuthMode {
+			Log("ContainerLogSchemaV2 set to true since IsContainerLogV2 is true with MSI")
 			ContainerLogSchemaV2 = true
 		}
 	}
