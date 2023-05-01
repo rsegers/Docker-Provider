@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Get the start time of the setup in seconds
+startTime=$(date +%s)
+
 gracefulShutdown() {
       echo "gracefulShutdown start @ `date --rfc-3339=seconds`"
       echo "gracefulShutdown fluent-bit process start @ `date --rfc-3339=seconds`"
@@ -18,6 +21,7 @@ setGlobalEnvVar() {
       export "$1"="$2"
       echo "export \"$1\"=\"$2\"" >> /opt/env_vars
 }
+touch /opt/env_vars
 echo "source /opt/env_vars" >> ~/.bashrc
 
 waitforlisteneronTCPport() {
@@ -237,11 +241,13 @@ mkdir -p /var/opt/microsoft/docker-cimprov/state
 echo "disabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
 
 #Run inotify as a daemon to track changes to the mounted configmap.
+touch /opt/inotifyoutput.txt
 inotifywait /etc/config/settings --daemon --recursive --outfile "/opt/inotifyoutput.txt" --event create,delete --format '%e : %T' --timefmt '+%s'
 
 #Run inotify as a daemon to track changes to the mounted configmap for OSM settings.
 if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSidecar")) ||
       ((-e "/etc/config/kube.conf") && ("${SIDECAR_SCRAPING_ENABLED}" == "false")) ]]; then
+      touch /opt/inotifyoutput-osm.txt
       inotifywait /etc/config/osm-settings --daemon --recursive --outfile "/opt/inotifyoutput-osm.txt" --event create,delete --format '%e : %T' --timefmt '+%s'
 fi
 
@@ -531,11 +537,12 @@ if [ ${#APPLICATIONINSIGHTS_AUTH_URL} -ge 1 ]; then # (check if APPLICATIONINSIG
       fi
 fi
 
-aikey=$(echo $APPLICATIONINSIGHTS_AUTH | base64 --decode)
+aikey=$(echo $APPLICATIONINSIGHTS_AUTH | base64 -d)
 export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey
 echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc
 
 source ~/.bashrc
+cat packages_version.txt
 
 if [ "${ENABLE_FBIT_INTERNAL_METRICS}" == "true" ]; then
     echo "Fluent-bit Internal metrics configured"
@@ -757,7 +764,7 @@ else
 
       echo "set caps for ruby process to read container env from proc"
       RUBY_PATH=$(which ruby)
-      sudo setcap cap_sys_ptrace,cap_dac_read_search+ep "$RUBY_PATH"
+      setcap cap_sys_ptrace,cap_dac_read_search+ep "$RUBY_PATH"
       echo "export KUBELET_RUNTIME_OPERATIONS_METRIC="$KUBELET_RUNTIME_OPERATIONS_METRIC >> ~/.bashrc
       echo "export KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC="$KUBELET_RUNTIME_OPERATIONS_ERRORS_METRIC >> ~/.bashrc
 
@@ -769,13 +776,10 @@ else
 fi
 
 #start cron daemon for logrotate
-service cron start
-#get  docker-provider versions
+/usr/sbin/crond -n -s &
 
-dpkg -l | grep docker-cimprov | awk '{print $2 " " $3}'
-
-DOCKER_CIMPROV_VERSION=$(dpkg -l | grep docker-cimprov | awk '{print $3}')
-echo "DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION"
+#get docker-provider version
+DOCKER_CIMPROV_VERSION=$(cat packages_version.txt | grep "DOCKER_CIMPROV_VERSION" | awk -F= '{print $2}')
 export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION
 echo "export DOCKER_CIMPROV_VERSION=$DOCKER_CIMPROV_VERSION" >>~/.bashrc
 
@@ -806,6 +810,8 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATIO
     # except logs, all other data types ingested via sidecar container MDSD port
     export MDSD_FLUENT_SOCKET_PORT="26230"
     echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
+    export SSL_CERT_FILE="/etc/pki/tls/certs/ca-bundle.crt"
+    echo "export SSL_CERT_FILE=$SSL_CERT_FILE" >> ~/.bashrc
 else
       if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
             echo "*** setting up oneagent in aad auth msi mode ***"
@@ -820,6 +826,8 @@ else
             echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
             export ENABLE_MCS="true"
             echo "export ENABLE_MCS=$ENABLE_MCS" >> ~/.bashrc
+            export SSL_CERT_FILE="/etc/pki/tls/certs/ca-bundle.crt"
+            echo "export SSL_CERT_FILE=$SSL_CERT_FILE" >> ~/.bashrc
             export MONITORING_USE_GENEVA_CONFIG_SERVICE="false"
             echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
             export MDSD_USE_LOCAL_PERSISTENCY="false"
@@ -846,8 +854,6 @@ else
      fi
 fi
 source ~/.bashrc
-
-dpkg -l | grep mdsd | awk '{print $2 " " $3}'
 
 if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
     if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
@@ -877,7 +883,7 @@ else
       mdsd -l ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
 fi
 
-# Set up a cron job for logrotation
+# # Set up a cron job for logrotation
 if [ ! -f /etc/cron.d/ci-agent ]; then
       echo "setting up cronjob for ci agent log rotation"
       echo "*/5 * * * * root /usr/sbin/logrotate -s /var/lib/logrotate/ci-agent-status /etc/logrotate.d/ci-agent >/dev/null 2>&1" >/etc/cron.d/ci-agent
@@ -941,7 +947,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
             if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
                   echo "starting fluent-bit and setting telegraf conf file for prometheus sidecar"
-                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-prom-side-car.conf -e /opt/fluent-bit/bin/out_oms.so &
+                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-prom-side-car.conf -e /opt/fluent-bit/bin/out_oms.so &
             else
                   echo "not starting fluent-bit in prometheus sidecar (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
             fi
@@ -968,19 +974,19 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
-                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}-e /opt/fluent-bit/bin/out_oms.so &
+                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}-e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             else
                   echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
                   sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}
                   sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf
-                  /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
+                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             fi
       fi
 else
       echo "starting fluent-bit and setting telegraf conf file for replicaset"
-      /opt/fluent-bit/bin/fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-rs.conf -e /opt/fluent-bit/bin/out_oms.so &
+      fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-rs.conf -e /opt/fluent-bit/bin/out_oms.so &
       telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf"
 fi
 
@@ -1035,20 +1041,20 @@ echo "export HOST_VAR=/hostfs/var" >>~/.bashrc
 if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
             if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
-                  echo "checking for listener on tcp #25229 and waiting for 30 secs if not.."
-                  waitforlisteneronTCPport 25229 30
+                  echo "checking for listener on tcp #25229 and waiting for $WAITTIME_PORT_25229 secs if not.."
+                  waitforlisteneronTCPport 25229 $WAITTIME_PORT_25229
             else
                   echo "no metrics to scrape since MUTE_PROM_SIDECAR is true, not checking for listener on tcp #25229"
             fi
       else
-            echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
-            waitforlisteneronTCPport 25226 30
-            echo "checking for listener on tcp #25228 and waiting for 30 secs if not.."
-            waitforlisteneronTCPport 25228 30
+            echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
+            waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
+            echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
+            waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
       fi
 elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
-        echo "checking for listener on tcp #25226 and waiting for 30 secs if not.."
-        waitforlisteneronTCPport 25226 30
+        echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
+        waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
 fi
 
 
@@ -1060,23 +1066,13 @@ elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
         echo "not starting telegraf since prom scraping is disabled for replicaset"
     else
         /opt/telegraf --config $telegrafConfFile &
-        echo "telegraf version: $(/opt/telegraf --version)"
-        dpkg -l | grep fluent-bit | awk '{print $2 " " $3}'
     fi
 else
     echo "not starting telegraf (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
 fi
 
-#dpkg -l | grep telegraf | awk '{print $2 " " $3}'
-
 # Write messages from the liveness probe to stdout (so telemetry picks it up)
 touch /dev/write-to-traces
-
-echo "stopping rsyslog..."
-service rsyslog stop
-
-echo "getting rsyslog status..."
-service rsyslog status
 
 if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
      checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
@@ -1085,6 +1081,11 @@ elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
 else
       echo "not checking onboarding status (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
 fi
+
+# Get the end time of the setup in seconds
+endTime=$(date +%s)
+elapsed=$((endTime-startTime))
+echo "startup script took: $elapsed seconds"
 
 shutdown() {
      if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
