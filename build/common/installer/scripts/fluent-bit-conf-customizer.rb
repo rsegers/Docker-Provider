@@ -2,10 +2,12 @@
 require_relative "ConfigParseErrorLogger"
 
 @fluent_bit_conf_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit.conf"
+@fluent_bit_common_conf_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf"
 
 @os_type = ENV["OS_TYPE"]
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @fluent_bit_conf_path = "/etc/fluent-bit/fluent-bit.conf"
+  @fluent_bit_common_conf_path = "/etc/fluent-bit/fluent-bit-common.conf"
 end
 
 @default_service_interval = "15"
@@ -13,6 +15,21 @@ end
 
 def is_number?(value)
   true if Integer(value) rescue false
+end
+
+def substituteMultiline(multilineLogging, new_contents)
+    if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true"
+      new_contents = new_contents.gsub("#${MultilineEnabled}", "")
+      new_contents = new_contents.gsub("azm-containers-parser.conf", "azm-containers-parser-multiline.conf")
+      # replace parser with multiline version. ensure running script multiple times does not have negative impact
+      if (/[^\.]Parser\s{1,}docker/).match(new_contents)
+        new_contents = new_contents.gsub(/[^\.]Parser\s{1,}docker/, " Multiline.Parser docker")
+      else
+        new_contents = new_contents.gsub(/[^\.]Parser\s{1,}cri/, " Multiline.Parser cri")
+      end
+    end
+
+    return new_contents
 end
 
 def substituteFluentBitPlaceHolders
@@ -62,21 +79,18 @@ def substituteFluentBitPlaceHolders
       new_contents = new_contents.gsub("\n    ${TAIL_IGNORE_OLDER}\n", "\n")
     end
 
-    if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true"
-      new_contents = new_contents.gsub("#${MultilineEnabled}", "")
-      new_contents = new_contents.gsub("azm-containers-parser.conf", "azm-containers-parser-multiline.conf")
-      # replace parser with multiline version. ensure running script multiple times does not have negative impact
-      if (/[^\.]Parser\s{1,}docker/).match(text)
-        new_contents = new_contents.gsub(/[^\.]Parser\s{1,}docker/, " Multiline.Parser docker")
-      else
-        new_contents = new_contents.gsub(/[^\.]Parser\s{1,}cri/, " Multiline.Parser cri")
-      end
-    end
-
+    new_contents = substituteMultiline(multilineLogging, new_contents)
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in fluent-bit.conf file"
+
+    puts "config::Starting to substitute the placeholders in fluent-bit-common.conf file for log collection"
+    text = File.read(@fluent_bit_common_conf_path)
+    new_contents = substituteMultiline(multilineLogging, text)
+    File.open(@fluent_bit_common_conf_path, "w") { |file| file.puts new_contents }
+    puts "config::Successfully substituted the placeholders in fluent-bit-common.conf file"
+
   rescue => errorStr
-    ConfigParseErrorLogger.logError("fluent-bit-config-customizer: error while substituting values in fluent-bit.conf file: #{errorStr}")
+    ConfigParseErrorLogger.logError("fluent-bit-config-customizer: error while substituting values in fluent-bit conf files: #{errorStr}")
   end
 end
 
