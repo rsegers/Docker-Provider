@@ -143,10 +143,10 @@ func (e *Extension) IsContainerLogV2() bool {
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
 	logger.Printf("Get IsContainerLogV2 - check dataCollectionSettings in instance")
-	if len(e.dataCollectionSettings) > 0 && e.dataCollectionSettings["isContainerLogV2"] != "" {
-		message := fmt.Sprintf("isContainerLogV2: %s", e.dataCollectionSettings["isContainerLogV2"])
+	if len(e.dataCollectionSettings) > 0 && e.dataCollectionSettings["enableContainerLogV2"] != "" {
+		message := fmt.Sprintf("isContainerLogV2: %s", e.dataCollectionSettings["enableContainerLogV2"])
 		logger.Printf(message)
-		return e.dataCollectionSettings["isContainerLogV2"] == "true"
+		return e.dataCollectionSettings["enableContainerLogV2"] == "true"
 	}
 	var err error
 	logger.Printf("Get IsContainerLogV2 - check DataCollectionSettings")
@@ -156,8 +156,8 @@ func (e *Extension) IsContainerLogV2() bool {
 		logger.Printf(message)
 	}
 
-	logger.Printf("longwTest, isContainerLogV2: %s", e.dataCollectionSettings["isContainerLogV2"])
-	return e.dataCollectionSettings["isContainerLogV2"] == "true"
+	logger.Printf("longwTest, isContainerLogV2: %s", e.dataCollectionSettings["enableContainerLogV2"])
+	return e.dataCollectionSettings["enableContainerLogV2"] == "true"
 }
 
 func (e *Extension) GetOutputStreamId(datatype string) string {
