@@ -69,12 +69,7 @@ func getExtensionConfigs() ([]ExtensionConfig, error) {
 	}
 
 	var extensionData TaggedData
-	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
-	if err != nil {
-		logger.Printf("Error::mdsd::Failed to unmarshal config data. Error message: %s", string(err.Error()))
-		return nil, err
-	}
-
+	json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 	logger.Printf("Info::mdsd::getExtensionConfigs:: getting extension config from fluent socket - end")
 
 	return extensionData.ExtensionConfigs, nil
