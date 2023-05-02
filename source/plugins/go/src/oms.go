@@ -475,7 +475,9 @@ func fetchContainerLogV2FromDCR() {
 		if ext == nil {
 			Log("GetInstance() returned nil")
 		}
+		Log("Get IsContainerLogV2 - start")
 		IsContainerLogV2 = ext.IsContainerLogV2()
+		Log("Get IsContainerLogV2 - end")
 		if IsContainerLogV2 && IsAADMSIAuthMode {
 			Log("ContainerLogSchemaV2 set to true since IsContainerLogV2 is true with MSI")
 			ContainerLogSchemaV2 = true

@@ -95,7 +95,7 @@ func getExtensionSettings() (map[string]map[string]interface{}, error) {
 }
 
 func getDataCollectionSettings() (map[string]string, error) {
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting datatype output stream map from fluent socket - start")
+	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting data collection settings from fluent socket - start")
 	dataCollectionSettings := make(map[string]string)
 
 	extensionSettings, err := getExtensionSettings()
@@ -108,7 +108,7 @@ func getDataCollectionSettings() (map[string]string, error) {
 			dataCollectionSettings[k] = fmt.Sprintf("%v", v)
 		}
 	}
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting datatype output stream map from fluent socket - end")
+	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting data collection settings from fluent socket - end")
 	return dataCollectionSettings, nil
 }
 
@@ -138,12 +138,14 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 func (e *Extension) IsContainerLogV2() bool {
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
+	logger.Printf("Get IsContainerLogV2 - check dataCollectionSettings in instance")
 	if len(e.dataCollectionSettings) > 0 && e.dataCollectionSettings["isContainerLogV2"] != "" {
 		message := fmt.Sprintf("isContainerLogV2: %s", e.dataCollectionSettings["isContainerLogV2"])
 		logger.Printf(message)
 		return e.dataCollectionSettings["isContainerLogV2"] == "true"
 	}
 	var err error
+	logger.Printf("Get IsContainerLogV2 - check DataCollectionSettings")
 	e.dataCollectionSettings, err = getDataCollectionSettings()
 	if err != nil {
 		message := fmt.Sprintf("Error getting isContainerLogV2: %s", err.Error())
