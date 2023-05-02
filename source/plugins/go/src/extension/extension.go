@@ -57,15 +57,15 @@ func getExtensionConfigs() ([]ExtensionConfig, error) {
 	}
 	response := string(responseBytes)
 
-	var responseObjet AgentTaggedDataResponse
-	err = json.Unmarshal([]byte(response), &responseObjet)
+	var responseObject AgentTaggedDataResponse
+	err = json.Unmarshal([]byte(response), &responseObject)
 	if err != nil {
 		logger.Printf("Error::mdsd::Failed to unmarshal config data. Error message: %s", string(err.Error()))
 		return nil, err
 	}
 
 	var extensionData TaggedData
-	err = json.Unmarshal([]byte(responseObjet.TaggedData), &extensionData)
+	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 	if err != nil {
 		logger.Printf("Error::mdsd::Failed to unmarshal config data. Error message: %s", string(err.Error()))
 		return nil, err
@@ -101,7 +101,7 @@ func getDataCollectionSettings() (map[string]string, error) {
 
 	extensionSettings, err := getExtensionSettings()
 	if err != nil {
-		return extensionSettings, err
+		return dataCollectionSettings, err
 	}
 	dataCollectionSettingsItr := extensionSettings["dataCollectionSettings"]
 	if dataCollectionSettingsItr != nil && len(dataCollectionSettingsItr) > 0 {
