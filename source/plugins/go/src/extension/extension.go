@@ -138,10 +138,10 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 func (e *Extension) IsContainerLogV2() bool {
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
-	if len(e.dataCollectionSettings) > 0 && e.dataCollectionSettings["isContainerLogV2"] != "" {
-		message := fmt.Sprintf("isContainerLogV2: %s", e.dataCollectionSettings["isContainerLogV2"])
+	if len(e.dataCollectionSettings) > 0 && e.dataCollectionSettings["enableContainerLogV2"] != "" {
+		message := fmt.Sprintf("isContainerLogV2: %s", e.dataCollectionSettings["enableContainerLogV2"])
 		logger.Printf(message)
-		return e.dataCollectionSettings["isContainerLogV2"] == "true"
+		return e.dataCollectionSettings["enableContainerLogV2"] == "true"
 	}
 	var err error
 	e.dataCollectionSettings, err = getDataCollectionSettings()
@@ -149,7 +149,7 @@ func (e *Extension) IsContainerLogV2() bool {
 		message := fmt.Sprintf("Error getting isContainerLogV2: %s", err.Error())
 		logger.Printf(message)
 	}
-	return e.dataCollectionSettings["isContainerLogV2"] == "true"
+	return e.dataCollectionSettings["enableContainerLogV2"] == "true"
 }
 
 func (e *Extension) GetOutputStreamId(datatype string) string {
