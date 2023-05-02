@@ -72,6 +72,7 @@ func getExtensionConfigs() ([]ExtensionConfig, error) {
 	json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 	logger.Printf("Info::mdsd::getExtensionConfigs:: getting extension config from fluent socket - end")
 
+	logger.Printf("longwTest, ExtensionConfigs: %s", extensionData.ExtensionConfigs)
 	return extensionData.ExtensionConfigs, nil
 }
 
@@ -91,6 +92,7 @@ func getExtensionSettings() (map[string]map[string]interface{}, error) {
 	}
 	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension settings from ExtensionConfigs - end")
 
+	logger.Printf("longwTest, extensionSettings: %s", extensionSettings)
 	return extensionSettings, nil
 }
 
@@ -109,6 +111,7 @@ func getDataCollectionSettings() (map[string]string, error) {
 		}
 	}
 	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting data collection settings from fluent socket - end")
+	logger.Printf("longwTest, dataCollectionSettings: %s", dataCollectionSettings)
 	return dataCollectionSettings, nil
 }
 
@@ -132,6 +135,7 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	logger.Printf("Info::mdsd::build the datatype and streamid map -- end")
 	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting datatype output stream map from ExtensionConfigs - end")
 
+	logger.Printf("longwTest, datatypeOutputStreamMap: %s", datatypeOutputStreamMap)
 	return datatypeOutputStreamMap, nil
 }
 
@@ -151,6 +155,8 @@ func (e *Extension) IsContainerLogV2() bool {
 		message := fmt.Sprintf("Error getting isContainerLogV2: %s", err.Error())
 		logger.Printf(message)
 	}
+
+	logger.Printf("longwTest, isContainerLogV2: %s", e.dataCollectionSettings["isContainerLogV2"])
 	return e.dataCollectionSettings["isContainerLogV2"] == "true"
 }
 
