@@ -471,6 +471,8 @@ func updateContainerImageNameMaps() {
 
 func fetchContainerLogV2FromDCR() {
 	for ; true; <-ContainerLogV2DCRTicker.C {
+		time.Sleep(2 * time.Minute)
+
 		ext := extension.GetInstance(FLBLogger, ContainerType)
 		if ext == nil {
 			Log("GetInstance() returned nil")
