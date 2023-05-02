@@ -13,6 +13,7 @@ import (
 
 type Extension struct {
 	datatypeStreamIdMap map[string]string
+	dataCollectionSettings map[string]string
 }
 
 var singleton *Extension
@@ -23,7 +24,10 @@ var containerType string
 
 func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 	once.Do(func() {
-		singleton = &Extension{make(map[string]string)}
+		singleton = &Extension{
+			datatypeStreamIdMap:    make(map[string]string),
+			dataCollectionSettings: make(map[string]string),
+		}	
 		flbLogger.Println("Extension Instance created")
 	})
 	logger = flbLogger
@@ -105,7 +109,9 @@ func getDataCollectionSettings() (map[string]string, error) {
 	}
 	dataCollectionSettingsItr := extensionSettings["dataCollectionSettings"]
 	if dataCollectionSettingsItr != nil && len(dataCollectionSettingsItr) > 0 {
-		dataCollectionSettings = dataCollectionSettingsItr
+		for k, v := range dataCollectionSettingsItr {
+			dataCollectionSettings[k] = fmt.Sprintf("%v", v)
+		}
 	}
 	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting datatype output stream map from fluent socket - end")
 	return dataCollectionSettings, nil
