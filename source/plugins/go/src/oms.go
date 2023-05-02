@@ -89,7 +89,7 @@ const IPName = "ContainerInsights"
 const defaultContainerInventoryRefreshInterval = 60
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
-const containerLogV2PollingIntervalMinutes = 5
+const containerLogV2PollingIntervalMinutes = 3
 
 //Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -471,6 +471,9 @@ func updateContainerImageNameMaps() {
 
 func fetchContainerLogV2FromDCR() {
 	for ; true; <-ContainerLogV2DCRTicker.C {
+		//wait for 2 minutes for initialize
+		time.Sleep(2 * time.Minute)
+
 		ext := extension.GetInstance(FLBLogger, ContainerType)
 		if ext == nil {
 			Log("GetInstance() returned nil")
