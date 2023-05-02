@@ -95,7 +95,7 @@ func getExtensionSettings() (map[string]map[string]interface{}, error) {
 }
 
 func getDataCollectionSettings() (map[string]string, error) {
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting datatype output stream map from fluent socket - start")
+	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting data collection settings from ExtensionSettings - start")
 	dataCollectionSettings := make(map[string]string)
 
 	extensionSettings, err := getExtensionSettings()
@@ -108,7 +108,7 @@ func getDataCollectionSettings() (map[string]string, error) {
 			dataCollectionSettings[k] = fmt.Sprintf("%v", v)
 		}
 	}
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting datatype output stream map from fluent socket - end")
+	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting data collection settings from ExtensionSettings - end")
 	return dataCollectionSettings, nil
 }
 
