@@ -89,7 +89,7 @@ const IPName = "ContainerInsights"
 const defaultContainerInventoryRefreshInterval = 60
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
-const containerLogV2PollingIntervalSeconds = 5
+const containerLogV2PollingIntervalMinutes = 5
 
 //Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -1762,8 +1762,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("kubeMonAgentConfigEventFlushInterval = %d \n", kubeMonAgentConfigEventFlushInterval)
 	KubeMonAgentConfigEventsSendTicker = time.NewTicker(time.Minute * time.Duration(kubeMonAgentConfigEventFlushInterval))
 
-	Log("containerLogV2PollingIntervalSeconds = %d \n", containerLogV2PollingIntervalSeconds)
-	ContainerLogV2DCRTicker = time.NewTicker(time.Minute * time.Duration(containerLogV2PollingIntervalSeconds))
+	Log("containerLogV2PollingIntervalMinutes = %d \n", containerLogV2PollingIntervalMinutes)
+	ContainerLogV2DCRTicker = time.NewTicker(time.Minute * time.Duration(containerLogV2PollingIntervalMinutes))
 
 	Log("Computer == %s \n", Computer)
 
