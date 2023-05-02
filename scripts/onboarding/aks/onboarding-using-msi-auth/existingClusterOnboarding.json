@@ -117,7 +117,7 @@
                                                 "interval": "[parameters('dataCollectionInterval')]",
                                                 "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
                                                 "namespaces": "[parameters('namespacesForDataCollection')]",
-                                                "containerLogV2": "[parameters('enableContainerLogV2')]"
+                                                "enableContainerLogV2": "[parameters('enableContainerLogV2')]"
                                             }
                                         },
                                         "extensionName": "ContainerInsights"
