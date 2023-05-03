@@ -76,7 +76,7 @@ func getExtensionConfigs() ([]ExtensionConfig, error) {
 }
 
 func getExtensionSettings() (map[string]map[string]interface{}, error) {
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension settings from ExtensionConfigs - start")
+	logger.Printf("extensionconfig::getExtensionSettings:: getting extension settings from ExtensionConfigs - start")
 	extensionSettings := make(map[string]map[string]interface{})
 
 	extensionConfigs, err := getExtensionConfigs()
@@ -89,13 +89,13 @@ func getExtensionSettings() (map[string]map[string]interface{}, error) {
 			extensionSettings = extensionSettingsItr
 		}
 	}
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension settings from ExtensionConfigs - end")
+	logger.Printf("extensionconfig::getExtensionSettings:: getting extension settings from ExtensionConfigs - end")
 
 	return extensionSettings, nil
 }
 
 func getDataCollectionSettings() (map[string]string, error) {
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting data collection settings from ExtensionSettings - start")
+	logger.Printf("extensionconfig::getDataCollectionSettings:: getting data collection settings from ExtensionSettings - start")
 	dataCollectionSettings := make(map[string]string)
 
 	extensionSettings, err := getExtensionSettings()
@@ -108,7 +108,7 @@ func getDataCollectionSettings() (map[string]string, error) {
 			dataCollectionSettings[k] = fmt.Sprintf("%v", v)
 		}
 	}
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting data collection settings from ExtensionSettings - end")
+	logger.Printf("extensionconfig::getDataCollectionSettings:: getting data collection settings from ExtensionSettings - end")
 	return dataCollectionSettings, nil
 }
 
