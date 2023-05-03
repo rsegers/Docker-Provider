@@ -122,9 +122,10 @@
                                         ],
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
-                                            "interval": "[parameters('dataCollectionInterval')]",
+                                             "interval": "[parameters('dataCollectionInterval')]",
                                              "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-                                             "namespaces": "[parameters('namespacesForDataCollection')]"
+                                             "namespaces": "[parameters('namespacesForDataCollection')]",
+                                             "enableContainerLogV2": "[parameters('enableContainerLogV2')]"                                             
                                           }
                                         },
                                         "extensionName": "ContainerInsights"
