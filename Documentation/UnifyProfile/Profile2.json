@@ -17,11 +17,7 @@
             }
         },
         "appMonitoring": {
-            "enabled": true,
-            "appMonitoringConfig" : {
-              "autoInstrumentation": "<AzureNative | OTELNative | None>",
-              "aiInstrumentationKey": "<aiInstrumentationKey>"
-            }
+            "enabled": true
         }
     }
 }

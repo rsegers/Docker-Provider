@@ -16,10 +16,6 @@
                 "disableLogAnalyticsMetricsIngestion": false,
                 "useManagedIdentityAuth": false,
                 "logAnalyticsWorkspaceResourceID": "<workspaceResourceId>"
-            },
-            "appMonitoringConfig": {
-                "autoInstrumentation": "<AzureNative | OTELNative | None>",
-                "aiInstrumentationKey": "<aiInstrumentationKey>"
             }
         }
     }

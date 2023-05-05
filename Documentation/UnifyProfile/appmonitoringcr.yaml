@@ -1,0 +1,8 @@
+apiVersion: azmon.app.monitoring/v1
+kind: AppMonitoringConfig
+metadata:
+ name: appmonitoring
+ namespace: "<app-k8s-namespace>"
+spec:
+ aiConnectionString: "<applicationInsightsConnectionString>"
+ autoInstrumentation: "<AzureNative | OTELNative | None>"
