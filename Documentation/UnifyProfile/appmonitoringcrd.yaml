@@ -39,5 +39,9 @@ spec:
                  - AzureNative
                  - OTELNative
                  - None
+               appMonitoringScope:
+                  type: array
+                  items:
+                    type: string
              required: ["aiConnectionString", "autoInstrumentation"]
          required: ["spec"]

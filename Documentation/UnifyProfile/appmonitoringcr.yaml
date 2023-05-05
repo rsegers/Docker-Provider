@@ -5,4 +5,5 @@ metadata:
  namespace: "<app-k8s-namespace>"
 spec:
  aiConnectionString: "<applicationInsightsConnectionString>"
- autoInstrumentation: "<AzureNative | OTELNative | None>"
+ autoInstrumentation: "<AzureNative | OTELNative | None>" # optional, default AzureNative
+ appMonitoringScope: [ "<deployment1>", "<deployment2>" , "<deploymentN>"]   # optional, specify list deployments to target app monitoring
