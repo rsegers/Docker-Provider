@@ -115,6 +115,7 @@ jobs:
       artifactName: drop
   
 - job: build_linux
+  timeoutInMinutes: 120
   dependsOn: common
   pool:
     name: Azure-Pipelines-CI-Test-EO
@@ -123,6 +124,8 @@ jobs:
     linuxTelemetryTag: $[ dependencies.common.outputs['setup.linuxTelemetryTag'] ]
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
+    # This is necessary because of: https://github.com/moby/moby/issues/37965
+    DOCKER_BUILDKIT: 1
 
   steps:
   - task: CodeQL3000Init@0

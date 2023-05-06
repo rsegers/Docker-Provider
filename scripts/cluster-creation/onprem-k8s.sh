@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
 TEMP_DIR=temp-$RANDOM
-KIND_VERSION="v0.8.1"
+KIND_VERSION="v0.17.0"
 
 install-kind()
 {
@@ -26,7 +26,7 @@ create_cluster()
 {
 sudo tee kind-config.yaml > /dev/null << 'EOF'
 kind: Cluster
-apiVersion: kind.sigs.k8s.io/v1alpha3
+apiVersion: kind.x-k8s.io/v1alpha4
 nodes:
  - role: control-plane
  - role: worker

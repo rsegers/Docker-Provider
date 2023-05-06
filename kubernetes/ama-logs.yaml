@@ -306,6 +306,11 @@ data:
   #BASE64 ENCODED (Both WSID & KEY) INSIDE DOUBLE QUOTE ("")
   WSID: "VALUE_WSID"
   KEY: "VALUE_KEY"
+  #Below Setting required Only for non Public cloud testing
+  # DOMAIN: "Base64 encoded value of Log analytics domain name"
+  #Below settings required Only for HTTP Proxy testing
+  # PROXY: "Base64 encoded value of HTTP(s) Proxy endpoint"
+  # PROXY.CERT: "Base64 encoded value of Proxy trusted CA cert"
 ---
 # Uncomment below lines for MSI Auth Mode  testing
 # apiVersion: v1
@@ -341,6 +346,7 @@ spec:
         agentVersion: "azure-mdsd-1.17.0"
         dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
+        kubernetes.azure.com/no-http-proxy-vars: "true"
         # prometheus.io/scrape: "true"
         # prometheus.io/port: "9102"
     spec:
@@ -386,7 +392,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.7"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -474,6 +480,11 @@ spec:
             - mountPath: /etc/config/settings/adx
               name: ama-logs-adx-secret
               readOnly: true
+            #Uncomment below for HTTP(s) proxy testing
+            # - mountPath: /etc/ssl/certs/proxy-cert.crt
+            #   subPath: PROXYCERT.crt
+            #   name: ama-logs-secret
+            #   readOnly: true
           livenessProbe:
             exec:
               command:
@@ -485,7 +496,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: ama-logs-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.7"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -537,6 +548,11 @@ spec:
             - mountPath: /etc/config/osm-settings
               name: osm-settings-vol-config
               readOnly: true
+            #Uncomment below for HTTP(s) proxy testing
+            # - mountPath: /etc/ssl/certs/proxy-cert.crt
+            #   subPath: PROXYCERT.crt
+            #   name: ama-logs-secret
+            #   readOnly: true
           livenessProbe:
             exec:
               command:
@@ -637,6 +653,7 @@ spec:
         agentVersion: "azure-mdsd-1.17.0"
         dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
+        kubernetes.azure.com/no-http-proxy-vars: "true"
     spec:
       serviceAccountName: ama-logs
       containers:
@@ -712,7 +729,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.7"
           imagePullPolicy: IfNotPresent
           # comment resources if VPA configured since the VPA will set these values
           resources:
@@ -785,6 +802,11 @@ spec:
             - mountPath: /etc/config/osm-settings
               name: osm-settings-vol-config
               readOnly: true
+            #Uncomment below for HTTP(s) proxy testing
+            # - mountPath: /etc/ssl/certs/proxy-cert.crt
+            #   subPath: PROXYCERT.crt
+            #   name: ama-logs-secret
+            #   readOnly: true
           livenessProbe:
             exec:
               command:
@@ -890,6 +912,7 @@ spec:
         agentVersion: "0.0.0-0"
         dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
+        kubernetes.azure.com/no-http-proxy-vars: "true"
         # prometheus.io/scrape: "true"
         # prometheus.io/port: "9102"
     spec:
@@ -900,12 +923,12 @@ spec:
             value: "3"
      containers:
        - name: ama-logs-windows
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.5"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.7"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
            cpu: 500m
-           memory: 600Mi
+           memory: 700Mi
          env:
           - name: FBIT_SERVICE_FLUSH_INTERVAL
             value: "15"

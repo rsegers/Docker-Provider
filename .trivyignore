@@ -1,20 +1,19 @@
-# telegraf vulnerabilities legacy MEDIUM Severity
+# telegraf MEDIUM 
 CVE-2019-3826
 CVE-2022-23471
 CVE-2022-41721
-
-# telegraf vulnerabilities
-GHSA-4xgv-j62q-h3rj
-GHSA-hxp2-xqf3-v83h
 CVE-2023-25153
 CVE-2023-25173
-CVE-2022-3821
+GHSA-4xgv-j62q-h3rj
+GHSA-hxp2-xqf3-v83h
+
+#telegraf HIGH
 CVE-2022-41723
 CVE-2023-27561
 
-# ubuntu base vulnerabilities
-CVE-2022-48303
-CVE-2022-3821
-
+# ruby HIGH 
 CVE-2023-28756
 CVE-2023-28755
+
+#ruby MEDIUM
+CVE-2022-24795
