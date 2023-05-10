@@ -28,6 +28,13 @@ rm /usr/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/openssl-3.0.1
 rm /usr/lib/ruby/gems/3.1.0/specifications/default/find-0.1.1.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/find-0.1.1
+rm /usr/lib/ruby/gems/3.1.0/specifications/default/time-0.2.0.gemspec
+rm -rf /usr/lib/ruby/gems/3.1.0/gems/time-0.2.0
+rm /usr/lib/ruby/gems/3.1.0/specifications/default/time-0.2.0.gemspec
+rm -rf /usr/lib/ruby/gems/3.1.0/gems/time-0.2.0
+gem install --default time -v "0.2.2" --no-doc
+gem install --default uri -v "0.12.1" --no-doc
+
 
 if [ "${ARCH}" != "arm64" ]; then
     wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.17.1%2Frpm/azure-mdsd_1.17.1-build.master.377_x86_64.rpm" -O azure-mdsd.rpm
