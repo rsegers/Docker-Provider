@@ -70,7 +70,7 @@ COPY --from=builder /usr/lib/ruby /usr/lib/ruby
 COPY --from=builder /usr/bin/inotifywait /usr/bin/inotifywait
 COPY --from=builder /usr/sbin/busybox /usr/sbin/busybox
 COPY --from=builder /usr/bin/fluent-bit /usr/bin/fluent-bit
-COPY --from=builder /opt/telegraf /opt/telegraf
+COPY --from=builder /usr/bin/telegraf /usr/bin/telegraf
 COPY --from=builder /usr/sbin/crond /usr/sbin/crond
 #vim is kept for debugging. If it seems like it is not needed, we cam remove it later
 COPY --from=builder /usr/bin/vim /usr/bin/vim

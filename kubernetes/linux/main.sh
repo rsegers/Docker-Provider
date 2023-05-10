@@ -906,7 +906,7 @@ else
             if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ] && [ -e "/opt/telegraf-test-prom-side-car.conf" ]; then
                   if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
                         echo "****************Start Telegraf in Test Mode**************************"
-                        /opt/telegraf --config /opt/telegraf-test-prom-side-car.conf --input-filter file -test
+                        /usr/bin/telegraf --config /opt/telegraf-test-prom-side-car.conf --input-filter file -test
                         if [ $? -eq 0 ]; then
                               mv "/opt/telegraf-test-prom-side-car.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
                               echo "Moving test conf file to telegraf side-car conf since test run succeeded"
@@ -918,7 +918,7 @@ else
             else
                   if [ -e "/opt/telegraf-test.conf" ]; then
                         echo "****************Start Telegraf in Test Mode**************************"
-                        /opt/telegraf --config /opt/telegraf-test.conf --input-filter file -test
+                        /usr/bin/telegraf --config /opt/telegraf-test.conf --input-filter file -test
                         if [ $? -eq 0 ]; then
                               mv "/opt/telegraf-test.conf" "/etc/opt/microsoft/docker-cimprov/telegraf.conf"
                               echo "Moving test conf file to telegraf daemonset conf since test run succeeded"
@@ -929,7 +929,7 @@ else
       else
             if [ -e "/opt/telegraf-test-rs.conf" ]; then
                   echo "****************Start Telegraf in Test Mode**************************"
-                  /opt/telegraf --config /opt/telegraf-test-rs.conf --input-filter file -test
+                  /usr/bin/telegraf --config /opt/telegraf-test-rs.conf --input-filter file -test
                   if [ $? -eq 0 ]; then
                         mv "/opt/telegraf-test-rs.conf" "/etc/opt/microsoft/docker-cimprov/telegraf-rs.conf"
                         echo "Moving test conf file to telegraf replicaset conf since test run succeeded"
@@ -1063,7 +1063,7 @@ elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
     if [ "${CONTROLLER_TYPE}" == "ReplicaSet" ] && [ "${TELEMETRY_RS_TELEGRAF_DISABLED}" == "true" ]; then
         echo "not starting telegraf since prom scraping is disabled for replicaset"
     else
-        /opt/telegraf --config $telegrafConfFile &
+        /usr/bin/telegraf --config $telegrafConfFile &
     fi
 else
     echo "not starting telegraf (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
