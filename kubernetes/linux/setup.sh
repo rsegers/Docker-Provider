@@ -79,8 +79,8 @@ fluentd --setup ./fluent
 
 gem install gyoku iso8601 bigdecimal --no-doc
 gem install tomlrb -v "2.0.1" --no-document
-gem install time -v "0.2.2" --no-document
-gem install uri -v "0.11.1" --no-document
+gem update --default time
+gem update --default uri
 
 
 rm -f $TMPDIR/docker-cimprov*.sh
