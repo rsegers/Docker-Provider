@@ -28,10 +28,14 @@ rm /usr/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/openssl-3.0.1
 rm /usr/lib/ruby/gems/3.1.0/specifications/default/find-0.1.1.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/find-0.1.1
-rm /usr/lib/ruby/gems/3.1.0/specifications/default/time-0.2.0.gemspec
-rm -rf /usr/lib/ruby/gems/3.1.0/gems/time-0.2.0
-gem install --default time -v "0.2.2" --no-doc
 
+# update the time and uri package to tackle the vulnerabilities in these gems
+gem update time --default
+gem update uri --default
+mv /usr/lib/ruby/gems/3.1.0/specifications/default/time-0.2.0.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
+mv /usr/lib/ruby/gems/3.1.0/specifications/default/uri-0.11.0.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
+gem uninstall time --version 0.2.0
+gem uninstall uri --version 0.11.0
 
 if [ "${ARCH}" != "arm64" ]; then
     wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.17.1%2Frpm/azure-mdsd_1.17.1-build.master.377_x86_64.rpm" -O azure-mdsd.rpm
@@ -77,6 +81,7 @@ echo "$(fluent-bit --version)" >> packages_version.txt
 
 # install fluentd using the mariner package
 # sudo tdnf install rubygem-fluentd-1.14.6 -y
+
 gem install fluentd -v "1.14.6" --no-document
 echo "$(fluentd --version)" >> packages_version.txt
 fluentd --setup ./fluent
