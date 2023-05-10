@@ -30,8 +30,8 @@ rm /usr/lib/ruby/gems/3.1.0/specifications/default/find-0.1.1.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/find-0.1.1
 rm /usr/lib/ruby/gems/3.1.0/specifications/default/time-0.2.0.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/time-0.2.0
-rm /usr/lib/ruby/gems/3.1.0/specifications/default/time-0.2.0.gemspec
-rm -rf /usr/lib/ruby/gems/3.1.0/gems/time-0.2.0
+rm /usr/lib/ruby/gems/3.1.0/specifications/default/uri-0.11.0.gemspec
+rm -rf /usr/lib/ruby/gems/3.1.0/gems/uri-0.11.0
 gem install --default time -v "0.2.2" --no-doc
 gem install --default uri -v "0.12.1" --no-doc
 
