@@ -1881,7 +1881,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", ContainerLogSchemaVersion)
 
 	//dealing with ContainerLogSchemaVersion from configMap, default is v1 schema
-	ContainerLogSchemaV2 = false 
+	ContainerLogSchemaV2 = false
 
 	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true

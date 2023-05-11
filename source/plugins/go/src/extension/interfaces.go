@@ -26,9 +26,9 @@ type StreamDefinition struct {
 
 // ExtensionConfig structure for extension definition in DCR
 type ExtensionConfig struct {
-	ID                string                 `json:"id"`
-	OriginIds         []string               `json:"originIds"`
+	ID                string                            `json:"id"`
+	OriginIds         []string                          `json:"originIds"`
 	ExtensionSettings map[string]map[string]interface{} `json:"extensionSettings"`
-	InputStreams      map[string]interface{} `json:"inputStreams"`
-	OutputStreams     map[string]interface{} `json:"outputStreams"`
+	InputStreams      map[string]interface{}            `json:"inputStreams"`
+	OutputStreams     map[string]interface{}            `json:"outputStreams"`
 }

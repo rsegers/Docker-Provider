@@ -12,7 +12,7 @@ import (
 )
 
 type Extension struct {
-	datatypeStreamIdMap map[string]string
+	datatypeStreamIdMap    map[string]string
 	dataCollectionSettings map[string]string
 }
 
@@ -27,7 +27,7 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 		singleton = &Extension{
 			datatypeStreamIdMap:    make(map[string]string),
 			dataCollectionSettings: make(map[string]string),
-		}	
+		}
 		flbLogger.Println("Extension Instance created")
 	})
 	logger = flbLogger
@@ -38,7 +38,7 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 func getExtensionConfigs() ([]ExtensionConfig, error) {
 	logger.Printf("extensionconfig::getExtensionConfigs:: getting extension config from fluent socket - start")
 	guid := uuid.New()
-	
+
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerInsights", "Version": "1"}
 	jsonBytes, err := json.Marshal(taggedData)
 
