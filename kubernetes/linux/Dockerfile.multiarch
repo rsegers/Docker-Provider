@@ -19,7 +19,7 @@ LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 ENV tmpdir /opt
 
-# RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
+RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
 RUN tdnf install -y build-essential wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
 RUN mkdir /busybin && busybox --install /busybin
 
@@ -124,6 +124,6 @@ FROM distroless_image AS ContainerInsights
 # by copying over a file we create a dependency
 # see: https://github.com/docker/build-push-action/issues/377
 COPY --from=vulnscan /usr/local/bin/trivy /usr/local/bin/trivy
-RUN ["/bin/bash", "-c", "rm -rf /usr/local/bin/trivy"]
+# RUN ["/bin/bash", "-c", "rm -rf /usr/local/bin/trivy"]
 
 CMD [ "/opt/main.sh" ]
