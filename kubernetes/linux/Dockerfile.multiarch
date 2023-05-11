@@ -14,7 +14,7 @@ RUN cd /src/build/linux && make arch=${TARGETARCH}
 
 FROM ${MARINER_BASE_IMAGE} AS builder
 ARG TARGETOS TARGETARCH
-MAINTAINER OMSContainers@microsoft.com
+LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 ENV tmpdir /opt
