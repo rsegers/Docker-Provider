@@ -19,7 +19,7 @@ LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 ENV tmpdir /opt
 
-RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
+# RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
 RUN tdnf install -y build-essential wget openssl curl sudo net-tools cronie rsyslog vim dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
 RUN mkdir /busybin && busybox --install /busybin
 
@@ -113,9 +113,9 @@ COPY --from=builder /lib/libjq.so.1 /lib/libonig.so.5 /lib/
 FROM distroless_image AS vulnscan
 COPY .trivyignore .trivyignore
 RUN ["/bin/bash", "-c", "curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin v0.39.0"]
-RUN trivy rootfs --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-files "/usr/local/bin/trivy" /
-RUN trivy rootfs --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM /usr/lib
-RUN trivy rootfs --exit-code 1 --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-files "/usr/local/bin/trivy" / > /dev/null 2>&1 && trivy rootfs --exit-code 1 --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM /usr/lib > /dev/null 2>&1
+RUN ["/bin/bash", "-c", "trivy rootfs --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-files \"/usr/local/bin/trivy\" /"]
+RUN ["/bin/bash", "-c", "trivy rootfs --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM /usr/lib"]
+RUN ["/bin/bash", "-c", "trivy rootfs --exit-code 1 --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --skip-files \"/usr/local/bin/trivy\" / > /dev/null 2>&1 && trivy rootfs --exit-code 1 --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM /usr/lib > /dev/null 2>&1"]
 
 # Revert to base layer before vulnscan
 FROM distroless_image AS ContainerInsights
