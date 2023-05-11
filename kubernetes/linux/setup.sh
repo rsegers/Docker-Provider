@@ -38,9 +38,9 @@ gem uninstall time --version 0.2.0
 gem uninstall uri --version 0.11.0
 
 if [ "${ARCH}" != "arm64" ]; then
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.17.1%2Frpm/azure-mdsd_1.17.1-build.master.377_x86_64.rpm" -O azure-mdsd.rpm
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.26.1/azure-mdsd-1.26.1-build.master.97.x86_64.rpm" -O azure-mdsd.rpm
 else
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.17.1%2Frpm/azure-mdsd_1.17.1-build.master.377_aarch64.rpm" -O azure-mdsd.rpm
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.26.1/azure-mdsd-1.26.1-build.master.97.aarch64.rpm" -O azure-mdsd.rpm
 fi
 sudo tdnf install -y azure-mdsd.rpm
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
