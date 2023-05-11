@@ -395,7 +395,7 @@ class KubernetesContainerInventory
            podItem.key?("spec") && !podItem["spec"].nil? && !podItem["spec"].empty? &&
            !podItem["spec"]["runtimeClassName"].nil? && !podItem["spec"]["runtimeClassName"].empty? &&
            podItem["spec"]["runtimeClassName"].eql?("kata-mshv-vm-isolation")
-          isKataRuntime = true
+          isKataRuntimePod = true
         end
       rescue => error
         $log.warn("KubernetesContainerInventory::isSandboxingPod: failed with an error: #{error}")
