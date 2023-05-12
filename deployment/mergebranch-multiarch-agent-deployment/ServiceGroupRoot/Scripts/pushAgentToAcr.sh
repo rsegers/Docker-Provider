@@ -72,7 +72,7 @@ else
   exit 1
 fi     
 
-echo "Pushing ${AGENT_IMAGE_FULL_PATH} to ${ACR_NAME} with force option set to $AZ_ACR_IMPORT_FORCE"
+echo "Pushing ${AGENT_IMAGE_FULL_PATH} to ${ACR_NAME} with force option set to ${AZ_ACR_IMPORT_FORCE}"
 az acr import --name $ACR_NAME --source $SOURCE_IMAGE_FULL_PATH --image $AGENT_IMAGE_FULL_PATH --force $AZ_ACR_IMPORT_FORCE
 if [ $? -eq 0 ]; then
   echo "Retagged and pushed image successfully"
