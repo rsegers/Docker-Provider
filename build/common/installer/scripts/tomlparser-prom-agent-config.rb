@@ -13,8 +13,17 @@ require_relative "ConfigParseErrorLogger"
 @promFbitBufferSize = 10
 @promFbitMemBufLimit = 200
 
+@waittime_port_25226 = 45
+@waittime_port_25228 = 120
+@waittime_port_25229 = 45
+
 def is_number?(value)
   true if Integer(value) rescue false
+end
+
+# check if it is a valid waittime
+def is_valid_waittime?(value, default)
+  return !value.nil? && is_number?(value) && value.to_i >= default/2 && value.to_i <= 3*default
 end
 
 # Use parser to parse the configmap toml file to a ruby structure
@@ -63,6 +72,28 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "Using config map value: AZMON_SIDECAR_FBIT_MEM_BUF_LIMIT = #{@promFbitMemBufLimit.to_s + "m"}"
         end
       end
+
+      network_listener_waittime_config = parsedConfig[:agent_settings][:network_listener_waittime]
+      if !network_listener_waittime_config.nil?
+        waittime = network_listener_waittime_config[:tcp_port_25226]
+        if is_valid_waittime?(waittime, @waittime_port_25226)
+          @waittime_port_25226 = waittime.to_i
+          puts "Using config map value: WAITTIME_PORT_25226 = #{@waittime_port_25226}"
+        end
+
+        waittime = network_listener_waittime_config[:tcp_port_25228]
+        if is_valid_waittime?(waittime, @waittime_port_25228)
+          @waittime_port_25228 = waittime.to_i
+          puts "Using config map value: WAITTIME_PORT_25228 = #{@waittime_port_25228}"
+        end
+
+        waittime = network_listener_waittime_config[:tcp_port_25229]
+        if is_valid_waittime?(waittime, @waittime_port_25229)
+          @waittime_port_25229 = waittime.to_i
+          puts "Using config map value: WAITTIME_PORT_25229 = #{@waittime_port_25229}"
+        end
+      end
+
     end
   rescue => errorStr
     puts "config::error:Exception while reading config settings for sidecar agent configuration setting - #{errorStr}, using defaults"
@@ -89,6 +120,10 @@ if !file.nil?
   file.write("export AZMON_SIDECAR_FBIT_CHUNK_SIZE=#{@promFbitChunkSize.to_s + "m"}\n")
   file.write("export AZMON_SIDECAR_FBIT_BUFFER_SIZE=#{@promFbitBufferSize.to_s + "m"}\n")
   file.write("export AZMON_SIDECAR_FBIT_MEM_BUF_LIMIT=#{@promFbitMemBufLimit.to_s + "m"}\n")
+  
+  file.write("export WAITTIME_PORT_25226=#{@waittime_port_25226}\n")
+  file.write("export WAITTIME_PORT_25228=#{@waittime_port_25228}\n")
+  file.write("export WAITTIME_PORT_25229=#{@waittime_port_25229}\n")
   # Close file after writing all environment variables
   file.close
 else
