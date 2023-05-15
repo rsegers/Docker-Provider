@@ -1,8 +1,28 @@
 apiVersion: azmon.app.monitoring/v1
-kind: AppMonitoringConfig
+kind: appmonitoringconfig
 metadata:
  name: appmonitoring
- namespace: "<app-k8s-namespace>"
+ namespace: "<app-k8s-namespace-1>"
+spec:
+ aiConnectionString: "<applicationInsightsConnectionString>"
+ autoInstrumentation: "<AzureNative | OTELNative | None>" # optional, default AzureNative
+ appMonitoringScope: [ "<deployment1>", "<deployment2>" , "<deploymentN>"]   # optional, specify list deployments to target app monitoring
+---
+apiVersion: azmon.app.monitoring/v1
+kind: appmonitoringconfig
+metadata:
+ name: appmonitoring
+ namespace: "<app-k8s-namespace-2>"
+spec:
+ aiConnectionString: "<applicationInsightsConnectionString>"
+ autoInstrumentation: "<AzureNative | OTELNative | None>" # optional, default AzureNative
+ appMonitoringScope: [ "<deployment1>", "<deployment2>" , "<deploymentN>"]   # optional, specify list deployments to target app monitoring
+---
+apiVersion: azmon.app.monitoring/v1
+kind: appmonitoringconfig
+metadata:
+ name: appmonitoring
+ namespace: "<app-k8s-namespace-3>"
 spec:
  aiConnectionString: "<applicationInsightsConnectionString>"
  autoInstrumentation: "<AzureNative | OTELNative | None>" # optional, default AzureNative
