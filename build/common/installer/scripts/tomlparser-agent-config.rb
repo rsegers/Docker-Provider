@@ -92,7 +92,7 @@ require_relative "ConfigParseErrorLogger"
 @multiline_enabled = "false"
 
 @waittime_port_25226 = 45
-@waittime_port_25228 = 60
+@waittime_port_25228 = 120
 @waittime_port_25229 = 45
 
 def is_number?(value)
