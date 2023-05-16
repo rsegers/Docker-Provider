@@ -31,11 +31,12 @@ additional questions or comments.
 - Common
   - Add KataRuntimePod check in kubernetes_container_inventory
   - Retire unused pipeline files and Dockerfile
-  - Release pipeline upgrade for override tag
-  - LogCollection troubleshoot script update for ARO clusters
+  - Update release pipeline for override tag
+  - Update LogCollection troubleshoot script for ARO clusters
 - Linux
   - Update MDSD version from 1.17.1 to 1.26.1
   - Update Telegraf version from 1.25.2 to 1.26.0 for vulnerabilities
+  - Update Dockerfile for trivy vulnerabilities scan
 
 ### 04/26/2023 -
 ##### Version microsoft/oms:3.1.7 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.7 (linux)
