@@ -1404,13 +1404,13 @@ class KubernetesApiClient
     def isCompletedJobPod(controllerKind, podStatus)
       isCompletedPod = false
       begin
-        if !controllerKind.nil? & !controllerKind.empty? &&
+        if !controllerKind.nil? && !controllerKind.empty? &&
            !podStatus.nil? && !podStatus.empty? &&
            controllerKind.downcase == Constants::CONTROLLER_KIND_JOB && podStatus == "Succeeded"
           isCompletedPod = true
         end
       rescue => error
-        @Log.warn "in_kube_podinventory::isCompletedJobPod failed with an error: #{err}"
+        @Log.warn "in_kube_podinventory::isCompletedJobPod failed with an error: #{error}"
       end
       return isCompletedPod
     end

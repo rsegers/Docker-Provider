@@ -29,10 +29,18 @@ rm -rf /usr/lib/ruby/gems/3.1.0/gems/openssl-3.0.1
 rm /usr/lib/ruby/gems/3.1.0/specifications/default/find-0.1.1.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/find-0.1.1
 
+# update the time and uri package to tackle the vulnerabilities in these gems
+gem update time --default
+gem update uri --default
+mv /usr/lib/ruby/gems/3.1.0/specifications/default/time-0.2.0.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
+mv /usr/lib/ruby/gems/3.1.0/specifications/default/uri-0.11.0.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
+gem uninstall time --version 0.2.0
+gem uninstall uri --version 0.11.0
+
 if [ "${ARCH}" != "arm64" ]; then
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.17.1%2Frpm/azure-mdsd_1.17.1-build.master.377_x86_64.rpm" -O azure-mdsd.rpm
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.26.1/azure-mdsd-1.26.1-build.master.97.x86_64.rpm" -O azure-mdsd.rpm
 else
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.17.1%2Frpm/azure-mdsd_1.17.1-build.master.377_aarch64.rpm" -O azure-mdsd.rpm
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.26.1/azure-mdsd-1.26.1-build.master.97.aarch64.rpm" -O azure-mdsd.rpm
 fi
 sudo tdnf install -y azure-mdsd.rpm
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
@@ -78,7 +86,6 @@ fluentd --setup ./fluent
 
 gem install gyoku iso8601 bigdecimal --no-doc
 gem install tomlrb -v "2.0.1" --no-document
-
 
 rm -f $TMPDIR/docker-cimprov*.sh
 rm -f $TMPDIR/mdsd.xml

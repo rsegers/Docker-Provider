@@ -3,7 +3,7 @@
 
 class KubernetesContainerInventory
   require "json"
-  require "time"  
+  require "time"
   require_relative "omslog"
   require_relative "ApplicationInsightsUtility"
 
@@ -16,6 +16,7 @@ class KubernetesContainerInventory
   class << self
     def getContainerInventoryRecords(podItem, batchTime, clusterCollectEnvironmentVar, isWindows = false)
       containerInventoryRecords = Array.new
+      isKataRuntimePod = false
       begin
         containersInfoMap = getContainersInfoMap(podItem, isWindows)
         podContainersStatuses = []
@@ -25,7 +26,7 @@ class KubernetesContainerInventory
         if !podItem["status"]["initContainerStatuses"].nil? && !podItem["status"]["initContainerStatuses"].empty?
           podContainersStatuses = podContainersStatuses + podItem["status"]["initContainerStatuses"]
         end
-
+        isKataRuntimePod = isSandboxingPod(podItem)
         if !podContainersStatuses.empty?
           podContainersStatuses.each do |containerStatus|
             containerInventoryRecord = {}
@@ -141,8 +142,9 @@ class KubernetesContainerInventory
             containerInventoryRecord["Command"] = containerInfoMap["Command"]
             if !clusterCollectEnvironmentVar.nil? && !clusterCollectEnvironmentVar.empty? && clusterCollectEnvironmentVar.casecmp("false") == 0
               containerInventoryRecord["EnvironmentVar"] = ["AZMON_CLUSTER_COLLECT_ENV_VAR=FALSE"]
-            elsif isWindows || isContainerTerminated || isContainerWaiting
+            elsif isWindows || isContainerTerminated || isContainerWaiting || isKataRuntimePod
               # for terminated and waiting containers, since the cproc doesnt exist we lost the env and we can only get this
+              # for kata runtime pod(s) runs inside light weight VM, cant access host cproc
               containerInventoryRecord["EnvironmentVar"] = containerInfoMap["EnvironmentVar"]
             else
               if containerId.nil? || containerId.empty? || containerRuntime.nil? || containerRuntime.empty?
@@ -380,8 +382,25 @@ class KubernetesContainerInventory
         ApplicationInsightsUtility.sendExceptionTelemetry(error)
       end
     end
+
     def is_number?(value)
       true if Integer(value) rescue false
+    end
+
+    # https://learn.microsoft.com/en-us/azure/aks/use-pod-sandboxing
+    def isSandboxingPod(podItem)
+      isKataRuntimePod = false
+      begin
+        if !podItem.nil? && !podItem.empty? &&
+           podItem.key?("spec") && !podItem["spec"].nil? && !podItem["spec"].empty? &&
+           !podItem["spec"]["runtimeClassName"].nil? && !podItem["spec"]["runtimeClassName"].empty? &&
+           podItem["spec"]["runtimeClassName"].eql?("kata-mshv-vm-isolation")
+          isKataRuntimePod = true
+        end
+      rescue => error
+        $log.warn("KubernetesContainerInventory::isSandboxingPod: failed with an error: #{error}")
+      end
+      return isKataRuntimePod
     end
   end
 end
