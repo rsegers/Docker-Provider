@@ -13,10 +13,10 @@ additional questions or comments.
 ##### Version microsoft/oms:win-3.1.8 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.8 (windows)
 ##### Current dependencies
 - Linux
-  - CBL-Mariner 2.0
+  - CBL-Mariner 2.0.20230426 https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20230426-2.0
   - Golang - 1.20.3
   - Ruby - 3.1.3
-  - MDSD - 1.26.1-build.master.97
+  - MDSD - 1.26.1
   - Telegraf - 1.26.0
   - Fluent-bit - 2.0.9
   - Fluentd - 1.14.6
@@ -29,13 +29,13 @@ additional questions or comments.
   - Golang - 1.20.3
 ##### Code change log
 - Common
-  - Add KataRuntimePod check in kubernetes_container_inventory
   - Retire unused pipeline files and Dockerfile
   - Update release pipeline for override tag
   - Update LogCollection troubleshoot script for ARO clusters
 - Linux
+  - Add KataRuntimePod check in kubernetes_container_inventory
   - Update MDSD version from 1.17.1 to 1.26.1
-  - Update Telegraf version from 1.25.2 to 1.26.0 for vulnerabilities
+  - Update Telegraf version from 1.25.2 to 1.26.0 for vulnerabilities fixes
   - Update Dockerfile for trivy vulnerabilities scan
 
 ### 04/26/2023 -
