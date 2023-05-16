@@ -13,7 +13,7 @@ additional questions or comments.
 ##### Version microsoft/oms:win-3.1.8 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.8 (windows)
 ##### Current dependencies
 - Linux
-  - CBL-Mariner 2.0.20230426 https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20230426-2.0
+  - [CBL-Mariner 2.0.20230426](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20230426-2.0)
   - Golang - 1.20.3
   - Ruby - 3.1.3
   - MDSD - 1.26.1
