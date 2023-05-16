@@ -9,11 +9,9 @@
             }
         },
         "logsAndTraces": {
-            "enabled": true,
+            "containerInsightsLogsEnabled": true,
             "appMonitoringEnabled": false,
-            "logsConfig": {
-                "disableCustomMetricsCollection": false,
-                "disableLogAnalyticsMetricsIngestion": false,
+            "containerInsightsConfig": {
                 "useManagedIdentityAuth": false,
                 "logAnalyticsWorkspaceResourceID": "<workspaceResourceId>"
             }
