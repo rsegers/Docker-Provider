@@ -54,13 +54,11 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
       streams            = ["Microsoft-ContainerInsights-Group-Default"]
       extension_name     = "ContainerInsights"
       extension_json = jsonencode({
-        "extensionSettings": {
-            "dataCollectionSettings" : {
-                "interval": var.data_collection_interval,
-                "namespaceFilteringMode": var.namespace_filtering_mode_for_data_collection,
-                "namespaces": var.namespaces_for_data_collection
-            }
-        }
+          "dataCollectionSettings" : {
+              "interval": var.data_collection_interval,
+              "namespaceFilteringMode": var.namespace_filtering_mode_for_data_collection,
+              "namespaces": var.namespaces_for_data_collection
+          }
       })
       name = "ContainerInsightsExtension"
     }
