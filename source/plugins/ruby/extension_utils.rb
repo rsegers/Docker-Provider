@@ -112,5 +112,35 @@ class ExtensionUtils
       end
       return namespaceFilteringMode
     end
+
+    def getDataCollectionProfile
+      begin
+        dataCollectionStreamProfile = "Default"
+        dataTypes = []
+        dataTypeToStreamIdMap = Extensio.instance.get_stream_mapping()
+        if !dataTypeToStreamIdMap.nil? && !dataTypeToStreamIdMap.empty?
+          dataTypes = dataTypeToStreamIdMap.keys
+          if (dataTypes.length == 12)
+            dataCollectionStreamProfile = "Default"
+          elsif ((dataTypes.length <= 3) &&
+                 (dataTypes.include?("CONTAINER_LOG_BLOB") || dataTypes.include?("CONTAINERINSIGHTS_CONTAINERLOGV2")) &&
+                 dataTypes.include?("KUBE_EVENTS_BLOB"))
+            dataCollectionStreamProfile = "LogsAndEvents"
+          elsif (dataTypes.length == 2) && dataTypes.include?("LINUX_PERF_BLOB") && dataTypes.include?("INSIGHTS_METRICS_BLOB")
+            dataCollectionStreamProfile = "Performance"
+          elsif (dataTypes.length == 8) && dataTypes.include?("INSIGHTS_METRICS_BLOB") && dataTypes.include?("KUBE_POD_INVENTORY_BLOB") &&
+                dataTypes.include?("KUBE_NODE_INVENTORY_BLOB") && dataTypes.include?("KUBE_EVENTS_BLOB") &&
+                dataTypes.include?("CONTAINER_INVENTORY_BLOB") && dataTypes.include?("CONTAINER_NODE_INVENTORY_BLOB") &&
+                dataTypes.include?("KUBE_NODE_INVENTORY_BLOB") && dataTypes.include?("KUBE_SERVICES_BLOB")
+            dataCollectionStreamProfile = "Workload,Deployments,and HPAs"
+          else
+            dataCollectionStreamProfile = "Custom"
+          end
+        end
+      rescue => errorStr
+        $log.warn("ExtensionUtils::getDataCollectionProfile: failed with an exception: #{errorStr}")
+      end
+      return dataCollectionStreamProfile
+    end
   end
 end

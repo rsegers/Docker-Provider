@@ -238,6 +238,9 @@ module Fluent::Plugin
               telemetryProperties["DATA_COLLECTION_INTERVAL_MINUTES"] = @run_interval / 60
             end
           end
+          if ExtensionUtils.isAADMSIAuthMode()
+            telemetryProperties["dataCollectionProfile"] = ExtensionUtils.getDataCollectionProfile()
+          end
           begin
             if Dir.exist?("/etc/mdsd.d/config-cache/configchunks")
               Dir.glob("/etc/mdsd.d/config-cache/configchunks/*.json") { |file|
