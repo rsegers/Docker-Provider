@@ -153,25 +153,11 @@ module Fluent::Plugin
         podInventoryStartTime = (Time.now.to_f * 1000).to_i
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_podinventory::enumerate: AAD AUTH MSI MODE")
-          if @kubeperfTag.nil? || !@kubeperfTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @kubeperfTag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
-          end
-          if @kubeservicesTag.nil? || !@kubeservicesTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @kubeservicesTag = ExtensionUtils.getOutputStreamId(Constants::KUBE_SERVICES_DATA_TYPE)
-          end
-          if @containerInventoryTag.nil? || !@containerInventoryTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @containerInventoryTag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
-          end
-          if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
-          end
-          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_POD_INVENTORY_DATA_TYPE)
-          end
-          $log.info("in_kube_podinventory::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
+          @kubeservicesTag = ExtensionUtils.getOutputStreamId(Constants::KUBE_SERVICES_DATA_TYPE)
+          @containerInventoryTag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
+          @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_POD_INVENTORY_DATA_TYPE)
           $log.info("in_kube_podinventory::enumerate: using kubeservices tag -#{@kubeservicesTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_podinventory::enumerate: using containerinventory tag -#{@containerInventoryTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_podinventory::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
           $log.info("in_kube_podinventory::enumerate: using kubepodinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
@@ -360,14 +346,14 @@ module Fluent::Plugin
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
               $log.info("kubePodInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
             end
-            router.emit_stream(@tag, eventStream) if eventStream
+            router.emit_stream(@tag, eventStream) if !@tag.nil? && !@tag.empty? && eventStream
             eventStream = Fluent::MultiEventStream.new
           end
         end  #podInventory block end
 
         if eventStream.count > 0
           $log.info("in_kube_podinventory::parse_and_emit_records: number of pod inventory records emitted #{eventStream.count} @ #{Time.now.utc.iso8601}")
-          router.emit_stream(@tag, eventStream) if eventStream
+          router.emit_stream(@tag, eventStream) if !@tag.nil? && !@tag.empty? && eventStream
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
             $log.info("kubePodInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
           end
@@ -376,7 +362,7 @@ module Fluent::Plugin
 
         if containerInventoryStream.count > 0
           $log.info("in_kube_podinventory::parse_and_emit_records: number of windows container inventory records emitted #{containerInventoryStream.count} @ #{Time.now.utc.iso8601}")
-          router.emit_stream(@containerInventoryTag, containerInventoryStream) if containerInventoryStream
+          router.emit_stream(@containerInventoryTag, containerInventoryStream) if !@containerInventoryTag.nil? && !@containerInventoryTag.empty? && containerInventoryStream
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
             $log.info("kubeWindowsContainerInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
           end
@@ -416,7 +402,7 @@ module Fluent::Plugin
               kubeServicesEventStream.add(emitTime, kubeServiceRecord) if kubeServiceRecord
               if @PODS_EMIT_STREAM_BATCH_SIZE > 0 && kubeServicesEventStream.count >= @PODS_EMIT_STREAM_BATCH_SIZE
                 $log.info("in_kube_podinventory::parse_and_emit_records: number of service records emitted #{kubeServicesEventStream.count} @ #{Time.now.utc.iso8601}")
-                router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if kubeServicesEventStream
+                router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if !@kubeservicesTag.nil? && !@kubeservicesTag.empty? && kubeServicesEventStream
                 kubeServicesEventStream = Fluent::MultiEventStream.new
                 if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
                   $log.info("kubeServicesEventEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -427,7 +413,7 @@ module Fluent::Plugin
 
           if kubeServicesEventStream.count > 0
             $log.info("in_kube_podinventory::parse_and_emit_records : number of service records emitted #{kubeServicesEventStream.count} @ #{Time.now.utc.iso8601}")
-            router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if kubeServicesEventStream
+            router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if !@kubeservicesTag.nil? && !@kubeservicesTag.empty? && kubeServicesEventStream
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
               $log.info("kubeServicesEventEmitStreamSuccess @ #{Time.now.utc.iso8601}")
             end

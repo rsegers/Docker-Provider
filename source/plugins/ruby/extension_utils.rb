@@ -11,7 +11,10 @@ class ExtensionUtils
       outputStreamId = ""
       begin
         if !dataType.nil? && !dataType.empty?
-          outputStreamId = Extension.instance.get_output_stream_id(dataType)
+          dataTypeToStreamIdMap = Extensio.instance.get_stream_mapping()
+          if !dataTypeToStreamIdMap.nil? && dataTypeToStreamIdMap.has_key?(dataType)
+            outputStreamId = dataTypeToStreamIdMap[dataType]
+          end
           $log.info("ExtensionUtils::getOutputStreamId: got streamid: #{outputStreamId} for datatype: #{dataType}")
         else
           $log.warn("ExtensionUtils::getOutputStreamId: dataType shouldnt be nil or empty")

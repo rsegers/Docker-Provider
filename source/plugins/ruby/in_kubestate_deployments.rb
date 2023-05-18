@@ -87,8 +87,10 @@ module Fluent::Plugin
 
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kubestate_deployments::enumerate: AAD AUTH MSI MODE")
-          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @tag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+          @tag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+          if @tag.nil? || @tag.empty?
+            $log.warn("in_kubestate_deployments::enumerate: skipping kubestate deployments collection since its opted-out")
+            return
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()

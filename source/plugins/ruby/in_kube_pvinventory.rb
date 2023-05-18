@@ -66,8 +66,10 @@ module Fluent::Plugin
         batchTime = currentTime.utc.iso8601
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_pvinventory::enumerate: AAD AUTH MSI MODE")
-          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_PV_INVENTORY_DATA_TYPE)
+          @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_PV_INVENTORY_DATA_TYPE)
+          if @tag.nil? || @tag.empty?
+            $log.warn("in_kube_pvinventory::enumerate: skipping kubepvinventory collection since its opted-out")
+            return
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()

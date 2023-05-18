@@ -63,10 +63,12 @@ module Fluent::Plugin
       $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
       if ExtensionUtils.isAADMSIAuthMode()
         $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
-        if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-          @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
-        end
+        @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
         $log.info("in_container_inventory::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
+        if @tag.nil? || @tag.empty?
+          $log.warn("in_container_inventory::enumerate: skipping container inventory collection since its opted-out")
+          return
+        end
         if ExtensionUtils.isDataCollectionSettingsConfigured()
           @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
           $log.info("in_container_inventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
