@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      nodeSelector:
+       kubernetes.io/os: linux
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        ports:
+        - containerPort: 80
+        env:
+        - name: k8s.pod.name
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: k8s.pod.namespace
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: k8s.pod.uid
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.uid
+        - name: k8s.node.name
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+
+
+
+
