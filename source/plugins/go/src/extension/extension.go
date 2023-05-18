@@ -32,13 +32,6 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 }
 
 func (e *Extension) GetOutputStreamId(datatype string) string {
-	extensionconfiglock.Lock()
-	defer extensionconfiglock.Unlock()
-	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap[datatype] != "" {
-		message := fmt.Sprintf("OutputstreamId: %s for the datatype: %s", e.datatypeStreamIdMap[datatype], datatype)
-		logger.Printf(message)
-		return e.datatypeStreamIdMap[datatype]
-	}
 	var err error
 	e.datatypeStreamIdMap, err = getDataTypeToStreamIdMapping()
 	if err != nil {

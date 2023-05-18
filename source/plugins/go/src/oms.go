@@ -729,9 +729,13 @@ func flushKubeMonAgentEventRecords() {
 				}
 			}
 			if IsWindows == false && len(msgPackEntries) > 0 { //for linux, mdsd route
-				if IsAADMSIAuthMode == true && strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) == false {
+				if IsAADMSIAuthMode == true {
 					Log("Info::mdsd::obtaining output stream id for data type: %s", KubeMonAgentEventDataType)
 					MdsdKubeMonAgentEventsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(KubeMonAgentEventDataType)
+					if MdsdKubeMonAgentEventsTagName == "" {
+						Log("Warn::mdsd::skipping Microsoft-KubeMonAgentEvents stream since its opted out")
+						return
+					}
 				}
 				Log("Info::mdsd:: using mdsdsource name for KubeMonAgentEvents: %s", MdsdKubeMonAgentEventsTagName)
 				msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdKubeMonAgentEventsTagName, msgPackEntries)
@@ -949,9 +953,13 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 			}
 		}
 		if len(msgPackEntries) > 0 {
-			if IsAADMSIAuthMode == true && (strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) == false) {
+			if IsAADMSIAuthMode == true {
 				Log("Info::mdsd::obtaining output stream id for InsightsMetricsDataType since Log Analytics AAD MSI Auth Enabled")
 				MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType)
+				if MdsdInsightsMetricsTagName == "" {
+					Log("Warn::mdsd::skipping Microsoft-InsightsMetrics stream since its opted out")
+					return output.FLB_OK
+				}
 			}
 			msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdInsightsMetricsTagName, msgPackEntries)
 			if MdsdInsightsMetricsMsgpUnixSocketClient == nil {
@@ -1267,8 +1275,16 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			Log("Info::mdsd::obtaining output stream id")
 			if ContainerLogSchemaV2 == true {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogV2DataType)
+				if MdsdContainerLogTagName == "" {
+					Log("Warn::mdsd::skipping Microsoft-ContainerLogV2 stream since its opted out")
+					return output.FLB_RETRY
+				}
 			} else {
 				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogDataType)
+				if MdsdContainerLogTagName == "" {
+					Log("Warn::mdsd::skipping Microsoft-ContainerLog stream since its opted out")
+					return output.FLB_RETRY
+				}
 			}
 			Log("Info::mdsd:: using mdsdsource name: %s", MdsdContainerLogTagName)
 		}
