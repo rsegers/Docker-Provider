@@ -93,7 +93,7 @@ module Fluent::Plugin
           @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_EVENTS_DATA_TYPE)
           $log.info("in_kube_events::enumerate: using kubeevents tag: #{@tag} @ #{Time.now.utc.iso8601}")
           if @tag.nil? || @tag.empty?
-            $log.warn("in_kube_events::enumerate: skipping kubeevents collection since its opted-out")
+            $log.warn("in_kube_events::enumerate: skipping Microsoft-KubeEvents since its opted-out")
             return
           end
 

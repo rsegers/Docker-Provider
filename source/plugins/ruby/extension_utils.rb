@@ -128,6 +128,8 @@ class ExtensionUtils
             dataCollectionStreamProfile = "LogsAndEvents"
           elsif (dataTypes.length == 2) && dataTypes.include?("LINUX_PERF_BLOB") && dataTypes.include?("INSIGHTS_METRICS_BLOB")
             dataCollectionStreamProfile = "Performance"
+          elsif (dataTypes.length == 2) && dataTypes.include?("INSIGHTS_METRICS_BLOB") && dataTypes.include?("Microsoft-KubePVInventory")
+            dataCollectionStreamProfile = "Performance"
           elsif (dataTypes.length == 8) && dataTypes.include?("INSIGHTS_METRICS_BLOB") && dataTypes.include?("KUBE_POD_INVENTORY_BLOB") &&
                 dataTypes.include?("KUBE_NODE_INVENTORY_BLOB") && dataTypes.include?("KUBE_EVENTS_BLOB") &&
                 dataTypes.include?("CONTAINER_INVENTORY_BLOB") && dataTypes.include?("CONTAINER_NODE_INVENTORY_BLOB") &&

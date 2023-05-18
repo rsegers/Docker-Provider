@@ -68,7 +68,7 @@ module Fluent::Plugin
           $log.info("in_kube_pvinventory::enumerate: AAD AUTH MSI MODE")
           @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_PV_INVENTORY_DATA_TYPE)
           if @tag.nil? || @tag.empty?
-            $log.warn("in_kube_pvinventory::enumerate: skipping kubepvinventory collection since its opted-out")
+            $log.warn("in_kube_pvinventory::enumerate: skipping Microsoft-KubePVInventory since its opted-out")
             return
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
