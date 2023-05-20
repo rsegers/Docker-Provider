@@ -103,9 +103,7 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": [
-                                           "Microsoft-ContainerInsights-Group-Default"
-                                        ],
+                                        "streams": "[parameters('defaultStreams')]",
                                         "extensionSettings": {
                                             "dataCollectionSettings" : {
                                                 "interval": "[parameters('dataCollectionInterval')]",
@@ -127,9 +125,7 @@
                             },
                             "dataFlows": [
                                 {
-                                    "streams": [
-                                        "Microsoft-ContainerInsights-Group-Default"
-                                    ],
+                                    "streams": "[parameters('defaultStreams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]
@@ -167,9 +163,7 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": [
-                                            "Microsoft-ContainerInsights-Group-Default"
-                                        ],
+                                        "streams": "[parameters('defaultStreams')]",
                                         "extensionName": "ContainerInsights"
                                     }
                                 ]
@@ -184,8 +178,13 @@
                             },
                             "dataFlows": [
                                 {
+                                    "streams": "[parameters('defaultStreams')]",
+                                    "destinations": [
+                                        "ciworkspace"
+                                    ]
+                                },
+                                {
                                     "streams": [
-                                        "Microsoft-ContainerInsights-Group-Default",
                                         "Microsoft-Syslog"
                                     ],
                                     "destinations": [
