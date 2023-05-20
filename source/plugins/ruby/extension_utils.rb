@@ -132,7 +132,7 @@ class ExtensionUtils
                 dataTypes.include?("KUBE_NODE_INVENTORY_BLOB") && dataTypes.include?("KUBE_EVENTS_BLOB") &&
                 dataTypes.include?("CONTAINER_INVENTORY_BLOB") && dataTypes.include?("CONTAINER_NODE_INVENTORY_BLOB") &&
                 dataTypes.include?("KUBE_NODE_INVENTORY_BLOB") && dataTypes.include?("KUBE_SERVICES_BLOB")
-            dataCollectionStreamProfile = "Workload,Deployments,and HPAs"
+            dataCollectionStreamProfile = "Workload,Deployments and HPAs"
           else
             dataCollectionStreamProfile = "Custom"
           end

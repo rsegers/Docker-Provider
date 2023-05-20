@@ -32,6 +32,12 @@
                 "description": "Full Resource ID of the log analitycs workspace that will be used for data destination. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz"
             }
         },
+        "defaultStreams": {
+            "type": "array",
+            "metadata": {
+                "description": "Array of default container insights streams"
+            }
+        },
         "enableSyslog": {
             "type": "bool",
             "metadata": {
