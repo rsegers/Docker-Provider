@@ -44,7 +44,6 @@ func (e *Extension) GetOutputStreamId(datatype string) string {
 }
 
 func getDataTypeToStreamIdMapping() (map[string]string, error) {
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension config from fluent socket - start")
 	guid := uuid.New()
 	datatypeOutputStreamMap := make(map[string]string)
 
@@ -65,7 +64,6 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	}
 	responseBytes, err := FluentSocketWriter.writeAndRead(fs, data)
 	defer FluentSocketWriter.disconnect(fs)
-	logger.Printf("Info::mdsd::Making call to FluentSocket: %s to write and read the config data", fs.sockAddress)
 	if err != nil {
 		return datatypeOutputStreamMap, err
 	}
@@ -82,16 +80,11 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 	json.Unmarshal([]byte(responseObjet.TaggedData), &extensionData)
 
 	extensionConfigs := extensionData.ExtensionConfigs
-	logger.Printf("Info::mdsd::build the datatype and streamid map -- start")
 	for _, extensionConfig := range extensionConfigs {
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
 			datatypeOutputStreamMap[dataType] = outputStreamID.(string)
 		}
 	}
-	logger.Printf("Info::mdsd::build the datatype and streamid map -- end")
-
-	logger.Printf("extensionconfig::getDataTypeToStreamIdMapping:: getting extension config from fluent socket-end")
-
 	return datatypeOutputStreamMap, nil
 }

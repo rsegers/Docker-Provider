@@ -119,7 +119,7 @@ class ExtensionUtils
         dataTypeToStreamIdMap = Extension.instance.get_stream_mapping()
         if !dataTypeToStreamIdMap.nil? && !dataTypeToStreamIdMap.empty?
           dataTypes = dataTypeToStreamIdMap.keys
-          if (dataTypes.length == 12)
+          if (dataTypes.length >= 12)
             dataCollectionStreamProfile = "Default"
           elsif ((dataTypes.length <= 3) && (dataTypes.include?("CONTAINER_LOG_BLOB") || dataTypes.include?("CONTAINERINSIGHTS_CONTAINERLOGV2")) && dataTypes.include?("KUBE_EVENTS_BLOB"))
             dataCollectionStreamProfile = "LogsAndEvents"
