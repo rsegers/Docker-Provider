@@ -139,16 +139,16 @@ module Fluent::Plugin
           @ContainerNodeInventoryTag = @extensionUtils.getOutputStreamId(Constants::CONTAINER_NODE_INVENTORY_DATA_TYPE)
           @tag = @extensionUtils.getOutputStreamId(Constants::KUBE_NODE_INVENTORY_DATA_TYPE)
           if @kubeperfTag.nil? || @kubeperfTag.empty?
-            $log.warn("in_kube_nodes::enumerate: skipping Microsoft-Perf since its opted-out @ #{Time.now.utc.iso8601}")
+            $log.warn("in_kube_nodes::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if @insightsMetricsTag.nil? || @insightsMetricsTag.empty?
-            $log.warn("in_kube_nodes::enumerate: skipping Microsoft-InsightsMetrics since its opted-out @ #{Time.now.utc.iso8601}")
+            $log.warn("in_kube_nodes::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if @ContainerNodeInventoryTag.nil? || @ContainerNodeInventoryTag.empty?
-             $log.info("in_kube_nodes::enumerate: skipping Microsoft-ContainerNodeInventory since its opted-out @ #{Time.now.utc.iso8601}")
+            $log.info("in_kube_nodes::enumerate: skipping Microsoft-ContainerNodeInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if @tag.nil? || @tag.empty?
-            $log.info("in_kube_nodes::enumerate: skipping Microsoft-KubeNodeInventory since its opted-out @ #{Time.now.utc.iso8601}")
+            $log.info("in_kube_nodes::enumerate: skipping Microsoft-KubeNodeInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()

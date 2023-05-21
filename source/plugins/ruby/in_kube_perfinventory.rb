@@ -96,10 +96,10 @@ module Fluent::Plugin
           @kubeperfTag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
           @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
           if @kubeperfTag.nil? || @kubeperfTag.empty?
-            $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-Perf since its opted-out @ #{Time.now.utc.iso8601}")
+            $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if @insightsMetricsTag.nil? || @insightsMetricsTag.empty?
-            $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-InsightsMetrics since its opted-out @ #{Time.now.utc.iso8601}")
+            $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
