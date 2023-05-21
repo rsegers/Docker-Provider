@@ -89,7 +89,7 @@ module Fluent::Plugin
           $log.info("in_kubestate_deployments::enumerate: AAD AUTH MSI MODE")
           @tag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
           if @tag.nil? || @tag.empty?
-            $log.warn("in_kubestate_deployments::enumerate: skipping kubestate deployments collection since its opted-out")
+            $log.warn("in_kubestate_deployments::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
             return
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()

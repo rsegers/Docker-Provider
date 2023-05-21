@@ -66,10 +66,10 @@ module Fluent::Plugin
           @tag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
           @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
           if @tag.nil? || @tag.empty?
-            $log.info("in_win_cadvisor_perf::enumerate: skipping Microsoft-Perf since its opted-out @ #{Time.now.utc.iso8601}")
+            $log.info("in_win_cadvisor_perf::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if @insightsMetricsTag.nil? || @insightsMetricsTag.empty?
-            $log.info("in_win_cadvisor_perf::enumerate: skipping Microsoft-InsightsMetrics since its opted-out @ #{Time.now.utc.iso8601}")
+            $log.info("in_win_cadvisor_perf::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()

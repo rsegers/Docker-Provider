@@ -85,7 +85,7 @@ module Fluent::Plugin
           $log.info("in_kubestate_hpa::enumerate: AAD AUTH MSI MODE")
           @tag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
           if @tag.nil? || @tag.empty?
-            $log.warn("in_kubestate_hpa::enumerate: skipping kubehpa collection since its opted-out")
+            $log.warn("in_kubestate_hpa::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
             return
           end
           $log.info("in_kubestate_hpa::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
