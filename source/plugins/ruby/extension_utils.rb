@@ -11,11 +11,10 @@ class ExtensionUtils
       outputStreamId = ""
       begin
         if !dataType.nil? && !dataType.empty?
-          dataTypeToStreamIdMap = Extensio.instance.get_stream_mapping()
+          dataTypeToStreamIdMap = Extension.instance.get_stream_mapping()
           if !dataTypeToStreamIdMap.nil? && dataTypeToStreamIdMap.has_key?(dataType)
             outputStreamId = dataTypeToStreamIdMap[dataType]
           end
-          $log.info("ExtensionUtils::getOutputStreamId: got streamid: #{outputStreamId} for datatype: #{dataType}")
         else
           $log.warn("ExtensionUtils::getOutputStreamId: dataType shouldnt be nil or empty")
         end
@@ -117,7 +116,7 @@ class ExtensionUtils
       begin
         dataCollectionStreamProfile = "Default"
         dataTypes = []
-        dataTypeToStreamIdMap = Extensio.instance.get_stream_mapping()
+        dataTypeToStreamIdMap = Extension.instance.get_stream_mapping()
         if !dataTypeToStreamIdMap.nil? && !dataTypeToStreamIdMap.empty?
           dataTypes = dataTypeToStreamIdMap.keys
           if (dataTypes.length == 12)

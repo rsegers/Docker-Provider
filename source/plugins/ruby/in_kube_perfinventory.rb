@@ -95,8 +95,12 @@ module Fluent::Plugin
           $log.info("in_kube_perfinventory::enumerate: AAD AUTH MSI MODE")
           @kubeperfTag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
           @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
-          $log.info("in_kube_perfinventory::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_perfinventory::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
+          if @kubeperfTag.nil? || @kubeperfTag.empty?
+            $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-Perf since its opted-out @ #{Time.now.utc.iso8601}")
+          end
+          if @insightsMetricsTag.nil? || @insightsMetricsTag.empty?
+            $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-InsightsMetrics since its opted-out @ #{Time.now.utc.iso8601}")
+          end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
             $log.info("in_kube_perfinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")

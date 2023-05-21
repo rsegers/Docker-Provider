@@ -91,12 +91,10 @@ module Fluent::Plugin
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_events::enumerate: AAD AUTH MSI MODE")
           @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_EVENTS_DATA_TYPE)
-          $log.info("in_kube_events::enumerate: using kubeevents tag: #{@tag} @ #{Time.now.utc.iso8601}")
           if @tag.nil? || @tag.empty?
-            $log.warn("in_kube_events::enumerate: skipping Microsoft-KubeEvents since its opted-out")
+            $log.warn("in_kube_events::enumerate: skipping Microsoft-KubeEvents since its opted-out @ #{Time.now.utc.iso8601}")
             return
           end
-
           @namespaces = ExtensionUtils.getNamespacesForDataCollection()
           $log.info("in_kube_events::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
           @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()

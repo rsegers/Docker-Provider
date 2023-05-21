@@ -65,9 +65,12 @@ module Fluent::Plugin
           $log.info("in_win_cadvisor_perf::enumerate: AAD AUTH MSI MODE")
           @tag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
           @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
-          $log.info("in_win_cadvisor_perf::enumerate: using perf tag -#{@tag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_win_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
-
+          if @tag.nil? || @tag.empty?
+            $log.info("in_win_cadvisor_perf::enumerate: skipping Microsoft-Perf since its opted-out @ #{Time.now.utc.iso8601}")
+          end
+          if @insightsMetricsTag.nil? || @insightsMetricsTag.empty?
+            $log.info("in_win_cadvisor_perf::enumerate: skipping Microsoft-InsightsMetrics since its opted-out @ #{Time.now.utc.iso8601}")
+          end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
             $log.info("in_win_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")

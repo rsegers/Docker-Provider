@@ -138,10 +138,18 @@ module Fluent::Plugin
           @insightsMetricsTag = @extensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
           @ContainerNodeInventoryTag = @extensionUtils.getOutputStreamId(Constants::CONTAINER_NODE_INVENTORY_DATA_TYPE)
           @tag = @extensionUtils.getOutputStreamId(Constants::KUBE_NODE_INVENTORY_DATA_TYPE)
-          $log.info("in_kube_nodes::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_nodes::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_nodes::enumerate: using containernodeinventory tag -#{@ContainerNodeInventoryTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_nodes::enumerate: using kubenodeinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
+          if @kubeperfTag.nil? || @kubeperfTag.empty?
+            $log.warn("in_kube_nodes::enumerate: skipping Microsoft-Perf since its opted-out @ #{Time.now.utc.iso8601}")
+          end
+          if @insightsMetricsTag.nil? || @insightsMetricsTag.empty?
+            $log.warn("in_kube_nodes::enumerate: skipping Microsoft-InsightsMetrics since its opted-out @ #{Time.now.utc.iso8601}")
+          end
+          if @ContainerNodeInventoryTag.nil? || @ContainerNodeInventoryTag.empty?
+             $log.info("in_kube_nodes::enumerate: skipping Microsoft-ContainerNodeInventory since its opted-out @ #{Time.now.utc.iso8601}")
+          end
+          if @tag.nil? || @tag.empty?
+            $log.info("in_kube_nodes::enumerate: skipping Microsoft-KubeNodeInventory since its opted-out @ #{Time.now.utc.iso8601}")
+          end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
             $log.info("in_kube_nodes::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")

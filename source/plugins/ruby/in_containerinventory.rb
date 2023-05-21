@@ -64,9 +64,8 @@ module Fluent::Plugin
       if ExtensionUtils.isAADMSIAuthMode()
         $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
         @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
-        $log.info("in_container_inventory::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
         if @tag.nil? || @tag.empty?
-          $log.warn("in_container_inventory::enumerate: skipping Microsoft-ContainerInventory since its opted-out")
+          $log.warn("in_container_inventory::enumerate: skipping Microsoft-ContainerInventory since its opted-out @ #{Time.now.utc.iso8601}")
           return
         end
         if ExtensionUtils.isDataCollectionSettingsConfigured()

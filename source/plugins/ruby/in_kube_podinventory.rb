@@ -156,9 +156,15 @@ module Fluent::Plugin
           @kubeservicesTag = ExtensionUtils.getOutputStreamId(Constants::KUBE_SERVICES_DATA_TYPE)
           @containerInventoryTag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
           @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_POD_INVENTORY_DATA_TYPE)
-          $log.info("in_kube_podinventory::enumerate: using kubeservices tag -#{@kubeservicesTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_podinventory::enumerate: using containerinventory tag -#{@containerInventoryTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_podinventory::enumerate: using kubepodinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
+          if @kubeservicesTag.nil? || @kubeservicesTag.empty?
+            $log.warn("in_kube_podinventory::enumerate: skipping Microsoft-KubeServices since its opted-out @ #{Time.now.utc.iso8601}")
+          end
+          if @containerInventoryTag.nil? || @containerInventoryTag.empty?
+            $log.info("in_kube_podinventory::enumerate: skipping Microsoft-ContainerInventory since its opted-out @ #{Time.now.utc.iso8601}")
+          end
+          if @tag.nil? || @tag.empty?
+            $log.info("in_kube_podinventory::enumerate: skipping Microsoft-KubePodInventory since its opted-out @ #{Time.now.utc.iso8601}")
+          end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
             $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
