@@ -170,15 +170,15 @@ var (
 	//ADX destination database name, default is DefaultAdxDatabaseName, can be overridden in configuration
 	AdxDatabaseName string
 	// container log or container log v2 tag name for oneagent route
-	MdsdContainerLogTagName           string
-    // ContainerLog Tag Refresh Tracker
+	MdsdContainerLogTagName string
+	// ContainerLog Tag Refresh Tracker
 	MdsdContainerLogTagRefreshTracker time.Time
 	// kubemonagent events tag name for oneagent route
-	MdsdKubeMonAgentEventsTagName           string
+	MdsdKubeMonAgentEventsTagName string
 	// KubeMonAgentEvents Tag Refresh Tracker
 	MdsdKubeMonAgentEventsTagRefreshTracker time.Time
 	// InsightsMetrics tag name for oneagent route
-	MdsdInsightsMetricsTagName           string
+	MdsdInsightsMetricsTagName string
 	// InsightsMetrics Tag Refresh Tracker
 	MdsdInsightsMetricsTagRefreshTracker time.Time
 	// flag to check if its Windows OS
