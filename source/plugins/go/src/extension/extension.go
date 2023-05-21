@@ -31,10 +31,15 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 	return singleton
 }
 
-func (e *Extension) GetOutputStreamId(datatype string) string {
-	var err error
+func (e *Extension) GetOutputStreamId(datatype string, useFromCache bool) string {
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
+	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap[datatype] != "" && useFromCache {
+		message := fmt.Sprintf("OutputstreamId: %s for the datatype: %s", e.datatypeStreamIdMap[datatype], datatype)
+		logger.Printf(message)
+		return e.datatypeStreamIdMap[datatype]
+	}
+	var err error
 	e.datatypeStreamIdMap, err = getDataTypeToStreamIdMapping()
 	if err != nil {
 		message := fmt.Sprintf("Error getting datatype to streamid mapping: %s", err.Error())
