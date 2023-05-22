@@ -1494,7 +1494,7 @@ class KubernetesApiClient
       end
     end
 
-    def isDCRStreamId(tag)
+    def isDCRStreamIdTag(tag)
       return (!tag.nil? && tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX))
     end
   end

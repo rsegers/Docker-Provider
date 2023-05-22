@@ -95,7 +95,7 @@ module Fluent::Plugin
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_perfinventory::enumerate: AAD AUTH MSI MODE")
           useFromCache = true
-          if !KubernetesApiClient.isDCRStreamId(@kubeperfTag)
+          if !KubernetesApiClient.isDCRStreamIdTag(@kubeperfTag)
             useFromCache = false
           elsif (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
             @agentConfigRefreshTracker = DateTime.now.to_time.to_i

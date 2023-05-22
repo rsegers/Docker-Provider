@@ -69,7 +69,7 @@ module Fluent::Plugin
         if ExtensionUtils.isAADMSIAuthMode() && !@@isWindows.nil? && @@isWindows == false
           $log.info("in_cadvisor_perf::enumerate: AAD AUTH MSI MODE")
           useFromCache = true
-          if !KubernetesApiClient.isDCRStreamId(@tag)
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
             useFromCache = false
           elsif (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
             @agentConfigRefreshTracker = DateTime.now.to_time.to_i

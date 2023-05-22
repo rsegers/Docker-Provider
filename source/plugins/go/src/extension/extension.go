@@ -34,7 +34,7 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 func (e *Extension) GetOutputStreamId(datatype string, useFromCache bool) string {
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
-	if len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap[datatype] != "" && useFromCache {
+	if useFromCache && len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap[datatype] != "" {
 		message := fmt.Sprintf("OutputstreamId: %s for the datatype: %s", e.datatypeStreamIdMap[datatype], datatype)
 		logger.Printf(message)
 		return e.datatypeStreamIdMap[datatype]
