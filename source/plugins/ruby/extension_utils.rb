@@ -7,14 +7,11 @@ require_relative "constants"
 
 class ExtensionUtils
   class << self
-    def getOutputStreamId(dataType)
+    def getOutputStreamId(dataType, useFromCache)
       outputStreamId = ""
       begin
         if !dataType.nil? && !dataType.empty?
-          dataTypeToStreamIdMap = Extension.instance.get_stream_mapping()
-          if !dataTypeToStreamIdMap.nil? && dataTypeToStreamIdMap.has_key?(dataType)
-            outputStreamId = dataTypeToStreamIdMap[dataType]
-          end
+          outputStreamId = Extension.instance.get_output_stream_id(dataType, useFromCache)
         else
           $log.warn("ExtensionUtils::getOutputStreamId: dataType shouldnt be nil or empty")
         end

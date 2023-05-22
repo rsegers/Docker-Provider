@@ -737,18 +737,17 @@ func flushKubeMonAgentEventRecords() {
 			}
 			if IsWindows == false && len(msgPackEntries) > 0 { //for linux, mdsd route
 				if IsAADMSIAuthMode == true {
+					useFromCache := true
 					if !strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) {
-						Log("Info::mdsd::obtaining output stream id for data type: %s", KubeMonAgentEventDataType)
-						MdsdKubeMonAgentEventsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(KubeMonAgentEventDataType, false)
+						useFromCache = false
 					} else {
 						elapsed := time.Now().Sub(MdsdKubeMonAgentEventsTagRefreshTracker)
 						if elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
 							MdsdKubeMonAgentEventsTagRefreshTracker = time.Now()
-							MdsdKubeMonAgentEventsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(KubeMonAgentEventDataType, false)
-						} else {
-							MdsdKubeMonAgentEventsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(KubeMonAgentEventDataType, true)
+							useFromCache = false
 						}
 					}
+					MdsdKubeMonAgentEventsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(KubeMonAgentEventDataType, useFromCache)
 					if MdsdKubeMonAgentEventsTagName == "" {
 						Log("Warn::mdsd::skipping Microsoft-KubeMonAgentEvents stream since its opted out")
 						return
@@ -971,17 +970,17 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		}
 		if len(msgPackEntries) > 0 {
 			if IsAADMSIAuthMode == true {
+				useFromCache := true
 				if !strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) {
-					MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType, false)
+					useFromCache = false
 				} else {
 					elapsed := time.Now().Sub(MdsdInsightsMetricsTagRefreshTracker)
 					if elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
 						MdsdInsightsMetricsTagRefreshTracker = time.Now()
-						MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType, false)
-					} else {
-						MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType, true)
+						useFromCache = false
 					}
 				}
+				MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType, useFromCache)
 				if MdsdInsightsMetricsTagName == "" {
 					Log("Warn::mdsd::skipping Microsoft-InsightsMetrics stream since its opted out")
 					return output.FLB_OK
@@ -1302,17 +1301,17 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			if ContainerLogSchemaV2 == true {
 				containerlogDataType = ContainerLogV2DataType
 			}
+			useFromCache := true
 			if !strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) {
-				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(containerlogDataType, false)
+				useFromCache = false
 			} else {
 				elapsed := time.Now().Sub(MdsdContainerLogTagRefreshTracker)
 				if elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
 					MdsdContainerLogTagRefreshTracker = time.Now()
-					MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(containerlogDataType, false)
-				} else {
-					MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(containerlogDataType, true)
+					useFromCache = false
 				}
 			}
+			MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(containerlogDataType, useFromCache)
 			if MdsdContainerLogTagName == "" {
 				Log("Warn::mdsd::skipping Microsoft-ContainerLog or Microsoft-ContainerLogV2 stream since its opted out")
 				return output.FLB_RETRY

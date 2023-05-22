@@ -24,6 +24,7 @@ module Fluent::Plugin
       require_relative "extension_utils"
       @namespaces = []
       @namespaceFilteringMode = "off"
+      @agentConfigRefreshTracker = DateTime.now.to_time.to_i
     end
 
     config_param :run_interval, :time, :default => 60
@@ -67,8 +68,15 @@ module Fluent::Plugin
 
         if ExtensionUtils.isAADMSIAuthMode() && !@@isWindows.nil? && @@isWindows == false
           $log.info("in_cadvisor_perf::enumerate: AAD AUTH MSI MODE")
-          @tag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
-          @insightsmetricstag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+          useFromCache = true
+          if !KubernetesApiClient.isDCRStreamId(@tag)
+            useFromCache = false
+          elsif (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
+            @agentConfigRefreshTracker = DateTime.now.to_time.to_i
+            useFromCache = false
+          end
+          @tag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE, useFromCache)
+          @insightsmetricstag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE, true)
           if @tag.nil? || @tag.empty?
             $log.warn("in_cadvisor_perf::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end

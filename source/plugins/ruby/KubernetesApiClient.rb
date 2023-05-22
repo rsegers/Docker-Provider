@@ -1493,5 +1493,9 @@ class KubernetesApiClient
         @Log.warn "KubernetesApiClient::sendReplicasetAgentRequestsAndLimitsTelemetry failed with an error: #{err}"
       end
     end
+
+    def isDCRStreamId(tag)
+      return (!tag.nil? && tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX))
+    end
   end
 end

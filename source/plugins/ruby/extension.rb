@@ -15,9 +15,9 @@ class Extension
     $log.info("Extension::initialize complete")
   end
 
-  def get_output_stream_id(datatypeId)
+  def get_output_stream_id(datatypeId, useFromCache)
     @cache_lock.synchronize {
-      if @cache.has_key?(datatypeId)
+      if useFromCache && @cache.has_key?(datatypeId)
         return @cache[datatypeId]
       else
         @cache = get_stream_mapping()

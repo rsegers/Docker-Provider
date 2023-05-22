@@ -68,6 +68,7 @@ module Fluent::Plugin
       @watchNodesThread = nil
       @nodeItemsCache = {}
       @nodeItemsCacheSizeKB = 0
+      @agentConfigRefreshTracker = DateTime.now.to_time.to_i
     end
 
     config_param :run_interval, :time, :default => 60
@@ -134,10 +135,18 @@ module Fluent::Plugin
 
         if @extensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_nodes::enumerate: AAD AUTH MSI MODE")
-          @kubeperfTag = @extensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
-          @insightsMetricsTag = @extensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
-          @ContainerNodeInventoryTag = @extensionUtils.getOutputStreamId(Constants::CONTAINER_NODE_INVENTORY_DATA_TYPE)
-          @tag = @extensionUtils.getOutputStreamId(Constants::KUBE_NODE_INVENTORY_DATA_TYPE)
+          useFromCache = true
+          if !KubernetesApiClient.isDCRStreamId(@tag)
+            useFromCache = false
+          elsif (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
+            @agentConfigRefreshTracker = DateTime.now.to_time.to_i
+            useFromCache = false
+          end
+          @tag = @extensionUtils.getOutputStreamId(Constants::KUBE_NODE_INVENTORY_DATA_TYPE, useFromCache)
+          # since above call triggers the cache update (if useFromCache is true) so we dont need to trigger cache update in subsequent calls
+          @kubeperfTag = @extensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE, true)
+          @insightsMetricsTag = @extensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE, true)
+          @ContainerNodeInventoryTag = @extensionUtils.getOutputStreamId(Constants::CONTAINER_NODE_INVENTORY_DATA_TYPE, true)
           if @kubeperfTag.nil? || @kubeperfTag.empty?
             $log.warn("in_kube_nodes::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end

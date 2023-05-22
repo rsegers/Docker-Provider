@@ -20,6 +20,7 @@ module Fluent::Plugin
       require_relative "kubernetes_container_inventory"
       require_relative "extension_utils"
       @addonTokenAdapterImageTag = ""
+      @agentConfigRefreshTracker = DateTime.now.to_time.to_i
     end
 
     config_param :run_interval, :time, :default => 60
@@ -63,7 +64,14 @@ module Fluent::Plugin
       $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
       if ExtensionUtils.isAADMSIAuthMode()
         $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
-        @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
+        useFromCache = true
+        if !KubernetesApiClient.isDCRStreamId(@tag)
+          useFromCache = false
+        elsif (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
+          @agentConfigRefreshTracker = DateTime.now.to_time.to_i
+          useFromCache = false
+        end
+        @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE, useFromCache)
         if @tag.nil? || @tag.empty?
           $log.warn("in_container_inventory::enumerate: skipping Microsoft-ContainerInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
           return
