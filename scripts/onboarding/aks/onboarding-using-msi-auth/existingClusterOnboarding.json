@@ -170,6 +170,13 @@
                                     {
                                         "name": "ContainerInsightsExtension",
                                         "streams": "[parameters('defaultStreams')]",
+                                        "extensionSettings": {
+                                            "dataCollectionSettings" : {
+                                                "interval": "[parameters('dataCollectionInterval')]",
+                                                 "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                                                 "namespaces": "[parameters('namespacesForDataCollection')]"
+                                            }
+                                        },
                                         "extensionName": "ContainerInsights"
                                     }
                                 ]

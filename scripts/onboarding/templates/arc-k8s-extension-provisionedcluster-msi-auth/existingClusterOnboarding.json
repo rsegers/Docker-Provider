@@ -46,6 +46,12 @@
         "description": "Existing or new tags to use on Arc K8s ContainerInsights extension resources"
       }
    },
+   "defaultStreams": {
+     "type": "array",
+     "metadata": {
+        "description": "Array of default container insights streams"
+      }
+    },
     "enableSyslog": {
       "type": "bool",
       "metadata": {
@@ -117,9 +123,7 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": [
-                                           "Microsoft-ContainerInsights-Group-Default"
-                                        ],
+                                        "streams": "[parameters('defaultStreams')]",
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
                                             "interval": "[parameters('dataCollectionInterval')]",
@@ -141,9 +145,7 @@
                             },
                             "dataFlows": [
                                 {
-                                    "streams": [
-                                        "Microsoft-ContainerInsights-Group-Default"
-                                    ],
+                                  "streams": "[parameters('defaultStreams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]
@@ -181,9 +183,7 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": [
-                                            "Microsoft-ContainerInsights-Group-Default"
-                                        ],
+                                        "streams": "[parameters('defaultStreams')]",
                                         "extensionName": "ContainerInsights"
                                     }
                                 ]
@@ -198,13 +198,18 @@
                             },
                             "dataFlows": [
                                 {
-                                    "streams": [
-                                        "Microsoft-ContainerInsights-Group-Default",
-                                        "Microsoft-Syslog"
-                                    ],
+                                  "streams": "[parameters('defaultStreams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]
+                                },
+                                {
+                                  "streams": [
+                                      "Microsoft-Syslog"
+                                  ],
+                                  "destinations": [
+                                      "ciworkspace"
+                                  ]
                                 }
                             ]
                         }
