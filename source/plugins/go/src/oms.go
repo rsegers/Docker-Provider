@@ -738,14 +738,10 @@ func flushKubeMonAgentEventRecords() {
 			if IsWindows == false && len(msgPackEntries) > 0 { //for linux, mdsd route
 				if IsAADMSIAuthMode == true {
 					useFromCache := true
-					if !strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) {
+					elapsed := time.Now().Sub(MdsdKubeMonAgentEventsTagRefreshTracker)
+					if !strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
 						useFromCache = false
-					} else {
-						elapsed := time.Now().Sub(MdsdKubeMonAgentEventsTagRefreshTracker)
-						if elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-							MdsdKubeMonAgentEventsTagRefreshTracker = time.Now()
-							useFromCache = false
-						}
+						MdsdKubeMonAgentEventsTagRefreshTracker = time.Now()
 					}
 					MdsdKubeMonAgentEventsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(KubeMonAgentEventDataType, useFromCache)
 					if MdsdKubeMonAgentEventsTagName == "" {
@@ -971,14 +967,10 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		if len(msgPackEntries) > 0 {
 			if IsAADMSIAuthMode == true {
 				useFromCache := true
-				if !strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) {
+				elapsed := time.Now().Sub(MdsdInsightsMetricsTagRefreshTracker)
+				if !strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
 					useFromCache = false
-				} else {
-					elapsed := time.Now().Sub(MdsdInsightsMetricsTagRefreshTracker)
-					if elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-						MdsdInsightsMetricsTagRefreshTracker = time.Now()
-						useFromCache = false
-					}
+					MdsdInsightsMetricsTagRefreshTracker = time.Now()
 				}
 				MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType, useFromCache)
 				if MdsdInsightsMetricsTagName == "" {
@@ -1302,14 +1294,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				containerlogDataType = ContainerLogV2DataType
 			}
 			useFromCache := true
-			if !strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) {
+			elapsed := time.Now().Sub(MdsdContainerLogTagRefreshTracker)
+			if !strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
 				useFromCache = false
-			} else {
-				elapsed := time.Now().Sub(MdsdContainerLogTagRefreshTracker)
-				if elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-					MdsdContainerLogTagRefreshTracker = time.Now()
-					useFromCache = false
-				}
+				MdsdContainerLogTagRefreshTracker = time.Now()
 			}
 			MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(containerlogDataType, useFromCache)
 			if MdsdContainerLogTagName == "" {
