@@ -45,21 +45,21 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
   }
 
   data_flow {
-    streams      = ["Microsoft-ContainerInsights-Group-Default"]
+    streams      = ["Microsoft-ContainerInsights-Group-Default","Microsoft-Syslog"]
     destinations = ["ciworkspace"]
   }
 
   data_sources {
+    syslog{
+      streams            = ["Microsoft-Syslog"]
+      facilityNames      = var.syslog_facilities
+      logLevels          = var.syslog_levels
+      name               = "sysLogsDataSource"
+    }
+
     extension {
       streams            = ["Microsoft-ContainerInsights-Group-Default"]
       extension_name     = "ContainerInsights"
-      extension_json = jsonencode({
-          "dataCollectionSettings" : {
-              "interval": var.data_collection_interval,
-              "namespaceFilteringMode": var.namespace_filtering_mode_for_data_collection,
-              "namespaces": var.namespaces_for_data_collection
-          }
-      })
       name = "ContainerInsightsExtension"
     }
   }

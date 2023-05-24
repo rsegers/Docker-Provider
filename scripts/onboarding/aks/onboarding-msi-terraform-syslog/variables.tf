@@ -55,15 +55,3 @@ variable "resource_tag_values" {
     "<existingOrnew-tag-name3>" = "<existingOrnew-tag-value3>"
   }
 }
-
-variable "data_collection_interval" {
-  default = "1m"
-}
-
-variable "namespace_filtering_mode_for_data_collection" {
-  default = "Off"
-}
-
-variable "namespaces_for_data_collection" {
-  default = ["kube-system", "gatekeeper-system", "azure-arc"]
-}
