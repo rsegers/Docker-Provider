@@ -52,6 +52,12 @@
         "description": "Array of default container insights streams"
       }
     },
+    "enableContainerLogV2": {
+      "type": "bool",
+      "metadata": {
+          "description": "Enable ContainerLogV2 in Data Collection Rule"
+      }
+    },
     "enableSyslog": {
       "type": "bool",
       "metadata": {
@@ -127,8 +133,9 @@
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
                                             "interval": "[parameters('dataCollectionInterval')]",
-                                             "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-                                             "namespaces": "[parameters('namespacesForDataCollection')]"
+                                            "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                                            "namespaces": "[parameters('namespacesForDataCollection')]",
+                                            "enableContainerLogV2": "[parameters('enableContainerLogV2')]"
                                           }
                                         },
                                         "extensionName": "ContainerInsights"
@@ -184,6 +191,14 @@
                                     {
                                         "name": "ContainerInsightsExtension",
                                         "streams": "[parameters('defaultStreams')]",
+                                        "extensionSettings": {
+                                          "dataCollectionSettings" : {
+                                            "interval": "[parameters('dataCollectionInterval')]",
+                                            "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                                            "namespaces": "[parameters('namespacesForDataCollection')]",
+                                            "enableContainerLogV2": "[parameters('enableContainerLogV2')]"
+                                          }
+                                        },
                                         "extensionName": "ContainerInsights"
                                     }
                                 ]

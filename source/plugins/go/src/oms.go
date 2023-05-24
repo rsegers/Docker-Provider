@@ -1138,6 +1138,13 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	}
 	DataUpdateMutex.Unlock()
 
+	/*
+	if IsAADMSIAuthMode && MdsdMsgpUnixSocketClient == nil {
+        Log("Error::mdsd::Mdsd client is not ready.")
+        return output.FLB_RETRY
+    }
+	ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
+	*/
 	for _, record := range tailPluginRecords {
 		containerID, k8sNamespace, k8sPodName, containerName := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
 		logEntrySource := ToString(record["stream"])
@@ -1168,6 +1175,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
+		//ContainerLogSchemaV2 this should be called after flush to mdsd
 		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
 			stringMap["ContainerId"] = containerID
@@ -1230,6 +1238,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			//ADX
 			dataItemsADX = append(dataItemsADX, dataItemADX)
 		} else {
+			//ContainerLogSchemaV2 this should be called after flush to mdsd
 			if ContainerLogSchemaV2 == true {
 				dataItemLAv2 = DataItemLAv2{
 					TimeGenerated: stringMap["TimeGenerated"],
@@ -1286,18 +1295,26 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	numContainerLogRecords := 0
 
+	if ContainerLogSchemaV2 == true {
+		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
+	} else {
+		MdsdContainerLogTagName = MdsdContainerLogSourceName
+	}
+
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
 		if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
 			containerlogDataType := ContainerLogDataType
-			if ContainerLogSchemaV2 == true {
-				containerlogDataType = ContainerLogV2DataType
-			}
 			useFromCache := true
 			elapsed := time.Now().Sub(MdsdContainerLogTagRefreshTracker)
 			if !strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
 				useFromCache = false
 				MdsdContainerLogTagRefreshTracker = time.Now()
+			}
+
+			ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
+			if ContainerLogSchemaV2 == true {
+				containerlogDataType = ContainerLogV2DataType
 			}
 			MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(containerlogDataType, useFromCache)
 			if MdsdContainerLogTagName == "" {
@@ -1904,12 +1921,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		go flushKubeMonAgentEventRecords()
 	} else {
 		Log("Running in replicaset. Disabling container enrichment caching & updates \n")
-	}
-
-	if ContainerLogSchemaV2 == true {
-		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
-	} else {
-		MdsdContainerLogTagName = MdsdContainerLogSourceName
 	}
 
 	MdsdInsightsMetricsTagName = MdsdInsightsMetricsSourceName
