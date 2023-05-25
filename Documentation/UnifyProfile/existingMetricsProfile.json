@@ -1,0 +1,12 @@
+{
+    "azureMonitorProfile": {
+        "metrics": {
+            "enabled": true,
+            "appMonitoringMetricsEnabled": false,
+            "kubeStateMetrics": {
+                "metricAnnotationsAllowList": "pods=[k8s-annotation-1,k8s-annotation-n]",
+                "metricLabelsAllowlist": "namespaces=[k8s-label-1,k8s-label-n]"
+            }
+        }
+    }
+}

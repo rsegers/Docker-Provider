@@ -1,0 +1,11 @@
+{
+"addonProfiles": {
+    "omsagent": {
+      "config": {
+        "logAnalyticsWorkspaceResourceID": "/subscriptions/<WorkspaceSubscription>/resourceGroups/<DefaultWorkspaceRG>/providers/Microsoft.OperationalInsights/workspaces/<defaultWorkspaceName>",
+        "useAADAuth": false
+      },
+      "enabled": true
+    }
+  }
+}
