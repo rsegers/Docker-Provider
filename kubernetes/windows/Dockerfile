@@ -1,7 +1,7 @@
 # Supported values of windows version are ltsc2019 or ltsc2022 which are being passed by the build script or build pipeline
 ARG WINDOWS_VERSION=
 FROM mcr.microsoft.com/windows/servercore:${WINDOWS_VERSION}
-MAINTAINER OMSContainers@microsoft.com
+LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
@@ -76,7 +76,7 @@ COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluen
 COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
 
 # default value will be overwritten by pipeline 
-ARG IMAGE_TAG=win-3.1.7
+ARG IMAGE_TAG=win-3.1.8
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 ENV OS_TYPE "windows"
