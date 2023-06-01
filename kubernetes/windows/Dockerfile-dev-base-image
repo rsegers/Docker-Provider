@@ -4,9 +4,13 @@ LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
-# Download and Install .NET Framework 4.8
-ADD https://download.visualstudio.microsoft.com/download/pr/2d6bb6b2-226a-4baa-bdec-798822606ff1/8494001c276a4b96804cde7829c04d7f/ndp48-x86-x64-allos-enu.exe /ndp48-x86-x64-allos-enu.exe
-RUN /ndp48-x86-x64-allos-enu.exe /q /norestart
+# Install .NET Framework 4.8
+RUN powershell -Command \
+    $ErrorActionPreference = 'Stop'; \
+    $ProgressPreference = 'SilentlyContinue'; \
+    Invoke-WebRequest -Uri 'https://dotnet.microsoft.com/download/dotnet-framework/net48' -OutFile dotnet-framework-installer.exe ; \
+    Start-Process -FilePath dotnet-framework-installer.exe -ArgumentList '/q', '/norestart' -NoNewWindow -Wait ; \
+    Remove-Item -Force dotnet-framework-installer.exe
 
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
