@@ -8,6 +8,7 @@ class KubernetesApiClient
   require "net/https"
   require "uri"
   require "time"
+  require "ipaddress"
 
   require_relative "oms_common"
   require_relative "constants"
@@ -340,7 +341,15 @@ class KubernetesApiClient
                 nodeStatusAddresses = nodeStatus["addresses"]
                 if !nodeStatusAddresses.nil?
                   nodeStatusAddresses.each do |address|
-                    winNode[address["type"]] = address["address"]
+                    if !address["type"].nil? && address["type"].eql?("InternalIP")
+                      address = address["address"]
+                      # Pick Only IPv4 address in case of  dual stack
+                      if IPAddress.valid_ipv4?(address)
+                        winNode[address["type"]] = address
+                      end
+                    else
+                      winNode[address["type"]] = address["address"]
+                    end
                   end
                   winNodes.push(winNode)
                 end
