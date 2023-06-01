@@ -13,27 +13,22 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   
   default_node_pool {
     name       = "agentpool"
-    vm_size    = "Standard_D2_v2"
+    vm_size    = var.vm_size
     node_count = var.agent_count
   }
 
   identity {
-    type = "SystemAssigned"
+    type = var.identity_type
   }
 
   oms_agent {
     log_analytics_workspace_id = var.workspace_resource_id
     msi_auth_for_monitoring_enabled = true
   }
-
-  network_profile {
-    network_plugin    = "kubenet"
-    load_balancer_sku = "standard"
-  }
 }
 
 resource "azurerm_monitor_data_collection_rule" "dcr" {
-  name                = "MSCI-dcr-${var.workspace_region}-${var.cluster_name}"
+  name                = "MSCI-${var.workspace_region}-${var.cluster_name}"
   resource_group_name = azurerm_resource_group.rg.name
   location            = azurerm_resource_group.rg.location
 
@@ -68,8 +63,8 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
 }
 
 resource "azurerm_monitor_data_collection_rule_association" "dcra" {
-  name                        = "MSCI-dcra-${var.workspace_region}-${var.cluster_name}"
+  name                        = "${var.cluster_name}/microsoft.insights/ContainerInsightsExtension"
   target_resource_id          = azurerm_kubernetes_cluster.k8s.id
   data_collection_rule_id     = azurerm_monitor_data_collection_rule.dcr.id
-  description                 = "Association of data collection rule. Deleting this association will break the data collection for this AKS Cluster."
+  description                 = "Association of container insights data collection rule. Deleting this association will break the data collection for this AKS Cluster."
 }

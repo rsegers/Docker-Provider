@@ -2,6 +2,16 @@ variable "agent_count" {
   default = 3
 }
 
+variable "vm_size" {
+  type = string
+  default = "Standard_D2_v2"
+}
+
+variable "identity_type" {
+  type = string
+  default = "SystemAssigned"
+}
+
 variable "aks_resource_group_name" {
   type = string
   default = "<ResourceGroup>"
