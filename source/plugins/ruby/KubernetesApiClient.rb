@@ -346,7 +346,6 @@ class KubernetesApiClient
                       # Pick Only IPv4 address in case of  dual stack
                       if IPAddress.valid_ipv4?(ipAddress)
                         winNode[address["type"]] = ipAddress
-                        break
                       end
                     else
                       winNode[address["type"]] = address["address"]
