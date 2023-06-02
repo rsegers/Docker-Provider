@@ -8,6 +8,7 @@ class KubernetesApiClient
   require "net/https"
   require "uri"
   require "time"
+  require "ipaddress"
 
   require_relative "oms_common"
   require_relative "constants"
@@ -340,7 +341,15 @@ class KubernetesApiClient
                 nodeStatusAddresses = nodeStatus["addresses"]
                 if !nodeStatusAddresses.nil?
                   nodeStatusAddresses.each do |address|
-                    winNode[address["type"]] = address["address"]
+                    if !address["type"].nil? && address["type"].eql?("InternalIP")
+                      ipAddress = address["address"]
+                      # Pick Only IPv4 address in case of  dual stack
+                      if IPAddress.valid_ipv4?(ipAddress)
+                        winNode[address["type"]] = ipAddress
+                      end
+                    else
+                      winNode[address["type"]] = address["address"]
+                    end
                   end
                   winNodes.push(winNode)
                 end
@@ -1404,13 +1413,13 @@ class KubernetesApiClient
     def isCompletedJobPod(controllerKind, podStatus)
       isCompletedPod = false
       begin
-        if !controllerKind.nil? & !controllerKind.empty? &&
+        if !controllerKind.nil? && !controllerKind.empty? &&
            !podStatus.nil? && !podStatus.empty? &&
            controllerKind.downcase == Constants::CONTROLLER_KIND_JOB && podStatus == "Succeeded"
           isCompletedPod = true
         end
       rescue => error
-        @Log.warn "in_kube_podinventory::isCompletedJobPod failed with an error: #{err}"
+        @Log.warn "in_kube_podinventory::isCompletedJobPod failed with an error: #{error}"
       end
       return isCompletedPod
     end

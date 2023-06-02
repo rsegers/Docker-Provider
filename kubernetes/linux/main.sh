@@ -972,7 +972,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
-                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}-e /opt/fluent-bit/bin/out_oms.so &
+                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
                   telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             else
                   echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
