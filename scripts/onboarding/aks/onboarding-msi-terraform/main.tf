@@ -63,7 +63,7 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
 }
 
 resource "azurerm_monitor_data_collection_rule_association" "dcra" {
-  name                        = "${var.cluster_name}/microsoft.insights/ContainerInsightsExtension"
+  name                        = "ContainerInsightsExtension"
   target_resource_id          = azurerm_kubernetes_cluster.k8s.id
   data_collection_rule_id     = azurerm_monitor_data_collection_rule.dcr.id
   description                 = "Association of container insights data collection rule. Deleting this association will break the data collection for this AKS Cluster."
