@@ -25,6 +25,7 @@ RUN refreshenv \
 && gem install win32-ipc -v 0.7.0 \
 && gem install win32-event -v 0.6.3 \
 && gem install windows-pr -v 1.2.6 \
+&& gem install win32-api -v 1.10.1 \
 && gem install tomlrb -v 2.0.1 \
 && gem install gyoku -v 1.3.1 \
 && gem sources --clear-all
