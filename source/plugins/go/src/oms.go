@@ -1145,6 +1145,26 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
     }
 	ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
 	*/
+	
+	Log("longw: start check v2")
+	if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled  {
+		if MdsdMsgpUnixSocketClient == nil {
+			Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
+			CreateMDSDClient(ContainerLogV2, ContainerType)
+			if MdsdMsgpUnixSocketClient == nil {
+				Log("Error::mdsd::Unable to create mdsd client. Please check error log.")
+				ContainerLogTelemetryMutex.Lock()
+				defer ContainerLogTelemetryMutex.Unlock()
+				ContainerLogsMDSDClientCreateErrors += 1
+				Log("longw: retry")
+				return output.FLB_RETRY
+			}
+		ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
+		Log("longw v2 value0: %s", ContainerLogSchemaV2)
+	}
+	Log("longw v2 value1: %s", ContainerLogSchemaV2)
+	Log("longw: end check v2")
+
 	for _, record := range tailPluginRecords {
 		containerID, k8sNamespace, k8sPodName, containerName := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
 		logEntrySource := ToString(record["stream"])
@@ -1312,10 +1332,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				MdsdContainerLogTagRefreshTracker = time.Now()
 			}
 
-			ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
+			//ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
 			if ContainerLogSchemaV2 == true {
 				containerlogDataType = ContainerLogV2DataType
 			}
+			Log("longw v2 value2: %s", ContainerLogSchemaV2)
 			MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(containerlogDataType, useFromCache)
 			if MdsdContainerLogTagName == "" {
 				Log("Warn::mdsd::skipping Microsoft-ContainerLog or Microsoft-ContainerLogV2 stream since its opted out")
