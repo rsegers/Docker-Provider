@@ -342,10 +342,10 @@ class KubernetesApiClient
                 if !nodeStatusAddresses.nil?
                   nodeStatusAddresses.each do |address|
                     if !address["type"].nil? && address["type"].eql?("InternalIP")
-                      address = address["address"]
+                      ipAddress = address["address"]
                       # Pick Only IPv4 address in case of  dual stack
-                      if IPAddress.valid_ipv4?(address)
-                        winNode[address["type"]] = address
+                      if IPAddress.valid_ipv4?(ipAddress)
+                        winNode[address["type"]] = ipAddress
                       end
                     else
                       winNode[address["type"]] = address["address"]
