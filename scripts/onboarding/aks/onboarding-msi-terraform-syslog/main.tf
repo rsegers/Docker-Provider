@@ -47,8 +47,8 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
   data_sources {
     syslog{
       streams            = ["Microsoft-Syslog"]
-      facilityNames      = var.syslog_facilities
-      logLevels          = var.syslog_levels
+      facility_names      = var.syslog_facilities
+      log_levels          = var.syslog_levels
       name               = "sysLogsDataSource"
     }
 
