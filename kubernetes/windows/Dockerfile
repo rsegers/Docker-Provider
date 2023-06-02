@@ -20,12 +20,11 @@ RUN refreshenv \
 && echo gem: --no-document >> C:\ProgramData\gemrc \
 && gem install cool.io -v 1.7.1 --platform ruby \
 && gem install oj -v 3.3.10 \
-&& gem install fluentd -v 1.14.6 \
+&& gem install fluentd -v 1.15.2 \
 && gem install win32-service -v 1.0.1 \
 && gem install win32-ipc -v 0.7.0 \
 && gem install win32-event -v 0.6.3 \
 && gem install windows-pr -v 1.2.6 \
-&& gem install win32-api -v 1.10.1 \
 && gem install tomlrb -v 2.0.1 \
 && gem install gyoku -v 1.3.1 \
 && gem sources --clear-all
