@@ -18,6 +18,7 @@ module Fluent::Plugin
       require "yaml"
       require "json"
       require "time"
+      require "ipaddress"
 
       require_relative "KubernetesApiClient"
       require_relative "ApplicationInsightsUtility"
