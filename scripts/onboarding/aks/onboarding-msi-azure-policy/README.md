@@ -1,11 +1,12 @@
-You can create the policy definition using a command like :
+You can create the policy definition using a command like in windows:
 
-```az policy definition create --name "(Preview)AKS-Monitoring-Addon-MSI" --display-name "(Preview)AKS-Monitoring-Addon-MSI" --mode Indexed --metadata version=1.0.0 category=Kubernetes --rules .\azure-policy.rules.json --params .\azure-policy.parameters.json```
+```az policy definition create --name "Preview-AKS-Monitoring-Addon-MSI" --display-name "Preview-AKS-Monitoring-Addon-MSI" --mode Indexed --metadata version=1.0.0 category=Kubernetes --rules .\azure-policy.rules.json --params .\azure-policy.parameters.json```
+
+For linux or wsl environment, change the backward slash to forward slash.
 
 You can Create the policy assignment with the following command like :
 
-```az policy assignment create --name aks-monitoring-addon --policy "(Preview)AKS-Monitoring-Addon-MSI" --assign-identity --identity-scope /subscriptions/<subscriptionId> --role Contributor --scope /subscriptions/<subscriptionId> --location <location> --role Contributor --scope /subscriptions/<subscriptionId> -p "{ \"workspaceResourceId\": { \"value\":  \"/subscriptions/<subscriptionId>/resourcegroups/<resourceGroupName>/providers/microsoft.operationalinsights/workspaces/<workspaceName>\" } }"```
-
+```az policy assignment create --name aks-monitoring-addon --policy "Preview-AKS-Monitoring-Addon-MSI" --assign-identity --identity-scope /subscriptions/<subscriptionId> --role Contributor --scope /subscriptions/<subscriptionId> --location <location> --role Contributor --scope /subscriptions/<subscriptionId> -p "{ \"workspaceResourceId\": { \"value\":  \"/subscriptions/<subscriptionId>/resourcegroups/<resourceGroupName>/providers/microsoft.operationalinsights/workspaces/<workspaceName>\" } }"```
 
 **NOTE**
 
