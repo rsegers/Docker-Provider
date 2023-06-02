@@ -1161,6 +1161,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 		ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
 		Log("longw v2 value0: %s", ContainerLogSchemaV2)
+		}
 	}
 	Log("longw v2 value1: %s", ContainerLogSchemaV2)
 	Log("longw: end check v2")
