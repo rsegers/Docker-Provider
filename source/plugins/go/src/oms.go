@@ -737,13 +737,7 @@ func flushKubeMonAgentEventRecords() {
 			}
 			if IsWindows == false && len(msgPackEntries) > 0 { //for linux, mdsd route
 				if IsAADMSIAuthMode == true {
-					useFromCache := true
-					elapsed := time.Now().Sub(MdsdKubeMonAgentEventsTagRefreshTracker)
-					if !strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-						useFromCache = false
-						MdsdKubeMonAgentEventsTagRefreshTracker = time.Now()
-					}
-					MdsdKubeMonAgentEventsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(KubeMonAgentEventDataType, useFromCache)
+					MdsdKubeMonAgentEventsTagName = getOutputStreamIdTag(KubeMonAgentEventDataType)
 					if MdsdKubeMonAgentEventsTagName == "" {
 						Log("Warn::mdsd::skipping Microsoft-KubeMonAgentEvents stream since its opted out")
 						return
@@ -846,6 +840,33 @@ func flushKubeMonAgentEventRecords() {
 			skipKubeMonEventsFlush = false
 		}
 	}
+}
+
+// get the Output stream ID tag value corresponding to the datatype
+func getOutputStreamIdTag(dataType string) string {
+	useFromCache := true
+	switch dataType {
+	case ContainerLogDataType, ContainerLogV2DataType:
+		elapsed := time.Now().Sub(MdsdContainerLogTagRefreshTracker)
+		if !strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
+			useFromCache = false
+			MdsdContainerLogTagRefreshTracker = time.Now()
+		}
+	case KubeMonAgentEventDataType:
+		elapsed := time.Now().Sub(MdsdKubeMonAgentEventsTagRefreshTracker)
+		if !strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
+			useFromCache = false
+			MdsdKubeMonAgentEventsTagRefreshTracker = time.Now()
+		}
+	case InsightsMetricsDataType:
+		elapsed := time.Now().Sub(MdsdInsightsMetricsTagRefreshTracker)
+		if !strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
+			useFromCache = false
+			MdsdInsightsMetricsTagRefreshTracker = time.Now()
+		}
+	}
+
+	return extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(dataType, useFromCache)
 }
 
 //Translates telegraf time series to one or more Azure loganalytics metric(s)
@@ -966,13 +987,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		}
 		if len(msgPackEntries) > 0 {
 			if IsAADMSIAuthMode == true {
-				useFromCache := true
-				elapsed := time.Now().Sub(MdsdInsightsMetricsTagRefreshTracker)
-				if !strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-					useFromCache = false
-					MdsdInsightsMetricsTagRefreshTracker = time.Now()
-				}
-				MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType, useFromCache)
+				MdsdInsightsMetricsTagName = getOutputStreamIdTag(InsightsMetricsDataType)
 				if MdsdInsightsMetricsTagName == "" {
 					Log("Warn::mdsd::skipping Microsoft-InsightsMetrics stream since its opted out")
 					return output.FLB_OK
@@ -1293,13 +1308,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			if ContainerLogSchemaV2 == true {
 				containerlogDataType = ContainerLogV2DataType
 			}
-			useFromCache := true
-			elapsed := time.Now().Sub(MdsdContainerLogTagRefreshTracker)
-			if !strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-				useFromCache = false
-				MdsdContainerLogTagRefreshTracker = time.Now()
-			}
-			MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(containerlogDataType, useFromCache)
+			MdsdContainerLogTagName = getOutputStreamIdTag(containerlogDataType)
 			if MdsdContainerLogTagName == "" {
 				Log("Warn::mdsd::skipping Microsoft-ContainerLog or Microsoft-ContainerLogV2 stream since its opted out")
 				return output.FLB_RETRY
