@@ -22,7 +22,9 @@ param syslogFacilities array
 var clusterSubscriptionId = split(aksResourceId, '/')[2]
 var clusterResourceGroup = split(aksResourceId, '/')[4]
 var clusterName = split(aksResourceId, '/')[8]
-var dcrNameFull = 'MSCI-${workspaceRegion}-${clusterName}'
+var clusterLocation = replace(aksResourceLocation, ' ', '')
+var workspaceLocation = replace(workspaceRegion, ' ', '')
+var dcrNameFull = 'MSCI-${workspaceLocation}-${clusterName}'
 var dcrName = ((length(dcrNameFull) > 64) ? substring(dcrNameFull, 0, 64) : dcrNameFull)
 var associationName = 'ContainerInsightsExtension'
 var dataCollectionRuleId = resourceId(clusterSubscriptionId, clusterResourceGroup, 'Microsoft.Insights/dataCollectionRules', dcrName)
@@ -44,6 +46,8 @@ module aks_monitoring_msi_dcra_aksResourceId './nested_aks_monitoring_msi_dcra_a
   name: 'aks-monitoring-msi-dcra-${uniqueString(aksResourceId)}'
   scope: resourceGroup(clusterSubscriptionId, clusterResourceGroup)
   params: {
+    clusterName: clusterName
+    clusterLocation: clusterLocation
     associationName: associationName
     dataCollectionRuleId: dataCollectionRuleId
   }
