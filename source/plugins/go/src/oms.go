@@ -21,8 +21,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tinylib/msgp/msgp"
 
-	"Docker-Provider/source/plugins/go/src/extension"
-
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/Azure/azure-kusto-go/kusto/ingest"
@@ -840,33 +838,6 @@ func flushKubeMonAgentEventRecords() {
 			skipKubeMonEventsFlush = false
 		}
 	}
-}
-
-// get the Output stream ID tag value corresponding to the datatype
-func getOutputStreamIdTag(dataType string) string {
-	useFromCache := true
-	switch dataType {
-	case ContainerLogDataType, ContainerLogV2DataType:
-		elapsed := time.Now().Sub(MdsdContainerLogTagRefreshTracker)
-		if !strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-			useFromCache = false
-			MdsdContainerLogTagRefreshTracker = time.Now()
-		}
-	case KubeMonAgentEventDataType:
-		elapsed := time.Now().Sub(MdsdKubeMonAgentEventsTagRefreshTracker)
-		if !strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-			useFromCache = false
-			MdsdKubeMonAgentEventsTagRefreshTracker = time.Now()
-		}
-	case InsightsMetricsDataType:
-		elapsed := time.Now().Sub(MdsdInsightsMetricsTagRefreshTracker)
-		if !strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-			useFromCache = false
-			MdsdInsightsMetricsTagRefreshTracker = time.Now()
-		}
-	}
-
-	return extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(dataType, useFromCache)
 }
 
 //Translates telegraf time series to one or more Azure loganalytics metric(s)
