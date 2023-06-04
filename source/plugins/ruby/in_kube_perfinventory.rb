@@ -98,7 +98,7 @@ module Fluent::Plugin
           if !isFromCache
             @agentConfigRefreshTracker = DateTime.now.to_time.to_i
           end
-          @insightsmetricstag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::INSIGHTS_METRICS_DATA_TYPE, @insightsmetricstag, @agentConfigRefreshTracker)
+          @insightsMetricsTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::INSIGHTS_METRICS_DATA_TYPE, @insightsMetricsTag, @agentConfigRefreshTracker)
           if !KubernetesApiClient.isDCRStreamIdTag(@kubeperfTag)
             $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
