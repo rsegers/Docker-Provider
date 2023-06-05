@@ -7,10 +7,8 @@ LABEL vendor=Microsoft\ Corp \
 
 ARG IMAGE_TAG=0.1.0
 
-# Do not split this into multiple RUN!
-# Docker creates a layer for every RUN-Statement
+ENV chocolateyVersion 1.4.0
 RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
-# Fluentd depends on cool.io whose fat gem is only available for Ruby < 2.5, so need to specify --platform ruby when install Ruby > 2.5 and install msys2 to get dev tools
 RUN choco install -y ruby --version 3.1.1.1 --params "'/InstallDir:C:\ruby31'" \
 && choco install -y msys2 --version 20211130.0.0 --params "'/NoPath /NoUpdate /InstallDir:C:\ruby31\msys64'"
 
