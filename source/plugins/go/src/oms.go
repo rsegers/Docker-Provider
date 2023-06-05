@@ -1145,7 +1145,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				defer ContainerLogTelemetryMutex.Unlock()
 				ContainerLogsMDSDClientCreateErrors += 1
 				Log("longw: retry")
-				return output.FLB_RETRY
+				//return output.FLB_RETRY
 			}
 		ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
 		Log("longw v2 value0: %s", ContainerLogSchemaV2)
