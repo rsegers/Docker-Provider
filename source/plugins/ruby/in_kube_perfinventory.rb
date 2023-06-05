@@ -94,17 +94,15 @@ module Fluent::Plugin
         batchTime = currentTime.utc.iso8601
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_perfinventory::enumerate: AAD AUTH MSI MODE")
-          useFromCache = true
-          if !KubernetesApiClient.isDCRStreamIdTag(@kubeperfTag) || (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
+          @kubeperfTag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::PERF_DATA_TYPE, @kubeperfTag, @agentConfigRefreshTracker)
+          if !isFromCache
             @agentConfigRefreshTracker = DateTime.now.to_time.to_i
-            useFromCache = false
           end
-          @kubeperfTag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE, useFromCache)
-          @insightsmetricstag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE, true)
-          if @kubeperfTag.nil? || @kubeperfTag.empty?
+          @insightsMetricsTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::INSIGHTS_METRICS_DATA_TYPE, @insightsMetricsTag, @agentConfigRefreshTracker)
+          if !KubernetesApiClient.isDCRStreamIdTag(@kubeperfTag)
             $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          if @insightsMetricsTag.nil? || @insightsMetricsTag.empty?
+          if !KubernetesApiClient.isDCRStreamIdTag(@insightsMetricsTag)
             $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()

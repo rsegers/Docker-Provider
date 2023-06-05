@@ -84,13 +84,11 @@ module Fluent::Plugin
 
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kubestate_hpa::enumerate: AAD AUTH MSI MODE")
-          useFromCache = true
-          if !KubernetesApiClient.isDCRStreamIdTag(@tag) || (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
+          @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::INSIGHTS_METRICS_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+          if !isFromCache
             @agentConfigRefreshTracker = DateTime.now.to_time.to_i
-            useFromCache = false
           end
-          @tag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE, useFromCache)
-          if @tag.nil? || @tag.empty?
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
             $log.warn("in_kubestate_hpa::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
             return
           end

@@ -64,17 +64,15 @@ module Fluent::Plugin
         @@istestvar = ENV["ISTEST"]
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_win_cadvisor_perf::enumerate: AAD AUTH MSI MODE")
-          useFromCache = true
-          if !KubernetesApiClient.isDCRStreamIdTag(@tag) || (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
+          @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::PERF_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+          if !isFromCache
             @agentConfigRefreshTracker = DateTime.now.to_time.to_i
-            useFromCache = false
           end
-          @tag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE, useFromCache)
-          @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE, true)
-          if @tag.nil? || @tag.empty?
+          @insightsMetricsTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::INSIGHTS_METRICS_DATA_TYPE, @insightsMetricsTag, @agentConfigRefreshTracker)
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
             $log.info("in_win_cadvisor_perf::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          if @insightsMetricsTag.nil? || @insightsMetricsTag.empty?
+          if !KubernetesApiClient.isDCRStreamIdTag(@insightsMetricsTag)
             $log.info("in_win_cadvisor_perf::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()

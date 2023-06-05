@@ -91,13 +91,11 @@ module Fluent::Plugin
 
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_events::enumerate: AAD AUTH MSI MODE")
-          useFromCache = true
-          if !KubernetesApiClient.isDCRStreamIdTag(@tag) || (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
+          @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::KUBE_EVENTS_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+          if !isFromCache
             @agentConfigRefreshTracker = DateTime.now.to_time.to_i
-            useFromCache = false
           end
-          @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_EVENTS_DATA_TYPE, useFromCache)
-          if @tag.nil? || @tag.empty?
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
             $log.warn("in_kube_events::enumerate: skipping Microsoft-KubeEvents stream since its opted-out @ #{Time.now.utc.iso8601}")
             return
           end

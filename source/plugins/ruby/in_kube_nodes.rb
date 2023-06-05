@@ -135,26 +135,23 @@ module Fluent::Plugin
 
         if @extensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_nodes::enumerate: AAD AUTH MSI MODE")
-          useFromCache = true
-          if !KubernetesApiClient.isDCRStreamIdTag(@tag) || (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
+          @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::KUBE_NODE_INVENTORY_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+          if !isFromCache
             @agentConfigRefreshTracker = DateTime.now.to_time.to_i
-            useFromCache = false
           end
-          @tag = @extensionUtils.getOutputStreamId(Constants::KUBE_NODE_INVENTORY_DATA_TYPE, useFromCache)
-          # since above call triggers the cache update (if useFromCache is true) so we dont need to trigger cache update in subsequent calls
-          @kubeperfTag = @extensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE, true)
-          @insightsMetricsTag = @extensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE, true)
-          @ContainerNodeInventoryTag = @extensionUtils.getOutputStreamId(Constants::CONTAINER_NODE_INVENTORY_DATA_TYPE, true)
-          if @kubeperfTag.nil? || @kubeperfTag.empty?
+          @kubeperfTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::PERF_DATA_TYPE, @kubeperfTag, @agentConfigRefreshTracker)
+          @insightsMetricsTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::INSIGHTS_METRICS_DATA_TYPE, @insightsMetricsTag, @agentConfigRefreshTracker)
+          @ContainerNodeInventoryTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::CONTAINER_NODE_INVENTORY_DATA_TYPE, @ContainerNodeInventoryTag, @agentConfigRefreshTracker)
+          if !KubernetesApiClient.isDCRStreamIdTag(@kubeperfTag)
             $log.warn("in_kube_nodes::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          if @insightsMetricsTag.nil? || @insightsMetricsTag.empty?
+          if !KubernetesApiClient.isDCRStreamIdTag(@insightsMetricsTag)
             $log.warn("in_kube_nodes::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          if @ContainerNodeInventoryTag.nil? || @ContainerNodeInventoryTag.empty?
+          if !KubernetesApiClient.isDCRStreamIdTag(@ContainerNodeInventoryTag)
             $log.info("in_kube_nodes::enumerate: skipping Microsoft-ContainerNodeInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          if @tag.nil? || @tag.empty?
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
             $log.info("in_kube_nodes::enumerate: skipping Microsoft-KubeNodeInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
