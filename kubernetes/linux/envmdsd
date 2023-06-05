@@ -1,7 +1,7 @@
 #export MDSD_ROLE_PREFIX="/var/run/mdsd-ci/default"
 #export MDSD_OPTIONS="-d -A -r ${MDSD_ROLE_PREFIX}"
 export MDSD_LOG="/var/opt/microsoft/linuxmonagent/log"
-export MDSD_SPOOL_DIRECTORY="/var/opt/microsoft/linuxmonagent"
+export MDSD_SPOOL_DIRECTORY="/var/opt/mdsd_spool_directory"
 #export CIWORKSPACE_id=""
 #export CIWORKSPACE_key=""
 export MDSD_OPTIONS="-A -c /etc/mdsd.d/mdsd.xml -r ${MDSD_ROLE_PREFIX} -S ${MDSD_SPOOL_DIRECTORY}/eh -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos"
