@@ -1,12 +1,13 @@
 # Supported values of windows version are ltsc2019 or ltsc2022 which are being passed by the build script or build pipeline
 ARG WINDOWS_VERSION=
 FROM mcr.microsoft.com/windows/servercore:${WINDOWS_VERSION}
-MAINTAINER OMSContainers@microsoft.com
+LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
+ENV chocolateyVersion 1.4.0
 RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
 # Fluentd depends on cool.io whose fat gem is only available for Ruby < 2.5, so need to specify --platform ruby when install Ruby > 2.5 and install msys2 to get dev tools
 RUN choco install -y ruby --version 3.1.1.1 --params "'/InstallDir:C:\ruby31'" \
@@ -76,7 +77,7 @@ COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluen
 COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
 
 # default value will be overwritten by pipeline 
-ARG IMAGE_TAG=win-3.1.7
+ARG IMAGE_TAG=win-3.1.8
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 ENV OS_TYPE "windows"
