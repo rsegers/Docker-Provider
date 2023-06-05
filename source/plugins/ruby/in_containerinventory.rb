@@ -64,13 +64,11 @@ module Fluent::Plugin
       $log.info("in_container_inventory::enumerate : Begin processing @ #{Time.now.utc.iso8601}")
       if ExtensionUtils.isAADMSIAuthMode()
         $log.info("in_container_inventory::enumerate: AAD AUTH MSI MODE")
-        useFromCache = true
-        if !KubernetesApiClient.isDCRStreamIdTag(@tag) || (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
+        @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::CONTAINER_INVENTORY_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+        if !isFromCache
           @agentConfigRefreshTracker = DateTime.now.to_time.to_i
-          useFromCache = false
         end
-        @tag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE, useFromCache)
-        if @tag.nil? || @tag.empty?
+        if !KubernetesApiClient.isDCRStreamIdTag(@tag)
           $log.warn("in_container_inventory::enumerate: skipping Microsoft-ContainerInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
           return
         end

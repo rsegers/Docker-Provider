@@ -144,8 +144,6 @@ func (e *Extension) GetOutputStreamId(datatype string, useFromCache bool) string
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
 	if useFromCache && len(e.datatypeStreamIdMap) > 0 && e.datatypeStreamIdMap[datatype] != "" {
-		message := fmt.Sprintf("OutputstreamId: %s for the datatype: %s", e.datatypeStreamIdMap[datatype], datatype)
-		logger.Printf(message)
 		return e.datatypeStreamIdMap[datatype]
 	}
 	var err error

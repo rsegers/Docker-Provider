@@ -154,21 +154,19 @@ module Fluent::Plugin
         podInventoryStartTime = (Time.now.to_f * 1000).to_i
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_podinventory::enumerate: AAD AUTH MSI MODE")
-          useFromCache = true
-          if !KubernetesApiClient.isDCRStreamIdTag(@tag) || (DateTime.now.to_time.to_i - @agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS
+          @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::KUBE_POD_INVENTORY_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+          if !isFromCache
             @agentConfigRefreshTracker = DateTime.now.to_time.to_i
-            useFromCache = false
           end
-          @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_POD_INVENTORY_DATA_TYPE, useFromCache)
-          @kubeservicesTag = ExtensionUtils.getOutputStreamId(Constants::KUBE_SERVICES_DATA_TYPE, true)
-          @containerInventoryTag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE, true)
-          if @kubeservicesTag.nil? || @kubeservicesTag.empty?
+          @kubeservicesTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::KUBE_SERVICES_DATA_TYPE, @kubeservicesTag, @agentConfigRefreshTracker)
+          @containerInventoryTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::CONTAINER_INVENTORY_DATA_TYPE, @containerInventoryTag, @agentConfigRefreshTracker)
+          if !KubernetesApiClient.isDCRStreamIdTag(@kubeservicesTag)
             $log.warn("in_kube_podinventory::enumerate: skipping Microsoft-KubeServices stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          if @containerInventoryTag.nil? || @containerInventoryTag.empty?
+          if !KubernetesApiClient.isDCRStreamIdTag(@containerInventoryTag)
             $log.info("in_kube_podinventory::enumerate: skipping Microsoft-ContainerInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          if @tag.nil? || @tag.empty?
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
             $log.info("in_kube_podinventory::enumerate: skipping Microsoft-KubePodInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
