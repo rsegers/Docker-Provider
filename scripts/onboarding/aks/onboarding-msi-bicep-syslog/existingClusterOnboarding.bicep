@@ -22,50 +22,86 @@ param syslogFacilities array
 var clusterSubscriptionId = split(aksResourceId, '/')[2]
 var clusterResourceGroup = split(aksResourceId, '/')[4]
 var clusterName = split(aksResourceId, '/')[8]
-var clusterLocation = replace(aksResourceLocation, ' ', '')
 var workspaceLocation = replace(workspaceRegion, ' ', '')
 var dcrNameFull = 'MSCI-${workspaceLocation}-${clusterName}'
 var dcrName = ((length(dcrNameFull) > 64) ? substring(dcrNameFull, 0, 64) : dcrNameFull)
 var associationName = 'ContainerInsightsExtension'
 var dataCollectionRuleId = resourceId(clusterSubscriptionId, clusterResourceGroup, 'Microsoft.Insights/dataCollectionRules', dcrName)
 
-module aks_monitoring_msi_dcr_dcr './nested_aks_monitoring_msi_dcr_dcr.bicep' = {
-  name: 'aks-monitoring-msi-dcr-${uniqueString(dcrName)}'
-  scope: resourceGroup(clusterSubscriptionId, clusterResourceGroup)
-  params: {
-    dcrName: dcrName
-    workspaceRegion: workspaceRegion
-    resourceTagValues: resourceTagValues
-    syslogFacilities: syslogFacilities
-    syslogLevels: syslogLevels
-    workspaceResourceId: workspaceResourceId
+resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-01' = {
+  name: dcrName
+  location: workspaceRegion
+  tags: resourceTagValues
+  kind: 'Linux'
+  properties: {
+    dataSources: {
+      syslog: [
+        {
+          streams: [
+            'Microsoft-Syslog'
+          ]
+          facilityNames: syslogFacilities
+          logLevels: syslogLevels
+          name: 'sysLogsDataSource'
+        }
+      ]
+      extensions: [
+        {
+          name: 'ContainerInsightsExtension'
+          streams: [
+            'Microsoft-ContainerInsights-Group-Default'
+          ]
+          extensionName: 'ContainerInsights'
+        }
+      ]
+    }
+    destinations: {
+      logAnalytics: [
+        {
+          workspaceResourceId: workspaceResourceId
+          name: 'ciworkspace'
+        }
+      ]
+    }
+    dataFlows: [
+      {
+        streams: [
+          'Microsoft-ContainerInsights-Group-Default'
+          'Microsoft-Syslog'
+        ]
+        destinations: [
+          'ciworkspace'
+        ]
+      }
+    ]
   }
 }
 
-module aks_monitoring_msi_dcra_aksResourceId './nested_aks_monitoring_msi_dcra_aksResourceId.bicep' = {
-  name: 'aks-monitoring-msi-dcra-${uniqueString(aksResourceId)}'
-  scope: resourceGroup(clusterSubscriptionId, clusterResourceGroup)
-  params: {
-    clusterName: clusterName
-    clusterLocation: clusterLocation
-    associationName: associationName
+resource aks_monitoring_msi_addon 'Microsoft.ContainerService/managedClusters@2018-03-31' = {
+  name: clusterName
+  location: aksResourceLocation
+  tags: resourceTagValues
+  properties: {
+    addonProfiles: {
+      omsagent: {
+        enabled: true
+        config: {
+          logAnalyticsWorkspaceResourceID: workspaceResourceId
+          useAADAuth: 'true'
+        }
+      }
+    }
+  }
+}
+
+resource aks_monitoring_msi_dcra 'microsoft.insights/dataCollectionRuleAssociations@2022-06-01' = {
+  name: associationName
+  scope: aks_monitoring_msi_addon
+  properties: {
+    description: 'Association of data collection rule. Deleting this association will break the data collection for this AKS Cluster.'
     dataCollectionRuleId: dataCollectionRuleId
   }
   dependsOn: [
-    aks_monitoring_msi_dcr_dcr
-  ]
-}
-
-module aks_monitoring_msi_addon_aksResourceId './nested_aks_monitoring_msi_addon_aksResourceId.bicep' = {
-  name: 'aks-monitoring-msi-addon-${uniqueString(aksResourceId)}'
-  scope: resourceGroup(clusterSubscriptionId, clusterResourceGroup)
-  params: {
-    clusterName: clusterName
-    aksResourceLocation: aksResourceLocation
-    resourceTagValues: resourceTagValues
-    workspaceResourceId: workspaceResourceId
-  }
-  dependsOn: [
-    aks_monitoring_msi_dcra_aksResourceId
+    aks_monitoring_msi_dcr
   ]
 }
