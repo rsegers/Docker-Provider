@@ -8,6 +8,36 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 05/16/2023 -
+##### Version microsoft/oms:3.1.8 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.8 (linux)
+##### Version microsoft/oms:win-3.1.8 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.8 (windows)
+##### Current dependencies
+- Linux
+  - [CBL-Mariner 2.0.20230426](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20230426-2.0)
+  - Golang - 1.20.3
+  - Ruby - 3.1.3
+  - MDSD - 1.26.1
+  - Telegraf - 1.26.0
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.5
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.3.2
+  - Golang - 1.20.3
+##### Code change log
+- Common
+  - Retire unused pipeline files and Dockerfile
+  - Update release pipeline for override tag
+  - Update LogCollection troubleshoot script for ARO clusters
+- Linux
+  - Add KataRuntimePod check in kubernetes_container_inventory
+  - Update MDSD version from 1.17.1 to 1.26.1
+  - Update Telegraf version from 1.25.2 to 1.26.0 for vulnerabilities fixes
+  - Update Dockerfile for trivy vulnerabilities scan
+
 ### 04/26/2023 -
 ##### Version microsoft/oms:3.1.7 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.7 (linux)
 ##### Version microsoft/oms:win-3.1.7 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.7 (windows)
@@ -36,7 +66,6 @@ additional questions or comments.
   - Updated the default wait times for the telegraf network port listeners
   - Exposed the wait times through config maps for testing and support
 
-## Release History
 ### 04/07/2023 -
 ##### Version microsoft/oms:3.1.6 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.6 (linux)
 ##### Version microsoft/oms:win-3.1.6 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.6 (windows)
