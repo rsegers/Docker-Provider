@@ -12,6 +12,8 @@ fi
 sudo tdnf install ca-certificates-microsoft -y
 sudo update-ca-trust
 
+echo "MARINER $(grep 'VERSION=' /etc/os-release)" >> packages_version.txt
+
 # sudo tdnf install ruby-3.1.3 -y
 tdnf install -y gcc patch bzip2 openssl-devel libyaml-devel libffi-devel readline-devel zlib-devel gdbm-devel ncurses-devel
 wget https://github.com/rbenv/ruby-build/archive/refs/tags/v20230330.tar.gz -O ruby-build.tar.gz
@@ -87,6 +89,7 @@ fluentd --setup ./fluent
 
 gem install gyoku iso8601 bigdecimal --no-doc
 gem install tomlrb -v "2.0.1" --no-document
+gem install ipaddress --no-document
 
 rm -f $TMPDIR/docker-cimprov*.sh
 rm -f $TMPDIR/mdsd.xml
