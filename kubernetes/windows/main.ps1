@@ -583,8 +583,8 @@ function Start-Fluent-Telegraf {
         Start-Telegraf
     }
 
-    fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'
-
+    # fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'
+    Start-Process -Verb RunAs -FilePath "fluentd" -ArgumentList "--reg-winsvc", "i", "--reg-winsvc-auto-start", "--winsvc-name", "fluentdwinaks", "--reg-winsvc-fluentdopt", "'-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'"
     Notepad.exe | Out-Null
 }
 
