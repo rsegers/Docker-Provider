@@ -597,7 +597,7 @@ function Start-Telegraf {
     # run prometheus custom config parser
     Write-Host "**********Running config parser for custom prometheus scraping**********"
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
-    .\setpromenv.ps1
+    if (Test-Path -Path setpromenv.ps1) { ./setpromenv.ps1}
     Write-Host "**********End running config parser for custom prometheus scraping**********"
 
     $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
