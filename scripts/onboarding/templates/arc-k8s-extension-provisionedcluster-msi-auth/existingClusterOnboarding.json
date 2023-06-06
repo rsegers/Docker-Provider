@@ -127,8 +127,8 @@
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
                                             "interval": "[parameters('dataCollectionInterval')]",
-                                             "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-                                             "namespaces": "[parameters('namespacesForDataCollection')]"
+                                            "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                                            "namespaces": "[parameters('namespacesForDataCollection')]"
                                           }
                                         },
                                         "extensionName": "ContainerInsights"
@@ -163,7 +163,7 @@
                 "resources": [
                     {
                         "type": "Microsoft.Insights/dataCollectionRules",
-                        "apiVersion": "2021-04-01",
+                        "apiVersion": "2022-06-01",
                         "name": "[variables('dcrName')]",
                         "location": "[parameters('workspaceRegion')]",
                         "tags": "[parameters('resourceTagValues')]",
