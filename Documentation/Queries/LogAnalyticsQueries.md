@@ -60,6 +60,7 @@ KubePodInv
     let clustereResourceId = "<clusterARMResourceId>";
     let deploymentNamespace = "<deploymentName>";
     let deploymentNamePrefix = "<deploymentNamePrefix>";
+    let versionLabelKeyName = "version"; # update the version label key if its different
 
     let KubePodInv = KubePodInventory
     | where TimeGenerated >= startTime and TimeGenerated < endTime
@@ -81,7 +82,7 @@ KubePodInv
     | where PodName startswith deploymentNamePrefix
     ) on ContainerId
     | extend LabelsJSON = parse_json(PodLabel)
-    | project TimeGenerated, deployment,  deploymentVersion = LabelsJSON.[0].["version"], PodName, PodStatus, ContainerName, ContainerId, ContainerStatus, LogMessage, LogSource
+    | project TimeGenerated, deployment,  deploymentVersion = LabelsJSON.[0].[versionLabelKeyName], PodName, PodStatus, ContainerName, ContainerId, ContainerStatus, LogMessage, LogSource
 
 ```
 
