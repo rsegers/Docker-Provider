@@ -41,11 +41,6 @@ variable "workspace_region" {
   default = "<workspaceRegion>"
 }
 
-variable "enable_syslog" {
-  type = string
-  default = false
-}
-
 variable "syslog_levels" {
   type = list(string)
   default = ["Debug", "Info", "Notice", "Warning", "Error", "Critical", "Alert", "Emergency"]
