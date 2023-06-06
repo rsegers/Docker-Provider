@@ -30,7 +30,7 @@ resource "azurerm_kubernetes_cluster" "k8s" {
 resource "azurerm_monitor_data_collection_rule" "dcr" {
   name                = "MSCI-${var.workspace_region}-${var.cluster_name}"
   resource_group_name = azurerm_resource_group.rg.name
-  location            = azurerm_resource_group.rg.location
+  location            = var.workspace_region
 
   destinations {
     log_analytics {

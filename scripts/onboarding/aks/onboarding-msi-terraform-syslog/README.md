@@ -8,3 +8,4 @@ If you are deploying a new AKS cluster using Terraform with ama logs addon enabl
 
 **NOTE**
 - Please edit the main.tf file appropriately before running the terraform template
+- Data will start flowing after 10 minutes since the cluster needs to be ready first
