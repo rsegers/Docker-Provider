@@ -92,11 +92,14 @@ resource aks_monitoring_msi_addon 'Microsoft.ContainerService/managedClusters@20
       }
     }
   }
+  dependsOn: [
+    aks_monitoring_msi_dcra
+  ]
 }
 
-resource aks_monitoring_msi_dcra 'microsoft.insights/dataCollectionRuleAssociations@2022-06-01' = {
-  name: associationName
-  scope: aks_monitoring_msi_addon
+#disable-next-line BCP174
+resource aks_monitoring_msi_dcra 'Microsoft.ContainerService/managedClusters/providers/dataCollectionRuleAssociations@2022-06-01' = {
+  name: '${clusterName}/microsoft.insights/${associationName}'
   properties: {
     description: 'Association of data collection rule. Deleting this association will break the data collection for this AKS Cluster.'
     dataCollectionRuleId: dataCollectionRuleId
