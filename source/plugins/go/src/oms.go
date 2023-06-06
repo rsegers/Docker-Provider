@@ -735,7 +735,7 @@ func flushKubeMonAgentEventRecords() {
 			}
 			if IsWindows == false && len(msgPackEntries) > 0 { //for linux, mdsd route
 				if IsAADMSIAuthMode == true {
-					MdsdKubeMonAgentEventsTagName = getOutputStreamIdTag(KubeMonAgentEventDataType)
+					MdsdKubeMonAgentEventsTagName = getOutputStreamIdTag(KubeMonAgentEventDataType, MdsdKubeMonAgentEventsTagName, &MdsdKubeMonAgentEventsTagRefreshTracker)
 					if MdsdKubeMonAgentEventsTagName == "" {
 						Log("Warn::mdsd::skipping Microsoft-KubeMonAgentEvents stream since its opted out")
 						return
@@ -958,7 +958,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		}
 		if len(msgPackEntries) > 0 {
 			if IsAADMSIAuthMode == true {
-				MdsdInsightsMetricsTagName = getOutputStreamIdTag(InsightsMetricsDataType)
+				MdsdInsightsMetricsTagName = getOutputStreamIdTag(InsightsMetricsDataType, MdsdInsightsMetricsTagName, &MdsdInsightsMetricsTagRefreshTracker)
 				if MdsdInsightsMetricsTagName == "" {
 					Log("Warn::mdsd::skipping Microsoft-InsightsMetrics stream since its opted out")
 					return output.FLB_OK
@@ -1279,7 +1279,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			if ContainerLogSchemaV2 == true {
 				containerlogDataType = ContainerLogV2DataType
 			}
-			MdsdContainerLogTagName = getOutputStreamIdTag(containerlogDataType)
+			MdsdContainerLogTagName = getOutputStreamIdTag(containerlogDataType, MdsdContainerLogTagName, &MdsdContainerLogTagRefreshTracker)
 			if MdsdContainerLogTagName == "" {
 				Log("Warn::mdsd::skipping Microsoft-ContainerLog or Microsoft-ContainerLogV2 stream since its opted out")
 				return output.FLB_RETRY
