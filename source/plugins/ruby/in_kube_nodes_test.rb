@@ -3,7 +3,6 @@ require "minitest/autorun"
 require "fluent/test"
 require "fluent/test/driver/input"
 require "fluent/test/helpers"
-
 require_relative "in_kube_nodes.rb"
 
 class InKubeNodesTests < Minitest::Test
