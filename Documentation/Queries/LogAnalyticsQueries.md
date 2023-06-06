@@ -85,7 +85,7 @@ KubePodInv
 
 ```
 
-# 3. Container Logs for Specific Controller
+# 4. Container Logs for Specific Controller
 
 ``` bash
     let startTime = ago(1h);
@@ -117,7 +117,7 @@ KubePodInv
 
 ```
 
-# 4. Container Logs of Any Failed Pod in Specified Namespace
+# 5. Container Logs of Any Failed Pod in Specified Namespace
 
 ``` bash
     let startTime = ago(4h);
