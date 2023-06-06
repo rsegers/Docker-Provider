@@ -265,8 +265,8 @@
       "type": "Microsoft.Resources/deployments",
       "name": "[Concat('arc-k8s-ci-extension', '-',  uniqueString(parameters('clusterResourceId')))]",
       "apiVersion": "2019-05-01",
-      "subscriptionId": "[split(parameters('clusterResourceId'),'/')[2]]",
-      "resourceGroup": "[split(parameters('clusterResourceId'),'/')[4]]",
+      "subscriptionId": "[variables('clusterSubscriptionId')]",
+      "resourceGroup": "[variables('clusterResourceGroup')]",
       "dependsOn": [
         "[Concat('arc-k8s-monitoring-msi-dcra', '-',  uniqueString(parameters('clusterResourceId')))]"
       ],
@@ -305,7 +305,7 @@
                   }
                 }
               },
-              "scope": "[concat('Microsoft.HybridContainerService/provisionedClusters/', split(parameters('clusterResourceId'),'/')[8])]"
+              "scope": "[concat('Microsoft.HybridContainerService/provisionedClusters/', variables('clusterName'))]"
             }
           ]
         }
