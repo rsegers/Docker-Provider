@@ -10,6 +10,7 @@ You can Create the policy assignment with the following command like :
 
 **NOTE**
 
+- Please make sure when performing remediation task, the policy assignment has access to workspace you specified.
 - Please download all files under AddonPolicyTemplate folder before running the policy template.
 - If you want to assign policy from the portal, follow the below guides:
     - After creating the policy definition through the above command, go to Azure portal -> Policy -> Definitions and select the definition you just created.
