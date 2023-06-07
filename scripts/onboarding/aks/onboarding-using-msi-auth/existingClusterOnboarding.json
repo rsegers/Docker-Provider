@@ -32,6 +32,12 @@
                 "description": "Full Resource ID of the log analitycs workspace that will be used for data destination. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz"
             }
         },
+        "defaultStreams": {
+            "type": "array",
+            "metadata": {
+                "description": "Array of default container insights streams"
+            }
+        },
         "enableSyslog": {
             "type": "bool",
             "metadata": {
@@ -93,7 +99,7 @@
                 "resources": [
                     {
                         "type": "Microsoft.Insights/dataCollectionRules",
-                        "apiVersion": "2021-04-01",
+                        "apiVersion": "2022-06-01",
                         "name": "[variables('dcrName')]",
                         "location": "[parameters('workspaceRegion')]",
                         "tags": "[parameters('resourceTagValues')]",
@@ -103,14 +109,12 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": [
-                                           "Microsoft-ContainerInsights-Group-Default"
-                                        ],
+                                        "streams": "[parameters('defaultStreams')]",
                                         "extensionSettings": {
                                             "dataCollectionSettings" : {
                                                 "interval": "[parameters('dataCollectionInterval')]",
-                                                 "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-                                                 "namespaces": "[parameters('namespacesForDataCollection')]"
+                                                "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                                                "namespaces": "[parameters('namespacesForDataCollection')]"
                                             }
                                         },
                                         "extensionName": "ContainerInsights"
@@ -127,9 +131,7 @@
                             },
                             "dataFlows": [
                                 {
-                                    "streams": [
-                                        "Microsoft-ContainerInsights-Group-Default"
-                                    ],
+                                    "streams": "[parameters('defaultStreams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]
@@ -138,7 +140,7 @@
                         }
                     }
                 ]
-              },
+        },
         "syslogAndCITemplate": {
                 "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
                 "contentVersion": "1.0.0.0",
@@ -147,7 +149,7 @@
                 "resources": [
                     {
                         "type": "Microsoft.Insights/dataCollectionRules",
-                        "apiVersion": "2021-04-01",
+                        "apiVersion": "2022-06-01",
                         "name": "[variables('dcrName')]",
                         "location": "[parameters('workspaceRegion')]",
                         "tags": "[parameters('resourceTagValues')]",
@@ -167,9 +169,14 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": [
-                                            "Microsoft-ContainerInsights-Group-Default"
-                                        ],
+                                        "streams": "[parameters('defaultStreams')]",
+                                        "extensionSettings": {
+                                            "dataCollectionSettings" : {
+                                                "interval": "[parameters('dataCollectionInterval')]",
+                                                "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                                                "namespaces": "[parameters('namespacesForDataCollection')]"
+                                            }
+                                        },
                                         "extensionName": "ContainerInsights"
                                     }
                                 ]
@@ -184,8 +191,13 @@
                             },
                             "dataFlows": [
                                 {
+                                    "streams": "[parameters('defaultStreams')]",
+                                    "destinations": [
+                                        "ciworkspace"
+                                    ]
+                                },
+                                {
                                     "streams": [
-                                        "Microsoft-ContainerInsights-Group-Default",
                                         "Microsoft-Syslog"
                                     ],
                                     "destinations": [
@@ -196,7 +208,7 @@
                         }
                     }
                 ]
-              }
+        }
     },
     "resources": [
         {
@@ -231,7 +243,7 @@
                     {
                         "type": "Microsoft.ContainerService/managedClusters/providers/dataCollectionRuleAssociations",
                         "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('associationName'))]",
-                        "apiVersion": "2021-04-01",
+                        "apiVersion": "2022-06-01",
                         "properties": {
                             "description": "Association of data collection rule. Deleting this association will break the data collection for this AKS Cluster.",
                             "dataCollectionRuleId": "[variables('dataCollectionRuleId')]"

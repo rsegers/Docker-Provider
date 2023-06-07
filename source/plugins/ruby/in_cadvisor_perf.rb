@@ -24,6 +24,7 @@ module Fluent::Plugin
       require_relative "extension_utils"
       @namespaces = []
       @namespaceFilteringMode = "off"
+      @agentConfigRefreshTracker = DateTime.now.to_time.to_i
     end
 
     config_param :run_interval, :time, :default => 60
@@ -67,14 +68,17 @@ module Fluent::Plugin
 
         if ExtensionUtils.isAADMSIAuthMode() && !@@isWindows.nil? && @@isWindows == false
           $log.info("in_cadvisor_perf::enumerate: AAD AUTH MSI MODE")
-          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @tag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
+          @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::PERF_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+          if !isFromCache
+            @agentConfigRefreshTracker = DateTime.now.to_time.to_i
           end
-          if @insightsmetricstag.nil? || !@insightsmetricstag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @insightsmetricstag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+          @insightsmetricstag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::INSIGHTS_METRICS_DATA_TYPE, @insightsmetricstag, @agentConfigRefreshTracker)
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
+            $log.warn("in_cadvisor_perf::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          $log.info("in_cadvisor_perf::enumerate: using perf tag -#{@tag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_cadvisor_perf::enumerate: using insightsmetrics tag -#{@insightsmetricstag} @ #{Time.now.utc.iso8601}")
+          if !KubernetesApiClient.isDCRStreamIdTag(@insightsmetricstag)
+            $log.warn("in_cadvisor_perf::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
+          end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
             $log.info("in_cadvisor_perf::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
@@ -90,7 +94,7 @@ module Fluent::Plugin
           eventStream.add(time, record) if record
         end
 
-        router.emit_stream(@tag, eventStream) if eventStream
+        router.emit_stream(@tag, eventStream) if !@tag.nil? && !@tag.empty? && eventStream
         router.emit_stream(@mdmtag, eventStream) if eventStream
 
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
@@ -107,7 +111,7 @@ module Fluent::Plugin
               insightsMetricsEventStream.add(time, insightsMetricsRecord) if insightsMetricsRecord
             end
 
-            router.emit_stream(@insightsmetricstag, insightsMetricsEventStream) if insightsMetricsEventStream
+            router.emit_stream(@insightsmetricstag, insightsMetricsEventStream) if !@insightsmetricstag.nil? && !@insightsmetricstag.empty? && insightsMetricsEventStream
             router.emit_stream(@mdmtag, insightsMetricsEventStream) if insightsMetricsEventStream
 
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && insightsMetricsEventStream.count > 0)

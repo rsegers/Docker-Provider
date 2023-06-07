@@ -21,8 +21,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/tinylib/msgp/msgp"
 
-	"Docker-Provider/source/plugins/go/src/extension"
-
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/Azure/azure-kusto-go/kusto/ingest"
@@ -90,6 +88,7 @@ const defaultContainerInventoryRefreshInterval = 60
 
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
+const agentConfigRefreshIntervalSeconds = 300
 
 //Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -170,10 +169,16 @@ var (
 	AdxDatabaseName string
 	// container log or container log v2 tag name for oneagent route
 	MdsdContainerLogTagName string
+	// ContainerLog Tag Refresh Tracker
+	MdsdContainerLogTagRefreshTracker time.Time
 	// kubemonagent events tag name for oneagent route
 	MdsdKubeMonAgentEventsTagName string
+	// KubeMonAgentEvents Tag Refresh Tracker
+	MdsdKubeMonAgentEventsTagRefreshTracker time.Time
 	// InsightsMetrics tag name for oneagent route
 	MdsdInsightsMetricsTagName string
+	// InsightsMetrics Tag Refresh Tracker
+	MdsdInsightsMetricsTagRefreshTracker time.Time
 	// flag to check if its Windows OS
 	IsWindows bool
 	// container type
@@ -729,9 +734,12 @@ func flushKubeMonAgentEventRecords() {
 				}
 			}
 			if IsWindows == false && len(msgPackEntries) > 0 { //for linux, mdsd route
-				if IsAADMSIAuthMode == true && strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) == false {
-					Log("Info::mdsd::obtaining output stream id for data type: %s", KubeMonAgentEventDataType)
-					MdsdKubeMonAgentEventsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(KubeMonAgentEventDataType)
+				if IsAADMSIAuthMode == true {
+					MdsdKubeMonAgentEventsTagName = getOutputStreamIdTag(KubeMonAgentEventDataType, MdsdKubeMonAgentEventsTagName, &MdsdKubeMonAgentEventsTagRefreshTracker)
+					if MdsdKubeMonAgentEventsTagName == "" {
+						Log("Warn::mdsd::skipping Microsoft-KubeMonAgentEvents stream since its opted out")
+						return
+					}
 				}
 				Log("Info::mdsd:: using mdsdsource name for KubeMonAgentEvents: %s", MdsdKubeMonAgentEventsTagName)
 				msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdKubeMonAgentEventsTagName, msgPackEntries)
@@ -949,9 +957,12 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 			}
 		}
 		if len(msgPackEntries) > 0 {
-			if IsAADMSIAuthMode == true && (strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) == false) {
-				Log("Info::mdsd::obtaining output stream id for InsightsMetricsDataType since Log Analytics AAD MSI Auth Enabled")
-				MdsdInsightsMetricsTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(InsightsMetricsDataType)
+			if IsAADMSIAuthMode == true {
+				MdsdInsightsMetricsTagName = getOutputStreamIdTag(InsightsMetricsDataType, MdsdInsightsMetricsTagName, &MdsdInsightsMetricsTagRefreshTracker)
+				if MdsdInsightsMetricsTagName == "" {
+					Log("Warn::mdsd::skipping Microsoft-InsightsMetrics stream since its opted out")
+					return output.FLB_OK
+				}
 			}
 			msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdInsightsMetricsTagName, msgPackEntries)
 			if MdsdInsightsMetricsMsgpUnixSocketClient == nil {
@@ -1263,14 +1274,16 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
-		if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled && strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) == false {
-			Log("Info::mdsd::obtaining output stream id")
+		if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
+			containerlogDataType := ContainerLogDataType
 			if ContainerLogSchemaV2 == true {
-				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogV2DataType)
-			} else {
-				MdsdContainerLogTagName = extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(ContainerLogDataType)
+				containerlogDataType = ContainerLogV2DataType
 			}
-			Log("Info::mdsd:: using mdsdsource name: %s", MdsdContainerLogTagName)
+			MdsdContainerLogTagName = getOutputStreamIdTag(containerlogDataType, MdsdContainerLogTagName, &MdsdContainerLogTagRefreshTracker)
+			if MdsdContainerLogTagName == "" {
+				Log("Warn::mdsd::skipping Microsoft-ContainerLog or Microsoft-ContainerLogV2 stream since its opted out")
+				return output.FLB_RETRY
+			}
 		}
 
 		fluentForward := MsgPackForward{
@@ -1881,6 +1894,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	MdsdInsightsMetricsTagName = MdsdInsightsMetricsSourceName
 	MdsdKubeMonAgentEventsTagName = MdsdKubeMonAgentEventsSourceName
+	MdsdKubeMonAgentEventsTagRefreshTracker = time.Now()
+	MdsdInsightsMetricsTagRefreshTracker = time.Now()
+	MdsdContainerLogTagRefreshTracker = time.Now()
 	Log("ContainerLogsRouteADX: %v, IsWindows: %v, IsAADMSIAuthMode = %v IsGenevaLogsIntegrationEnabled = %v \n", ContainerLogsRouteADX, IsWindows, IsAADMSIAuthMode, IsGenevaLogsIntegrationEnabled)
 	if !ContainerLogsRouteADX && IsWindows && IsAADMSIAuthMode && !IsGenevaLogsIntegrationEnabled {
 		Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)

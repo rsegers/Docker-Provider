@@ -1,6 +1,7 @@
 package main
 
 import (
+	"Docker-Provider/source/plugins/go/src/extension"
 	"bufio"
 	"crypto/tls"
 	"errors"
@@ -279,4 +280,19 @@ func getGenevaWindowsNamedPipeName() string {
 		namedPipeName = "CAgentStream_ContainerLogV2Pipe_" + gcsNameSpace
 	}
 	return namedPipeName
+}
+
+// get the Output stream ID tag value corresponding to the datatype
+func getOutputStreamIdTag(dataType string, streamIdTagName string, refreshTracker *time.Time) string {
+	useFromCache := true
+	if refreshTracker != nil {
+		elapsed := time.Now().Sub(*refreshTracker)
+		if !strings.HasPrefix(streamIdTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
+			useFromCache = false
+			*refreshTracker = time.Now()
+		}
+	} else {
+		Log("getOutputStreamIdTag: refreshTracker is nil")
+	}
+	return extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(dataType, useFromCache)
 }

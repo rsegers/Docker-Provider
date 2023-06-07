@@ -104,7 +104,7 @@ The general directory structure is:
 
 # Branches
 
-- We are using a single branch which has all the code in development and we will be releasing from this branch itself. 
+- We are using a single branch which has all the code in development and we will be releasing from this branch itself.
 - `ci_prod` branch contains codebase version in development.
 
 To contribute: create your private branch off of `ci_prod`, make changes and use pull request to merge back to `ci_prod`.
@@ -340,7 +340,7 @@ Here are the instructions to onboard the feature branch to Azure Dev Ops pipelin
 
 Integrated to Azure DevOps release pipeline for the ci_prod branch. With this, for every commit to ci_prod branch, latest bits automatically deployed to DEV AKS clusters in Build subscription.
 
-When releasing the agent, we have a separate Azure DevOps pipeline which needs to be run to publish the image to prod MCR and our PROD AKS clusters. 
+When releasing the agent, we have a separate Azure DevOps pipeline which needs to be run to publish the image to prod MCR and our PROD AKS clusters.
 
 For development, agent image will be in this format mcr.microsoft.com/azuremonitor/containerinsights/cidev:`Major.Minor.Patch`-CommitAheadCount-<git-commit-id>. Image tag for windows will be win-`Major.Minor.Patch`-CommitAheadCount-<git-commit-id>.
 For releases, agent will be in this format mcr.microsoft.com/azuremonitor/containerinsights/ciprod:`Major.Minor.Patch`. Image tag for windows will be win-`Major.Minor.Patch`.
@@ -358,11 +358,11 @@ For our single branch ci_prod, automatically deployed latest yaml with latest ag
 # Testing MSI Auth Mode Using Yaml
 
   1. Enable Monitoring addon with Managed Idenity Auth Mode either using Portal or CLI or Template
-  2. Deploy [ARM template](./scripts/onboarding/aks/onboarding-using-msi-auth/) with enabled = false to create DCR, DCR-A and link the workspace to Portal
+  2. Get the MSI token (which is valid for 24 hrs.) value via `kubectl get secrets -n kube-system  aad-msi-auth-token -o=jsonpath='{.data.token}'`
+  3. Disable Monitoring addon via `az aks disable-addons -a monitoring -g <rgName> -n <clusterName>`
+  4. Deploy [ARM template](./scripts/onboarding/aks/onboarding-using-msi-auth/) with enabled = false to create DCR, DCR-A and link the workspace to Portal
    > Note - Make sure to update the parameter values in existingClusterParam.json file and have enabled = false in template file
     `az deployment group create --resource-group <ResourceGroupName> --template-file ./existingClusterOnboarding.json --parameters @./existingClusterParam.json`
-  3. Get the MSI token (which is valid for 24 hrs.) value via `kubectl get secrets -n kube-system  aad-msi-auth-token -o=jsonpath='{.data.token}'`
-  4. Disable Monitoring addon via `az aks disable-addons -a monitoring -g <rgName> -n <clusterName>`
   5. Uncomment MSI auth related yaml lines, replace all the placeholder values, MSI token value and image tag in the ama-logs.yaml
   6. Deploy the ama-logs.yaml via `kubectl apply -f ama-logs.yaml`
     > Note: use the image toggle for release E2E validation

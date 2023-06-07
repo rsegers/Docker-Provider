@@ -34,6 +34,7 @@ module Fluent::Plugin
       @insightsMetricsTag = "oneagent.containerInsights.INSIGHTS_METRICS_BLOB"
       @namespaces = []
       @namespaceFilteringMode = "off"
+      @agentConfigRefreshTracker = DateTime.now.to_time.to_i
     end
 
     config_param :run_interval, :time, :default => 60
@@ -93,14 +94,17 @@ module Fluent::Plugin
         batchTime = currentTime.utc.iso8601
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_perfinventory::enumerate: AAD AUTH MSI MODE")
-          if @kubeperfTag.nil? || !@kubeperfTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @kubeperfTag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
+          @kubeperfTag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::PERF_DATA_TYPE, @kubeperfTag, @agentConfigRefreshTracker)
+          if !isFromCache
+            @agentConfigRefreshTracker = DateTime.now.to_time.to_i
           end
-          if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+          @insightsMetricsTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::INSIGHTS_METRICS_DATA_TYPE, @insightsMetricsTag, @agentConfigRefreshTracker)
+          if !KubernetesApiClient.isDCRStreamIdTag(@kubeperfTag)
+            $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-Perf stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          $log.info("in_kube_perfinventory::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_perfinventory::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
+          if !KubernetesApiClient.isDCRStreamIdTag(@insightsMetricsTag)
+            $log.warn("in_kube_perfinventory::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
+          end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
             $log.info("in_kube_perfinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
@@ -167,7 +171,7 @@ module Fluent::Plugin
 
           if @PODS_EMIT_STREAM_BATCH_SIZE > 0 && kubePerfEventStream.count >= @PODS_EMIT_STREAM_BATCH_SIZE
             $log.info("in_kube_perfinventory::parse_and_emit_records: number of container perf records emitted #{kubePerfEventStream.count} @ #{Time.now.utc.iso8601}")
-            router.emit_stream(@kubeperfTag, kubePerfEventStream) if kubePerfEventStream
+            router.emit_stream(@kubeperfTag, kubePerfEventStream) if !@kubeperfTag.nil? && !@kubeperfTag.empty? && kubePerfEventStream
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
               $log.info("kubeContainerPerfEventEmitStreamSuccess @ #{Time.now.utc.iso8601}")
             end
@@ -189,14 +193,14 @@ module Fluent::Plugin
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
               $log.info("kubePodInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
             end
-            router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream
+            router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if !@insightsMetricsTag.nil? && !@insightsMetricsTag.empty? && insightsMetricsEventStream
             insightsMetricsEventStream = Fluent::MultiEventStream.new
           end
         end  #podInventory block end
 
         if kubePerfEventStream.count > 0
           $log.info("in_kube_perfinventory::parse_and_emit_records: number of perf records emitted #{kubePerfEventStream.count} @ #{Time.now.utc.iso8601}")
-          router.emit_stream(@kubeperfTag, kubePerfEventStream) if kubePerfEventStream
+          router.emit_stream(@kubeperfTag, kubePerfEventStream) if !@kubeperfTag.nil? && !@kubeperfTag.empty? && kubePerfEventStream
           kubePerfEventStream = nil
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
             $log.info("kubeContainerPerfEventEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -205,7 +209,7 @@ module Fluent::Plugin
 
         if insightsMetricsEventStream.count > 0
           $log.info("in_kube_perfinventory::parse_and_emit_records: number of insights metrics records emitted #{insightsMetricsEventStream.count} @ #{Time.now.utc.iso8601}")
-          router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if insightsMetricsEventStream
+          router.emit_stream(@insightsMetricsTag, insightsMetricsEventStream) if !@insightsMetricsTag.nil? && !@insightsMetricsTag.empty? && insightsMetricsEventStream
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
             $log.info("kubePodInsightsMetricsEmitStreamSuccess @ #{Time.now.utc.iso8601}")
           end

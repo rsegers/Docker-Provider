@@ -14,6 +14,7 @@ class KubernetesApiClient
   require_relative "constants"
   require_relative "WatchStream"
   require_relative "kubernetes_container_inventory"
+  require_relative "extension_utils"
 
   @@ApiVersion = "v1"
   @@ApiVersionApps = "v1"
@@ -1501,6 +1502,23 @@ class KubernetesApiClient
       rescue => err
         @Log.warn "KubernetesApiClient::sendReplicasetAgentRequestsAndLimitsTelemetry failed with an error: #{err}"
       end
+    end
+
+    def isDCRStreamIdTag(tag)
+      return (!tag.nil? && tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX))
+    end
+
+    def getOutputStreamIdAndSource(datatype, tag, agentConfigRefreshTracker)
+      fromCache = true
+      begin
+        if (!isDCRStreamIdTag(tag) || (DateTime.now.to_time.to_i - agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS)
+          fromCache = false
+        end
+        tag = ExtensionUtils.getOutputStreamId(datatype, fromCache)
+      rescue => error
+        @Log.warn "KubernetesApiClient::getOutputStreamIdAndSource failed with an error: #{error}"
+      end
+      return tag, fromCache
     end
   end
 end
