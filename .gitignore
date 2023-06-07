@@ -31,6 +31,7 @@ source/plugins/go/src/*.h
 *.log
 *.byebug_history
 #npm modules and build output for the typescript project
-appmonitoring/ts/src/node_modules/
+node_modules
+appmonitoring/ts/src/node_modules
 appmonitoring/ts/src/*.js
 appmonitoring/ts/src/*.js.map
