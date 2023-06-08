@@ -22,7 +22,7 @@ import (
 	"github.com/tinylib/msgp/msgp"
 
 	"Docker-Provider/source/plugins/go/src/extension"
-	
+
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/Azure/azure-kusto-go/kusto/ingest"
@@ -1126,7 +1126,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	}
 	DataUpdateMutex.Unlock()
 
-	if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled  {
+	if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
 		if MdsdMsgpUnixSocketClient == nil {
 			Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
 			CreateMDSDClient(ContainerLogV2, ContainerType)
@@ -1137,7 +1137,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				ContainerLogsMDSDClientCreateErrors += 1
 				return output.FLB_RETRY
 			}
-		ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
+			ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
 		}
 	}
 	for _, record := range tailPluginRecords {
