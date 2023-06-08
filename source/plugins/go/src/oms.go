@@ -22,7 +22,7 @@ import (
 	"github.com/tinylib/msgp/msgp"
 
 	"Docker-Provider/source/plugins/go/src/extension"
-
+	
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/Azure/azure-kusto-go/kusto/ingest"
@@ -737,7 +737,7 @@ func flushKubeMonAgentEventRecords() {
 			}
 			if IsWindows == false && len(msgPackEntries) > 0 { //for linux, mdsd route
 				if IsAADMSIAuthMode == true {
-					MdsdKubeMonAgentEventsTagName = getOutputStreamIdTag(KubeMonAgentEventDataType)
+					MdsdKubeMonAgentEventsTagName = getOutputStreamIdTag(KubeMonAgentEventDataType, MdsdKubeMonAgentEventsTagName, &MdsdKubeMonAgentEventsTagRefreshTracker)
 					if MdsdKubeMonAgentEventsTagName == "" {
 						Log("Warn::mdsd::skipping Microsoft-KubeMonAgentEvents stream since its opted out")
 						return
@@ -960,7 +960,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 		}
 		if len(msgPackEntries) > 0 {
 			if IsAADMSIAuthMode == true {
-				MdsdInsightsMetricsTagName = getOutputStreamIdTag(InsightsMetricsDataType)
+				MdsdInsightsMetricsTagName = getOutputStreamIdTag(InsightsMetricsDataType, MdsdInsightsMetricsTagName, &MdsdInsightsMetricsTagRefreshTracker)
 				if MdsdInsightsMetricsTagName == "" {
 					Log("Warn::mdsd::skipping Microsoft-InsightsMetrics stream since its opted out")
 					return output.FLB_OK
@@ -1184,7 +1184,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
-		//ContainerLogSchemaV2 this should be called after flush to mdsd
+		Log("longw v2 value3: %s", ContainerLogSchemaV2)
 		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
 			stringMap["ContainerId"] = containerID
@@ -1247,7 +1247,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			//ADX
 			dataItemsADX = append(dataItemsADX, dataItemADX)
 		} else {
-			//ContainerLogSchemaV2 this should be called after flush to mdsd
+			Log("longw v2 value5: %s", ContainerLogSchemaV2)
 			if ContainerLogSchemaV2 == true {
 				dataItemLAv2 = DataItemLAv2{
 					TimeGenerated: stringMap["TimeGenerated"],
@@ -1304,23 +1304,24 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	numContainerLogRecords := 0
 
+	Log("longw v2 value6: %s", ContainerLogSchemaV2)
 	if ContainerLogSchemaV2 == true {
 		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
 	} else {
 		MdsdContainerLogTagName = MdsdContainerLogSourceName
 	}
 
+	Log("longw v2 value7: %s, %d, %s, %v, %v", ContainerLogSchemaV2, len(msgPackEntries), ContainerLogsRouteV2, IsAADMSIAuthMode, IsGenevaLogsIntegrationEnabled)
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
 		if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
 			containerlogDataType := ContainerLogDataType
-			
-			ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
+
 			if ContainerLogSchemaV2 == true {
 				containerlogDataType = ContainerLogV2DataType
 			}
 			Log("longw v2 value2: %s", ContainerLogSchemaV2)
-			MdsdContainerLogTagName = getOutputStreamIdTag(containerlogDataType)
+			MdsdContainerLogTagName = getOutputStreamIdTag(containerlogDataType, MdsdContainerLogTagName, &MdsdContainerLogTagRefreshTracker)
 
 			if MdsdContainerLogTagName == "" {
 				Log("Warn::mdsd::skipping Microsoft-ContainerLog or Microsoft-ContainerLogV2 stream since its opted out")
@@ -1419,6 +1420,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 		}
 	} else if ContainerLogsRouteADX == true && len(dataItemsADX) > 0 {
+		Log("longw v2 value8: %s", ContainerLogSchemaV2)
 		// Route to ADX
 		r, w := io.Pipe()
 		defer r.Close()
@@ -1472,6 +1474,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		Log("Success::ADX::Successfully wrote %d container log records to ADX in %s", numContainerLogRecords, elapsed)
 
 	} else if (ContainerLogSchemaV2 == true && len(dataItemsLAv2) > 0) || len(dataItemsLAv1) > 0 { //ODS
+		Log("longw v2 value9: %s", ContainerLogSchemaV2)
 		var logEntry interface{}
 		recordType := ""
 		loglinesCount := 0
@@ -1553,6 +1556,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	}
 
+	Log("longw v2 value10: %s", ContainerLogSchemaV2)
 	ContainerLogTelemetryMutex.Lock()
 	defer ContainerLogTelemetryMutex.Unlock()
 

@@ -283,28 +283,16 @@ func getGenevaWindowsNamedPipeName() string {
 }
 
 // get the Output stream ID tag value corresponding to the datatype
-func getOutputStreamIdTag(dataType string) string {
+func getOutputStreamIdTag(dataType string, streamIdTagName string, refreshTracker *time.Time) string {
 	useFromCache := true
-	switch dataType {
-	case ContainerLogDataType, ContainerLogV2DataType:
-		elapsed := time.Now().Sub(MdsdContainerLogTagRefreshTracker)
-		if !strings.HasPrefix(MdsdContainerLogTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
+	if refreshTracker != nil {
+		elapsed := time.Now().Sub(*refreshTracker)
+		if !strings.HasPrefix(streamIdTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
 			useFromCache = false
-			MdsdContainerLogTagRefreshTracker = time.Now()
+			*refreshTracker = time.Now()
 		}
-	case KubeMonAgentEventDataType:
-		elapsed := time.Now().Sub(MdsdKubeMonAgentEventsTagRefreshTracker)
-		if !strings.HasPrefix(MdsdKubeMonAgentEventsTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-			useFromCache = false
-			MdsdKubeMonAgentEventsTagRefreshTracker = time.Now()
-		}
-	case InsightsMetricsDataType:
-		elapsed := time.Now().Sub(MdsdInsightsMetricsTagRefreshTracker)
-		if !strings.HasPrefix(MdsdInsightsMetricsTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-			useFromCache = false
-			MdsdInsightsMetricsTagRefreshTracker = time.Now()
-		}
+	} else {
+		Log("getOutputStreamIdTag: refreshTracker is nil")
 	}
-
 	return extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(dataType, useFromCache)
 }
