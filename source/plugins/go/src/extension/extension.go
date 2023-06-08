@@ -37,7 +37,6 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 
 func getExtensionConfigs() ([]ExtensionConfig, error) {
 	guid := uuid.New()
-
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerInsights", "Version": "1"}
 	jsonBytes, err := json.Marshal(taggedData)
 
@@ -52,16 +51,14 @@ func getExtensionConfigs() ([]ExtensionConfig, error) {
 	if containerType != "" && strings.Compare(strings.ToLower(containerType), "prometheussidecar") == 0 {
 		fs.sockAddress = fmt.Sprintf("/var/run/mdsd-%s/default_fluent.socket", containerType)
 	}
+	
 	responseBytes, err := FluentSocketWriter.writeAndRead(fs, data)
 	defer FluentSocketWriter.disconnect(fs)
 	if err != nil {
 		return nil, err
 	}
-	response := string(responseBytes) // TODO: why is this converted to a string then back into a []byte?
-	logger.Printf("longw: response %v", responseBytes)
-	logger.Printf("longw: response2 %v", []byte(response))
 	var responseObject AgentTaggedDataResponse
-	err = json.Unmarshal([]byte(response), &responseObject)
+	err = json.Unmarshal(responseBytes, &responseObject)
 	if err != nil {
 		logger.Printf("Error::mdsd::Failed to unmarshal config data. Error message: %s", string(err.Error()))
 		return nil, err

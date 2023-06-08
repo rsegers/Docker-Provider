@@ -1126,15 +1126,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	}
 	DataUpdateMutex.Unlock()
 
-	/*
-	if IsAADMSIAuthMode && MdsdMsgpUnixSocketClient == nil {
-        Log("Error::mdsd::Mdsd client is not ready.")
-        return output.FLB_RETRY
-    }
-	ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
-	*/
-	
-	Log("longw: start check v2")
 	if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled  {
 		if MdsdMsgpUnixSocketClient == nil {
 			Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
@@ -1144,16 +1135,11 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				ContainerLogTelemetryMutex.Lock()
 				defer ContainerLogTelemetryMutex.Unlock()
 				ContainerLogsMDSDClientCreateErrors += 1
-				Log("longw: retry")
 				return output.FLB_RETRY
 			}
 		ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
-		Log("longw v2 value0: %s", ContainerLogSchemaV2)
 		}
 	}
-	Log("longw v2 value1: %s", ContainerLogSchemaV2)
-	Log("longw: end check v2")
-
 	for _, record := range tailPluginRecords {
 		containerID, k8sNamespace, k8sPodName, containerName := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
 		logEntrySource := ToString(record["stream"])
@@ -1184,7 +1170,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
-		Log("longw v2 value3: %s", ContainerLogSchemaV2)
 		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
 			stringMap["ContainerId"] = containerID
@@ -1247,7 +1232,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			//ADX
 			dataItemsADX = append(dataItemsADX, dataItemADX)
 		} else {
-			Log("longw v2 value5: %s", ContainerLogSchemaV2)
 			if ContainerLogSchemaV2 == true {
 				dataItemLAv2 = DataItemLAv2{
 					TimeGenerated: stringMap["TimeGenerated"],
@@ -1304,14 +1288,12 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	numContainerLogRecords := 0
 
-	Log("longw v2 value6: %s", ContainerLogSchemaV2)
 	if ContainerLogSchemaV2 == true {
 		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
 	} else {
 		MdsdContainerLogTagName = MdsdContainerLogSourceName
 	}
 
-	Log("longw v2 value7: %s, %d, %s, %v, %v", ContainerLogSchemaV2, len(msgPackEntries), ContainerLogsRouteV2, IsAADMSIAuthMode, IsGenevaLogsIntegrationEnabled)
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
 		if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
@@ -1320,7 +1302,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			if ContainerLogSchemaV2 == true {
 				containerlogDataType = ContainerLogV2DataType
 			}
-			Log("longw v2 value2: %s", ContainerLogSchemaV2)
 			MdsdContainerLogTagName = getOutputStreamIdTag(containerlogDataType, MdsdContainerLogTagName, &MdsdContainerLogTagRefreshTracker)
 
 			if MdsdContainerLogTagName == "" {
@@ -1420,7 +1401,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 		}
 	} else if ContainerLogsRouteADX == true && len(dataItemsADX) > 0 {
-		Log("longw v2 value8: %s", ContainerLogSchemaV2)
 		// Route to ADX
 		r, w := io.Pipe()
 		defer r.Close()
@@ -1474,7 +1454,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		Log("Success::ADX::Successfully wrote %d container log records to ADX in %s", numContainerLogRecords, elapsed)
 
 	} else if (ContainerLogSchemaV2 == true && len(dataItemsLAv2) > 0) || len(dataItemsLAv1) > 0 { //ODS
-		Log("longw v2 value9: %s", ContainerLogSchemaV2)
 		var logEntry interface{}
 		recordType := ""
 		loglinesCount := 0
@@ -1556,7 +1535,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 	}
 
-	Log("longw v2 value10: %s", ContainerLogSchemaV2)
 	ContainerLogTelemetryMutex.Lock()
 	defer ContainerLogTelemetryMutex.Unlock()
 
