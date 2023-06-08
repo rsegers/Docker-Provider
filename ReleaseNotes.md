@@ -29,14 +29,12 @@ additional questions or comments.
   - Golang - 1.20.3
 ##### Code change log
 - Common
-  - Fix bug which causes ama-logs pod to restart continously for docker container runtime clusters
   - Allow scheduling ama-logs pods on tainted nodes in Arc K8S clusters via amalogs.scheduleOnTaintedNodes option
   - Add azure policy, terraform, and bicep support for MSI onboarding
   - Cost optimization GA changes
 - Linux
+  - Fix bug which causes ama-logs pod to restart continously for docker container runtime clusters
   - Remove vim package from image to vulnerabilities footprint
-  - Update MDSD version from 1.17.1 to 1.26.1
-  - Update Telegraf version from 1.25.2 to 1.26.0 for vulnerabilities fixes
   - Update Dockerfile for trivy vulnerabilities scan
   - Update Mariner version from 2.0.20230426 to 2.0.20230526
 - Windows
