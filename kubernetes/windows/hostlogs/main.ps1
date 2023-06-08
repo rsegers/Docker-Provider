@@ -1,83 +1,102 @@
-$rootDir = Get-Location
+Set-Location $env:CONTAINER_SANDBOX_MOUNT_POINT
 
 function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\opt\hostlogswindows\scripts\powershell\filesystemwatcher.ps1
 }
 
+function Invoke-ConfigmapParser($rubypath) {
+    & $rubypath ./opt/hostlogswindows/scripts/ruby/tomlparser-hostlogs-geneva-config.rb
+}
+
+# Workaround for https://github.com/microsoft/Windows-Containers/issues/366
+function Invoke-ConfigmapParserFromHost($rubypath) {
+    $tmpdir = "C:\WindowsHostLogs"
+
+    # Cleanup any old files from previous run
+    if (Test-Path $tmpdir) {
+        Remove-Item $tmpdir -R -Force
+    }
+
+    Write-host "Copying ruby binaries to host directory: $tmpdir"
+    New-Item $tmpdir -Type Directory > $null
+    Copy-Item "./ruby31" $tmpdir -R
+
+    Invoke-ConfigmapParser (Join-Path $tmpdir $rubypath)
+
+    Write-host "Cleaning up ruby binaries from the host"
+    Remove-Item $tmpdir -R -Force
+}
+
+function Get-ProcessEnvironmentVariable($name) {
+    return [System.Environment]::GetEnvironmentVariable($name, "process")
+}
+
 function Set-EnvironmentVariables {
 
-    $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
-    if (![string]::IsNullOrEmpty($aksResourceId)) {
-        [System.Environment]::SetEnvironmentVariable("AKS_RESOURCE_ID", $aksResourceId, "machine")
-        Write-Host "Successfully set environment variable AKS_RESOURCE_ID - $($aksResourceId) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable AKS_RESOURCE_ID for target 'machine' since it is either null or empty"
-    }
-
-    $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
-    if (![string]::IsNullOrEmpty($aksRegion)) {
-        [System.Environment]::SetEnvironmentVariable("AKS_REGION", $aksRegion, "machine")
-        Write-Host "Successfully set environment variable AKS_REGION - $($aksRegion) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable AKS_REGION for target 'machine' since it is either null or empty"
-    }
-
-    $hostName = [System.Environment]::GetEnvironmentVariable("HOSTNAME", "process")
-    if (![string]::IsNullOrEmpty($hostName)) {
-        [System.Environment]::SetEnvironmentVariable("HOSTNAME", $hostName, "machine")
-        Write-Host "Successfully set environment variable HOSTNAME - $($hostName) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable HOSTNAME for target 'machine' since it is either null or empty"
-    }
-
-
     $schemaVersionFile = './etc/config/settings/schema-version'
-    if (Test-Path $schemaVersionFile) {
-        $schemaVersion = Get-Content $schemaVersionFile | ForEach-Object { $_.TrimEnd() }
-        if ($schemaVersion.GetType().Name -eq 'String') {
-            [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Process")
-            [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Machine")
-        }
-        $env:AZMON_AGENT_CFG_SCHEMA_VERSION
-    }
 
     # Set env vars for geneva monitor
     $envVars = @{
-        MONITORING_DATA_DIRECTORY = (Join-Path $rootDir "opt\genevamonitoringagent\datadirectory")
-        MONITORING_GCS_AUTH_ID_TYPE = "AuthMSIToken"
-        MONITORING_GCS_REGION = "$aksregion"    
+        AZMON_AGENT_CFG_SCHEMA_VERSION = if (Test-Path $schemaVersionFile) {Get-Content $schemaVersionFile | ForEach-Object { $_.TrimEnd() } } else {""}
+        # Agent identity
+        AKS_CLUSTER_NAME               = Get-ProcessEnvironmentVariable AKS_CLUSTER_NAME
+        AKS_REGION                     = Get-ProcessEnvironmentVariable AKS_REGION
+        HOSTNAME                       = Get-ProcessEnvironmentVariable HOSTNAME
+        # Agent Configuration
+        MONITORING_DATA_DIRECTORY      = (Join-Path $env:CONTAINER_SANDBOX_MOUNT_POINT "opt\genevamonitoringagent\datadirectory")
+        MONITORING_GCS_AUTH_ID_TYPE    = "AuthMSIToken"
+        MONITORING_GCS_REGION          = Get-ProcessEnvironmentVariable AKS_REGION   
     }
 
-    foreach($key in $envVars.PSBase.Keys) {
-        [System.Environment]::SetEnvironmentVariable($key, $envVars[$key], "Process")
-        [System.Environment]::SetEnvironmentVariable($key, $envVars[$key], "Machine")
+    foreach ($key in $envVars.PSBase.Keys) {
+        $value = $envVars[$key]
+        if (![string]::IsNullOrEmpty($value)) {
+            [System.Environment]::SetEnvironmentVariable($key, $value, "Process")
+            [System.Environment]::SetEnvironmentVariable($key, $value, "User")
+            Write-Host "Successfully set environment variable $key - $value"
+        }
+        else {
+            Write-Host "Failed to set environment variable $key since it is either null or empty"
+        }
     }
 
-    # run config parser
-    $rubypath =  "./ruby31/bin/ruby.exe"
+    # Load env vars from config map
+    $rubypath = "./ruby31/bin/ruby.exe"
 
-    #Parse the configmap to set the right environment variables for geneva config.
-    & $rubypath ./opt/hostlogswindows/scripts/ruby/tomlparser-hostlogs-geneva-config.rb
+    # Use Join-Path to normalize paths with consistent delimeters
+    $mountPath = Join-Path $env:CONTAINER_SANDBOX_MOUNT_POINT ""
+    $bindMountPath = Join-Path "C:\hpc" ""
+    # Check if using bind mounted directory added in containerd 1.7
+    if ($mountPath -eq $bindMountPath) {
+        Invoke-ConfigmapParserFromHost $rubypath 
+    }
+    else {
+        Invoke-ConfigmapParser $rubypath 
+    }
+
+    # Set env vars parsed from the config map
     .\setagentenv.ps1
 }
 
+# Checks if all geneva env vars are set to start the geneva agent
 function Get-GenevaEnabled {
-  $gcsEnvironment = [System.Environment]::GetEnvironmentVariable("MONITORING_GCS_ENVIRONMENT", "process")
-  $gcsAccount = [System.Environment]::GetEnvironmentVariable("MONITORING_GCS_ACCOUNT", "process")
-  $gcsNamespace = [System.Environment]::GetEnvironmentVariable("MONITORING_GCS_NAMESPACE", "process")
-  $gcsConfigVersion = [System.Environment]::GetEnvironmentVariable("MONITORING_CONFIG_VERSION", "process")
-  $gcsAuthIdIdentifier = [System.Environment]::GetEnvironmentVariable("MONITORING_MANAGED_ID_IDENTIFIER", "process")
-  $gcsAuthIdValue = [System.Environment]::GetEnvironmentVariable("MONITORING_MANAGED_ID_VALUE", "process")
+    $enabled = $true
 
-  return (![string]::IsNullOrEmpty($gcsEnvironment)) -and 
-    (![string]::IsNullOrEmpty($gcsAccount)) -and 
-    (![string]::IsNullOrEmpty($gcsNamespace)) -and 
-    (![string]::IsNullOrEmpty($gcsConfigVersion)) -and 
-    (![string]::IsNullOrEmpty($gcsAuthIdIdentifier))  -and 
-    (![string]::IsNullOrEmpty($gcsAuthIdValue)) 
+    foreach ($envvar in 
+        "MONITORING_DATA_DIRECTORY",
+        "MONITORING_CONFIG_VERSION",
+        "MONITORING_GCS_ENVIRONMENT", 
+        "MONITORING_GCS_ACCOUNT", 
+        "MONITORING_GCS_NAMESPACE", 
+        "MONITORING_GCS_REGION",
+        "MONITORING_GCS_AUTH_ID_TYPE",
+        "MONITORING_MANAGED_ID_IDENTIFIER", 
+        "MONITORING_MANAGED_ID_VALUE"
+    ) {
+        $enabled = $enabled -and ![string]::IsNullOrEmpty((Get-ProcessEnvironmentVariable $envvar))
+    }
+
+    return $enabled
 }
 
 Start-Transcript -Path main.txt
@@ -85,13 +104,14 @@ Start-Transcript -Path main.txt
 Set-EnvironmentVariables
 Start-FileSystemWatcher
 
-if(Get-GenevaEnabled){
+if (Get-GenevaEnabled) {
     Invoke-Expression ".\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe -useenv"
-} else {
+}
+else {
     Write-Host "Geneva not configured. Watching for config map"
     # Infinite loop keeps container alive while waiting for config map
     # Otherwise when the process ends, kubernetes sees this as a crash and the container will enter a crash loop
-    while($true){
+    while ($true) {
         Start-Sleep 3600
     }
 }

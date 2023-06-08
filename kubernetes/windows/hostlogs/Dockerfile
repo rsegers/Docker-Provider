@@ -23,8 +23,6 @@ RUN powershell -Command "Remove-Item -Force C:\ruby31\lib\ruby\gems\3.1.0\cache\
 
 SHELL ["powershell"]
 
-ENV tmpdir /opt/hostlogswindows/scripts/powershell
-
 COPY setup.ps1 /opt/hostlogswindows/scripts/powershell/setup.ps1
 RUN ./opt/hostlogswindows/scripts/powershell/setup.ps1
 
@@ -35,4 +33,4 @@ COPY main.ps1 /opt/hostlogswindows/scripts/powershell/main.ps1
 COPY ./hostlogswindows/installer/scripts/filesystemwatcher.ps1 /opt/hostlogswindows/scripts/powershell
 COPY ./hostlogswindows/installer/livenessprobe/livenessprobe.exe /opt/hostlogswindows/scripts/cmd/
 
-ENTRYPOINT ["powershell", ".\\opt\\hostlogswindows\\scripts\\powershell\\main.ps1"]
+ENTRYPOINT ["powershell", "& (Join-Path $env:CONTAINER_SANDBOX_MOUNT_POINT \\opt\\hostlogswindows\\scripts\\powershell\\main.ps1)"]
