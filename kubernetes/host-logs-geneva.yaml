@@ -30,7 +30,10 @@ spec:
     securityContext:
       windowsOptions:
         hostProcess: true
+        # For containerd 1.7+ "Administrators" is preferred over "NT AUTHORITY\\SYSTEM"
+        # This will create a new admin user instead of using the builtin localsystem account
         runAsUserName: "NT AUTHORITY\\SYSTEM"
+        # runAsUserName: "Administrators"
     hostNetwork: true
     containers:
      - name: host-logs-windows
@@ -58,8 +61,8 @@ spec:
             command:
               - cmd
               - /c
-              - .\opt\hostlogswindows\scripts\cmd\livenessprobe.exe
-              - ".\\etc\\hostlogswindows\\filesystemwatcher.txt"
+              - "%CONTAINER_SANDBOX_MOUNT_POINT%\\opt\\hostlogswindows\\scripts\\cmd\\livenessprobe.exe"
+              - "%CONTAINER_SANDBOX_MOUNT_POINT%\\etc\\hostlogswindows\\filesystemwatcher.txt"
     affinity:
      nodeAffinity:
        requiredDuringSchedulingIgnoredDuringExecution:
