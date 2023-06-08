@@ -36,7 +36,6 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 }
 
 func getExtensionConfigs() ([]ExtensionConfig, error) {
-	logger.Printf("longw: getExtensionConfigs start")
 	guid := uuid.New()
 
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerInsights", "Version": "1"}
@@ -58,8 +57,9 @@ func getExtensionConfigs() ([]ExtensionConfig, error) {
 	if err != nil {
 		return nil, err
 	}
-	response := string(responseBytes)
-
+	response := string(responseBytes) // TODO: why is this converted to a string then back into a []byte?
+	logger.Printf("longw: response %v", responseBytes)
+	logger.Printf("longw: response2 %v", []byte(response))
 	var responseObject AgentTaggedDataResponse
 	err = json.Unmarshal([]byte(response), &responseObject)
 	if err != nil {
@@ -70,7 +70,6 @@ func getExtensionConfigs() ([]ExtensionConfig, error) {
 	var extensionData TaggedData
 	json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 
-	logger.Printf("longw: getExtensionConfigs end")
 	return extensionData.ExtensionConfigs, nil
 }
 
