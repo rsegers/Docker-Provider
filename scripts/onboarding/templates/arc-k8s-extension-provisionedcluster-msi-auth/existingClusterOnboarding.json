@@ -46,6 +46,12 @@
         "description": "Existing or new tags to use on Arc K8s ContainerInsights extension resources"
       }
    },
+   "defaultStreams": {
+     "type": "array",
+     "metadata": {
+        "description": "Array of default container insights streams"
+      }
+    },
     "enableSyslog": {
       "type": "bool",
       "metadata": {
@@ -107,7 +113,7 @@
                 "resources": [
                     {
                         "type": "Microsoft.Insights/dataCollectionRules",
-                        "apiVersion": "2021-04-01",
+                        "apiVersion": "2022-06-01",
                         "name": "[variables('dcrName')]",
                         "location": "[parameters('workspaceRegion')]",
                         "tags": "[parameters('resourceTagValues')]",
@@ -117,14 +123,12 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": [
-                                           "Microsoft-ContainerInsights-Group-Default"
-                                        ],
+                                        "streams": "[parameters('defaultStreams')]",
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
                                             "interval": "[parameters('dataCollectionInterval')]",
-                                             "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-                                             "namespaces": "[parameters('namespacesForDataCollection')]"
+                                            "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                                            "namespaces": "[parameters('namespacesForDataCollection')]"
                                           }
                                         },
                                         "extensionName": "ContainerInsights"
@@ -141,9 +145,7 @@
                             },
                             "dataFlows": [
                                 {
-                                    "streams": [
-                                        "Microsoft-ContainerInsights-Group-Default"
-                                    ],
+                                  "streams": "[parameters('defaultStreams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]
@@ -161,7 +163,7 @@
                 "resources": [
                     {
                         "type": "Microsoft.Insights/dataCollectionRules",
-                        "apiVersion": "2021-04-01",
+                        "apiVersion": "2022-06-01",
                         "name": "[variables('dcrName')]",
                         "location": "[parameters('workspaceRegion')]",
                         "tags": "[parameters('resourceTagValues')]",
@@ -181,9 +183,7 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": [
-                                            "Microsoft-ContainerInsights-Group-Default"
-                                        ],
+                                        "streams": "[parameters('defaultStreams')]",
                                         "extensionName": "ContainerInsights"
                                     }
                                 ]
@@ -198,13 +198,18 @@
                             },
                             "dataFlows": [
                                 {
-                                    "streams": [
-                                        "Microsoft-ContainerInsights-Group-Default",
-                                        "Microsoft-Syslog"
-                                    ],
+                                  "streams": "[parameters('defaultStreams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]
+                                },
+                                {
+                                  "streams": [
+                                      "Microsoft-Syslog"
+                                  ],
+                                  "destinations": [
+                                      "ciworkspace"
+                                  ]
                                 }
                             ]
                         }
@@ -245,7 +250,7 @@
             {
               "type": "Microsoft.HybridContainerService/provisionedClusters/providers/dataCollectionRuleAssociations",
               "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('associationName'))]",
-              "apiVersion": "2021-04-01",
+              "apiVersion": "2022-06-01",
               "properties": {
                 "description": "Association of data collection rule. Deleting this association will break the data collection for this AKS Cluster.",
                 "dataCollectionRuleId": "[variables('dataCollectionRuleId')]"
@@ -260,8 +265,8 @@
       "type": "Microsoft.Resources/deployments",
       "name": "[Concat('arc-k8s-ci-extension', '-',  uniqueString(parameters('clusterResourceId')))]",
       "apiVersion": "2019-05-01",
-      "subscriptionId": "[split(parameters('clusterResourceId'),'/')[2]]",
-      "resourceGroup": "[split(parameters('clusterResourceId'),'/')[4]]",
+      "subscriptionId": "[variables('clusterSubscriptionId')]",
+      "resourceGroup": "[variables('clusterResourceGroup')]",
       "dependsOn": [
         "[Concat('arc-k8s-monitoring-msi-dcra', '-',  uniqueString(parameters('clusterResourceId')))]"
       ],
@@ -300,7 +305,7 @@
                   }
                 }
               },
-              "scope": "[concat('Microsoft.HybridContainerService/provisionedClusters/', split(parameters('clusterResourceId'),'/')[8])]"
+              "scope": "[concat('Microsoft.HybridContainerService/provisionedClusters/', variables('clusterName'))]"
             }
           ]
         }

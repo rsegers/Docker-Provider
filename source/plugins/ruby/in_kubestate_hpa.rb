@@ -34,6 +34,7 @@ module Fluent::Plugin
       @ClusterName = KubernetesApiClient.getClusterName
       @namespaces = []
       @namespaceFilteringMode = "off"
+      @agentConfigRefreshTracker = DateTime.now.to_time.to_i
     end
 
     config_param :run_interval, :time, :default => 60
@@ -83,8 +84,13 @@ module Fluent::Plugin
 
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kubestate_hpa::enumerate: AAD AUTH MSI MODE")
-          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @tag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+          @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::INSIGHTS_METRICS_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+          if !isFromCache
+            @agentConfigRefreshTracker = DateTime.now.to_time.to_i
+          end
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
+            $log.warn("in_kubestate_hpa::enumerate: skipping Microsoft-InsightsMetrics stream since its opted-out @ #{Time.now.utc.iso8601}")
+            return
           end
           $log.info("in_kubestate_hpa::enumerate: using tag -#{@tag} @ #{Time.now.utc.iso8601}")
           if ExtensionUtils.isDataCollectionSettingsConfigured()
