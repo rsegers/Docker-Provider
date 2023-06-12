@@ -218,8 +218,6 @@ EOF
     ;;
 esac
 
-cat request.json | jq
-
 # Send Request
 SUBSCRIPTION=${ADMIN_SUBSCRIPTION_ID}
 RESOURCE_AUDIENCE=${RESOURCE_AUDIENCE}
