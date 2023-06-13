@@ -868,7 +868,11 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
       mkdir -p /var/run/mdsd-${CONTAINER_TYPE}
       # add -T 0xFFFF for full traces
       #enabling with local persistence mode
-      mdsd -l ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+      if [ "${CONTROLLER_TYPE}" == "ReplicaSet" ]; then
+            mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+      else
+            mdsd -l ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+      fi
     else
       echo "not starting mdsd (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
     fi
