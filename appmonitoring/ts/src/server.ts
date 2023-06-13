@@ -1,30 +1,28 @@
-﻿import fs = require("fs");
-import https = require("https");
-import request = require("request");
-import { ContentProcessor } from "./ContentProcessor";
-import { logger, Metrics } from "./LoggerWrapper";
-import { IRootObject } from "./RequestDefinition";
+﻿//import * as fs from "fs";
+import * as https from "https";
+import { ContentProcessor } from "./ContentProcessor.js";
+import { logger, Metrics } from "./LoggerWrapper.js";
+import { IRootObject } from "./RequestDefinition.js";
+import { K8sWatcher } from "./K8sWatcher.js";
 
-let options;
-const port = process.env.port || 1337;
+// don't await, this runs an infinite loop
+K8sWatcher.StartWatchingCRs();
 
-logger.info(`listening on port ${port}`, "");
+/*let options: https.ServerOptions;
 try {
     options = {
-        cert: fs.readFileSync("/mnt/webhook/cert.pem"),
-        key: fs.readFileSync("/mnt/webhook/key.pem"),
+        cert: fs.readFileSync("/mnt/webhook/tls.cert"),
+        key: fs.readFileSync("/mnt/webhook/tls.key"),
     };
-    logger.info("loaded certificates from /mnt", "");
-} catch {
-    options = {
-        cert: fs.readFileSync("./../../server-cert.pem"),
-        key: fs.readFileSync("./../../server-key.pem"),
-    };
-    logger.info("loaded certs from local", "");
-}
+} catch (e) {
+    logger.error(`Failed to load certs: ${e}`);
+}*/
 
-https.createServer(options, (req, res) => {
-    logger.info(`received request with url: ${req.url}, method: ${req.method}, content-type: ${req.headers["content-type"]}`, "");
+const port = process.env.port || 1337;
+logger.info(`listening on port ${port}`);
+
+https.createServer(/*options*/null, (req, res) => {
+    logger.info(`Received request with url: ${req.url}, method: ${req.method}, content-type: ${req.headers["content-type"]}`);
     logger.telemetry(Metrics.Request, 1, "");
     if (req.method === "POST" && req.headers["content-type"] === "application/json") {
         let body = "";
@@ -42,17 +40,17 @@ https.createServer(options, (req, res) => {
                 // swallow
             }
             ContentProcessor.TryUpdateConfig(body).then((updatedConfig) => {
-                logger.info("done processing request", uid);
+                logger.info(`Done processing request ${uid}`);
                 res.writeHead(200, { "Content-Type": "application/json" });
                 res.end(updatedConfig);
                 logger.telemetry(Metrics.Success, 1, uid);
             }).catch((error) => {
-                logger.error(`error while processing request`, uid, error);
+                logger.error(`Error while processing request: ${uid}, ${error}`);
                 logger.telemetry(Metrics.Fail, 1, uid);
             });
         });
     } else {
-        logger.error("unaccepable method, returning 404", "", req.method);
+        logger.error(`Unacceptable method, returning 404, method: ${req.method}`);
         res.writeHead(404);
         res.end();
         logger.telemetry(Metrics.Error, 1, "");

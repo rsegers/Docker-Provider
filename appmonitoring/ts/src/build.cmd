@@ -1,5 +1,4 @@
-rem call npm i @types/node
-del *.js.map
-del *.js
-call tsc --build
-rem call npm run lint 
+call del *.js.map
+call del *.js
+
+call tsc --build && npx eslint *.ts

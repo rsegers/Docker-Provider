@@ -1,0 +1,10 @@
+apiVersion: azmon.app.monitoring/v1
+kind: appmonitoringconfig
+metadata:
+ name: appmonitoring
+ namespace: default1
+spec:
+ autoInstrumentationPlatforms: [ C#, Java, NodeJs, OpenTelemetry ]
+ aiConnectionString: applicationInsightsConnectionString1
+ deployments: [ deployment1, deployment2 ]
+---
