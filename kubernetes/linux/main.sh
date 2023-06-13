@@ -236,9 +236,6 @@ generateGenevaInfraNamespaceConfig() {
       rm /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf
 }
 
-chown syslog:syslog /var/opt/mdsd_spool_directory
-rm -rf /var/opt/mdsd_spool_directory/events/HEALTH_ASSESSMENT_BLOB
-
 #using /var/opt/microsoft/docker-cimprov/state instead of /var/opt/microsoft/ama-logs/state since the latter gets deleted during onboarding
 mkdir -p /var/opt/microsoft/docker-cimprov/state
 echo "disabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
