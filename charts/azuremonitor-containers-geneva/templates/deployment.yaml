@@ -45,8 +45,6 @@ spec:
            value: "geneva-container"
          - name: AZMON_CONTAINER_LOG_SCHEMA_VERSION
            value: "v2"
-         - name: CLOUD_ENVIRONMENT
-           value:  {{ .Values.genevaLogsConfig.environment | quote }}
          - name: MONITORING_GCS_ENVIRONMENT
            value:  {{ .Values.genevaLogsConfig.environment | quote }}
          - name: MONITORING_GCS_ACCOUNT
