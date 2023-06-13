@@ -1126,20 +1126,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	}
 	DataUpdateMutex.Unlock()
 
-	if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
-		if MdsdMsgpUnixSocketClient == nil {
-			Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
-			CreateMDSDClient(ContainerLogV2, ContainerType)
-			if MdsdMsgpUnixSocketClient == nil {
-				Log("Error::mdsd::Unable to create mdsd client. Please check error log.")
-				ContainerLogTelemetryMutex.Lock()
-				defer ContainerLogTelemetryMutex.Unlock()
-				ContainerLogsMDSDClientCreateErrors += 1
-				return output.FLB_RETRY
-			}
-			ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
-		}
-	}
 	for _, record := range tailPluginRecords {
 		containerID, k8sNamespace, k8sPodName, containerName := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
 		logEntrySource := ToString(record["stream"])
@@ -1169,6 +1155,22 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
+
+		if !IsWindows && IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
+			if MdsdMsgpUnixSocketClient == nil {
+				Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
+				CreateMDSDClient(ContainerLogV2, ContainerType)
+				if MdsdMsgpUnixSocketClient == nil {
+					Log("Error::mdsd::Unable to create mdsd client. Please check error log.")
+					ContainerLogTelemetryMutex.Lock()
+					defer ContainerLogTelemetryMutex.Unlock()
+					ContainerLogsMDSDClientCreateErrors += 1
+					return output.FLB_RETRY
+				}
+				ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
+			}
+		}
+		
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
 		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer

@@ -97,7 +97,8 @@ func getDataCollectionSettings() (map[string]string, error) {
 	dataCollectionSettingsItr := extensionSettings["dataCollectionSettings"]
 	if dataCollectionSettingsItr != nil && len(dataCollectionSettingsItr) > 0 {
 		for k, v := range dataCollectionSettingsItr {
-			dataCollectionSettings[k] = fmt.Sprintf("%v", v)
+			lk := strings.ToLower(k)
+			dataCollectionSettings[lk] = fmt.Sprintf("%v", v)
 		}
 	}
 	return dataCollectionSettings, nil
