@@ -1167,10 +1167,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					ContainerLogsMDSDClientCreateErrors += 1
 					return output.FLB_RETRY
 				}
-				ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
 			}
+			ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
 		}
-		
+
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
 		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
