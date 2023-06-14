@@ -98,7 +98,8 @@ func getDataCollectionSettings() (map[string]string, error) {
 	if dataCollectionSettingsItr != nil && len(dataCollectionSettingsItr) > 0 {
 		for k, v := range dataCollectionSettingsItr {
 			lk := strings.ToLower(k)
-			dataCollectionSettings[lk] = fmt.Sprintf("%v", v)
+			lv := strings.ToLower(fmt.Sprintf("%v", v))
+			dataCollectionSettings[lk] = fmt.Sprintf("%v", lv)
 		}
 	}
 	return dataCollectionSettings, nil
@@ -123,10 +124,9 @@ func getDataTypeToStreamIdMapping() (map[string]string, error) {
 func (e *Extension) IsContainerLogV2() bool {
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
-	if len(e.dataCollectionSettings) > 0 && e.dataCollectionSettings["enableContainerLogV2"] != "" {
-		message := fmt.Sprintf("isContainerLogV2: %s", e.dataCollectionSettings["enableContainerLogV2"])
+	if len(e.dataCollectionSettings) > 0 && e.dataCollectionSettings["enablecontainerlogv2"] != "" {
 		logger.Printf(message)
-		return e.dataCollectionSettings["enableContainerLogV2"] == "true"
+		return e.dataCollectionSettings["enablecontainerlogv2"] == "true"
 	}
 	var err error
 	e.dataCollectionSettings, err = getDataCollectionSettings()
@@ -134,7 +134,7 @@ func (e *Extension) IsContainerLogV2() bool {
 		message := fmt.Sprintf("Error getting isContainerLogV2: %s", err.Error())
 		logger.Printf(message)
 	}
-	return e.dataCollectionSettings["enableContainerLogV2"] == "true"
+	return e.dataCollectionSettings["enablecontainerlogv2"] == "true"
 }
 
 func (e *Extension) GetOutputStreamId(datatype string, useFromCache bool) string {
