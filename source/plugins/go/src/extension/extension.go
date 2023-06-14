@@ -125,7 +125,6 @@ func (e *Extension) IsContainerLogV2() bool {
 	extensionconfiglock.Lock()
 	defer extensionconfiglock.Unlock()
 	if len(e.dataCollectionSettings) > 0 && e.dataCollectionSettings["enablecontainerlogv2"] != "" {
-		logger.Printf(message)
 		return e.dataCollectionSettings["enablecontainerlogv2"] == "true"
 	}
 	var err error
