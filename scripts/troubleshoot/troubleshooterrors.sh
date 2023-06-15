@@ -31,6 +31,7 @@ kubectlInstallLinkMessage="Please install kubectl as per the instructions https:
 jqInstallLinkMessage="Please install jq as per instructions https://stedolan.github.io/jq/download/ and rerun the troubleshooting script"
 ciExtensionReOnboarding="Please reinstall extension as per instructions https://docs.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-enable-arc-enabled-clusters?toc=/azure/azure-arc/kubernetes/toc.json"
 timesyncHelpMessage="Please check if you have any timesync issues on your cluster nodes"
+dataCollectionRulesMessage="Please check this doc to setup dcr and dcra properly https://learn.microsoft.com/en-us/azure/azure-monitor/essentials/data-collection-rule-overview"
 
 log_message() {
   echo "$@"
@@ -282,6 +283,22 @@ validate_ci_extension() {
 
   workspaceKey=$(az rest --method post --uri $logAnalyticsWorkspaceResourceID/sharedKeys?api-version=2015-11-01-preview --query primarySharedKey -o json)
   workspacePrimarySharedKey=$(echo $workspaceKey | tr -d '"')
+
+  dcraId=$(az monitor data-collection rule association list --resource ${clusterResourceId} --query "[].id" -o tsv | tr "[:upper:]" "[:lower:]" | tr -d "[:space:]")
+  log_message "dcraId: ${dcraId}"
+  if [ -z "$dcraId" ]; then
+     log_message "-e error dcra either null or empty in the config settings"
+     log_message ${dataCollectionRulesMessage}
+     exit 1
+  fi
+
+  dcrId=$(az monitor data-collection rule association list --resource ${clusterResourceId} --query "[].dataCollectionRuleId" -o tsv | tr "[:upper:]" "[:lower:]" | tr -d "[:space:]")
+  log_message "dcrId: ${dcrId}"
+  if [ -z "$dcrId" ]; then
+     log_message "-e error dcra existing but dcr either null or empty in the config settings"
+     log_message ${dataCollectionRulesMessage}
+     exit 1
+  fi
 
   log_message "END:validate_ci_extension:SUCCESS"
 }
