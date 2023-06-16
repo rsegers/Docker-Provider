@@ -425,6 +425,8 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 		SendException(message)
 		return configurationId, channelId, err
 	}
+	Log("longwtest1: %v", agentConfiguration)
+	Log("longwtest2: %v", string(responseBytes))
 
 	if len(agentConfiguration.Configurations) == 0 {
 		message := "getAgentConfiguration: Received empty agentConfiguration.Configurations array"
