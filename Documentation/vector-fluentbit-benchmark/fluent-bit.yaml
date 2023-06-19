@@ -1,0 +1,175 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluent-bit
+  namespace: kube-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: fluent-bit-reader
+rules:
+  - apiGroups: [""]
+    resources:
+      [
+        "pods",
+        "events",
+        "nodes",
+        "nodes/stats",
+        "nodes/metrics",
+        "nodes/spec",
+        "nodes/proxy",
+        "namespaces",
+        "services",
+        "persistentvolumes"
+      ]
+    verbs: ["list", "get", "watch"]
+  - apiGroups: ["apps", "extensions", "autoscaling"]
+    resources: ["replicasets", "deployments", "horizontalpodautoscalers"]
+    verbs: ["list"]
+  - nonResourceURLs: ["/metrics"]
+    verbs: ["get"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: fluent-bitclusterrolebinding
+subjects:
+  - kind: ServiceAccount
+    name: fluent-bit
+    namespace: kube-system
+roleRef:
+  kind: ClusterRole
+  name: fluent-bit-reader
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: kube-system
+  labels:
+    k8s-app: fluent-bit
+data:
+  # Configuration files: server, input, filters and output
+  # ======================================================
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush         1
+        Log_Level     info
+        Daemon        off
+        storage.path  /var/log/
+        storage.sync  normal
+        storage.checksum off
+        storage.max_chunks_up 5000
+        storage.backlog.mem_limit 10M
+        Parsers_File  parsers.conf
+        HTTP_Server   Off
+        HTTP_Listen   0.0.0.0
+        HTTP_Port     2020
+
+    @INCLUDE input.conf
+    @INCLUDE output.conf
+
+  input.conf: |
+    [INPUT]
+        Name              tail
+        storage.type  filesystem
+        Tag               kube.*
+        Path              /var/log/containers/*.log
+        Parser            cri
+        DB                /var/log/flb_kube.db
+        Buffer_Chunk_Size 4MB
+        Buffer_Max_Size   10MB
+        Mem_Buf_Limit     2000MB
+        Path_Key filepath
+        Skip_Long_Lines   On
+        Refresh_Interval  10
+        Rotate_Wait       20
+        Exclude_Path      /var/log/containers/*_kube-system_*.log
+        threaded          on
+
+  parsers.conf: |
+    [PARSER]
+        # http://rubular.com/r/tjUt3Awgg4
+        Name cri
+        Format regex
+        Regex ^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<message>.*)$
+        Time_Key    time
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+
+  output.conf: |
+    [OUTPUT]
+        Name        azure
+        Match       *
+        Workers     1
+        Customer_ID f1e47b3b-d9c6-49c3-920b-2a7c873f1c13
+        Shared_Key  <workspaceKey>
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: kube-system
+  labels:
+    k8s-app: fluent-bit-logging
+    version: v1
+    kubernetes.io/cluster-service: "true"
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluent-bit-logging
+  template:
+    metadata:
+      labels:
+        k8s-app: fluent-bit-logging
+        version: v1
+        kubernetes.io/cluster-service: "true"
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "2020"
+        prometheus.io/path: /api/v1/metrics/prometheus
+    spec:
+      terminationGracePeriodSeconds: 10
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+      - name: fluent-bit
+        image: fluent/fluent-bit:2.0.9
+        imagePullPolicy: IfNotPresent
+        ports:
+          - containerPort: 2020
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: fluent-bit-config
+          mountPath: /fluent-bit/etc/
+        resources:
+            limits:
+              cpu: "4"
+              memory: 4Gi
+            requests:
+              cpu: 300m
+              memory: 256Mi
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: fluent-bit-config
+        configMap:
+          name: fluent-bit-config
+      serviceAccountName: fluent-bit
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - operator: "Exists"
+        effect: "NoExecute"
+      - operator: "Exists"
+        effect: "NoSchedule"
