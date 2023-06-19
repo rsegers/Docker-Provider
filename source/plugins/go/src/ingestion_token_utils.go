@@ -59,11 +59,6 @@ type AgentConfiguration struct {
 			Datasources []struct {
 				Configuration struct {
 					Extensionname string `json:"extensionName"`
-					Extensionsettings struct {
-						DataCollectionSettings struct {
-							EnableContainerLogV2 bool `json:"enableContainerLogV2"`
-						} `json:"dataCollectionSettings"`
-					} `json:"extensionSettings"`
 				} `json:"configuration"`
 				ID      string `json:"id"`
 				Kind    string `json:"kind"`
@@ -83,6 +78,11 @@ type AgentConfiguration struct {
 				Containerinsights []struct {
 					ID            string   `json:"id"`
 					Originids     []string `json:"originIds"`
+					Extensionsettings struct {
+						DataCollectionSettings struct {
+							EnableContainerLogV2 bool `json:"enableContainerLogV2"`
+						} `json:"dataCollectionSettings"`
+					} `json:"extensionSettings"`
 					Outputstreams struct {
 						LinuxPerfBlob                   string `json:"LINUX_PERF_BLOB"`
 						ContainerInventoryBlob          string `json:"CONTAINER_INVENTORY_BLOB"`
@@ -450,8 +450,9 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 
 	configurationId = agentConfiguration.Configurations[0].Configurationid
 	channelId = agentConfiguration.Configurations[0].Content.Channels[0].ID
-	if len(agentConfiguration.Configurations[0].Content.Datasources) > 0 {
-		enableContainerLogV2 = agentConfiguration.Configurations[0].Content.Datasources[0].Configuration.Extensionsettings.DataCollectionSettings.EnableContainerLogV2
+	if len(agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights) > 0 {
+		// Assuming you have an instance of AgentConfiguration named agentConfiguration
+		enableContainerLogV2 = agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights[0].Extensionsettings.DataCollectionSettings.EnableContainerLogV2
 	}
 	Log("longwtest3: %v", enableContainerLogV2)
 	
