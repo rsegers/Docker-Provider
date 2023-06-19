@@ -324,7 +324,6 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 	Log("Info getAgentConfiguration: start")
 	configurationId = ""
 	channelId = ""
-	var enableContainerLogV2 bool
 	var amcs_endpoint *url.URL
 	var AmcsEndpoint string
 	osType := os.Getenv("OS_TYPE")
@@ -452,9 +451,9 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 	channelId = agentConfiguration.Configurations[0].Content.Channels[0].ID
 	if len(agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights) > 0 {
 		// Assuming you have an instance of AgentConfiguration named agentConfiguration
-		enableContainerLogV2 = agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights[0].Extensionsettings.DataCollectionSettings.EnableContainerLogV2
+		ContainerLogSchemaV2 = agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights[0].Extensionsettings.DataCollectionSettings.EnableContainerLogV2
 	}
-	Log("longwtest3: %v", enableContainerLogV2)
+	Log("longwtest3: %v", ContainerLogSchemaV2)
 	
 	Log("getAgentConfiguration: obtained configurationId: %s, channelId: %s", configurationId, channelId)
 	Log("Info getAgentConfiguration: end")
