@@ -59,6 +59,11 @@ type AgentConfiguration struct {
 			Datasources []struct {
 				Configuration struct {
 					Extensionname string `json:"extensionName"`
+					Extensionsettings struct {
+						DataCollectionSettings struct {
+							EnableContainerLogV2 bool `json:"enableContainerLogV2"`
+						} `json:"dataCollectionSettings"`
+					} `json:"extensionSettings"`
 				} `json:"configuration"`
 				ID      string `json:"id"`
 				Kind    string `json:"kind"`
@@ -319,6 +324,7 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 	Log("Info getAgentConfiguration: start")
 	configurationId = ""
 	channelId = ""
+	var enableContainerLogV2 bool
 	var amcs_endpoint *url.URL
 	var AmcsEndpoint string
 	osType := os.Getenv("OS_TYPE")
@@ -444,7 +450,11 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 
 	configurationId = agentConfiguration.Configurations[0].Configurationid
 	channelId = agentConfiguration.Configurations[0].Content.Channels[0].ID
-
+	if len(agentConfiguration.Configurations[0].Content.Datasources) > 0 {
+		enableContainerLogV2 = agentConfiguration.Configurations[0].Content.Datasources[0].Configuration.Extensionsettings.DataCollectionSettings.EnableContainerLogV2
+	}
+	Log("longwtest3: %v", enableContainerLogV2)
+	
 	Log("getAgentConfiguration: obtained configurationId: %s, channelId: %s", configurationId, channelId)
 	Log("Info getAgentConfiguration: end")
 
