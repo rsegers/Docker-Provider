@@ -8,6 +8,41 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 06/08/2023 -
+##### Version microsoft/oms:3.1.9 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.9 (linux)
+##### Version microsoft/oms:win-3.1.9 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.9 (windows)
+##### Current dependencies
+- Linux
+  - [CBL-Mariner 2.0.20230526](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20230526-2.0)
+  - Golang - 1.20.3
+  - Ruby - 3.1.3
+  - MDSD - 1.26.1
+  - Telegraf - 1.26.0
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.5
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.3.2
+  - Golang - 1.20.3
+##### Code change log
+- Common
+  - Allow scheduling ama-logs pods on tainted nodes in Arc K8S clusters via amalogs.scheduleOnTaintedNodes option
+  - Add azure policy, terraform, and bicep support for MSI onboarding
+  - Cost optimization GA changes
+- Linux
+  - Fix bug which causes ama-logs pod to restart continously for docker container runtime clusters
+  - Remove vim package from image to vulnerabilities footprint
+  - Update Dockerfile for trivy vulnerabilities scan
+  - Update Mariner version from 2.0.20230426 to 2.0.20230526
+- Windows
+  - Fix chocolatey version to 1.4.0
+  - Mute telegraf if monitor_kubernetes_pods is false or N/A
+  - Use IPV4 address for AKS clusters with dual stacks for cadvisor calls
+  - Update BouncyCastle version to 1.8.9 from 1.8.6.1
+
 ### 05/16/2023 -
 ##### Version microsoft/oms:3.1.8 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.8 (linux)
 ##### Version microsoft/oms:win-3.1.8 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.8 (windows)
