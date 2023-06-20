@@ -80,7 +80,10 @@ type AgentConfiguration struct {
 					Originids     []string `json:"originIds"`
 					Extensionsettings struct {
 						DataCollectionSettings struct {
-							EnableContainerLogV2 bool `json:"enableContainerLogV2"`
+							Interval               string   `json:"interval"`
+							NamespaceFilteringMode string   `json:"namespaceFilteringMode"`
+							Namespaces             []string `json:"namespaces"`
+							EnableContainerLogV2   bool     `json:"enableContainerLogV2"`
 						} `json:"dataCollectionSettings"`
 					} `json:"extensionSettings"`
 					Outputstreams struct {
@@ -450,7 +453,6 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 	configurationId = agentConfiguration.Configurations[0].Configurationid
 	channelId = agentConfiguration.Configurations[0].Content.Channels[0].ID
 	if len(agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights) > 0 {
-		// Assuming you have an instance of AgentConfiguration named agentConfiguration
 		ContainerLogSchemaV2 = agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights[0].Extensionsettings.DataCollectionSettings.EnableContainerLogV2
 	}
 	Log("longwtest3: %v", ContainerLogSchemaV2)
