@@ -593,83 +593,79 @@ function Start-Telegraf {
     Write-Host "**********Setting default environment variables for telegraf prometheus plugin..."
     .\setdefaulttelegrafenvvariables.ps1
 
-    Set-ProcessAndMachineEnvVariables "TELEMETRY_CUSTOM_PROM_MONITOR_PODS" "false"
     # run prometheus custom config parser
     Write-Host "**********Running config parser for custom prometheus scraping**********"
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
-    if (Test-Path -Path setpromenv.ps1) { ./setpromenv.ps1}
     Write-Host "**********End running config parser for custom prometheus scraping**********"
 
-    $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
-    if (![string]::IsNullOrEmpty($monitorKubernetesPods) -and $monitorKubernetesPods.ToLower() -eq 'true') {
-        # Set required environment variable for telegraf prometheus plugin to run properly
-        Write-Host "Setting required environment variables for telegraf prometheus input plugin to run properly..."
-        $kubernetesServiceHost = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_HOST", "process")
-        if (![string]::IsNullOrEmpty($kubernetesServiceHost)) {
-            [System.Environment]::SetEnvironmentVariable("KUBERNETES_SERVICE_HOST", $kubernetesServiceHost, "machine")
-            Write-Host "Successfully set environment variable KUBERNETES_SERVICE_HOST - $($kubernetesServiceHost) for target 'machine'..."
+
+    # Set required environment variable for telegraf prometheus plugin to run properly
+    Write-Host "Setting required environment variables for telegraf prometheus input plugin to run properly..."
+    $kubernetesServiceHost = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_HOST", "process")
+    if (![string]::IsNullOrEmpty($kubernetesServiceHost)) {
+        [System.Environment]::SetEnvironmentVariable("KUBERNETES_SERVICE_HOST", $kubernetesServiceHost, "machine")
+        Write-Host "Successfully set environment variable KUBERNETES_SERVICE_HOST - $($kubernetesServiceHost) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable KUBERNETES_SERVICE_HOST for target 'machine' since it is either null or empty"
+    }
+
+    $kubernetesServicePort = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_PORT", "process")
+    if (![string]::IsNullOrEmpty($kubernetesServicePort)) {
+        [System.Environment]::SetEnvironmentVariable("KUBERNETES_SERVICE_PORT", $kubernetesServicePort, "machine")
+        Write-Host "Successfully set environment variable KUBERNETES_SERVICE_PORT - $($kubernetesServicePort) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable KUBERNETES_SERVICE_PORT for target 'machine' since it is either null or empty"
+    }
+    $nodeIp = [System.Environment]::GetEnvironmentVariable("NODE_IP", "process")
+    if (![string]::IsNullOrEmpty($nodeIp)) {
+        [System.Environment]::SetEnvironmentVariable("NODE_IP", $nodeIp, "machine")
+        Write-Host "Successfully set environment variable NODE_IP - $($nodeIp) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable NODE_IP for target 'machine' since it is either null or empty"
+    }
+
+    $hostName = [System.Environment]::GetEnvironmentVariable("HOSTNAME", "process")
+    Write-Host "nodename: $($hostName)"
+    Write-Host "replacing nodename in telegraf config"
+    (Get-Content "C:\etc\telegraf\telegraf.conf").replace('placeholder_hostname', $hostName) | Set-Content "C:\etc\telegraf\telegraf.conf"
+
+    Write-Host "Installing telegraf service"
+    C:\opt\telegraf\telegraf.exe --service install --config "C:\etc\telegraf\telegraf.conf"
+
+    # Setting delay auto start for telegraf since there have been known issues with windows server and telegraf -
+    # https://github.com/influxdata/telegraf/issues/4081
+    # https://github.com/influxdata/telegraf/issues/3601
+    try {
+        $serverName = [System.Environment]::GetEnvironmentVariable("PODNAME", "process")
+        if (![string]::IsNullOrEmpty($serverName)) {
+            sc.exe \\$serverName config telegraf start= delayed-auto
+            Write-Host "Successfully set delayed start for telegraf"
+
         }
         else {
-            Write-Host "Failed to set environment variable KUBERNETES_SERVICE_HOST for target 'machine' since it is either null or empty"
+            Write-Host "Failed to get environment variable PODNAME to set delayed telegraf start"
         }
+    }
+    catch {
+        $e = $_.Exception
+        Write-Host $e
+        Write-Host "exception occured in delayed telegraf start.. continuing without exiting"
+    }
+    Write-Host "Running telegraf service in test mode"
+    C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --test
+    Write-Host "Starting telegraf service"
+    C:\opt\telegraf\telegraf.exe --service start
 
-        $kubernetesServicePort = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_PORT", "process")
-        if (![string]::IsNullOrEmpty($kubernetesServicePort)) {
-            [System.Environment]::SetEnvironmentVariable("KUBERNETES_SERVICE_PORT", $kubernetesServicePort, "machine")
-            Write-Host "Successfully set environment variable KUBERNETES_SERVICE_PORT - $($kubernetesServicePort) for target 'machine'..."
-        }
-        else {
-            Write-Host "Failed to set environment variable KUBERNETES_SERVICE_PORT for target 'machine' since it is either null or empty"
-        }
-        $nodeIp = [System.Environment]::GetEnvironmentVariable("NODE_IP", "process")
-        if (![string]::IsNullOrEmpty($nodeIp)) {
-            [System.Environment]::SetEnvironmentVariable("NODE_IP", $nodeIp, "machine")
-            Write-Host "Successfully set environment variable NODE_IP - $($nodeIp) for target 'machine'..."
-        }
-        else {
-            Write-Host "Failed to set environment variable NODE_IP for target 'machine' since it is either null or empty"
-        }
-
-        $hostName = [System.Environment]::GetEnvironmentVariable("HOSTNAME", "process")
-        Write-Host "nodename: $($hostName)"
-        Write-Host "replacing nodename in telegraf config"
-        (Get-Content "C:\etc\telegraf\telegraf.conf").replace('placeholder_hostname', $hostName) | Set-Content "C:\etc\telegraf\telegraf.conf"
-
-        Write-Host "Installing telegraf service"
-        C:\opt\telegraf\telegraf.exe --service install --config "C:\etc\telegraf\telegraf.conf"
-
-        # Setting delay auto start for telegraf since there have been known issues with windows server and telegraf -
-        # https://github.com/influxdata/telegraf/issues/4081
-        # https://github.com/influxdata/telegraf/issues/3601
-        try {
-            $serverName = [System.Environment]::GetEnvironmentVariable("PODNAME", "process")
-            if (![string]::IsNullOrEmpty($serverName)) {
-                sc.exe \\$serverName config telegraf start= delayed-auto
-                Write-Host "Successfully set delayed start for telegraf"
-
-            }
-            else {
-                Write-Host "Failed to get environment variable PODNAME to set delayed telegraf start"
-            }
-        }
-        catch {
-            $e = $_.Exception
-            Write-Host $e
-            Write-Host "exception occured in delayed telegraf start.. continuing without exiting"
-        }
-        Write-Host "Running telegraf service in test mode"
-        C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --test
-        Write-Host "Starting telegraf service"
+    # Trying to start telegraf again if it did not start due to fluent bit not being ready at startup
+    Get-Service telegraf | findstr Running
+    if ($? -eq $false) {
+        Write-Host "trying to start telegraf in again in 30 seconds, since fluentbit might not have been ready..."
+        Start-Sleep -s 30
         C:\opt\telegraf\telegraf.exe --service start
-
-        # Trying to start telegraf again if it did not start due to fluent bit not being ready at startup
-        Get-Service telegraf | findstr Running
-        if ($? -eq $false) {
-            Write-Host "trying to start telegraf in again in 30 seconds, since fluentbit might not have been ready..."
-            Start-Sleep -s 30
-            C:\opt\telegraf\telegraf.exe --service start
-            Get-Service telegraf
-        }
+        Get-Service telegraf
     }
 }
 
