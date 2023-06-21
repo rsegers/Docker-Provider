@@ -433,8 +433,6 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 		SendException(message)
 		return configurationId, channelId, err
 	}
-	Log("longwtest1: %v", agentConfiguration)
-	Log("longwtest2: %v", string(responseBytes))
 
 	if len(agentConfiguration.Configurations) == 0 {
 		message := "getAgentConfiguration: Received empty agentConfiguration.Configurations array"
@@ -455,8 +453,6 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 	if len(agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights) > 0 {
 		ContainerLogSchemaV2 = agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights[0].Extensionsettings.DataCollectionSettings.EnableContainerLogV2
 	}
-	Log("longwtest3: %v", ContainerLogSchemaV2)
-	
 	Log("getAgentConfiguration: obtained configurationId: %s, channelId: %s", configurationId, channelId)
 	Log("Info getAgentConfiguration: end")
 
