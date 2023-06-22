@@ -1,5 +1,8 @@
 Set-Location $env:CONTAINER_SANDBOX_MOUNT_POINT
 
+$rubydir = "./ruby31"
+$rubypath = Join-Path $rubydir "/bin/ruby.exe"
+
 function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\opt\hostlogswindows\scripts\powershell\filesystemwatcher.ps1
 }
@@ -18,13 +21,18 @@ function Invoke-ConfigmapParserFromHost($rubypath) {
     }
 
     Write-host "Copying ruby binaries to host directory: $tmpdir"
-    New-Item $tmpdir -Type Directory > $null
-    Copy-Item "./ruby31" $tmpdir -R
-
-    Invoke-ConfigmapParser (Join-Path $tmpdir $rubypath)
-
-    Write-host "Cleaning up ruby binaries from the host"
-    Remove-Item $tmpdir -R -Force
+    try {
+        New-Item $tmpdir -Type Directory > $null
+        Copy-Item $rubydir $tmpdir -R
+    
+        Invoke-ConfigmapParser (Join-Path $tmpdir $rubypath)
+    }
+    finally {
+        Write-host "Cleaning up ruby binaries from the host"
+        if (Test-Path $tmpdir) {
+            Remove-Item $tmpdir -R -Force
+        }
+    }
 }
 
 function Get-ProcessEnvironmentVariable($name) {
@@ -53,15 +61,14 @@ function Set-EnvironmentVariables {
         if (![string]::IsNullOrEmpty($value)) {
             [System.Environment]::SetEnvironmentVariable($key, $value, "Process")
             [System.Environment]::SetEnvironmentVariable($key, $value, "User")
-            Write-Host "Successfully set environment variable $key - $value"
+            Write-Output "Successfully set environment variable $key - $value"
         }
         else {
-            Write-Host "Failed to set environment variable $key since it is either null or empty"
+            Write-Output "Failed to set environment variable $key since it is either null or empty"
         }
     }
 
     # Load env vars from config map
-    $rubypath = "./ruby31/bin/ruby.exe"
 
     # Use Join-Path to normalize paths with consistent delimeters
     $mountPath = Join-Path $env:CONTAINER_SANDBOX_MOUNT_POINT ""
@@ -108,7 +115,7 @@ if (Get-GenevaEnabled) {
     Invoke-Expression ".\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe -useenv"
 }
 else {
-    Write-Host "Geneva not configured. Watching for config map"
+    Write-Output "Geneva not configured. Watching for config map"
     # Infinite loop keeps container alive while waiting for config map
     # Otherwise when the process ends, kubernetes sees this as a crash and the container will enter a crash loop
     while ($true) {
