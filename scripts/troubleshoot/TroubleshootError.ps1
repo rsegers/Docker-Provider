@@ -659,6 +659,29 @@ else {
 
     if ($true -eq $UseAADAuth) {
         #
+        # Check existence of the ContainerInsightsExtension DCR-A on the cluster resource
+        #
+        try {
+            $dcrAssociation = Get-AzDataCollectionRuleAssociation -TargetResourceId $ClusterResourceId -AssociationName "ContainerInsightsExtension" -ErrorAction Stop -WarningAction silentlyContinue
+            Write-Host("Successfully fetched ContainerInsightsExtension Data Collection Rule Association ...") -ForegroundColor Green
+            if ($null -eq $dcrAssociation) {
+                Write-Host("")
+                Write-Host("ContainerInsightsExtension Data Collection Rule Association doenst exist.") -ForegroundColor Red
+                Write-Host("")
+                Stop-Transcript
+                exit 1
+            }
+        }
+        catch {
+            Write-Host("")
+            Write-Host("Failed to get the data collection Rule Association. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
+            Write-Host("If ContainerInsightsExtension DataCollectionRule Association has been deleted accidentally, disable and enable Monitoring addon back to get this fixed.") -ForegroundColor Red
+            Write-Host("")
+            Stop-Transcript
+            exit 1
+        }
+
+        #
         # Check existence of the ContainerInsightsExtension DCR
         #
         try {
@@ -690,31 +713,8 @@ else {
         }
         catch {
             Write-Host("")
-            Write-Host("Failed to get the data collection Rule: '" + $dcrRuleName + "'. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
+            Write-Host("Failed to get the data collection Rule: '" + $dcrRuleName + "'. Data Collection Rule Association exists. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
             Write-Host("If  DataCollectionRule :'" + $dcrRuleName + "' has been deleted accidentally, disable and enable Monitoring addon back to get this fixed.") -ForegroundColor Red
-            Write-Host("")
-            Stop-Transcript
-            exit 1
-        }
-
-        #
-        # Check existence of the ContainerInsightsExtension DCR-A on the cluster resource
-        #
-        try {
-            $dcrAssociation = Get-AzDataCollectionRuleAssociation -TargetResourceId $ClusterResourceId -AssociationName "ContainerInsightsExtension" -ErrorAction Stop -WarningAction silentlyContinue
-            Write-Host("Successfully fetched ContainerInsightsExtension Data Collection Rule Association ...") -ForegroundColor Green
-            if ($null -eq $dcrAssociation) {
-                Write-Host("")
-                Write-Host("ContainerInsightsExtension Data Collection Rule Association doenst exist.") -ForegroundColor Red
-                Write-Host("")
-                Stop-Transcript
-                exit 1
-            }
-        }
-        catch {
-            Write-Host("")
-            Write-Host("Failed to get the data collection Rule Association. Please make sure that it hasn't been deleted and you have access to it.") -ForegroundColor Red
-            Write-Host("If ContainerInsightsExtension DataCollectionRule Association has been deleted accidentally, disable and enable Monitoring addon back to get this fixed.") -ForegroundColor Red
             Write-Host("")
             Stop-Transcript
             exit 1
