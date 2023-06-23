@@ -159,6 +159,8 @@ var (
 	ContainerLogsRouteADX bool
 	// container log schema (applicable only for non-ADX route)
 	ContainerLogSchemaV2 bool
+	// container log schema version from config map
+	ContainerLogV2ConfigMap bool
 	//ADX Cluster URI
 	AdxClusterUri string
 	// ADX clientID
@@ -1156,7 +1158,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
 
-		if !IsWindows && IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
+		if !IsWindows && !ContainerLogV2ConfigMap && IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
 			if MdsdMsgpUnixSocketClient == nil {
 				Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
 				CreateMDSDClient(ContainerLogV2, ContainerType)
@@ -1886,8 +1888,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", ContainerLogSchemaVersion)
 
 	ContainerLogSchemaV2 = false //default is v1 schema
+	ContainerLogV2ConfigMap = (strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0)
 
-	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
+	if ContainerLogV2ConfigMap && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)

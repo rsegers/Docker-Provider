@@ -450,7 +450,7 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 
 	configurationId = agentConfiguration.Configurations[0].Configurationid
 	channelId = agentConfiguration.Configurations[0].Content.Channels[0].ID
-	if len(agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights) > 0 {
+	if !ContainerLogV2ConfigMap && len(agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights) > 0 {
 		ContainerLogSchemaV2 = agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights[0].Extensionsettings.DataCollectionSettings.EnableContainerLogV2
 	}
 	Log("getAgentConfiguration: obtained configurationId: %s, channelId: %s", configurationId, channelId)
