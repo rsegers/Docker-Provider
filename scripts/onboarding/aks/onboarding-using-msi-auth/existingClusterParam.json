@@ -14,6 +14,9 @@
     "workspaceRegion": {
       "value": "<workspaceRegion>"
     },
+    "enableContainerLogV2": {
+      "value": true
+    },
     "enableSyslog": {
       "value": false
     },
