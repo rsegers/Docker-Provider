@@ -13,17 +13,14 @@ data:
     sinks:
       azure_monitor_logs:
         buffer:
-        - max_events: 5000
+        - max_events: 1000000
           type: memory
-          when_full: overflow
-        - max_size: 1073741824
-          type: disk
-          when_full: drop_newest
-        customer_id: f1e47b3b-d9c6-49c3-920b-2a7c873f1c13
+          when_full: block
+        customer_id: <Update-log-analytics-workspace-guid>
         inputs:
         - parser
         log_type: VectorContainerLog
-        shared_key: <workspaceKey>
+        shared_key:  <Update-log-analytics-workspace-key>
         type: azure_monitor_logs
     sources:
       kube_log:

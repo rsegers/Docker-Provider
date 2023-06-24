@@ -1,4 +1,18 @@
 apiVersion: v1
+kind: Service
+metadata:
+  name: fluent-bit-metrics-service
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9102
+      targetPort: 9102
+      protocol: TCP
+      name: fluentbit-metrics
+  selector:
+     k8s-app: fluent-bit-logging
+---
+apiVersion: v1
 kind: ServiceAccount
 metadata:
   name: fluent-bit
@@ -61,7 +75,6 @@ data:
         storage.path  /var/log/
         storage.sync  normal
         storage.checksum off
-        storage.max_chunks_up 5000
         storage.backlog.mem_limit 10M
         Parsers_File  parsers.conf
         HTTP_Server   Off
@@ -74,7 +87,6 @@ data:
   input.conf: |
     [INPUT]
         Name              tail
-        storage.type  filesystem
         Tag               kube.*
         Path              /var/log/containers/*.log
         Parser            cri
@@ -88,6 +100,12 @@ data:
         Rotate_Wait       20
         Exclude_Path      /var/log/containers/*_kube-system_*.log
         threaded          on
+
+    [INPUT]
+        name            fluentbit_metrics
+        Alias           fluentbit_metrics_input
+        tag             internal_metrics
+        scrape_interval 60
 
   parsers.conf: |
     [PARSER]
@@ -103,8 +121,15 @@ data:
         Name        azure
         Match       *
         Workers     1
-        Customer_ID f1e47b3b-d9c6-49c3-920b-2a7c873f1c13
-        Shared_Key  <workspaceKey>
+        Customer_ID <Update-log-analytics-workspace-guid>
+        Shared_Key  <Update-log-analytics-workspace-key>
+
+    [OUTPUT]
+        name            prometheus_exporter
+        Alias           fluentbit_metrics_output
+        match           internal_metrics
+        host            0.0.0.0
+        port            9102
 ---
 apiVersion: apps/v1
 kind: DaemonSet
@@ -135,7 +160,7 @@ spec:
         kubernetes.io/os: linux
       containers:
       - name: fluent-bit
-        image: fluent/fluent-bit:2.0.9
+        image: fluent/fluent-bit:2.1.4
         imagePullPolicy: IfNotPresent
         ports:
           - containerPort: 2020
