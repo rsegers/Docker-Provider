@@ -11,7 +11,13 @@ data:
   vector.yaml: |
     data_dir: /var/lib/vector
     sinks:
+      prometheus_exporter:
+       type: prometheus_exporter
+       inputs:
+       - vector_metrics
       azure_monitor_logs:
+        acknowledgements:
+          enabled: true
         buffer:
         - max_events: 1000000
           type: memory
@@ -20,7 +26,7 @@ data:
         inputs:
         - parser
         log_type: VectorContainerLog
-        shared_key:  <Update-log-analytics-workspace-key>
+        shared_key: <Update-log-analytics-workspace-key>
         type: azure_monitor_logs
     sources:
       kube_log:
@@ -29,6 +35,9 @@ data:
         exclude:
         - /var/log/containers/*_kube-system_*.log
         type: file
+      vector_metrics:
+        type: internal_metrics
+        scrape_interval_secs: 60
     transforms:
       parser:
         type: remap
