@@ -58,11 +58,17 @@ require_relative "ConfigParseErrorLogger"
 @nodesEmitStreamBatchSizeMin = 50
 
 # configmap settings related fbit config
+@enableFbitInternalMetrics = false
 @fbitFlushIntervalSecs = 0
 @fbitTailBufferChunkSizeMBs = 0
 @fbitTailBufferMaxSizeMBs = 0
 @fbitTailMemBufLimitMBs = 0
 @fbitTailIgnoreOlder = ""
+@storageTotalLimitSizeMB = 200
+@outputForwardWorkers = 10
+# retries infinetly until it succeeds
+@outputForwardRetryLimit = "no_limits"
+@requireAckResponse = "false"
 
 # configmap settings related to mdsd
 @mdsdMonitoringMaxEventRate = 0
@@ -83,8 +89,24 @@ require_relative "ConfigParseErrorLogger"
 
 @ignoreProxySettings = false
 
+@multiline_enabled = "false"
+
+@waittime_port_25226 = 45
+@waittime_port_25228 = 120
+@waittime_port_25229 = 45
+
 def is_number?(value)
   true if Integer(value) rescue false
+end
+
+# check if it is number and greater than 0
+def is_valid_number?(value)
+  return !value.nil? && is_number?(value) && value.to_i > 0
+end
+
+# check if it is a valid waittime
+def is_valid_waittime?(value, default)
+  return !value.nil? && is_number?(value) && value.to_i >= default/2 && value.to_i <= 3*default
 end
 
 # Use parser to parse the configmap toml file to a ruby structure
@@ -159,19 +181,19 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       fbit_config = parsedConfig[:agent_settings][:fbit_config]
       if !fbit_config.nil?
         fbitFlushIntervalSecs = fbit_config[:log_flush_interval_secs]
-        if !fbitFlushIntervalSecs.nil? && is_number?(fbitFlushIntervalSecs) && fbitFlushIntervalSecs.to_i > 0
+        if is_valid_number?(fbitFlushIntervalSecs)
           @fbitFlushIntervalSecs = fbitFlushIntervalSecs.to_i
           puts "Using config map value: log_flush_interval_secs = #{@fbitFlushIntervalSecs}"
         end
 
         fbitTailBufferChunkSizeMBs = fbit_config[:tail_buf_chunksize_megabytes]
-        if !fbitTailBufferChunkSizeMBs.nil? && is_number?(fbitTailBufferChunkSizeMBs) && fbitTailBufferChunkSizeMBs.to_i > 0
+        if is_valid_number?(fbitTailBufferChunkSizeMBs)
           @fbitTailBufferChunkSizeMBs = fbitTailBufferChunkSizeMBs.to_i
           puts "Using config map value: tail_buf_chunksize_megabytes  = #{@fbitTailBufferChunkSizeMBs}"
         end
 
         fbitTailBufferMaxSizeMBs = fbit_config[:tail_buf_maxsize_megabytes]
-        if !fbitTailBufferMaxSizeMBs.nil? && is_number?(fbitTailBufferMaxSizeMBs) && fbitTailBufferMaxSizeMBs.to_i > 0
+        if is_valid_number?(fbitTailBufferMaxSizeMBs)
           if fbitTailBufferMaxSizeMBs.to_i >= @fbitTailBufferChunkSizeMBs
             @fbitTailBufferMaxSizeMBs = fbitTailBufferMaxSizeMBs.to_i
             puts "Using config map value: tail_buf_maxsize_megabytes = #{@fbitTailBufferMaxSizeMBs}"
@@ -188,7 +210,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         end
 
         fbitTailMemBufLimitMBs = fbit_config[:tail_mem_buf_limit_megabytes]
-        if !fbitTailMemBufLimitMBs.nil? && is_number?(fbitTailMemBufLimitMBs) && fbitTailMemBufLimitMBs.to_i > 0
+        if is_valid_number?(fbitTailMemBufLimitMBs)
           @fbitTailMemBufLimitMBs = fbitTailMemBufLimitMBs.to_i
           puts "Using config map value: tail_mem_buf_limit_megabytes  = #{@fbitTailMemBufLimitMBs}"
         end
@@ -203,15 +225,51 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             puts "config:warn: provided tail_ignore_older value is not valid hence using default value"
           end
         end
+
+        enableFbitInternalMetrics = fbit_config[:enable_internal_metrics]
+        if !enableFbitInternalMetrics.nil? && enableFbitInternalMetrics.downcase == "true"
+          @enableFbitInternalMetrics = true
+          puts "Using config map value: enable_internal_metrics = #{@enableFbitInternalMetrics}"
+        end
       end
 
+      # fbit forward plugins geneva settings per tenant
+      fbit_config = parsedConfig[:agent_settings][:geneva_tenant_fbit_settings]
+      if !fbit_config.nil?
+        storageTotalLimitSizeMB = fbit_config[:storage_total_limit_size_mb]
+        if is_valid_number?(storageTotalLimitSizeMB)
+          @storageTotalLimitSizeMB = storageTotalLimitSizeMB.to_i
+          puts "Using config map value: storage_total_limit_size_mb = #{@storageTotalLimitSizeMB}"
+        end
+        outputForwardWorkers = fbit_config[:output_forward_workers]
+        if is_valid_number?(outputForwardWorkers)
+          @outputForwardWorkers = outputForwardWorkers.to_i
+          puts "Using config map value: output_forward_workers = #{@outputForwardWorkers}"
+        end
+        #Ref https://docs.fluentbit.io/manual/administration/scheduling-and-retries
+        outputForwardRetryLimit = fbit_config[:output_forward_retry_limit]
+        if !outputForwardRetryLimit.nil?
+          if is_number?(outputForwardRetryLimit) && outputForwardRetryLimit.to_i > 0
+            @outputForwardRetryLimit = outputForwardRetryLimit.to_i
+            puts "Using config map value: output_forward_retry_limit = #{@outputForwardRetryLimit}"
+          elsif ["False", "no_limits", "no_retries"].include?(outputForwardRetryLimit)
+            @outputForwardRetryLimit = outputForwardRetryLimit
+            puts "Using config map value: output_forward_retry_limit = #{@outputForwardRetryLimit}"
+          end
+        end
+        requireAckResponse = fbit_config[:require_ack_response]
+        if !requireAckResponse.nil? && requireAckResponse.downcase == "true"
+          @requireAckResponse = requireAckResponse
+          puts "Using config map value: require_ack_response = #{@requireAckResponse}"
+        end
+      end
       # ama-logs daemonset only settings
       if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
         # mdsd settings
         mdsd_config = parsedConfig[:agent_settings][:mdsd_config]
         if !mdsd_config.nil?
           mdsdMonitoringMaxEventRate = mdsd_config[:monitoring_max_event_rate]
-          if !mdsdMonitoringMaxEventRate.nil? && is_number?(mdsdMonitoringMaxEventRate) && mdsdMonitoringMaxEventRate.to_i > 0
+          if is_valid_number?(mdsdMonitoringMaxEventRate)
             @mdsdMonitoringMaxEventRate = mdsdMonitoringMaxEventRate.to_i
             puts "Using config map value: monitoring_max_event_rate  = #{@mdsdMonitoringMaxEventRate}"
           end
@@ -227,12 +285,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
       if !prom_fbit_config.nil?
         chunk_size = prom_fbit_config[:tcp_listener_chunk_size]
-        if !chunk_size.nil? && is_number?(chunk_size) && chunk_size.to_i > 0
+        if is_valid_number?(chunk_size)
           @promFbitChunkSize = chunk_size.to_i
           puts "Using config map value: AZMON_FBIT_CHUNK_SIZE = #{@promFbitChunkSize.to_s + "m"}"
         end
         buffer_size = prom_fbit_config[:tcp_listener_buffer_size]
-        if !buffer_size.nil? && is_number?(buffer_size) && buffer_size.to_i > 0
+        if is_valid_number?(buffer_size)
           @promFbitBufferSize = buffer_size.to_i
           puts "Using config map value: AZMON_FBIT_BUFFER_SIZE = #{@promFbitBufferSize.to_s + "m"}"
           if @promFbitBufferSize < @promFbitChunkSize
@@ -241,7 +299,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           end
         end
         mem_buf_limit = prom_fbit_config[:tcp_listener_mem_buf_limit]
-        if !mem_buf_limit.nil? && is_number?(mem_buf_limit) && mem_buf_limit.to_i > 0
+        if is_valid_number?(mem_buf_limit)
           @promFbitMemBufLimit = mem_buf_limit.to_i
           puts "Using config map value: AZMON_FBIT_MEM_BUF_LIMIT = #{@promFbitMemBufLimit.to_s + "m"}"
         end
@@ -254,6 +312,34 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "Using config map value: ignoreProxySettings = #{@ignoreProxySettings}"
         end
       end
+
+      multiline_config = parsedConfig[:agent_settings][:multiline]
+      if !multiline_config.nil?
+        @multiline_enabled = multiline_config[:enabled]
+        puts "Using config map value: AZMON_MULTILINE_ENABLED = #{@multiline_enabled}"
+      end
+
+      network_listener_waittime_config = parsedConfig[:agent_settings][:network_listener_waittime]
+      if !network_listener_waittime_config.nil?
+        waittime = network_listener_waittime_config[:tcp_port_25226]
+        if is_valid_waittime?(waittime, @waittime_port_25226)
+          @waittime_port_25226 = waittime.to_i
+          puts "Using config map value: WAITTIME_PORT_25226 = #{@waittime_port_25226}"
+        end
+
+        waittime = network_listener_waittime_config[:tcp_port_25228]
+        if is_valid_waittime?(waittime, @waittime_port_25228)
+          @waittime_port_25228 = waittime.to_i
+          puts "Using config map value: WAITTIME_PORT_25228 = #{@waittime_port_25228}"
+        end
+
+        waittime = network_listener_waittime_config[:tcp_port_25229]
+        if is_valid_waittime?(waittime, @waittime_port_25229)
+          @waittime_port_25229 = waittime.to_i
+          puts "Using config map value: WAITTIME_PORT_25229 = #{@waittime_port_25229}"
+        end
+      end
+
     end
   rescue => errorStr
     puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
@@ -285,6 +371,7 @@ if !file.nil?
   file.write("export PODS_EMIT_STREAM_BATCH_SIZE=#{@podsEmitStreamBatchSize}\n")
   file.write("export NODES_EMIT_STREAM_BATCH_SIZE=#{@nodesEmitStreamBatchSize}\n")
   # fbit settings
+  file.write("export ENABLE_FBIT_INTERNAL_METRICS=#{@enableFbitInternalMetrics}\n")
   if @fbitFlushIntervalSecs > 0
     file.write("export FBIT_SERVICE_FLUSH_INTERVAL=#{@fbitFlushIntervalSecs}\n")
   end
@@ -300,6 +387,17 @@ if !file.nil?
   if !@fbitTailIgnoreOlder.nil? && !@fbitTailIgnoreOlder.empty?
     file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
   end
+
+  if @storageTotalLimitSizeMB > 0
+    file.write("export STORAGE_TOTAL_LIMIT_SIZE_MB=#{@storageTotalLimitSizeMB.to_s + "M"}\n")
+  end
+
+  if @outputForwardWorkers > 0
+    file.write("export OUTPUT_FORWARD_WORKERS_COUNT=#{@outputForwardWorkers}\n")
+  end
+
+  file.write("export OUTPUT_FORWARD_RETRY_LIMIT=#{@outputForwardRetryLimit}\n")
+  file.write("export REQUIRE_ACK_RESPONSE=#{@requireAckResponse}\n")
 
   #mdsd settings
   if @mdsdMonitoringMaxEventRate > 0
@@ -328,6 +426,14 @@ if !file.nil?
     file.write("export IGNORE_PROXY_SETTINGS=#{@ignoreProxySettings}\n")
   end
 
+  if @multiline_enabled.strip.casecmp("true") == 0
+    file.write("export AZMON_MULTILINE_ENABLED=#{@multiline_enabled}\n")
+  end
+
+  file.write("export WAITTIME_PORT_25226=#{@waittime_port_25226}\n")
+  file.write("export WAITTIME_PORT_25228=#{@waittime_port_25228}\n")
+  file.write("export WAITTIME_PORT_25229=#{@waittime_port_25229}\n")
+
   # Close file after writing all environment variables
   file.close
 else
@@ -344,6 +450,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   file = File.open("setagentenv.ps1", "w")
 
   if !file.nil?
+    commands = get_command_windows("ENABLE_FBIT_INTERNAL_METRICS", @enableFbitInternalMetrics)
+    file.write(commands)
     if @fbitFlushIntervalSecs > 0
       commands = get_command_windows("FBIT_SERVICE_FLUSH_INTERVAL", @fbitFlushIntervalSecs)
       file.write(commands)
@@ -385,8 +493,29 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       commands = get_command_windows("AZMON_FBIT_MEM_BUF_LIMIT", @promFbitMemBufLimitDefault)
       file.write(commands)
     end
+
+    if @storageTotalLimitSizeMB > 0
+      commands = get_command_windows("STORAGE_TOTAL_LIMIT_SIZE_MB", @storageTotalLimitSizeMB.to_s + "M")
+      file.write(commands)
+    end
+
+    if @outputForwardWorkers > 0
+      commands = get_command_windows("OUTPUT_FORWARD_WORKERS_COUNT", @outputForwardWorkers)
+      file.write(commands)
+    end
+
+    commands = get_command_windows("OUTPUT_FORWARD_RETRY_LIMIT", @outputForwardRetryLimit)
+    file.write(commands)
+
+    commands = get_command_windows("REQUIRE_ACK_RESPONSE", @requireAckResponse)
+    file.write(commands)
+
     if @ignoreProxySettings
       commands = get_command_windows("IGNORE_PROXY_SETTINGS", @ignoreProxySettings)
+      file.write(commands)
+    end
+    if @multiline_enabled.strip.casecmp("true") == 0
+      commands = get_command_windows("AZMON_MULTILINE_ENABLED", @multiline_enabled)
       file.write(commands)
     end
     # Close file after writing all environment variables

@@ -110,7 +110,16 @@ spec:
        {{- if ne .Values.amalogs.metricsEndpoint "<your_metrics_endpoint>" }}
        - name: CUSTOM_METRICS_ENDPOINT
          value: {{ .Values.amalogs.metricsEndpoint | quote }}
+       {{- else if ne .Values.Azure.proxySettings.autonomousFqdn "<arca_autonomous_fqdn>" }}
+       - name: CUSTOM_METRICS_ENDPOINT
+         value: "https://metricsingestiongateway.monitoring.{{ .Values.Azure.proxySettings.autonomousFqdn }}"
        {{- end }}
+       {{- if ne .Values.amalogs.tokenAudience "<your_token_audience>" }}
+       - name: customResourceEndpoint
+         value: {{ .Values.amalogs.tokenAudience | quote }}
+       {{- end }}
+       - name: IS_CUSTOM_CERT
+         value: {{ .Values.Azure.proxySettings.isCustomCert | quote }}
        securityContext:
          privileged: true
        ports:
@@ -232,8 +241,14 @@ spec:
    {{- with .Values.amalogs.daemonset.affinity }}
    affinity: {{- toYaml . | nindent 8 }}
    {{- end }}
+   {{- if .Values.amalogs.scheduleOnTaintedNodes }}
+   {{- with .Values.amalogs.tolerationsUnrestricted }}
+   tolerations: {{- toYaml . | nindent 8 }}
+   {{- end }}
+   {{- else }}
    {{- with .Values.amalogs.tolerations }}
    tolerations: {{- toYaml . | nindent 8 }}
+   {{- end }}
    {{- end }}
    volumes:
     - name: host-root

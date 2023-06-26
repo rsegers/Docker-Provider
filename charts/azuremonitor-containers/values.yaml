@@ -19,11 +19,13 @@ Azure:
     httpsProxy: ""
     noProxy: ""
     proxyCert: ""
+    isCustomCert: false
+    autonomousFqdn: "<arca_autonomous_fqdn>"
 amalogs:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "ciprod12032022-c9f3dc30"
-    tagWindows: "win-ciprod12032022-c9f3dc30"
+    tag: "3.1.9"
+    tagWindows: "win-3.1.9"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "18.0.1-0"
     agentVersion: "azure-mdsd-1.17.0"
@@ -55,6 +57,9 @@ amalogs:
   # This flag used to ignore the proxy settings
   ignoreExtensionProxySettings: false
 
+  # This flag allows ama-logs pods to be scheduled on nodes with taints
+  scheduleOnTaintedNodes: false
+
   ## To get your workspace id and key do the following
   ## You can create a Azure Loganalytics workspace from portal.azure.com and get its ID & PRIMARY KEY from 'Advanced Settings' tab in the Ux.
 
@@ -65,6 +70,7 @@ amalogs:
   proxy: <your_proxy_config>
   # This metricsEndpoint used to define the endpoint custom metrics emit to. If not defined, default public Azure monitoring endpoint '{aks_region}.monitoring.azure.com' will be used.
   metricsEndpoint: <your_metrics_endpoint>
+  tokenAudience: <your_token_audience>
   env:
     clusterName: <your_cluster_name>
     ## Applicable for only managed clusters hosted in Azure
@@ -102,6 +108,14 @@ amalogs:
     - key: "node-role.kubernetes.io/master"
       operator: "Exists"
       effect: "PreferNoSchedule"
+  
+  tolerationsUnrestricted:
+    - operator: "Exists"
+      effect: "NoSchedule"
+    - operator: "Exists"
+      effect: "NoExecute"
+    - operator: "Exists"
+      effect: "PreferNoSchedule" 
 
   ## Pod scheduling preferences.
   ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
@@ -111,35 +125,19 @@ amalogs:
       nodeAffinity:
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
-            - labelSelector:
-              matchExpressions:
-                - key: kubernetes.io/os
-                  operator: In
-                  values:
-                    - linux
-                - key: type
-                  operator: NotIn
-                  values:
-                    - virtual-kubelet
-                - key: kubernetes.io/arch
-                  operator: In
-                  values:
-                    - amd64
-          nodeSelectorTerms:
-            - labelSelector:
-              matchExpressions:
-                - key: kubernetes.io/os
-                  operator: In
-                  values:
-                    - linux
-                - key: type
-                  operator: NotIn
-                  values:
-                    - virtual-kubelet
-                - key: kubernetes.io/arch
-                  operator: In
-                  values:
-                    - amd64
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: type
+              operator: NotIn
+              values:
+                - virtual-kubelet
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
   deployment:
     affinity:
       nodeAffinity:
@@ -154,43 +152,23 @@ amalogs:
                 - managed
         requiredDuringSchedulingIgnoredDuringExecution:
           nodeSelectorTerms:
-            - labelSelector:
-              matchExpressions:
-                - key: kubernetes.io/os
-                  operator: In
-                  values:
-                    - linux
-                - key: type
-                  operator: NotIn
-                  values:
-                    - virtual-kubelet
-                - key: kubernetes.io/role
-                  operator: NotIn
-                  values:
-                    - master
-                - key: kubernetes.io/arch
-                  operator: In
-                  values:
-                    - amd64
-          nodeSelectorTerms:
-            - labelSelector:
-              matchExpressions:
-                - key: kubernetes.io/os
-                  operator: In
-                  values:
-                    - linux
-                - key: type
-                  operator: NotIn
-                  values:
-                    - virtual-kubelet
-                - key: kubernetes.io/role
-                  operator: NotIn
-                  values:
-                    - master
-                - key: kubernetes.io/arch
-                  operator: In
-                  values:
-                    - amd64
+          - matchExpressions:
+            - key: kubernetes.io/os
+              operator: In
+              values:
+                - linux
+            - key: type
+              operator: NotIn
+              values:
+                - virtual-kubelet
+            - key: kubernetes.io/role
+              operator: NotIn
+              values:
+                - master
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
   ## Configure resource requests and limits
   ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
   ##

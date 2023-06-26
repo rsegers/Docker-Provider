@@ -38,11 +38,18 @@ require "fileutils"
 @responseTimeout = "15s"
 @tlsCa = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
 @insecureSkipVerify = true
+@podNamespace = "pod_namespace"
 
 # Checking to see if this is the daemonset or replicaset to parse config accordingly
 @controller = ENV["CONTROLLER_TYPE"]
 @containerType = ENV["CONTAINER_TYPE"]
 @sidecarScrapingEnabled = ENV["SIDECAR_SCRAPING_ENABLED"]
+
+@disableRSTelegraf = false
+
+def get_command_windows(env_variable_name, env_variable_value)
+  return "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n" + "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
+end
 
 # Use parser to parse the configmap toml file to a ruby structure
 def parseConfigMap
@@ -111,6 +118,7 @@ def createPrometheusPluginsWithNamespaceSetting(monitorKubernetesPods, monitorKu
           pluginConfigsWithNamespaces += "\n[[inputs.prometheus]]
   interval = \"#{interval}\"
   monitor_kubernetes_pods = true
+  pod_namespace_label_name = \"#{@podNamespace}\"
   pod_scrape_scope = \"#{(@controller.casecmp(@replicaset) == 0) ? "cluster" : "node"}\"
   monitor_kubernetes_pods_namespace = \"#{namespace}\"
   kubernetes_label_selector = \"#{kubernetesLabelSelectors}\"
@@ -146,6 +154,10 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           fieldDrop = parsedConfig[:prometheus_data_collection_settings][:cluster][:fielddrop]
           urls = parsedConfig[:prometheus_data_collection_settings][:cluster][:urls]
           kubernetesServices = parsedConfig[:prometheus_data_collection_settings][:cluster][:kubernetes_services]
+
+          if fieldPass.nil? && fieldDrop.nil? && urls.nil? && kubernetesServices.nil?
+            @disableRSTelegraf = true
+          end
 
           # Remove below 4 lines after phased rollout
           monitorKubernetesPods = parsedConfig[:prometheus_data_collection_settings][:cluster][:monitor_kubernetes_pods]
@@ -221,6 +233,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             #Set environment variables for telemetry
             file = File.open("telemetry_prom_config_env_var", "w")
             if !file.nil?
+              file.write("export TELEMETRY_RS_TELEGRAF_DISABLED=\"#{@disableRSTelegraf}\"\n")
               file.write("export TELEMETRY_RS_PROM_INTERVAL=\"#{interval}\"\n")
               #Setting array lengths as environment variables for telemetry purposes
               file.write("export TELEMETRY_RS_PROM_FIELDPASS_LENGTH=\"#{fieldPass.length}\"\n")
@@ -332,6 +345,13 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 # Close file after writing all environment variables
                 file.close
                 puts "config::Successfully created telemetry file for prometheus sidecar"
+              end
+            elsif !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+              # Setting the environment variable for starting telegraf only when monitorKubernetesPods is true 
+              file = File.open("setpromenv.ps1", "w")
+              if !file.nil?
+                commands = get_command_windows("TELEMETRY_CUSTOM_PROM_MONITOR_PODS", monitorKubernetesPods)
+                file.write(commands)
               end
             end
           else

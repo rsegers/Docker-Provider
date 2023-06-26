@@ -8,11 +8,13 @@ class KubernetesApiClient
   require "net/https"
   require "uri"
   require "time"
+  require "ipaddress"
 
   require_relative "oms_common"
   require_relative "constants"
   require_relative "WatchStream"
   require_relative "kubernetes_container_inventory"
+  require_relative "extension_utils"
 
   @@ApiVersion = "v1"
   @@ApiVersionApps = "v1"
@@ -340,7 +342,15 @@ class KubernetesApiClient
                 nodeStatusAddresses = nodeStatus["addresses"]
                 if !nodeStatusAddresses.nil?
                   nodeStatusAddresses.each do |address|
-                    winNode[address["type"]] = address["address"]
+                    if !address["type"].nil? && address["type"].eql?("InternalIP")
+                      ipAddress = address["address"]
+                      # Pick Only IPv4 address in case of  dual stack
+                      if IPAddress.valid_ipv4?(ipAddress)
+                        winNode[address["type"]] = ipAddress
+                      end
+                    else
+                      winNode[address["type"]] = address["address"]
+                    end
                   end
                   winNodes.push(winNode)
                 end
@@ -1382,13 +1392,13 @@ class KubernetesApiClient
       return item
     end
 
-    def getPodReadyCondition(podStatusConditions)
+    def getPodReadyCondition(podStatusConditions, controllerKind, podStatus)
       podReadyCondition = false
       begin
         if !podStatusConditions.nil? && !podStatusConditions.empty?
           podStatusConditions.each do |condition|
             if condition["type"] == "Ready"
-              if condition["status"].downcase == "true"
+              if condition["status"].downcase == "true" || isCompletedJobPod(controllerKind, podStatus)
                 podReadyCondition = true
               end
               break #Exit the for loop since we found the ready condition
@@ -1399,6 +1409,20 @@ class KubernetesApiClient
         @Log.warn "in_kube_podinventory::getPodReadyCondition failed with an error: #{err}"
       end
       return podReadyCondition
+    end
+
+    def isCompletedJobPod(controllerKind, podStatus)
+      isCompletedPod = false
+      begin
+        if !controllerKind.nil? && !controllerKind.empty? &&
+           !podStatus.nil? && !podStatus.empty? &&
+           controllerKind.downcase == Constants::CONTROLLER_KIND_JOB && podStatus == "Succeeded"
+          isCompletedPod = true
+        end
+      rescue => error
+        @Log.warn "in_kube_podinventory::isCompletedJobPod failed with an error: #{error}"
+      end
+      return isCompletedPod
     end
 
     def isEmitCacheTelemetry
@@ -1478,6 +1502,23 @@ class KubernetesApiClient
       rescue => err
         @Log.warn "KubernetesApiClient::sendReplicasetAgentRequestsAndLimitsTelemetry failed with an error: #{err}"
       end
+    end
+
+    def isDCRStreamIdTag(tag)
+      return (!tag.nil? && tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX))
+    end
+
+    def getOutputStreamIdAndSource(datatype, tag, agentConfigRefreshTracker)
+      fromCache = true
+      begin
+        if (!isDCRStreamIdTag(tag) || (DateTime.now.to_time.to_i - agentConfigRefreshTracker).abs >= Constants::AGENT_CONFIG_REFRESH_INTERVAL_SECONDS)
+          fromCache = false
+        end
+        tag = ExtensionUtils.getOutputStreamId(datatype, fromCache)
+      rescue => error
+        @Log.warn "KubernetesApiClient::getOutputStreamIdAndSource failed with an error: #{error}"
+      end
+      return tag, fromCache
     end
   end
 end

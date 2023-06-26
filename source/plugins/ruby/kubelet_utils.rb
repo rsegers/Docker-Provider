@@ -56,9 +56,9 @@ class KubeletUtils
         parsed_response = JSON.parse(allocatable_response.body)
 
         begin
-          kubereserved_cpu = parsed_response["kubeletconfig"]["kubeReserved"]["cpu"]
-          if kubereserved_cpu.nil? || kubereserved_cpu == ""
-            kubereserved_cpu = "0.0"
+          kubereserved_cpu = "0.0"
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("kubeReserved") && parsed_response["kubeletconfig"]["kubeReserved"].key?("cpu") && parsed_response["kubeletconfig"]["kubeReserved"]["cpu"] != ""
+            kubereserved_cpu = parsed_response["kubeletconfig"]["kubeReserved"]["cpu"]
           end
           @log.info "get_node_allocatable::kubereserved_cpu  #{kubereserved_cpu}"
         rescue => errorStr
@@ -68,9 +68,9 @@ class KubeletUtils
         end
 
         begin
-          kubereserved_memory = parsed_response["kubeletconfig"]["kubeReserved"]["memory"]
-          if kubereserved_memory.nil? || kubereserved_memory == ""
-            kubereserved_memory = "0.0"
+          kubereserved_memory = "0.0"
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("kubeReserved") && parsed_response["kubeletconfig"]["kubeReserved"].key?("memory") && parsed_response["kubeletconfig"]["kubeReserved"]["memory"] != ""
+            kubereserved_memory = parsed_response["kubeletconfig"]["kubeReserved"]["memory"]  
           end
           @log.info "get_node_allocatable::kubereserved_memory #{kubereserved_memory}"
         rescue => errorStr
@@ -79,9 +79,9 @@ class KubeletUtils
           ApplicationInsightsUtility.sendExceptionTelemetry("Error in get_node_allocatable::kubereserved_memory: #{errorStr}")
         end
         begin
-          systemReserved_cpu = parsed_response["kubeletconfig"]["systemReserved"]["cpu"]
-          if systemReserved_cpu.nil? || systemReserved_cpu == ""
-            systemReserved_cpu = "0.0"
+          systemReserved_cpu = "0.0"
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("systemReserved") && parsed_response["kubeletconfig"]["systemReserved"].key?("cpu") && parsed_response["kubeletconfig"]["systemReserved"]["cpu"] != ""
+            systemReserved_cpu = parsed_response["kubeletconfig"]["systemReserved"]["cpu"]
           end
           @log.info "get_node_allocatable::systemReserved_cpu  #{systemReserved_cpu}"
         rescue => errorStr
@@ -92,9 +92,9 @@ class KubeletUtils
         end
 
         begin
-          explicitlyReserved_cpu = parsed_response["kubeletconfig"]["reservedCPUs"]
-          if explicitlyReserved_cpu.nil? || explicitlyReserved_cpu == ""
-            explicitlyReserved_cpu = "0.0"
+          explicitlyReserved_cpu = "0.0"
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("reservedCPUs") && parsed_response["kubeletconfig"]["reservedCPUs"] != ""
+            explicitlyReserved_cpu = parsed_response["kubeletconfig"]["reservedCPUs"]
           end
           @log.info "get_node_allocatable::explicitlyReserved_cpu  #{explicitlyReserved_cpu}"
         rescue => errorStr
@@ -105,9 +105,9 @@ class KubeletUtils
         end
 
         begin
-          systemReserved_memory = parsed_response["kubeletconfig"]["systemReserved"]["memory"]
-          if systemReserved_memory.nil? || systemReserved_memory == ""
-            systemReserved_memory = "0.0"
+          systemReserved_memory = "0.0"
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("systemReserved") && parsed_response["kubeletconfig"]["systemReserved"].key?("memory") && parsed_response["kubeletconfig"]["systemReserved"]["memory"] != ""
+            systemReserved_memory = parsed_response["kubeletconfig"]["systemReserved"]["memory"]
           end
           @log.info "get_node_allocatable::systemReserved_memory #{systemReserved_memory}"
         rescue => errorStr
@@ -117,9 +117,9 @@ class KubeletUtils
         end
 
         begin
-          evictionHard_memory = parsed_response["kubeletconfig"]["evictionHard"]["memory.available"]
-          if evictionHard_memory.nil? || evictionHard_memory == ""
-            evictionHard_memory = "0.0"
+          evictionHard_memory = "0.0"
+          if parsed_response.key?("kubeletconfig") && parsed_response["kubeletconfig"].key?("evictionHard") && parsed_response["kubeletconfig"]["evictionHard"].key?("memory.available") && parsed_response["kubeletconfig"]["evictionHard"]["memory.available"] != ""
+            evictionHard_memory = parsed_response["kubeletconfig"]["evictionHard"]["memory.available"]
           end
           @log.info "get_node_allocatable::evictionHard_memory #{evictionHard_memory}"
         rescue => errorStr

@@ -30,6 +30,7 @@ module Fluent::Plugin
       @collectAllKubeEvents = false
       @namespaces = []
       @namespaceFilteringMode = "off"
+      @agentConfigRefreshTracker = DateTime.now.to_time.to_i
     end
 
     config_param :run_interval, :time, :default => 60
@@ -90,10 +91,14 @@ module Fluent::Plugin
 
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_events::enumerate: AAD AUTH MSI MODE")
-          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_EVENTS_DATA_TYPE)
+          @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::KUBE_EVENTS_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+          if !isFromCache
+            @agentConfigRefreshTracker = DateTime.now.to_time.to_i
           end
-          $log.info("in_kube_events::enumerate: using kubeevents tag: #{@tag} @ #{Time.now.utc.iso8601}")
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
+            $log.warn("in_kube_events::enumerate: skipping Microsoft-KubeEvents stream since its opted-out @ #{Time.now.utc.iso8601}")
+            return
+          end
           @namespaces = ExtensionUtils.getNamespacesForDataCollection()
           $log.info("in_kube_events::enumerate: using data collection namespaces: #{@namespaces} @ #{Time.now.utc.iso8601}")
           @namespaceFilteringMode = ExtensionUtils.getNamespaceFilteringModeForDataCollection()
@@ -152,7 +157,6 @@ module Fluent::Plugin
         events["items"].each do |items|
           record = {}
           #<BUGBUG> - Not sure if ingestion has the below mapping for this custom type. Fix it as part of fixed type conversion
-          record["CollectionTime"] = batchTime #This is the time that is mapped to become TimeGenerated
           eventId = items["metadata"]["uid"] + "/" + items["count"].to_s
           newEventQueryState.push(eventId)
           if !eventQueryState.empty? && eventQueryState.include?(eventId)
@@ -178,7 +182,8 @@ module Fluent::Plugin
           record["Reason"] = items["reason"]
           record["Message"] = items["message"]
           record["KubeEventType"] = items["type"]
-          record["TimeGenerated"] = items["metadata"]["creationTimestamp"]
+          #use metadata time instead of batchTime when metadata time not empty
+          record["CollectionTime"] = items["metadata"].key?("creationTimestamp") ? items["metadata"]["creationTimestamp"] : batchTime
           record["SourceComponent"] = ""
           if items.key?("source") && items["source"].key?("component")
             record["SourceComponent"] = items["source"]["component"]

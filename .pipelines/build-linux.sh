@@ -16,7 +16,7 @@ make
 cd $DIR
 
 echo "------------ Bundle Shell Extension Scripts for Agent Release -------------------------"
-cd $DIR/../deployment/agent-deployment/ServiceGroupRoot/Scripts
+cd $DIR/../deployment/mergebranch-multiarch-agent-deployment/ServiceGroupRoot/Scripts
 tar -czvf ../artifacts.tar.gz pushAgentToAcr.sh
 cd $DIR
 

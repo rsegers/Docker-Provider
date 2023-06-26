@@ -34,19 +34,23 @@ data:
           # In the absense of this configmap, default value for enabled is true
           enabled = true
        [log_collection_settings.enrich_container_logs]
-          # In the absense of this configmap, default value for enrich_container_logs is false
+          # In the absense of this configmap, default value for enrich_container_logs is false
           enabled = false
-          # When this is enabled (enabled = true), every container log entry (both stdout & stderr) will be enriched with container Name & container Image
+          # When this is enabled (enabled = true), every container log entry (both stdout & stderr) will be enriched with container Name & container Image
        [log_collection_settings.collect_all_kube_events]
-          # In the absense of this configmap, default value for collect_all_kube_events is false
+          # In the absense of this configmap, default value for collect_all_kube_events is false
           # When the setting is set to false, only the kube events with !normal event type will be collected
           enabled = false
-          # When this is enabled (enabled = true), all kube events including normal events will be collected
+          # When this is enabled (enabled = true), all kube events including normal events will be collected
        #[log_collection_settings.schema]
           # In the absence of this configmap, default value for containerlog_schema_version is "v1"
           # Supported values for this setting are "v1","v2"
           # See documentation at https://aka.ms/ContainerLogv2 for benefits of v2 schema over v1 schema before opting for "v2" schema
           # containerlog_schema_version = "v2"
+       #[log_collection_settings.enable_multiline_logs]
+          # fluent-bit based multiline log collection for go (stacktrace), dotnet (stacktrace)
+          # if enabled will also stitch together container logs split by docker/cri due to size limits(16KB per log line)
+          # enabled = "false"
 
 
   prometheus-data-collection-settings: |-
@@ -71,8 +75,7 @@ data:
 
         # When monitor_kubernetes_pods = true, replicaset will scrape Kubernetes pods for the following prometheus annotations:
         # - prometheus.io/scrape: Enable scraping for this pod
-        # - prometheus.io/scheme: If the metrics endpoint is secured then you will need to
-        #     set this to `https` & most likely set the tls config.
+        # - prometheus.io/scheme: Default is http
         # - prometheus.io/path: If the metrics path is not /metrics, define it with this annotation.
         # - prometheus.io/port: If port is not 9102 use this annotation
         monitor_kubernetes_pods = false
@@ -112,10 +115,10 @@ data:
   metric_collection_settings: |-
     # Metrics collection settings for metrics sent to Log Analytics and MDM
     [metric_collection_settings.collect_kube_system_pv_metrics]
-      # In the absense of this configmap, default value for collect_kube_system_pv_metrics is false
+      # In the absense of this configmap, default value for collect_kube_system_pv_metrics is false
       # When the setting is set to false, only the persistent volume metrics outside the kube-system namespace will be collected
       enabled = false
-      # When this is enabled (enabled = true), persistent volume metrics including those in the kube-system namespace will be collected
+      # When this is enabled (enabled = true), persistent volume metrics including those in the kube-system namespace will be collected
 
   alertable-metrics-configuration-settings: |-
     # Alertable metrics configuration settings for container resource utilization
@@ -185,6 +188,13 @@ data:
     # in such scenarios, use the following config to ignore proxy settings
     # [agent_settings.proxy_config]
     #    ignore_proxy_settings = "true"  # if this is not applied, default value is false
+
+    # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
+    # Configuration settings for the waittime for the network listeners to be available
+    # [agent_settings.network_listener_waittime] 
+    #   tcp_port_25226 = 45                           # Port 25226 is used for telegraf to fluent-bit data in ReplicaSet
+    #   tcp_port_25228 = 60                           # Port 25228 is used for telegraf to fluentd data
+    #   tcp_port_25229 = 45                           # Port 25229 is used for telegraf to fluent-bit data in DaemonSet
 
 metadata:
   name: container-azm-ms-agentconfig

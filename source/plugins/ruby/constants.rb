@@ -145,6 +145,9 @@ class Constants
   # only used in windows in AAD MSI auth mode
   IMDS_TOKEN_PATH_FOR_WINDOWS = "c:/etc/imds-access-token/token"
 
+  # Agent DCR config refresh interval
+  AGENT_CONFIG_REFRESH_INTERVAL_SECONDS = 300
+
   # extension settings and these should match with DCR extension settings
   EXTENSION_SETTINGS = "extensionSettings"
   EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS = "dataCollectionSettings"

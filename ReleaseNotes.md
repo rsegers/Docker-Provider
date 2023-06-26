@@ -8,8 +8,170 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 06/08/2023 -
+##### Version microsoft/oms:3.1.9 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.9 (linux)
+##### Version microsoft/oms:win-3.1.9 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.9 (windows)
+##### Current dependencies
+- Linux
+  - [CBL-Mariner 2.0.20230526](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20230526-2.0)
+  - Golang - 1.20.3
+  - Ruby - 3.1.3
+  - MDSD - 1.26.1
+  - Telegraf - 1.26.0
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.5
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.3.2
+  - Golang - 1.20.3
+##### Code change log
+- Common
+  - Allow scheduling ama-logs pods on tainted nodes in Arc K8S clusters via amalogs.scheduleOnTaintedNodes option
+  - Add azure policy, terraform, and bicep support for MSI onboarding
+  - Cost optimization GA changes
+- Linux
+  - Fix bug which causes ama-logs pod to restart continously for docker container runtime clusters
+  - Remove vim package from image to vulnerabilities footprint
+  - Update Dockerfile for trivy vulnerabilities scan
+  - Update Mariner version from 2.0.20230426 to 2.0.20230526
+- Windows
+  - Fix chocolatey version to 1.4.0
+  - Mute telegraf if monitor_kubernetes_pods is false or N/A
+  - Use IPV4 address for AKS clusters with dual stacks for cadvisor calls
+  - Update BouncyCastle version to 1.8.9 from 1.8.6.1
+
+### 05/16/2023 -
+##### Version microsoft/oms:3.1.8 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.8 (linux)
+##### Version microsoft/oms:win-3.1.8 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.8 (windows)
+##### Current dependencies
+- Linux
+  - [CBL-Mariner 2.0.20230426](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20230426-2.0)
+  - Golang - 1.20.3
+  - Ruby - 3.1.3
+  - MDSD - 1.26.1
+  - Telegraf - 1.26.0
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.5
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.3.2
+  - Golang - 1.20.3
+##### Code change log
+- Common
+  - Retire unused pipeline files and Dockerfile
+  - Update release pipeline for override tag
+  - Update LogCollection troubleshoot script for ARO clusters
+- Linux
+  - Add KataRuntimePod check in kubernetes_container_inventory
+  - Update MDSD version from 1.17.1 to 1.26.1
+  - Update Telegraf version from 1.25.2 to 1.26.0 for vulnerabilities fixes
+  - Update Dockerfile for trivy vulnerabilities scan
+
+### 04/26/2023 -
+##### Version microsoft/oms:3.1.7 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.7 (linux)
+##### Version microsoft/oms:win-3.1.7 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.7 (windows)
+##### Current dependencies
+- Linux
+  - CBL-Mariner 2.0
+  - Golang - 1.20.3
+  - Ruby - 3.1.3
+  - MDSD - 1.17.1-build.master.377
+  - Telegraf - 1.25.2
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.5
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.3.2
+  - Golang - 1.20.3
+##### Code change log
+- Common
+  - Adding the multiline changes in fluent-bit-common
+- Linux
+  - Migration of base image Ubuntu 18.04 to CBL-Mariner 2.0
+  - Update golang version from 1.18.3 to 1.20.3
+  - Updated the default wait times for the telegraf network port listeners
+  - Exposed the wait times through config maps for testing and support
+
+### 04/07/2023 -
+##### Version microsoft/oms:3.1.6 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.6 (linux)
+##### Version microsoft/oms:win-3.1.6 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.6 (windows)
+##### Code change log
+- Common
+  - Geneva logs integration for single and multi tenancy
+  - Change output fwd plugin settings configurable
+  - Add multiline logs feature with configmap
+  - Config AMA specific envvars only if 1p mode is configured
+  - Update prometheus.io/scheme default description in configmap
+  - Add support to specify azure autonomous resource endpoint parameter for the Extension chart for custom metrics
+  - Add autonomous fqdn to endpoint for metrics 
+  - Add devskim as github action and codeql as enabled in ADO pipeline
+  - AgentLogCollection.sh update for collecting more detailed logs
+  - Fix pod ready condition issue for pods that are job ready 
+  - Updating packages for go vulnerabilities
+  - Remove the necessary askcoin references in troubleshooter and readme
+  - Change md5 to sha256 for the omslogger
+  - Log message and yaml to sync with AKS RP
+  - Add nil check in kubelet
+  - Fix fluent-bit output plugin crash when the tags are missing for the telegraf metrics
+- Linux Agent
+  - Use -p when creating dirs in main.sh
+  - Disable telegraf on replicaset by default. For resource optimization, telegraf in replicaset only enabled either the cluster level Prometheus Scraping or NPM configured
+  - Remove unused default gem openssl, gem find, gem rvm & python installed
+
+### 03/21/2023 -
+##### Version microsoft/oms:3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4 (linux)
+##### Version microsoft/oms:win-3.1.5 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.5 (windows)
+##### Code change log
+- Windows Agent
+  - Downgrade telegraf to version 1.24.2 due to Telegraf Data Collector Service error
+
+Note: Starting 03/01/2023 we have moved to the semver versioning system for naming image tags with the release 3.1.4
+### 03/01/2023 -
+##### Version microsoft/oms:3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.4 (linux)
+##### Version microsoft/oms:win-3.1.4 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.4 (windows)
+##### Code change log
+- Common
+  - Move to semver versioning system for naming imageTags
+  - Fix bug in overwriting prometheus namespace
+  - Fix kube events timestamp using metadata timestamp
+  - Moved syslog telemetry from AI to pod inventory
+  - Update telegraf to version 1.25.2
+  - Fix bug wherein sidecar container was not muted by default
+  - Removed labelSelector from ama-logs.yaml and helm charts
+  - Update fluent-bit to version 2.0.5
+  - Enabled multiline support for ContainerLogV2 via configmap
+- Linux Agent
+  - Update ruby to version 3.1.3
+- Windows Agent
+  - Fix podName missing bug in ContainerLogV2
 
 Note : The agent version(s) below has dates (ciprod\<mmddyyyy\>), which indicate the agent build dates (not release dates)
+
+### 01/18/2023 -
+##### Version microsoft/oms:ciprod01182023-095c864a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod01182023-095c864a (linux)
+##### Version microsoft/oms:win-ciprod01182023-095c864a Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-ciprod01182023-095c864a (windows)
+##### Code change log
+- Linux Agent
+  - Replace ifconfig.co url with mcr.microsoft.com for network connectivity test
+  - Add xvda in devices so that telegraf can fetch the Disk IO data from xvda disk as well
+- Common
+  - Added the config option to ignore proxy settings for the AMPLS + Proxy environment
+  - Changes to the MSI Onboarding ARM templates for handling DCR naming and handling the scenario where DCR name is more than 64 characters and also removing the spaces in the workspace region if user inputs the workspace region name with spaces
+  - Add specific master/control-plane toleration key to fix the node upgrade issue in Arc extension.
+  - AKS, Arc K8s and Provisioned cluster template updates for Data collection settings.
+  - Implementation of Data collection settings for Cost optimization feature
+  - Telemetry to track data collection settings enablement and settings
+  - Agent rename changes for the Azure Arc Provisioned cluster onboarding templates
+  - Update for troubleshooting script for collecting syslog data
 
 ### 12/03/2022 -
 ##### Version microsoft/oms:ciprod12032022-c9f3dc30 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:ciprod12032022-c9f3dc30 (linux)

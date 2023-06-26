@@ -39,6 +39,54 @@ function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\filesystemwatcher.ps1
 }
 
+function Set-ProcessAndMachineEnvVariables($name, $value) {
+    [System.Environment]::SetEnvironmentVariable($name, $value, "Process")
+    [System.Environment]::SetEnvironmentVariable($name, $value, "Machine")
+}
+
+function Set-GenevaAMAEnvironmentVariables {
+    Set-ProcessAndMachineEnvVariables "MONITORING_DATA_DIRECTORY" "C:\\opt\\windowsazuremonitoragent\\datadirectory"
+    Set-ProcessAndMachineEnvVariables "MONITORING_ROLE_INSTANCE" "MONITORING_ROLE_INSTANCE"
+    Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_OsType" "Windows"
+    Set-ProcessAndMachineEnvVariables "MONITORING_VERSION" "2.0"
+    Set-ProcessAndMachineEnvVariables "MONITORING_ROLE" "cloudAgentRoleIdentity"
+    Set-ProcessAndMachineEnvVariables "MONITORING_IDENTITY" "use_ip_address"
+    $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
+    Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_Location" $aksRegion
+    $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
+    Set-ProcessAndMachineEnvVariables "MA_RoleEnvironment_ResourceId" $aksResourceId
+    Set-ProcessAndMachineEnvVariables "MA_ENABLE_LARGE_EVENTS" "1"
+}
+
+function Generate-GenevaTenantNameSpaceConfig {
+     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsTenantNameSpaces)) {
+        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", $genevaLogsTenantNameSpaces, "machine")
+        $genevaLogsTenantNameSpacesArray = $genevaLogsTenantNameSpaces.Split(",")
+        for ($i = 0; $i -lt $genevaLogsTenantNameSpacesArray.Length; $i = $i + 1) {
+          $tenantName = $genevaLogsTenantNameSpacesArray[$i]
+          Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
+          (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
+        }
+    }
+    Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf
+}
+
+function Generate-GenevaInfraNameSpaceConfig {
+   $genevaLogsInfraNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", "process")
+   if (![string]::IsNullOrEmpty($genevaLogsInfraNameSpaces)) {
+       [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", $genevaLogsInfraNameSpaces, "machine")
+       $genevaLogsInfraNameSpacesArray = $genevaLogsInfraNameSpaces.Split(",")
+       for ($i = 0; $i -lt $genevaLogsInfraNameSpacesArray.Length; $i = $i + 1) {
+         $infraNameSpaceName = $genevaLogsInfraNameSpacesArray[$i]
+         $infraNamespaceWithoutSuffix = $infraNameSpaceName.TrimEnd("_*")
+         Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
+         (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf  -Raw) -replace '<INFRA_NAMESPACE>', $infraNameSpaceName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
+       }
+   }
+   Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf
+}
+
 #register fluentd as a windows service
 
 function Set-EnvironmentVariables {
@@ -156,16 +204,6 @@ function Set-EnvironmentVariables {
         # Set PROXY
         [System.Environment]::SetEnvironmentVariable("PROXY", $proxy, "Process")
         [System.Environment]::SetEnvironmentVariable("PROXY", $proxy, "Machine")
-    }
-    #set agent config schema version
-    $schemaVersionFile = '/etc/config/settings/schema-version'
-    if (Test-Path $schemaVersionFile) {
-        $schemaVersion = Get-Content $schemaVersionFile | ForEach-Object { $_.TrimEnd() }
-        if ($schemaVersion.GetType().Name -eq 'String') {
-            [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Process")
-            [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Machine")
-        }
-        $env:AZMON_AGENT_CFG_SCHEMA_VERSION
     }
 
     # Need to do this before the SA fetch for AI key for airgapped clouds so that it is not overwritten with defaults.
@@ -330,13 +368,76 @@ function Read-Configs {
     .\setagentenv.ps1
 
     #Replace placeholders in fluent-bit.conf
-    ruby /opt/amalogswindows/scripts/ruby/td-agent-bit-conf-customizer.rb
+    ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
+
+    ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
+    .\setgenevaconfigenv.ps1
+
+    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsIntegration)) {
+        if ($genevaLogsIntegration.ToLower() -eq 'true') {
+            [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", $genevaLogsIntegration, "machine")
+            Write-Host "Successfully set environment variable GENEVA_LOGS_INTEGRATION - $($genevaLogsIntegration) for target 'machine'..."
+        }
+    }
+    else {
+        Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
+    }
+
+    $enableFbitInternalMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", "process")
+    if (![string]::IsNullOrEmpty($enableFbitInternalMetrics)) {
+        [System.Environment]::SetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", $enableFbitInternalMetrics, "machine")
+        Write-Host "Successfully set environment variable ENABLE_FBIT_INTERNAL_METRICS - $($enableFbitInternalMetrics) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable ENABLE_FBIT_INTERNAL_METRICS for target 'machine' since it is either null or empty"
+    }
+
+    if (![string]::IsNullOrEmpty($enableFbitInternalMetrics) -and $enableFbitInternalMetrics.ToLower() -eq 'true') {
+        Write-Host "Fluent-bit Internal metrics configured"
+    } else {
+        Clear-Content C:/etc/fluent-bit/fluent-bit-internal-metrics.conf
+    }
+
+    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsMultitenancy)) {
+        if ($genevaLogsMultitenancy.ToLower() -eq 'true') {
+          [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", $genevaLogsMultitenancy, "machine")
+          Write-Host "Successfully set environment variable GENEVA_LOGS_MULTI_TENANCY - $($genevaLogsMultitenancy) for target 'machine'..."
+        }
+    }
+    else {
+        Write-Host "Failed to set environment variable GENEVA_LOGS_MULTI_TENANCY for target 'machine' since it is either null or empty"
+    }
+    if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true') {
+        Write-Host "Setting Geneva Windows AMA Environment variables"
+        Set-GenevaAMAEnvironmentVariables
+        if (![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
+            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "common"
+            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "tenant"
+            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "infra"
+            Generate-GenevaTenantNameSpaceConfig
+            Generate-GenevaInfraNameSpaceConfig
+        }
+    }
 
     # run mdm config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
     .\setmdmenv.ps1
 }
 
+function Set-AgentConfigSchemaVersion {
+      #set agent config schema version
+      $schemaVersionFile = '/etc/config/settings/schema-version'
+      if (Test-Path $schemaVersionFile) {
+          $schemaVersion = Get-Content $schemaVersionFile | ForEach-Object { $_.TrimEnd() }
+          if ($schemaVersion.GetType().Name -eq 'String') {
+              [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Process")
+              [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Machine")
+          }
+          $env:AZMON_AGENT_CFG_SCHEMA_VERSION
+      }
+}
 function Get-ContainerRuntime {
     # containerd is the default runtime on AKS windows
     $containerRuntime = "containerd"
@@ -457,11 +558,23 @@ function Start-Fluent-Telegraf {
         # change parser from docker to cri if the container runtime is not docker
         Write-Host "changing parser from Docker to CRI since container runtime : $($containerRuntime) and which is non-docker"
         (Get-Content -Path C:/etc/fluent-bit/fluent-bit.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit.conf
+        (Get-Content -Path C:/etc/fluent-bit/fluent-bit-common.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit-common.conf
     }
-
-    # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
-    # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
-    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:\etc\fluent-bit\fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
+    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
+        $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit-geneva.conf"
+        Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
+        # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
+        # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
+        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit-geneva.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+    } else {
+        $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit.conf"
+        Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
+        # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
+        # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
+        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+    }
 
     # Start telegraf only in sidecar scraping mode
     $sidecarScrapingEnabled = [System.Environment]::GetEnvironmentVariable('SIDECAR_SCRAPING_ENABLED')
@@ -480,79 +593,83 @@ function Start-Telegraf {
     Write-Host "**********Setting default environment variables for telegraf prometheus plugin..."
     .\setdefaulttelegrafenvvariables.ps1
 
+    Set-ProcessAndMachineEnvVariables "TELEMETRY_CUSTOM_PROM_MONITOR_PODS" "false"
     # run prometheus custom config parser
     Write-Host "**********Running config parser for custom prometheus scraping**********"
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
+    if (Test-Path -Path setpromenv.ps1) { ./setpromenv.ps1}
     Write-Host "**********End running config parser for custom prometheus scraping**********"
 
-
-    # Set required environment variable for telegraf prometheus plugin to run properly
-    Write-Host "Setting required environment variables for telegraf prometheus input plugin to run properly..."
-    $kubernetesServiceHost = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_HOST", "process")
-    if (![string]::IsNullOrEmpty($kubernetesServiceHost)) {
-        [System.Environment]::SetEnvironmentVariable("KUBERNETES_SERVICE_HOST", $kubernetesServiceHost, "machine")
-        Write-Host "Successfully set environment variable KUBERNETES_SERVICE_HOST - $($kubernetesServiceHost) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable KUBERNETES_SERVICE_HOST for target 'machine' since it is either null or empty"
-    }
-
-    $kubernetesServicePort = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_PORT", "process")
-    if (![string]::IsNullOrEmpty($kubernetesServicePort)) {
-        [System.Environment]::SetEnvironmentVariable("KUBERNETES_SERVICE_PORT", $kubernetesServicePort, "machine")
-        Write-Host "Successfully set environment variable KUBERNETES_SERVICE_PORT - $($kubernetesServicePort) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable KUBERNETES_SERVICE_PORT for target 'machine' since it is either null or empty"
-    }
-    $nodeIp = [System.Environment]::GetEnvironmentVariable("NODE_IP", "process")
-    if (![string]::IsNullOrEmpty($nodeIp)) {
-        [System.Environment]::SetEnvironmentVariable("NODE_IP", $nodeIp, "machine")
-        Write-Host "Successfully set environment variable NODE_IP - $($nodeIp) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable NODE_IP for target 'machine' since it is either null or empty"
-    }
-
-    $hostName = [System.Environment]::GetEnvironmentVariable("HOSTNAME", "process")
-    Write-Host "nodename: $($hostName)"
-    Write-Host "replacing nodename in telegraf config"
-    (Get-Content "C:\etc\telegraf\telegraf.conf").replace('placeholder_hostname', $hostName) | Set-Content "C:\etc\telegraf\telegraf.conf"
-
-    Write-Host "Installing telegraf service"
-    C:\opt\telegraf\telegraf.exe --service install --config "C:\etc\telegraf\telegraf.conf"
-
-    # Setting delay auto start for telegraf since there have been known issues with windows server and telegraf -
-    # https://github.com/influxdata/telegraf/issues/4081
-    # https://github.com/influxdata/telegraf/issues/3601
-    try {
-        $serverName = [System.Environment]::GetEnvironmentVariable("PODNAME", "process")
-        if (![string]::IsNullOrEmpty($serverName)) {
-            sc.exe \\$serverName config telegraf start= delayed-auto
-            Write-Host "Successfully set delayed start for telegraf"
-
+    $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
+    if (![string]::IsNullOrEmpty($monitorKubernetesPods) -and $monitorKubernetesPods.ToLower() -eq 'true') {
+        # Set required environment variable for telegraf prometheus plugin to run properly
+        Write-Host "Setting required environment variables for telegraf prometheus input plugin to run properly..."
+        $kubernetesServiceHost = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_HOST", "process")
+        if (![string]::IsNullOrEmpty($kubernetesServiceHost)) {
+            [System.Environment]::SetEnvironmentVariable("KUBERNETES_SERVICE_HOST", $kubernetesServiceHost, "machine")
+            Write-Host "Successfully set environment variable KUBERNETES_SERVICE_HOST - $($kubernetesServiceHost) for target 'machine'..."
         }
         else {
-            Write-Host "Failed to get environment variable PODNAME to set delayed telegraf start"
+            Write-Host "Failed to set environment variable KUBERNETES_SERVICE_HOST for target 'machine' since it is either null or empty"
         }
-    }
-    catch {
-        $e = $_.Exception
-        Write-Host $e
-        Write-Host "exception occured in delayed telegraf start.. continuing without exiting"
-    }
-    Write-Host "Running telegraf service in test mode"
-    C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --test
-    Write-Host "Starting telegraf service"
-    C:\opt\telegraf\telegraf.exe --service start
 
-    # Trying to start telegraf again if it did not start due to fluent bit not being ready at startup
-    Get-Service telegraf | findstr Running
-    if ($? -eq $false) {
-        Write-Host "trying to start telegraf in again in 30 seconds, since fluentbit might not have been ready..."
-        Start-Sleep -s 30
+        $kubernetesServicePort = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_PORT", "process")
+        if (![string]::IsNullOrEmpty($kubernetesServicePort)) {
+            [System.Environment]::SetEnvironmentVariable("KUBERNETES_SERVICE_PORT", $kubernetesServicePort, "machine")
+            Write-Host "Successfully set environment variable KUBERNETES_SERVICE_PORT - $($kubernetesServicePort) for target 'machine'..."
+        }
+        else {
+            Write-Host "Failed to set environment variable KUBERNETES_SERVICE_PORT for target 'machine' since it is either null or empty"
+        }
+        $nodeIp = [System.Environment]::GetEnvironmentVariable("NODE_IP", "process")
+        if (![string]::IsNullOrEmpty($nodeIp)) {
+            [System.Environment]::SetEnvironmentVariable("NODE_IP", $nodeIp, "machine")
+            Write-Host "Successfully set environment variable NODE_IP - $($nodeIp) for target 'machine'..."
+        }
+        else {
+            Write-Host "Failed to set environment variable NODE_IP for target 'machine' since it is either null or empty"
+        }
+
+        $hostName = [System.Environment]::GetEnvironmentVariable("HOSTNAME", "process")
+        Write-Host "nodename: $($hostName)"
+        Write-Host "replacing nodename in telegraf config"
+        (Get-Content "C:\etc\telegraf\telegraf.conf").replace('placeholder_hostname', $hostName) | Set-Content "C:\etc\telegraf\telegraf.conf"
+
+        Write-Host "Installing telegraf service"
+        C:\opt\telegraf\telegraf.exe --service install --config "C:\etc\telegraf\telegraf.conf"
+
+        # Setting delay auto start for telegraf since there have been known issues with windows server and telegraf -
+        # https://github.com/influxdata/telegraf/issues/4081
+        # https://github.com/influxdata/telegraf/issues/3601
+        try {
+            $serverName = [System.Environment]::GetEnvironmentVariable("PODNAME", "process")
+            if (![string]::IsNullOrEmpty($serverName)) {
+                sc.exe \\$serverName config telegraf start= delayed-auto
+                Write-Host "Successfully set delayed start for telegraf"
+
+            }
+            else {
+                Write-Host "Failed to get environment variable PODNAME to set delayed telegraf start"
+            }
+        }
+        catch {
+            $e = $_.Exception
+            Write-Host $e
+            Write-Host "exception occured in delayed telegraf start.. continuing without exiting"
+        }
+        Write-Host "Running telegraf service in test mode"
+        C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --test
+        Write-Host "Starting telegraf service"
         C:\opt\telegraf\telegraf.exe --service start
-        Get-Service telegraf
+
+        # Trying to start telegraf again if it did not start due to fluent bit not being ready at startup
+        Get-Service telegraf | findstr Running
+        if ($? -eq $false) {
+            Write-Host "trying to start telegraf in again in 30 seconds, since fluentbit might not have been ready..."
+            Start-Sleep -s 30
+            C:\opt\telegraf\telegraf.exe --service start
+            Get-Service telegraf
+        }
     }
 }
 
@@ -599,9 +716,12 @@ function Bootstrap-CACertificates {
     }
 }
 
+Set-ProcessAndMachineEnvVariables "COMPlus_ThreadPool_UnfairSemaphoreSpinLimit" "0"
+
 Start-Transcript -Path main.txt
 
 Remove-WindowsServiceIfItExists "fluentdwinaks"
+Set-AgentConfigSchemaVersion
 Read-Configs
 Set-EnvironmentVariables
 Start-FileSystemWatcher
@@ -616,14 +736,20 @@ if (![string]::IsNullOrEmpty($requiresCertBootstrap) -and `
     Bootstrap-CACertificates
 }
 
+$isGenevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION")
 $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
-if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+if (![string]::IsNullOrEmpty($isGenevaLogsIntegration) -and $isGenevaLogsIntegration.ToLower() -eq 'true') {
+    Write-Host "Starting Windows AMA in 1P Mode"
+    #start Windows AMA
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
+} elseif (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
     Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
 }
 else {
     Generate-Certificates
     Test-CertificatePath
 }
+
 
 Start-Fluent-Telegraf
 

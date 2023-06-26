@@ -26,6 +26,7 @@ module Fluent::Plugin
       @pvTypeToCountHash = {}
       @namespaces = []
       @namespaceFilteringMode = "off"
+      @agentConfigRefreshTracker = DateTime.now.to_time.to_i
     end
 
     config_param :run_interval, :time, :default => 60
@@ -66,8 +67,13 @@ module Fluent::Plugin
         batchTime = currentTime.utc.iso8601
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_pvinventory::enumerate: AAD AUTH MSI MODE")
-          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_PV_INVENTORY_DATA_TYPE)
+          @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::KUBE_PV_INVENTORY_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+          if !isFromCache
+            @agentConfigRefreshTracker = DateTime.now.to_time.to_i
+          end
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
+            $log.warn("in_kube_pvinventory::enumerate: skipping Microsoft-KubePVInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
+            return
           end
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()

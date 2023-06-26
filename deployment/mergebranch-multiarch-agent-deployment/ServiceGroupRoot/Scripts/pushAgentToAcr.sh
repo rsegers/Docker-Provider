@@ -20,15 +20,23 @@ if [ $? -ne 0 ]; then
    exit 1
 fi
 
+TAG_EXISTS_STATUS=0 #Default value for the condition when the echo fails below
+AZ_ACR_IMPORT_FORCE=""
+
 if [[ "$AGENT_IMAGE_FULL_PATH" == *"win-"* ]]; then
   echo "checking windows tags"
-  TAG_EXISTS=$(echo $MCR_TAG_RESULT | jq '.tags | contains(["'"win-$AGENT_RELEASE$AGENT_IMAGE_TAG_SUFFIX"'"])')
+  echo $MCR_TAG_RESULT | jq '.tags' | grep -q \"win-"$AGENT_IMAGE_TAG_SUFFIX"\" || TAG_EXISTS_STATUS=$?
 else
   echo "checking linux tags"
-  TAG_EXISTS=$(echo $MCR_TAG_RESULT | jq '.tags | contains(["'"$AGENT_RELEASE$AGENT_IMAGE_TAG_SUFFIX"'"])')
+  echo $MCR_TAG_RESULT | jq '.tags' | grep -q \""$AGENT_IMAGE_TAG_SUFFIX"\" || TAG_EXISTS_STATUS=$?
 fi
 
-if $TAG_EXISTS; then
+echo "TAG_EXISTS_STATUS = $TAG_EXISTS_STATUS; OVERRIDE_TAG = $OVERRIDE_TAG"
+
+if [[ "$OVERRIDE_TAG" == "true" ]]; then
+  echo "OverrideTag set to true. Will override ${AGENT_IMAGE_TAG_SUFFIX} image"
+  AZ_ACR_IMPORT_FORCE="--force"
+elif [ "$TAG_EXISTS_STATUS" -eq 0 ]; then
   echo "-e error ${AGENT_IMAGE_TAG_SUFFIX} already exists in mcr. make sure the image tag is unique"
   exit 1
 fi
@@ -64,8 +72,8 @@ else
   exit 1
 fi     
 
-echo "Pushing ${AGENT_IMAGE_FULL_PATH} to ${ACR_NAME}"
-az acr import --name $ACR_NAME --source $SOURCE_IMAGE_FULL_PATH --image $AGENT_IMAGE_FULL_PATH
+echo "Pushing ${AGENT_IMAGE_FULL_PATH} to ${ACR_NAME} with force option set to ${AZ_ACR_IMPORT_FORCE}"
+az acr import --name $ACR_NAME --source $SOURCE_IMAGE_FULL_PATH --image $AGENT_IMAGE_FULL_PATH $AZ_ACR_IMPORT_FORCE
 if [ $? -eq 0 ]; then
   echo "Retagged and pushed image successfully"
 else

@@ -1,14 +1,16 @@
 # Supported values of windows version are ltsc2019 or ltsc2022 which are being passed by the build script or build pipeline
 ARG WINDOWS_VERSION=
 FROM mcr.microsoft.com/windows/servercore:${WINDOWS_VERSION}
-MAINTAINER OMSContainers@microsoft.com
+LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
-ARG IMAGE_TAG=win-ciprod12032022-c9f3dc30
+RUN reg add "HKLM\Software\Microsoft\Cryptography\Wintrust\Config" /v "EnableCertPaddingCheck" /t REG_DWORD /d "1" /f
+RUN reg add "HKLM\Software\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" /v "EnableCertPaddingCheck" /t REG_DWORD /d "1" /f
 
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
+ENV chocolateyVersion 1.4.0
 RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))"
 # Fluentd depends on cool.io whose fat gem is only available for Ruby < 2.5, so need to specify --platform ruby when install Ruby > 2.5 and install msys2 to get dev tools
 RUN choco install -y ruby --version 3.1.1.1 --params "'/InstallDir:C:\ruby31'" \
@@ -28,6 +30,7 @@ RUN refreshenv \
 && gem install windows-pr -v 1.2.6 \
 && gem install tomlrb -v 2.0.1 \
 && gem install gyoku -v 1.3.1 \
+&& gem install ipaddress -v 0.8.3 \
 && gem sources --clear-all
 
 # Remove gem cache and chocolatey
@@ -60,7 +63,13 @@ COPY ./amalogswindows/out_oms.so /opt/amalogswindows/out_oms.so
 COPY ./amalogswindows/installer/conf/fluent.conf /etc/fluent/
 COPY ./amalogswindows/installer/conf/fluent-bit.conf /etc/fluent-bit
 COPY ./amalogswindows/installer/conf/azm-containers-parser.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/azm-containers-parser-multiline.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/out_oms.conf /etc/amalogswindows
+COPY ./amalogswindows/installer/conf/fluent-bit-geneva-logs_*.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/fluent-bit-geneva.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/fluent-bit-common.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/fluent-bit-internal-metrics.conf /etc/fluent-bit/
+
 
 # copy telegraf conf file
 COPY ./amalogswindows/installer/conf/telegraf.conf /etc/telegraf/
@@ -71,7 +80,10 @@ COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluen
 #Copy fluentd ruby plugins
 COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
 
+# default value will be overwritten by pipeline
+ARG IMAGE_TAG=win-3.1.9
 ENV AGENT_VERSION ${IMAGE_TAG}
+
 ENV OS_TYPE "windows"
 ENV APPLICATIONINSIGHTS_AUTH "NzAwZGM5OGYtYTdhZC00NThkLWI5NWMtMjA3ZjM3NmM3YmRi"
 ENV AZMON_COLLECT_ENV False

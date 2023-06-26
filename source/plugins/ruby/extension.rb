@@ -6,7 +6,6 @@ require_relative "omslog"
 require_relative "constants"
 require_relative "ApplicationInsightsUtility"
 
-
 class Extension
   include Singleton
 
@@ -16,9 +15,9 @@ class Extension
     $log.info("Extension::initialize complete")
   end
 
-  def get_output_stream_id(datatypeId)
+  def get_output_stream_id(datatypeId, useFromCache)
     @cache_lock.synchronize {
-      if @cache.has_key?(datatypeId)
+      if useFromCache && @cache.has_key?(datatypeId)
         return @cache[datatypeId]
       else
         @cache = get_stream_mapping()
@@ -41,7 +40,7 @@ class Extension
           end
         end
       end
-    rescue =>errorStr
+    rescue => errorStr
       $log.warn("Extension::get_extension_settings failed: #{errorStr}")
       ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
     end
@@ -58,17 +57,16 @@ class Extension
           dataCollectionSettings = dcSettings
         end
       end
-    rescue =>errorStr
+    rescue => errorStr
       $log.warn("Extension::get_extension_data_collection_settings failed: #{errorStr}")
       ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
     end
     return dataCollectionSettings
   end
 
-
   def get_stream_mapping()
-     dataTypeToStreamIdMap = Hash.new
-     begin
+    dataTypeToStreamIdMap = Hash.new
+    begin
       extensionConfigurations = get_extension_configs()
       if !extensionConfigurations.nil? && !extensionConfigurations.empty?
         extensionConfigurations.each do |extensionConfig|
@@ -84,14 +82,15 @@ class Extension
       else
         $log.warn("Extension::get_stream_mapping::received extensionConfigurations either nil or empty")
       end
-     rescue => errorStr
+    rescue => errorStr
       $log.warn("Extension::get_stream_mapping failed: #{errorStr}")
       ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
-     end
-     return dataTypeToStreamIdMap
+    end
+    return dataTypeToStreamIdMap
   end
 
   private
+
   def get_extension_configs()
     extensionConfigurations = []
     begin

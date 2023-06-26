@@ -1,5 +1,5 @@
 FROM ama-logs-windows-base
-MAINTAINER OMSContainers@microsoft.com
+LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
@@ -21,7 +21,11 @@ COPY ./amalogswindows/out_oms.so /opt/amalogswindows/out_oms.so
 COPY ./amalogswindows/installer/conf/fluent.conf /etc/fluent/
 COPY ./amalogswindows/installer/conf/fluent-bit.conf /etc/fluent-bit
 COPY ./amalogswindows/installer/conf/azm-containers-parser.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/azm-containers-parser-multiline.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/fluent-bit-geneva-logs_*.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/out_oms.conf /etc/amalogswindows
+COPY ./amalogswindows/installer/conf/fluent-bit-geneva.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/fluent-bit-common.conf /etc/fluent-bit/
 
 # copy telegraf conf file
 COPY ./amalogswindows/installer/conf/telegraf.conf /etc/telegraf/

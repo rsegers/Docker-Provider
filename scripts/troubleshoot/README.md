@@ -19,6 +19,15 @@ The table below summarizes known issues you may face while using Azure Monitor f
 | `Error retrieving data` after adding Container Health through az aks cli | When onboarding using az aks cli, very seldom, Container Health may not be properly onboarded. Please check whether the Container Insights Solution is onboarded. To do this, go to your [Log Analytics workspace](https://docs.microsoft.com/en-us/azure/log-analytics/log-analytics-manage-access) and see if Container Insights Solution is available by going to the "Solutions" tab under General. To resolve this issue, you will need to redeploy the Container Insights Solution. Please follow the instructions on [how to deploy Azure Monitor - container health solution to your Log Analytics workspace. ](https://github.com/microsoft/Docker-Provider/blob/ci_prod/scripts/onboarding/solution-onboarding.md) |
 | Failed to `Enable fast alerting experience on basic metrics for this Azure Kubernetes Services cluster`  | The action is trying to grant the Monitoring Metrics Publisher role assignment on the cluster resource. The user initiating the process must have access to the **Microsoft.Authorization/roleAssignments/write** permission on the AKS cluster resource scope. Only members of the **Owner** and **User Access Administrator** built-in roles are granted access to this permission. If your security policies require assigning granular level permissions, we recommend you view [custom roles](https://docs.microsoft.com/en-us/azure/role-based-access-control/custom-roles) and assign it to the users who require it. |
 
+# Azure Kubernetes Service (AKS) with Bicep, Terraform and Azure Policy
+| Issues and Error Messages  | Action |
+| ---- | --- |
+| Error Message `InvalidTemplate` when using Bicep template | Please check and make sure all the parameters in existingClusterParam.json are set correctly. |
+| Error Message `parsing the Workspace ID: the segment at position x didn't match` when using Terraform template | The workspace_resource_id needs to be in the right case sensitive format. |
+| Error Message `to be managed via Terraform this resource needs to be imported into the State` when using Terraform template | If the resource group already exists, you need to run `terraform import azurerm_resource_group.rg /subscriptions/<Subscription_ID>/resourceGroups/<Resource_Group_Name>` before terraform plan. |
+| Error Message `Authorization failed for template resources` when using Azure Policy | Please make sure roleDefinitionIds in azure-policy.rules.json have sufficient build in roles. |
+| Error Message `does not have permission to perform action on linked scope(s)` when using Azure Policy | Please make sure the policy assignment has the access to the workspace. |
+
 # Azure Red Hat OpenShift Service (ARO)
 The table below summarizes known issues you may face while using Azure Monitor for containers .
 
@@ -59,7 +68,7 @@ Steps:
 - Run the following command to execute the script - `./TroubleshootError.ps1 -ClusterResourceId <resourceIdoftheCluster>`
     > Note: For AKS, resourceIdoftheCluster should be in this format `/subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.ContainerService/managedClusters/<clusterName>`.For ARO, should be in this format `/subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.ContainerService/openShiftManagedClusters/<clusterName>`.
 - This script will generate a TroubleshootDump.txt which collects detailed information about container health onboarding.
-- Please send this file to [AskCoin](mailto:askcoin@microsoft.com). We will respond back to you.
+- Please [create a support ticket](https://azure.microsoft.com/en-us/support/create-ticket) in Azure and send this file alongwith it. We will respond back to you.
 
 # Aks-Engine Kubernetes
 
@@ -70,14 +79,14 @@ Steps:
 - Collect Subscription ID, Resource group name of the Aks-Engine Kubernetes cluster
 - Use the following command to run the script : `.\TroubleshootError_AcsEngine.ps1 -SubscriptionId <subId> -ResourceGroupName <rgName>`.
 This script will generate a TroubleshootDump.txt which collects detailed information about container health onboarding.
-Please send this file to [AskCoin](mailto:askcoin@microsoft.com). We will respond back to you.
+Please create a support ticket in Azure and send this file alongwith it. We will respond back to you.
 - Please remember to 'Set-ExecutionPolicy' to what it was previously(from the value stored in the file) after you've run the script
 
 For more details on Azure Resource Manager template deployment via cli refer to [this documentation](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-template-deploy-cli).
 
 If steps above did not help to resolve your issue, you can use either of the following methods to contact us for help:
 *	File a [GitHub Issue](https://github.com/microsoft/Docker-Provider/issues)
-*	Email [AskCoin](mailto:askcoin@microsoft.com) : Please attach the TroubleshootErrorDump.txt in the email generated by the troubleshooting script if you had tried running the script to solve your problem.
+*	[Create a support ticket](https://azure.microsoft.com/en-us/support/create-ticket) in Azure : Please attach the TroubleshootErrorDump.txt generated by the troubleshooting script if you had tried running the script to solve your problem.
 
 # Azure Arc-enabled Kubernetes
 
@@ -94,8 +103,8 @@ Steps:
      bash troubleshooterrors.sh --resource-id <azureArcK8sConnectedClusterResourceId> --kube-context <kubeContextofK8sCluster>
   ```
 - This script will generate a TroubleshootDump.log which collects detailed information about container health onboarding.
-Please send this file to [AskCoin](mailto:askcoin@microsoft.com). We will respond back to you.
+[Create a support ticket](https://azure.microsoft.com/en-us/support/create-ticket) in Azure and send this file alongwith it. We will respond back to you.
 
 If steps above did not help to resolve your issue, you can use either of the following methods to contact us for help:
 *	File a [GitHub Issue](https://github.com/microsoft/Docker-Provider/issues)
-*	Email [AskCoin](mailto:askcoin@microsoft.com) : Please attach the TroubleshootErrorDump.log in the email generated by the troubleshooting script if you had tried running the script to solve your problem.
+*	[Create a support ticket](https://azure.microsoft.com/en-us/support/create-ticket) in Azure : Please attach the TroubleshootErrorDump.log generated by the troubleshooting script if you had tried running the script to solve your problem.

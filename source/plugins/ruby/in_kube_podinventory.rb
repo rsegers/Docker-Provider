@@ -61,6 +61,7 @@ module Fluent::Plugin
       @containerInventoryTag = "oneagent.containerInsights.CONTAINER_INVENTORY_BLOB"
       @namespaces = []
       @namespaceFilteringMode = "off"
+      @agentConfigRefreshTracker = DateTime.now.to_time.to_i
     end
 
     config_param :run_interval, :time, :default => 60
@@ -153,26 +154,21 @@ module Fluent::Plugin
         podInventoryStartTime = (Time.now.to_f * 1000).to_i
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_podinventory::enumerate: AAD AUTH MSI MODE")
-          if @kubeperfTag.nil? || !@kubeperfTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @kubeperfTag = ExtensionUtils.getOutputStreamId(Constants::PERF_DATA_TYPE)
+          @tag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::KUBE_POD_INVENTORY_DATA_TYPE, @tag, @agentConfigRefreshTracker)
+          if !isFromCache
+            @agentConfigRefreshTracker = DateTime.now.to_time.to_i
           end
-          if @kubeservicesTag.nil? || !@kubeservicesTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @kubeservicesTag = ExtensionUtils.getOutputStreamId(Constants::KUBE_SERVICES_DATA_TYPE)
+          @kubeservicesTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::KUBE_SERVICES_DATA_TYPE, @kubeservicesTag, @agentConfigRefreshTracker)
+          @containerInventoryTag, _ = KubernetesApiClient.getOutputStreamIdAndSource(Constants::CONTAINER_INVENTORY_DATA_TYPE, @containerInventoryTag, @agentConfigRefreshTracker)
+          if !KubernetesApiClient.isDCRStreamIdTag(@kubeservicesTag)
+            $log.warn("in_kube_podinventory::enumerate: skipping Microsoft-KubeServices stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          if @containerInventoryTag.nil? || !@containerInventoryTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @containerInventoryTag = ExtensionUtils.getOutputStreamId(Constants::CONTAINER_INVENTORY_DATA_TYPE)
+          if !KubernetesApiClient.isDCRStreamIdTag(@containerInventoryTag)
+            $log.info("in_kube_podinventory::enumerate: skipping Microsoft-ContainerInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          if @insightsMetricsTag.nil? || !@insightsMetricsTag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @insightsMetricsTag = ExtensionUtils.getOutputStreamId(Constants::INSIGHTS_METRICS_DATA_TYPE)
+          if !KubernetesApiClient.isDCRStreamIdTag(@tag)
+            $log.info("in_kube_podinventory::enumerate: skipping Microsoft-KubePodInventory stream since its opted-out @ #{Time.now.utc.iso8601}")
           end
-          if @tag.nil? || !@tag.start_with?(Constants::EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX)
-            @tag = ExtensionUtils.getOutputStreamId(Constants::KUBE_POD_INVENTORY_DATA_TYPE)
-          end
-          $log.info("in_kube_podinventory::enumerate: using perf tag -#{@kubeperfTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_podinventory::enumerate: using kubeservices tag -#{@kubeservicesTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_podinventory::enumerate: using containerinventory tag -#{@containerInventoryTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_podinventory::enumerate: using insightsmetrics tag -#{@insightsMetricsTag} @ #{Time.now.utc.iso8601}")
-          $log.info("in_kube_podinventory::enumerate: using kubepodinventory tag -#{@tag} @ #{Time.now.utc.iso8601}")
           if ExtensionUtils.isDataCollectionSettingsConfigured()
             @run_interval = ExtensionUtils.getDataCollectionIntervalSeconds()
             $log.info("in_kube_podinventory::enumerate: using data collection interval(seconds): #{@run_interval} @ #{Time.now.utc.iso8601}")
@@ -251,6 +247,22 @@ module Fluent::Plugin
             if @run_interval > 60
               telemetryProperties["DATA_COLLECTION_INTERVAL_MINUTES"] = @run_interval / 60
             end
+          end
+          if ExtensionUtils.isAADMSIAuthMode()
+            telemetryProperties["dataCollectionProfile"] = ExtensionUtils.getDataCollectionProfile()
+          end
+          begin
+            if Dir.exist?("/etc/mdsd.d/config-cache/configchunks")
+              Dir.glob("/etc/mdsd.d/config-cache/configchunks/*.json") { |file|
+                if File.file?(file) && File.exist?(file)
+                  if File.foreach(file).grep(/LINUX_SYSLOGS_BLOB/).any?
+                    telemetryProperties["syslogEnabled"] = "true"
+                  end
+                end
+              }
+            end
+          rescue => errorStr
+            $log.warn("in_kube_podinventory::enumerate: Exception in getting syslog status: #{errorStr}")
           end
           ApplicationInsightsUtility.sendCustomEvent("KubePodInventoryHeartBeatEvent", telemetryProperties)
           ApplicationInsightsUtility.sendMetricTelemetry("PodCount", @podCount, {})
@@ -347,14 +359,14 @@ module Fluent::Plugin
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
               $log.info("kubePodInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
             end
-            router.emit_stream(@tag, eventStream) if eventStream
+            router.emit_stream(@tag, eventStream) if !@tag.nil? && !@tag.empty? && eventStream
             eventStream = Fluent::MultiEventStream.new
           end
         end  #podInventory block end
 
         if eventStream.count > 0
           $log.info("in_kube_podinventory::parse_and_emit_records: number of pod inventory records emitted #{eventStream.count} @ #{Time.now.utc.iso8601}")
-          router.emit_stream(@tag, eventStream) if eventStream
+          router.emit_stream(@tag, eventStream) if !@tag.nil? && !@tag.empty? && eventStream
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
             $log.info("kubePodInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
           end
@@ -363,7 +375,7 @@ module Fluent::Plugin
 
         if containerInventoryStream.count > 0
           $log.info("in_kube_podinventory::parse_and_emit_records: number of windows container inventory records emitted #{containerInventoryStream.count} @ #{Time.now.utc.iso8601}")
-          router.emit_stream(@containerInventoryTag, containerInventoryStream) if containerInventoryStream
+          router.emit_stream(@containerInventoryTag, containerInventoryStream) if !@containerInventoryTag.nil? && !@containerInventoryTag.empty? && containerInventoryStream
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
             $log.info("kubeWindowsContainerInventoryEmitStreamSuccess @ #{Time.now.utc.iso8601}")
           end
@@ -403,7 +415,7 @@ module Fluent::Plugin
               kubeServicesEventStream.add(emitTime, kubeServiceRecord) if kubeServiceRecord
               if @PODS_EMIT_STREAM_BATCH_SIZE > 0 && kubeServicesEventStream.count >= @PODS_EMIT_STREAM_BATCH_SIZE
                 $log.info("in_kube_podinventory::parse_and_emit_records: number of service records emitted #{kubeServicesEventStream.count} @ #{Time.now.utc.iso8601}")
-                router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if kubeServicesEventStream
+                router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if !@kubeservicesTag.nil? && !@kubeservicesTag.empty? && kubeServicesEventStream
                 kubeServicesEventStream = Fluent::MultiEventStream.new
                 if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
                   $log.info("kubeServicesEventEmitStreamSuccess @ #{Time.now.utc.iso8601}")
@@ -414,7 +426,7 @@ module Fluent::Plugin
 
           if kubeServicesEventStream.count > 0
             $log.info("in_kube_podinventory::parse_and_emit_records : number of service records emitted #{kubeServicesEventStream.count} @ #{Time.now.utc.iso8601}")
-            router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if kubeServicesEventStream
+            router.emit_stream(@kubeservicesTag, kubeServicesEventStream) if !@kubeservicesTag.nil? && !@kubeservicesTag.empty? && kubeServicesEventStream
             if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0)
               $log.info("kubeServicesEventEmitStreamSuccess @ #{Time.now.utc.iso8601}")
             end
@@ -550,8 +562,8 @@ module Fluent::Plugin
         mdmPodRecord["ControllerName"] = record["ControllerName"]
         mdmPodRecord["Namespace"] = record["Namespace"]
         mdmPodRecord["PodStatus"] = record["PodStatus"]
-        mdmPodRecord["PodReadyCondition"] = KubernetesApiClient.getPodReadyCondition(item["status"]["conditions"])
         mdmPodRecord["ControllerKind"] = record["ControllerKind"]
+        mdmPodRecord["PodReadyCondition"] = KubernetesApiClient.getPodReadyCondition(item["status"]["conditions"], record["ControllerKind"], record["PodStatus"])
         mdmPodRecord["containerRecords"] = []
 
         podContainers = []

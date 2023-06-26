@@ -23,6 +23,7 @@ require_relative "ConfigParseErrorLogger"
 @collectAllKubeEvents = false
 @containerLogsRoute = "v2" # default for linux
 @adxDatabaseName = "containerinsights" # default for all configurations
+@logEnableMultiline = "false"
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
   # This path format is necessary for fluent-bit in windows
@@ -140,14 +141,29 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       ConfigParseErrorLogger.logError("Exception while reading config map settings for cluster level container log enrichment - #{errorStr}, using defaults, please check config map for errors")
     end
 
-     #Get container log schema version setting
-     begin
+    #Get container log schema version setting
+    begin
       if !parsedConfig[:log_collection_settings][:schema].nil? && !parsedConfig[:log_collection_settings][:schema][:containerlog_schema_version].nil?
         @containerLogSchemaVersion = parsedConfig[:log_collection_settings][:schema][:containerlog_schema_version]
         puts "config::Using config map setting for container log schema version"
       end
     rescue => errorStr
       ConfigParseErrorLogger.logError("Exception while reading config map settings for container log schema version - #{errorStr}, using defaults, please check config map for errors")
+    end
+
+    # Get multiline log enabling setting
+    begin
+      if !parsedConfig[:log_collection_settings][:enable_multiline_logs].nil? && !parsedConfig[:log_collection_settings][:enable_multiline_logs][:enabled].nil?
+        @logEnableMultiline = parsedConfig[:log_collection_settings][:enable_multiline_logs][:enabled]
+        puts "config::Using config map setting for multiline logging"
+
+        if @containerLogSchemaVersion.strip.casecmp("v2") != 0
+          puts "config:: WARN: container logs V2 is disabled and is required for multiline logging. Disabling multiline logging"
+          @logEnableMultiline = "false"
+        end
+      end
+    rescue => errorStr
+      ConfigParseErrorLogger.logError("Exception while reading config map settings for enabling multiline logs - #{errorStr}, using defaults, please check config map for errors")
     end
 
     #Get kube events enrichment setting
@@ -164,11 +180,11 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     begin
       if !parsedConfig[:log_collection_settings][:route_container_logs].nil? && !parsedConfig[:log_collection_settings][:route_container_logs][:version].nil?
         if !parsedConfig[:log_collection_settings][:route_container_logs][:version].empty?
-           @containerLogsRoute = parsedConfig[:log_collection_settings][:route_container_logs][:version]
-           puts "config::Using config map setting for container logs route: #{@containerLogsRoute}"
-        else 
-           puts "config::Ignoring config map settings and using default value since provided container logs route value is empty"    
-        end         
+          @containerLogsRoute = parsedConfig[:log_collection_settings][:route_container_logs][:version]
+          puts "config::Using config map setting for container logs route: #{@containerLogsRoute}"
+        else
+          puts "config::Ignoring config map settings and using default value since provided container logs route value is empty"
+        end
       end
     rescue => errorStr
       ConfigParseErrorLogger.logError("Exception while reading config map settings for container logs route - #{errorStr}, using defaults, please check config map for errors")
@@ -178,12 +194,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     begin
       if !parsedConfig[:log_collection_settings][:adx_database].nil? && !parsedConfig[:log_collection_settings][:adx_database][:name].nil?
         if !parsedConfig[:log_collection_settings][:adx_database][:name].empty?
-           @adxDatabaseName = parsedConfig[:log_collection_settings][:adx_database][:name]
-           puts "config::Using config map setting for ADX database name : #{@adxDatabaseName}"
-        else 
-           puts "config::Ignoring config map settings and using default value '#{@adxDatabaseName}' since provided adx database name value is empty"    
-        end   
-      else      
+          @adxDatabaseName = parsedConfig[:log_collection_settings][:adx_database][:name]
+          puts "config::Using config map setting for ADX database name : #{@adxDatabaseName}"
+        else
+          puts "config::Ignoring config map settings and using default value '#{@adxDatabaseName}' since provided adx database name value is empty"
+        end
+      else
         puts "config::No ADX database name set, using default value : #{@adxDatabaseName}"
       end
     rescue => errorStr
@@ -210,7 +226,7 @@ end
 file = File.open("config_env_var", "w")
 
 if !file.nil?
-  # This will be used in td-agent-bit.conf file to filter out logs
+  # This will be used in fluent-bit.conf file to filter out logs
   if (!@collectStdoutLogs && !@collectStderrLogs)
     #Stop log tailing completely
     @logTailPath = "/opt/nolog*.log"
@@ -222,6 +238,8 @@ if !file.nil?
   end
   file.write("export AZMON_COLLECT_STDOUT_LOGS=#{@collectStdoutLogs}\n")
   file.write("export AZMON_LOG_TAIL_PATH=#{@logTailPath}\n")
+  logTailPathDir = File.dirname(@logTailPath)
+  file.write("export AZMON_LOG_TAIL_PATH_DIR=#{logTailPathDir}\n")
   file.write("export AZMON_LOG_EXCLUSION_REGEX_PATTERN=\"#{@logExclusionRegexPattern}\"\n")
   file.write("export AZMON_STDOUT_EXCLUDED_NAMESPACES=#{@stdoutExcludeNamespaces}\n")
   file.write("export AZMON_COLLECT_STDERR_LOGS=#{@collectStderrLogs}\n")
@@ -233,6 +251,7 @@ if !file.nil?
   file.write("export AZMON_CONTAINER_LOGS_ROUTE=#{@containerLogsRoute}\n")
   file.write("export AZMON_CONTAINER_LOG_SCHEMA_VERSION=#{@containerLogSchemaVersion}\n")
   file.write("export AZMON_ADX_DATABASE_NAME=#{@adxDatabaseName}\n")
+  file.write("export AZMON_MULTILINE_ENABLED=#{@logEnableMultiline}\n")
   # Close file after writing all environment variables
   file.close
   puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "
@@ -241,7 +260,6 @@ else
   puts "Exception while opening file for writing config environment variables"
   puts "****************End Config Processing********************"
 end
-
 
 =begin
 This section generates the file that will set the environment variables for windows. This script will be called by the main.ps1 script
@@ -269,31 +287,35 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     end
     commands = get_command_windows("AZMON_COLLECT_STDOUT_LOGS", @collectStdoutLogs)
     file.write(commands)
-    commands = get_command_windows('AZMON_LOG_TAIL_PATH', @logTailPath)
+    commands = get_command_windows("AZMON_LOG_TAIL_PATH", @logTailPath)
     file.write(commands)
-    commands = get_command_windows('AZMON_LOG_EXCLUSION_REGEX_PATTERN', @logExclusionRegexPattern)
+    logTailPathDir = File.dirname(@logTailPath)
+    commands = get_command_windows("AZMON_LOG_TAIL_PATH_DIR", logTailPathDir)
     file.write(commands)
-    commands = get_command_windows('AZMON_STDOUT_EXCLUDED_NAMESPACES', @stdoutExcludeNamespaces)
+    commands = get_command_windows("AZMON_LOG_EXCLUSION_REGEX_PATTERN", @logExclusionRegexPattern)
     file.write(commands)
-    commands = get_command_windows('AZMON_COLLECT_STDERR_LOGS', @collectStderrLogs)
+    commands = get_command_windows("AZMON_STDOUT_EXCLUDED_NAMESPACES", @stdoutExcludeNamespaces)
     file.write(commands)
-    commands = get_command_windows('AZMON_STDERR_EXCLUDED_NAMESPACES', @stderrExcludeNamespaces)
+    commands = get_command_windows("AZMON_COLLECT_STDERR_LOGS", @collectStderrLogs)
     file.write(commands)
-    commands = get_command_windows('AZMON_CLUSTER_COLLECT_ENV_VAR', @collectClusterEnvVariables)
+    commands = get_command_windows("AZMON_STDERR_EXCLUDED_NAMESPACES", @stderrExcludeNamespaces)
     file.write(commands)
-    commands = get_command_windows('AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH', @excludePath)
+    commands = get_command_windows("AZMON_CLUSTER_COLLECT_ENV_VAR", @collectClusterEnvVariables)
     file.write(commands)
-    commands = get_command_windows('AZMON_CLUSTER_CONTAINER_LOG_ENRICH', @enrichContainerLogs)
+    commands = get_command_windows("AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH", @excludePath)
     file.write(commands)
-    commands = get_command_windows('AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS', @collectAllKubeEvents)
+    commands = get_command_windows("AZMON_CLUSTER_CONTAINER_LOG_ENRICH", @enrichContainerLogs)
     file.write(commands)
-    commands = get_command_windows('AZMON_CONTAINER_LOGS_ROUTE', @containerLogsRoute)
+    commands = get_command_windows("AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS", @collectAllKubeEvents)
     file.write(commands)
-    commands = get_command_windows('AZMON_CONTAINER_LOG_SCHEMA_VERSION', @containerLogSchemaVersion)
+    commands = get_command_windows("AZMON_CONTAINER_LOGS_ROUTE", @containerLogsRoute)
     file.write(commands)
-    commands = get_command_windows('AZMON_ADX_DATABASE_NAME', @adxDatabaseName)
+    commands = get_command_windows("AZMON_CONTAINER_LOG_SCHEMA_VERSION", @containerLogSchemaVersion)
     file.write(commands)
-
+    commands = get_command_windows("AZMON_ADX_DATABASE_NAME", @adxDatabaseName)
+    file.write(commands)
+    commands = get_command_windows("AZMON_MULTILINE_ENABLED", @logEnableMultiline)
+    file.write(commands)
     # Close file after writing all environment variables
     file.close
     puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "
