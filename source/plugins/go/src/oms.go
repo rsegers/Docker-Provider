@@ -1858,7 +1858,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 			fmt.Fprintf(os.Stdout, "Routing container logs thru %s route...\n", ContainerLogsADXRoute)
 		}
 	} else if strings.Compare(strings.ToLower(osType), "windows") != 0 { //for linux, oneagent will be default route
-		ContainerLogsRouteV2 = true //default is mdsd route
 		Log("Routing container logs thru %s route...", ContainerLogsRoute)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsRoute)
 	}

@@ -21,7 +21,7 @@ require_relative "ConfigParseErrorLogger"
 @enrichContainerLogs = false
 @containerLogSchemaVersion = ""
 @collectAllKubeEvents = false
-@containerLogsRoute = "v2" # default for linux
+@containerLogsRoute = "v1" # default for linux
 @adxDatabaseName = "containerinsights" # default for all configurations
 @logEnableMultiline = "false"
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
