@@ -33,11 +33,12 @@ jobs:
   ## prod release are in format Major.Minor.Patch
   ## preview release are in format preview-Major.Minor.Patch
   - bash: |
-      commit=$(git describe) 
-      linuxImagetag="$commit"
-      windowsImageTag=win-"$commit"
+      commit=$(git describe | cut -d'-' -f1,2)
+      datetime=$(date +%Y%m%d%H%M%S)
+      linuxImagetag="$commit"-"$datetime"
+      windowsImageTag=win-"$commit"-"$datetime"
 
-      telemetryTag=$commit
+      telemetryTag=$linuxImagetag
       if [ -z "$TELEMETRY_TAG" ]
         then
           echo "\$TELEMETRY_TAG variable is not set"
