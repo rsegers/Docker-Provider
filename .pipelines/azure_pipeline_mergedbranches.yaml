@@ -33,7 +33,7 @@ jobs:
   ## prod release are in format Major.Minor.Patch
   ## preview release are in format preview-Major.Minor.Patch
   - bash: |
-      commit=$(git describe | cut -d'-' -f1,2)
+      commit=$(git describe)
       datetime=$(date +%Y%m%d%H%M%S)
       linuxImagetag="$commit"-"$datetime"
       windowsImageTag=win-"$commit"-"$datetime"
