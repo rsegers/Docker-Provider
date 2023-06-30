@@ -38,7 +38,7 @@
 				  "type": "string"
 				},
 				"enableSyslog": {
-				  "type": "bool"
+				  "type": "boolean"
 				},
 				"syslogLevels": {
 				  "type": "array"
@@ -60,7 +60,10 @@
 				},
 				"namespacesForDataCollection": {
 				  "type": "array"
-				}
+				},
+				"enableContainerLogV2": {
+					"type": "boolean"
+				  }
 			  },
 			  "variables": {
 				"clusterSubscriptionId": "[split(parameters('aksResourceId'),'/')[2]]",
@@ -97,7 +100,8 @@
 												"dataCollectionSettings" : {
 													"interval": "[parameters('dataCollectionInterval')]",
 													"namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-													"namespaces": "[parameters('namespacesForDataCollection')]"
+													"namespaces": "[parameters('namespacesForDataCollection')]",
+													"enableContainerLogV2": "[parameters('enableContainerLogV2')]"
 												}
 											},
 											"extensionName": "ContainerInsights"
@@ -161,7 +165,8 @@
 												"dataCollectionSettings" : {
 													"interval": "[parameters('dataCollectionInterval')]",
 													"namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-													"namespaces": "[parameters('namespacesForDataCollection')]"
+													"namespaces": "[parameters('namespacesForDataCollection')]",
+													"enableContainerLogV2": "[parameters('enableContainerLogV2')]"
 												}
 											},
 											"extensionName": "ContainerInsights"

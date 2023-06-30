@@ -62,3 +62,7 @@ variable "namespace_filtering_mode_for_data_collection" {
 variable "namespaces_for_data_collection" {
   default = ["kube-system", "gatekeeper-system", "azure-arc"]
 }
+
+variable "enableContainerLogV2" {
+  default = true
+}

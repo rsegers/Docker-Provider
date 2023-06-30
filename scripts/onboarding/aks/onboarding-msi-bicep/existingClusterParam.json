@@ -29,6 +29,9 @@
       },
       "namespacesForDataCollection": {
         "value": [ "kube-system", "gatekeeper-system", "azure-arc" ]
+      },
+      "enableContainerLogV2": {
+        "value": true
       }
     }
   }

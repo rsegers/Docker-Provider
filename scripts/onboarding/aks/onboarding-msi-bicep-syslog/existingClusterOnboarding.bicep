@@ -19,6 +19,23 @@ param syslogLevels array
 @description('Array of allowed syslog facilities')
 param syslogFacilities array
 
+@description('Data collection interval e.g. "5m" for metrics and inventory. Supported value range from 1m to 30m')
+param dataCollectionInterval string
+
+@description('Data collection Filtering Mode for the namespaces')
+@allowed([
+  'Off'
+  'Include'
+  'Exclude'
+])
+param namespaceFilteringModeForDataCollection string = 'Off'
+
+@description('An array of Kubernetes namespaces for the data collection of inventory, events and metrics')
+param namespacesForDataCollection array
+
+@description('The flag for enable containerlogv2 schema')
+param enableContainerLogV2 bool
+
 var clusterSubscriptionId = split(aksResourceId, '/')[2]
 var clusterResourceGroup = split(aksResourceId, '/')[4]
 var clusterName = split(aksResourceId, '/')[8]
@@ -51,6 +68,14 @@ resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-
           streams: [
             'Microsoft-ContainerInsights-Group-Default'
           ]
+          extensionSettings: {
+            dataCollectionSettings: {
+              interval: dataCollectionInterval
+              namespaceFilteringMode: namespaceFilteringModeForDataCollection
+              namespaces: namespacesForDataCollection
+              enableContainerLogV2: enableContainerLogV2
+            }
+          }
           extensionName: 'ContainerInsights'
         }
       ]

@@ -27,6 +27,9 @@ param namespaceFilteringModeForDataCollection string = 'Off'
 @description('An array of Kubernetes namespaces for the data collection of inventory, events and metrics')
 param namespacesForDataCollection array
 
+@description('The flag for enable containerlogv2 schema')
+param enableContainerLogV2 bool
+
 var clusterSubscriptionId = split(aksResourceId, '/')[2]
 var clusterResourceGroup = split(aksResourceId, '/')[4]
 var clusterName = split(aksResourceId, '/')[8]
@@ -54,6 +57,7 @@ resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-
               interval: dataCollectionInterval
               namespaceFilteringMode: namespaceFilteringModeForDataCollection
               namespaces: namespacesForDataCollection
+              enableContainerLogV2: enableContainerLogV2
             }
           }
           extensionName: 'ContainerInsights'

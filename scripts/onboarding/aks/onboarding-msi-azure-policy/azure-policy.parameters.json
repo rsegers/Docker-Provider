@@ -68,5 +68,9 @@
       "defaultValue": [
         "kube-system", "gatekeeper-system", "azure-arc"
       ]
+    },
+    "enableContainerLogV2": {
+      "type": "boolean",
+      "defaultValue": true
     }
 }
