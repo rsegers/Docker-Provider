@@ -62,8 +62,8 @@
 				  "type": "array"
 				},
 				"enableContainerLogV2": {
-					"type": "boolean"
-				  }
+				  "type": "boolean"
+				}
 			  },
 			  "variables": {
 				"clusterSubscriptionId": "[split(parameters('aksResourceId'),'/')[2]]",
