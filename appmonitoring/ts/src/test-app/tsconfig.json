@@ -9,9 +9,6 @@
     "moduleResolution": "nodenext",
   },
   "exclude": [
-    "test-app",
-    "node_modules",
-    "bin",
-    "obj"
+    "node_modules"
   ]
 }
