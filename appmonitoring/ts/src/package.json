@@ -28,6 +28,17 @@
     "tsc": "^2.0.4",
     "typescript": "^5.0.4"
   },
+  "overrides": {
+    "async-listener": {
+      "semver": "^7.5.3"
+    },
+    "cls-hooked": {
+      "semver": "^7.5.3"
+    },
+    "diagnostic-channel": {
+      "semver": "^7.5.3"
+    }
+  },
   "engines": {
     "node": "^16.19.1"
   },
