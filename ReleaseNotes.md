@@ -8,6 +8,38 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 06/30/2023 -
+##### Version microsoft/oms:3.1.10 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.10 (linux)
+##### Version microsoft/oms:win-3.1.10 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.10 (windows)
+##### Current dependencies
+- Linux
+  - [CBL-Mariner 2.0.20230526](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20230526-2.0)
+  - Golang - 1.20.3
+  - Ruby - 3.1.3
+  - MDSD - 1.26.1
+  - Telegraf - 1.26.0
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.14
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.3.2
+  - Golang - 1.20.3
+##### Code change log
+- Common
+  - Add Containerlogv2 support in dataCollectionSettings
+  - Update troubleshoot doc for MSI GA
+- Linux
+  - Update HPA api version to v2
+  - Update environment variable Geneva Helm chart
+- Windows
+  - Add gem ipaddress package for fluentd
+  - Fix window vulnerability for CVE-2013-3900
+  - Address windows spin-wait thread pool issue
+  - Update fluent-bit version from 2.0.5 to 2.0.14 for addressing memory leak issue
+
 ### 06/08/2023 -
 ##### Version microsoft/oms:3.1.9 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.9 (linux)
 ##### Version microsoft/oms:win-3.1.9 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.9 (windows)
