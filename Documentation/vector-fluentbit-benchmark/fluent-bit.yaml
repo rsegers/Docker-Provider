@@ -91,15 +91,15 @@ data:
         Path              /var/log/containers/*.log
         Parser            cri
         DB                /var/log/flb_kube.db
-        Buffer_Chunk_Size 4MB
+        Read_from_Head    true
+        Buffer_Chunk_Size 10MB
         Buffer_Max_Size   10MB
         Mem_Buf_Limit     2000MB
         Path_Key filepath
         Skip_Long_Lines   On
-        Refresh_Interval  10
+        Refresh_Interval  30
         Rotate_Wait       20
         Exclude_Path      /var/log/containers/*_kube-system_*.log
-        threaded          on
 
     [INPUT]
         name            fluentbit_metrics
