@@ -9,7 +9,7 @@
       "type": "string"
     },
     "enableSyslog": {
-      "type": "boolean",
+      "type": "bool",
       "defaultValue": false
     },
     "syslogLevels": {
@@ -70,7 +70,7 @@
       ]
     },
     "enableContainerLogV2": {
-      "type": "boolean",
+      "type": "bool",
       "defaultValue": true
     }
 }

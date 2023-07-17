@@ -38,7 +38,7 @@
 				  "type": "string"
 				},
 				"enableSyslog": {
-				  "type": "boolean"
+				  "type": "bool"
 				},
 				"syslogLevels": {
 				  "type": "array"
@@ -62,7 +62,7 @@
 				  "type": "array"
 				},
 				"enableContainerLogV2": {
-				  "type": "boolean"
+				  "type": "bool"
 				}
 			  },
 			  "variables": {
