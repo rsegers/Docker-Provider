@@ -19,7 +19,9 @@ LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 ENV tmpdir /opt
 
-RUN tdnf install -y dnf && dnf -y clean expire-cache && dnf -y check-update
+RUN tdnf clean all
+RUN tdnf repolist --refresh
+RUN tdnf update
 RUN tdnf install -y build-essential wget openssl curl sudo net-tools cronie rsyslog dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
 RUN mkdir /busybin && busybox --install /busybin
 
