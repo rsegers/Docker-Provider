@@ -1,3 +1,87 @@
+apiVersion: "autoscaling.k8s.io/v1"
+kind: VerticalPodAutoscaler
+metadata:
+  name: ama-logs-vpa
+  namespace: kube-system
+  labels:
+    component: ama-logs-agent-vpa
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: DaemonSet
+    name: ama-logs
+  updatePolicy:
+    updateMode: "Auto"
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "ama-logs"
+        minAllowed:
+         cpu: 75m
+         memory: 325Mi
+        maxAllowed:
+         cpu: 5
+         memory: 8Gi
+        controlledResources: ["cpu", "memory"]
+      - containerName: "ama-logs-prometheus"
+        minAllowed:
+         cpu: 75m
+         memory: 225Mi
+        maxAllowed:
+         cpu: 1
+         memory: 2Gi
+        controlledResources: ["cpu", "memory"]
+---
+apiVersion: "autoscaling.k8s.io/v1"
+kind: VerticalPodAutoscaler
+metadata:
+  name: ama-logs-rs-vpa
+  namespace: kube-system
+  labels:
+    component: ama-logs-agent-vpa
+spec:
+  targetRef:
+    apiVersion: "apps/v1"
+    kind: Deployment
+    name: ama-logs-rs
+  updatePolicy:
+    updateMode: "Auto"
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: "ama-logs"
+        minAllowed:
+         cpu: 150m
+         memory: 250Mi
+        maxAllowed:
+         cpu: 2
+         memory: 2.5Gi
+        controlledResources: ["cpu", "memory"]
+# ---
+# apiVersion: "autoscaling.k8s.io/v1"
+# kind: VerticalPodAutoscaler
+# metadata:
+#   name: ama-logs-windows-vpa
+#   namespace: kube-system
+#   labels:
+#     component: ama-logs-agent-vpa
+# spec:
+#   targetRef:
+#     apiVersion: "apps/v1"
+#     kind: DaemonSet
+#     name: ama-logs-windows
+#   updatePolicy:
+#     updateMode: "Auto"
+#   resourcePolicy:
+#     containerPolicies:
+#       - containerName: "ama-logs-windows"
+#         minAllowed:
+#          cpu: 500m
+#          memory: 1Gi
+#         maxAllowed:
+#          cpu: 2
+#          memory: 2Gi
+#         controlledResources: ["cpu", "memory"]
+---
 apiVersion: v1
 kind: ServiceAccount
 metadata:
