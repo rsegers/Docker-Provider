@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<MonitoringManagement version="1.0" namespace="<NamespaceForLinuxContainers>" eventVersion="1" timestamp="2016-01-20T00:00:00.000">
+  <Accounts>
+    <Account moniker="<GenevaLogsAccountMoniker>" isDefault="true" />
+  </Accounts>
+  <Management eventVolume="Large" defaultRetentionInDays="90">
+    <Identity>
+      <IdentityComponent name="Tenant">TENANT_ID</IdentityComponent>
+      <IdentityComponent name="Role">ROLE_ID</IdentityComponent>
+      <IdentityComponent name="RoleInstance">ROLEINSTANCE_ID</IdentityComponent>
+    </Identity>
+    <AgentResourceUsage diskQuotaInMB="50000" />
+  </Management>
+  <Schemas>
+   <Schema name="ContainerLogV2Schema">
+      <Column name="ContainerId" type="str" mdstype="mt:wstr" />
+      <Column name="LogMessage" type="str" mdstype="mt:wstr" />
+      <Column name="LogSource" type="str" mdstype="mt:wstr" />
+      <Column name="TimeGenerated" type="str" mdstype="mt:wstr" />
+      <Column name="PodName" type="str" mdstype="mt:wstr" />
+      <Column name="PodNamespace" type="str" mdstype="mt:wstr" />
+      <Column name="Computer" type="str" mdstype="mt:wstr" />
+      <Column name="ContainerName" type="str" mdstype="mt:wstr" />
+      <Column name="AzureResourceId" type="str" mdstype="mt:wstr" />
+    </Schema>
+  </Schemas>
+  <Sources>
+   <Source name="ContainerLogV2Source" schema="ContainerLogV2Schema" />
+  </Sources>
+  <Events>
+    <MdsdEvents>
+     <MdsdEventSource source="ContainerLogV2Source">
+        <RouteEvent eventName="ContainerLogV2" duration="PT10S" priority="High" storeType="CentralBond" account="<GenevaLogsAccountMoniker>" immutable="true">
+        </RouteEvent>
+    </MdsdEventSource>
+    <MdsdEventSource source="MaQosEvent">
+        <RouteEvent eventName="MaQosSummary" storeType="CentralBond" duration="PT15M" />
+     </MdsdEventSource>
+    </MdsdEvents>
+  </Events>
+</MonitoringManagement>

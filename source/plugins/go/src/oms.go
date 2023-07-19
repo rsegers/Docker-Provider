@@ -21,6 +21,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/tinylib/msgp/msgp"
 
+	"Docker-Provider/source/plugins/go/src/extension"
+
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
 	"github.com/Azure/azure-kusto-go/kusto/ingest"
@@ -157,6 +159,8 @@ var (
 	ContainerLogsRouteADX bool
 	// container log schema (applicable only for non-ADX route)
 	ContainerLogSchemaV2 bool
+	// container log schema version from config map
+	ContainerLogV2ConfigMap bool
 	//ADX Cluster URI
 	AdxClusterUri string
 	// ADX clientID
@@ -1153,6 +1157,22 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		logEntry := ToString(record["log"])
 		logEntryTimeStamp := ToString(record["time"])
+
+		if !IsWindows && !ContainerLogV2ConfigMap && IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
+			if MdsdMsgpUnixSocketClient == nil {
+				Log("Error::mdsd::mdsd connection does not exist. re-connecting ...")
+				CreateMDSDClient(ContainerLogV2, ContainerType)
+				if MdsdMsgpUnixSocketClient == nil {
+					Log("Error::mdsd::Unable to create mdsd client. Please check error log.")
+					ContainerLogTelemetryMutex.Lock()
+					defer ContainerLogTelemetryMutex.Unlock()
+					ContainerLogsMDSDClientCreateErrors += 1
+					return output.FLB_RETRY
+				}
+			}
+			ContainerLogSchemaV2 = extension.GetInstance(FLBLogger, ContainerType).IsContainerLogV2()
+		}
+
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
 		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
 			stringMap["Computer"] = Computer
@@ -1271,6 +1291,12 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	}
 
 	numContainerLogRecords := 0
+
+	if ContainerLogSchemaV2 == true {
+		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
+	} else {
+		MdsdContainerLogTagName = MdsdContainerLogSourceName
+	}
 
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
@@ -1862,8 +1888,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("AZMON_CONTAINER_LOG_SCHEMA_VERSION:%s", ContainerLogSchemaVersion)
 
 	ContainerLogSchemaV2 = false //default is v1 schema
+	ContainerLogV2ConfigMap = (strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0)
 
-	if strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0 && ContainerLogsRouteADX != true {
+	if ContainerLogV2ConfigMap && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true
 		Log("Container logs schema=%s", ContainerLogV2SchemaVersion)
 		fmt.Fprintf(os.Stdout, "Container logs schema=%s... \n", ContainerLogV2SchemaVersion)
@@ -1884,12 +1911,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		go flushKubeMonAgentEventRecords()
 	} else {
 		Log("Running in replicaset. Disabling container enrichment caching & updates \n")
-	}
-
-	if ContainerLogSchemaV2 == true {
-		MdsdContainerLogTagName = MdsdContainerLogV2SourceName
-	} else {
-		MdsdContainerLogTagName = MdsdContainerLogSourceName
 	}
 
 	MdsdInsightsMetricsTagName = MdsdInsightsMetricsSourceName

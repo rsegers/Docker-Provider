@@ -5,6 +5,9 @@ LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
+RUN reg add "HKLM\Software\Microsoft\Cryptography\Wintrust\Config" /v "EnableCertPaddingCheck" /t REG_DWORD /d "1" /f
+RUN reg add "HKLM\Software\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" /v "EnableCertPaddingCheck" /t REG_DWORD /d "1" /f
+
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
 ENV chocolateyVersion 1.4.0
@@ -27,6 +30,7 @@ RUN refreshenv \
 && gem install windows-pr -v 1.2.6 \
 && gem install tomlrb -v 2.0.1 \
 && gem install gyoku -v 1.3.1 \
+&& gem install ipaddress -v 0.8.3 \
 && gem sources --clear-all
 
 # Remove gem cache and chocolatey
@@ -76,8 +80,8 @@ COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluen
 #Copy fluentd ruby plugins
 COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
 
-# default value will be overwritten by pipeline 
-ARG IMAGE_TAG=win-3.1.9
+# default value will be overwritten by pipeline
+ARG IMAGE_TAG=win-3.1.10
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 ENV OS_TYPE "windows"

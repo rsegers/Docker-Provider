@@ -78,6 +78,14 @@ type AgentConfiguration struct {
 				Containerinsights []struct {
 					ID            string   `json:"id"`
 					Originids     []string `json:"originIds"`
+					Extensionsettings struct {
+						DataCollectionSettings struct {
+							Interval               string   `json:"interval"`
+							NamespaceFilteringMode string   `json:"namespaceFilteringMode"`
+							Namespaces             []string `json:"namespaces"`
+							EnableContainerLogV2   bool     `json:"enableContainerLogV2"`
+						} `json:"dataCollectionSettings"`
+					} `json:"extensionSettings"`
 					Outputstreams struct {
 						LinuxPerfBlob                   string `json:"LINUX_PERF_BLOB"`
 						ContainerInventoryBlob          string `json:"CONTAINER_INVENTORY_BLOB"`
@@ -442,7 +450,9 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 
 	configurationId = agentConfiguration.Configurations[0].Configurationid
 	channelId = agentConfiguration.Configurations[0].Content.Channels[0].ID
-
+	if !ContainerLogV2ConfigMap && len(agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights) > 0 {
+		ContainerLogSchemaV2 = agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights[0].Extensionsettings.DataCollectionSettings.EnableContainerLogV2
+	}
 	Log("getAgentConfiguration: obtained configurationId: %s, channelId: %s", configurationId, channelId)
 	Log("Info getAgentConfiguration: end")
 

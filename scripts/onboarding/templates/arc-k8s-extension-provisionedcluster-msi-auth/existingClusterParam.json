@@ -17,6 +17,9 @@
     "workspaceDomain": {
       "value": "<workspaceDomainName>"
     },
+    "enableContainerLogV2": {
+      "value": true
+    },
     "enableSyslog": {
       "value": false
     },
