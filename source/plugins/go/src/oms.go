@@ -1151,8 +1151,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			// And the ClusterResourceId in the receiving record
 			Computer = ToString(record["Computer"])
 			stringMap["AzureResourceId"] = ToString(record["AzureResourceId"])
+			stringMap["AzureRegion"] = ToString(record["AzureRegion"])
 		} else if IsGenevaLogsIntegrationEnabled == true {
 			stringMap["AzureResourceId"] = ResourceID
+			stringMap["AzureRegion"] = ToString(record["AzureRegion"])
 		}
 
 		logEntry := ToString(record["log"])

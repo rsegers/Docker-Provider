@@ -22,6 +22,7 @@
       <Column name="Computer" type="str" mdstype="mt:wstr" />
       <Column name="ContainerName" type="str" mdstype="mt:wstr" />
       <Column name="AzureResourceId" type="str" mdstype="mt:wstr" />
+      <Column name="AzureRegion" type="str" mdstype="mt:wstr" />
     </Schema>
   </Schemas>
   <Sources>
@@ -30,7 +31,7 @@
   <Events>
     <MdsdEvents>
      <MdsdEventSource source="ContainerLogV2Source">
-        <RouteEvent eventName="ContainerLogV2" duration="PT10S" priority="High" storeType="CentralBond" account="<GenevaLogsAccountMoniker>" immutable="true">
+        <RouteEvent eventName="ContainerLogV2" duration="PT1S" priority="High" storeType="CentralBond" account="<GenevaLogsAccountMoniker>" immutable="true">
         </RouteEvent>
     </MdsdEventSource>
     <MdsdEventSource source="MaQosEvent">
