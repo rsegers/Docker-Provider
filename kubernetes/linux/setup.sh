@@ -74,6 +74,14 @@ echo "$(fluent-bit --version)" >> packages_version.txt
 # install fluentd using the mariner package
 # sudo tdnf install rubygem-fluentd-1.14.6 -y
 gem install fluentd -v "1.14.6" --no-document
+
+# remove the certs from the gem
+cd /usr/lib/ruby/gems/3.1.0/gems/fluentd-1.14.6/test/plugin_helper/data/cert
+find -name 'ca-cert-key.pem' -exec rm {} \;
+find -name 'cert-key.pem' -exec rm {} \;
+find -name 'ca-cert-key-pass.pem' -exec rm {} \;
+find -name 'cert-key-pass.pem' -exec rm {} \;
+
 echo "$(fluentd --version)" >> packages_version.txt
 fluentd --setup ./fluent
 
