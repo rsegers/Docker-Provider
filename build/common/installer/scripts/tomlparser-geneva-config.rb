@@ -77,7 +77,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 end
               end
             end
-            enable_fbit_threading = parsedConfig[:integrations][:geneva_logs][:enable_threading]
+            enable_fbit_threading = parsedConfig[:integrations][:geneva_logs][:enable_threading].to_s
             puts "config::geneva_logs:enable_threading provided in the configmap: #{enable_fbit_threading}"
             if !enable_fbit_threading.nil? && enable_fbit_threading.strip.casecmp("true") == 0
               @enable_fbit_threading = true
