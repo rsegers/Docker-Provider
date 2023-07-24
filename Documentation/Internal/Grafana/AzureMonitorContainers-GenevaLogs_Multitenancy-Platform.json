@@ -1127,7 +1127,7 @@
   },
   "timepicker": {},
   "timezone": "",
-  "title": "Azure Monitor for Containers - Geneva Logs Integration",
+  "title": "Azure Monitor for Containers - Geneva Logs Multitenacy- Platform",
   "uid": "E_FvdCC4z",
   "version": 6,
   "weekStart": ""
