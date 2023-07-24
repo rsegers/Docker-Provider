@@ -24,7 +24,7 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 71,
+  "id": 72,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -112,7 +112,7 @@
           },
           "editorMode": "code",
           "expr": "sum by () (rate(fluentbit_input_records_total{name=~\"$namespace-*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "All",
           "range": true,
           "refId": "A"
         }
@@ -204,7 +204,7 @@
           },
           "editorMode": "code",
           "expr": "sum by () (rate(fluentbit_output_proc_records_total{name=~\"$namespace-*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "All",
           "range": true,
           "refId": "A"
         }
@@ -296,7 +296,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_output_proc_records_total{name=~\"$namespace-*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -389,7 +389,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_input_records_total{name=~\"$namespace-*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -481,7 +481,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_input_bytes_total{name=~\"$namespace-*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -573,7 +573,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_output_proc_bytes_total{name=~\"$namespace-*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -665,7 +665,7 @@
           },
           "editorMode": "code",
           "expr": "sum by () (rate(fluentbit_input_bytes_total{name=~\"$namespace-*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "All",
           "range": true,
           "refId": "A"
         }
@@ -757,7 +757,7 @@
           },
           "editorMode": "code",
           "expr": "sum by () (rate(fluentbit_output_proc_bytes_total{name=~\"$namespace-*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "All",
           "range": true,
           "refId": "A"
         }
@@ -849,7 +849,7 @@
           },
           "editorMode": "code",
           "expr": "\r\nsum by (node) (rate(fluentbit_output_retries_failed_total{name=~\"$namespace_*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -941,7 +941,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_output_dropped_records_total{name=~\"$namespace_*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -1033,7 +1033,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_output_errors_total{name=~\"$namespace_*\"}[5m]))",
-          "legendFormat": "__auto",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -1068,7 +1068,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "ci-logs-prod-aks-geneva-integration-multi-tenancy",
           "value": "ci-logs-prod-aks-geneva-integration-multi-tenancy"
         },
@@ -1094,7 +1094,7 @@
       },
       {
         "current": {
-          "selected": true,
+          "selected": false,
           "text": "partner-1",
           "value": "partner-1"
         },
@@ -1122,13 +1122,13 @@
     ]
   },
   "time": {
-    "from": "now-24h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Azure Monitor for Containers - Geneva Logs Multitenacy- Platform",
   "uid": "E_FvdCC4z",
-  "version": 6,
+  "version": 12,
   "weekStart": ""
 }
