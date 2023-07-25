@@ -208,6 +208,23 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				if mdsdMonitoringMaxEventRate != "" {
 					telemetryDimensions["mdsdMonitoringMaxEventRate"] = mdsdMonitoringMaxEventRate
 				}
+				mdsdUploadMaxSizeInMB := os.Getenv("MDSD_ODS_UPLOAD_CHUNKING_SIZE_IN_MB")
+				if mdsdUploadMaxSizeInMB != "" {
+					telemetryDimensions["mdsdUploadMaxSizeInMB"] = mdsdUploadMaxSizeInMB
+				}
+				mdsdUploadFrequencyInSeconds := os.Getenv("AMA_MAX_PUBLISH_LATENCY")
+				if mdsdUploadFrequencyInSeconds != "" {
+					telemetryDimensions["mdsdUploadFrequencyInSeconds"] = mdsdUploadFrequencyInSeconds
+				}
+				mdsdBackPressureThresholdInMB := os.Getenv("MDSD_BACKPRESSURE_MONITOR_MEMORY_THRESHOLD_IN_MB")
+				if mdsdBackPressureThresholdInMB != "" {
+					telemetryDimensions["mdsdBackPressureThresholdInMB"] = mdsdBackPressureThresholdInMB
+				}
+				mdsdDisabledCompression := os.Getenv("MDSD_ODS_COMPRESSION_LEVEL")
+				if mdsdDisabledCompression != "" {
+					telemetryDimensions["mdsdDisabledCompression"] = "true"
+				}
+
 				telemetryDimensions["PromFbitChunkSize"] = os.Getenv("AZMON_FBIT_CHUNK_SIZE")
 				telemetryDimensions["PromFbitBufferSize"] = os.Getenv("AZMON_FBIT_BUFFER_SIZE")
 				telemetryDimensions["PromFbitMemBufLimit"] = os.Getenv("AZMON_FBIT_MEM_BUF_LIMIT")
@@ -399,7 +416,7 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 					CommonProperties["GENEVA_LOGS_CONFIG_VERSION"] = genevaLogsConfigVersion
 				}
 			}
-            genevaLogsIntegrationServiceMode := os.Getenv("GENEVA_LOGS_INTEGRATION_SERVICE_MODE")
+			genevaLogsIntegrationServiceMode := os.Getenv("GENEVA_LOGS_INTEGRATION_SERVICE_MODE")
 			if genevaLogsIntegrationServiceMode != "" && strings.Compare(strings.ToLower(genevaLogsIntegrationServiceMode), "true") == 0 {
 				CommonProperties["IsGenevaLogsIntegrationServiceMode"] = "true"
 			}
