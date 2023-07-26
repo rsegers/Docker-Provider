@@ -111,7 +111,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_input_records_total{name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by () (rate(fluentbit_input_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
@@ -203,7 +203,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_output_proc_records_total{name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by () (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
@@ -295,7 +295,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_output_proc_records_total{name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -388,7 +388,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_input_records_total{name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_input_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -480,7 +480,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_input_bytes_total{name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_input_bytes_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -572,7 +572,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_output_proc_bytes_total{name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_output_proc_bytes_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -664,7 +664,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_input_bytes_total{name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by () (rate(fluentbit_input_bytes_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
@@ -756,7 +756,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_output_proc_bytes_total{name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by () (rate(fluentbit_output_proc_bytes_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
@@ -848,7 +848,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "\r\nsum by (node) (rate(fluentbit_output_retries_failed_total{name=~\"$namespace_*\"}[5m]))",
+          "expr": "\r\nsum by (node) (rate(fluentbit_output_retries_failed_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -940,7 +940,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_output_dropped_records_total{name=~\"$namespace_*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_output_dropped_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -1032,7 +1032,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_output_errors_total{name=~\"$namespace_*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_output_errors_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
