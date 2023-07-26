@@ -31,7 +31,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -108,7 +108,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by () (rate(fluentbit_input_records_total{name=~\"$namespace-*\"}[5m]))",
@@ -123,7 +123,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -200,7 +200,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by () (rate(fluentbit_output_proc_records_total{name=~\"$namespace-*\"}[5m]))",
@@ -215,7 +215,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -292,7 +292,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_output_proc_records_total{name=~\"$namespace-*\"}[5m]))",
@@ -307,7 +307,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "description": "",
       "fieldConfig": {
@@ -385,7 +385,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_input_records_total{name=~\"$namespace-*\"}[5m]))",
@@ -400,7 +400,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -477,7 +477,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_input_bytes_total{name=~\"$namespace-*\"}[5m]))",
@@ -492,7 +492,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -569,7 +569,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_output_proc_bytes_total{name=~\"$namespace-*\"}[5m]))",
@@ -584,7 +584,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -661,7 +661,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by () (rate(fluentbit_input_bytes_total{name=~\"$namespace-*\"}[5m]))",
@@ -676,7 +676,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -753,7 +753,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by () (rate(fluentbit_output_proc_bytes_total{name=~\"$namespace-*\"}[5m]))",
@@ -768,7 +768,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -845,7 +845,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "\r\nsum by (node) (rate(fluentbit_output_retries_failed_total{name=~\"$namespace_*\"}[5m]))",
@@ -860,7 +860,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -937,7 +937,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_output_dropped_records_total{name=~\"$namespace_*\"}[5m]))",
@@ -952,7 +952,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "-- Grafana --"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1029,7 +1029,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "-- Grafana --"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_output_errors_total{name=~\"$namespace_*\"}[5m]))",
@@ -1052,8 +1052,8 @@
       {
         "current": {
           "selected": false,
-          "text": "Managed_Prometheus_-- Grafana --",
-          "value": "Managed_Prometheus_-- Grafana --"
+          "text": "Managed_Prometheus_${datasource}",
+          "value": "Managed_Prometheus_${datasource}"
         },
         "hide": 0,
         "includeAll": false,
@@ -1069,8 +1069,8 @@
       {
         "current": {
           "selected": false,
-          "text": "-- Grafana ---multi-tenancy",
-          "value": "-- Grafana ---multi-tenancy"
+          "text": "${datasource}-multi-tenancy",
+          "value": "${datasource}-multi-tenancy"
         },
         "datasource": {
           "type": "prometheus",
