@@ -201,7 +201,7 @@ data:
       backpressure_memory_threshold_in_mb = "2500" # default 3500MB
       upload_max_size_in_mb = "20"  # default 2MB
       upload_frequency_seconds = "1" # default 60 upload_frequency_seconds
-      disable_compression = "false"  # default compression enabled
+      compression_level = "0"  # supported levels 0 to 9 and 0 means no compression
 
 metadata:
   name: container-azm-ms-agentconfig

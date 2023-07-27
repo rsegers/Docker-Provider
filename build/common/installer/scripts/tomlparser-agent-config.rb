@@ -75,7 +75,7 @@ require_relative "ConfigParseErrorLogger"
 @mdsdUploadMaxSizeInMB = 0
 @mdsdUploadFrequencyInSeconds = 0
 @mdsdBackPressureThresholdInMB = 0
-@disableMDSDCompression = false
+@mdsdCompressionLevel = -1
 
 # Checking to see if this is the daemonset or replicaset to parse config accordingly
 @controllerType = ENV["CONTROLLER_TYPE"]
@@ -296,10 +296,10 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           else
             puts "Ignoring mdsd backpressure limit. Check input values for correctness."
           end
-          disableMDSDCompression = mdsd_config[:disable_compression]
-          if !disableMDSDCompression.nil? && disableMDSDCompression.downcase == "true"
-            @disableMDSDCompression = true
-            puts "Using config map value: disableMDSDCompression = #{@disableMDSDCompression}"
+          mdsdCompressionLevel = mdsd_config[:compression_level]
+          if is_valid_number?(mdsdCompressionLevel) && mdsdCompressionLevel.to_i < 10
+            @mdsdCompressionLevel = mdsdCompressionLevel
+            puts "Using config map value: mdsdCompressionLevel = #{@mdsdCompressionLevel}"
           end
         end
       end
@@ -445,8 +445,8 @@ if !file.nil?
     file.write("export MDSD_BACKPRESSURE_MONITOR_MEMORY_THRESHOLD_IN_MB=#{@mdsdBackPressureThresholdInMB}\n")
   end
 
-  if @disableMDSDCompression
-    file.write("export MDSD_ODS_COMPRESSION_LEVEL=0\n")
+  if @mdsdCompressionLevel >= 0
+    file.write("export MDSD_ODS_COMPRESSION_LEVEL=#{@mdsdCompressionLevel}\n")
   end
 
   if @promFbitChunkSize > 0
