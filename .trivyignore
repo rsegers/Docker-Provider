@@ -13,3 +13,6 @@ CVE-2023-2253
 CVE-2023-34231
 
 GHSA-2w8w-qhg4-f78j
+
+# webrick
+CVE-2017-10784
