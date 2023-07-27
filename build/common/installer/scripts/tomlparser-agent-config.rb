@@ -288,7 +288,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             @mdsdUploadFrequencyInSeconds = mdsdUploadFrequencyInSeconds.to_i
             puts "Using config map value: upload_frequency_seconds  = #{@mdsdUploadFrequencyInSeconds}"
           end
-          # TODO - Merge PR changes from Amol
           mdsdBackPressureThresholdInMB = mdsd_config[:backpressure_memory_threshold_in_mb]
           if is_valid_number?(mdsdBackPressureThresholdInMB) && mdsdBackPressureThresholdInMB.to_i > 100
             @mdsdBackPressureThresholdInMB = mdsdBackPressureThresholdInMB.to_i
