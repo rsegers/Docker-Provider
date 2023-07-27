@@ -196,6 +196,7 @@ data:
     #   tcp_port_25228 = 60                           # Port 25228 is used for telegraf to fluentd data
     #   tcp_port_25229 = 45                           # Port 25229 is used for telegraf to fluent-bit data in DaemonSet
 
+    # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # [agent_settings.mdsd_config]
     #   monitoring_max_event_rate = "50000" # default 20K eps
     #   backpressure_memory_threshold_in_mb = "1500" # default 3500MB
