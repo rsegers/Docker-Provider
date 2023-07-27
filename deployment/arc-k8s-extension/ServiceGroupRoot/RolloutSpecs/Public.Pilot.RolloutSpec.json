@@ -22,7 +22,7 @@
       "name": "PushChartToACR",
       "targetType": "ServiceResource",
       "targetName": "PushChartToACR-Pilot",
-      "actions": [ "wait/waitSdpBakeTime", "Shell/PushChartToACR"],
+      "actions": [ "Shell/PushChartToACR"],
       "dependsOn": [ ]
     }
   ]
