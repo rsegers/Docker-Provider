@@ -296,7 +296,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             puts "Ignoring mdsd backpressure limit. Check input values for correctness."
           end
           mdsdCompressionLevel = mdsd_config[:compression_level]
-          if is_valid_number?(mdsdCompressionLevel) && mdsdCompressionLevel.to_i < 10 # supported levels from 0 to 9
+          if is_number?(mdsdCompressionLevel) && mdsdCompressionLevel.to_i >= 0 && mdsdCompressionLevel.to_i < 10 # supported levels from 0 to 9
             @mdsdCompressionLevel = mdsdCompressionLevel.to_i
             puts "Using config map value: mdsdCompressionLevel = #{@mdsdCompressionLevel}"
           else
