@@ -196,12 +196,12 @@ data:
     #   tcp_port_25228 = 60                           # Port 25228 is used for telegraf to fluentd data
     #   tcp_port_25229 = 45                           # Port 25229 is used for telegraf to fluent-bit data in DaemonSet
 
-    [agent_settings.mdsd_config]
-      monitoring_max_event_rate = "50000" # default 20K eps
-      backpressure_memory_threshold_in_mb = "2500" # default 3500MB
-      upload_max_size_in_mb = "20"  # default 2MB
-      upload_frequency_seconds = "1" # default 60 upload_frequency_seconds
-      compression_level = "0"  # supported levels 0 to 9 and 0 means no compression
+    # [agent_settings.mdsd_config]
+    #   monitoring_max_event_rate = "50000" # default 20K eps
+    #   backpressure_memory_threshold_in_mb = "1500" # default 3500MB
+    #   upload_max_size_in_mb = "20"  # default 2MB
+    #   upload_frequency_seconds = "1" # default 60 upload_frequency_seconds
+    #   compression_level = "0"  # supported levels 0 to 9 and 0 means no compression
 
 metadata:
   name: container-azm-ms-agentconfig
