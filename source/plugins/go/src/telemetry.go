@@ -220,9 +220,9 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				if mdsdBackPressureThresholdInMB != "" {
 					telemetryDimensions["mdsdBackPressureThresholdInMB"] = mdsdBackPressureThresholdInMB
 				}
-				mdsdDisabledCompression := os.Getenv("MDSD_ODS_COMPRESSION_LEVEL")
-				if mdsdDisabledCompression != "" {
-					telemetryDimensions["mdsdDisabledCompression"] = "true"
+				mdsdCompressionLevel := os.Getenv("MDSD_ODS_COMPRESSION_LEVEL")
+				if mdsdCompressionLevel != "" {
+					telemetryDimensions["mdsdCompressionLevel"] = mdsdCompressionLevel
 				}
 
 				telemetryDimensions["PromFbitChunkSize"] = os.Getenv("AZMON_FBIT_CHUNK_SIZE")
