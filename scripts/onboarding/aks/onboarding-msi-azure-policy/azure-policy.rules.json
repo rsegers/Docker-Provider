@@ -63,6 +63,9 @@
 				},
 				"enableContainerLogV2": {
 				  "type": "bool"
+				},
+				"defaultStreams": {
+					"type": "array"
 				}
 			  },
 			  "variables": {
@@ -93,9 +96,7 @@
 									"extensions": [
 										{
 											"name": "ContainerInsightsExtension",
-											"streams": [
-											   "Microsoft-ContainerInsights-Group-Default"
-											],
+											"streams": "[parameters('defaultStreams')]",
 											"extensionSettings": {
 												"dataCollectionSettings" : {
 													"interval": "[parameters('dataCollectionInterval')]",
@@ -118,9 +119,7 @@
 								},
 								"dataFlows": [
 									{
-										"streams": [
-											"Microsoft-ContainerInsights-Group-Default"
-										],
+										"streams": "[parameters('defaultStreams')]",
 										"destinations": [
 											"ciworkspace"
 										]
@@ -158,9 +157,7 @@
 									"extensions": [
 										{
 											"name": "ContainerInsightsExtension",
-											"streams": [
-												"Microsoft-ContainerInsights-Group-Default"
-											],
+											"streams": "[parameters('defaultStreams')]",
 											"extensionSettings": {
 												"dataCollectionSettings" : {
 													"interval": "[parameters('dataCollectionInterval')]",
@@ -183,8 +180,13 @@
 								},
 								"dataFlows": [
 									{
+										"streams": "[parameters('defaultStreams')]",
+										"destinations": [
+											"ciworkspace"
+										]
+									},
+									{
 										"streams": [
-											"Microsoft-ContainerInsights-Group-Default",
 											"Microsoft-Syslog"
 										],
 										"destinations": [
@@ -236,7 +238,7 @@
 								"dataCollectionRuleId": "[variables('dataCollectionRuleId')]"
 							}
 						  }
-		
+
 						]
 					  },
 					  "parameters": {}
@@ -319,6 +321,9 @@
 			  },
 			  "namespacesForDataCollection": {
 				"value": "[parameters('namespacesForDataCollection')]"
+			  },
+			  "defaultStreams": {
+				"value": "[parameters('defaultStreams')]"
 			  }
 			}
 		  }

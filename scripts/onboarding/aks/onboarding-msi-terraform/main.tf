@@ -10,7 +10,7 @@ resource "azurerm_kubernetes_cluster" "k8s" {
   dns_prefix          = var.dns_prefix
 
   tags = var.resource_tag_values
-  
+
   default_node_pool {
     name       = "agentpool"
     vm_size    = var.vm_size
@@ -40,7 +40,7 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
   }
 
   data_flow {
-    streams      = ["Microsoft-ContainerInsights-Group-Default"]
+    streams      = var.defaultStreams
     destinations = ["ciworkspace"]
   }
 

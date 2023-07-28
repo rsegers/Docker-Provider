@@ -30,6 +30,9 @@ param namespacesForDataCollection array
 @description('The flag for enable containerlogv2 schema')
 param enableContainerLogV2 bool
 
+@description('An array of Container Insights Streams for Data collection')
+param defaultStreams array
+
 var clusterSubscriptionId = split(aksResourceId, '/')[2]
 var clusterResourceGroup = split(aksResourceId, '/')[4]
 var clusterName = split(aksResourceId, '/')[8]
@@ -49,9 +52,7 @@ resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-
       extensions: [
         {
           name: 'ContainerInsightsExtension'
-          streams: [
-            'Microsoft-ContainerInsights-Group-Default'
-          ]
+          streams: defaultStreams
           extensionSettings: {
             dataCollectionSettings: {
               interval: dataCollectionInterval
@@ -74,9 +75,7 @@ resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-
     }
     dataFlows: [
       {
-        streams: [
-          'Microsoft-ContainerInsights-Group-Default'
-        ]
+        streams: defaultStreams
         destinations: [
           'ciworkspace'
         ]

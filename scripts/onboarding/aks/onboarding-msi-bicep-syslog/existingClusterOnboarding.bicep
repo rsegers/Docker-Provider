@@ -33,6 +33,9 @@ param namespaceFilteringModeForDataCollection string = 'Off'
 @description('An array of Kubernetes namespaces for the data collection of inventory, events and metrics')
 param namespacesForDataCollection array
 
+@description('An array of Container Insights Streams for Data collection')
+param defaultStreams array
+
 @description('The flag for enable containerlogv2 schema')
 param enableContainerLogV2 bool
 
@@ -65,9 +68,7 @@ resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-
       extensions: [
         {
           name: 'ContainerInsightsExtension'
-          streams: [
-            'Microsoft-ContainerInsights-Group-Default'
-          ]
+          streams: defaultStreams
           extensionSettings: {
             dataCollectionSettings: {
               interval: dataCollectionInterval
@@ -90,14 +91,19 @@ resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-
     }
     dataFlows: [
       {
+        streams: defaultStreams
+        destinations: [
+          'ciworkspace'
+        ]
+      },
+      {
         streams: [
-          'Microsoft-ContainerInsights-Group-Default'
           'Microsoft-Syslog'
         ]
         destinations: [
           'ciworkspace'
         ]
-      }
+      },
     ]
   }
 }
