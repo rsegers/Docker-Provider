@@ -322,6 +322,9 @@
 			  "namespacesForDataCollection": {
 				"value": "[parameters('namespacesForDataCollection')]"
 			  },
+			  "enableContainerLogV2": {
+				"value": "[parameters('enableContainerLogV2')]"
+			  },
 			  "defaultStreams": {
 				"value": "[parameters('defaultStreams')]"
 			  }
