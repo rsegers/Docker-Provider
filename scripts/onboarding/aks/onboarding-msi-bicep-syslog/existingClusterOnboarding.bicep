@@ -103,7 +103,7 @@ resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-
         destinations: [
           'ciworkspace'
         ]
-      },
+      }
     ]
   }
 }
