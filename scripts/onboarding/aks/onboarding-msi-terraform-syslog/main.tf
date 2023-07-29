@@ -49,7 +49,6 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
     destinations = ["ciworkspace"]
   }
 
-
   data_sources {
     syslog{
       streams            = ["Microsoft-Syslog"]
