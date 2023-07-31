@@ -73,7 +73,7 @@
       "type": "bool",
       "defaultValue": true
     },
-    "defaultStreams": {
+    "streams": {
        "type": "array",
        "defaultValue": [
         "Microsoft-ContainerLog",

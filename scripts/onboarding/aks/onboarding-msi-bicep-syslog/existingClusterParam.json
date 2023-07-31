@@ -69,7 +69,7 @@
       "enableContainerLogV2": {
         "value": true
       },
-      "defaultStreams": {
+      "streams": {
         "value": [
           "Microsoft-ContainerLog",
           "Microsoft-ContainerLogV2",

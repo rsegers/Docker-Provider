@@ -40,7 +40,7 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
   }
 
   data_flow {
-    streams      = var.defaultStreams
+    streams      = var.streams
     destinations = ["ciworkspace"]
   }
 
@@ -58,7 +58,7 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
     }
 
     extension {
-      streams            = var.defaultStreams
+      streams            = ["Microsoft-ContainerLog", "Microsoft-ContainerLogV2", "Microsoft-KubeEvents", "Microsoft-KubePodInventory", "Microsoft-KubeNodeInventory", "Microsoft-KubePVInventory", "Microsoft-KubeServices", "Microsoft-KubeMonAgentEvents", "Microsoft-InsightsMetrics", "Microsoft-ContainerInventory","Microsoft-ContainerNodeInventory", "Microsoft-Perf"]
       extension_name     = "ContainerInsights"
       extension_json     = jsonencode({
         "dataCollectionSettings" : {

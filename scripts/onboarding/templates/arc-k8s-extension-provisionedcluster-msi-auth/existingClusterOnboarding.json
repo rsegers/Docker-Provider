@@ -46,7 +46,7 @@
         "description": "Existing or new tags to use on Arc K8s ContainerInsights extension resources"
       }
    },
-   "defaultStreams": {
+   "streams": {
      "type": "array",
      "metadata": {
         "description": "Array of default container insights streams"
@@ -129,7 +129,20 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": "[parameters('defaultStreams')]",
+                                        "streams": [
+                                          "Microsoft-ContainerLog",
+                                          "Microsoft-ContainerLogV2",
+                                          "Microsoft-KubeEvents",
+                                          "Microsoft-KubePodInventory",
+                                          "Microsoft-KubeNodeInventory",
+                                          "Microsoft-KubePVInventory",
+                                          "Microsoft-KubeServices",
+                                          "Microsoft-KubeMonAgentEvents",
+                                          "Microsoft-InsightsMetrics",
+                                          "Microsoft-ContainerInventory",
+                                          "Microsoft-ContainerNodeInventory",
+                                          "Microsoft-Perf"
+                                        ],
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
                                             "interval": "[parameters('dataCollectionInterval')]",
@@ -152,7 +165,7 @@
                             },
                             "dataFlows": [
                                 {
-                                  "streams": "[parameters('defaultStreams')]",
+                                  "streams": "[parameters('streams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]
@@ -190,7 +203,20 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": "[parameters('defaultStreams')]",
+                                        "streams": [
+                                          "Microsoft-ContainerLog",
+                                          "Microsoft-ContainerLogV2",
+                                          "Microsoft-KubeEvents",
+                                          "Microsoft-KubePodInventory",
+                                          "Microsoft-KubeNodeInventory",
+                                          "Microsoft-KubePVInventory",
+                                          "Microsoft-KubeServices",
+                                          "Microsoft-KubeMonAgentEvents",
+                                          "Microsoft-InsightsMetrics",
+                                          "Microsoft-ContainerInventory",
+                                          "Microsoft-ContainerNodeInventory",
+                                          "Microsoft-Perf"
+                                        ],
                                         "extensionSettings": {
                                           "dataCollectionSettings" : {
                                             "interval": "[parameters('dataCollectionInterval')]",
@@ -213,7 +239,7 @@
                             },
                             "dataFlows": [
                                 {
-                                  "streams": "[parameters('defaultStreams')]",
+                                  "streams": "[parameters('streams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]

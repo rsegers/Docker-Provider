@@ -64,7 +64,7 @@
 				"enableContainerLogV2": {
 				  "type": "bool"
 				},
-				"defaultStreams": {
+				"streams": {
 					"type": "array"
 				}
 			  },
@@ -96,7 +96,20 @@
 									"extensions": [
 										{
 											"name": "ContainerInsightsExtension",
-											"streams": "[parameters('defaultStreams')]",
+											"streams": [
+												"Microsoft-ContainerLog",
+												"Microsoft-ContainerLogV2",
+												"Microsoft-KubeEvents",
+												"Microsoft-KubePodInventory",
+												"Microsoft-KubeNodeInventory",
+												"Microsoft-KubePVInventory",
+												"Microsoft-KubeServices",
+												"Microsoft-KubeMonAgentEvents",
+												"Microsoft-InsightsMetrics",
+												"Microsoft-ContainerInventory",
+												"Microsoft-ContainerNodeInventory",
+												"Microsoft-Perf"
+											],
 											"extensionSettings": {
 												"dataCollectionSettings" : {
 													"interval": "[parameters('dataCollectionInterval')]",
@@ -119,7 +132,7 @@
 								},
 								"dataFlows": [
 									{
-										"streams": "[parameters('defaultStreams')]",
+										"streams": "[parameters('streams')]",
 										"destinations": [
 											"ciworkspace"
 										]
@@ -157,7 +170,20 @@
 									"extensions": [
 										{
 											"name": "ContainerInsightsExtension",
-											"streams": "[parameters('defaultStreams')]",
+											"streams":  [
+												"Microsoft-ContainerLog",
+												"Microsoft-ContainerLogV2",
+												"Microsoft-KubeEvents",
+												"Microsoft-KubePodInventory",
+												"Microsoft-KubeNodeInventory",
+												"Microsoft-KubePVInventory",
+												"Microsoft-KubeServices",
+												"Microsoft-KubeMonAgentEvents",
+												"Microsoft-InsightsMetrics",
+												"Microsoft-ContainerInventory",
+												"Microsoft-ContainerNodeInventory",
+												"Microsoft-Perf"
+											],
 											"extensionSettings": {
 												"dataCollectionSettings" : {
 													"interval": "[parameters('dataCollectionInterval')]",
@@ -180,7 +206,7 @@
 								},
 								"dataFlows": [
 									{
-										"streams": "[parameters('defaultStreams')]",
+										"streams": "[parameters('streams')]",
 										"destinations": [
 											"ciworkspace"
 										]
@@ -325,8 +351,8 @@
 			  "enableContainerLogV2": {
 				"value": "[parameters('enableContainerLogV2')]"
 			  },
-			  "defaultStreams": {
-				"value": "[parameters('defaultStreams')]"
+			  "streams": {
+				"value": "[parameters('streams')]"
 			  }
 			}
 		  }

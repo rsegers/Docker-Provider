@@ -31,7 +31,7 @@ param namespacesForDataCollection array
 param enableContainerLogV2 bool
 
 @description('An array of Container Insights Streams for Data collection')
-param defaultStreams array
+param streams array
 
 var clusterSubscriptionId = split(aksResourceId, '/')[2]
 var clusterResourceGroup = split(aksResourceId, '/')[4]
@@ -52,7 +52,7 @@ resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-
       extensions: [
         {
           name: 'ContainerInsightsExtension'
-          streams: defaultStreams
+          streams: ["Microsoft-ContainerLog", "Microsoft-ContainerLogV2", "Microsoft-KubeEvents", "Microsoft-KubePodInventory", "Microsoft-KubeNodeInventory", "Microsoft-KubePVInventory", "Microsoft-KubeServices", "Microsoft-KubeMonAgentEvents", "Microsoft-InsightsMetrics", "Microsoft-ContainerInventory","Microsoft-ContainerNodeInventory", "Microsoft-Perf"]
           extensionSettings: {
             dataCollectionSettings: {
               interval: dataCollectionInterval
@@ -75,7 +75,7 @@ resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-
     }
     dataFlows: [
       {
-        streams: defaultStreams
+        streams: streams
         destinations: [
           'ciworkspace'
         ]
