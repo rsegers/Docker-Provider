@@ -46,7 +46,7 @@ resource "azurerm_monitor_data_collection_rule" "dcr" {
 
   data_sources {
     extension {
-      streams            = ["Microsoft-ContainerLog", "Microsoft-ContainerLogV2", "Microsoft-KubeEvents", "Microsoft-KubePodInventory", "Microsoft-KubeNodeInventory", "Microsoft-KubePVInventory", "Microsoft-KubeServices", "Microsoft-KubeMonAgentEvents", "Microsoft-InsightsMetrics", "Microsoft-ContainerInventory","Microsoft-ContainerNodeInventory", "Microsoft-Perf"]
+      streams            = var.streams
       extension_name     = "ContainerInsights"
       extension_json     = jsonencode({
         "dataCollectionSettings" : {
