@@ -212,6 +212,10 @@ spec:
               fieldPath: status.hostIP
        - name: ISTEST
          value: {{ .Values.amalogs.ISTEST | quote }}
+       - name: HOSTNAME
+         valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
        securityContext:
          privileged: true
        volumeMounts:
