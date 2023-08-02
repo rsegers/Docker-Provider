@@ -24,14 +24,14 @@
   "editable": true,
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
-  "id": 69,
+  "id": 78,
   "links": [],
   "liveNow": false,
   "panels": [
     {
       "datasource": {
         "type": "prometheus",
-       "uid": "${datasource}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -86,10 +86,219 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 13,
-        "w": 7,
+        "h": 7,
+        "w": 8,
         "x": 0,
         "y": 0
+      },
+      "id": 16,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by () (rate(fluentbit_input_records_total{cluster=~\"$cluster\", name=~\"infra_*\"}[5m]))",
+          "legendFormat": "All Nodes",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit input records/s by All Nodes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 8,
+        "y": 0
+      },
+      "id": 17,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by () (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", name=~\"infra_*\"}[5m]))",
+          "legendFormat": "All Nodes",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit output process records/s by All Nodes",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "aks-agentpool-93097783-vmss000000"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 8,
+        "x": 0,
+        "y": 7
       },
       "id": 2,
       "options": {
@@ -108,7 +317,7 @@
         {
           "datasource": {
             "type": "prometheus",
-           "uid": "${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_input_records_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
@@ -123,7 +332,7 @@
     {
       "datasource": {
         "type": "prometheus",
-       "uid": "${datasource}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -175,15 +384,40 @@
             ]
           }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "akswinp000000"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 13,
+        "h": 7,
         "w": 6,
-        "x": 7,
-        "y": 0
+        "x": 8,
+        "y": 7
       },
-      "id": 4,
+      "id": 13,
       "options": {
         "legend": {
           "calcs": [],
@@ -200,22 +434,22 @@
         {
           "datasource": {
             "type": "prometheus",
-           "uid": "${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_input_bytes_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", name=~\"infra_*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit input bytes/s by Node",
+      "title": "Fluent-bit output process records/s by Node",
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "prometheus",
-       "uid": "${datasource}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -270,10 +504,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 7,
+        "h": 7,
+        "w": 8,
         "x": 0,
-        "y": 13
+        "y": 14
       },
       "id": 6,
       "options": {
@@ -292,7 +526,7 @@
         {
           "datasource": {
             "type": "prometheus",
-           "uid": "${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_output_errors_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
@@ -307,7 +541,7 @@
     {
       "datasource": {
         "type": "prometheus",
-       "uid": "${datasource}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -362,102 +596,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
+        "h": 7,
         "w": 6,
-        "x": 7,
-        "y": 13
-      },
-      "id": 5,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "list",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "mode": "single",
-          "sort": "none"
-        }
-      },
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-           "uid": "${datasource}"
-          },
-          "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_output_retries_failed_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
-          "legendFormat": "{{node}}",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Fluent-bit retries failed errors/s by Node",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-       "uid": "${datasource}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "palette-classic"
-          },
-          "custom": {
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "drawStyle": "line",
-            "fillOpacity": 0,
-            "gradientMode": "none",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "lineInterpolation": "linear",
-            "lineWidth": 1,
-            "pointSize": 5,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "auto",
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green",
-                "value": null
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 13,
-        "w": 7,
-        "x": 0,
-        "y": 23
+        "x": 8,
+        "y": 14
       },
       "id": 7,
       "options": {
@@ -476,7 +618,7 @@
         {
           "datasource": {
             "type": "prometheus",
-           "uid": "${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_output_dropped_records_total{cluster=~\"$cluster\", name=~\"infra_*\"}[5m]))",
@@ -491,7 +633,7 @@
     {
       "datasource": {
         "type": "prometheus",
-       "uid": "${datasource}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -546,12 +688,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 13,
-        "w": 7,
-        "x": 7,
-        "y": 23
+        "h": 8,
+        "w": 8,
+        "x": 0,
+        "y": 21
       },
-      "id": 8,
+      "id": 4,
       "options": {
         "legend": {
           "calcs": [],
@@ -568,22 +710,22 @@
         {
           "datasource": {
             "type": "prometheus",
-           "uid": "${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_input_files_opened_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_input_bytes_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit input files opened/s by Node",
+      "title": "Fluent-bit input bytes/s by Node",
       "type": "timeseries"
     },
     {
       "datasource": {
         "type": "prometheus",
-       "uid": "${datasource}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -638,7 +780,333 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 13,
+        "h": 8,
+        "w": 6,
+        "x": 8,
+        "y": 21
+      },
+      "id": 14,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (node) (rate(fluentbit_output_proc_bytes_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
+          "legendFormat": "{{node}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit output bytes/s by Node",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ci-logs-prod-aks-geneva-integration"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "infra_windows-log-ltsc2022_tail"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 7,
+        "x": 0,
+        "y": 29
+      },
+      "id": 12,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ci-logs-prod-aks-geneva-integration"
+          },
+          "editorMode": "code",
+          "expr": "sum by (name) (rate(fluentbit_input_records_total{cluster=~\"$cluster\", name=~\"infra_*\"}[5m]))",
+          "legendFormat": "{{name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit input records/s by Namespace",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "ci-logs-prod-aks-geneva-integration"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "__systemRef": "hideSeriesFrom",
+            "matcher": {
+              "id": "byNames",
+              "options": {
+                "mode": "exclude",
+                "names": [
+                  "infra_windows-log-ltsc2022_geneva"
+                ],
+                "prefix": "All except:",
+                "readOnly": true
+              }
+            },
+            "properties": [
+              {
+                "id": "custom.hideFrom",
+                "value": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": true
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 7,
+        "x": 7,
+        "y": 29
+      },
+      "id": 15,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "ci-logs-prod-aks-geneva-integration"
+          },
+          "editorMode": "code",
+          "expr": "sum by (name) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", name=~\"infra_*\"}[5m]))",
+          "legendFormat": "{{name}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit output records/s by Namespace",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
         "w": 7,
         "x": 0,
         "y": 36
@@ -660,7 +1128,7 @@
         {
           "datasource": {
             "type": "prometheus",
-           "uid": "${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_input_files_closed_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
@@ -675,7 +1143,7 @@
     {
       "datasource": {
         "type": "prometheus",
-       "uid": "${datasource}"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -730,10 +1198,102 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 13,
+        "h": 7,
         "w": 7,
         "x": 7,
         "y": 36
+      },
+      "id": 5,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (node) (rate(fluentbit_output_retries_failed_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
+          "legendFormat": "{{node}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit retries failed errors/s by Node",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 7,
+        "x": 0,
+        "y": 43
       },
       "id": 10,
       "options": {
@@ -752,7 +1312,7 @@
         {
           "datasource": {
             "type": "prometheus",
-           "uid": "${datasource}"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (node) (rate(fluentbit_input_files_rotated_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
@@ -762,6 +1322,98 @@
         }
       ],
       "title": "Fluent-bit rotated files/s by Node",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 5,
+        "w": 7,
+        "x": 7,
+        "y": 43
+      },
+      "id": 8,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (node) (rate(fluentbit_input_files_opened_total{cluster=~\"$cluster\",name=~\"infra_*\"}[5m]))",
+          "legendFormat": "{{node}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit input files opened/s by Node",
       "type": "timeseries"
     }
   ],
@@ -775,8 +1427,8 @@
       {
         "current": {
           "selected": false,
-          "text": "Managed_Prometheus_gangams-aks-hyperscale-test",
-          "value": "Managed_Prometheus_gangams-aks-hyperscale-test"
+          "text": "Managed_Prometheus_ci-logs-prod-aks-geneva-integration",
+          "value": "Managed_Prometheus_ci-logs-prod-aks-geneva-integration"
         },
         "hide": 0,
         "includeAll": false,
@@ -792,8 +1444,8 @@
       {
         "current": {
           "selected": false,
-          "text": "gangams-aks-hyperscale-test",
-          "value": "gangams-aks-hyperscale-test"
+          "text": "ci-logs-prod-aks-geneva-integration-multi-tenancy",
+          "value": "ci-logs-prod-aks-geneva-integration-multi-tenancy"
         },
         "datasource": {
           "type": "prometheus",
@@ -819,13 +1471,13 @@
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-15m",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Azure Monitor for Containers",
   "uid": "ytPDGK3Vk",
-  "version": 7,
+  "version": 11,
   "weekStart": ""
 }
