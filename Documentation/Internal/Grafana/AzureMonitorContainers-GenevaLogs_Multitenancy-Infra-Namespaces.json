@@ -817,7 +817,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ci-logs-prod-aks-geneva-integration"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -919,7 +919,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ci-logs-prod-aks-geneva-integration"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (name) (rate(fluentbit_input_records_total{cluster=~\"$cluster\", name=~\"infra_*\"}[5m]))",
@@ -934,7 +934,7 @@
     {
       "datasource": {
         "type": "prometheus",
-        "uid": "ci-logs-prod-aks-geneva-integration"
+        "uid": "${datasource}"
       },
       "fieldConfig": {
         "defaults": {
@@ -1036,7 +1036,7 @@
         {
           "datasource": {
             "type": "prometheus",
-            "uid": "ci-logs-prod-aks-geneva-integration"
+            "uid": "${datasource}"
           },
           "editorMode": "code",
           "expr": "sum by (name) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", name=~\"infra_*\"}[5m]))",
@@ -1427,8 +1427,8 @@
       {
         "current": {
           "selected": false,
-          "text": "Managed_Prometheus_ci-logs-prod-aks-geneva-integration",
-          "value": "Managed_Prometheus_ci-logs-prod-aks-geneva-integration"
+          "text": "Managed_Prometheus_${datasource}",
+          "value": "Managed_Prometheus_${datasource}"
         },
         "hide": 0,
         "includeAll": false,
@@ -1444,8 +1444,8 @@
       {
         "current": {
           "selected": false,
-          "text": "ci-logs-prod-aks-geneva-integration-multi-tenancy",
-          "value": "ci-logs-prod-aks-geneva-integration-multi-tenancy"
+          "text": "${datasource}",
+          "value": "${datasource}"
         },
         "datasource": {
           "type": "prometheus",

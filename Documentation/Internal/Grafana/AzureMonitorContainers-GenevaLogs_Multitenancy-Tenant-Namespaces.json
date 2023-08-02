@@ -1069,8 +1069,8 @@
       {
         "current": {
           "selected": false,
-          "text": "${datasource}-multi-tenancy",
-          "value": "${datasource}-multi-tenancy"
+          "text": "${datasource}",
+          "value": "${datasource}"
         },
         "datasource": {
           "type": "prometheus",
