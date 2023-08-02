@@ -1,0 +1,122 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "dcrName": {
+            "type": "string",
+            "metadata": {
+                "description": "Data collection rule Name"
+            }
+        },
+        "dceResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Full Resource ID of the Data Collection Endpoint Resource Id"
+            }
+        },
+        "workspaceRegion": {
+            "type": "string",
+            "metadata": {
+                "description": "Workspace Region for data collection rule"
+            }
+        },
+        "workspaceResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Full Resource ID of the log analitycs workspace that will be used for data destination. For example /subscriptions/00000000-0000-0000-0000-0000-00000000/resourceGroups/ResourceGroupName/providers/Microsoft.operationalinsights/workspaces/ws_xyz"
+            }
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Insights/dataCollectionRules",
+            "apiVersion": "2022-06-01",
+            "name": "[parameters('dcrName')]",
+            "location": "[parameters('workspaceRegion')]",
+            "kind": "Linux",
+            "properties": {
+                "dataCollectionEndpointId": "[parameters('dceResourceId')]",
+                "streamDeclarations": {
+                    "Custom-CustomLogV2_CL": {
+                        "columns": [
+                            {
+                                "name": "TimeGenerated",
+                                "type": "datetime"
+                            },
+                            {
+                                "name": "RawData",
+                                "type": "string"
+                            }
+                        ]
+                    }
+                },
+                "dataSources": {
+                    "logFiles": [
+                        {
+                            "streams": [
+                                "Custom-CustomLogV2_CL"
+                            ],
+                            "filePatterns": [
+                                "/var/log/*.log"
+                            ],
+                            "format": "text",
+                            "settings": {
+                                "text": {
+                                    "recordStartTimestampFormat": "ISO 8601"
+                                }
+                            },
+                            "name": "CustomLogV2_CL"
+                        }
+                    ],
+                    "extensions": [
+                        {
+                            "name": "ContainerInsightsExtension",
+                            "streams":  [
+                                "Microsoft-ContainerLog",
+                                "Microsoft-ContainerLogV2",
+                                "Microsoft-KubeEvents",
+                                "Microsoft-KubePodInventory",
+                                "Microsoft-KubeNodeInventory",
+                                "Microsoft-KubePVInventory",
+                                "Microsoft-KubeServices",
+                                "Microsoft-KubeMonAgentEvents",
+                                "Microsoft-InsightsMetrics",
+                                "Microsoft-ContainerInventory",
+                                "Microsoft-ContainerNodeInventory",
+                                "Microsoft-Perf"
+                              ],
+                            "extensionName": "ContainerInsights"
+                        }
+                    ]
+                },
+                "destinations": {
+                    "logAnalytics": [
+                        {
+                            "workspaceResourceId": "[parameters('workspaceResourceId')]",
+                            "name": "ciworkspace"
+                        }
+                    ]
+                },
+                "dataFlows": [
+                    {
+                        "streams": [
+                            "Custom-CustomLogV2_CL"
+                        ],
+                        "destinations": [
+                            "ciworkspace"
+                        ],
+                        "transformKql": "source",
+                        "outputStream": "Custom-CustomLogV2_CL"
+                    },
+                    {
+                        "streams": ["Microsoft-ContainerLogV2"],
+                        "destinations": [
+                            "ciworkspace"
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}

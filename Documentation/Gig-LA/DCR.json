@@ -1,0 +1,110 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "dataCollectionRules_CustomLogV2DCR_name": {
+            "defaultValue": "CustomLogV2DCR",
+            "type": "String"
+        },
+        "dataCollectionEndpoints_CustomLogV2DCE_externalid": {
+            "defaultValue": "/subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.Insights/dataCollectionEndpoints/<DCEName>",
+            "type": "String"
+        },
+        "workspaces_gangams_gig_learn_externalid": {
+            "defaultValue": "/subscriptions/<subId>/resourceGroups/<rgName>/providers/Microsoft.OperationalInsights/workspaces/<workspaceName>",
+            "type": "String"
+        }
+    },
+    "variables": {},
+    "resources": [
+        {
+            "type": "Microsoft.Insights/dataCollectionRules",
+            "apiVersion": "2022-06-01",
+            "name": "[parameters('dataCollectionRules_CustomLogV2DCR_name')]",
+            "location": "uksouth",
+            "kind": "Linux",
+            "properties": {
+                "dataCollectionEndpointId": "[parameters('dataCollectionEndpoints_CustomLogV2DCE_externalid')]",
+                "streamDeclarations": {
+                    "Custom-CustomLogV2_CL": {
+                        "columns": [
+                            {
+                                "name": "TimeGenerated",
+                                "type": "datetime"
+                            },
+                            {
+                                "name": "RawData",
+                                "type": "string"
+                            }
+                        ]
+                    }
+                },
+                "dataSources": {
+                    "logFiles": [
+                        {
+                            "streams": [
+                                "Custom-CustomLogV2_CL"
+                            ],
+                            "filePatterns": [
+                                "/var/log/*.log"
+                            ],
+                            "format": "text",
+                            "settings": {
+                                "text": {
+                                    "recordStartTimestampFormat": "ISO 8601"
+                                }
+                            },
+                            "name": "CustomLogV2_CL"
+                        }
+                    ],
+                    "extensions": [
+                        {
+                            "name": "ContainerInsightsExtension",
+                            "streams":  [
+                                "Microsoft-ContainerLog",
+                                "Microsoft-ContainerLogV2",
+                                "Microsoft-KubeEvents",
+                                "Microsoft-KubePodInventory",
+                                "Microsoft-KubeNodeInventory",
+                                "Microsoft-KubePVInventory",
+                                "Microsoft-KubeServices",
+                                "Microsoft-KubeMonAgentEvents",
+                                "Microsoft-InsightsMetrics",
+                                "Microsoft-ContainerInventory",
+                                "Microsoft-ContainerNodeInventory",
+                                "Microsoft-Perf"
+                              ],
+                            "extensionName": "ContainerInsights"
+                        }
+                    ]
+                },
+                "destinations": {
+                    "logAnalytics": [
+                        {
+                            "workspaceResourceId": "[parameters('workspaces_gangams_gig_learn_externalid')]",
+                            "name": "la--910877881"
+                        }
+                    ]
+                },
+                "dataFlows": [
+                    {
+                        "streams": [
+                            "Custom-CustomLogV2_CL"
+                        ],
+                        "destinations": [
+                            "la--910877881"
+                        ],
+                        "transformKql": "source",
+                        "outputStream": "Custom-CustomLogV2_CL"
+                    },
+                    {
+                        "streams": ["Microsoft-ContainerLogV2"],
+                        "destinations": [
+                            "la--910877881"
+                        ]
+                    }
+                ]
+            }
+        }
+    ]
+}
