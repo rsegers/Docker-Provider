@@ -1,0 +1,28 @@
+<MonitoringManagement eventVersion="1" version="1.0" timestamp="2018-05-07T00:00:00Z" namespace="<NamespaceForWindowsContainers>">
+  <Accounts>
+    <Account moniker="<GenevaLogsAccountMoniker>" isDefault="true" />
+  </Accounts>
+  <Management eventVolume="Large" defaultRetentionInDays="90">
+    <Identity>
+      <IdentityComponent name="Tenant">"TENANT_ID"</IdentityComponent>
+      <IdentityComponent name="Role">"ROLE_ID"</IdentityComponent>
+      <IdentityComponent name="RoleInstance">"ROLEINSTANCE_ID"</IdentityComponent>
+    </Identity>
+    <AgentResourceUsage diskQuotaInMB="50000" />
+  </Management>
+  <!-- Events documentation: https://jarvis.dc.ad.msft.net/?page=documents&section=9c95f4eb-8689-4c9f-81bf-82d688e860fd&id=ac0084ad-5065-4b16-8f7d-0a5193143378   -->
+  <!--
+      Events can contain one or more Event elements.  The Event elements each describe a different kind of collector.
+      Events must be defined in the order of the mds2.xsd.
+    -->
+  <Sources>
+    <Source name="ContainerLogV2" eventName="ContainerLogV2" type="Pipe" streamName="ContainerLogV2Pipe" storeType="CentralBond" />
+  </Sources>
+  <!-- Events documentation: https://jarvis.dc.ad.msft.net/?page=documents&section=9c95f4eb-8689-4c9f-81bf-82d688e860fd&id=ac0084ad-5065-4b16-8f7d-0a5193143378   -->
+  <!--
+      Events can contain one or more Event elements.  The Event elements each describe a different kind of collector.
+      Events must be defined in the order of the mds2.xsd.
+    -->
+  <Events>
+  </Events>
+</MonitoringManagement>

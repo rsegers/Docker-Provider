@@ -72,6 +72,11 @@ require_relative "ConfigParseErrorLogger"
 
 # configmap settings related to mdsd
 @mdsdMonitoringMaxEventRate = 0
+@mdsdUploadMaxSizeInMB = 0
+@mdsdUploadFrequencyInSeconds = 0
+@mdsdBackPressureThresholdInMB = 0
+@mdsdCompressionLevel = -1
+
 # Checking to see if this is the daemonset or replicaset to parse config accordingly
 @controllerType = ENV["CONTROLLER_TYPE"]
 @daemonset = "daemonset"
@@ -106,7 +111,7 @@ end
 
 # check if it is a valid waittime
 def is_valid_waittime?(value, default)
-  return !value.nil? && is_number?(value) && value.to_i >= default/2 && value.to_i <= 3*default
+  return !value.nil? && is_number?(value) && value.to_i >= default / 2 && value.to_i <= 3 * default
 end
 
 # Use parser to parse the configmap toml file to a ruby structure
@@ -273,6 +278,30 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             @mdsdMonitoringMaxEventRate = mdsdMonitoringMaxEventRate.to_i
             puts "Using config map value: monitoring_max_event_rate  = #{@mdsdMonitoringMaxEventRate}"
           end
+          mdsdUploadMaxSizeInMB = mdsd_config[:upload_max_size_in_mb]
+          if is_valid_number?(mdsdUploadMaxSizeInMB)
+            @mdsdUploadMaxSizeInMB = mdsdUploadMaxSizeInMB.to_i
+            puts "Using config map value: upload_max_size_in_mb  = #{@mdsdUploadMaxSizeInMB}"
+          end
+          mdsdUploadFrequencyInSeconds = mdsd_config[:upload_frequency_seconds]
+          if is_valid_number?(mdsdUploadFrequencyInSeconds)
+            @mdsdUploadFrequencyInSeconds = mdsdUploadFrequencyInSeconds.to_i
+            puts "Using config map value: upload_frequency_seconds  = #{@mdsdUploadFrequencyInSeconds}"
+          end
+          mdsdBackPressureThresholdInMB = mdsd_config[:backpressure_memory_threshold_in_mb]
+          if is_valid_number?(mdsdBackPressureThresholdInMB) && mdsdBackPressureThresholdInMB.to_i > 100
+            @mdsdBackPressureThresholdInMB = mdsdBackPressureThresholdInMB.to_i
+            puts "Using config map value: backpressure_memory_threshold_in_mb  = #{@mdsdBackPressureThresholdInMB}"
+          else
+            puts "Ignoring mdsd backpressure limit. Check input values for correctness."
+          end
+          mdsdCompressionLevel = mdsd_config[:compression_level]
+          if is_number?(mdsdCompressionLevel) && mdsdCompressionLevel.to_i >= 0 && mdsdCompressionLevel.to_i < 10 # supported levels from 0 to 9
+            @mdsdCompressionLevel = mdsdCompressionLevel.to_i
+            puts "Using config map value: mdsdCompressionLevel = #{@mdsdCompressionLevel}"
+          else
+            puts "Ignoring mdsd compression_level level since its not supported level. Check input values for correctness."
+          end
         end
       end
 
@@ -339,7 +368,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "Using config map value: WAITTIME_PORT_25229 = #{@waittime_port_25229}"
         end
       end
-
     end
   rescue => errorStr
     puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
@@ -402,6 +430,24 @@ if !file.nil?
   #mdsd settings
   if @mdsdMonitoringMaxEventRate > 0
     file.write("export MONITORING_MAX_EVENT_RATE=#{@mdsdMonitoringMaxEventRate}\n")
+  end
+
+  if @mdsdUploadMaxSizeInMB > 0
+    file.write("export MDSD_ODS_UPLOAD_CHUNKING_SIZE_IN_MB=#{@mdsdUploadMaxSizeInMB}\n")
+  end
+
+  if @mdsdUploadFrequencyInSeconds > 0
+    file.write("export AMA_MAX_PUBLISH_LATENCY=#{@mdsdUploadFrequencyInSeconds}\n")
+    # MDSD requires this needs to be true for overriding the default 60s upload frequency
+    file.write("export AMA_LOAD_TEST_LATENCY=true\n")
+  end
+
+  if @mdsdBackPressureThresholdInMB > 0
+    file.write("export MDSD_BACKPRESSURE_MONITOR_MEMORY_THRESHOLD_IN_MB=#{@mdsdBackPressureThresholdInMB}\n")
+  end
+
+  if @mdsdCompressionLevel >= 0
+    file.write("export MDSD_ODS_COMPRESSION_LEVEL=#{@mdsdCompressionLevel}\n")
   end
 
   if @promFbitChunkSize > 0

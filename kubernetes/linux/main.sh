@@ -339,7 +339,7 @@ fi
 
 # Set environment variable for if public cloud by checking the workspace domain.
 if [ -z $domain ]; then
-      ClOUD_ENVIRONMENT="unknown"
+      CLOUD_ENVIRONMENT="unknown"
 elif [ $domain == "opinsights.azure.com" ]; then
       CLOUD_ENVIRONMENT="azurepubliccloud"
 elif [ $domain == "opinsights.azure.cn" ]; then

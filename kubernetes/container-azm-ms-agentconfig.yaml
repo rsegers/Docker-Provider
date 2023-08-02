@@ -34,14 +34,14 @@ data:
           # In the absense of this configmap, default value for enabled is true
           enabled = true
        [log_collection_settings.enrich_container_logs]
-          # In the absense of this configmap, default value for enrich_container_logs is false
+          # In the absense of this configmap, default value for enrich_container_logs is false
           enabled = false
-          # When this is enabled (enabled = true), every container log entry (both stdout & stderr) will be enriched with container Name & container Image
+          # When this is enabled (enabled = true), every container log entry (both stdout & stderr) will be enriched with container Name & container Image
        [log_collection_settings.collect_all_kube_events]
-          # In the absense of this configmap, default value for collect_all_kube_events is false
+          # In the absense of this configmap, default value for collect_all_kube_events is false
           # When the setting is set to false, only the kube events with !normal event type will be collected
           enabled = false
-          # When this is enabled (enabled = true), all kube events including normal events will be collected
+          # When this is enabled (enabled = true), all kube events including normal events will be collected
        #[log_collection_settings.schema]
           # In the absence of this configmap, default value for containerlog_schema_version is "v1"
           # Supported values for this setting are "v1","v2"
@@ -115,10 +115,10 @@ data:
   metric_collection_settings: |-
     # Metrics collection settings for metrics sent to Log Analytics and MDM
     [metric_collection_settings.collect_kube_system_pv_metrics]
-      # In the absense of this configmap, default value for collect_kube_system_pv_metrics is false
+      # In the absense of this configmap, default value for collect_kube_system_pv_metrics is false
       # When the setting is set to false, only the persistent volume metrics outside the kube-system namespace will be collected
       enabled = false
-      # When this is enabled (enabled = true), persistent volume metrics including those in the kube-system namespace will be collected
+      # When this is enabled (enabled = true), persistent volume metrics including those in the kube-system namespace will be collected
 
   alertable-metrics-configuration-settings: |-
     # Alertable metrics configuration settings for container resource utilization
@@ -191,10 +191,18 @@ data:
 
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # Configuration settings for the waittime for the network listeners to be available
-    # [agent_settings.network_listener_waittime] 
+    # [agent_settings.network_listener_waittime]
     #   tcp_port_25226 = 45                           # Port 25226 is used for telegraf to fluent-bit data in ReplicaSet
     #   tcp_port_25228 = 60                           # Port 25228 is used for telegraf to fluentd data
     #   tcp_port_25229 = 45                           # Port 25229 is used for telegraf to fluent-bit data in DaemonSet
+
+    # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
+    # [agent_settings.mdsd_config]
+    #   monitoring_max_event_rate = "50000" # default 20K eps
+    #   backpressure_memory_threshold_in_mb = "1500" # default 3500MB
+    #   upload_max_size_in_mb = "20"  # default 2MB
+    #   upload_frequency_seconds = "1" # default 60 upload_frequency_seconds
+    #   compression_level = "0"  # supported levels 0 to 9 and 0 means no compression
 
 metadata:
   name: container-azm-ms-agentconfig

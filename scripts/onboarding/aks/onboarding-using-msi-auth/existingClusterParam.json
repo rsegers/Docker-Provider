@@ -14,6 +14,9 @@
     "workspaceRegion": {
       "value": "<workspaceRegion>"
     },
+    "enableContainerLogV2": {
+      "value": true
+    },
     "enableSyslog": {
       "value": false
     },
@@ -73,7 +76,7 @@
         "azure-arc"
       ]
     },
-    "defaultStreams": {
+    "streams": {
       "value": [
         "Microsoft-ContainerLog",
         "Microsoft-ContainerLogV2",
