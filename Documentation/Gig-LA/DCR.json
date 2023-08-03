@@ -61,18 +61,7 @@
                         {
                             "name": "ContainerInsightsExtension",
                             "streams":  [
-                                "Microsoft-ContainerLog",
-                                "Microsoft-ContainerLogV2",
-                                "Microsoft-KubeEvents",
-                                "Microsoft-KubePodInventory",
-                                "Microsoft-KubeNodeInventory",
-                                "Microsoft-KubePVInventory",
-                                "Microsoft-KubeServices",
-                                "Microsoft-KubeMonAgentEvents",
-                                "Microsoft-InsightsMetrics",
-                                "Microsoft-ContainerInventory",
-                                "Microsoft-ContainerNodeInventory",
-                                "Microsoft-Perf"
+                                "Microsoft-ContainerLogV2"
                               ],
                             "extensionName": "ContainerInsights"
                         }
@@ -93,9 +82,7 @@
                         ],
                         "destinations": [
                             "la--910877881"
-                        ],
-                        "transformKql": "source",
-                        "outputStream": "Custom-CustomLogV2_CL"
+                        ]
                     },
                     {
                         "streams": ["Microsoft-ContainerLogV2"],
