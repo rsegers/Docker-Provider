@@ -3,16 +3,16 @@
   "contentVersion": "1.0.0.0",
   "parameters": {
     "aksResourceId": {
-      "value": "/subscriptions/<SubId>/resourcegroups/<rgName>/providers/Microsoft.ContainerService/managedClusters/<clusterName>"
+      "value": "/subscriptions/b4b0cbab-64dc-42bc-9d95-ea7c8d0cf188/resourcegroups/gangams-aks-hyper-scale-test/providers/Microsoft.ContainerService/managedClusters/gangams-aks-hyper-scale-test"
     },
     "aksResourceLocation": {
-      "value": "<clusterRegion>"
+      "value": "eastus2"
     },
     "workspaceResourceId": {
-      "value": "/subscriptions/<SubId>/resourcegroups/<rgName>/providers/microsoft.operationalinsights/workspaces/<workspaceName>"
+      "value": "/subscriptions/b4b0cbab-64dc-42bc-9d95-ea7c8d0cf188/resourcegroups/defaultresourcegroup-eus2/providers/microsoft.operationalinsights/workspaces/defaultworkspace-b4b0cbab-64dc-42bc-9d95-ea7c8d0cf188-eus2"
     },
     "workspaceRegion": {
-      "value": "<workspaceName>"
+      "value": "eastus2"
     },
     "resourceTagValues": {
       "value": {

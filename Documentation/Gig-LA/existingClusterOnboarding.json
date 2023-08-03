@@ -43,6 +43,7 @@
         "dcrName": "[if(greater(length(variables('dcrNameFull')), 64), substring(variables('dcrNameFull'), 0, 64), variables('dcrNameFull'))]",
         "dceName": "[if(greater(length(variables('dcrNameFull')), 64), substring(variables('dcrNameFull'), 0, 64), variables('dcrNameFull'))]",
         "associationName": "ContainerInsightsExtension",
+        "dceAssociationName": "configurationAccessEndpoint",
         "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]"
     },
     "resources": [
@@ -169,12 +170,44 @@
         },
         {
             "type": "Microsoft.Resources/deployments",
+            "name": "[Concat('aks-monitoring-msi-dcea', '-',  uniqueString(parameters('aksResourceId')))]",
+            "apiVersion": "2017-05-10",
+            "subscriptionId": "[variables('clusterSubscriptionId')]",
+            "resourceGroup": "[variables('clusterResourceGroup')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('dceName'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.ContainerService/managedClusters/providers/dataCollectionRuleAssociations",
+                            "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('dceAssociationName'))]",
+                            "apiVersion": "2022-06-01",
+                            "properties": {
+                                "description": "Association of data collection endpoint. Deleting this association will break the data collection for this AKS Cluster.",
+                                "dataCollectionEndpointId": "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('dceName'))]"
+                            }
+                        }
+                    ]
+                },
+                "parameters": {}
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
             "name": "[Concat('aks-monitoring-msi-addon', '-',  uniqueString(parameters('aksResourceId')))]",
             "apiVersion": "2017-05-10",
             "subscriptionId": "[variables('clusterSubscriptionId')]",
             "resourceGroup": "[variables('clusterResourceGroup')]",
             "dependsOn": [
-                "[Concat('aks-monitoring-msi-dcra', '-',  uniqueString(parameters('aksResourceId')))]"
+                "[Concat('aks-monitoring-msi-dcra', '-',  uniqueString(parameters('aksResourceId')))]",
+                "[Concat('aks-monitoring-msi-dcea', '-',  uniqueString(parameters('aksResourceId')))]"
             ],
             "properties": {
                 "mode": "Incremental",

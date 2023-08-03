@@ -814,6 +814,17 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATIO
     echo "export SSL_CERT_FILE=$SSL_CERT_FILE" >> ~/.bashrc
 else
       if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
+            echo "*** starting ama core agent in aad auth msi mode ***"
+            PA_GIG_BRIDGE_MODE=true
+            PA_FLUENT_SOCKET_PORT=13000
+            PA_DATA_PORT=13000
+
+            echo "export PA_FLUENT_SOCKET_PORT=$PA_FLUENT_SOCKET_PORT" >> ~/.bashrc
+            echo "export PA_DATA_PORT=$PA_DATA_PORT" >> ~/.bashrc
+            echo "export PA_GIG_BRIDGE_MODE=$PA_GIG_BRIDGE_MODE" >> ~/.bashrc
+            source ~/.bashrc
+   	      /opt/microsoft/azure-mdsd/bin/amacoreagent -c /etc/opt/microsoft/azuremonitoragent/amacoreagent --configport 12563 --amacalog /var/opt/microsoft/azuremonitoragent/log/amaca.log &
+
             echo "*** setting up oneagent in aad auth msi mode ***"
             # msi auth specific args
             MDSD_AAD_MSI_AUTH_ARGS="-a -A"
