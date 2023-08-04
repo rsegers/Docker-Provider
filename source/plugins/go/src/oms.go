@@ -1488,7 +1488,13 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			return output.FLB_OK
 		}
 
+		OMSEndpoint = strings.Replace(GiGEndpointURITemplate, "<STREAM>", "CONTAINERINSIGHTS_CONTAINERLOGV2", 1)
+		message := fmt.Sprintf("GigEndpoint: %s", OMSEndpoint)
+		Log(message)
+
+		Log("Error::ODS Ingestion Auth Token is empty. Please check error log.")
 		req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(marshalled))
+
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("User-Agent", userAgent)
 		reqId := uuid.New().String()

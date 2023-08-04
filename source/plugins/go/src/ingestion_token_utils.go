@@ -19,8 +19,8 @@ import (
 )
 
 const IMDSTokenPathForWindows = "c:/etc/imds-access-token/token" // only used in windows
-const AMCSAgentConfigAPIVersion = "2020-08-01-preview"
-const AMCSIngestionTokenAPIVersion = "2020-04-01-preview"
+const AMCSAgentConfigAPIVersion = "2022-06-02"
+const AMCSIngestionTokenAPIVersion = "2022-06-02"
 const MaxRetries = 3
 
 var IMDSToken string
@@ -28,6 +28,9 @@ var IMDSTokenExpiration int64
 
 var ConfigurationId string
 var ChannelId string
+
+var GiGTokenEndpoint string
+var GiGEndpointURITemplate string
 
 var IngestionAuthToken string
 var IngestionAuthTokenExpiration int64
@@ -52,59 +55,107 @@ type IMDSResponse struct {
 
 type AgentConfiguration struct {
 	Configurations []struct {
-		Configurationid string `json:"configurationId"`
-		Etag            string `json:"eTag"`
+		ConfigurationID string `json:"configurationId"`
+		ETag            string `json:"eTag"`
 		Op              string `json:"op"`
 		Content         struct {
-			Datasources []struct {
-				Configuration struct {
-					Extensionname string `json:"extensionName"`
-				} `json:"configuration"`
+			DataSources []struct {
+				ExtensionConfiguration struct {
+					ExtensionName string `json:"extensionName"`
+				} `json:"configuration,omitempty"`
 				ID      string `json:"id"`
 				Kind    string `json:"kind"`
 				Streams []struct {
 					Stream                string `json:"stream"`
 					Solution              string `json:"solution"`
-					Extensionoutputstream string `json:"extensionOutputStream"`
+					ExtensionOutputStream string `json:"extensionOutputStream"`
 				} `json:"streams"`
-				Sendtochannels []string `json:"sendToChannels"`
+				SendToChannels         []string `json:"sendToChannels"`
+				CustomLogConfiguration struct {
+					FilePatterns []string `json:"filePatterns"`
+					Format       string   `json:"format"`
+					Settings     struct {
+						Text struct {
+							RecordStartTimestampFormat string `json:"recordStartTimestampFormat"`
+						} `json:"text"`
+					} `json:"settings"`
+				} `json:"configuration,omitempty"`
 			} `json:"dataSources"`
 			Channels []struct {
-				Endpoint string `json:"endpoint"`
-				ID       string `json:"id"`
-				Protocol string `json:"protocol"`
+				Endpoint            string `json:"endpoint,omitempty"`
+				TokenEndpointURI    string `json:"tokenEndpointUri"`
+				ID                  string `json:"id"`
+				Protocol            string `json:"protocol"`
+				EndpointURITemplate string `json:"endpointUriTemplate,omitempty"`
 			} `json:"channels"`
-			Extensionconfigurations struct {
-				Containerinsights []struct {
+			ExtensionConfigurations struct {
+				ContainerInsights []struct {
 					ID            string   `json:"id"`
-					Originids     []string `json:"originIds"`
-					Extensionsettings struct {
-						DataCollectionSettings struct {
-							Interval               string   `json:"interval"`
-							NamespaceFilteringMode string   `json:"namespaceFilteringMode"`
-							Namespaces             []string `json:"namespaces"`
-							EnableContainerLogV2   bool     `json:"enableContainerLogV2"`
-						} `json:"dataCollectionSettings"`
-					} `json:"extensionSettings"`
-					Outputstreams struct {
-						LinuxPerfBlob                   string `json:"LINUX_PERF_BLOB"`
-						ContainerInventoryBlob          string `json:"CONTAINER_INVENTORY_BLOB"`
-						ContainerLogBlob                string `json:"CONTAINER_LOG_BLOB"`
+					OriginIds     []string `json:"originIds"`
+					OutputStreams struct {
 						ContainerinsightsContainerlogv2 string `json:"CONTAINERINSIGHTS_CONTAINERLOGV2"`
-						ContainerNodeInventoryBlob      string `json:"CONTAINER_NODE_INVENTORY_BLOB"`
-						KubeEventsBlob                  string `json:"KUBE_EVENTS_BLOB"`
-						KubeMonAgentEventsBlob          string `json:"KUBE_MON_AGENT_EVENTS_BLOB"`
-						KubeNodeInventoryBlob           string `json:"KUBE_NODE_INVENTORY_BLOB"`
-						KubePodInventoryBlob            string `json:"KUBE_POD_INVENTORY_BLOB"`
-						KubePvInventoryBlob             string `json:"KUBE_PV_INVENTORY_BLOB"`
-						KubeServicesBlob                string `json:"KUBE_SERVICES_BLOB"`
-						InsightsMetricsBlob             string `json:"INSIGHTS_METRICS_BLOB"`
 					} `json:"outputStreams"`
 				} `json:"ContainerInsights"`
 			} `json:"extensionConfigurations"`
 		} `json:"content"`
 	} `json:"configurations"`
 }
+
+// type AgentConfiguration struct {
+// 	Configurations []struct {
+// 		Configurationid string `json:"configurationId"`
+// 		Etag            string `json:"eTag"`
+// 		Op              string `json:"op"`
+// 		Content         struct {
+// 			Datasources []struct {
+// 				Configuration struct {
+// 					Extensionname string `json:"extensionName"`
+// 				} `json:"configuration"`
+// 				ID      string `json:"id"`
+// 				Kind    string `json:"kind"`
+// 				Streams []struct {
+// 					Stream                string `json:"stream"`
+// 					Solution              string `json:"solution"`
+// 					Extensionoutputstream string `json:"extensionOutputStream"`
+// 				} `json:"streams"`
+// 				Sendtochannels []string `json:"sendToChannels"`
+// 			} `json:"dataSources"`
+// 			Channels []struct {
+// 				Endpoint string `json:"endpoint"`
+// 				ID       string `json:"id"`
+// 				Protocol string `json:"protocol"`
+// 			} `json:"channels"`
+// 			Extensionconfigurations struct {
+// 				Containerinsights []struct {
+// 					ID            string   `json:"id"`
+// 					Originids     []string `json:"originIds"`
+// 					Extensionsettings struct {
+// 						DataCollectionSettings struct {
+// 							Interval               string   `json:"interval"`
+// 							NamespaceFilteringMode string   `json:"namespaceFilteringMode"`
+// 							Namespaces             []string `json:"namespaces"`
+// 							EnableContainerLogV2   bool     `json:"enableContainerLogV2"`
+// 						} `json:"dataCollectionSettings"`
+// 					} `json:"extensionSettings"`
+// 					Outputstreams struct {
+// 						LinuxPerfBlob                   string `json:"LINUX_PERF_BLOB"`
+// 						ContainerInventoryBlob          string `json:"CONTAINER_INVENTORY_BLOB"`
+// 						ContainerLogBlob                string `json:"CONTAINER_LOG_BLOB"`
+// 						ContainerinsightsContainerlogv2 string `json:"CONTAINERINSIGHTS_CONTAINERLOGV2"`
+// 						ContainerNodeInventoryBlob      string `json:"CONTAINER_NODE_INVENTORY_BLOB"`
+// 						KubeEventsBlob                  string `json:"KUBE_EVENTS_BLOB"`
+// 						KubeMonAgentEventsBlob          string `json:"KUBE_MON_AGENT_EVENTS_BLOB"`
+// 						KubeNodeInventoryBlob           string `json:"KUBE_NODE_INVENTORY_BLOB"`
+// 						KubePodInventoryBlob            string `json:"KUBE_POD_INVENTORY_BLOB"`
+// 						KubePvInventoryBlob             string `json:"KUBE_PV_INVENTORY_BLOB"`
+// 						KubeServicesBlob                string `json:"KUBE_SERVICES_BLOB"`
+// 						InsightsMetricsBlob             string `json:"INSIGHTS_METRICS_BLOB"`
+// 					} `json:"outputStreams"`
+// 				} `json:"ContainerInsights"`
+// 			} `json:"extensionConfigurations"`
+// 		} `json:"content"`
+// 	} `json:"configurations"`
+// }
 
 type IngestionTokenResponse struct {
 	Configurationid    string `json:"configurationId"`
@@ -323,10 +374,11 @@ func getAccessTokenFromIMDS() (string, int64, error) {
 	return imdsAccessToken, expiration, nil
 }
 
-func getAgentConfiguration(imdsAccessToken string) (configurationId string, channelId string, err error) {
-	Log("Info getAgentConfiguration: start")
-	configurationId = ""
-	channelId = ""
+func getGiGEndpoints(imdsAccessToken string) (gigTokenEndpoint string, endpointURITemplate string, err error) {
+	Log("Info getGiGEndpoints: start")
+	gigTokenEndpoint = ""
+	endpointURITemplate = ""
+
 	var amcs_endpoint *url.URL
 	var AmcsEndpoint string
 	osType := os.Getenv("OS_TYPE")
@@ -342,17 +394,17 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 
 	amcs_endpoint, err = url.Parse(amcs_endpoint_string)
 	if err != nil {
-		Log("getAgentConfiguration: Error creating AMCS endpoint URL: %s", err.Error())
-		return configurationId, channelId, err
+		Log("getGiGEndpoints: Error creating AMCS endpoint URL: %s", err.Error())
+		return gigTokenEndpoint, endpointURITemplate, err
 	}
 
 	var bearer = "Bearer " + imdsAccessToken
 	// Create a new request using http
 	req, err := http.NewRequest("GET", amcs_endpoint.String(), nil)
 	if err != nil {
-		message := fmt.Sprintf("getAgentConfiguration: Error creating HTTP request for AMCS endpoint: %s", err.Error())
+		message := fmt.Sprintf("getGiGEndpoints: Error creating HTTP request for AMCS endpoint: %s", err.Error())
 		Log(message)
-		return configurationId, channelId, err
+		return gigTokenEndpoint, endpointURITemplate, err
 	}
 	req.Header.Set("Authorization", bearer)
 
@@ -361,7 +413,7 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 	for retryCount := 0; retryCount < MaxRetries; retryCount++ {
 		resp, err = HTTPClient.Do(req)
 		if err != nil {
-			message := fmt.Sprintf("getAgentConfiguration: Error calling AMCS endpoint: %s", err.Error())
+			message := fmt.Sprintf("getGiGEndpoints: Error calling AMCS endpoint: %s", err.Error())
 			Log(message)
 			SendException(message)
 			continue
@@ -369,10 +421,10 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 		if resp != nil && resp.Body != nil {
 			defer resp.Body.Close()
 		}
-		Log("getAgentConfiguration Response Status: %d", resp.StatusCode)
+		Log("getGiGEndpoints Response Status: %d", resp.StatusCode)
 		if resp.StatusCode == 421 { // AMCS returns redirected endpoint incase of private link
 			agentConfigEndpoint := resp.Header.Get("x-ms-agent-config-endpoint")
-			Log("getAgentConfiguration x-ms-agent-config-endpoint: %s", agentConfigEndpoint)
+			Log("getGiGEndpoints x-ms-agent-config-endpoint: %s", agentConfigEndpoint)
 			if agentConfigEndpoint != "" {
 				AMCSRedirectedEndpoint = agentConfigEndpoint
 				// reconstruct request with redirected endpoint
@@ -381,16 +433,16 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 				var bearer = "Bearer " + imdsAccessToken
 				req, err = http.NewRequest("GET", redirected_amcs_endpoint_string, nil)
 				if err != nil {
-					message := fmt.Sprintf("getAgentConfiguration: Error creating HTTP request for AMCS endpoint: %s", err.Error())
+					message := fmt.Sprintf("getGiGEndpoints: Error creating HTTP request for AMCS endpoint: %s", err.Error())
 					Log(message)
-					return configurationId, channelId, err
+					return gigTokenEndpoint, endpointURITemplate, err
 				}
 				req.Header.Set("Authorization", bearer)
 				continue
 			}
 		}
 		if IsRetriableError(resp.StatusCode) {
-			message := fmt.Sprintf("getAgentConfiguration: Request failed with an error code: %d, retryCount: %d", resp.StatusCode, retryCount)
+			message := fmt.Sprintf("getGiGEndpoints: Request failed with an error code: %d, retryCount: %d", resp.StatusCode, retryCount)
 			Log(message)
 			retryDelay := time.Duration((retryCount+1)*100) * time.Millisecond
 			if resp.StatusCode == 429 {
@@ -404,81 +456,210 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 			time.Sleep(retryDelay)
 			continue
 		} else if resp.StatusCode != 200 {
-			message := fmt.Sprintf("getAgentConfiguration: Request failed with nonretryable error code: %d, retryCount: %d", resp.StatusCode, retryCount)
+			message := fmt.Sprintf("getGiGEndpoints: Request failed with nonretryable error code: %d, retryCount: %d", resp.StatusCode, retryCount)
 			Log(message)
 			SendException(message)
-			return configurationId, channelId, err
+			return gigTokenEndpoint, endpointURITemplate, err
 		}
 		IsSuccess = true
 		break // call succeeded, don't retry any more
 	}
 	if !IsSuccess || resp == nil || resp.Body == nil {
-		message := fmt.Sprintf("getAgentConfiguration Request ran out of retries")
+		message := fmt.Sprintf("getGiGEndpoints Request ran out of retries")
 		Log(message)
 		SendException(message)
-		return configurationId, channelId, err
+		return gigTokenEndpoint, endpointURITemplate, err
 	}
 	responseBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		Log("getAgentConfiguration: Error reading response body from AMCS API call: %s", err.Error())
-		return configurationId, channelId, err
+		Log("getGiGEndpoints: Error reading response body from AMCS API call: %s", err.Error())
+		return gigTokenEndpoint, endpointURITemplate, err
 	}
 
 	// Unmarshall response body into struct
 	var agentConfiguration AgentConfiguration
 	err = json.Unmarshal(responseBytes, &agentConfiguration)
 	if err != nil {
-		message := fmt.Sprintf("getAgentConfiguration: Error unmarshalling the response: %s", err.Error())
+		message := fmt.Sprintf("getGiGEndpoints: Error unmarshalling the response: %s", err.Error())
 		Log(message)
 		SendException(message)
-		return configurationId, channelId, err
+		return gigTokenEndpoint, endpointURITemplate, err
 	}
 
 	if len(agentConfiguration.Configurations) == 0 {
-		message := "getAgentConfiguration: Received empty agentConfiguration.Configurations array"
+		message := "getGiGEndpoints: Received empty agentConfiguration.Configurations array"
 		Log(message)
 		SendException(message)
-		return configurationId, channelId, err
+		return gigTokenEndpoint, endpointURITemplate, err
 	}
 
 	if len(agentConfiguration.Configurations[0].Content.Channels) == 0 {
-		message := "getAgentConfiguration: Received empty agentConfiguration.Configurations[0].Content.Channels"
+		message := "getGiGEndpoints: Received empty agentConfiguration.Configurations[0].Content.Channels"
 		Log(message)
 		SendException(message)
-		return configurationId, channelId, err
+		return gigTokenEndpoint, endpointURITemplate, err
 	}
 
-	configurationId = agentConfiguration.Configurations[0].Configurationid
-	channelId = agentConfiguration.Configurations[0].Content.Channels[0].ID
-	if !ContainerLogV2ConfigMap && len(agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights) > 0 {
-		ContainerLogSchemaV2 = agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights[0].Extensionsettings.DataCollectionSettings.EnableContainerLogV2
+	for index := 0; index < len(agentConfiguration.Configurations[0].Content.Channels); index++ {
+		channel := agentConfiguration.Configurations[0].Content.Channels[index]
+		if channel.Protocol == "gig" {
+			gigTokenEndpoint = channel.TokenEndpointURI
+			endpointURITemplate = channel.EndpointURITemplate
+		}
 	}
-	Log("getAgentConfiguration: obtained configurationId: %s, channelId: %s", configurationId, channelId)
-	Log("Info getAgentConfiguration: end")
 
-	return configurationId, channelId, nil
+	Log("getGiGEndpoints: obtained tokenEndpointURI: %s, endpointURITemplate: %s", gigTokenEndpoint, endpointURITemplate)
+	Log("Info getGiGEndpoints: end")
+
+	return gigTokenEndpoint, endpointURITemplate, nil
 }
 
-func getIngestionAuthToken(imdsAccessToken string, configurationId string, channelId string) (ingestionAuthToken string, refreshInterval int64, err error) {
+// func getAgentConfiguration(imdsAccessToken string) (configurationId string, channelId string, err error) {
+// 	Log("Info getAgentConfiguration: start")
+// 	configurationId = ""
+// 	channelId = ""
+// 	var amcs_endpoint *url.URL
+// 	var AmcsEndpoint string
+// 	osType := os.Getenv("OS_TYPE")
+// 	resourceId := os.Getenv("AKS_RESOURCE_ID")
+// 	resourceRegion := os.Getenv("AKS_REGION")
+// 	mcsEndpoint := os.Getenv("MCS_ENDPOINT")
+
+// 	AmcsEndpoint = fmt.Sprintf("https://global.handler.control.%s", mcsEndpoint)
+// 	if AMCSRedirectedEndpoint != "" {
+// 		AmcsEndpoint = AMCSRedirectedEndpoint
+// 	}
+// 	amcs_endpoint_string := fmt.Sprintf("%s%s/agentConfigurations?operatingLocation=%s&platform=%s&api-version=%s", AmcsEndpoint, resourceId, resourceRegion, osType, AMCSAgentConfigAPIVersion)
+
+// 	amcs_endpoint, err = url.Parse(amcs_endpoint_string)
+// 	if err != nil {
+// 		Log("getAgentConfiguration: Error creating AMCS endpoint URL: %s", err.Error())
+// 		return configurationId, channelId, err
+// 	}
+
+// 	var bearer = "Bearer " + imdsAccessToken
+// 	// Create a new request using http
+// 	req, err := http.NewRequest("GET", amcs_endpoint.String(), nil)
+// 	if err != nil {
+// 		message := fmt.Sprintf("getAgentConfiguration: Error creating HTTP request for AMCS endpoint: %s", err.Error())
+// 		Log(message)
+// 		return configurationId, channelId, err
+// 	}
+// 	req.Header.Set("Authorization", bearer)
+
+// 	var resp *http.Response = nil
+// 	IsSuccess := false
+// 	for retryCount := 0; retryCount < MaxRetries; retryCount++ {
+// 		resp, err = HTTPClient.Do(req)
+// 		if err != nil {
+// 			message := fmt.Sprintf("getAgentConfiguration: Error calling AMCS endpoint: %s", err.Error())
+// 			Log(message)
+// 			SendException(message)
+// 			continue
+// 		}
+// 		if resp != nil && resp.Body != nil {
+// 			defer resp.Body.Close()
+// 		}
+// 		Log("getAgentConfiguration Response Status: %d", resp.StatusCode)
+// 		if resp.StatusCode == 421 { // AMCS returns redirected endpoint incase of private link
+// 			agentConfigEndpoint := resp.Header.Get("x-ms-agent-config-endpoint")
+// 			Log("getAgentConfiguration x-ms-agent-config-endpoint: %s", agentConfigEndpoint)
+// 			if agentConfigEndpoint != "" {
+// 				AMCSRedirectedEndpoint = agentConfigEndpoint
+// 				// reconstruct request with redirected endpoint
+// 				var err error
+// 				redirected_amcs_endpoint_string := fmt.Sprintf("%s%s/agentConfigurations?operatingLocation=%s&platform=%s&api-version=%s", AMCSRedirectedEndpoint, resourceId, resourceRegion, osType, AMCSAgentConfigAPIVersion)
+// 				var bearer = "Bearer " + imdsAccessToken
+// 				req, err = http.NewRequest("GET", redirected_amcs_endpoint_string, nil)
+// 				if err != nil {
+// 					message := fmt.Sprintf("getAgentConfiguration: Error creating HTTP request for AMCS endpoint: %s", err.Error())
+// 					Log(message)
+// 					return configurationId, channelId, err
+// 				}
+// 				req.Header.Set("Authorization", bearer)
+// 				continue
+// 			}
+// 		}
+// 		if IsRetriableError(resp.StatusCode) {
+// 			message := fmt.Sprintf("getAgentConfiguration: Request failed with an error code: %d, retryCount: %d", resp.StatusCode, retryCount)
+// 			Log(message)
+// 			retryDelay := time.Duration((retryCount+1)*100) * time.Millisecond
+// 			if resp.StatusCode == 429 {
+// 				if resp != nil && resp.Header.Get("Retry-After") != "" {
+// 					after, err := strconv.ParseInt(resp.Header.Get("Retry-After"), 10, 64)
+// 					if err != nil && after > 0 {
+// 						retryDelay = time.Duration(after) * time.Second
+// 					}
+// 				}
+// 			}
+// 			time.Sleep(retryDelay)
+// 			continue
+// 		} else if resp.StatusCode != 200 {
+// 			message := fmt.Sprintf("getAgentConfiguration: Request failed with nonretryable error code: %d, retryCount: %d", resp.StatusCode, retryCount)
+// 			Log(message)
+// 			SendException(message)
+// 			return configurationId, channelId, err
+// 		}
+// 		IsSuccess = true
+// 		break // call succeeded, don't retry any more
+// 	}
+// 	if !IsSuccess || resp == nil || resp.Body == nil {
+// 		message := fmt.Sprintf("getAgentConfiguration Request ran out of retries")
+// 		Log(message)
+// 		SendException(message)
+// 		return configurationId, channelId, err
+// 	}
+// 	responseBytes, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		Log("getAgentConfiguration: Error reading response body from AMCS API call: %s", err.Error())
+// 		return configurationId, channelId, err
+// 	}
+
+// 	// Unmarshall response body into struct
+// 	var agentConfiguration AgentConfiguration
+// 	err = json.Unmarshal(responseBytes, &agentConfiguration)
+// 	if err != nil {
+// 		message := fmt.Sprintf("getAgentConfiguration: Error unmarshalling the response: %s", err.Error())
+// 		Log(message)
+// 		SendException(message)
+// 		return configurationId, channelId, err
+// 	}
+
+// 	if len(agentConfiguration.Configurations) == 0 {
+// 		message := "getAgentConfiguration: Received empty agentConfiguration.Configurations array"
+// 		Log(message)
+// 		SendException(message)
+// 		return configurationId, channelId, err
+// 	}
+
+// 	if len(agentConfiguration.Configurations[0].Content.Channels) == 0 {
+// 		message := "getAgentConfiguration: Received empty agentConfiguration.Configurations[0].Content.Channels"
+// 		Log(message)
+// 		SendException(message)
+// 		return configurationId, channelId, err
+// 	}
+
+// 	configurationId = agentConfiguration.Configurations[0].Configurationid
+// 	channelId = agentConfiguration.Configurations[0].Content.Channels[0].ID
+// 	if !ContainerLogV2ConfigMap && len(agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights) > 0 {
+// 		ContainerLogSchemaV2 = agentConfiguration.Configurations[0].Content.Extensionconfigurations.Containerinsights[0].Extensionsettings.DataCollectionSettings.EnableContainerLogV2
+// 	}
+// 	Log("getAgentConfiguration: obtained configurationId: %s, channelId: %s", configurationId, channelId)
+// 	Log("Info getAgentConfiguration: end")
+
+// 	return configurationId, channelId, nil
+// }
+
+func getGiGIngestionAuthToken(imdsAccessToken string, gigTokenEndpoint string) (ingestionAuthToken string, refreshInterval int64, err error) {
 	Log("Info getIngestionAuthToken: start")
 	ingestionAuthToken = ""
 	refreshInterval = 0
 	var amcs_endpoint *url.URL
-	var AmcsEndpoint string
-	osType := os.Getenv("OS_TYPE")
-	resourceId := os.Getenv("AKS_RESOURCE_ID")
-	resourceRegion := os.Getenv("AKS_REGION")
-	mcsEndpoint := os.Getenv("MCS_ENDPOINT")
 
-	AmcsEndpoint = fmt.Sprintf("https://global.handler.control.%s", mcsEndpoint)
-	if AMCSRedirectedEndpoint != "" {
-		AmcsEndpoint = AMCSRedirectedEndpoint
-	}
-
-	amcs_endpoint_string := fmt.Sprintf("%s%s/agentConfigurations/%s/channels/%s/issueIngestionToken?operatingLocation=%s&platform=%s&api-version=%s", AmcsEndpoint, resourceId, configurationId, channelId, resourceRegion, osType, AMCSIngestionTokenAPIVersion)
+	amcs_endpoint_string := gigTokenEndpoint
 	amcs_endpoint, err = url.Parse(amcs_endpoint_string)
 	if err != nil {
-		Log("getIngestionAuthToken: Error creating AMCS endpoint URL: %s", err.Error())
+		Log("getGiGIngestionAuthToken: Error creating AMCS endpoint URL: %s", err.Error())
 		return ingestionAuthToken, refreshInterval, err
 	}
 
@@ -486,7 +667,7 @@ func getIngestionAuthToken(imdsAccessToken string, configurationId string, chann
 	// Create a new request using http
 	req, err := http.NewRequest("GET", amcs_endpoint.String(), nil)
 	if err != nil {
-		Log("getIngestionAuthToken: Error creating HTTP request for AMCS endpoint: %s", err.Error())
+		Log("getGiGIngestionAuthToken: Error creating HTTP request for AMCS endpoint: %s", err.Error())
 		return ingestionAuthToken, refreshInterval, err
 	}
 
@@ -499,7 +680,7 @@ func getIngestionAuthToken(imdsAccessToken string, configurationId string, chann
 		// Call managed services for Azure resources token endpoint
 		resp, err = HTTPClient.Do(req)
 		if err != nil {
-			message := fmt.Sprintf("getIngestionAuthToken: Error calling AMCS endpoint for ingestion auth token: %s", err.Error())
+			message := fmt.Sprintf("getGiGIngestionAuthToken: Error calling AMCS endpoint for ingestion auth token: %s", err.Error())
 			Log(message)
 			SendException(message)
 			resp = nil
@@ -509,29 +690,9 @@ func getIngestionAuthToken(imdsAccessToken string, configurationId string, chann
 		if resp != nil && resp.Body != nil {
 			defer resp.Body.Close()
 		}
-
-		Log("getIngestionAuthToken Response Status: %d", resp.StatusCode)
-		if resp.StatusCode == 421 { // AMCS returns redirected endpoint incase of private link
-			agentConfigEndpoint := resp.Header.Get("x-ms-agent-config-endpoint")
-			Log("getIngestionAuthToken x-ms-agent-config-endpoint: %s", agentConfigEndpoint)
-			if agentConfigEndpoint != "" {
-				AMCSRedirectedEndpoint = agentConfigEndpoint
-				// reconstruct request with redirected endpoint
-				var err error
-				redirected_amcs_endpoint_string := fmt.Sprintf("%s%s/agentConfigurations/%s/channels/%s/issueIngestionToken?operatingLocation=%s&platform=%s&api-version=%s", AMCSRedirectedEndpoint, resourceId, configurationId, channelId, resourceRegion, osType, AMCSIngestionTokenAPIVersion)
-				var bearer = "Bearer " + imdsAccessToken
-				req, err = http.NewRequest("GET", redirected_amcs_endpoint_string, nil)
-				if err != nil {
-					message := fmt.Sprintf("getIngestionAuthToken: Error creating HTTP request for AMCS endpoint: %s", err.Error())
-					Log(message)
-					return ingestionAuthToken, refreshInterval, err
-				}
-				req.Header.Set("Authorization", bearer)
-				continue
-			}
-		}
+		Log("getGiGIngestionAuthToken Response Status: %d", resp.StatusCode)
 		if IsRetriableError(resp.StatusCode) {
-			message := fmt.Sprintf("getIngestionAuthToken: Request failed with an error code: %d, retryCount: %d", resp.StatusCode, retryCount)
+			message := fmt.Sprintf("getGiGIngestionAuthToken: Request failed with an error code: %d, retryCount: %d", resp.StatusCode, retryCount)
 			Log(message)
 			retryDelay := time.Duration((retryCount+1)*100) * time.Millisecond
 			if resp.StatusCode == 429 {
@@ -545,7 +706,7 @@ func getIngestionAuthToken(imdsAccessToken string, configurationId string, chann
 			time.Sleep(retryDelay)
 			continue
 		} else if resp.StatusCode != 200 {
-			message := fmt.Sprintf("getIngestionAuthToken: Request failed with nonretryable error code: %d, retryCount: %d", resp.StatusCode, retryCount)
+			message := fmt.Sprintf("getGiGIngestionAuthToken: Request failed with nonretryable error code: %d, retryCount: %d", resp.StatusCode, retryCount)
 			Log(message)
 			SendException(message)
 			return ingestionAuthToken, refreshInterval, err
@@ -555,7 +716,7 @@ func getIngestionAuthToken(imdsAccessToken string, configurationId string, chann
 	}
 
 	if !IsSuccess || resp == nil || resp.Body == nil {
-		message := "getIngestionAuthToken: ran out of retries calling AMCS for ingestion token"
+		message := "getGiGIngestionAuthToken: ran out of retries calling AMCS for ingestion token"
 		Log(message)
 		SendException(message)
 		return ingestionAuthToken, refreshInterval, err
@@ -564,7 +725,7 @@ func getIngestionAuthToken(imdsAccessToken string, configurationId string, chann
 	// Pull out response body
 	responseBytes, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		Log("getIngestionAuthToken: Error reading response body from AMCS Ingestion API call : %s", err.Error())
+		Log("getGiGIngestionAuthToken: Error reading response body from AMCS Ingestion API call : %s", err.Error())
 		return ingestionAuthToken, refreshInterval, err
 	}
 
@@ -572,7 +733,7 @@ func getIngestionAuthToken(imdsAccessToken string, configurationId string, chann
 	var ingestionTokenResponse IngestionTokenResponse
 	err = json.Unmarshal(responseBytes, &ingestionTokenResponse)
 	if err != nil {
-		Log("getIngestionAuthToken: Error unmarshalling the response: %s", err.Error())
+		Log("getGiGIngestionAuthToken: Error unmarshalling the response: %s", err.Error())
 		return ingestionAuthToken, refreshInterval, err
 	}
 
@@ -580,14 +741,144 @@ func getIngestionAuthToken(imdsAccessToken string, configurationId string, chann
 
 	refreshInterval, err = getTokenRefreshIntervalFromAmcsResponse(resp.Header)
 	if err != nil {
-		Log("getIngestionAuthToken: Error failed to parse max-age response header")
+		Log("getGiGIngestionAuthToken: Error failed to parse max-age response header")
 		return ingestionAuthToken, refreshInterval, err
 	}
-	Log("getIngestionAuthToken: refresh interval %d seconds", refreshInterval)
+	Log("getGiGIngestionAuthToken: refresh interval %d seconds", refreshInterval)
 
-	Log("Info getIngestionAuthToken: end")
+	Log("Info getGiGIngestionAuthToken: end")
 	return ingestionAuthToken, refreshInterval, nil
 }
+
+// func getIngestionAuthToken(imdsAccessToken string, configurationId string, channelId string) (ingestionAuthToken string, refreshInterval int64, err error) {
+// 	Log("Info getIngestionAuthToken: start")
+// 	ingestionAuthToken = ""
+// 	refreshInterval = 0
+// 	var amcs_endpoint *url.URL
+// 	var AmcsEndpoint string
+// 	osType := os.Getenv("OS_TYPE")
+// 	resourceId := os.Getenv("AKS_RESOURCE_ID")
+// 	resourceRegion := os.Getenv("AKS_REGION")
+// 	mcsEndpoint := os.Getenv("MCS_ENDPOINT")
+
+// 	AmcsEndpoint = fmt.Sprintf("https://global.handler.control.%s", mcsEndpoint)
+// 	if AMCSRedirectedEndpoint != "" {
+// 		AmcsEndpoint = AMCSRedirectedEndpoint
+// 	}
+
+// 	amcs_endpoint_string := fmt.Sprintf("%s%s/agentConfigurations/%s/channels/%s/issueIngestionToken?operatingLocation=%s&platform=%s&api-version=%s", AmcsEndpoint, resourceId, configurationId, channelId, resourceRegion, osType, AMCSIngestionTokenAPIVersion)
+// 	amcs_endpoint, err = url.Parse(amcs_endpoint_string)
+// 	if err != nil {
+// 		Log("getIngestionAuthToken: Error creating AMCS endpoint URL: %s", err.Error())
+// 		return ingestionAuthToken, refreshInterval, err
+// 	}
+
+// 	var bearer = "Bearer " + imdsAccessToken
+// 	// Create a new request using http
+// 	req, err := http.NewRequest("GET", amcs_endpoint.String(), nil)
+// 	if err != nil {
+// 		Log("getIngestionAuthToken: Error creating HTTP request for AMCS endpoint: %s", err.Error())
+// 		return ingestionAuthToken, refreshInterval, err
+// 	}
+
+// 	// add authorization header to the req
+// 	req.Header.Add("Authorization", bearer)
+
+// 	var resp *http.Response = nil
+// 	IsSuccess := false
+// 	for retryCount := 0; retryCount < MaxRetries; retryCount++ {
+// 		// Call managed services for Azure resources token endpoint
+// 		resp, err = HTTPClient.Do(req)
+// 		if err != nil {
+// 			message := fmt.Sprintf("getIngestionAuthToken: Error calling AMCS endpoint for ingestion auth token: %s", err.Error())
+// 			Log(message)
+// 			SendException(message)
+// 			resp = nil
+// 			continue
+// 		}
+
+// 		if resp != nil && resp.Body != nil {
+// 			defer resp.Body.Close()
+// 		}
+
+// 		Log("getIngestionAuthToken Response Status: %d", resp.StatusCode)
+// 		if resp.StatusCode == 421 { // AMCS returns redirected endpoint incase of private link
+// 			agentConfigEndpoint := resp.Header.Get("x-ms-agent-config-endpoint")
+// 			Log("getIngestionAuthToken x-ms-agent-config-endpoint: %s", agentConfigEndpoint)
+// 			if agentConfigEndpoint != "" {
+// 				AMCSRedirectedEndpoint = agentConfigEndpoint
+// 				// reconstruct request with redirected endpoint
+// 				var err error
+// 				redirected_amcs_endpoint_string := fmt.Sprintf("%s%s/agentConfigurations/%s/channels/%s/issueIngestionToken?operatingLocation=%s&platform=%s&api-version=%s", AMCSRedirectedEndpoint, resourceId, configurationId, channelId, resourceRegion, osType, AMCSIngestionTokenAPIVersion)
+// 				var bearer = "Bearer " + imdsAccessToken
+// 				req, err = http.NewRequest("GET", redirected_amcs_endpoint_string, nil)
+// 				if err != nil {
+// 					message := fmt.Sprintf("getIngestionAuthToken: Error creating HTTP request for AMCS endpoint: %s", err.Error())
+// 					Log(message)
+// 					return ingestionAuthToken, refreshInterval, err
+// 				}
+// 				req.Header.Set("Authorization", bearer)
+// 				continue
+// 			}
+// 		}
+// 		if IsRetriableError(resp.StatusCode) {
+// 			message := fmt.Sprintf("getIngestionAuthToken: Request failed with an error code: %d, retryCount: %d", resp.StatusCode, retryCount)
+// 			Log(message)
+// 			retryDelay := time.Duration((retryCount+1)*100) * time.Millisecond
+// 			if resp.StatusCode == 429 {
+// 				if resp != nil && resp.Header.Get("Retry-After") != "" {
+// 					after, err := strconv.ParseInt(resp.Header.Get("Retry-After"), 10, 64)
+// 					if err != nil && after > 0 {
+// 						retryDelay = time.Duration(after) * time.Second
+// 					}
+// 				}
+// 			}
+// 			time.Sleep(retryDelay)
+// 			continue
+// 		} else if resp.StatusCode != 200 {
+// 			message := fmt.Sprintf("getIngestionAuthToken: Request failed with nonretryable error code: %d, retryCount: %d", resp.StatusCode, retryCount)
+// 			Log(message)
+// 			SendException(message)
+// 			return ingestionAuthToken, refreshInterval, err
+// 		}
+// 		IsSuccess = true
+// 		break
+// 	}
+
+// 	if !IsSuccess || resp == nil || resp.Body == nil {
+// 		message := "getIngestionAuthToken: ran out of retries calling AMCS for ingestion token"
+// 		Log(message)
+// 		SendException(message)
+// 		return ingestionAuthToken, refreshInterval, err
+// 	}
+
+// 	// Pull out response body
+// 	responseBytes, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		Log("getIngestionAuthToken: Error reading response body from AMCS Ingestion API call : %s", err.Error())
+// 		return ingestionAuthToken, refreshInterval, err
+// 	}
+
+// 	// Unmarshall response body into struct
+// 	var ingestionTokenResponse IngestionTokenResponse
+// 	err = json.Unmarshal(responseBytes, &ingestionTokenResponse)
+// 	if err != nil {
+// 		Log("getIngestionAuthToken: Error unmarshalling the response: %s", err.Error())
+// 		return ingestionAuthToken, refreshInterval, err
+// 	}
+
+// 	ingestionAuthToken = ingestionTokenResponse.Ingestionauthtoken
+
+// 	refreshInterval, err = getTokenRefreshIntervalFromAmcsResponse(resp.Header)
+// 	if err != nil {
+// 		Log("getIngestionAuthToken: Error failed to parse max-age response header")
+// 		return ingestionAuthToken, refreshInterval, err
+// 	}
+// 	Log("getIngestionAuthToken: refresh interval %d seconds", refreshInterval)
+
+// 	Log("Info getIngestionAuthToken: end")
+// 	return ingestionAuthToken, refreshInterval, nil
+// }
 
 var cacheControlHeaderRegex = regexp.MustCompile(`max-age=([0-9]+)`)
 
@@ -635,22 +926,22 @@ func refreshIngestionAuthToken() {
 		}
 		var err error
 		// ignore agent configuration expiring, the configuration and channel IDs will never change (without creating an agent restart)
-		if ConfigurationId == "" || ChannelId == "" {
-			ConfigurationId, ChannelId, err = getAgentConfiguration(IMDSToken)
+		if GiGTokenEndpoint == "" || GiGEndpointURITemplate == "" {
+			GiGTokenEndpoint, GiGEndpointURITemplate, err = getGiGEndpoints(IMDSToken)
 			if err != nil {
-				message := fmt.Sprintf("refreshIngestionAuthToken: Error getAgentConfiguration %s \n", err.Error())
+				message := fmt.Sprintf("refreshIngestionAuthToken: Error getGiGEndpoints %s \n", err.Error())
 				Log(message)
 				SendException(message)
 				continue
 			}
 		}
-		if IMDSToken == "" || ConfigurationId == "" || ChannelId == "" {
-			message := "refreshIngestionAuthToken: IMDSToken or ConfigurationId or ChannelId empty"
+		if IMDSToken == "" || GiGTokenEndpoint == "" || GiGEndpointURITemplate == "" {
+			message := "refreshIngestionAuthToken: IMDSToken or GiGTokenEndpoint or GiGEndpointURITemplate empty"
 			Log(message)
 			SendException(message)
 			continue
 		}
-		ingestionAuthToken, refreshIntervalInSeconds, err := getIngestionAuthToken(IMDSToken, ConfigurationId, ChannelId)
+		ingestionAuthToken, refreshIntervalInSeconds, err := getGiGIngestionAuthToken(IMDSToken, GiGTokenEndpoint)
 		if err != nil {
 			message := fmt.Sprintf("refreshIngestionAuthToken: Error getIngestionAuthToken %s \n", err.Error())
 			Log(message)
