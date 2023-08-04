@@ -1,0 +1,12 @@
+{
+    "ServiceArguments": {
+      "Version": "1.0"
+    },
+
+      "EndpointConfigurations": [
+          {
+              "Destination": "GigLA",
+              "EndpointPort": 14000
+          }
+      ]
+  }
