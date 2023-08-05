@@ -814,18 +814,21 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATIO
     echo "export SSL_CERT_FILE=$SSL_CERT_FILE" >> ~/.bashrc
 else
       if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
-            echo "*** starting ama core agent in aad auth msi mode ***"
-            export PA_GIG_BRIDGE_MODE=true
-            export PA_FLUENT_SOCKET_PORT=14000
-            export PA_DATA_PORT=14000
-            export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
-
-            echo "export PA_FLUENT_SOCKET_PORT=$PA_FLUENT_SOCKET_PORT" >> ~/.bashrc
-            echo "export PA_DATA_PORT=$PA_DATA_PORT" >> ~/.bashrc
-            echo "export PA_GIG_BRIDGE_MODE=$PA_GIG_BRIDGE_MODE" >> ~/.bashrc
-            echo "export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=$DOTNET_SYSTEM_GLOBALIZATION_INVARIANT" >> ~/.bashrc
-            source ~/.bashrc
-   	      /opt/microsoft/azure-mdsd/bin/amacoreagent -c /etc/opt/microsoft/azuremonitoragent/amacoreagent --configport 12563 --amacalog /var/opt/microsoft/azuremonitoragent/log/amaca.log &
+           if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
+                  echo "*** starting ama core agent in aad auth msi mode since this is daemonset and main container ***"
+                  export PA_GIG_BRIDGE_MODE=true
+                  export PA_FLUENT_SOCKET_PORT=13000
+                  export PA_DATA_PORT=13000
+                  export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+                  {
+                     echo "export PA_FLUENT_SOCKET_PORT=$PA_FLUENT_SOCKET_PORT"
+                     echo "export PA_DATA_PORT=$PA_DATA_PORT"
+                     echo "export PA_GIG_BRIDGE_MODE=$PA_GIG_BRIDGE_MODE"
+                     echo "export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=$DOTNET_SYSTEM_GLOBALIZATION_INVARIANT"
+                  } >> ~/.bashrc
+                  source ~/.bashrc
+                  /opt/microsoft/azure-mdsd/bin/amacoreagent -c /etc/opt/microsoft/azuremonitoragent/amacoreagent --configport 12563 --amacalog /var/opt/microsoft/azuremonitoragent/log/amaca.log &
+            fi
 
             echo "*** setting up oneagent in aad auth msi mode ***"
             # msi auth specific args
