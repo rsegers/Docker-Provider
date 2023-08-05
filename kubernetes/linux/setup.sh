@@ -41,7 +41,7 @@ gem uninstall uri --version 0.11.0
 
 if [ "${ARCH}" != "arm64" ]; then
     # MDSD build 1.28 with GiG changes
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.26/azure-mdsd-1.28.0-build.master.1365.x86_64.rpm" -O azure-mdsd.rpm
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.26/azure-mdsd-1.28.0-build.master.1380.x86_64.rpm" -O azure-mdsd.rpm
 
 else
     wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.26.1/azure-mdsd-1.26.1-build.master.97.aarch64.rpm" -O azure-mdsd.rpm
