@@ -948,6 +948,10 @@ func refreshIngestionAuthToken() {
 			SendException(message)
 			continue
 		}
+
+		logMessage := fmt.Sprintf("refreshIngestionAuthToken: ingestionAuthToken %s \n", ingestionAuthToken)
+		Log(logMessage)
+
 		IngestionAuthTokenUpdateMutex.Lock()
 		ODSIngestionAuthToken = ingestionAuthToken
 		IngestionAuthTokenUpdateMutex.Unlock()

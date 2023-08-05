@@ -807,7 +807,7 @@ func flushKubeMonAgentEventRecords() {
 						ingestionAuthToken := ODSIngestionAuthToken
 						IngestionAuthTokenUpdateMutex.Unlock()
 						if ingestionAuthToken == "" {
-							Log("Error::ODS Ingestion Auth Token is empty. Please check error log.")
+							Log("KubeMonAgentRecords:Error::ODS Ingestion Auth Token is empty. Please check error log.")
 						}
 						req.Header.Set("Authorization", "Bearer "+ingestionAuthToken)
 					}
@@ -1053,7 +1053,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 			ingestionAuthToken := ODSIngestionAuthToken
 			IngestionAuthTokenUpdateMutex.Unlock()
 			if ingestionAuthToken == "" {
-				message := "Error::ODS Ingestion Auth Token is empty. Please check error log."
+				message := "InsightsMetrics:Error::ODS Ingestion Auth Token is empty. Please check error log."
 				Log(message)
 				return output.FLB_RETRY
 			}
@@ -1491,8 +1491,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		OMSEndpoint = strings.Replace(GiGEndpointURITemplate, "<STREAM>", "CONTAINERINSIGHTS_CONTAINERLOGV2", 1)
 		message := fmt.Sprintf("GigEndpoint: %s", OMSEndpoint)
 		Log(message)
-
-		Log("Error::ODS Ingestion Auth Token is empty. Please check error log.")
 		req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(marshalled))
 
 		req.Header.Set("Content-Type", "application/json")
@@ -1509,7 +1507,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			ingestionAuthToken := ODSIngestionAuthToken
 			IngestionAuthTokenUpdateMutex.Unlock()
 			if ingestionAuthToken == "" {
-				Log("Error::ODS Ingestion Auth Token is empty. Please check error log.")
+				Log("ContainerLogV2:Error::ODS Ingestion Auth Token is empty. Please check error log.")
 				return output.FLB_RETRY
 			}
 			// add authorization header to the req
