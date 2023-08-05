@@ -1456,24 +1456,24 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		Log("Success::ADX::Successfully wrote %d container log records to ADX in %s", numContainerLogRecords, elapsed)
 
 	} else if (ContainerLogSchemaV2 == true && len(dataItemsLAv2) > 0) || len(dataItemsLAv1) > 0 { //ODS
-		var logEntry interface{}
+		// var logEntry interface{}
 		recordType := ""
 		loglinesCount := 0
 		//schema v2
 		if len(dataItemsLAv2) > 0 && ContainerLogSchemaV2 == true {
-			logEntry = ContainerLogBlobLAv2{
-				DataType:  ContainerLogV2DataType,
-				IPName:    IPName,
-				DataItems: dataItemsLAv2}
+			// logEntry = ContainerLogBlobLAv2{
+			// 	DataType:  ContainerLogV2DataType,
+			// 	IPName:    IPName,
+			// 	DataItems: dataItemsLAv2}
 			loglinesCount = len(dataItemsLAv2)
 			recordType = "ContainerLogV2"
 		} else {
 			//schema v1
 			if len(dataItemsLAv1) > 0 {
-				logEntry = ContainerLogBlobLAv1{
-					DataType:  ContainerLogDataType,
-					IPName:    IPName,
-					DataItems: dataItemsLAv1}
+				// logEntry = ContainerLogBlobLAv1{
+				// 	DataType:  ContainerLogDataType,
+				// 	IPName:    IPName,
+				// 	DataItems: dataItemsLAv1}
 				loglinesCount = len(dataItemsLAv1)
 				recordType = "ContainerLog"
 			}
