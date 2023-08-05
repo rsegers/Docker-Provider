@@ -6,7 +6,7 @@
       "EndpointConfigurations": [
           {
               "Destination": "GigLA",
-              "EndpointPort": 13000
+              "EndpointPort": 14000
           }
       ]
   }
