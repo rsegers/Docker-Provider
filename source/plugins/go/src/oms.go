@@ -1479,7 +1479,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 		}
 
-		marshalled, err := json.Marshal(logEntry)
+        // For GiG Direct Ingestion,
+		marshalled, err := json.Marshal(dataItemsLAv2)
+		// For ODS
+		//marshalled, err := json.Marshal(logEntry)
 		//Log("LogEntry::e %s", marshalled)
 		if err != nil {
 			message := fmt.Sprintf("Error while Marshalling log Entry: %s", err.Error())
