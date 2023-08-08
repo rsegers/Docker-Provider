@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"compress/gzip"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -195,6 +196,8 @@ var (
 	IsGenevaLogsTelemetryServiceMode bool
 	// named pipe connection to ContainerLog for AMA
 	ContainerLogNamedPipe net.Conn
+	// gzip compression enabled or not
+	IsGzipCompressionEnabled bool
 )
 
 var (
@@ -1479,7 +1482,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 		}
 
-        // For GiG Direct Ingestion,
+		// For GiG Direct Ingestion,
 		marshalled, err := json.Marshal(dataItemsLAv2)
 		// For ODS
 		//marshalled, err := json.Marshal(logEntry)
@@ -1494,7 +1497,19 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		OMSEndpoint = strings.Replace(GiGEndpointURITemplate, "<STREAM>", "CONTAINERINSIGHTS_CONTAINERLOGV2", 1)
 		message := fmt.Sprintf("GigEndpoint: %s", OMSEndpoint)
 		Log(message)
-		req, _ := http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(marshalled))
+
+		var req *http.Request
+
+		if IsGzipCompressionEnabled {
+			var compressedBytes bytes.Buffer
+			w := gzip.NewWriter(&compressedBytes)
+			w.Write(marshalled)
+			w.Close()
+			req, _ = http.NewRequest("POST", OMSEndpoint, &compressedBytes)
+			req.Header.Set("Content-Encoding", "gzip")
+		} else {
+			req, _ = http.NewRequest("POST", OMSEndpoint, bytes.NewBuffer(marshalled))
+		}
 
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("User-Agent", userAgent)
@@ -1531,7 +1546,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			return output.FLB_RETRY
 		}
 
-		if resp == nil || ( resp.StatusCode != 200 && resp.StatusCode != 204) {
+		if resp == nil || (resp.StatusCode != 200 && resp.StatusCode != 204) {
 			if resp != nil {
 				Log("RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
 			}
@@ -1766,6 +1781,13 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	userAgent = fmt.Sprintf("%s/%s", agentName, dockerCimprovVersion)
 
 	Log("Usage-Agent = %s \n", userAgent)
+
+	IsGzipCompressionEnabled = false
+	isEnableGzipCompression := os.Getenv("ENABLE_GZIP_COMPRESSION")
+	if strings.Compare(strings.ToLower(isEnableGzipCompression), "true") == 0 {
+		IsGzipCompressionEnabled = true
+		Log("IsGzipCompressionEnabled %v", IsGzipCompressionEnabled)
+	}
 
 	// Initialize image,name map refresh ticker
 	containerInventoryRefreshInterval, err := strconv.Atoi(pluginConfig["container_inventory_refresh_interval"])
