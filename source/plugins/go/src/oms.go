@@ -1546,7 +1546,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			return output.FLB_RETRY
 		}
 
-		if resp == nil || (resp.StatusCode != 200 && resp.StatusCode != 204) {
+		if resp == nil || IsRetriableError(resp.StatusCode) {
 			if resp != nil {
 				Log("RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
 			}
