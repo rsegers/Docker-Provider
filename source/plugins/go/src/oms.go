@@ -1531,7 +1531,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			return output.FLB_RETRY
 		}
 
-		if resp == nil || resp.StatusCode != 200 {
+		if resp == nil || ( resp.StatusCode != 200 && resp.StatusCode != 204) {
 			if resp != nil {
 				Log("RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
 			}
@@ -1865,7 +1865,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 			fmt.Fprintf(os.Stdout, "Routing container logs thru %s route...\n", ContainerLogsADXRoute)
 		}
 	} else if strings.Compare(strings.ToLower(osType), "windows") != 0 { //for linux, oneagent will be default route
-		ContainerLogsRouteV2 = true //default is mdsd route
+		ContainerLogsRouteV2 = false //default is mdsd route // making v2 false for testing Direct GiG
 		Log("Routing container logs thru %s route...", ContainerLogsRoute)
 		fmt.Fprintf(os.Stdout, "Routing container logs thru %s route... \n", ContainerLogsRoute)
 	}
@@ -1926,7 +1926,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	MdsdInsightsMetricsTagRefreshTracker = time.Now()
 	MdsdContainerLogTagRefreshTracker = time.Now()
 	Log("ContainerLogsRouteADX: %v, IsWindows: %v, IsAADMSIAuthMode = %v IsGenevaLogsIntegrationEnabled = %v \n", ContainerLogsRouteADX, IsWindows, IsAADMSIAuthMode, IsGenevaLogsIntegrationEnabled)
-	if !ContainerLogsRouteADX && IsWindows && IsAADMSIAuthMode && !IsGenevaLogsIntegrationEnabled {
+	//if !ContainerLogsRouteADX && IsWindows && IsAADMSIAuthMode && !IsGenevaLogsIntegrationEnabled {
+	if !ContainerLogsRouteADX && IsAADMSIAuthMode && !IsGenevaLogsIntegrationEnabled {
 		Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)
 		IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
 		go refreshIngestionAuthToken()
