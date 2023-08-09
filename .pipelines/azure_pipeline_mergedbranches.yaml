@@ -272,6 +272,16 @@ jobs:
   #     TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01g'
 
   - task: onebranch.pipeline.signing@1
+  displayName: 'Setup Signing'
+  inputs:
+    command: 'setup'
+    signing_environment: 'azure-ado'
+    use_cache_v2: true
+    install_cert: true
+    watch_directory: $(Build.SourcesDirectory)
+    cache_directory: $(Build.SourcesDirectory)/.sign/.cache
+
+  - task: onebranch.pipeline.signing@1
     displayName: 'Sign Windows exe binaries'
     inputs:
       command: 'sign'
