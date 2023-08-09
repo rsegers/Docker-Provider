@@ -198,6 +198,8 @@ var (
 	ContainerLogNamedPipe net.Conn
 	// gzip compression enabled or not
 	IsGzipCompressionEnabled bool
+	// flag to check whether to use HTTP2
+    IsUseHTTP2 bool
 )
 
 var (
@@ -1749,6 +1751,13 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		IsAADMSIAuthMode = true
 		Log("AAD MSI Auth Mode Configured")
 	}
+
+	IsUseHTTP2 = false
+	if strings.Compare(strings.ToLower(os.Getenv("USE_HTTP2")), "true") == 0 {
+		IsUseHTTP2 = true
+		Log("HTTP2 configured")
+	}
+
 	ResourceID = os.Getenv(envAKSResourceID)
 
 	if len(ResourceID) > 0 {

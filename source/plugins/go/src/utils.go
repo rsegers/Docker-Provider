@@ -19,6 +19,7 @@ import (
 	"github.com/Azure/azure-kusto-go/kusto/ingest"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	"github.com/tinylib/msgp/msgp"
+	"golang.org/x/net/http2"
 )
 
 // ReadConfiguration reads a property file
@@ -65,7 +66,9 @@ func ReadConfiguration(filename string) (map[string]string, error) {
 // CreateHTTPClient used to create the client for sending post requests to OMSEndpoint
 func CreateHTTPClient() {
 	var transport *http.Transport
+	var http2transport *http2.Transport
 	if IsAADMSIAuthMode {
+		http2transport = &http2.Transport{}
 		transport = &http.Transport{}
 	} else {
 		certFilePath := PluginConfiguration["cert_file_path"]
@@ -103,9 +106,16 @@ func CreateHTTPClient() {
 		}
 	}
 
-	HTTPClient = http.Client{
-		Transport: transport,
-		Timeout:   30 * time.Second,
+	if IsUseHTTP2 {
+		HTTPClient = http.Client{
+			Transport: http2transport,
+			Timeout:   30 * time.Second,
+		}
+	} else {
+		HTTPClient = http.Client{
+			Transport: transport,
+			Timeout:   30 * time.Second,
+		}
 	}
 
 	Log("Successfully created HTTP Client")
