@@ -1518,6 +1518,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		//expensive to do string len for every request, so use a flag
 		if ResourceCentric == true {
 			req.Header.Set("x-ms-AzureResourceId", ResourceID)
+			req.Header.Set("azure-monitor-source-resourceId", ResourceID) // for GiG path
 		}
 
 		if IsAADMSIAuthMode == true {
