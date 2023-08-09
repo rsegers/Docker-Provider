@@ -220,56 +220,56 @@ jobs:
       exit /B %ERRORLEVEL%
     displayName: 'build base'
 
-  - task: onebranch.pipeline.signing@1
-    displayName: 'Sign OSS binaries'
-    inputs:
-      command: 'sign'
-      signing_environment: 'azure-ado'
-      cp_code: '135020002'
-      files_to_sign: '**\ruby31\bin\ruby.exe;**\ruby31\lib\ruby\gems\3.1.0\gems\cool.io-1.7.1\lib\*.so;**\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\*.so;**\ruby31\bin\ruby_builtin_dlls\*.dll;**\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\win32\*.so;**\ruby31\lib\ruby\gems\3.1.0\gems\msgpack-1.7.0\lib\msgpack\*.so;**\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\*.so'
-      search_root: '$(Build.SourcesDirectory)'
+  # - task: onebranch.pipeline.signing@1
+  #   displayName: 'Sign OSS binaries'
+  #   inputs:
+  #     command: 'sign'
+  #     signing_environment: 'azure-ado'
+  #     cp_code: '135020002'
+  #     files_to_sign: '**\ruby31\bin\ruby.exe;**\ruby31\lib\ruby\gems\3.1.0\gems\cool.io-1.7.1\lib\*.so;**\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\*.so;**\ruby31\bin\ruby_builtin_dlls\*.dll;**\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\win32\*.so;**\ruby31\lib\ruby\gems\3.1.0\gems\msgpack-1.7.0\lib\msgpack\*.so;**\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\*.so'
+  #     search_root: '$(Build.SourcesDirectory)'
   
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\bin\'
-      Contents: '.exe'
-      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01a'
+  # - task: CopyFiles@2
+  #   inputs:
+  #     SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\bin\'
+  #     Contents: '.exe'
+  #     TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01a'
 
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\lib\ruby\gems\3.1.0\gems\cool.io-1.7.1\lib\'
-      Contents: '.so'
-      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01b'
+  # - task: CopyFiles@2
+  #   inputs:
+  #     SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\lib\ruby\gems\3.1.0\gems\cool.io-1.7.1\lib\'
+  #     Contents: '.so'
+  #     TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01b'
 
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\'
-      Contents: '.so'
-      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01c'
+  # - task: CopyFiles@2
+  #   inputs:
+  #     SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\'
+  #     Contents: '.so'
+  #     TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01c'
 
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\bin\ruby_builtin_dlls\'
-      Contents: '.ddl'
-      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01d'
+  # - task: CopyFiles@2
+  #   inputs:
+  #     SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\bin\ruby_builtin_dlls\'
+  #     Contents: '.ddl'
+  #     TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01d'
   
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\win32\'
-      Contents: '.so'
-      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01e'
+  # - task: CopyFiles@2
+  #   inputs:
+  #     SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\win32\'
+  #     Contents: '.so'
+  #     TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01e'
 
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\lib\ruby\gems\3.1.0\gems\msgpack-1.7.0\lib\msgpack\'
-      Contents: '.so'
-      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01f'
+  # - task: CopyFiles@2
+  #   inputs:
+  #     SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\lib\ruby\gems\3.1.0\gems\msgpack-1.7.0\lib\msgpack\'
+  #     Contents: '.so'
+  #     TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01f'
 
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\'
-      Contents: '.so'
-      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01g'
+  # - task: CopyFiles@2
+  #   inputs:
+  #     SourceFolder: '$(Build.SourcesDirectory)\kubernetes\windows\amalogswindows\ruby31\lib\ruby\3.1.0\x64-mingw-ucrt\'
+  #     Contents: '.so'
+  #     TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_01g'
 
   - task: onebranch.pipeline.signing@1
     displayName: 'Sign Windows exe binaries'
