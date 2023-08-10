@@ -670,7 +670,8 @@ func refreshIngestionAuthToken() {
 }
 
 func IsRetriableError(httpStatusCode int) bool {
-	retryableStatusCodes := [5]int{408, 429, 502, 503, 504}
+    // Added 500 to retriable error code per Ingestion team
+	retryableStatusCodes := [6]int{408, 429, 502, 500, 503, 504}
 	for _, code := range retryableStatusCodes {
 		if code == httpStatusCode {
 			return true

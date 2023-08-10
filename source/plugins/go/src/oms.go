@@ -1072,7 +1072,11 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 			return output.FLB_RETRY
 		}
 
-		if resp == nil || resp.StatusCode != 200 {
+		if resp != nil && resp.Body != nil {
+			defer resp.Body.Close()
+		}
+
+		if resp == nil || IsRetriableError(resp.StatusCode) {
 			if resp != nil {
 				Log("PostTelegrafMetricsToLA::Error:(retriable) RequestID %s Response Status %v Status Code %v", reqID, resp.Status, resp.StatusCode)
 			}
@@ -1080,13 +1084,13 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 				UpdateNumTelegrafMetricsSentTelemetry(0, 1, 1, 0)
 			}
 			return output.FLB_RETRY
+		} else if (resp.StatusCode >= 200 && resp.StatusCode < 300) {
+			numMetrics := len(laMetrics)
+			UpdateNumTelegrafMetricsSentTelemetry(numMetrics, 0, 0, numWinMetricsWithTagsSize64KBorMore)
+			Log("PostTelegrafMetricsToLA::Info:Successfully flushed %v records in %v", numMetrics, elapsed)
+		} else {
+			Log("PostTelegrafMetricsToLA::Error:Failed with non-retriable error::RequestId %s Status %s Status Code %d", reqID, resp.Status, resp.StatusCode)
 		}
-
-		defer resp.Body.Close()
-
-		numMetrics := len(laMetrics)
-		UpdateNumTelegrafMetricsSentTelemetry(numMetrics, 0, 0, numWinMetricsWithTagsSize64KBorMore)
-		Log("PostTelegrafMetricsToLA::Info:Successfully flushed %v records in %v", numMetrics, elapsed)
 	}
 
 	return output.FLB_OK
@@ -1524,17 +1528,20 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			return output.FLB_RETRY
 		}
 
-		if resp == nil || resp.StatusCode != 200 {
-			if resp != nil {
-				Log("RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
-			}
-			return output.FLB_RETRY
+		// If the returned error is nil, the Response will contain a non-nil Body which the user is expected to close
+		if resp != nil && resp.Body != nil {
+			defer resp.Body.Close()
 		}
 
-		defer resp.Body.Close()
-		numContainerLogRecords = loglinesCount
-		Log("PostDataHelper::Info::Successfully flushed %d %s records to ODS in %s", numContainerLogRecords, recordType, elapsed)
-
+		if IsRetriableError(resp.StatusCode) {
+			Log("PostDataHelper::Warn::Failed with retriable error code hence retrying .RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
+			return output.FLB_RETRY
+		} else if (resp.StatusCode >= 200 && resp.StatusCode < 300) { // Success is indicated with 2xx status codes
+			numContainerLogRecords = loglinesCount
+			Log("PostDataHelper::Info::Successfully flushed %d %s records to ODS in %s", numContainerLogRecords, recordType, elapsed)
+		} else {
+			Log("PostDataHelper::Error:: Failed with non-retriable error::RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
+		}
 	}
 
 	ContainerLogTelemetryMutex.Lock()
