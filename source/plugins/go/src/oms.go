@@ -1084,7 +1084,7 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 				UpdateNumTelegrafMetricsSentTelemetry(0, 1, 1, 0)
 			}
 			return output.FLB_RETRY
-		} else if (resp.StatusCode >= 200 && resp.StatusCode < 300) {
+		} else if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			numMetrics := len(laMetrics)
 			UpdateNumTelegrafMetricsSentTelemetry(numMetrics, 0, 0, numWinMetricsWithTagsSize64KBorMore)
 			Log("PostTelegrafMetricsToLA::Info:Successfully flushed %v records in %v", numMetrics, elapsed)
@@ -1533,10 +1533,12 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			defer resp.Body.Close()
 		}
 
-		if IsRetriableError(resp.StatusCode) {
-			Log("PostDataHelper::Warn::Failed with retriable error code hence retrying .RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
+		if resp == nil || IsRetriableError(resp.StatusCode) {
+			if resp != nil {
+				Log("PostDataHelper::Warn::Failed with retriable error code hence retrying .RequestId %s Status %s Status Code %d", reqId, resp.Status, resp.StatusCode)
+			}
 			return output.FLB_RETRY
-		} else if (resp.StatusCode >= 200 && resp.StatusCode < 300) { // Success is indicated with 2xx status codes
+		} else if resp.StatusCode >= 200 && resp.StatusCode < 300 { // Success is indicated with 2xx status codes
 			numContainerLogRecords = loglinesCount
 			Log("PostDataHelper::Info::Successfully flushed %d %s records to ODS in %s", numContainerLogRecords, recordType, elapsed)
 		} else {
