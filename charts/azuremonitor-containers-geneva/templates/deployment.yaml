@@ -18,8 +18,6 @@ spec:
     metadata:
      annotations:
        agentVersion: {{ .Values.image.agentVersion }}
-       prometheus.io/scrape: "true"
-       prometheus.io/port: "9102"
      labels:
        rsName: "ama-logs-geneva"
        aadpodidbinding: {{ .Values.genevaLogsConfig.aadpodidbinding }}
