@@ -225,6 +225,14 @@ def get_command_windows(env_variable_name, env_variable_value)
   return "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n" + "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
 end
 
+def is_configure_geneva_env_vars()
+  is_configure = false
+  if (@geneva_logs_integration && !@multi_tenancy) || (@geneva_logs_integration && @multi_tenancy && !@infra_namespaces.empty?)
+    is_configure = true
+  end
+  return is_configure
+end
+
 @configSchemaVersion = ENV["AZMON_AGENT_CFG_SCHEMA_VERSION"]
 puts "****************Start Agent Integrations Config Processing********************"
 if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @configSchemaVersion.strip.casecmp("v1") == 0 #note v1 is the only supported schema version , so hardcoding it
@@ -254,7 +262,7 @@ if !file.nil?
     file.write("export ENABLE_FBIT_THREADING=#{@enable_fbit_threading}\n")
   end
 
-  if @geneva_logs_integration
+  if is_configure_geneva_env_vars()
     file.write("export MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}\n")
     file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}\n")
     file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
@@ -290,7 +298,7 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       file.write(commands)
     end
 
-    if @geneva_logs_integration
+    if is_configure_geneva_env_vars()
       commands = get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment)
       file.write(commands)
       commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace_windows)

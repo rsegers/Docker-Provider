@@ -61,6 +61,17 @@ waitforlisteneronTCPport() {
       fi
 }
 
+isGenevaMode() {
+  if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${GENEVA_LOGS_MULTI_TENANCY}" == "false" ]; then
+   true
+  elif [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ] && [ -n "${GENEVA_LOGS_INFRA_NAMESPACES}" ]; then
+   true
+  elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+   true
+  else
+   false
+  fi
+}
 checkAgentOnboardingStatus() {
       local sleepdurationsecs=1
       local totalsleptsecs=0
@@ -80,7 +91,8 @@ checkAgentOnboardingStatus() {
                         successMessage="Loaded data sources"
                         failureMessage="Failed to load data sources into config"
                   fi
-                  if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+
+                  if isGenevaMode; then
                         successMessage="Config downloaded and parsed"
                         failureMessage="failed to download start up config"
                   fi
@@ -800,7 +812,7 @@ source /etc/mdsd.d/envmdsd
 MDSD_AAD_MSI_AUTH_ARGS=""
 # check if its AAD Auth MSI mode via USING_AAD_MSI_AUTH
 export AAD_MSI_AUTH_MODE=false
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION}" == "true"  -o "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && isGenevaMode; then
     echo "Runnning AMA in Geneva Logs Integration Mode"
     export MONITORING_USE_GENEVA_CONFIG_SERVICE=true
     echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=true" >> ~/.bashrc
