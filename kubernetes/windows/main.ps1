@@ -716,24 +716,24 @@ function Bootstrap-CACertificates {
     }
 }
 
-function IsGenevaMode {
-    $isgenevaLogsIntegration=$false
-    $isgenevaLogsMultitenancy=$false
+function IsGenevaMode() {
+    $isGenevaLogsIntegration=$false
+    $isGenevaLogsMultitenancy=$false
     $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION")
     $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY")
     $genevaLogsInfraNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES")
-    $isgenevaLogsInfraNameSpacesEmpty=$true
+    $isGenevaLogsInfraNameSpacesEmpty=$true
 
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true') {
-        $isgenevaLogsIntegration=$true
+        $isGenevaLogsIntegration=$true
     }
     if (![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
-        $isgenevaLogsMultitenancy=$true
+        $isGenevaLogsMultitenancy=$true
     }
     if (![string]::IsNullOrEmpty($genevaLogsInfraNameSpaces)) {
-        $isgenevaLogsInfraNameSpacesEmpty=$false
+        $isGenevaLogsInfraNameSpacesEmpty=$false
     }
-    if ($isgenevaLogsIntegration -and !$isgenevaLogsMultitenancy) -or ($isgenevaLogsIntegration -and $isgenevaLogsMultitenancy -and ! $isgenevaLogsInfraNameSpacesEmpty){
+    if (($isGenevaLogsIntegration -and !$isGenevaLogsMultitenancy) -or ($isGenevaLogsIntegration -and $isGenevaLogsMultitenancy -and ! $isGenevaLogsInfraNameSpacesEmpty)){
       return $true
     }
     return $false
