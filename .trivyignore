@@ -1,9 +1,9 @@
-# telegraf MEDIUM
+#telegraf MEDIUM
 # CVE-2019-3826
 # CVE-2023-28841
 # CVE-2023-28842
 # CVE-2023-25809
-# GHSA-2w8w-qhg4-f78j
+GHSA-2w8w-qhg4-f78j
 
 # # telegraf HIGH
 # CVE-2023-27561
@@ -11,8 +11,6 @@
 # CVE-2023-28642
 # CVE-2023-2253
 # CVE-2023-34231
-
-# GHSA-2w8w-qhg4-f78j
 
 # ruby HIGH
 CVE-2017-10784
