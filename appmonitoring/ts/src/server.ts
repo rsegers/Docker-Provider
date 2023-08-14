@@ -1,13 +1,28 @@
-﻿import * as fs from "fs";
-import * as https from "https";
+﻿import * as https from "https";
 import { ContentProcessor } from "./ContentProcessor.js";
 import { logger, Metrics } from "./LoggerWrapper.js";
 import { AppMonitoringConfigCR, IRootObject } from "./RequestDefinition.js";
 import { K8sWatcher } from "./K8sWatcher.js";
 import { AppMonitoringConfigCRsCollection } from "./AppMonitoringConfigCRsCollection.js"
+import fs from "fs";
+import { CertificateManager } from "./CertificateGenerator.js";
 
+const containerMode = process.env.CONTAINER_MODE;
+
+if ("secrets-manager".localeCompare(containerMode) === 0) {
+    try {
+        logger.info("Running in certificate manager mode...");
+        await CertificateManager.CreateWebhookAndCertificates();
+    } catch (error) {
+        logger.error(JSON.stringify(error));
+        logger.error("Failed to Install Certificates, Terminating...");
+    }
+    
+    process.exit();
+} 
 const crs: AppMonitoringConfigCRsCollection = new AppMonitoringConfigCRsCollection();
 
+logger.info("Running in server mode...");
 // don't await, this runs an infinite loop
 K8sWatcher.StartWatchingCRs((cr: AppMonitoringConfigCR, isRemoved: boolean) => {
     if (isRemoved) {
