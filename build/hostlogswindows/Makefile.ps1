@@ -36,7 +36,7 @@ New-Item -Path $publishdir -ItemType "directory" -Force
 Write-Host("Start:build livenessprobe cpp code")
 $livenessprobesrcpath = Join-Path -Path $builddir  -ChildPath "hostlogswindows\installer\livenessprobe\livenessprobe.cpp"
 $livenessprobeexepath = Join-Path -Path $builddir  -ChildPath "hostlogswindows\installer\livenessprobe\livenessprobe.exe"
-g++ $livenessprobesrcpath -o $livenessprobeexepath -municode
+g++ $livenessprobesrcpath -o $livenessprobeexepath -municode -l shlwapi
 Write-Host("End:build livenessprobe cpp code")
 if (Test-Path -Path $livenessprobeexepath){
     Write-Host("livenessprobe.exe exists which indicates cpp build step succeeded") -ForegroundColor Green
@@ -44,6 +44,7 @@ if (Test-Path -Path $livenessprobeexepath){
     Write-Host("livenessprobe.exe doesnt exist which indicates cpp build step failed") -ForegroundColor Red
     exit 1
 }
+
 
 $installerdir = Join-Path -Path $builddir -ChildPath "common\installer"
 Write-Host("copying common installer files conf and scripts from :" + $installerdir + "  to  :" + $publishdir + " ...")

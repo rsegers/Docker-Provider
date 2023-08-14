@@ -77,6 +77,9 @@ class TestGenevaConfigParser < Minitest::Unit::TestCase
   # It does not verify that the script is valid and correctly sets env vars
   def test_writeEnvScript
     # set values to write
+    @geneva_data_directory = "./opt/genevamonitoringagent/datadirectory"
+    @geneva_auth_type = "AuthMSIToken"
+    @geneva_region = "eastus2"
     @geneva_account_environment = CONFIG_MAP_VARIABLES[:environment]
     @geneva_account_name = CONFIG_MAP_VARIABLES[:account]
     @geneva_account_namespace = CONFIG_MAP_VARIABLES[:namespace]
@@ -94,6 +97,9 @@ class TestGenevaConfigParser < Minitest::Unit::TestCase
       # verify expected env variables appear in the script
       # this does not verify that the script sets them correctly
       content = f.read
+      assert(/.*MONITORING_DATA_DIRECTORY.*/.match(content), "MONITORING_DATA_DIRECTORY env variable not set by script.")
+      assert(/.*MONITORING_GCS_AUTH_ID_TYPE.*/.match(content), "MONITORING_GCS_AUTH_ID_TYPE env variable not set by script.")
+      assert(/.*MONITORING_GCS_REGION.*/.match(content), "MONITORING_GCS_REGION env variable not set by script.")
       assert(/.*MONITORING_GCS_ENVIRONMENT.*/.match(content), "MONITORING_GCS_ENVIRONMENT env variable not set by script.")
       assert(/.*MONITORING_GCS_ACCOUNT.*/.match(content), "MONITORING_GCS_ACCOUNT env variable not set by script.")
       assert(/.*MONITORING_GCS_NAMESPACE.*/.match(content), "MONITORING_GCS_NAMESPACE env variable not set by script.")

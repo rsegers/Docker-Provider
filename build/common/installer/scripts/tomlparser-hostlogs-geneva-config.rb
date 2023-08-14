@@ -9,11 +9,14 @@ require_relative "ConfigParseErrorLogger"
 @configSchemaVersion = ""
 
 # configmap settings related to geneva logs config
-@geneva_account_environment = ""
-@geneva_account_name = ""
-@geneva_account_namespace = ""
-@geneva_logs_config_version = ""
-@geneva_gcs_authid = ""
+@geneva_data_directory = "./opt/genevamonitoringagent/datadirectory"
+@geneva_auth_type = "AuthMSIToken"
+@geneva_region = ENV["AKS_REGION"]
+@geneva_account_environment = "Placeholder"
+@geneva_account_name = "Placeholder"
+@geneva_account_namespace = "Placeholder"
+@geneva_logs_config_version = "Placeholder"
+@geneva_gcs_authid = "Placeholder#Placeholder"
 @azure_json_path = "C:\\k\\azure.json"
 
 # Use parser to parse the configmap toml file to a ruby structure
@@ -92,25 +95,28 @@ def writeEnvScript(filepath)
 
   if !file.nil?
 
-    if !@geneva_account_environment.empty? && !@geneva_account_name.empty? && !@geneva_account_namespace.empty? && !@geneva_logs_config_version.empty? && !@geneva_gcs_authid.empty?
-      file.write(get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment))
-      file.write(get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name))
-      file.write(get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace))
-      file.write(get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version))
-      
-      authIdParts =  @geneva_gcs_authid.split('#', 2)
-      file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
-      file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
+    file.write(get_command_windows("MONITORING_DATA_DIRECTORY", @geneva_data_directory))
+    file.write(get_command_windows("MONITORING_GCS_AUTH_ID_TYPE", @geneva_auth_type))
+    file.write(get_command_windows("MONITORING_GCS_REGION", @geneva_region))
+    file.write(get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment))
+    file.write(get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name))
+    file.write(get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace))
+    file.write(get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version))
 
-      puts "Using config map value: MONITORING_GCS_ENVIRONMENT = #{@geneva_account_environment}"
-      puts "Using config map value: MONITORING_GCS_ACCOUNT = #{@geneva_account_name}"
-      puts "Using config map value: MONITORING_GCS_NAMESPACE = #{@geneva_account_namespace}"
-      puts "Using config map value: MONITORING_CONFIG_VERSION = #{@geneva_logs_config_version}"
-      puts "Using config map value: MONITORING_MANAGED_ID_IDENTIFIER = #{authIdParts[0]}"
-      puts "Using config map value: MONITORING_MANAGED_ID_VALUE= #{authIdParts[1]}"
+    authIdParts =  @geneva_gcs_authid.split('#', 2)
+    file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
+    file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
 
-      puts "config::info:successfully parsed geneva_logs_config settings"
-    end
+    puts "Using config map value: MONITORING_DATA_DIRECTORY = #{@geneva_data_directory}"
+    puts "Using config map value: MONITORING_GCS_AUTH_ID_TYPE = #{@geneva_auth_type}"
+    puts "Using config map value: MONITORING_GCS_REGION = #{@geneva_region}"
+    puts "Using config map value: MONITORING_GCS_ENVIRONMENT = #{@geneva_account_environment}"
+    puts "Using config map value: MONITORING_GCS_ACCOUNT = #{@geneva_account_name}"
+    puts "Using config map value: MONITORING_GCS_NAMESPACE = #{@geneva_account_namespace}"
+    puts "Using config map value: MONITORING_CONFIG_VERSION = #{@geneva_logs_config_version}"
+    puts "Using config map value: MONITORING_MANAGED_ID_IDENTIFIER = #{authIdParts[0]}"
+    puts "Using config map value: MONITORING_MANAGED_ID_VALUE= #{authIdParts[1]}"
+    puts "config::info:successfully parsed geneva_logs_config settings"
 
     # Close file after writing all environment variables
     file.close
@@ -133,7 +139,7 @@ else
 end
 
 def get_command_windows(env_variable_name, env_variable_value)
-  return "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n" + "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
+  return "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n"
 end
 
 writeEnvScript("setagentenv.ps1")

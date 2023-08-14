@@ -1,59 +1,16 @@
-$rootDir = Get-Location
-
 function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\opt\hostlogswindows\scripts\powershell\filesystemwatcher.ps1
 }
 
 function Set-EnvironmentVariables {
 
-    $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
-    if (![string]::IsNullOrEmpty($aksResourceId)) {
-        [System.Environment]::SetEnvironmentVariable("AKS_RESOURCE_ID", $aksResourceId, "machine")
-        Write-Host "Successfully set environment variable AKS_RESOURCE_ID - $($aksResourceId) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable AKS_RESOURCE_ID for target 'machine' since it is either null or empty"
-    }
-
-    $aksRegion = [System.Environment]::GetEnvironmentVariable("AKS_REGION", "process")
-    if (![string]::IsNullOrEmpty($aksRegion)) {
-        [System.Environment]::SetEnvironmentVariable("AKS_REGION", $aksRegion, "machine")
-        Write-Host "Successfully set environment variable AKS_REGION - $($aksRegion) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable AKS_REGION for target 'machine' since it is either null or empty"
-    }
-
-    $hostName = [System.Environment]::GetEnvironmentVariable("HOSTNAME", "process")
-    if (![string]::IsNullOrEmpty($hostName)) {
-        [System.Environment]::SetEnvironmentVariable("HOSTNAME", $hostName, "machine")
-        Write-Host "Successfully set environment variable HOSTNAME - $($hostName) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable HOSTNAME for target 'machine' since it is either null or empty"
-    }
-
-
     $schemaVersionFile = './etc/config/settings/schema-version'
     if (Test-Path $schemaVersionFile) {
         $schemaVersion = Get-Content $schemaVersionFile | ForEach-Object { $_.TrimEnd() }
         if ($schemaVersion.GetType().Name -eq 'String') {
             [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Process")
-            [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Machine")
         }
         $env:AZMON_AGENT_CFG_SCHEMA_VERSION
-    }
-
-    # Set env vars for geneva monitor
-    $envVars = @{
-        MONITORING_DATA_DIRECTORY = (Join-Path $rootDir "opt\genevamonitoringagent\datadirectory")
-        MONITORING_GCS_AUTH_ID_TYPE = "AuthMSIToken"
-        MONITORING_GCS_REGION = "$aksregion"    
-    }
-
-    foreach($key in $envVars.PSBase.Keys) {
-        [System.Environment]::SetEnvironmentVariable($key, $envVars[$key], "Process")
-        [System.Environment]::SetEnvironmentVariable($key, $envVars[$key], "Machine")
     }
 
     # run config parser
@@ -64,7 +21,10 @@ function Set-EnvironmentVariables {
     .\setagentenv.ps1
 }
 
-function Get-GenevaEnabled {
+function Get-GenevaEnvironmentConfiguration {
+  $gcsDataDirectory = [System.Environment]::GetEnvironmentVariable("MONITORING_DATA_DIRECTORY", "process")
+  $gcsAuthIdType = [System.Environment]::GetEnvironmentVariable("MONITORING_GCS_AUTH_ID_TYPE", "process")
+  $gcsRegion = [System.Environment]::GetEnvironmentVariable("MONITORING_GCS_REGION", "process")
   $gcsEnvironment = [System.Environment]::GetEnvironmentVariable("MONITORING_GCS_ENVIRONMENT", "process")
   $gcsAccount = [System.Environment]::GetEnvironmentVariable("MONITORING_GCS_ACCOUNT", "process")
   $gcsNamespace = [System.Environment]::GetEnvironmentVariable("MONITORING_GCS_NAMESPACE", "process")
@@ -72,9 +32,12 @@ function Get-GenevaEnabled {
   $gcsAuthIdIdentifier = [System.Environment]::GetEnvironmentVariable("MONITORING_MANAGED_ID_IDENTIFIER", "process")
   $gcsAuthIdValue = [System.Environment]::GetEnvironmentVariable("MONITORING_MANAGED_ID_VALUE", "process")
 
-  return (![string]::IsNullOrEmpty($gcsEnvironment)) -and 
+  return (![string]::IsNullOrEmpty($gcsDataDirectory)) -and
+    (![string]::IsNullOrEmpty($gcsAuthIdType)) -and
+    (![string]::IsNullOrEmpty($gcsRegion)) -and
+    (![string]::IsNullOrEmpty($gcsEnvironment)) -and 
     (![string]::IsNullOrEmpty($gcsAccount)) -and 
-    (![string]::IsNullOrEmpty($gcsNamespace)) -and 
+    (![string]::IsNullOrEmpty($gcsNamespace)) -and
     (![string]::IsNullOrEmpty($gcsConfigVersion)) -and 
     (![string]::IsNullOrEmpty($gcsAuthIdIdentifier))  -and 
     (![string]::IsNullOrEmpty($gcsAuthIdValue)) 
@@ -85,14 +48,20 @@ Start-Transcript -Path main.txt
 Set-EnvironmentVariables
 Start-FileSystemWatcher
 
-if(Get-GenevaEnabled){
-    Invoke-Expression ".\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe -useenv"
-} else {
-    Write-Host "Geneva not configured. Watching for config map"
-    # Infinite loop keeps container alive while waiting for config map
-    # Otherwise when the process ends, kubernetes sees this as a crash and the container will enter a crash loop
-    while($true){
-        Start-Sleep 3600
+if(Get-GenevaEnvironmentConfiguration)
+{
+    Write-Host "Geneva environment is configured. Starting Windows AMA in 1P Mode"
+
+    Start-Job -Name "WindowsHostLogsJob" -ScriptBlock { 
+        Start-Process -NoNewWindow -FilePath ".\opt\genevamonitoringagent\genevamonitoringagent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")
     }
+} 
+else 
+{
+    Write-Host "Geneva environment not configured. Liveness probe will fail the container."
 }
 
+# Execute Notepad.exe to keep container alive since there is nothing in the foreground.
+Notepad.exe | Out-Null
+
+Write-Host "Main.ps1 ending"
