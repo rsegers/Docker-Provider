@@ -1,0 +1,42 @@
+data_dir = "/var/opt/microsoft/docker-cimprov/log"
+
+[sinks.prometheus_exporter]
+type = "prometheus_exporter"
+inputs = [ "vector_metrics" ]
+
+[sinks.azure_monitor_logs]
+customer_id = "WSID"
+inputs = [ "parser" ]
+log_type = "VectorContainerLog"
+shared_key = "WSKEY"
+type = "azure_monitor_logs"
+
+  [sinks.azure_monitor_logs.acknowledgements]
+  enabled = true
+
+  [[sinks.azure_monitor_logs.buffer]]
+  max_events = 1_000_000
+  type = "memory"
+  when_full = "block"
+
+[sources.kube_log]
+include = [ "/var/log/containers/*.log" ]
+exclude = [ "/var/log/containers/*_kube-system_*.log" ]
+type = "file"
+
+[sources.vector_metrics]
+type = "internal_metrics"
+scrape_interval_secs = 60
+
+[transforms.parser]
+type = "remap"
+inputs = [ "kube_log" ]
+source = """
+. |= parse_regex!(.message, r'^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<log>.*)$')
+.filepath = .file
+del(.source_type)
+del(.time)
+del(.file)
+del(.host)
+del(.message)
+del(.Message)"""

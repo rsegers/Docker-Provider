@@ -40,6 +40,8 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/tomlparser-mdm-metrics-config.rb;                                  build/common/installer/scripts/tomlparser-mdm-metrics-config.rb;     755; root; root
 /opt/tomlparser-metric-collection-config.rb;                            build/linux/installer/scripts/tomlparser-metric-collection-config.rb;     755; root; root
 
+/etc/opt/microsoft/docker-cimprov/vector.toml;			                  build/linux/installer/conf/vector.toml;                    644; root; root
+
 /opt/tomlparser-geneva-config.rb;                                       build/common/installer/scripts/tomlparser-geneva-config.rb;           755; root; root
 /etc/opt/microsoft/azuremonitoragent/amacoreagent/PA.json;              build/linux/installer/conf/PA.json;                                   755; root; root
 

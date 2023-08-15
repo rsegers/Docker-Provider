@@ -265,6 +265,14 @@ else
       echo "customRegion:$customRegion"
 fi
 
+echo "starting vector ..."
+echo "vector: replace WSID & WSKEY placeholders in the vector.toml"
+sed -i "s/WSID/$WSID/" /etc/opt/microsoft/docker-cimprov/vector.toml
+sed -i "s/WSKEY/$WSKEY/" /etc/opt/microsoft/docker-cimprov/vector.toml
+/opt/vector --config /etc/opt/microsoft/docker-cimprov/vector.toml -q &
+echo "vector started successfully."
+
+
 #set agent config schema version
 if [ -e "/etc/config/settings/schema-version" ] && [ -s "/etc/config/settings/schema-version" ]; then
       #trim
