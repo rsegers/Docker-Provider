@@ -227,7 +227,7 @@ end
 
 def is_configure_geneva_env_vars()
   is_configure = false
-  if (@geneva_logs_integration && !@multi_tenancy) || (@geneva_logs_integration && @multi_tenancy && !@infra_namespaces.empty?)
+  if (@geneva_logs_integration && (!@multi_tenancy || !@infra_namespaces.empty?))
     is_configure = true
   end
   return is_configure

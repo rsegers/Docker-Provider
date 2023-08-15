@@ -62,9 +62,7 @@ waitforlisteneronTCPport() {
 }
 
 isGenevaMode() {
-  if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${GENEVA_LOGS_MULTI_TENANCY}" == "false" ]; then
-   true
-  elif [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ] && [ -n "${GENEVA_LOGS_INFRA_NAMESPACES}" ]; then
+  if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && { [ "${GENEVA_LOGS_MULTI_TENANCY}" == "false" ] || [ -n "${GENEVA_LOGS_INFRA_NAMESPACES}" ]; }; then
    true
   elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
    true
