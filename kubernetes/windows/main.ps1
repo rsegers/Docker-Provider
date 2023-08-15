@@ -733,7 +733,7 @@ function IsGenevaMode() {
     if (![string]::IsNullOrEmpty($genevaLogsInfraNameSpaces)) {
         $isGenevaLogsInfraNameSpacesEmpty=$false
     }
-    if (($isGenevaLogsIntegration -and !$isGenevaLogsMultitenancy) -or ($isGenevaLogsIntegration -and $isGenevaLogsMultitenancy -and ! $isGenevaLogsInfraNameSpacesEmpty)){
+    if ($isGenevaLogsIntegration -and (!$isGenevaLogsMultitenancy -or !$isGenevaLogsInfraNameSpacesEmpty)){
       return $true
     }
     return $false
