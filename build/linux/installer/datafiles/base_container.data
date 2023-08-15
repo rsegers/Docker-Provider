@@ -181,9 +181,10 @@ MAINTAINER:              'Microsoft Corporation'
 /var/opt/microsoft/azuremonitoragent/log;               755; root; root
 
 
+/opt/vector;                              755; root; root;sysdir
 /opt/fluent-bit;                          755; root; root;sysdir
 /opt/fluent-bit/bin;                      755; root; root;sysdir
-/etc/telegraf;                              755; root; root;sysdir
+/etc/telegraf;                            755; root; root;sysdir
 
 /etc/fluent;                                                         755; root; root; sysdir
 /etc/fluent/plugin;                                                  755; root; root; sysdir
