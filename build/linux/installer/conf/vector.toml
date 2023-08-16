@@ -5,10 +5,10 @@ type = "prometheus_exporter"
 inputs = [ "vector_metrics" ]
 
 [sinks.azure_monitor_logs]
-customer_id = "WSID"
+customer_id = "${WSID}"
 inputs = [ "parser" ]
 log_type = "VectorContainerLog"
-shared_key = "WSKEY"
+shared_key = "{WSKEY}"
 type = "azure_monitor_logs"
 
   [sinks.azure_monitor_logs.acknowledgements]
