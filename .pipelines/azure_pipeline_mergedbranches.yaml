@@ -220,6 +220,15 @@ jobs:
       exit /B %ERRORLEVEL%
     displayName: 'build base'
 
+  - script: echo $(Build.SourcesDirectory)
+    displayName: 'Print Build.SourcesDirectory'
+
+  - script: echo $(System.DefaultWorkingDirectory)
+    displayName: 'Print Build.DefaultWorkingDirectory'
+
+  - script: echo $(Build.ArtifactStagingDirectory)
+    displayName: 'Print Build.ArtifactStagingDirectory'
+
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
