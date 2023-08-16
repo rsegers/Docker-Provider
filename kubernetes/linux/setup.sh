@@ -88,8 +88,11 @@ echo "$(fluent-bit --version)" >> packages_version.txt
 fluentd_version="1.14.6"
 gem install fluentd -v $fluentd_version --no-document
 
-wget https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.26/vector -o vector
+wget https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.26/vector.tar.gz -O vector.tar.gz
+tar -xzf vector.tar.gz
 
+# remove vector.tar.gz file
+rm -rf vector.tar.gz
 # remove the test directory from fluentd
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/fluentd-$fluentd_version/test/
 
