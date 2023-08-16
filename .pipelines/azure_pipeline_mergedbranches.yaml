@@ -220,6 +220,51 @@ jobs:
       exit /B %ERRORLEVEL%
     displayName: 'build base'
 
+  - task: EsrpCodeSigning@3
+    inputs:
+      ConnectedServiceName: 'ESRPContainerInsights Service Connection'
+      FolderPath: '$(Build.SourcesDirectory)'
+      Pattern: '*.dll,*.exe'
+      signConfigType: 'inlineSignParams'
+      inlineOperation: |
+        [
+                {
+                    "KeyCode" : "CP-230012",
+                    "OperationCode" : "SigntoolSign",
+                    "Parameters" : {
+                        "OpusName" : "Microsoft",
+                        "OpusInfo" : "http://www.microsoft.com",
+                        "FileDigest" : "/fd \"SHA256\"",
+                        "PageHash" : "/NPH",
+                        "TimeStamp" : "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                    },
+                    "ToolName" : "sign",
+                    "ToolVersion" : "1.0"
+                },
+                {
+                    "KeyCode" : "CP-230012",
+                    "OperationCode" : "SigntoolVerify",
+                    "Parameters" : {},
+                    "ToolName" : "sign",
+                    "ToolVersion" : "1.0"
+                }
+            ]
+      SessionTimeout: '60'
+      MaxConcurrency: '50'
+      MaxRetryAttempts: '5'
+
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)\opt\amalogswindows\certgenerator\'
+      Contents: '.exe'
+      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_02a'
+
+  - task: CopyFiles@2
+    inputs:
+      SourceFolder: '$(Build.SourcesDirectory)\opt\amalogswindows\scripts\cmd\'
+      Contents: '.exe'
+      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_02b'
+
   - task: CodeQL3000Init@0
   - task: AzureCLI@2
     displayName: "Docker windows build for ltsc2019"
