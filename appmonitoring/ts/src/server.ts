@@ -16,6 +16,7 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
     } catch (error) {
         logger.error(JSON.stringify(error));
         logger.error("Failed to Install Certificates, Terminating...");
+        throw error;
     }
     
     process.exit();
@@ -52,6 +53,7 @@ try {
     logger.info(`Certs successfully loaded. Cert: ${options.cert}`);
 } catch (e) {
     logger.error(`Failed to load certs: ${e}`);
+    throw e;
 }
 
 const port = process.env.port || 1337;
