@@ -262,17 +262,17 @@ jobs:
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
 
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: '$(Build.SourcesDirectory)\opt\amalogswindows\certgenerator\'
-      Contents: '.exe'
-      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_02a'
+  # - task: CopyFiles@2
+  #   inputs:
+  #     SourceFolder: '$(Build.SourcesDirectory)\opt\amalogswindows\certgenerator\'
+  #     Contents: '.exe'
+  #     TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_02a'
 
-  - task: CopyFiles@2
-    inputs:
-      SourceFolder: '$(Build.SourcesDirectory)\opt\amalogswindows\scripts\cmd\'
-      Contents: '.exe'
-      TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_02b'
+  # - task: CopyFiles@2
+  #   inputs:
+  #     SourceFolder: '$(Build.SourcesDirectory)\opt\amalogswindows\scripts\cmd\'
+  #     Contents: '.exe'
+  #     TargetFolder: '$(Build.SourcesDirectory)\out\package\signed_files_02b'
 
   - task: CodeQL3000Init@0
   - task: AzureCLI@2
