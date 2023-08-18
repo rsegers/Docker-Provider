@@ -6,11 +6,16 @@ import (
 	"Docker-Provider/source/plugins/go/src/extension"
 	"context"
 	"net"
+
+	// "os"
 	"syscall"
 	"time"
 
 	"github.com/Microsoft/go-winio"
 )
+
+// var lockFile *os.File
+// var err error
 
 func CreateWindowsNamedPipeClient(namedPipe string, namedPipeConnection *net.Conn) {
 	if namedPipe == "" {
@@ -51,3 +56,27 @@ func CheckIfNamedPipeCreated(namedPipeConnection *net.Conn, datatype string, err
 	}
 	return true
 }
+
+// func GetFileLock() error {
+// 	lockFilePath := "/etc/amalogswindows/filelock_ama"
+// 	lockFile, err = os.OpenFile(lockFilePath, os.O_CREATE|os.O_RDWR, 0666)
+// 	if err != nil {
+// 		Log("Error opening the lockfile: %s", err)
+// 		return err
+// 	}
+// 	err = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX)
+// 	if err != nil {
+// 		Log("Error getting the access of the file: %s", err)
+// 		return err
+// 	}
+// 	return nil
+// }
+
+// func ReleaseFileLock() error {
+// 	// Release the lock and close the file
+// 	unlock_err := syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
+// 	if unlock_err != nil {
+// 		Log("Error releasing lock:", unlock_err)
+// 	}
+// 	lockFile.Close()
+// }
