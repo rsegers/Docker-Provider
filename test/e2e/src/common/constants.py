@@ -44,7 +44,8 @@ TIMEOUT = 300
 AMA_LOGS_MAIN_CONTAINER_NAME = 'ama-logs'
 
 # WAIT TIME BEFORE READING THE AGENT LOGS
-AGENT_WAIT_TIME_SECS = "360"
+# This wait time might not enough
+AGENT_WAIT_TIME_SECS = "180"
 # Azure Monitor for Container Extension related
 AGENT_RESOURCES_NAMESPACE = 'kube-system'
 AGENT_DEPLOYMENT_NAME = 'ama-logs-rs'
