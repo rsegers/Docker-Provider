@@ -61,7 +61,12 @@ module Fluent::Plugin
         if @pipe_handle
           @log.info "out_named_pipe::Writing for datatype: #{@datatype}"
           @chunk_write_lock.synchronize {
-            chunk.write_to(@pipe_handle)
+            lock_file_path = '/etc/amalogswindows/filelock_ama'
+            File.open(lock_file_path, File::CREAT|File::RDWR, 0666) do |lock_file|
+              lock_file.flock(File::LOCK_EX)
+              chunk.write_to(@pipe_handle)
+              lock_file.flock(File::LOCK_UN)
+            end
           }
 
           # Adding telemetry to send total events written to named pipe telemetry every 10 minutes

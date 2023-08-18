@@ -1338,8 +1338,25 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			if CheckIfNamedPipeCreated(&ContainerLogNamedPipe, datatype, &ContainerLogsWindowsAMAClientCreateErrors, IsGenevaLogsIntegrationEnabled) {
 				Log("Info::AMA::Starting to write container logs to named pipe")
 				deadline := 10 * time.Second
+				lockFilePath := "/etc/amalogswindows/filelock_ama"
+				lockFile, err := os.OpenFile(lockFilePath, os.O_CREATE|os.O_RDWR, 0666)
+				if err != nil {
+					Log("Error opening the lockfile: %s", err)
+					return output.FLB_RETRY
+				}
+				err = syscall.Flock(int(lockFile.Fd()), syscall.LOCK_EX)
+				if err != nil {
+					Log("Error acquiring the lock: %s", err)
+					return output.FLB_RETRY
+				}
 				ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
 				n, err := ContainerLogNamedPipe.Write(msgpBytes)
+				// Release the lock and close the file
+				unlock_err := syscall.Flock(int(lockFile.Fd()), syscall.LOCK_UN)
+				if unlock_err != nil {
+					fmt.Println("Error releasing lock:", err)
+				}
+				lockFile.Close()
 				if err != nil {
 					Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
 					if ContainerLogNamedPipe != nil {
