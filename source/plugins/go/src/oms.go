@@ -1875,6 +1875,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		if IsWindows {
 			if IsGenevaLogsIntegrationEnabled {
 				CreateWindowsNamedPipesClient(getGenevaWindowsNamedPipeName())
+				Log("Creating HTTP Client for insights metrics since OS Platform is Windows and Configured in Geneva Logs Integration Mode")
+				CreateHTTPClient()
 			}
 		} else {
 			CreateMDSDClient(ContainerLogV2, ContainerType)
@@ -1927,7 +1929,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	MdsdInsightsMetricsTagRefreshTracker = time.Now()
 	MdsdContainerLogTagRefreshTracker = time.Now()
 	Log("ContainerLogsRouteADX: %v, IsWindows: %v, IsAADMSIAuthMode = %v IsGenevaLogsIntegrationEnabled = %v \n", ContainerLogsRouteADX, IsWindows, IsAADMSIAuthMode, IsGenevaLogsIntegrationEnabled)
-	if !ContainerLogsRouteADX && IsWindows && IsAADMSIAuthMode && !IsGenevaLogsIntegrationEnabled {
+	if !ContainerLogsRouteADX && IsWindows && IsAADMSIAuthMode {
 		Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)
 		IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
 		go refreshIngestionAuthToken()
