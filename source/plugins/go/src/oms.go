@@ -1875,6 +1875,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		if IsWindows {
 			if IsGenevaLogsIntegrationEnabled {
 				CreateWindowsNamedPipesClient(getGenevaWindowsNamedPipeName())
+				Log("Creating HTTP Client for insights metrics since OS Platform is Windows and Configured in Geneva Logs Integration Mode")
+				CreateHTTPClient()
 			}
 		} else {
 			CreateMDSDClient(ContainerLogV2, ContainerType)
