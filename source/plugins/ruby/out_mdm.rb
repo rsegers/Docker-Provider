@@ -179,7 +179,7 @@ module Fluent::Plugin
           if @cached_access_token.to_s.empty? || (Time.now + 5 * 60 > @token_expiry_time) # Refresh token 5 minutes from expiration
             @log.info "Refreshing access token for out_mdm plugin.."
             if (!!@isAADMSIAuth)
-              properties["aadAuthMSIMode"] = "true"
+              properties["isMSI"] = "true"
             end
             if @isAADMSIAuth && @isWindows
               @log.info "reading the token from IMDS token file since its windows.."
