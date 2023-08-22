@@ -38,6 +38,8 @@ class ApplicationInsightsUtility
     @@proxy = (ProxyUtils.getProxyConfiguration)
   end
 
+  @@controllerType = {"daemonset" => "DS", "replicaset" => "RS"}
+
   def initialize
   end
 
@@ -47,47 +49,31 @@ class ApplicationInsightsUtility
       begin
         resourceInfo = ENV["AKS_RESOURCE_ID"]
         if resourceInfo.nil? || resourceInfo.empty?
-          @@CustomProperties["ACSResourceName"] = ENV[@@EnvAcsResourceName]
-          @@CustomProperties["ClusterType"] = @@AcsClusterType
-          @@CustomProperties["SubscriptionID"] = ""
-          @@CustomProperties["ResourceGroupName"] = ""
-          @@CustomProperties["ClusterName"] = ""
+          @@CustomProperties["ID"] = ENV[@@EnvAcsResourceName]
           @@CustomProperties["Region"] = ""
         else
-          @@CustomProperties["AKS_RESOURCE_ID"] = resourceInfo
-          begin
-            splitStrings = resourceInfo.split("/")
-            subscriptionId = splitStrings[2]
-            resourceGroupName = splitStrings[4]
-            clusterName = splitStrings[8]
-          rescue => errorStr
-            $log.warn("Exception in AppInsightsUtility: parsing AKS resourceId: #{resourceInfo}, error: #{errorStr}")
-          end
-          @@CustomProperties["ClusterType"] = @@AksClusterType
-          @@CustomProperties["SubscriptionID"] = subscriptionId
-          @@CustomProperties["ResourceGroupName"] = resourceGroupName
-          @@CustomProperties["ClusterName"] = clusterName
+          @@CustomProperties["ID"] = resourceInfo
           @@CustomProperties["Region"] = ENV[@@EnvAksRegion]
         end
 
         #Commenting it for now from initilize method, we need to pivot all telemetry off of kubenode docker version
         #getDockerInfo()
         @@CustomProperties["WorkspaceID"] = getWorkspaceId
-        @@CustomProperties["AgentVersion"] = ENV[@@EnvAgentVersion]
-        @@CustomProperties["ControllerType"] = ENV[@@EnvControllerType]
+        @@CustomProperties["Version"] = ENV[@@EnvAgentVersion]
+        @@CustomProperties["ControllerType"] = @@controllerType[ENV[@@EnvControllerType].downcase]
         @@CustomProperties["Computer"] = @@hostName
         encodedAppInsightsKey = ENV[@@EnvApplicationInsightsKey]
         appInsightsEndpoint = ENV[@@EnvApplicationInsightsEndpoint]
         @@CustomProperties["WorkspaceCloud"] = getWorkspaceCloud
         if !@@proxy.nil? && !@@proxy.empty?
           $log.info("proxy configured")
-          @@CustomProperties["IsProxyConfigured"] = "true"
+          @@CustomProperties["Proxy"] = "true"
           isProxyConfigured = true
           if ProxyUtils.isProxyCACertConfigured()
             @@CustomProperties["ProxyCACertConfigured"] = "true"
           end
         else
-          @@CustomProperties["IsProxyConfigured"] = "false"
+          @@CustomProperties["Proxy"] = "false"
           isProxyConfigured = false
           if ProxyUtils.isIgnoreProxySettings()
             $log.info("proxy configuration ignored since ignoreProxyConfig is true")
@@ -95,11 +81,11 @@ class ApplicationInsightsUtility
           end
           $log.info("proxy is not configured")
         end
-        aadAuthMSIMode = ENV[@@EnvAADMSIAuthMode]
-        if !aadAuthMSIMode.nil? && !aadAuthMSIMode.empty? && aadAuthMSIMode.downcase == "true".downcase
-          @@CustomProperties["aadAuthMSIMode"] = "true"
+        isMSI = ENV[@@EnvAADMSIAuthMode]
+        if !isMSI.nil? && !isMSI.empty? && isMSI.downcase == "true".downcase
+          @@CustomProperties["isMSI"] = "true"
         else
-          @@CustomProperties["aadAuthMSIMode"] = "false"
+          @@CustomProperties["isMSI"] = "false"
         end
         addonResizerVPAEnabled = ENV[@@EnvAddonResizerVPAEnabled]
         if !addonResizerVPAEnabled.nil? && !addonResizerVPAEnabled.empty? && addonResizerVPAEnabled.downcase == "true".downcase

@@ -68,6 +68,11 @@ var (
 	PromMonitorPodsLabelSelectorLength int
 	//Tracks the number of monitor kubernetes pods field selectors and sent only from prometheus sidecar (uses ContainerLogTelemetryTicker)
 	PromMonitorPodsFieldSelectorLength int
+	//Map to get the short name for the controller type
+	ControllerType = map[string]string{
+		"daemonset":  "DS",
+		"replicaset": "RS",
+	}
 )
 
 const (
@@ -360,40 +365,27 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 	CommonProperties = make(map[string]string)
 	CommonProperties["Computer"] = Computer
 	CommonProperties["WorkspaceID"] = WorkspaceID
-	CommonProperties["ControllerType"] = os.Getenv("CONTROLLER_TYPE")
-	CommonProperties["AgentVersion"] = agentVersion
+	CommonProperties["ControllerType"] = ControllerType[strings.ToLower(os.Getenv("CONTROLLER_TYPE"))]
+	CommonProperties["Version"] = agentVersion
 
 	aksResourceID := os.Getenv(envAKSResourceID)
 	// if the aks resource id is not defined, it is most likely an ACS Cluster
 	if aksResourceID == "" {
-		CommonProperties["ACSResourceName"] = os.Getenv(envACSResourceName)
-		CommonProperties["ClusterType"] = clusterTypeACS
+		CommonProperties["ID"] = os.Getenv(envACSResourceName)
 
-		CommonProperties["SubscriptionID"] = ""
-		CommonProperties["ResourceGroupName"] = ""
-		CommonProperties["ClusterName"] = ""
 		CommonProperties["Region"] = ""
-		CommonProperties["AKS_RESOURCE_ID"] = ""
 
 	} else {
-		CommonProperties["ACSResourceName"] = ""
-		CommonProperties["AKS_RESOURCE_ID"] = aksResourceID
-		splitStrings := strings.Split(aksResourceID, "/")
-		if len(splitStrings) > 0 && len(splitStrings) < 10 {
-			CommonProperties["SubscriptionID"] = splitStrings[2]
-			CommonProperties["ResourceGroupName"] = splitStrings[4]
-			CommonProperties["ClusterName"] = splitStrings[8]
-		}
-		CommonProperties["ClusterType"] = clusterTypeAKS
+		CommonProperties["ID"] = aksResourceID
 
 		region := os.Getenv("AKS_REGION")
 		CommonProperties["Region"] = region
 	}
 
 	if isProxyConfigured == true {
-		CommonProperties["IsProxyConfigured"] = "true"
+		CommonProperties["Proxy"] = "true"
 	} else {
-		CommonProperties["IsProxyConfigured"] = "false"
+		CommonProperties["Proxy"] = "false"
 	}
 
 	// Adding container type to telemetry
