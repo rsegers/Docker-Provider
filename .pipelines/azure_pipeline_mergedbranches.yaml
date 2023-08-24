@@ -232,7 +232,7 @@ jobs:
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
-      FolderPath: '$(Build.SourcesDirectory)'
+      FolderPath: '$(Build.ArtifactStagingDirectory)'
       Pattern: '*.dll,*.exe'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
