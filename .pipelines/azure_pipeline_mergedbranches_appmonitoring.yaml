@@ -126,6 +126,9 @@ jobs:
         echo "Installing typescript..."
         sudo npm install typescript
 
+        echo "Installing npm packages..."
+        sudo npm install
+
         #echo "Updating packages..."
         #npm update
         
