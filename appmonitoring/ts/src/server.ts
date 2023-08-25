@@ -71,6 +71,8 @@ https.createServer(options, (req, res) => {
         });
 
         req.on("end", async () => {
+            const begin = Date.now();
+  
             let uid = "";
             try {
                 const message: IRootObject = JSON.parse(body);
@@ -85,7 +87,9 @@ https.createServer(options, (req, res) => {
             try {
                 const updatedConfig: string = await ContentProcessor.TryUpdateConfig(body, crs);
                 
-                logger.info(`Done processing request ${uid}`);
+                const end = Date.now();
+                
+                logger.info(`Done processing request in ${end - begin} ms for ${uid}`);
                 logger.telemetry(Metrics.Success, 1, uid);
 
                 res.writeHead(200, { "Content-Type": "application/json" });
