@@ -5,7 +5,7 @@ import { IRootObject } from "./RequestDefinition.js";
 export class TemplateValidator {
     public static ValidateContent(content: IRootObject) {
         let returnValue = true;
-        logger.info(`Validating content ${this.uid(content)}, ${JSON.stringify(content)}`);
+        //logger.info(`Validating content ${this.uid(content)}, ${JSON.stringify(content)}`);
 
         if (isNullOrUndefined(content)) {
             logger.error(`Null content ${this.uid(content)}`);
@@ -29,7 +29,7 @@ export class TemplateValidator {
             returnValue = false;
         }
 
-        logger.info(`Successfully validated content ${this.uid(content)}, ${content}`);
+        //logger.info(`Successfully validated content ${this.uid(content)}, ${content}`);
         logger.telemetry(returnValue ? Metrics.CPValidationPass : Metrics.CPValidationFail, 1, this.uid(content));
         return returnValue;
     }

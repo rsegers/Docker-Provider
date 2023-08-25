@@ -60,7 +60,7 @@ const port = process.env.port || 1337;
 logger.info(`listening on port ${port}`);
 
 https.createServer(options, (req, res) => {
-    logger.info(`Received request with url: ${req.url}, method: ${req.method}, content-type: ${req.headers["content-type"]}`);
+    //logger.info(`Received request with url: ${req.url}, method: ${req.method}, content-type: ${req.headers["content-type"]}`);
     logger.telemetry(Metrics.Request, 1, "");
     
     if (req.method === "POST" && req.headers["content-type"] === "application/json") {

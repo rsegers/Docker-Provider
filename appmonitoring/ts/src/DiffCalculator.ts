@@ -11,18 +11,18 @@ export class DiffCalculator {
             return null;
         }
 
-        logger.info(`Calculating diff ${this.uid(content)}, ${JSON.stringify(content)}`);
+        //logger.info(`Calculating diff ${this.uid(content)}, ${JSON.stringify(content)}`);
         const updatedContent: IRootObject = JSON.parse(JSON.stringify(content));
 
         let updateTarget: object;
 
         try {
             updateTarget = updatedContent.request.object.spec.template.spec;
-            logger.info(`Updating request.object.spec.template.spec ${this.uid(content)}, ${JSON.stringify(content)}`);
+            //logger.info(`Updating request.object.spec.template.spec ${this.uid(content)}, ${JSON.stringify(content)}`);
         }
         catch (ex) {
             updateTarget = updatedContent.request.object.spec;
-            logger.info(`Updating request.object.spec ${this.uid(content)}, ${JSON.stringify(content)}`);
+            //logger.info(`Updating request.object.spec ${this.uid(content)}, ${JSON.stringify(content)}`);
         }
 
         const initContainers = AddedTypes.init_containers(platforms);
@@ -65,7 +65,7 @@ export class DiffCalculator {
                 value: updatedContent.request.object.spec
             }];
         
-        logger.info(`Determined diff ${this.uid(content)}, ${JSON.stringify(jsonDiff)}`);
+        //logger.info(`Determined diff ${this.uid(content)}, ${JSON.stringify(jsonDiff)}`);
 
         return jsonDiff;
     }

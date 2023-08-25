@@ -31,7 +31,7 @@ export class ContentProcessor {
             response.response.allowed = TemplateValidator.ValidateContent(instance.content);
 
             const podInfo: PodInfo = await instance.getPodInfo();
-            logger.info(`Extracted PodInfo: ${JSON.stringify(podInfo)}`);
+            //logger.info(`Extracted PodInfo: ${JSON.stringify(podInfo)}`);
 
             const namespace: string = instance.content.request.object.metadata.namespace;
             if (!namespace) {
@@ -43,7 +43,7 @@ export class ContentProcessor {
                 if (!cr) {
                     // no relevant CR found, do not mutate and return with no modifications
                     // do not block the request though, allowed should remain true
-                    logger.info(`No governing CR found, will not mutate`);
+                    //logger.info(`No governing CR found, will not mutate`);
                     response.response.patch = Buffer.from(JSON.stringify([])).toString("base64");
                 } else {
                     const armIdMatches = /^\/subscriptions\/(?<SubscriptionId>[^/]+)\/resourceGroups\/(?<ResourceGroup>[^/]+)\/providers\/(?<Provider>[^/]+)\/(?<ResourceType>[^/]+)\/(?<ResourceName>[^/]+).*$/i.exec(process.env.ARM_ID);
@@ -53,7 +53,7 @@ export class ContentProcessor {
 
                     const clusterName = armIdMatches[5];
 
-                    logger.info(`Governing CR for the object to be processed (namespace: ${namespace}, deploymentName: ${podInfo.deploymentName}): ${JSON.stringify(cr)}`);
+                    //logger.info(`Governing CR for the object to be processed (namespace: ${namespace}, deploymentName: ${podInfo.deploymentName}): ${JSON.stringify(cr)}`);
                     response.response.patch = Buffer.from(JSON.stringify(await DiffCalculator.CalculateDiff(
                         instance.content,
                         podInfo as PodInfo,
@@ -70,7 +70,7 @@ export class ContentProcessor {
             }
 
             const finalResult = JSON.stringify(response);
-            logger.info(`Determined final response ${instance.uid}, ${finalResult}`);
+            //logger.info(`Determined final response ${instance.uid}, ${finalResult}`);
             return finalResult;
 
         } catch (e) {
@@ -90,7 +90,7 @@ export class ContentProcessor {
 
         try {
             this.content = JSON.parse(message);
-            logger.info(`Parsed incoming message content, Initialized ContentProcessor. ${this.uid}, ${message}`);
+            //logger.info(`Parsed incoming message content, Initialized ContentProcessor. ${this.uid}, ${message}`);
         } catch (ex) {
             logger.error(`Exception encountered parsing input ${this.uid}, ${ex}, ${message}`);
             throw ex;
@@ -105,7 +105,7 @@ export class ContentProcessor {
     }
 
     private async getPodInfo(): Promise<PodInfo> {
-        logger.info(`Attempting to get owner info ${this.uid}`);
+        //logger.info(`Attempting to get owner info ${this.uid}`);
 
         const podInfo: PodInfo = new PodInfo();
 
