@@ -238,7 +238,7 @@ jobs:
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
-      FolderPath: '$(Build.ArtifactStagingDirectory)'
+      FolderPath: '$(Build.SourcesDirectory)'
       Pattern: '*.dll,*.exe'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
@@ -325,6 +325,39 @@ jobs:
       endlocal
       exit /B %ERRORLEVEL%
     displayName: 'build base'
+
+  - task: EsrpCodeSigning@3
+    inputs:
+      ConnectedServiceName: 'ESRPContainerInsights Service Connection'
+      FolderPath: '$(Build.SourcesDirectory)'
+      Pattern: '*.dll,*.exe'
+      signConfigType: 'inlineSignParams'
+      inlineOperation: |
+        [
+                {
+                    "KeyCode" : "CP-230012",
+                    "OperationCode" : "SigntoolSign",
+                    "Parameters" : {
+                        "OpusName" : "Microsoft",
+                        "OpusInfo" : "http://www.microsoft.com",
+                        "FileDigest" : "/fd \"SHA256\"",
+                        "PageHash" : "/NPH",
+                        "TimeStamp" : "/tr \"http://rfc3161.gtm.corp.microsoft.com/TSS/HttpTspServer\" /td sha256"
+                    },
+                    "ToolName" : "sign",
+                    "ToolVersion" : "1.0"
+                },
+                {
+                    "KeyCode" : "CP-230012",
+                    "OperationCode" : "SigntoolVerify",
+                    "Parameters" : {},
+                    "ToolName" : "sign",
+                    "ToolVersion" : "1.0"
+                }
+            ]
+      SessionTimeout: '60'
+      MaxConcurrency: '50'
+      MaxRetryAttempts: '5'
 
   - task: AzureCLI@2
     displayName: "Docker windows build for ltsc2022"
