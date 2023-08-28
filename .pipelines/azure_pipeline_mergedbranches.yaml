@@ -229,6 +229,12 @@ jobs:
   - script: echo $(Build.ArtifactStagingDirectory)
     displayName: 'Print Build.ArtifactStagingDirectory'
 
+  - script: dir $(System.DefaultWorkingDirectory)
+    displayName: 'List files in DefaultWorking Directory'
+
+  - script: dir $(Build.ArtifactStagingDirectory)
+    displayName: 'List files in Staging Directory'
+
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
