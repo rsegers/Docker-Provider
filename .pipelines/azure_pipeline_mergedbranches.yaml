@@ -381,10 +381,33 @@ jobs:
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
 
-  - task: EsrpCodeSigning@3
+  - task: AzureCLI@2
+    displayName: "Docker windows build for ltsc2022"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: ps
+      scriptLocation: inlineScript
+      inlineScript: |
+        mkdir -p $(Build.ArtifactStagingDirectory)/windows
+        cd kubernetes/windows
+
+        az --version
+        az account show
+        az account set -s ${{ variables.subscription }}
+        az acr login -n ${{ variables.containerRegistry }}
+
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
+
+- script: |
+    mkdir -p $(Build.ArtifactStagingDirectory)/signing
+    docker run --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
+    docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe ./signing
+    docker rm signingContainer
+
+- task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
-      FolderPath: '$(Build.SourcesDirectory)'
+      FolderPath: '$(Build.ArtifactStagingDirectory)/signing'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
@@ -415,25 +438,16 @@ jobs:
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
 
-  - task: AzureCLI@2
-    displayName: "Docker windows build for ltsc2022"
-    inputs:
-      azureSubscription: ${{ variables.armServiceConnectionName }}
-      scriptType: ps
-      scriptLocation: inlineScript
-      inlineScript: |
-        mkdir -p $(Build.ArtifactStagingDirectory)/windows
-        cd kubernetes/windows
+- script: |
+    docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
+    docker cp ./signing pushContainer:C:\opt\fluent-bit\bin\fluent-bit.exe
+    docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
+    docker rm pushContainer
 
-        az --version
-        az account show
-        az account set -s ${{ variables.subscription }}
-        az acr login -n ${{ variables.containerRegistry }}
-
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
-        if ("$(Build.Reason)" -ne "PullRequest") {
-           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
-        }
+- script: |
+    if ("$(Build.Reason)" -ne "PullRequest") {
+       docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
+    }
 
 - job: build_windows_multi_arc
   dependsOn:
