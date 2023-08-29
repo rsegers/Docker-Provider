@@ -268,7 +268,7 @@ jobs:
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
 
-- task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
       FolderPath: 'src\myapp\$(BuildConfiguration)\Release'
@@ -383,7 +383,7 @@ jobs:
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
 
-- task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
       FolderPath: 'src\myapp\$(BuildConfiguration)\Release'
