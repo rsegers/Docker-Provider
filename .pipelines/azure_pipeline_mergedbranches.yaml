@@ -388,7 +388,7 @@ jobs:
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
-        ​​​​​​​​[
+        [
                 {
                     "KeyCode" : "CP-231522",
                     "OperationCode" : "SigntoolSign",
