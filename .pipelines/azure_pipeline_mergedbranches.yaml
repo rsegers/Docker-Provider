@@ -271,7 +271,7 @@ jobs:
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
-      FolderPath: 'src\myapp\$(BuildConfiguration)\Release'
+      FolderPath: '$(Build.SourcesDirectory)'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
@@ -386,7 +386,7 @@ jobs:
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
-      FolderPath: 'src\myapp\$(BuildConfiguration)\Release'
+      FolderPath: '$(Build.SourcesDirectory)'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
