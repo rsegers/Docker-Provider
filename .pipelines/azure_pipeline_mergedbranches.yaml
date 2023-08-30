@@ -400,7 +400,7 @@ jobs:
 
   - script: |
       mkdir -p $(Build.ArtifactStagingDirectory)/signing
-      docker run --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
+      docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
       docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe ./signing
       docker rm signingContainer
 
