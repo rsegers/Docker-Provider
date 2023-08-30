@@ -71,7 +71,7 @@ Write-Host ('Extracting Certificate Generator Package')
     Expand-Archive -Path /opt/amalogswindows/certificategenerator.zip -Destination /opt/amalogswindows/certgenerator/ -Force
 Write-Host ('Finished Extracting Certificate Generator Package')
 
-Write-Host ('Installing Windows Azure Monitor Agent');
+Write-Host ('Installing Windows Azure Monitor Agent: ' + $windowsazuremonitoragent);
 try {
     Invoke-WebRequest -Uri $windowsazuremonitoragent -OutFile /installation/windowsazuremonitoragent.zip
     Expand-Archive -Path /installation/windowsazuremonitoragent.zip -Destination /installation/windowsazuremonitoragent
