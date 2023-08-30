@@ -46,7 +46,7 @@ WORKDIR /opt/amalogswindows/scripts/powershell
 COPY ./amalogswindows/*.zip /opt/amalogswindows/
 
 COPY setup.ps1 /opt/amalogswindows/scripts/powershell
-RUN ./setup.ps1
+RUN ./setup.ps1 -windowsazuremonitoragent ${WINDOWS_AMA_URL}
 
 COPY main.ps1 /opt/amalogswindows/scripts/powershell
 COPY ./amalogswindows/installer/scripts/filesystemwatcher.ps1 /opt/amalogswindows/scripts/powershell
