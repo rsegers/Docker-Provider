@@ -395,7 +395,7 @@ jobs:
 
   - script: |
       echo "Creating directory..."
-      New-Item -Path "$(Build.ArtifactStagingDirectory)\signing" -ItemType Directory
+      mkdir "%Build.ArtifactStagingDirectory%\signing"
       cd $(Build.ArtifactStagingDirectory)/signing
       echo "List directory1"
       dir $(Build.ArtifactStagingDirectory)
