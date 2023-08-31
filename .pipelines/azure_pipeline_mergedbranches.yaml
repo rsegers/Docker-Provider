@@ -400,10 +400,15 @@ jobs:
         docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
 
   - script: |
+      echo "Creating directory..."
       mkdir -p $(Build.ArtifactStagingDirectory)/signing
+      echo "Creating docker container..."
       docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
+      echo "Copying files..."
       docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe ./signing
+      echo "Removing container..."
       docker rm signingContainer
+    displayName: Extract files to sign
 
   - task: EsrpCodeSigning@3
     inputs:
@@ -444,11 +449,13 @@ jobs:
       docker cp ./signing pushContainer:C:\opt\fluent-bit\bin\fluent-bit.exe
       docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
       docker rm pushContainer
+    displayName: Replace files in origin Image
 
   - script: |
       if ("$(Build.Reason)" -ne "PullRequest") {
         docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
       }
+    displayName: Push Docker Image
 
 - job: build_windows_multi_arc
   dependsOn:
