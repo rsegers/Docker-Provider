@@ -396,15 +396,18 @@ jobs:
   - script: |
       echo "Creating directory..."
       mkdir -p $(Build.ArtifactStagingDirectory)/signing
+      cd $(Build.ArtifactStagingDirectory)/signing
+      echo "List directory1"
       dir $(Build.ArtifactStagingDirectory)
-      dir $(Build.ArtifactStagingDirectory)/signing
+      echo "List directory2"
+      dir .
       echo "Creating docker container..."
       docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
       echo "Copying files..."
-      docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe ./$(Build.ArtifactStagingDirectory)/signing
+      docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe .
       echo "Removing container..."
       docker rm signingContainer
-      dir $(Build.ArtifactStagingDirectory)/signing
+      dir .
     displayName: Extract files to sign
 
   - script: dir $(System.DefaultWorkingDirectory)
