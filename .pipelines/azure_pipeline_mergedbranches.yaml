@@ -393,22 +393,25 @@ jobs:
 
         docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
 
-  - script: |
+- task: PowerShell@2
+  displayName: Extract files to sign
+  inputs:
+    targetType: 'inline'
+    script: |
       echo "Creating directory..."
-      mkdir "%Build.ArtifactStagingDirectory%\signing"
+      mkdir -p $(Build.ArtifactStagingDirectory)/signing
       cd $(Build.ArtifactStagingDirectory)/signing
       echo "List directory1"
-      dir $(Build.ArtifactStagingDirectory)
+      ls $(Build.ArtifactStagingDirectory)
       echo "List directory2"
-      dir .
+      ls .
       echo "Creating docker container..."
       docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
       echo "Copying files..."
       docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe .
       echo "Removing container..."
       docker rm signingContainer
-      dir .
-    displayName: Extract files to sign
+      ls .
 
   - script: dir $(System.DefaultWorkingDirectory)
     displayName: 'List files in DefaultWorking Directory'
@@ -450,18 +453,24 @@ jobs:
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
 
-  - script: |
+- task: PowerShell@2
+  displayName: Replace files in origin Image
+  inputs:
+    targetType: 'inline'
+    script: |
       docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
-      docker cp ./signing pushContainer:C:\opt\fluent-bit\bin\fluent-bit.exe
+      docker cp ./signing/fluent-bit.exe pushContainer:C:\opt\fluent-bit\bin\fluent-bit.exe
       docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
       docker rm pushContainer
-    displayName: Replace files in origin Image
 
-  - script: |
+- task: PowerShell@2
+  displayName: Push Docker Image
+  inputs:
+    targetType: 'inline'
+    script: |
       if ("$(Build.Reason)" -ne "PullRequest") {
         docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
       }
-    displayName: Push Docker Image
 
 - job: build_windows_multi_arc
   dependsOn:
