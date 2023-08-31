@@ -1,6 +1,7 @@
 # Supported values of windows version are ltsc2019 or ltsc2022 which are being passed by the build script or build pipeline
 ARG WINDOWS_VERSION=
 ARG WINDOWS_AMA_URL=
+RUN echo $WINDOWS_AMA_URL
 FROM mcr.microsoft.com/windows/servercore:${WINDOWS_VERSION}
 LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
@@ -47,7 +48,7 @@ WORKDIR /opt/amalogswindows/scripts/powershell
 COPY ./amalogswindows/*.zip /opt/amalogswindows/
 
 COPY setup.ps1 /opt/amalogswindows/scripts/powershell
-RUN ./setup.ps1 -windowsazuremonitoragent ${WINDOWS_AMA_URL}
+RUN ./setup.ps1 -windowsazuremonitoragent $WINDOWS_AMA_URL
 
 COPY main.ps1 /opt/amalogswindows/scripts/powershell
 COPY ./amalogswindows/installer/scripts/filesystemwatcher.ps1 /opt/amalogswindows/scripts/powershell
