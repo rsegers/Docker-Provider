@@ -223,12 +223,6 @@ jobs:
   - script: echo $(Build.SourcesDirectory)
     displayName: 'Print Build.SourcesDirectory'
 
-  - script: echo $(System.DefaultWorkingDirectory)
-    displayName: 'Print Build.DefaultWorkingDirectory'
-
-  - script: echo $(Build.ArtifactStagingDirectory)
-    displayName: 'Print Build.ArtifactStagingDirectory'
-
   - script: dir $(System.DefaultWorkingDirectory)
     displayName: 'List files in DefaultWorking Directory'
 
@@ -402,13 +396,22 @@ jobs:
   - script: |
       echo "Creating directory..."
       mkdir -p $(Build.ArtifactStagingDirectory)/signing
+      dir $(Build.ArtifactStagingDirectory)
+      dir $(Build.ArtifactStagingDirectory)/signing
       echo "Creating docker container..."
       docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
       echo "Copying files..."
-      docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe ./signing
+      docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe ./$(Build.ArtifactStagingDirectory)/signing
       echo "Removing container..."
       docker rm signingContainer
+      dir $(Build.ArtifactStagingDirectory)/signing
     displayName: Extract files to sign
+
+  - script: dir $(System.DefaultWorkingDirectory)
+    displayName: 'List files in DefaultWorking Directory'
+
+  - script: dir $(Build.ArtifactStagingDirectory)
+    displayName: 'List files in Staging Directory'
 
   - task: EsrpCodeSigning@3
     inputs:
