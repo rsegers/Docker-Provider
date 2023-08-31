@@ -453,24 +453,24 @@ jobs:
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
 
-- task: PowerShell@2
-  displayName: Replace files in origin Image
-  inputs:
-    targetType: 'inline'
-    script: |
-      docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
-      docker cp ./signing/fluent-bit.exe pushContainer:C:\opt\fluent-bit\bin\fluent-bit.exe
-      docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
-      docker rm pushContainer
+  - task: PowerShell@2
+    displayName: Replace files in origin Image
+    inputs:
+      targetType: 'inline'
+      script: |
+        docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
+        docker cp ./signing/fluent-bit.exe pushContainer:C:\opt\fluent-bit\bin\fluent-bit.exe
+        docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
+        docker rm pushContainer
 
-- task: PowerShell@2
-  displayName: Push Docker Image
-  inputs:
-    targetType: 'inline'
-    script: |
-      if ("$(Build.Reason)" -ne "PullRequest") {
-        docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
-      }
+  - task: PowerShell@2
+    displayName: Push Docker Image
+    inputs:
+      targetType: 'inline'
+      script: |
+        if ("$(Build.Reason)" -ne "PullRequest") {
+          docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
+        }
 
 - job: build_windows_multi_arc
   dependsOn:
