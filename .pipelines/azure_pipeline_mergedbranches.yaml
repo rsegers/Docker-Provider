@@ -393,25 +393,25 @@ jobs:
 
         docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
 
-- task: PowerShell@2
-  displayName: Extract files to sign
-  inputs:
-    targetType: 'inline'
-    script: |
-      echo "Creating directory..."
-      mkdir -p $(Build.ArtifactStagingDirectory)/signing
-      cd $(Build.ArtifactStagingDirectory)/signing
-      echo "List directory1"
-      ls $(Build.ArtifactStagingDirectory)
-      echo "List directory2"
-      ls .
-      echo "Creating docker container..."
-      docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
-      echo "Copying files..."
-      docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe .
-      echo "Removing container..."
-      docker rm signingContainer
-      ls .
+  - task: PowerShell@2
+    displayName: Extract files to sign
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "Creating directory..."
+        mkdir -p $(Build.ArtifactStagingDirectory)/signing
+        cd $(Build.ArtifactStagingDirectory)/signing
+        echo "List directory1"
+        ls $(Build.ArtifactStagingDirectory)
+        echo "List directory2"
+        ls .
+        echo "Creating docker container..."
+        docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
+        echo "Copying files..."
+        docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe .
+        echo "Removing container..."
+        docker rm signingContainer
+        ls .
 
   - script: dir $(System.DefaultWorkingDirectory)
     displayName: 'List files in DefaultWorking Directory'
