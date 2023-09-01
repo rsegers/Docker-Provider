@@ -406,7 +406,7 @@ jobs:
         echo "List directory2"
         ls .
         echo "Creating docker container..."
-        docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
+        docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned
         echo "Copying files..."
         docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe .
         echo "Removing container..."
@@ -458,9 +458,9 @@ jobs:
     inputs:
       targetType: 'inline'
       script: |
-        docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
+        docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned
         docker cp $(Build.ArtifactStagingDirectory)/signing/fluent-bit.exe pushContainer:C:\opt\fluent-bit\bin\fluent-bit.exe
-        docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
+        docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
         docker rm pushContainer
 
   - task: PowerShell@2
@@ -469,7 +469,7 @@ jobs:
       targetType: 'inline'
       script: |
         if ("$(Build.Reason)" -ne "PullRequest") {
-          docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
+          docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
         }
 
 - job: build_windows_multi_arc
