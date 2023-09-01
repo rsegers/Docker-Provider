@@ -459,7 +459,7 @@ jobs:
       targetType: 'inline'
       script: |
         docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
-        docker cp ./signing/fluent-bit.exe pushContainer:C:\opt\fluent-bit\bin\fluent-bit.exe
+        docker cp $(Build.ArtifactStagingDirectory)/signing/fluent-bit.exe pushContainer:C:\opt\fluent-bit\bin\fluent-bit.exe
         docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-signed
         docker rm pushContainer
 
