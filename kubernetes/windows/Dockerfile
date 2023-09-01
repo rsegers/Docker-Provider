@@ -9,8 +9,8 @@ LABEL vendor=Microsoft\ Corp \
 RUN reg add "HKLM\Software\Microsoft\Cryptography\Wintrust\Config" /v "EnableCertPaddingCheck" /t REG_DWORD /d "1" /f
 RUN reg add "HKLM\Software\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" /v "EnableCertPaddingCheck" /t REG_DWORD /d "1" /f
 
-RUN echo " The AMA url is: $env:WINDOWS_AMA_URL"
-RUN echo " The AMA url is: " + %WINDOWS_AMA_URL%
+RUN echo " The AMA url is: ${WINDOWS_AMA_URL}"
+RUN echo " The AMA url is: " + ${WINDOWS_AMA_URL)
 
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
@@ -50,7 +50,7 @@ WORKDIR /opt/amalogswindows/scripts/powershell
 COPY ./amalogswindows/*.zip /opt/amalogswindows/
 
 COPY setup.ps1 /opt/amalogswindows/scripts/powershell
-RUN ./setup.ps1 -windowsazuremonitoragent %WINDOWS_AMA_URL%
+RUN ./setup.ps1 -windowsazuremonitoragent ${WINDOWS_AMA_URL}
 
 COPY main.ps1 /opt/amalogswindows/scripts/powershell
 COPY ./amalogswindows/installer/scripts/filesystemwatcher.ps1 /opt/amalogswindows/scripts/powershell
