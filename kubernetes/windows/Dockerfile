@@ -10,7 +10,7 @@ RUN reg add "HKLM\Software\Microsoft\Cryptography\Wintrust\Config" /v "EnableCer
 RUN reg add "HKLM\Software\Wow6432Node\Microsoft\Cryptography\Wintrust\Config" /v "EnableCertPaddingCheck" /t REG_DWORD /d "1" /f
 
 RUN echo " The AMA url is: ${WINDOWS_AMA_URL}"
-RUN echo " The AMA url is: " + ${WINDOWS_AMA_URL)
+RUN echo " The AMA url is: " + ${WINDOWS_AMA_URL}
 
 # Do not split this into multiple RUN!
 # Docker creates a layer for every RUN-Statement
