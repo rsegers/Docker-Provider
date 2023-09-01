@@ -401,14 +401,21 @@ jobs:
         echo "Creating directory..."
         mkdir -p $(Build.ArtifactStagingDirectory)/signing
         cd $(Build.ArtifactStagingDirectory)/signing
-        echo "List directory1"
+
+        echo "List ArtifactStagingDirectory"
         ls $(Build.ArtifactStagingDirectory)
-        echo "List directory2"
-        ls .
+
         echo "Creating docker container..."
         docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned
-        echo "Copying files..."
-        docker cp signingContainer:C:\opt\fluent-bit\bin\fluent-bit.exe .
+        
+        echo "Extract fluent-bit"
+        mkdir -p fluent-bit
+        docker cp signingContainer:C:\opt\fluent-bit\. fluent-bit
+        
+        echo "Extract Ruby"
+        mkdir -p ruby31
+        docker cp signingContainer:C:\ruby31\. ruby31
+
         echo "Removing container..."
         docker rm signingContainer
         ls .
@@ -459,7 +466,11 @@ jobs:
       targetType: 'inline'
       script: |
         docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned
-        docker cp $(Build.ArtifactStagingDirectory)/signing/fluent-bit.exe pushContainer:C:\opt\fluent-bit\bin\fluent-bit.exe
+        
+        echo "Copy Signed binaries/folders back to docker image..."
+        docker cp $(Build.ArtifactStagingDirectory)/signing/fluent-bit pushContainer:C:\opt\fluent-bit
+        docker cp $(Build.ArtifactStagingDirectory)/signing/ruby31 pushContainer:C:\ruby31
+
         docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
         docker rm pushContainer
 
