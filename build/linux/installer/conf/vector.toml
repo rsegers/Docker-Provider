@@ -1,5 +1,9 @@
 data_dir = "/var/log"
 
+[sinks.basic]
+type = "basic"
+inputs = ["stdin"]
+
 [sinks.prometheus_exporter]
 type = "prometheus_exporter"
 inputs = [ "vector_metrics" ]
@@ -27,6 +31,9 @@ type = "file"
 [sources.vector_metrics]
 type = "internal_metrics"
 scrape_interval_secs = 60
+
+[sources.stdin]
+type = "stdin"
 
 [transforms.parser]
 type = "remap"
