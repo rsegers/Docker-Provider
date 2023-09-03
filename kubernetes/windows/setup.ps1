@@ -1,7 +1,3 @@
-param (
-    [string]$windowsazuremonitoragent = "https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/genevamonitoringagent.46.3.2.zip"
-)
-
 # speed up Invoke-WebRequest
 # https://stackoverflow.com/questions/28682642/powershell-why-is-using-invoke-webrequest-much-slower-than-a-browser-download
 $ProgressPreference = 'SilentlyContinue'
@@ -71,6 +67,7 @@ Write-Host ('Extracting Certificate Generator Package')
     Expand-Archive -Path /opt/amalogswindows/certificategenerator.zip -Destination /opt/amalogswindows/certgenerator/ -Force
 Write-Host ('Finished Extracting Certificate Generator Package')
 
+$windowsazuremonitoragent = [System.Environment]::GetEnvironmentVariable('WINDOWS_AMA_URL')
 Write-Host ('Installing Windows Azure Monitor Agent: ' + $windowsazuremonitoragent);
 try {
     Invoke-WebRequest -Uri $windowsazuremonitoragent -OutFile /installation/windowsazuremonitoragent.zip
