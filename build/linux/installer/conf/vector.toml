@@ -2,7 +2,8 @@ data_dir = "/var/log"
 
 [sinks.basic]
 type = "basic"
-inputs = ["stdin"]
+endpoint = "http://localhost:3000"
+inputs = [ "parser" ]
 
 [sinks.prometheus_exporter]
 type = "prometheus_exporter"
