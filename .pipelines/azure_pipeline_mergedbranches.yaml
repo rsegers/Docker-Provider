@@ -410,11 +410,11 @@ jobs:
         
         echo "Extract fluent-bit"
         mkdir -p fluent-bit
-        docker cp signingContainer:C:\opt\fluent-bit fluent-bit
+        docker cp signingContainer:C:\opt\fluent-bit .
         
         echo "Extract Ruby"
         mkdir -p ruby31
-        docker cp signingContainer:C:\ruby31 ruby31
+        docker cp signingContainer:C:\ruby31 .
 
         echo "Removing container..."
         docker rm signingContainer
