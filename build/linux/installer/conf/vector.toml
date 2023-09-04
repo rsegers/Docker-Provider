@@ -9,6 +9,9 @@ inputs = [ "vector_metrics" ]
 inputs = [ "parser" ]
 type = "azure_monitor"
 
+  [sinks.azure_monitor.batch]
+  max_bytes = 1_000_000
+
   [sinks.azure_monitor.acknowledgements]
   enabled = true
 
