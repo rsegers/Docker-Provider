@@ -1,25 +1,18 @@
 data_dir = "/var/log"
 
-[sinks.basic]
-type = "basic"
-endpoint = "http://localhost:3000"
-inputs = [ "parser" ]
 
 [sinks.prometheus_exporter]
 type = "prometheus_exporter"
 inputs = [ "vector_metrics" ]
 
-[sinks.azure_monitor_logs]
-customer_id = "WSID"
+[sinks.azure_monitor]
 inputs = [ "parser" ]
-log_type = "VectorContainerLog"
-shared_key = "WSKEY"
-type = "azure_monitor_logs"
+type = "azure_monitor"
 
-  [sinks.azure_monitor_logs.acknowledgements]
+  [sinks.azure_monitor.acknowledgements]
   enabled = true
 
-  [[sinks.azure_monitor_logs.buffer]]
+  [[sinks.azure_monitor.buffer]]
   max_events = 1_000_000
   type = "memory"
   when_full = "block"
@@ -33,15 +26,38 @@ type = "file"
 type = "internal_metrics"
 scrape_interval_secs = 60
 
-[sources.stdin]
-type = "stdin"
 
 [transforms.parser]
 type = "remap"
 inputs = [ "kube_log" ]
 source = """
 . |= parse_regex!(.message, r'^(?<time>[^ ]+) (?<stream>stdout|stderr) (?<logtag>[^ ]*) (?<log>.*)$')
-.filepath = .file
+.filepathparts, err  = split(.file, "/")
+.filename = .filepathparts[4]
+.filenamewithoutextension, err = split(.filename, ".")[0]
+.parts, err = split(.filenamewithoutextension, "_")
+
+.PodName = .parts[0]
+.PodNamespace = .parts[1]
+
+.containernameandid, err = split(.parts[2], "-", 2)
+
+.ContainerName = .containernameandid[0]
+.ContainerId = .containernameandid[1]
+
+.TimeGenerated = .time
+.Computer = get_env_var!("HOSTNAME")
+.LogMessage = .log
+.LogSource = .stream
+
+del(.log)
+del(.logtag)
+del(.stream)
+del(.filepathparts)
+del(.filename)
+del(.parts)
+del(.filenamewithoutextension)
+del(.containernameandid)
 del(.source_type)
 del(.time)
 del(.file)
