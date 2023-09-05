@@ -5,7 +5,6 @@ LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
     com.microsoft.product="Azure Monitor for containers"
 
-
 ARG WINDOWS_AMA_URL=https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/genevamonitoringagent.46.3.2.zip
 
 RUN reg add "HKLM\Software\Microsoft\Cryptography\Wintrust\Config" /v "EnableCertPaddingCheck" /t REG_DWORD /d "1" /f
