@@ -38,6 +38,9 @@ jobs:
       linuxImagetag="$commit"-"$datetime"
       windowsImageTag=win-"$commit"-"$datetime"
 
+      echo "Just checking prints"
+      echo "The url is $WINDOWS_AMA_URL"
+
       telemetryTag=$linuxImagetag
       if [ -z "$TELEMETRY_TAG" ]
         then
