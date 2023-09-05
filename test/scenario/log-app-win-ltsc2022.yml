@@ -9,23 +9,23 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: second-log-app
+  name: second-log-app-5
   namespace: windows-log-ltsc2022
 spec:
   replicas: 1
   selector:
    matchLabels:
-    app: second-log-app
+    app: second-log-app-5
   template:
    metadata:
     labels:
-     app: second-log-app
+     app: second-log-app-5
    spec:
     volumes:
     - name: html
       emptyDir: {}
     containers:
-    - name: second-log-app
+    - name: second-log-app-5
       image: mcr.microsoft.com/windows/servercore:ltsc2022
       command: ["powershell", "-c"]
       args:
