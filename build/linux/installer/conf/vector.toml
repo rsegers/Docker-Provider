@@ -43,16 +43,18 @@ source = """
 .PodName = .parts[0]
 .PodNamespace = .parts[1]
 
-.containernameandid, err = split(.parts[2], "-", 2)
+.containernameandid, err = split(.parts[2], "-")
+.ContainerId =  get!(.containernameandid, path: [length(.containernameandid) - 1 ])
+.temparray = remove!(.containernameandid, path: [length(.containernameandid) - 1 ])
+.ContainerName =  join!(.temparray, separator: "-")
 
-.ContainerName = .containernameandid[0]
-.ContainerId = .containernameandid[1]
 
 .TimeGenerated = .time
 .Computer = get_env_var!("HOSTNAME")
 .LogMessage = .log
 .LogSource = .stream
 
+del(.temparray)
 del(.log)
 del(.logtag)
 del(.stream)
