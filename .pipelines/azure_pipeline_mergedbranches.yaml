@@ -416,6 +416,9 @@ jobs:
         mkdir -p ruby31
         docker cp signingContainer:C:\ruby31 .
 
+        echo "Extract CertificateGenerator"
+        docker cp signingContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe .
+
         echo "Removing container..."
         docker rm signingContainer
         ls .
@@ -470,6 +473,7 @@ jobs:
         echo "Copy Signed binaries/folders back to docker image..."
         docker cp $(Build.ArtifactStagingDirectory)/signing/fluent-bit/. pushContainer:C:\opt\fluent-bit/
         docker cp $(Build.ArtifactStagingDirectory)/signing/ruby31/. pushContainer:C:\ruby31/
+        docker cp $(Build.ArtifactStagingDirectory)/signing/CertificateGenerator.exe pushContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe
 
         docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
         docker rm pushContainer
