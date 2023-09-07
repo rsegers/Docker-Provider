@@ -347,7 +347,7 @@ jobs:
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
       FolderPath: '$(Build.SourcesDirectory)'
-      Pattern: '*/livenessprobe.exe,*/CertificateGenerator.exe'
+      Pattern: '**/livenessprobe.exe,**/CertificateGenerator.exe'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
         [
