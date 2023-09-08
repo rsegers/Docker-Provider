@@ -295,9 +295,6 @@ jobs:
         mkdir -p ruby31
         docker cp signingContainer:C:\ruby31 .
 
-        echo "Extract CertificateGenerator"
-        docker cp signingContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe .
-
         echo "Extract telegraf"
         docker cp signingContainer:C:\opt\telegraf\telegraf.exe .
 
@@ -358,7 +355,6 @@ jobs:
         echo "Copy Signed binaries/folders back to docker image..."
         docker cp $(Build.ArtifactStagingDirectory)/signing/fluent-bit/. pushContainer:C:\opt\fluent-bit/
         docker cp $(Build.ArtifactStagingDirectory)/signing/ruby31/. pushContainer:C:\ruby31/
-        docker cp $(Build.ArtifactStagingDirectory)/signing/CertificateGenerator.exe pushContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe
         docker cp $(Build.ArtifactStagingDirectory)/signing/telegraf.exe pushContainer::C:\opt\telegraf\telegraf.exe
         docker cp $(Build.ArtifactStagingDirectory)/signing/out_oms.so pushContainer:C:\opt\amalogswindows\out_oms.so
 
@@ -473,9 +469,6 @@ jobs:
         mkdir -p ruby31
         docker cp signingContainer:C:\ruby31 .
 
-        echo "Extract CertificateGenerator"
-        docker cp signingContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe .
-
         echo "Extract telegraf"
         docker cp signingContainer:C:\opt\telegraf\telegraf.exe .
 
@@ -536,7 +529,6 @@ jobs:
         echo "Copy Signed binaries/folders back to docker image..."
         docker cp $(Build.ArtifactStagingDirectory)/signing/fluent-bit/. pushContainer:C:\opt\fluent-bit/
         docker cp $(Build.ArtifactStagingDirectory)/signing/ruby31/. pushContainer:C:\ruby31/
-        docker cp $(Build.ArtifactStagingDirectory)/signing/CertificateGenerator.exe pushContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe
         docker cp $(Build.ArtifactStagingDirectory)/signing/telegraf.exe pushContainer::C:\opt\telegraf\telegraf.exe
         docker cp $(Build.ArtifactStagingDirectory)/signing/out_oms.so pushContainer:C:\opt\amalogswindows\out_oms.so
 
