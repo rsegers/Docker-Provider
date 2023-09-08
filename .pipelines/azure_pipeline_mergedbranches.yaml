@@ -196,6 +196,7 @@ jobs:
       artifactName: drop
 
 - job: build_windows_2019
+  timeoutInMinutes: 120
   dependsOn:
   -  common
   pool:
@@ -220,20 +221,11 @@ jobs:
       exit /B %ERRORLEVEL%
     displayName: 'build base'
 
-  - script: echo $(Build.SourcesDirectory)
-    displayName: 'Print Build.SourcesDirectory'
-
-  - script: dir $(System.DefaultWorkingDirectory)
-    displayName: 'List files in DefaultWorking Directory'
-
-  - script: dir $(Build.ArtifactStagingDirectory)
-    displayName: 'List files in Staging Directory'
-
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
       FolderPath: '$(Build.SourcesDirectory)'
-      Pattern: '*.dll,*.exe,*.so'
+      Pattern: 'livenessprobe.exe,CertificateGenerator.exe'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
         [
@@ -262,10 +254,70 @@ jobs:
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
 
+  - task: CodeQL3000Init@0
+  - task: AzureCLI@2
+    displayName: "Docker windows build for ltsc2019"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: ps
+      scriptLocation: inlineScript
+      inlineScript: |
+        mkdir -p $(Build.ArtifactStagingDirectory)/windows
+        cd kubernetes/windows
+
+        az --version
+        az account show
+        az account set -s ${{ variables.subscription }}
+        az acr login -n ${{ variables.containerRegistry }}
+
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
+
+    - task: PowerShell@2
+      displayName: Extract files to sign
+      inputs:
+        targetType: 'inline'
+        script: |
+          echo "Creating directory..."
+          mkdir -p $(Build.ArtifactStagingDirectory)/signing
+          cd $(Build.ArtifactStagingDirectory)/signing
+
+          echo "List ArtifactStagingDirectory"
+          ls $(Build.ArtifactStagingDirectory)
+
+          echo "Creating docker container..."
+          docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned
+          
+          echo "Extract fluent-bit"
+          mkdir -p fluent-bit
+          docker cp signingContainer:C:\opt\fluent-bit .
+          
+          echo "Extract Ruby"
+          mkdir -p ruby31
+          docker cp signingContainer:C:\ruby31 .
+
+          echo "Extract CertificateGenerator"
+          docker cp signingContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe .
+
+          echo "Extract telegraf"
+          docker cp signingContainer:C:\opt\telegraf\telegraf.exe .
+
+          echo "Extract out oms"
+          docker cp signingContainer:C:\opt\amalogswindows\out_oms.so .
+
+          echo "Removing container..."
+          docker rm signingContainer
+          ls .
+
+  - script: dir $(System.DefaultWorkingDirectory)
+    displayName: 'List files in DefaultWorking Directory'
+
+  - script: dir $(Build.ArtifactStagingDirectory)
+    displayName: 'List files in Staging Directory'
+
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
-      FolderPath: '$(Build.SourcesDirectory)'
+      FolderPath: '$(Build.ArtifactStagingDirectory)/signing'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
@@ -296,25 +348,30 @@ jobs:
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
 
-  - task: CodeQL3000Init@0
-  - task: AzureCLI@2
-    displayName: "Docker windows build for ltsc2019"
+  - task: PowerShell@2
+    displayName: Replace files in origin Image
     inputs:
-      azureSubscription: ${{ variables.armServiceConnectionName }}
-      scriptType: ps
-      scriptLocation: inlineScript
-      inlineScript: |
-        mkdir -p $(Build.ArtifactStagingDirectory)/windows
-        cd kubernetes/windows
+      targetType: 'inline'
+      script: |
+        docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned
+        
+        echo "Copy Signed binaries/folders back to docker image..."
+        docker cp $(Build.ArtifactStagingDirectory)/signing/fluent-bit/. pushContainer:C:\opt\fluent-bit/
+        docker cp $(Build.ArtifactStagingDirectory)/signing/ruby31/. pushContainer:C:\ruby31/
+        docker cp $(Build.ArtifactStagingDirectory)/signing/CertificateGenerator.exe pushContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe
+        docker cp $(Build.ArtifactStagingDirectory)/signing/telegraf.exe pushContainer::C:\opt\telegraf\telegraf.exe
+        docker cp $(Build.ArtifactStagingDirectory)/signing/out_oms.so pushContainer:C:\opt\amalogswindows\out_oms.so
 
-        az --version
-        az account show
-        az account set -s ${{ variables.subscription }}
-        az acr login -n ${{ variables.containerRegistry }}
+        docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
+        docker rm pushContainer
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion) --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
+  - task: PowerShell@2
+    displayName: Push Docker Image
+    inputs:
+      targetType: 'inline'
+      script: |
         if ("$(Build.Reason)" -ne "PullRequest") {
-           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
+          docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
         }
   - task: CodeQL3000Finalize@0
 
