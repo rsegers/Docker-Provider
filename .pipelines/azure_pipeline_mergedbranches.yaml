@@ -272,41 +272,41 @@ jobs:
 
         docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
 
-    - task: PowerShell@2
-      displayName: Extract files to sign
-      inputs:
-        targetType: 'inline'
-        script: |
-          echo "Creating directory..."
-          mkdir -p $(Build.ArtifactStagingDirectory)/signing
-          cd $(Build.ArtifactStagingDirectory)/signing
+  - task: PowerShell@2
+    displayName: Extract files to sign
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "Creating directory..."
+        mkdir -p $(Build.ArtifactStagingDirectory)/signing
+        cd $(Build.ArtifactStagingDirectory)/signing
 
-          echo "List ArtifactStagingDirectory"
-          ls $(Build.ArtifactStagingDirectory)
+        echo "List ArtifactStagingDirectory"
+        ls $(Build.ArtifactStagingDirectory)
 
-          echo "Creating docker container..."
-          docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned
-          
-          echo "Extract fluent-bit"
-          mkdir -p fluent-bit
-          docker cp signingContainer:C:\opt\fluent-bit .
-          
-          echo "Extract Ruby"
-          mkdir -p ruby31
-          docker cp signingContainer:C:\ruby31 .
+        echo "Creating docker container..."
+        docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned
+        
+        echo "Extract fluent-bit"
+        mkdir -p fluent-bit
+        docker cp signingContainer:C:\opt\fluent-bit .
+        
+        echo "Extract Ruby"
+        mkdir -p ruby31
+        docker cp signingContainer:C:\ruby31 .
 
-          echo "Extract CertificateGenerator"
-          docker cp signingContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe .
+        echo "Extract CertificateGenerator"
+        docker cp signingContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe .
 
-          echo "Extract telegraf"
-          docker cp signingContainer:C:\opt\telegraf\telegraf.exe .
+        echo "Extract telegraf"
+        docker cp signingContainer:C:\opt\telegraf\telegraf.exe .
 
-          echo "Extract out oms"
-          docker cp signingContainer:C:\opt\amalogswindows\out_oms.so .
+        echo "Extract out oms"
+        docker cp signingContainer:C:\opt\amalogswindows\out_oms.so .
 
-          echo "Removing container..."
-          docker rm signingContainer
-          ls .
+        echo "Removing container..."
+        docker rm signingContainer
+        ls .
 
   - script: dir $(System.DefaultWorkingDirectory)
     displayName: 'List files in DefaultWorking Directory'
