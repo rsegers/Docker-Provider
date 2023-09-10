@@ -1098,9 +1098,6 @@ fi
 
 
 echo "starting vector ..."
-echo "replace placeholders WSID & WSKEY from /etc/opt/microsoft/docker-cimprov/vector.toml"
-sed -i "s|WSID|$WSID|g" /etc/opt/microsoft/docker-cimprov/vector.toml
-sed -i "s|WSKEY|$WSKEY|g" /etc/opt/microsoft/docker-cimprov/vector.toml
 /opt/vector --config /etc/opt/microsoft/docker-cimprov/vector.toml -q &
 echo "vector started successfully."
 
