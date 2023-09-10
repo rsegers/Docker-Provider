@@ -957,45 +957,49 @@ fi
 
 #telegraf & fluentbit requirements
 if [ ! -e "/etc/config/kube.conf" ]; then
-      if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
-            telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
-            if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
-                  echo "starting fluent-bit and setting telegraf conf file for prometheus sidecar"
-                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-prom-side-car.conf -e /opt/fluent-bit/bin/out_oms.so &
-            else
-                  echo "not starting fluent-bit in prometheus sidecar (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
-            fi
+      if [ "${VECTOR_GIG_LA_INTEGRATION}" == "true" ]; then
+           echo "skipping starting of fluent-bit since VECTOR_GIG_LA_INTEGRATION enabled"
       else
-            echo "starting fluent-bit and setting telegraf conf file for daemonset"
-            fluentBitConfFile="fluent-bit.conf"
-            if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-                  fluentBitConfFile="fluent-bit-geneva.conf"
-            elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
-                  fluentBitConfFile="fluent-bit-geneva-telemetry-svc.conf"
-                  # gangams - only support v2 in case of 1P mode
-                  AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
-                  echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
-
-                  if [ -z $FBIT_SERVICE_GRACE_INTERVAL_SECONDS ]; then
-                       export FBIT_SERVICE_GRACE_INTERVAL_SECONDS="10"
+           if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
+                  telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf-prom-side-car.conf"
+                  if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+                        echo "starting fluent-bit and setting telegraf conf file for prometheus sidecar"
+                        fluent-bit -c /etc/opt/microsoft/docker-cimprov/fluent-bit-prom-side-car.conf -e /opt/fluent-bit/bin/out_oms.so &
+                  else
+                        echo "not starting fluent-bit in prometheus sidecar (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
                   fi
-                  echo "Using FluentBit Grace Interval seconds:${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
-                  echo "export FBIT_SERVICE_GRACE_INTERVAL_SECONDS=$FBIT_SERVICE_GRACE_INTERVAL_SECONDS" >>~/.bashrc
-
-                  source ~/.bashrc
-                  # Delay FBIT service start to ensure MDSD is ready in 1P mode to avoid data loss
-                  sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}
-            fi
-            echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
-            if [ "$CONTAINER_RUNTIME" == "docker" ]; then
-                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
-                  telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
             else
-                  echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
-                  sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}
-                  sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf
-                  fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
-                  telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
+                  echo "starting fluent-bit and setting telegraf conf file for daemonset"
+                  fluentBitConfFile="fluent-bit.conf"
+                  if [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
+                        fluentBitConfFile="fluent-bit-geneva.conf"
+                  elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+                        fluentBitConfFile="fluent-bit-geneva-telemetry-svc.conf"
+                        # gangams - only support v2 in case of 1P mode
+                        AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
+                        echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
+
+                        if [ -z $FBIT_SERVICE_GRACE_INTERVAL_SECONDS ]; then
+                        export FBIT_SERVICE_GRACE_INTERVAL_SECONDS="10"
+                        fi
+                        echo "Using FluentBit Grace Interval seconds:${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
+                        echo "export FBIT_SERVICE_GRACE_INTERVAL_SECONDS=$FBIT_SERVICE_GRACE_INTERVAL_SECONDS" >>~/.bashrc
+
+                        source ~/.bashrc
+                        # Delay FBIT service start to ensure MDSD is ready in 1P mode to avoid data loss
+                        sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}
+                  fi
+                  echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
+                  if [ "$CONTAINER_RUNTIME" == "docker" ]; then
+                        fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
+                        telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
+                  else
+                        echo "since container run time is $CONTAINER_RUNTIME update the container log fluentbit Parser to cri from docker"
+                        sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile}
+                        sed -i 's/Parser.docker*/Parser cri/' /etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf
+                        fluent-bit -c /etc/opt/microsoft/docker-cimprov/${fluentBitConfFile} -e /opt/fluent-bit/bin/out_oms.so &
+                        telegrafConfFile="/etc/opt/microsoft/docker-cimprov/telegraf.conf"
+                  fi
             fi
       fi
 else
@@ -1097,9 +1101,11 @@ else
 fi
 
 
-echo "starting vector ..."
-/opt/vector --config /etc/opt/microsoft/docker-cimprov/vector.toml -q &
-echo "vector started successfully."
+if [ "${VECTOR_GIG_LA_INTEGRATION}" == "true" ]; then
+      echo "starting vector ..."
+      /opt/vector --config /etc/opt/microsoft/docker-cimprov/vector.toml -q &
+      echo "vector started successfully."
+fi
 
 # Get the end time of the setup in seconds
 endTime=$(date +%s)
