@@ -372,9 +372,6 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 	// if the aks resource id is not defined, it is most likely an ACS Cluster
 	if aksResourceID == "" {
 		CommonProperties["ID"] = os.Getenv(envACSResourceName)
-
-		CommonProperties["Region"] = ""
-
 	} else {
 		CommonProperties["ID"] = aksResourceID
 
