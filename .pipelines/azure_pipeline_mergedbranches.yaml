@@ -221,11 +221,78 @@ jobs:
       exit /B %ERRORLEVEL%
     displayName: 'build base'
 
+  - task: CodeQL3000Init@0
+  - task: AzureCLI@2
+    displayName: "Docker windows build for ltsc2019"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: ps
+      scriptLocation: inlineScript
+      inlineScript: |
+        mkdir -p $(Build.ArtifactStagingDirectory)/windows
+        cd kubernetes/windows
+
+        az --version
+        az account show
+        az account set -s ${{ variables.subscription }}
+        az acr login -n ${{ variables.containerRegistry }}
+
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
+
+  - task: PowerShell@2
+    displayName: Extract files to sign
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "Creating docker container..."
+        docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned
+
+        echo "Creating fist party directory..."
+        mkdir -p $(Build.ArtifactStagingDirectory)/fpSigning
+        cd $(Build.ArtifactStagingDirectory)/fpSigning
+
+        echo "Extract CertificateGenerator"
+        docker cp signingContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe .
+
+        echo "Extract LivenessProbe"
+        docker cp signingContainer:C:\opt\amalogswindows\scripts\cmd\livenessprobe.exe .
+
+        echo "Creating OSS directory..."
+        mkdir -p $(Build.ArtifactStagingDirectory)/ossSigning
+        cd $(Build.ArtifactStagingDirectory)/ossSigning
+
+        echo "Extract fluent-bit"
+        mkdir -p fluent-bit
+        docker cp signingContainer:C:\opt\fluent-bit .
+        
+        echo "Extract Ruby"
+        mkdir -p ruby31
+        docker cp signingContainer:C:\ruby31 .
+
+        echo "Extract telegraf"
+        docker cp signingContainer:C:\opt\telegraf\telegraf.exe .
+
+        echo "Extract out oms"
+        docker cp signingContainer:C:\opt\amalogswindows\out_oms.so .
+
+        echo "Removing container..."
+        docker rm signingContainer
+
+        echo "List ArtifactStagingDirectory"
+        ls $(Build.ArtifactStagingDirectory)
+        ls .
+
+  - script: dir $(System.DefaultWorkingDirectory)
+    displayName: 'List files in DefaultWorking Directory'
+
+  - script: dir $(Build.ArtifactStagingDirectory)
+    displayName: 'List files in Staging Directory'
+
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
-      FolderPath: '$(Build.SourcesDirectory)'
-      Pattern: 'livenessprobe.exe,CertificateGenerator.exe'
+      FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
+      Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
         [
@@ -253,68 +320,12 @@ jobs:
       SessionTimeout: '60'
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
-
-  - task: CodeQL3000Init@0
-  - task: AzureCLI@2
-    displayName: "Docker windows build for ltsc2019"
-    inputs:
-      azureSubscription: ${{ variables.armServiceConnectionName }}
-      scriptType: ps
-      scriptLocation: inlineScript
-      inlineScript: |
-        mkdir -p $(Build.ArtifactStagingDirectory)/windows
-        cd kubernetes/windows
-
-        az --version
-        az account show
-        az account set -s ${{ variables.subscription }}
-        az acr login -n ${{ variables.containerRegistry }}
-
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
-
-  - task: PowerShell@2
-    displayName: Extract files to sign
-    inputs:
-      targetType: 'inline'
-      script: |
-        echo "Creating directory..."
-        mkdir -p $(Build.ArtifactStagingDirectory)/signing
-        cd $(Build.ArtifactStagingDirectory)/signing
-
-        echo "List ArtifactStagingDirectory"
-        ls $(Build.ArtifactStagingDirectory)
-
-        echo "Creating docker container..."
-        docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned
-        
-        echo "Extract fluent-bit"
-        mkdir -p fluent-bit
-        docker cp signingContainer:C:\opt\fluent-bit .
-        
-        echo "Extract Ruby"
-        mkdir -p ruby31
-        docker cp signingContainer:C:\ruby31 .
-
-        echo "Extract telegraf"
-        docker cp signingContainer:C:\opt\telegraf\telegraf.exe .
-
-        echo "Extract out oms"
-        docker cp signingContainer:C:\opt\amalogswindows\out_oms.so .
-
-        echo "Removing container..."
-        docker rm signingContainer
-        ls .
-
-  - script: dir $(System.DefaultWorkingDirectory)
-    displayName: 'List files in DefaultWorking Directory'
-
-  - script: dir $(Build.ArtifactStagingDirectory)
-    displayName: 'List files in Staging Directory'
+    displayName: 'EsrpCodeSigning for first party'
 
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
-      FolderPath: '$(Build.ArtifactStagingDirectory)/signing'
+      FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
@@ -344,6 +355,7 @@ jobs:
       SessionTimeout: '60'
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
+    displayName: 'EsrpCodeSigning for OSS'
 
   - task: PowerShell@2
     displayName: Replace files in origin Image
@@ -353,10 +365,13 @@ jobs:
         docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned
         
         echo "Copy Signed binaries/folders back to docker image..."
-        docker cp $(Build.ArtifactStagingDirectory)/signing/fluent-bit/. pushContainer:C:\opt\fluent-bit/
-        docker cp $(Build.ArtifactStagingDirectory)/signing/ruby31/. pushContainer:C:\ruby31/
-        docker cp $(Build.ArtifactStagingDirectory)/signing/telegraf.exe pushContainer::C:\opt\telegraf\telegraf.exe
-        docker cp $(Build.ArtifactStagingDirectory)/signing/out_oms.so pushContainer:C:\opt\amalogswindows\out_oms.so
+        docker cp $(Build.ArtifactStagingDirectory)/fpSigning/CertificateGenerator.exe pushContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe
+        docker cp $(Build.ArtifactStagingDirectory)/fpSigning/livenessprobe.exe pushContainer:C:\opt\amalogswindows\scripts\cmd\livenessprobe.exe
+
+        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/fluent-bit/. pushContainer:C:\opt\fluent-bit/
+        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/ruby31/. pushContainer:C:\ruby31/
+        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/telegraf.exe pushContainer::C:\opt\telegraf\telegraf.exe
+        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/out_oms.so pushContainer:C:\opt\amalogswindows\out_oms.so
 
         docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
         docker rm pushContainer
@@ -396,11 +411,77 @@ jobs:
       exit /B %ERRORLEVEL%
     displayName: 'build base'
 
+  - task: AzureCLI@2
+    displayName: "Docker windows build for ltsc2022"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: ps
+      scriptLocation: inlineScript
+      inlineScript: |
+        mkdir -p $(Build.ArtifactStagingDirectory)/windows
+        cd kubernetes/windows
+
+        az --version
+        az account show
+        az account set -s ${{ variables.subscription }}
+        az acr login -n ${{ variables.containerRegistry }}
+
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
+
+  - task: PowerShell@2
+    displayName: Extract files to sign
+    inputs:
+      targetType: 'inline'
+      script: |
+        echo "Creating docker container..."
+        docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned
+
+        echo "Creating fist party directory..."
+        mkdir -p $(Build.ArtifactStagingDirectory)/fpSigning
+        cd $(Build.ArtifactStagingDirectory)/fpSigning
+
+        echo "Extract CertificateGenerator"
+        docker cp signingContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe .
+
+        echo "Extract LivenessProbe"
+        docker cp signingContainer:C:\opt\amalogswindows\scripts\cmd\livenessprobe.exe .
+
+        echo "Creating OSS directory..."
+        mkdir -p $(Build.ArtifactStagingDirectory)/ossSigning
+        cd $(Build.ArtifactStagingDirectory)/ossSigning
+
+        echo "Extract fluent-bit"
+        mkdir -p fluent-bit
+        docker cp signingContainer:C:\opt\fluent-bit .
+        
+        echo "Extract Ruby"
+        mkdir -p ruby31
+        docker cp signingContainer:C:\ruby31 .
+
+        echo "Extract telegraf"
+        docker cp signingContainer:C:\opt\telegraf\telegraf.exe .
+
+        echo "Extract out oms"
+        docker cp signingContainer:C:\opt\amalogswindows\out_oms.so .
+
+        echo "Removing container..."
+        docker rm signingContainer
+
+        echo "List ArtifactStagingDirectory"
+        ls $(Build.ArtifactStagingDirectory)
+        ls .
+
+  - script: dir $(System.DefaultWorkingDirectory)
+    displayName: 'List files in DefaultWorking Directory'
+
+  - script: dir $(Build.ArtifactStagingDirectory)
+    displayName: 'List files in Staging Directory'
+
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
-      FolderPath: '$(Build.SourcesDirectory)'
-      Pattern: 'livenessprobe.exe,CertificateGenerator.exe'
+      FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
+      Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
         [
@@ -428,67 +509,12 @@ jobs:
       SessionTimeout: '60'
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
-
-  - task: AzureCLI@2
-    displayName: "Docker windows build for ltsc2022"
-    inputs:
-      azureSubscription: ${{ variables.armServiceConnectionName }}
-      scriptType: ps
-      scriptLocation: inlineScript
-      inlineScript: |
-        mkdir -p $(Build.ArtifactStagingDirectory)/windows
-        cd kubernetes/windows
-
-        az --version
-        az account show
-        az account set -s ${{ variables.subscription }}
-        az acr login -n ${{ variables.containerRegistry }}
-
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) .
-
-  - task: PowerShell@2
-    displayName: Extract files to sign
-    inputs:
-      targetType: 'inline'
-      script: |
-        echo "Creating directory..."
-        mkdir -p $(Build.ArtifactStagingDirectory)/signing
-        cd $(Build.ArtifactStagingDirectory)/signing
-
-        echo "List ArtifactStagingDirectory"
-        ls $(Build.ArtifactStagingDirectory)
-
-        echo "Creating docker container..."
-        docker create --name signingContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned
-        
-        echo "Extract fluent-bit"
-        mkdir -p fluent-bit
-        docker cp signingContainer:C:\opt\fluent-bit .
-        
-        echo "Extract Ruby"
-        mkdir -p ruby31
-        docker cp signingContainer:C:\ruby31 .
-
-        echo "Extract telegraf"
-        docker cp signingContainer:C:\opt\telegraf\telegraf.exe .
-
-        echo "Extract out oms"
-        docker cp signingContainer:C:\opt\amalogswindows\out_oms.so .
-
-        echo "Removing container..."
-        docker rm signingContainer
-        ls .
-
-  - script: dir $(System.DefaultWorkingDirectory)
-    displayName: 'List files in DefaultWorking Directory'
-
-  - script: dir $(Build.ArtifactStagingDirectory)
-    displayName: 'List files in Staging Directory'
+    displayName: 'EsrpCodeSigning for first party'
 
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'ESRPContainerInsights Service Connection'
-      FolderPath: '$(Build.ArtifactStagingDirectory)/signing'
+      FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
@@ -518,6 +544,7 @@ jobs:
       SessionTimeout: '60'
       MaxConcurrency: '50'
       MaxRetryAttempts: '5'
+    displayName: 'EsrpCodeSigning for OSS'
 
   - task: PowerShell@2
     displayName: Replace files in origin Image
@@ -527,10 +554,13 @@ jobs:
         docker create --name pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned
         
         echo "Copy Signed binaries/folders back to docker image..."
-        docker cp $(Build.ArtifactStagingDirectory)/signing/fluent-bit/. pushContainer:C:\opt\fluent-bit/
-        docker cp $(Build.ArtifactStagingDirectory)/signing/ruby31/. pushContainer:C:\ruby31/
-        docker cp $(Build.ArtifactStagingDirectory)/signing/telegraf.exe pushContainer::C:\opt\telegraf\telegraf.exe
-        docker cp $(Build.ArtifactStagingDirectory)/signing/out_oms.so pushContainer:C:\opt\amalogswindows\out_oms.so
+        docker cp $(Build.ArtifactStagingDirectory)/fpSigning/CertificateGenerator.exe pushContainer:C:\opt\amalogswindows\certgenerator\CertificateGenerator.exe
+        docker cp $(Build.ArtifactStagingDirectory)/fpSigning/livenessprobe.exe pushContainer:C:\opt\amalogswindows\scripts\cmd\livenessprobe.exe
+
+        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/fluent-bit/. pushContainer:C:\opt\fluent-bit/
+        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/ruby31/. pushContainer:C:\ruby31/
+        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/telegraf.exe pushContainer::C:\opt\telegraf\telegraf.exe
+        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/out_oms.so pushContainer:C:\opt\amalogswindows\out_oms.so
 
         docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
         docker rm pushContainer
