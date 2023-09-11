@@ -364,17 +364,14 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 
 	CommonProperties = make(map[string]string)
 	CommonProperties["Computer"] = Computer
-	CommonProperties["WorkspaceID"] = WorkspaceID
-	CommonProperties["ControllerType"] = ControllerType[strings.ToLower(os.Getenv("CONTROLLER_TYPE"))]
+	CommonProperties["WSID"] = WorkspaceID
+	CommonProperties["Controller"] = ControllerType[strings.ToLower(os.Getenv("CONTROLLER_TYPE"))]
 	CommonProperties["Version"] = agentVersion
 
 	aksResourceID := os.Getenv(envAKSResourceID)
 	// if the aks resource id is not defined, it is most likely an ACS Cluster
 	if aksResourceID == "" {
 		CommonProperties["ID"] = os.Getenv(envACSResourceName)
-
-		CommonProperties["Region"] = ""
-
 	} else {
 		CommonProperties["ID"] = aksResourceID
 

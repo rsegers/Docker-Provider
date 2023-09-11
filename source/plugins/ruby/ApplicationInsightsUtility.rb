@@ -58,13 +58,13 @@ class ApplicationInsightsUtility
 
         #Commenting it for now from initilize method, we need to pivot all telemetry off of kubenode docker version
         #getDockerInfo()
-        @@CustomProperties["WorkspaceID"] = getWorkspaceId
+        @@CustomProperties["WSID"] = getWorkspaceId
         @@CustomProperties["Version"] = ENV[@@EnvAgentVersion]
-        @@CustomProperties["ControllerType"] = @@controllerType[ENV[@@EnvControllerType].downcase]
+        @@CustomProperties["Controller"] = @@controllerType[ENV[@@EnvControllerType].downcase]
         @@CustomProperties["Computer"] = @@hostName
         encodedAppInsightsKey = ENV[@@EnvApplicationInsightsKey]
         appInsightsEndpoint = ENV[@@EnvApplicationInsightsEndpoint]
-        @@CustomProperties["WorkspaceCloud"] = getWorkspaceCloud
+        @@CustomProperties["WSCloud"] = getWorkspaceCloud
         if !@@proxy.nil? && !@@proxy.empty?
           $log.info("proxy configured")
           @@CustomProperties["Proxy"] = "true"
