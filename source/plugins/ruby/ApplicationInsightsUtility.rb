@@ -156,14 +156,14 @@ class ApplicationInsightsUtility
       begin
         containerRuntime = ENV[@@EnvContainerRuntime]
         if !containerRuntime.nil? && !containerRuntime.empty?
-          # DockerVersion field holds either containerRuntime for non-docker or Dockerversion if its docker
-          @@CustomProperties["DockerVersion"] = containerRuntime
+          # cri field holds either containerRuntime for non-docker or Dockerversion if its docker
+          @@CustomProperties["cri"] = containerRuntime
           # Not doing this for windows since docker is being deprecated soon and we dont want to bring in the socket dependency.
           if !@@isWindows.nil? && @@isWindows == false
             if containerRuntime.casecmp("docker") == 0
               dockerInfo = DockerApiClient.dockerInfo
               if (!dockerInfo.nil? && !dockerInfo.empty?)
-                @@CustomProperties["DockerVersion"] = dockerInfo["Version"]
+                @@CustomProperties["cri"] = dockerInfo["Version"]
               end
             end
           end
@@ -223,7 +223,7 @@ class ApplicationInsightsUtility
       begin
         if @@CustomProperties.empty? || @@CustomProperties.nil?
           initializeUtility()
-        elsif @@CustomProperties["DockerVersion"].nil?
+        elsif @@CustomProperties["cri"].nil?
           getContainerRuntimeInfo()
         end
         telemetryProps = {}
@@ -247,7 +247,7 @@ class ApplicationInsightsUtility
       begin
         if @@CustomProperties.empty? || @@CustomProperties.nil?
           initializeUtility()
-        elsif @@CustomProperties["DockerVersion"].nil?
+        elsif @@CustomProperties["cri"].nil?
           getContainerRuntimeInfo()
         end
         @@CustomProperties["Computer"] = properties["Computer"]
@@ -270,7 +270,7 @@ class ApplicationInsightsUtility
         end
         if @@CustomProperties.empty? || @@CustomProperties.nil?
           initializeUtility()
-        elsif @@CustomProperties["DockerVersion"].nil?
+        elsif @@CustomProperties["cri"].nil?
           getContainerRuntimeInfo()
         end
         telemetryProps = {}

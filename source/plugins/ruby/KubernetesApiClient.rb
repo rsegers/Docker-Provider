@@ -1466,7 +1466,7 @@ class KubernetesApiClient
       begin
         if (!podName.nil? && podName.downcase.start_with?("ama-logs-rs-") && podNameSpace.eql?("kube-system") && containerName.eql?("ama-logs"))
           telemetryProps = {}
-          telemetryProps["PodName"] = podName
+          telemetryProps["Pod"] = podName
           telemetryProps["ContainerName"] = containerName
           case metricName
           when "cpuLimitNanoCores"
