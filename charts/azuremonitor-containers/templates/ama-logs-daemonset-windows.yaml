@@ -155,3 +155,4 @@ spec:
        secretName: ama-logs-adx-secret
        optional: true
 {{- end }}
+{{- end }}
