@@ -10,6 +10,8 @@ require_relative "ConfigParseErrorLogger"
 @configSchemaVersion = ""
 @geneva_logs_integration = false
 @multi_tenancy = false
+@disable_windows = false
+@disable_linux = false
 
 GENEVA_SUPPORTED_ENVIRONMENTS = ["Test", "Stage", "DiagnosticsProd", "FirstpartyProd", "BillingProd", "ExternalProd", "CaMooncake", "CaFairfax", "CaBlackforest"]
 @geneva_account_environment = "" # Supported values Test, Stage, DiagnosticsProd, FirstpartyProd, BillingProd, ExternalProd, CaMooncake, CaFairfax, CaBlackforest
@@ -55,6 +57,22 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         else
           @geneva_logs_integration = false
         end
+
+        disable_windows = parsedConfig[:integrations][:geneva_logs][:disable_windows].to_s
+        if !disable_windows.nil? && disable_windows.strip.casecmp("true") == 0
+          @disable_windows = true
+        end
+
+        disable_linux = parsedConfig[:integrations][:geneva_logs][:disable_linux].to_s
+        if !disable_linux.nil? && disable_linux.strip.casecmp("true") == 0
+          @disable_linux = true
+        end
+
+        if @disable_windows && @disable_linux
+          @geneva_logs_integration = false # if both are disabled then disable the integration
+          puts "config::geneva_logs:geneva logs integration disabled since both linux and windows disabled"
+        end
+
         if @geneva_logs_integration
           multi_tenancy = parsedConfig[:integrations][:geneva_logs][:multi_tenancy].to_s
           if !multi_tenancy.nil? && multi_tenancy.strip.casecmp("true") == 0
@@ -256,27 +274,30 @@ end
 file = File.open("geneva_config_env_var", "w")
 
 if !file.nil?
-  file.write("export GENEVA_LOGS_INTEGRATION=#{@geneva_logs_integration}\n")
-  file.write("export GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}\n")
-  if @enable_fbit_threading
-    file.write("export ENABLE_FBIT_THREADING=#{@enable_fbit_threading}\n")
+  if @disable_linux
+    puts "config::geneva_logs::info:geneva logs integration disabled for linux"
+  else
+    file.write("export GENEVA_LOGS_INTEGRATION=#{@geneva_logs_integration}\n")
+    file.write("export GENEVA_LOGS_MULTI_TENANCY=#{@multi_tenancy}\n")
+    if @enable_fbit_threading
+      file.write("export ENABLE_FBIT_THREADING=#{@enable_fbit_threading}\n")
+    end
+
+    if is_configure_geneva_env_vars()
+      file.write("export MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}\n")
+      file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}\n")
+      file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
+      file.write("export MONITORING_GCS_REGION=#{@geneva_gcs_region}\n")
+      file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
+      file.write("export MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}\n")
+      file.write("export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken")
+    end
+    file.write("export GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}\n")
+    file.write("export GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}\n")
+
+    # This required environment variable in geneva mode
+    file.write("export MDSD_MSGPACK_SORT_COLUMNS=1\n")
   end
-
-  if is_configure_geneva_env_vars()
-    file.write("export MONITORING_GCS_ENVIRONMENT=#{@geneva_account_environment}\n")
-    file.write("export MONITORING_GCS_NAMESPACE=#{@geneva_account_namespace}\n")
-    file.write("export MONITORING_GCS_ACCOUNT=#{@geneva_account_name}\n")
-    file.write("export MONITORING_GCS_REGION=#{@geneva_gcs_region}\n")
-    file.write("export MONITORING_CONFIG_VERSION=#{@geneva_logs_config_version}\n")
-    file.write("export MONITORING_GCS_AUTH_ID=#{@geneva_gcs_authid}\n")
-    file.write("export MONITORING_GCS_AUTH_ID_TYPE=AuthMSIToken")
-  end
-  file.write("export GENEVA_LOGS_INFRA_NAMESPACES=#{@infra_namespaces}\n")
-  file.write("export GENEVA_LOGS_TENANT_NAMESPACES=#{@tenant_namespaces}\n")
-
-  # This required environment variable in geneva mode
-  file.write("export MDSD_MSGPACK_SORT_COLUMNS=1\n")
-
   # Close file after writing all environment variables
   file.close
 else
@@ -289,42 +310,46 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   file = File.open("setgenevaconfigenv.ps1", "w")
 
   if !file.nil?
-    commands = get_command_windows("GENEVA_LOGS_INTEGRATION", @geneva_logs_integration)
-    file.write(commands)
-    commands = get_command_windows("GENEVA_LOGS_MULTI_TENANCY", @multi_tenancy)
-    file.write(commands)
-    if @enable_fbit_threading
-      commands = get_command_windows("ENABLE_FBIT_THREADING", @enable_fbit_threading)
+    if @disable_windows
+      puts "config::geneva_logs::info:geneva logs integration disabled for windows"
+    else
+      commands = get_command_windows("GENEVA_LOGS_INTEGRATION", @geneva_logs_integration)
       file.write(commands)
-    end
-
-    if is_configure_geneva_env_vars()
-      commands = get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment)
+      commands = get_command_windows("GENEVA_LOGS_MULTI_TENANCY", @multi_tenancy)
       file.write(commands)
-      commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace_windows)
-      file.write(commands)
-      commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
-      file.write(commands)
-      commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version_windows)
-      file.write(commands)
-      commands = get_command_windows("MONITORING_GCS_REGION", @geneva_gcs_region)
-      file.write(commands)
-      commands = get_command_windows("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken")
-      file.write(commands)
-      #Windows AMA expects these and these are different from Linux AMA
-      authIdParts = @geneva_gcs_authid.split("#", 2)
-      if authIdParts.length == 2
-        file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
-        file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
-      else
-        puts "Invalid GCS Auth Id: #{@geneva_gcs_authid}"
+      if @enable_fbit_threading
+        commands = get_command_windows("ENABLE_FBIT_THREADING", @enable_fbit_threading)
+        file.write(commands)
       end
-    end
 
-    commands = get_command_windows("GENEVA_LOGS_INFRA_NAMESPACES", @infra_namespaces)
-    file.write(commands)
-    commands = get_command_windows("GENEVA_LOGS_TENANT_NAMESPACES", @tenant_namespaces)
-    file.write(commands)
+      if is_configure_geneva_env_vars()
+        commands = get_command_windows("MONITORING_GCS_ENVIRONMENT", @geneva_account_environment)
+        file.write(commands)
+        commands = get_command_windows("MONITORING_GCS_NAMESPACE", @geneva_account_namespace_windows)
+        file.write(commands)
+        commands = get_command_windows("MONITORING_GCS_ACCOUNT", @geneva_account_name)
+        file.write(commands)
+        commands = get_command_windows("MONITORING_CONFIG_VERSION", @geneva_logs_config_version_windows)
+        file.write(commands)
+        commands = get_command_windows("MONITORING_GCS_REGION", @geneva_gcs_region)
+        file.write(commands)
+        commands = get_command_windows("MONITORING_GCS_AUTH_ID_TYPE", "AuthMSIToken")
+        file.write(commands)
+        #Windows AMA expects these and these are different from Linux AMA
+        authIdParts = @geneva_gcs_authid.split("#", 2)
+        if authIdParts.length == 2
+          file.write(get_command_windows("MONITORING_MANAGED_ID_IDENTIFIER", authIdParts[0]))
+          file.write(get_command_windows("MONITORING_MANAGED_ID_VALUE", authIdParts[1]))
+        else
+          puts "Invalid GCS Auth Id: #{@geneva_gcs_authid}"
+        end
+      end
+
+      commands = get_command_windows("GENEVA_LOGS_INFRA_NAMESPACES", @infra_namespaces)
+      file.write(commands)
+      commands = get_command_windows("GENEVA_LOGS_TENANT_NAMESPACES", @tenant_namespaces)
+      file.write(commands)
+    end
     # Close file after writing all environment variables
     file.close
     puts "****************End Config Processing********************"
