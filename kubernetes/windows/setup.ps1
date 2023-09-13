@@ -68,6 +68,9 @@ Write-Host ('Extracting Certificate Generator Package')
 Write-Host ('Finished Extracting Certificate Generator Package')
 
 $windowsazuremonitoragent = [System.Environment]::GetEnvironmentVariable('WINDOWS_AMA_URL')
+if ([string]::IsNullOrEmpty($windowsazuremonitoragent)) {
+    $windowsazuremonitoragent = "https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/genevamonitoringagent.46.3.2.zip"
+}
 Write-Host ('Installing Windows Azure Monitor Agent: ' + $windowsazuremonitoragent);
 try {
     Invoke-WebRequest -Uri $windowsazuremonitoragent -OutFile /installation/windowsazuremonitoragent.zip
