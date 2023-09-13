@@ -1,4 +1,4 @@
-{{- if or (and ( not (contains "microsoft.kubernetes/connectedclusters" (.Values.Azure.Cluster.ResourceId | lower))) ( not (contains "microsoft.hybridcontainerservice/provisionedclusters" (.Values.Azure.Cluster.ResourceId | lower)))) ( not (.Values.amalogs.useAADAuth)) }}
+{{- if not (.Values.amalogs.useAADAuth) }}
 {{- if and (ne .Values.amalogs.secret.key "<your_workspace_key>") (ne .Values.amalogs.secret.wsid "<your_workspace_id>") (or (ne .Values.amalogs.env.clusterName "<your_cluster_name>") (ne .Values.amalogs.env.clusterId "<your_cluster_id>") (ne .Values.Azure.Cluster.ResourceId "<your_cluster_id>") )}}
 apiVersion: apps/v1
 kind: DaemonSet
