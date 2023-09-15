@@ -30,7 +30,7 @@ additional questions or comments.
 ##### Code change log
 - Common
   * Telemetry optimization - Remove unnecessary customDimensions field and shortening some fields by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1056
-  * add separate flags for windows and linux in configmap for geneva logs… by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1064
+  * Add separate flags for windows and linux in configmap for geneva logs… by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1064
 - Windows
   * Gangams/fix insights metrics issue geneva logs by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1054
   * Not install windows pods for arc extension by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1063
