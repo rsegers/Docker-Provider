@@ -15,18 +15,20 @@ RUN powershell -Command "Set-ExecutionPolicy Bypass -Scope Process -Force; iex (
 # Fluentd depends on cool.io whose fat gem is only available for Ruby < 2.5, so need to specify --platform ruby when install Ruby > 2.5 and install msys2 to get dev tools
 RUN choco install -y ruby --version 3.1.1.1 --params "'/InstallDir:C:\ruby31'" \
 && choco install -y msys2 --version 20211130.0.0 --params "'/NoPath /NoUpdate /InstallDir:C:\ruby31\msys64'"
+
 # Delete unnecessary files after installation
-RUN rmdir /S /Q C:\ruby31\share\doc\ruby\html\js
-RUN del /F /Q C:\ruby31\ridk_use\ridk.ps1
-RUN del /F /Q C:\ruby31\msys64\usr\share\texinfo\js\info.js
-RUN del /F /Q C:\ruby31\msys64\usr\share\texinfo\js\modernizr.js
-RUN del /F /Q C:\ruby31\msys64\usr\share\terminfo\78\xterm.js
-RUN del /F /Q C:\ruby31\msys64\usr\lib\terminfo\78\xterm.js
-RUN del /F /Q C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\navigation.js
-RUN del /F /Q C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\searcher.js
-RUN del /F /Q C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\darkfish.js
-RUN del /F /Q C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\search.js
-RUN del /F /Q C:\ruby31\bin\ridk.ps1
+RUN powershell -Command "\
+if (Test-Path C:\ruby31\share\doc\ruby\html\js) { rmdir /S /Q C:\ruby31\share\doc\ruby\html\js }; \
+if (Test-Path C:\ruby31\ridk_use\ridk.ps1) { del /F /Q C:\ruby31\ridk_use\ridk.ps1 }; \
+if (Test-Path C:\ruby31\msys64\usr\share\texinfo\js\info.js) { del /F /Q C:\ruby31\msys64\usr\share\texinfo\js\info.js }; \
+if (Test-Path C:\ruby31\msys64\usr\share\texinfo\js\modernizr.js) { del /F /Q C:\ruby31\msys64\usr\share\texinfo\js\modernizr.js }; \
+if (Test-Path C:\ruby31\msys64\usr\share\terminfo\78\xterm.js) { del /F /Q C:\ruby31\msys64\usr\share\terminfo\78\xterm.js }; \
+if (Test-Path C:\ruby31\msys64\usr\lib\terminfo\78\xterm.js) { del /F /Q C:\ruby31\msys64\usr\lib\terminfo\78\xterm.js }; \
+if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\navigation.js) { del /F /Q C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\navigation.js }; \
+if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\searcher.js) { del /F /Q C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\searcher.js }; \
+if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\darkfish.js) { del /F /Q C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\darkfish.js }; \
+if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\search.js) { del /F /Q C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\search.js }; \
+if (Test-Path C:\ruby31\bin\ridk.ps1) { del /F /Q C:\ruby31\bin\ridk.ps1 }"
 
 # gangams - optional MSYS2 update via ridk failing in merged docker file so skipping that since we dont need optional update
 RUN refreshenv \
@@ -102,3 +104,5 @@ ENV CI_CERT_LOCATION "C://oms.crt"
 ENV CI_KEY_LOCATION "C://oms.key"
 
 ENTRYPOINT ["powershell", "C:\\opt\\amalogswindows\\scripts\\powershell\\main.ps1"]
+
+RUN if (Test-Path C:\ruby31\msys64\usr\share\texinfo\js\info.js) { echo "info.js exists!" } else { echo "info.js does not exist." }
