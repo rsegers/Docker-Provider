@@ -229,6 +229,9 @@ spec:
        securityContext:
          privileged: true
        volumeMounts:
+         - name: token
+           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+           readOnly: true
          - mountPath: /etc/kubernetes/host
            name: azure-json-path
          - mountPath: /etc/ama-logs-secret
@@ -269,6 +272,12 @@ spec:
    {{- end }}
    {{- end }}
    volumes:
+    - name: token
+      projected:
+        sources:
+        - serviceAccountToken:
+            path: token
+            expirationSeconds: 3600
     - name: host-root
       hostPath:
        path: /

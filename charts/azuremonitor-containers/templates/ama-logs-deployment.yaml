@@ -128,6 +128,9 @@ spec:
        - containerPort: 25224
          protocol: UDP
        volumeMounts:
+        - name: token
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
         - mountPath: /var/run/host
           name: docker-sock
         - mountPath: /var/log
@@ -182,6 +185,12 @@ spec:
    {{- end }}
    {{- end }}
    volumes:
+    - name: token
+      projected:
+        sources:
+        - serviceAccountToken:
+            path: token
+            expirationSeconds: 3600
     - name: docker-sock
       hostPath:
        path: /var/run

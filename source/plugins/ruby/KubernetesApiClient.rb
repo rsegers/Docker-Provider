@@ -9,6 +9,7 @@ class KubernetesApiClient
   require "uri"
   require "time"
   require "ipaddress"
+  require "jwt"
 
   require_relative "oms_common"
   require_relative "constants"
@@ -39,6 +40,7 @@ class KubernetesApiClient
   @Log = Logger.new(@LogPath, 2, 10 * 1048576) #keep last 2 files, max log file size = 10M
   @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
   @@TokenStr = nil
+  @@TokenExpiry = DateTime.now.to_time.to_i
   @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
@@ -114,16 +116,22 @@ class KubernetesApiClient
     end
 
     def getTokenStr
-      return @@TokenStr if !@@TokenStr.nil?
       begin
-        if File.exist?(@@TokenFileName) && File.readable?(@@TokenFileName)
-          @@TokenStr = File.read(@@TokenFileName).strip
-          return @@TokenStr
-        else
-          @Log.warn("Unable to read token string from #{@@TokenFileName}: #{error}")
-          return nil
+        if (@@TokenStr.nil? || (@@TokenExpiry - DateTime.now.to_time.to_i).abs < 900) # renew token if it is going to expire in 15 mins
+          if File.exist?(@@TokenFileName) && File.readable?(@@TokenFileName)
+            @@TokenStr = File.read(@@TokenFileName).strip
+            token_info = JWT.decode(@@TokenStr, nil, false)
+            @@TokenExpiry = token_info[0]["exp"]
+          else
+            @Log.warn("Unable to read token string from #{@@TokenFileName}: #{error}")
+            @@TokenExpiry = DateTime.now.to_time.to_i
+            @@TokenStr = nil
+          end
         end
+      rescue => error
+        @Log.warn("getTokenStr failed: #{error}")
       end
+      return @@TokenStr
     end
 
     def getClusterRegion(env = ENV)
