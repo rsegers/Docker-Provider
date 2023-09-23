@@ -103,6 +103,6 @@ ENV AZMON_COLLECT_ENV False
 ENV CI_CERT_LOCATION "C://oms.crt"
 ENV CI_KEY_LOCATION "C://oms.key"
 
-RUN powershell -Command "if (Test-Path C:\ruby31\msys64\usr\share\texinfo\js\info.js) { Write-Output 'info.js exists!' } else { Write-Output 'info.js does not exist.' }"
+# RUN powershell -Command "if (Test-Path 'C:\ruby31\msys64\usr\share\texinfo\js\info.js') { Write-Output 'info.js exists!' } else { Write-Output 'info.js does not exist.' }"
 
 ENTRYPOINT ["powershell", "C:\\opt\\amalogswindows\\scripts\\powershell\\main.ps1"]
