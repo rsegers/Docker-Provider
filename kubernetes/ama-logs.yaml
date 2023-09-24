@@ -452,7 +452,7 @@ spec:
             - containerPort: 25224
               protocol: UDP
           volumeMounts:
-            - name: token
+            - name: kube-api-access
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
             - mountPath: /var/run/mdsd-PrometheusSidecar
@@ -550,7 +550,7 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
-            - name: token
+            - name: kube-api-access
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
             - mountPath: /var/run/mdsd-PrometheusSidecar
@@ -603,12 +603,23 @@ spec:
         - operator: "Exists"
           effect: "PreferNoSchedule"
       volumes:
-        - name: token
+        - name: kube-api-access
           projected:
             sources:
-              - serviceAccountToken:
-                  path: token
-                  expirationSeconds: 3600
+            - serviceAccountToken:
+                path: token
+                expirationSeconds: 3600
+            - configMap:
+                items:
+                - key: ca.crt
+                  path: ca.crt
+                name: kube-root-ca.crt
+            - downwardAPI:
+                items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace        
         - name: mdsd-prometheus-sock
           emptyDir: {}
         - name: host-root
@@ -816,7 +827,7 @@ spec:
             - containerPort: 25224
               protocol: UDP
           volumeMounts:
-            - name: token
+            - name: kube-api-access
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
             - mountPath: /var/run/host
@@ -888,12 +899,23 @@ spec:
         - operator: "Exists"
           effect: "PreferNoSchedule"
       volumes:
-        - name: token
+        - name: kube-api-access
           projected:
             sources:
-              - serviceAccountToken:
-                  path: token
-                  expirationSeconds: 3600
+            - serviceAccountToken:
+                path: token
+                expirationSeconds: 3600
+            - configMap:
+                items:
+                - key: ca.crt
+                  path: ca.crt
+                name: kube-root-ca.crt
+            - downwardAPI:
+                items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace            
         - name: docker-sock
           hostPath:
             path: /var/run
@@ -1014,8 +1036,8 @@ spec:
           # - name: USING_AAD_MSI_AUTH
           #   value: "true"
          volumeMounts:
-          - name: token
-            mountPath: C:\var\run\secrets\kubernetes.io\serviceaccount
+          - name: kube-api-access
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
             readOnly: true
           - mountPath: C:\ProgramData\docker\containers
             name: docker-windows-containers
@@ -1074,12 +1096,23 @@ spec:
      - operator: "Exists"
        effect: PreferNoSchedule
      volumes:
-      - name: token
+      - name: kube-api-access
         projected:
           sources:
           - serviceAccountToken:
               path: token
               expirationSeconds: 3600
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace    
       - name: docker-windows-kuberenetes-container-logs
         hostPath:
           path: C:\var
