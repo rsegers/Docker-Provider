@@ -117,7 +117,7 @@ class KubernetesApiClient
 
     def getTokenStr
       begin
-        if (@@TokenStr.nil? || (@@TokenExpiry - DateTime.now.to_time.to_i).abs < 900) # refresh token from token file if it is going to expire in 15 mins
+        if (@@TokenStr.nil? || (@@TokenExpiry - DateTime.now.to_time.to_i).abs <= Constants::SERVICE_ACCOUNT_TOKEN_REFRESH_INTERVAL_SECONDS) # refresh token from token file if it is going if its near expiry
           if File.exist?(@@TokenFileName) && File.readable?(@@TokenFileName)
             @@TokenStr = File.read(@@TokenFileName).strip
             token_info = JWT.decode(@@TokenStr, nil, false)
