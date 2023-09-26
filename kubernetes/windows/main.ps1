@@ -739,8 +739,6 @@ function IsGenevaMode() {
     return $false
 }
 
-Set-ProcessAndMachineEnvVariables "COMPlus_ThreadPool_UnfairSemaphoreSpinLimit" "0"
-
 Start-Transcript -Path main.txt
 
 Remove-WindowsServiceIfItExists "fluentdwinaks"

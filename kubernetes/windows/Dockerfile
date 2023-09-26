@@ -41,6 +41,7 @@ SHELL ["powershell"]
 
 ENV tmpdir /opt/amalogswindows/scripts/powershell
 ENV WINDOWS_AMA_URL ${WINDOWS_AMA_URL}
+ENV COMPlus_ThreadPool_UnfairSemaphoreSpinLimit 0
 
 WORKDIR /opt/amalogswindows/scripts/powershell
 
