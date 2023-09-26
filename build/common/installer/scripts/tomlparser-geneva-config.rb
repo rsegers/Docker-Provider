@@ -222,15 +222,14 @@ def isValidGenevaConfig(environment, namespace, namespacewindows, account, authi
 end
 
 def get_command_windows(env_variable_name, env_variable_value)
-  # Set at the process level
-  ENV[env_variable_name] = env_variable_value
-
-  # Set at the machine/system level (requires administrative privileges)
-  success = system("setx #{env_variable_name} \"#{env_variable_value}\" /M")
-
-  unless success
-    raise "Failed to set environment variable at the machine level."
+  # Return Ruby code that sets an environment variable at the process level and system level
+  # with an exception check for the system-level set.
+  return <<-RUBY_CODE
+  ENV['#{env_variable_name}'] = '#{env_variable_value}'
+  unless system("setx #{env_variable_name} \\"#{env_variable_value}\\" /M")
+    raise "Failed to set '#{env_variable_name}' at the machine level."
   end
+  RUBY_CODE
 end
 
 def is_configure_geneva_env_vars()
