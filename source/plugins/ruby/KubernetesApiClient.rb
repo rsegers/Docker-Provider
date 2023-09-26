@@ -125,7 +125,7 @@ class KubernetesApiClient
               @@TokenExpiry = token_info[0]["exp"]
             rescue JWT::DecodeError => e
               @Log.warn("The token is not a JWT.")
-              @@TokenExpiry = DateTime.now.to_time.to_i + (60 * 60) # 1 hour token expiry for legacy tokens
+              @@TokenExpiry = DateTime.now.to_time.to_i + Constants::LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS
             end
           else
             @Log.warn("Unable to read token string from #{@@TokenFileName}: #{error}")
