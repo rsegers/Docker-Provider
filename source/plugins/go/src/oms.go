@@ -43,6 +43,12 @@ const InsightsMetricsDataType = "INSIGHTS_METRICS_BLOB"
 // DataType for KubeMonAgentEvent
 const KubeMonAgentEventDataType = "KUBE_MON_AGENT_EVENTS_BLOB"
 
+// DataType for Perf
+const PerfDataType = "LINUX_PERF_BLOB"
+
+// DataType for ContainerInventory
+const ContainerInventoryDataType = "CONTAINER_INVENTORY_BLOB"
+
 //env variable which has ResourceId for LA
 const ResourceIdEnv = "AKS_RESOURCE_ID"
 
@@ -77,6 +83,8 @@ const KubeMonAgentEventWarning = "Warning"
 const KubeMonAgentEventInfo = "Info"
 
 const KubeMonAgentEventsFlushedEvent = "KubeMonAgentEventsFlushed"
+
+const InputPluginRecordsFlushedEvent = "InputPluginRecordsFlushed"
 
 // ContainerLogPluginConfFilePath --> config file path for container log plugin
 const DaemonSetContainerLogPluginConfFilePath = "/etc/opt/microsoft/docker-cimprov/out_oms.conf"
@@ -1198,11 +1206,21 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 					}
 					SendException(message)
 				} else {
+					telemetryDimensions := make(map[string]string)
+					lowerTag := strings.ToLower(tag)
+					if strings.Contains(lowerTag, strings.ToLower(ContainerInventoryDataType)) {
+						telemetryDimensions["ContainerInventoryCount"] = strconv.Itoa(len(msgPackEntries))
+					} else if strings.Contains(lowerTag, strings.ToLower(InsightsMetricsDataType)) {
+						telemetryDimensions["InsightsMetricsCount"] = strconv.Itoa(len(msgPackEntries))
+					} else if strings.Contains(lowerTag, strings.ToLower(PerfDataType)) {
+						telemetryDimensions["PerfCount"] = strconv.Itoa(len(msgPackEntries))
+					} else {
+						Log("FlushInputPluginRecords::Warn::Flushed records of unknown data type %s", lowerTag)
+					}
 					numRecords := len(msgPackEntries)
 					Log("FlushInputPluginRecords::Info::Successfully flushed %d records that was %d bytes in %s", numRecords, bts, elapsed)
 					// Send telemetry to AppInsights resource
-					// SendEvent(KubeMonAgentEventsFlushedEvent, telemetryDimensions)
-					// TODO
+					SendEvent(InputPluginRecordsFlushedEvent, telemetryDimensions)
 				}
 			} else {
 				Log("Error::mdsd::Unable to create mdsd client for InputPluginRecords. Please check error log.")
