@@ -371,7 +371,7 @@ function Read-Configs {
     ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
-    .\setgenevaconfigenv.ps1
+    ruby /opt/amalogswindows/scripts/ruby/setgenevaconfigenv.rb
 
     $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
     if (![string]::IsNullOrEmpty($genevaLogsIntegration)) {

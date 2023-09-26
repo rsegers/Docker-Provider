@@ -222,7 +222,15 @@ def isValidGenevaConfig(environment, namespace, namespacewindows, account, authi
 end
 
 def get_command_windows(env_variable_name, env_variable_value)
-  return "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n" + "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
+  # Set at the process level
+  ENV[env_variable_name] = env_variable_value
+
+  # Set at the machine/system level (requires administrative privileges)
+  success = system("setx #{env_variable_name} \"#{env_variable_value}\" /M")
+
+  unless success
+    raise "Failed to set environment variable at the machine level."
+  end
 end
 
 def is_configure_geneva_env_vars()
@@ -286,7 +294,7 @@ end
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   # Write the settings to file, so that they can be set as environment variables
-  file = File.open("setgenevaconfigenv.ps1", "w")
+  file = File.open("setgenevaconfigenv.rb", "w")
 
   if !file.nil?
     commands = get_command_windows("GENEVA_LOGS_INTEGRATION", @geneva_logs_integration)
