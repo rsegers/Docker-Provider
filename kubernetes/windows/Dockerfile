@@ -90,17 +90,16 @@ ENV CI_CERT_LOCATION "C://oms.crt"
 ENV CI_KEY_LOCATION "C://oms.key"
 
 # Delete unnecessary files after installation
-RUN powershell -Command "\
-if (Test-Path C:\ruby31\share\doc\ruby\html\js) { Remove-Item -Path C:\ruby31\share\doc\ruby\html\js -Recurse -Confirm:$false }; \
-if (Test-Path C:\ruby31\ridk_use\ridk.ps1) { Remove-Item -Path C:\ruby31\ridk_use\ridk.ps1 -Force -Confirm:$false }; \
-if (Test-Path C:\ruby31\msys64\usr\share\texinfo\js\info.js) { Remove-Item -Path C:\ruby31\msys64\usr\share\texinfo\js\info.js -Force -Confirm:$false }; \
-if (Test-Path C:\ruby31\msys64\usr\share\texinfo\js\modernizr.js) { Remove-Item -Path C:\ruby31\msys64\usr\share\texinfo\js\modernizr.js -Force -Confirm:$false }; \
-if (Test-Path C:\ruby31\msys64\usr\share\terminfo\78\xterm.js) { Remove-Item -Path C:\ruby31\msys64\usr\share\terminfo\78\xterm.js -Force -Confirm:$false }; \
-if (Test-Path C:\ruby31\msys64\usr\lib\terminfo\78\xterm.js) { Remove-Item -Path C:\ruby31\msys64\usr\lib\terminfo\78\xterm.js -Force -Confirm:$false }; \
-if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\navigation.js) { Remove-Item -Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\navigation.js -Force -Confirm:$false }; \
-if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\searcher.js) { Remove-Item -Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\searcher.js -Force -Confirm:$false }; \
-if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\darkfish.js) { Remove-Item -Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\darkfish.js -Force -Confirm:$false }; \
-if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\search.js) { Remove-Item -Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\search.js -Force -Confirm:$false }; \
-if (Test-Path C:\ruby31\bin\ridk.ps1) { Remove-Item -Path C:\ruby31\bin\ridk.ps1 -Force -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\share\doc\ruby\html\js) { Remove-Item -Path C:\ruby31\share\doc\ruby\html\js -Recurse -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\ridk_use\ridk.ps1) { Remove-Item -Path C:\ruby31\ridk_use\ridk.ps1 -Force -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\msys64\usr\share\texinfo\js\info.js) { Remove-Item -Path C:\ruby31\msys64\usr\share\texinfo\js\info.js -Force -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\msys64\usr\share\texinfo\js\modernizr.js) { Remove-Item -Path C:\ruby31\msys64\usr\share\texinfo\js\modernizr.js -Force -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\msys64\usr\share\terminfo\78\xterm.js) { Remove-Item -Path C:\ruby31\msys64\usr\share\terminfo\78\xterm.js -Force -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\msys64\usr\lib\terminfo\78\xterm.js) { Remove-Item -Path C:\ruby31\msys64\usr\lib\terminfo\78\xterm.js -Force -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\navigation.js) { Remove-Item -Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\navigation.js -Force -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\searcher.js) { Remove-Item -Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\searcher.js -Force -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\darkfish.js) { Remove-Item -Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\darkfish.js -Force -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\search.js) { Remove-Item -Path C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\search.js -Force -Confirm:$false }"
+RUN powershell -Command "if (Test-Path C:\ruby31\bin\ridk.ps1) { Remove-Item -Path C:\ruby31\bin\ridk.ps1 -Force -Confirm:$false }"
 
 ENTRYPOINT ["powershell", "C:\\opt\\amalogswindows\\scripts\\powershell\\main.ps1"]
