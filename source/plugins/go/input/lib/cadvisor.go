@@ -1023,6 +1023,9 @@ func getContainerCpuMetricItems(metricInfo map[string]interface{}, hostName, met
 						if len(os.Getenv("AZMON_MULTILINE_ENABLED")) > 0 {
 							telemetryProps["multilineEnabled"] = os.Getenv("AZMON_MULTILINE_ENABLED")
 						}
+						if len(os.Getenv("AZMON_RESOURCE_OPTIMIZATION_ENABLED")) > 0 {
+							telemetryProps["resoureceOptimizationEnabled"] = os.Getenv("AZMON_RESOURCE_OPTIMIZATION_ENABLED")
+						}
 						SendMetricTelemetry(metricName, metricValue, telemetryProps)
 					}
 				}

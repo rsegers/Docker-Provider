@@ -32,6 +32,14 @@ def substituteMultiline(multilineLogging, new_contents)
     return new_contents
 end
 
+def substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
+  if !resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true"
+    new_contents = new_contents.gsub("#${ResourceOptimizationEnabled}", "")
+  end
+
+  return new_contents
+end
+
 def substituteFluentBitPlaceHolders
   begin
     # Replace the fluentbit config file with custom values if present
@@ -43,6 +51,7 @@ def substituteFluentBitPlaceHolders
     memBufLimit = ENV["FBIT_TAIL_MEM_BUF_LIMIT"]
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
+    resoureceOptimizationEnabled = ENV["AZMON_RESOURCE_OPTIMIZATION_ENABLED"]
 
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
@@ -80,6 +89,7 @@ def substituteFluentBitPlaceHolders
     end
 
     new_contents = substituteMultiline(multilineLogging, new_contents)
+    new_contents = substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in fluent-bit.conf file"
 
