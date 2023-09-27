@@ -275,23 +275,23 @@ spec:
    {{- end }}
    {{- end }}
    volumes:
-     - name: kube-api-access
-          projected:
-            sources:
-            - serviceAccountToken:
-                path: token
-                expirationSeconds: 3600
-            - configMap:
-                items:
-                - key: ca.crt
-                  path: ca.crt
-                name: kube-root-ca.crt
-            - downwardAPI:
-                items:
-                - fieldRef:
-                    apiVersion: v1
-                    fieldPath: metadata.namespace
-                  path: namespace               
+    - name: kube-api-access
+      projected:
+        sources:
+         - serviceAccountToken:
+             path: token
+             expirationSeconds: 3600
+         - configMap:
+             items:
+             - key: ca.crt
+               path: ca.crt
+             name: kube-root-ca.crt
+         - downwardAPI:
+             items:
+             - fieldRef:
+                 apiVersion: v1
+                 fieldPath: metadata.namespace
+               path: namespace
     - name: host-root
       hostPath:
        path: /

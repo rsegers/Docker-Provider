@@ -139,9 +139,9 @@ spec:
    {{- end }}
    {{- end }}
    volumes:
-     - name: kube-api-access
-       projected:
-         sources:
+    - name: kube-api-access
+      projected:
+        sources:
          - serviceAccountToken:
              path: token
              expirationSeconds: 3600
@@ -155,7 +155,7 @@ spec:
              - fieldRef:
                  apiVersion: v1
                  fieldPath: metadata.namespace
-               path: namespace    
+               path: namespace
     - name: docker-windows-kuberenetes-container-logs
       hostPath:
         path: C:\var
