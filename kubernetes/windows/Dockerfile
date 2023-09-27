@@ -90,6 +90,16 @@ ENV CI_CERT_LOCATION "C://oms.crt"
 ENV CI_KEY_LOCATION "C://oms.key"
 
 # Delete unnecessary files after installation
-RUN powershell -Command "Remove-Item -Recurse -Force 'C:\ruby31\share\doc\ruby\html\js'; Remove-Item -Force 'C:\ruby31\ridk_use\ridk.ps1'; Remove-Item -Force 'C:\ruby31\msys64\usr\share\texinfo\js\info.js'; Remove-Item -Force 'C:\ruby31\msys64\usr\share\texinfo\js\modernizr.js'; Remove-Item -Force 'C:\ruby31\msys64\usr\share\terminfo\78\xterm.js'; Remove-Item -Force 'C:\ruby31\msys64\usr\lib\terminfo\78\xterm.js'; Remove-Item -Force 'C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\navigation.js'; Remove-Item -Force 'C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\searcher.js'; Remove-Item -Force 'C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\darkfish.js'; Remove-Item -Force 'C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\search.js'; Remove-Item -Force 'C:\ruby31\bin\ridk.ps1'"
+RUN powershell -Command "Remove-Item -Recurse -Force 'C:\ruby31\share\doc\ruby\html\js'"
+RUN powershell -Command "Remove-Item -Force 'C:\ruby31\ridk_use\ridk.ps1'"
+RUN powershell -Command "Remove-Item -Force 'C:\ruby31\msys64\usr\share\texinfo\js\info.js'"
+RUN powershell -Command "Remove-Item -Force 'C:\ruby31\msys64\usr\share\texinfo\js\modernizr.js'"
+RUN powershell -Command "Remove-Item -Force 'C:\ruby31\msys64\usr\share\terminfo\78\xterm.js'"
+RUN powershell -Command "Remove-Item -Force 'C:\ruby31\msys64\usr\lib\terminfo\78\xterm.js'"
+RUN powershell -Command "Remove-Item -Force 'C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\navigation.js'"
+RUN powershell -Command "Remove-Item -Force 'C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\json_index\js\searcher.js'"
+RUN powershell -Command "Remove-Item -Force 'C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\darkfish.js'"
+RUN powershell -Command "Remove-Item -Force 'C:\ruby31\lib\ruby\3.1.0\rdoc\generator\template\darkfish\js\search.js'"
+RUN powershell -Command "Remove-Item -Force 'C:\ruby31\bin\ridk.ps1'"
 
 ENTRYPOINT ["powershell", "C:\\opt\\amalogswindows\\scripts\\powershell\\main.ps1"]
