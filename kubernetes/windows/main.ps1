@@ -373,15 +373,11 @@ function Read-Configs {
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
     ruby /opt/amalogswindows/scripts/powershell/setgenevaconfigenv.rb
 
-    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
-    if (![string]::IsNullOrEmpty($genevaLogsIntegration)) {
-        if ($genevaLogsIntegration.ToLower() -eq 'true') {
-            [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", $genevaLogsIntegration, "machine")
-            Write-Host "Successfully set environment variable GENEVA_LOGS_INTEGRATION - $($genevaLogsIntegration) for target 'machine'..."
-        }
-    }
-    else {
+    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "machine")
+    if ([string]::IsNullOrEmpty($genevaLogsIntegration)) {
         Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
+    } else {
+        Write-Host "Success to fetch environment variable GENEVA_LOGS_INTEGRATION for target 'machine', $($genevaLogsIntegration)"
     }
 
     $enableFbitInternalMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", "process")
