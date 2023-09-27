@@ -137,6 +137,9 @@ spec:
        - containerPort: 25224
          protocol: UDP
        volumeMounts:
+        - name: kube-api-access
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
         - mountPath: /hostfs
           name: host-root
           readOnly: true
@@ -229,6 +232,9 @@ spec:
        securityContext:
          privileged: true
        volumeMounts:
+         - name: kube-api-access
+           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+           readOnly: true
          - mountPath: /etc/kubernetes/host
            name: azure-json-path
          - mountPath: /etc/ama-logs-secret
@@ -269,6 +275,23 @@ spec:
    {{- end }}
    {{- end }}
    volumes:
+    - name: kube-api-access
+      projected:
+        sources:
+         - serviceAccountToken:
+             path: token
+             expirationSeconds: 3600
+         - configMap:
+             items:
+             - key: ca.crt
+               path: ca.crt
+             name: kube-root-ca.crt
+         - downwardAPI:
+             items:
+             - fieldRef:
+                 apiVersion: v1
+                 fieldPath: metadata.namespace
+               path: namespace
     - name: host-root
       hostPath:
        path: /
