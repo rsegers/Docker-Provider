@@ -255,7 +255,7 @@ class CAdvisorMetricsAPIClient
                 if (podName.downcase.start_with?("ama-logs-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("ama-logs") && metricNametoReturn.eql?(Constants::CPU_USAGE_NANO_CORES))
                   if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
                     telemetryProps = {}
-                    telemetryProps["PodName"] = podName
+                    telemetryProps["Pod"] = podName
                     telemetryProps["ContainerName"] = containerName
                     telemetryProps["Computer"] = hostName
                     telemetryProps["CAdvisorIsSecure"] = @cAdvisorMetricsSecurePort
@@ -587,7 +587,7 @@ class CAdvisorMetricsAPIClient
                 if (podName.downcase.start_with?("ama-logs-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("ama-logs"))
                   if (timeDifferenceInMinutes >= 10)
                     telemetryProps = {}
-                    telemetryProps["PodName"] = podName
+                    telemetryProps["Pod"] = podName
                     telemetryProps["ContainerName"] = containerName
                     telemetryProps["Computer"] = hostName
                     telemetryProps["CAdvisorIsSecure"] = @cAdvisorMetricsSecurePort
@@ -683,7 +683,7 @@ class CAdvisorMetricsAPIClient
                 if (podName.downcase.start_with?("ama-logs-") && podNamespace.eql?("kube-system") && containerName.downcase.start_with?("ama-logs") && ((metricNametoReturn.eql?(Constants::MEMORY_RSS_BYTES) && operatingSystem == "Linux") || (metricNametoReturn.eql?(Constants::MEMORY_WORKING_SET_BYTES) && operatingSystem == "Windows")))
                   if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
                     telemetryProps = {}
-                    telemetryProps["PodName"] = podName
+                    telemetryProps["Pod"] = podName
                     telemetryProps["ContainerName"] = containerName
                     telemetryProps["Computer"] = hostName
                     ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)

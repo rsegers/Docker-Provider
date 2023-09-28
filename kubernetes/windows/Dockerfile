@@ -1,5 +1,6 @@
 # Supported values of windows version are ltsc2019 or ltsc2022 which are being passed by the build script or build pipeline
 ARG WINDOWS_VERSION=
+ARG WINDOWS_AMA_URL=
 FROM mcr.microsoft.com/windows/servercore:${WINDOWS_VERSION}
 LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
@@ -30,6 +31,7 @@ RUN refreshenv \
 && gem install tomlrb -v 2.0.1 \
 && gem install gyoku -v 1.3.1 \
 && gem install ipaddress -v 0.8.3 \
+&& gem install jwt -v 2.7.1 \
 && gem sources --clear-all
 
 # Remove gem cache and chocolatey
@@ -38,6 +40,8 @@ RUN powershell -Command "Remove-Item -Force C:\ruby31\lib\ruby\gems\3.1.0\cache\
 SHELL ["powershell"]
 
 ENV tmpdir /opt/amalogswindows/scripts/powershell
+ENV WINDOWS_AMA_URL ${WINDOWS_AMA_URL}
+ENV COMPlus_ThreadPool_UnfairSemaphoreSpinLimit 0
 
 WORKDIR /opt/amalogswindows/scripts/powershell
 
@@ -80,7 +84,7 @@ COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluen
 COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
 
 # default value will be overwritten by pipeline
-ARG IMAGE_TAG=win-3.1.11
+ARG IMAGE_TAG=win-3.1.13
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 ENV OS_TYPE "windows"
