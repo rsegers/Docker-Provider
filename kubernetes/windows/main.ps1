@@ -59,8 +59,9 @@ function Set-GenevaAMAEnvironmentVariables {
 }
 
 function Generate-GenevaTenantNameSpaceConfig {
-     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "machine")
+     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")
     if (![string]::IsNullOrEmpty($genevaLogsTenantNameSpaces)) {
+        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", $genevaLogsTenantNameSpaces, "machine")
         $genevaLogsTenantNameSpacesArray = $genevaLogsTenantNameSpaces.Split(",")
         for ($i = 0; $i -lt $genevaLogsTenantNameSpacesArray.Length; $i = $i + 1) {
           $tenantName = $genevaLogsTenantNameSpacesArray[$i]
@@ -74,8 +75,9 @@ function Generate-GenevaTenantNameSpaceConfig {
 }
 
 function Generate-GenevaInfraNameSpaceConfig {
-   $genevaLogsInfraNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", "machine")
+   $genevaLogsInfraNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", "process")
    if (![string]::IsNullOrEmpty($genevaLogsInfraNameSpaces)) {
+       [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", $genevaLogsInfraNameSpaces, "machine")
        $genevaLogsInfraNameSpacesArray = $genevaLogsInfraNameSpaces.Split(",")
        for ($i = 0; $i -lt $genevaLogsInfraNameSpacesArray.Length; $i = $i + 1) {
          $infraNameSpaceName = $genevaLogsInfraNameSpacesArray[$i]
@@ -157,7 +159,7 @@ function Set-EnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("WSID", $wsID, "Machine")
 
     # Don't store WSKEY as environment variable
-    $isIgnoreProxySettings = [System.Environment]::GetEnvironmentVariable("IGNORE_PROXY_SETTINGS", "Machine")
+    $isIgnoreProxySettings = [System.Environment]::GetEnvironmentVariable("IGNORE_PROXY_SETTINGS", "process")
     if (![string]::IsNullOrEmpty($isIgnoreProxySettings)) {
         [System.Environment]::SetEnvironmentVariable("IGNORE_PROXY_SETTINGS", $isIgnoreProxySettings, "Process")
         [System.Environment]::SetEnvironmentVariable("IGNORE_PROXY_SETTINGS", $isIgnoreProxySettings, "Machine")
@@ -384,14 +386,23 @@ function Read-Configs {
         Invoke-Expression $command
     }
 
-    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "machine")
-    if ([string]::IsNullOrEmpty($genevaLogsIntegration)) {
+    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsIntegration)) {
+        if ($genevaLogsIntegration.ToLower() -eq 'true') {
+            [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", $genevaLogsIntegration, "machine")
+            Write-Host "Successfully set environment variable GENEVA_LOGS_INTEGRATION - $($genevaLogsIntegration) for target 'machine'..."
+        }
+    else {
         Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
     }
 
-    $enableFbitInternalMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", "machine")
-    if ([string]::IsNullOrEmpty($enableFbitInternalMetrics)) {
-        Write-Host "Failed to get environment variable ENABLE_FBIT_INTERNAL_METRICS for target 'machine' since it is either null or empty"
+    $enableFbitInternalMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", "process")
+    if (![string]::IsNullOrEmpty($enableFbitInternalMetrics)) {
+        [System.Environment]::SetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", $enableFbitInternalMetrics, "machine")
+        Write-Host "Successfully set environment variable ENABLE_FBIT_INTERNAL_METRICS - $($enableFbitInternalMetrics) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable ENABLE_FBIT_INTERNAL_METRICS for target 'machine' since it is either null or empty"
     }
 
     if (![string]::IsNullOrEmpty($enableFbitInternalMetrics) -and $enableFbitInternalMetrics.ToLower() -eq 'true') {
@@ -400,9 +411,15 @@ function Read-Configs {
         Clear-Content C:/etc/fluent-bit/fluent-bit-internal-metrics.conf
     }
 
-    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "machine")
-    if ([string]::IsNullOrEmpty($genevaLogsMultitenancy)) {
-        Write-Host "Failed to get environment variable GENEVA_LOGS_MULTI_TENANCY for target 'machine' since it is either null or empty"
+    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsMultitenancy)) {
+        if ($genevaLogsMultitenancy.ToLower() -eq 'true') {
+          [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", $genevaLogsMultitenancy, "machine")
+          Write-Host "Successfully set environment variable GENEVA_LOGS_MULTI_TENANCY - $($genevaLogsMultitenancy) for target 'machine'..."
+        }
+    }
+    else {
+        Write-Host "Failed to set environment variable GENEVA_LOGS_MULTI_TENANCY for target 'machine' since it is either null or empty"
     }
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true') {
         Write-Host "Setting Geneva Windows AMA Environment variables"
@@ -552,33 +569,14 @@ function Start-Fluent-Telegraf {
 
     $containerRuntime = Get-ContainerRuntime
 
-    # Check the environment variable at machine level
-    $envValueMachine = [System.Environment]::GetEnvironmentVariable("AZMON_FBIT_MEM_BUF_LIMIT", "machine")
-    Write-Host "Environment value at machine level: $envValueMachine "
-
-    # Check the environment variable at process level
-    $envValueProcess = [System.Environment]::GetEnvironmentVariable("AZMON_FBIT_MEM_BUF_LIMIT", "process")
-    Write-Host "Environment value at process level: $envValueProcess "
-
-    # Introduce a delay
-    Start-Sleep -Seconds 60  # Wait for 10 seconds
-
-    # Check the environment variable at machine level
-    $envValueMachine = [System.Environment]::GetEnvironmentVariable("AZMON_FBIT_MEM_BUF_LIMIT", "machine")
-    Write-Host "Environment value at machine level after delay: $envValueMachine "
-
-    # Check the environment variable at process level
-    $envValueProcess = [System.Environment]::GetEnvironmentVariable("AZMON_FBIT_MEM_BUF_LIMIT", "process")
-    Write-Host "Environment value at process level after delay: $envValueProcess "
-
     if (![string]::IsNullOrEmpty($containerRuntime) -and [string]$containerRuntime.StartsWith('docker') -eq $false) {
         # change parser from docker to cri if the container runtime is not docker
         Write-Host "changing parser from Docker to CRI since container runtime : $($containerRuntime) and which is non-docker"
         (Get-Content -Path C:/etc/fluent-bit/fluent-bit.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit.conf
         (Get-Content -Path C:/etc/fluent-bit/fluent-bit-common.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit-common.conf
     }
-    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "machine")
-    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "machine")
+    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
+    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
         $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit-geneva.conf"
         Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
@@ -622,7 +620,7 @@ function Start-Telegraf {
     }
     Write-Host "**********End running config parser for custom prometheus scraping**********"
 
-    $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS', "machine")
+    $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
     if (![string]::IsNullOrEmpty($monitorKubernetesPods) -and $monitorKubernetesPods.ToLower() -eq 'true') {
         # Set required environment variable for telegraf prometheus plugin to run properly
         Write-Host "Setting required environment variables for telegraf prometheus input plugin to run properly..."
