@@ -230,6 +230,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 					telemetryDimensions["mdsdCompressionLevel"] = mdsdCompressionLevel
 				}
 
+				// TODO verify this also fetched from machine level
 				telemetryDimensions["PromFbitChunkSize"] = os.Getenv("AZMON_FBIT_CHUNK_SIZE")
 				telemetryDimensions["PromFbitBufferSize"] = os.Getenv("AZMON_FBIT_BUFFER_SIZE")
 				telemetryDimensions["PromFbitMemBufLimit"] = os.Getenv("AZMON_FBIT_MEM_BUF_LIMIT")

@@ -267,12 +267,19 @@ which is the ENTRYPOINT script for the windows aks log container
 =end
 
 def get_command_windows(env_variable_name, env_variable_value)
-  return "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n" + "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
+  # Return Ruby code that sets an environment variable at the process level and system level
+  # with an exception check for the system-level set.
+  return <<-RUBY_CODE
+  ENV['#{env_variable_name}'] = '#{env_variable_value}'
+  unless system("setx #{env_variable_name} \\"#{env_variable_value}\\" /M")
+    raise "Failed to set '#{env_variable_name}' at the machine level."
+  end
+  RUBY_CODE
 end
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   # Write the settings to file, so that they can be set as environment variables
-  file = File.open("setenv.ps1", "w")
+  file = File.open("setenv.rb", "w")
 
   if !file.nil?
     # This will be used in fluent-bit.conf file to filter out logs

@@ -59,23 +59,23 @@ function Set-GenevaAMAEnvironmentVariables {
 }
 
 function Generate-GenevaTenantNameSpaceConfig {
-     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")
+     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "machine")
     if (![string]::IsNullOrEmpty($genevaLogsTenantNameSpaces)) {
-        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", $genevaLogsTenantNameSpaces, "machine")
         $genevaLogsTenantNameSpacesArray = $genevaLogsTenantNameSpaces.Split(",")
         for ($i = 0; $i -lt $genevaLogsTenantNameSpacesArray.Length; $i = $i + 1) {
           $tenantName = $genevaLogsTenantNameSpacesArray[$i]
           Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
           (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
         }
+    } else {
+        Write-Host "Failed to get environment variable GENEVA_LOGS_TENANT_NAMESPACES for target 'machine' since it is either null or empty"
     }
     Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf
 }
 
 function Generate-GenevaInfraNameSpaceConfig {
-   $genevaLogsInfraNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", "process")
+   $genevaLogsInfraNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", "machine")
    if (![string]::IsNullOrEmpty($genevaLogsInfraNameSpaces)) {
-       [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", $genevaLogsInfraNameSpaces, "machine")
        $genevaLogsInfraNameSpacesArray = $genevaLogsInfraNameSpaces.Split(",")
        for ($i = 0; $i -lt $genevaLogsInfraNameSpacesArray.Length; $i = $i + 1) {
          $infraNameSpaceName = $genevaLogsInfraNameSpacesArray[$i]
@@ -83,6 +83,8 @@ function Generate-GenevaInfraNameSpaceConfig {
          Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
          (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf  -Raw) -replace '<INFRA_NAMESPACE>', $infraNameSpaceName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
        }
+   } else {
+        Write-Host "Failed to get environment variable GENEVA_LOGS_INFRA_NAMESPACES for target 'machine' since it is either null or empty"
    }
    Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf
 }
@@ -155,7 +157,7 @@ function Set-EnvironmentVariables {
     [System.Environment]::SetEnvironmentVariable("WSID", $wsID, "Machine")
 
     # Don't store WSKEY as environment variable
-    $isIgnoreProxySettings = [System.Environment]::GetEnvironmentVariable("IGNORE_PROXY_SETTINGS", "process")
+    $isIgnoreProxySettings = [System.Environment]::GetEnvironmentVariable("IGNORE_PROXY_SETTINGS", "Machine")
     if (![string]::IsNullOrEmpty($isIgnoreProxySettings)) {
         [System.Environment]::SetEnvironmentVariable("IGNORE_PROXY_SETTINGS", $isIgnoreProxySettings, "Process")
         [System.Environment]::SetEnvironmentVariable("IGNORE_PROXY_SETTINGS", $isIgnoreProxySettings, "Machine")
@@ -362,10 +364,10 @@ function Set-EnvironmentVariables {
 function Read-Configs {
     # run config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
-    .\setenv.ps1
+    ruby /opt/amalogswindows/scripts/powershell/setenv.rb
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
-    .\setagentenv.ps1
+    ruby /opt/amalogswindows/scripts/powershell/setagentenv.rb
 
     #Replace placeholders in fluent-bit.conf
     ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
@@ -376,17 +378,11 @@ function Read-Configs {
     $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "machine")
     if ([string]::IsNullOrEmpty($genevaLogsIntegration)) {
         Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
-    } else {
-        Write-Host "Success to fetch environment variable GENEVA_LOGS_INTEGRATION for target 'machine', $($genevaLogsIntegration)"
     }
 
-    $enableFbitInternalMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", "process")
-    if (![string]::IsNullOrEmpty($enableFbitInternalMetrics)) {
-        [System.Environment]::SetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", $enableFbitInternalMetrics, "machine")
-        Write-Host "Successfully set environment variable ENABLE_FBIT_INTERNAL_METRICS - $($enableFbitInternalMetrics) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable ENABLE_FBIT_INTERNAL_METRICS for target 'machine' since it is either null or empty"
+    $enableFbitInternalMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", "machine")
+    if ([string]::IsNullOrEmpty($enableFbitInternalMetrics)) {
+        Write-Host "Failed to get environment variable ENABLE_FBIT_INTERNAL_METRICS for target 'machine' since it is either null or empty"
     }
 
     if (![string]::IsNullOrEmpty($enableFbitInternalMetrics) -and $enableFbitInternalMetrics.ToLower() -eq 'true') {
@@ -395,15 +391,9 @@ function Read-Configs {
         Clear-Content C:/etc/fluent-bit/fluent-bit-internal-metrics.conf
     }
 
-    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
-    if (![string]::IsNullOrEmpty($genevaLogsMultitenancy)) {
-        if ($genevaLogsMultitenancy.ToLower() -eq 'true') {
-          [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", $genevaLogsMultitenancy, "machine")
-          Write-Host "Successfully set environment variable GENEVA_LOGS_MULTI_TENANCY - $($genevaLogsMultitenancy) for target 'machine'..."
-        }
-    }
-    else {
-        Write-Host "Failed to set environment variable GENEVA_LOGS_MULTI_TENANCY for target 'machine' since it is either null or empty"
+    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "machine")
+    if ([string]::IsNullOrEmpty($genevaLogsMultitenancy)) {
+        Write-Host "Failed to get environment variable GENEVA_LOGS_MULTI_TENANCY for target 'machine' since it is either null or empty"
     }
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true') {
         Write-Host "Setting Geneva Windows AMA Environment variables"
@@ -419,7 +409,7 @@ function Read-Configs {
 
     # run mdm config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
-    .\setmdmenv.ps1
+    ruby /opt/amalogswindows/scripts/powershell/setmdmenv.rb
 }
 
 function Set-AgentConfigSchemaVersion {
@@ -556,8 +546,8 @@ function Start-Fluent-Telegraf {
         (Get-Content -Path C:/etc/fluent-bit/fluent-bit.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit.conf
         (Get-Content -Path C:/etc/fluent-bit/fluent-bit-common.conf -Raw) -replace 'docker', 'cri' | Set-Content C:/etc/fluent-bit/fluent-bit-common.conf
     }
-    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
-    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
+    $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "machine")
+    $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "machine")
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
         $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit-geneva.conf"
         Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
@@ -593,10 +583,10 @@ function Start-Telegraf {
     # run prometheus custom config parser
     Write-Host "**********Running config parser for custom prometheus scraping**********"
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
-    if (Test-Path -Path setpromenv.ps1) { ./setpromenv.ps1}
+    if (Test-Path -Path /opt/amalogswindows/scripts/powershell/setpromenv.rb) { ruby /opt/amalogswindows/scripts/powershell/setpromenv.rb}
     Write-Host "**********End running config parser for custom prometheus scraping**********"
 
-    $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
+    $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS', "machine")
     if (![string]::IsNullOrEmpty($monitorKubernetesPods) -and $monitorKubernetesPods.ToLower() -eq 'true') {
         # Set required environment variable for telegraf prometheus plugin to run properly
         Write-Host "Setting required environment variables for telegraf prometheus input plugin to run properly..."
