@@ -364,16 +364,25 @@ function Set-EnvironmentVariables {
 function Read-Configs {
     # run config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
-    ruby /opt/amalogswindows/scripts/powershell/setenv.rb
+    $commands = Get-Content -Path "/opt/amalogswindows/scripts/powershell/setenv.txt"
+    foreach ($command in $commands) {
+        Invoke-Expression $command
+    }
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
-    ruby /opt/amalogswindows/scripts/powershell/setagentenv.rb
+    $commands = Get-Content -Path "/opt/amalogswindows/scripts/powershell/setagentenv.txt"
+    foreach ($command in $commands) {
+        Invoke-Expression $command
+    }
 
     #Replace placeholders in fluent-bit.conf
     ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
-    ruby /opt/amalogswindows/scripts/powershell/setgenevaconfigenv.rb
+    $commands = Get-Content -Path "/opt/amalogswindows/scripts/powershell/setgenevaconfigenv.txt"
+    foreach ($command in $commands) {
+        Invoke-Expression $command
+    }
 
     $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "machine")
     if ([string]::IsNullOrEmpty($genevaLogsIntegration)) {
@@ -409,7 +418,10 @@ function Read-Configs {
 
     # run mdm config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
-    ruby /opt/amalogswindows/scripts/powershell/setmdmenv.rb
+    $commands = Get-Content -Path "/opt/amalogswindows/scripts/powershell/setmdmenv.txt"
+    foreach ($command in $commands) {
+        Invoke-Expression $command
+    }
 }
 
 function Set-AgentConfigSchemaVersion {
@@ -602,7 +614,12 @@ function Start-Telegraf {
     # run prometheus custom config parser
     Write-Host "**********Running config parser for custom prometheus scraping**********"
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
-    if (Test-Path -Path /opt/amalogswindows/scripts/powershell/setpromenv.rb) { ruby /opt/amalogswindows/scripts/powershell/setpromenv.rb}
+    if (Test-Path -Path /opt/amalogswindows/scripts/powershell/setpromenv.txt) {
+        $commands = Get-Content -Path "/opt/amalogswindows/scripts/powershell/setpromenv.txt"
+        foreach ($command in $commands) {
+            Invoke-Expression $command
+        }
+    }
     Write-Host "**********End running config parser for custom prometheus scraping**********"
 
     $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS', "machine")

@@ -491,19 +491,13 @@ else
 end
 
 def get_command_windows(env_variable_name, env_variable_value)
-  # Return Ruby code that sets an environment variable at the process level and system level
-  # with an exception check for the system-level set.
-  return <<-RUBY_CODE
-  ENV['#{env_variable_name}'] = '#{env_variable_value}'
-  unless system("setx #{env_variable_name} \\"#{env_variable_value}\\" /M")
-    raise "Failed to set '#{env_variable_name}' at the machine level."
-  end
-  RUBY_CODE
+  content = "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n"
+  content += "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
 end
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   # Write the settings to file, so that they can be set as environment variables
-  file = File.open("setagentenv.rb", "w")
+  file = File.open("setagentenv.txt", "w")
 
   if !file.nil?
     commands = get_command_windows("ENABLE_FBIT_INTERNAL_METRICS", @enableFbitInternalMetrics)
