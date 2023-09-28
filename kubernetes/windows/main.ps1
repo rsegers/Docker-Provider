@@ -542,22 +542,22 @@ function Start-Fluent-Telegraf {
 
     # Check the environment variable at machine level
     $envValueMachine = [System.Environment]::GetEnvironmentVariable("AZMON_FBIT_MEM_BUF_LIMIT", "machine")
-    Write-Host "Environment value at machine level: $envValueMachine"
+    Write-Host "Environment value at machine level: $envValueMachine "
 
     # Check the environment variable at process level
     $envValueProcess = [System.Environment]::GetEnvironmentVariable("AZMON_FBIT_MEM_BUF_LIMIT", "process")
-    Write-Host "Environment value at process level: $envValueProcess"
+    Write-Host "Environment value at process level: $envValueProcess "
 
     # Introduce a delay
     Start-Sleep -Seconds 60  # Wait for 10 seconds
 
     # Check the environment variable at machine level
     $envValueMachine = [System.Environment]::GetEnvironmentVariable("AZMON_FBIT_MEM_BUF_LIMIT", "machine")
-    Write-Host "Environment value at machine level after delay: $envValueMachine"
+    Write-Host "Environment value at machine level after delay: $envValueMachine "
 
     # Check the environment variable at process level
     $envValueProcess = [System.Environment]::GetEnvironmentVariable("AZMON_FBIT_MEM_BUF_LIMIT", "process")
-    Write-Host "Environment value at process level after delay: $envValueProcess"
+    Write-Host "Environment value at process level after delay: $envValueProcess "
 
     if (![string]::IsNullOrEmpty($containerRuntime) -and [string]$containerRuntime.StartsWith('docker') -eq $false) {
         # change parser from docker to cri if the container runtime is not docker
