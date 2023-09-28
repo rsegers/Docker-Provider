@@ -68,8 +68,6 @@ function Generate-GenevaTenantNameSpaceConfig {
           Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
           (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
         }
-    } else {
-        Write-Host "Failed to get environment variable GENEVA_LOGS_TENANT_NAMESPACES for target 'machine' since it is either null or empty"
     }
     Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf
 }
@@ -85,8 +83,6 @@ function Generate-GenevaInfraNameSpaceConfig {
          Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
          (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf  -Raw) -replace '<INFRA_NAMESPACE>', $infraNameSpaceName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
        }
-   } else {
-        Write-Host "Failed to get environment variable GENEVA_LOGS_INFRA_NAMESPACES for target 'machine' since it is either null or empty"
    }
    Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf
 }
@@ -392,6 +388,7 @@ function Read-Configs {
             [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", $genevaLogsIntegration, "machine")
             Write-Host "Successfully set environment variable GENEVA_LOGS_INTEGRATION - $($genevaLogsIntegration) for target 'machine'..."
         }
+    }
     else {
         Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
     }
