@@ -39,6 +39,11 @@ var (
 	aiLogger         *log.Logger
 )
 
+var controllerType = map[string]string{
+	"daemonset": "DS",
+	"replicaset": "RS",
+}
+
 func init() {
 	// Check if the OS is Windows
 	osType := os.Getenv("OS_TYPE")
@@ -70,59 +75,40 @@ func init() {
 	// Retrieve environment variables
 	resourceInfo := os.Getenv("AKS_RESOURCE_ID")
 	if resourceInfo == "" {
-		customProperties["ACSResourceName"] = os.Getenv(envAcsResource)
-		customProperties["ClusterType"] = acsClusterType
-		customProperties["SubscriptionID"] = ""
-		customProperties["ResourceGroupName"] = ""
-		customProperties["ClusterName"] = ""
+		customProperties["ID"] = os.Getenv(envAcsResource)
 		customProperties["Region"] = ""
 	} else {
-		customProperties["AKS_RESOURCE_ID"] = resourceInfo
-		splitStrings := strings.Split(resourceInfo, "/")
-		subscriptionID := ""
-		resourceGroupName := ""
-		clusterName := ""
-		if len(splitStrings) >= 9 {
-			subscriptionID = splitStrings[2]
-			resourceGroupName = splitStrings[4]
-			clusterName = splitStrings[8]
-		} else {
-			aiLogger.Fatalf("Error parsing AKS_RESOURCE_ID: %s", resourceInfo)
-		}
-		customProperties["ClusterType"] = aksClusterType
-		customProperties["SubscriptionID"] = subscriptionID
-		customProperties["ResourceGroupName"] = resourceGroupName
-		customProperties["ClusterName"] = clusterName
+		customProperties["ID"] = resourceInfo
 		customProperties["Region"] = os.Getenv(envAksRegion)
 	}
 
-	customProperties["WorkspaceID"] = getWorkspaceId()
-	customProperties["AgentVersion"] = os.Getenv(envAgentVersion)
-	customProperties["ControllerType"] = os.Getenv(envController)
+	customProperties["WSID"] = getWorkspaceId()
+	customProperties["Version"] = os.Getenv(envAgentVersion)
+	customProperties["Controller"] = controllerType[strings.ToLower(os.Getenv(envController))]
 	customProperties["Computer"] = hostName
 	encodedAppInsightsKey := os.Getenv(envAppInsights)
 	appInsightsEndpoint := os.Getenv(envAppEndpoint)
-	customProperties["WorkspaceCloud"] = getWorkspaceCloud()
+	customProperties["WSCloud"] = getWorkspaceCloud()
 	isProxyConfigured := false
 	if proxyEndpoint != "" {
-		customProperties["IsProxyConfigured"] = "true"
+		customProperties["Proxy"] = "true"
 		isProxyConfigured = true
 		if isProxyCACertConfigured() {
 			customProperties["IsProxyCACertConfigured"] = "true"
 		}
 	} else {
-		customProperties["IsProxyConfigured"] = "false"
+		customProperties["Proxy"] = "false"
 		isProxyConfigured = false
 		if isIgnoreProxySettings() {
 			customProperties["IsProxyConfigurationIgnored"] = "true"
 		}
 	}
 
-	aadAuthMSIMode := os.Getenv(envAADMSIAuth)
-	if aadAuthMSIMode != "" && strings.EqualFold(aadAuthMSIMode, "true") {
-		customProperties["aadAuthMSIMode"] = "true"
+	isMSI := os.Getenv(envAADMSIAuth)
+	if isMSI != "" && strings.EqualFold(isMSI, "true") {
+		customProperties["isMSI"] = "true"
 	} else {
-		customProperties["aadAuthMSIMode"] = "false"
+		customProperties["isMSI"] = "false"
 	}
 
 	addonResizerVPAEnabled := os.Getenv(envAddonResizer)
@@ -172,27 +158,8 @@ func init() {
 func getContainerRuntimeInfo() {
 	containerRuntime := os.Getenv(envContainerRT)
 	if containerRuntime != "" {
-		customProperties["DockerVersion"] = containerRuntime
-		// Not doing this for windows since docker is being deprecated soon and we dont want to bring in the socket dependency.
-		if !isWindows {
-			if strings.EqualFold(containerRuntime, "docker") {
-				cli, err := client.NewClientWithOpts(client.WithHost("unix:///var/run/host/docker.sock"), client.WithAPIVersionNegotiation())
-				if err != nil {
-					panic(err)
-				}
-				defer cli.Close()
-
-				// Get Docker version information
-				versionInfo, err := cli.ServerVersion(context.Background())
-				if err != nil {
-					panic(err)
-				}
-
-				if versionInfo.Version != "" {
-					customProperties["DockerVersion"] = versionInfo.Version
-				}
-			}
-		}
+		// cri field holds either containerRuntime for non-docker or Dockerversion if its docker
+		customProperties["cri"] = containerRuntime
 	}
 }
 
@@ -238,7 +205,7 @@ func SendCustomEvent(eventName string, properties map[string]string) {
 }
 
 func SendExceptionTelemetry(errorStr string, properties map[string]string) {
-	if customProperties["DockerVersion"] == "" {
+	if customProperties["cri"] == "" {
 		getContainerRuntimeInfo()
 	}
 
@@ -263,7 +230,7 @@ func SendExceptionTelemetry(errorStr string, properties map[string]string) {
 }
 
 func SendTelemetry(pluginName string, properties map[string]string) {
-	if customProperties["DockerVersion"] == "" {
+	if customProperties["cri"] == "" {
 		getContainerRuntimeInfo()
 	}
 
@@ -282,7 +249,7 @@ func SendMetricTelemetry(metricName string, metricValue float64, properties map[
 		return
 	}
 
-	if customProperties["DockerVersion"] == "" {
+	if customProperties["cri"] == "" {
 		getContainerRuntimeInfo()
 	}
 

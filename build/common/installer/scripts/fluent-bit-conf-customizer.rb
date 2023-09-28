@@ -34,7 +34,8 @@ end
 
 def substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
   if !resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true"
-    new_contents = new_contents.gsub("#${ResourceOptimizationEnabled}", "")
+    new_contents = new_contents.gsub("#${ResourceOptimizationEnabled} @INCLUDE", "@INCLUDE")
+    new_contents = new_contents.gsub("#${ResourceOptimizationEnabled}    plugins_file", "    plugins_file")
   end
 
   return new_contents

@@ -466,7 +466,7 @@ func getContainerMemoryMetricItems(metricInfo map[string]interface{}, hostName, 
 				if (isAmaLogsPod && isKubeSystemNamespace && isAmaLogsContainer && strings.EqualFold(metricName, MEMORY_RSS_BYTES) && operatingSystemLower == "linux") || (strings.EqualFold(metricName, MEMORY_WORKING_SET_BYTES) && operatingSystemLower == "windows") {
 					if timeDifferenceInMinutes >= TELEMETRY_FLUSH_INTERVAL_IN_MINUTES {
 						telemetryProps := map[string]string{}
-						telemetryProps["PodName"] = podName
+						telemetryProps["Pod"] = podName
 						telemetryProps["ContainerName"] = containerName
 						telemetryProps["Computer"] = hostName
 						SendMetricTelemetry(metricName, metricValue, telemetryProps)
@@ -566,7 +566,7 @@ func getContainerCpuMetricItemRate(metricInfo map[string]interface{}, hostName, 
 				if isAmaLogsPod && isKubeSystemNamespace && isAmaLogsContainer && strings.EqualFold(metricName, CPU_USAGE_NANO_CORES) {
 					if timeDifferenceInMinutes >= TELEMETRY_FLUSH_INTERVAL_IN_MINUTES {
 						telemetryProps := map[string]string{}
-						telemetryProps["PodName"] = podName
+						telemetryProps["Pod"] = podName
 						telemetryProps["ContainerName"] = containerName
 						telemetryProps["Computer"] = hostName
 						telemetryProps["CAdvisorIsSecure"] = os.Getenv("IS_SECURE_CADVISOR_PORT")
@@ -979,7 +979,7 @@ func getContainerCpuMetricItems(metricInfo map[string]interface{}, hostName, met
 				if isAmaLogsPod && isKubeSystemNamespace && isAmaLogsContainer && strings.EqualFold(metricName, CPU_USAGE_NANO_CORES) {
 					if timeDifferenceInMinutes >= TELEMETRY_FLUSH_INTERVAL_IN_MINUTES {
 						telemetryProps := map[string]string{}
-						telemetryProps["PodName"] = podName
+						telemetryProps["Pod"] = podName
 						telemetryProps["ContainerName"] = containerName
 						telemetryProps["Computer"] = hostName
 						telemetryProps["CAdvisorIsSecure"] = os.Getenv("IS_SECURE_CADVISOR_PORT")

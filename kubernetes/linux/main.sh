@@ -930,6 +930,8 @@ if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
                   fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
             fi
       fi
+else
+      echo "Skipping fluentd since AZMON_RESOURCE_OPTIMIZATION_ENABLED is set to ${AZMON_RESOURCE_OPTIMIZATION_ENABLED}"
 fi
 
 #If config parsing was successful, a copy of the conf file with replaced custom settings file is created
