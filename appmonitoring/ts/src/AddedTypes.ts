@@ -155,6 +155,10 @@ ${ownerUidAttribute}`
                 name: "APPLICATIONINSIGHTS_CONNECTION_STRING",
                 value: connectionString
             },
+            {
+                name: "OTEL_EXPORTER_OTLP_METRICS_ENDPOINT",
+                value: <what do we set here?>    
+            }
         ];
 
         // platform-specific environment variables
