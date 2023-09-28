@@ -127,6 +127,10 @@ class KubernetesApiClient
               @Log.warn("The token is not a JWT.")
               @@TokenExpiry = DateTime.now.to_time.to_i + Constants::LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS
             end
+            # By default without explicit token mount, token expiry is one year so setting expiry to 1hour to refresh token periodically
+            if (@@TokenExpiry - DateTime.now.to_time.to_i).abs > Constants::LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS
+              @@TokenExpiry = DateTime.now.to_time.to_i + Constants::LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS
+            end
           else
             @Log.warn("Unable to read token string from #{@@TokenFileName}: #{error}")
             @@TokenExpiry = DateTime.now.to_time.to_i
