@@ -207,9 +207,9 @@ jobs:
           --artifact-type 'application/vnd.cncf.notary.signature' \
           ./payload.json:application/cose \
           -a "io.cncf.notary.x509chain.thumbprint#S256=[\"43A772C85BE4479A1180FEB72D3B9F1795C99132\"]"
-      workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
-      displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
-      condition: eq(variables.IS_MAIN_BRANCH, true)
+    workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
+    displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
+    #condition: eq(variables.IS_MAIN_BRANCH, true)
 
   - task: AzureCLI@2
     displayName: "Vulnerability Scan with Trivy"
