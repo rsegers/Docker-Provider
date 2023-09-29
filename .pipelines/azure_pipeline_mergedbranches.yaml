@@ -209,7 +209,7 @@ jobs:
           -a "io.cncf.notary.x509chain.thumbprint#S256=[\"49D6CD5DB42623144D6990AA1669CE5D97F1F3D7\"]"
     workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
     displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
-    #condition: eq(variables.IS_MAIN_BRANCH, true)
+    condition: eq(variables.IS_MAIN_BRANCH, true)
 
   - task: AzureCLI@2
     displayName: "Vulnerability Scan with Trivy"
@@ -706,21 +706,21 @@ jobs:
       DockerImagesToScan: 'mcr.microsoft.com/windows/servercore:ltsc2019, mcr.microsoft.com/windows/servercore:ltsc2022, ${{ variables.repoImageName }}:$(windowsImageTag)'
 
   - powershell: |
-        $output = docker manifest inspect -v ${{ variables.repoImageName }}:$(windowsImageTag) | ConvertFrom-Json
-        $firstManifest = $output[0]
-        $MEDIA_TYPE = $firstManifest.Descriptor.mediaType
-        $DIGEST = $firstManifest.Descriptor.digest
-        $SIZE = $firstManifest.Descriptor.size
-        $payload = @{
-            targetArtifact = @{
-                mediaType = $MEDIA_TYPE
-                digest = $DIGEST
-                size = $SIZE
-            }
-        } | ConvertTo-Json
-        $payload | Out-File -FilePath "$(Build.ArtifactStagingDirectory)/windows/payload.json"
-      workingDirectory: $(Build.ArtifactStagingDirectory)/windows
-      displayName: "Build the payload json file"
+      $output = docker manifest inspect -v ${{ variables.repoImageName }}:$(windowsImageTag) | ConvertFrom-Json
+      $firstManifest = $output[0]
+      $MEDIA_TYPE = $firstManifest.Descriptor.mediaType
+      $DIGEST = $firstManifest.Descriptor.digest
+      $SIZE = $firstManifest.Descriptor.size
+      $payload = @{
+          targetArtifact = @{
+              mediaType = $MEDIA_TYPE
+              digest = $DIGEST
+              size = $SIZE
+          }
+      } | ConvertTo-Json
+      $payload | Out-File -FilePath "$(Build.ArtifactStagingDirectory)/windows/payload.json"
+    workingDirectory: $(Build.ArtifactStagingDirectory)/windows
+    displayName: "Build the payload json file"
 
   - task: EsrpCodeSigning@3
     inputs:
