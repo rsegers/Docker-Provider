@@ -240,8 +240,7 @@ def isValidGenevaConfig(environment, namespace, namespacewindows, account, authi
 end
 
 def get_command_windows(env_variable_name, env_variable_value)
-  content = "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n"
-  content += "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
+  "#{env_variable_name}=#{env_variable_value}\n"
 end
 
 def is_configure_geneva_env_vars()

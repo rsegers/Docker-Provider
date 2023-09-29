@@ -491,8 +491,7 @@ else
 end
 
 def get_command_windows(env_variable_name, env_variable_value)
-  content = "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n"
-  content += "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
+  "#{env_variable_name}=#{env_variable_value}\n"
 end
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0

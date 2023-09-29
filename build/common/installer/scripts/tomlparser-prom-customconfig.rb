@@ -48,8 +48,7 @@ require "fileutils"
 @disableRSTelegraf = false
 
 def get_command_windows(env_variable_name, env_variable_value)
-  content = "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n"
-  content += "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
+  "#{env_variable_name}=#{env_variable_value}\n"
 end
 
 # Use parser to parse the configmap toml file to a ruby structure
