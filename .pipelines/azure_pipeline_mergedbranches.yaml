@@ -355,7 +355,7 @@ jobs:
 
   - task: EsrpCodeSigning@3
     inputs:
-      ConnectedServiceName: 'ESRPContainerInsights Service Connection'
+      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
       FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
       Pattern: '*.dll,*.exe,*.so,*.ps1'
       signConfigType: 'inlineSignParams'
@@ -389,7 +389,7 @@ jobs:
 
   - task: EsrpCodeSigning@3
     inputs:
-      ConnectedServiceName: 'ESRPContainerInsights Service Connection'
+      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
       FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
@@ -557,7 +557,7 @@ jobs:
 
   - task: EsrpCodeSigning@3
     inputs:
-      ConnectedServiceName: 'ESRPContainerInsights Service Connection'
+      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
       FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
       Pattern: '*.dll,*.exe,*.so,*.ps1'
       signConfigType: 'inlineSignParams'
@@ -591,7 +591,7 @@ jobs:
 
   - task: EsrpCodeSigning@3
     inputs:
-      ConnectedServiceName: 'ESRPContainerInsights Service Connection'
+      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
       FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
