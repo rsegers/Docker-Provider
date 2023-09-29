@@ -169,6 +169,31 @@ jobs:
         EOF
 
   - task: CodeQL3000Finalize@0
+  - task: EsrpCodeSigning@4
+    inputs:
+      ConnectedServiceName: 'ESRPContainerInsights Service Connection'
+      FolderPath: '$(Build.ArtifactStagingDirectory)/linux/'
+      Pattern: '*.json'
+      signConfigType: 'inlineSignParams'
+      inlineOperation: |
+        [
+                    {
+                        "keyCode": "CP-469451",
+                        "operationSetCode": "NotaryCoseSign",
+                        "parameters": [
+                          {
+                            "parameterName": "CoseFlags",
+                            "parameterValue": "chainunprotected"
+                          }
+                        ],
+                        "toolName": "sign",
+                        "toolVersion": "1.0"
+                    }
+                  ]
+      SessionTimeout: '60'
+      MaxConcurrency: '50'
+      MaxRetryAttempts: '5'
+      PendingAnalysisWaitTimeoutMinutes: '5'
 
   - task: AzureCLI@2
     displayName: "Vulnerability Scan with Trivy"
