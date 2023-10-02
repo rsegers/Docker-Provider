@@ -219,9 +219,14 @@ ${ownerUidAttribute}`
 
                 case "Java":
                     {
-                        returnValue.push(...[{
+                        returnValue.push(...[
+                        {
                             name: "JAVA_TOOL_OPTIONS",
                             value: `-javaagent:${AddedTypes.agentVolumeMountPathJava}/applicationinsights-agent-codeless.jar`
+                        },
+                        {
+                            name: "OTEL_METRICS_EXPORTER",
+                            value: "otlp"
                         }]);
                     }
                     break;
