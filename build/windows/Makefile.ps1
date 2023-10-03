@@ -188,6 +188,14 @@ Write-Host("copying out_oms.so file to : $publishdir")
 Copy-Item -Path (Join-path -Path $outomsgoplugindir -ChildPath "out_oms.so")  -Destination $publishdir -Force
 Write-Host("successfully copied out_oms.so file to : $publishdir") -ForegroundColor Green
 
+Write-Host("copying containerinventory.so file to : $publishdir")
+Copy-Item -Path (Join-path -Path $containerinventorydir -ChildPath "containerinventory.so")  -Destination $publishdir -Force
+Write-Host("successfully copied containerinventory.so file to : $publishdir") -ForegroundColor Green
+
+Write-Host("copying perf.so file to : $publishdir")
+Copy-Item -Path (Join-path -Path $perfdir -ChildPath "perf.so")  -Destination $publishdir -Force
+Write-Host("successfully copied perf.so file to : $publishdir") -ForegroundColor Green
+
 # compile and build the liveness probe cpp code
 Write-Host("Start:build livenessprobe cpp code")
 $livenessprobesrcpath = Join-Path -Path $builddir  -ChildPath "windows\installer\livenessprobe\livenessprobe.cpp"
