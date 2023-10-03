@@ -1,7 +1,7 @@
 package lib
 
 import (
-	"context"
+	// "context"
 	"encoding/base64"
 	"log"
 	"net/http"
@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/docker/docker/client"
+	// "github.com/docker/docker/client"
 	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 )
 
@@ -40,7 +40,7 @@ var (
 )
 
 var controllerType = map[string]string{
-	"daemonset": "DS",
+	"daemonset":  "DS",
 	"replicaset": "RS",
 }
 
