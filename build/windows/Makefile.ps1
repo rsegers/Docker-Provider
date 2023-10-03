@@ -156,6 +156,9 @@ if ($isCDPxEnvironment) {
     [System.Environment]::SetEnvironmentVariable("GOBIN", "", [System.EnvironmentVariableTarget]::PROCESS)
   }
 
+  [System.Environment]::SetEnvironmentVariable("CGO_ENABLED", "1", [System.EnvironmentVariableTarget]::PROCESS)
+  [System.Environment]::SetEnvironmentVariable("CC", "x86_64-w64-mingw32-gcc", [System.EnvironmentVariableTarget]::PROCESS)
+  [System.Environment]::SetEnvironmentVariable("CXX", "x86_64-w64-mingw32-g++", [System.EnvironmentVariableTarget]::PROCESS)
   Write-Host("getting latest go modules ...")
   go  get
   Write-Host("successfully got latest go modules") -ForegroundColor Green
