@@ -165,20 +165,18 @@ if ($isCDPxEnvironment) {
 
   go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o out_oms.so .
 
-  $containerinventorydir = Join-Path -Path $rootdir -ChildPath "source\plugins\go\input\containerinventory"
-  Set-Location -Path $containerinventorydir
-  Remove-Item -Path $containerinventorydir\* -Include *.so,*.h -Force -ErrorAction Stop
+  $inputdir = Join-Path -Path $rootdir -ChildPath "source\plugins\go\input"
+  Set-Location -Path $inputdir
   Write-Host("getting latest go modules ...")
   go get
   Write-Host("successfully got latest go modules") -ForegroundColor Green
+  $containerinventorydir = Join-Path -Path $rootdir -ChildPath "source\plugins\go\input\containerinventory"
+  Remove-Item -Path $containerinventorydir\* -Include *.so,*.h -Force -ErrorAction Stop
+  Set-Location -Path $containerinventorydir
   go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o containerinventory.so .
 
   $perfdir = Join-Path -Path $rootdir -ChildPath "source\plugins\go\input\perf"
   Set-Location -Path $perfdir
-  Remove-Item -Path $perfdir\* -Include *.so,*.h -Force -ErrorAction Stop
-  Write-Host("getting latest go modules ...")
-  go get
-  Write-Host("successfully got latest go modules") -ForegroundColor Green
   go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o perf.so .
 
 
