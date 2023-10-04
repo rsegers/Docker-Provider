@@ -315,7 +315,6 @@ jobs:
         docker cp signingContainer:C:\opt\amalogswindows\scripts\cmd\livenessprobe.exe .
 
         echo "Extract ps scripts"
-        mkdir -p powershell
         docker cp signingContainer:C:\opt\amalogswindows\scripts\powershell .
 
         echo "Creating OSS directory..."
@@ -327,11 +326,9 @@ jobs:
         docker cp signingContainer:C:\opt\amalogswindows\certgenerator\Newtonsoft.Json.dll .
 
         echo "Extract fluent-bit"
-        mkdir -p fluent-bit
         docker cp signingContainer:C:\opt\fluent-bit .
         
         echo "Extract Ruby"
-        mkdir -p ruby31
         docker cp signingContainer:C:\ruby31 .
 
         echo "Extract telegraf"
@@ -517,7 +514,6 @@ jobs:
         docker cp signingContainer:C:\opt\amalogswindows\scripts\cmd\livenessprobe.exe .
 
         echo "Extract ps scripts"
-        mkdir -p powershell
         docker cp signingContainer:C:\opt\amalogswindows\scripts\powershell .
 
         echo "Creating OSS directory..."
@@ -529,11 +525,9 @@ jobs:
         docker cp signingContainer:C:\opt\amalogswindows\certgenerator\Newtonsoft.Json.dll .
 
         echo "Extract fluent-bit"
-        mkdir -p fluent-bit
         docker cp signingContainer:C:\opt\fluent-bit .
         
         echo "Extract Ruby"
-        mkdir -p ruby31
         docker cp signingContainer:C:\ruby31 .
 
         echo "Extract telegraf"

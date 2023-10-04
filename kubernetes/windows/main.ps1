@@ -429,6 +429,11 @@ function Read-Configs {
 function Set-EnvironmentVariablesFromFile {
     param ($filePath)
 
+    if (-not (Test-Path -Path $filePath -PathType Leaf)) {
+        Write-Host "The specified file path '$filePath' does not exist or is not valid."
+        return
+    }
+
     $envVars = @{}
     Get-Content -Path $filePath | ForEach-Object {
         $key, $value = $_ -split '='
@@ -614,9 +619,9 @@ function Start-Telegraf {
     # run prometheus custom config parser
     Write-Host "**********Running config parser for custom prometheus scraping**********"
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
-    if (Test-Path -Path /opt/amalogswindows/scripts/powershell/setpromenv.txt) {
-        Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setpromenv.txt"
-    }
+
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setpromenv.txt"
+
     Write-Host "**********End running config parser for custom prometheus scraping**********"
 
     $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
