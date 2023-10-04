@@ -186,24 +186,20 @@ module Fluent::Plugin
       retryAttemptCount = 1
       mdmRecords = {}
       begin
-        if File.exist?(Constants::MDM_POD_INVENTORY_STATE_FILE)
-          f = File.open(Constants::MDM_POD_INVENTORY_STATE_FILE, "r")
-          if !f.nil?
-            isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
-            raise "in_kube_podmdminventory:getMDMRecords:Failed to acquire file lock @ #{Time.now.utc.iso8601}" if !isAcquiredLock
-            startTime = (Time.now.to_f * 1000).to_i
-            mdmRecords = JSON.parse(f.read)
-            timetakenMs = ((Time.now.to_f * 1000).to_i - startTime)
-            if mdmRecords.nil? || mdmRecords.empty? || mdmRecords["items"].nil? || mdmRecords["collectionTime"] == @prevCollectionTime
-              raise "in_kube_podmdminventory:getMDMRecords: either read mdmRecords is nil or empty or stale @ #{Time.now.utc.iso8601}"
-            end
-            @prevCollectionTime = mdmRecords["collectionTime"]
-            $log.info "in_kube_podmdminventory:getMDMRecords:Number of MDM records: #{mdmRecords["items"].length} with time taken(ms) for read: #{timetakenMs} @ #{Time.now.utc.iso8601}"
-          else
-            raise "in_kube_podmdminventory:getMDMRecords:Failed to open file for read @ #{Time.now.utc.iso8601}"
+        f = File.open(Constants::MDM_POD_INVENTORY_STATE_FILE, "r")
+        if !f.nil?
+          isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
+          raise "in_kube_podmdminventory:getMDMRecords:Failed to acquire file lock @ #{Time.now.utc.iso8601}" if !isAcquiredLock
+          startTime = (Time.now.to_f * 1000).to_i
+          mdmRecords = JSON.parse(f.read)
+          timetakenMs = ((Time.now.to_f * 1000).to_i - startTime)
+          if mdmRecords.nil? || mdmRecords.empty? || mdmRecords["items"].nil? || mdmRecords["collectionTime"] == @prevCollectionTime
+            raise "in_kube_podmdminventory:getMDMRecords: either read mdmRecords is nil or empty or stale @ #{Time.now.utc.iso8601}"
           end
+          @prevCollectionTime = mdmRecords["collectionTime"]
+          $log.info "in_kube_podmdminventory:getMDMRecords:Number of MDM records: #{mdmRecords["items"].length} with time taken(ms) for read: #{timetakenMs} @ #{Time.now.utc.iso8601}"
         else
-          $log.warn "in_kube_podmdminventory:getMDMRecords:File does not exist: #{Constants::MDM_POD_INVENTORY_STATE_FILE} @ #{Time.now.utc.iso8601}"
+          raise "in_kube_podmdminventory:getMDMRecords:Failed to open file for read @ #{Time.now.utc.iso8601}"
         end
       rescue => err
         if retryAttemptCount <= maxRetryCount
@@ -214,7 +210,6 @@ module Fluent::Plugin
           retry
         end
         $log.warn "in_kube_podmdminventory:getMDMRecords failed with an error: #{err} after retries: #{maxRetryCount} @  #{Time.now.utc.iso8601}"
-        ApplicationInsightsUtility.sendExceptionTelemetry(err)
       ensure
         f.flock(File::LOCK_UN) if !f.nil?
         f.close if !f.nil?
