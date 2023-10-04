@@ -416,16 +416,18 @@ module Fluent::Plugin
       retryAttemptCount = 1
       nodeAllocatableRecords = {}
       begin
-        f = File.open(Constants::NODE_ALLOCATABLE_RECORDS_STATE_FILE, "r")
-        if !f.nil?
-          isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
-          raise "in_kube_perfinventory:getNodeAllocatableRecords:Failed to acquire file lock @ #{Time.now.utc.iso8601}" if !isAcquiredLock
-          startTime = (Time.now.to_f * 1000).to_i
-          nodeAllocatableRecords = JSON.parse(f.read)
-          timetakenMs = ((Time.now.to_f * 1000).to_i - startTime)
-          $log.info "in_kube_perfinventory:getNodeAllocatableRecords:Number of Node Allocatable records: #{nodeAllocatableRecords.length} with time taken(ms) for read: #{timetakenMs} @ #{Time.now.utc.iso8601}"
-        else
-          raise "in_kube_perfinventory:getNodeAllocatableRecords:Failed to open file for read @ #{Time.now.utc.iso8601}"
+        if File.exist?(Constants::NODE_ALLOCATABLE_RECORDS_STATE_FILE)
+          f = File.open(Constants::NODE_ALLOCATABLE_RECORDS_STATE_FILE, "r")
+          if !f.nil?
+            isAcquiredLock = f.flock(File::LOCK_EX | File::LOCK_NB)
+            raise "in_kube_perfinventory:getNodeAllocatableRecords:Failed to acquire file lock @ #{Time.now.utc.iso8601}" if !isAcquiredLock
+            startTime = (Time.now.to_f * 1000).to_i
+            nodeAllocatableRecords = JSON.parse(f.read)
+            timetakenMs = ((Time.now.to_f * 1000).to_i - startTime)
+            $log.info "in_kube_perfinventory:getNodeAllocatableRecords:Number of Node Allocatable records: #{nodeAllocatableRecords.length} with time taken(ms) for read: #{timetakenMs} @ #{Time.now.utc.iso8601}"
+          else
+            raise "in_kube_perfinventory:getNodeAllocatableRecords:Failed to open file for read @ #{Time.now.utc.iso8601}"
+          end
         end
       rescue => err
         if retryAttemptCount < maxRetryCount
