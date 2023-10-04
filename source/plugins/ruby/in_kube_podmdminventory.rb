@@ -202,6 +202,8 @@ module Fluent::Plugin
           else
             raise "in_kube_podmdminventory:getMDMRecords:Failed to open file for read @ #{Time.now.utc.iso8601}"
           end
+        else
+          $log.warn "in_kube_podmdminventory:getMDMRecords:File does not exist: #{Constants::MDM_POD_INVENTORY_STATE_FILE} @ #{Time.now.utc.iso8601}"
         end
       rescue => err
         if retryAttemptCount <= maxRetryCount

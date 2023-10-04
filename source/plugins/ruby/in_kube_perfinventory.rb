@@ -428,6 +428,8 @@ module Fluent::Plugin
           else
             raise "in_kube_perfinventory:getNodeAllocatableRecords:Failed to open file for read @ #{Time.now.utc.iso8601}"
           end
+        else
+          $log.warn "in_kube_perfinventory:getNodeAllocatableRecords:File does not exist: #{Constants::NODE_ALLOCATABLE_RECORDS_STATE_FILE} @ #{Time.now.utc.iso8601}"
         end
       rescue => err
         if retryAttemptCount < maxRetryCount
