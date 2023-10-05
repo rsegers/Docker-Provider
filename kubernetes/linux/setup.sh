@@ -39,16 +39,10 @@ mv /usr/lib/ruby/gems/3.1.0/specifications/default/uri-0.11.0.gemspec /usr/lib/r
 gem uninstall time --version 0.2.0
 gem uninstall uri --version 0.11.0
 
-if [ "${ARCH}" != "arm64" ]; then
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.27.4/azure-mdsd-1.27.4-build.master.140.x86_64.rpm" -O azure-mdsd.rpm
-else
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/official%2Fmdsd%2F1.27.4/azure-mdsd-1.27.4-build.master.140.aarch64.rpm" -O azure-mdsd.rpm
-fi
-sudo tdnf install -y azure-mdsd.rpm
+sudo tdnf install -y azure-mdsd-1.27.4
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d
 rm /usr/sbin/telegraf
-rm azure-mdsd.rpm
 
 mdsd_version=$(sudo tdnf list installed | grep mdsd | awk '{print $2}')
 echo "Azure mdsd: $mdsd_version" >> packages_version.txt
