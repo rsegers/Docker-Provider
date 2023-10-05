@@ -428,6 +428,8 @@ spec:
             #  value: "my_acs_cluster_name"
             - name: CONTROLLER_TYPE
               value: "DaemonSet"
+            - name: SYSLOG_HOST_PORT
+              value: "28330"
             - name: NODE_IP
               valueFrom:
                 fieldRef:

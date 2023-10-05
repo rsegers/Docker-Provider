@@ -842,6 +842,16 @@ else
             echo "export MONITORING_USE_GENEVA_CONFIG_SERVICE=$MONITORING_USE_GENEVA_CONFIG_SERVICE" >> ~/.bashrc
             export MDSD_USE_LOCAL_PERSISTENCY="false"
             echo "export MDSD_USE_LOCAL_PERSISTENCY=$MDSD_USE_LOCAL_PERSISTENCY" >> ~/.bashrc
+            if [ -n "$SYSLOG_HOST_PORT" ] && [ "$SYSLOG_HOST_PORT" != "28330" ]; then
+                  echo "Updating rsyslog config file with non default SYSLOG_HOST_PORT value ${SYSLOG_HOST_PORT}"
+                  if sed -i "s/Port=\"[0-9]*\"/Port=\"$SYSLOG_HOST_PORT\"/g" /etc/opt/microsoft/docker-cimprov/70-rsyslog-forward-mdsd-ci.conf; then
+                        echo "Successfully updated the rsylog config file."
+                  else
+                        echo "Failed to update the rsyslog config file."
+                  fi
+            else
+                  echo "SYSLOG_HOST_PORT is ${SYSLOG_HOST_PORT}. No changes made."
+            fi
             export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
             echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
       else
