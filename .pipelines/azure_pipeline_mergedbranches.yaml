@@ -209,7 +209,7 @@ jobs:
           -a "io.cncf.notary.x509chain.thumbprint#S256=[\"49D6CD5DB42623144D6990AA1669CE5D97F1F3D7\"]"
     workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
     displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
-    condition: eq(variables.IS_MAIN_BRANCH, true)
+    # condition: eq(variables.IS_MAIN_BRANCH, true)
 
   - task: AzureCLI@2
     displayName: "Vulnerability Scan with Trivy"
@@ -753,7 +753,7 @@ jobs:
       oras attach ${{ variables.repoImageName }}:$(windowsImageTag) --artifact-type application/vnd.cncf.notary.signature ./payload.json:application/cose -a io.cncf.notary.x509chain.thumbprint#S256=[\"49D6CD5DB42623144D6990AA1669CE5D97F1F3D7\"]
     workingDirectory: $(Build.ArtifactStagingDirectory)/windows
     displayName: "Download, install Oras and run oras attach"
-    condition: eq(variables.IS_MAIN_BRANCH, true)
+    # condition: eq(variables.IS_MAIN_BRANCH, true)
 
   - task: PublishBuildArtifacts@1
     inputs:
