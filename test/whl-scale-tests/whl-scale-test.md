@@ -6,6 +6,7 @@
 - [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli)
 - Latest sky-dev branch
 - Run `.\Docker-Provider\scripts\build\windows\install-build-pre-requisites.ps1`
+- [Install nuget.exe](https://learn.microsoft.com/en-us/nuget/consume-packages/install-use-packages-nuget-cli#prerequisites)
 <br>GENEVA_METRIC_ACCOUNT
 
 ## 1. Deploy Scale Test Infrastructure 
@@ -176,11 +177,72 @@ Example:
 5. Now go to metrics section -> naviagte to a Agent QoS and verify that data is working as expected
 
 
-## 4. Taking Measurements of each component
-Need to actually deploy a test component something to get this filled out
-<br>
+## 5. Generating logs for testing
+Log generators can be deployed to create large amounts of logs for scale testing. Log generators will be deployed in separate daemonsets for Text Logs, ETWs, Event Logs and Crash Dumps
+### Configure Log Generators
+Log generators can be configured by editing the values in `log-generation-config.yaml`. Each generator has different configuration options.
+#### Text Logs
 
-## 5. How to clean up scale test infra
+`TODO: Fill out text log generator configuration`
+| Option | Description |
+| ------ | ----------- |
+| | |
+
+#### ETW
+`TODO: Fill out ETW generator configuration`
+| Option | Description |
+| ------ | ----------- |
+| | |
+
+#### Event Logs
+`TODO: Fill out Event Log generator configuration`
+| Option | Description |
+| ------ | ----------- |
+| | |
+
+#### Crash Dumps
+`TODO: Fill out Crash Dumps generator configuration`
+| Option | Description |
+| ------ | ----------- |
+| | |
+
+### Deploy Log generators
+```powershell
+./deploy-log-generators.ps1
+```
+By default this will deploy all of the available log generators. If you only need to deploy a specific generator, use the flags -TextLogs, -ETW, -EventLogs or -CrashDumps to specify which generator to deploy.
+
+### Optional - Redeploy log generators
+It is possible to redeploy the log generators by re-running `./deploy-log-generators.ps1`. 
+By default this will delete any existing log generator daemonsets, rebuild the docker image, and deploy new daemonsets. 
+
+You can also use the `-ApplyConfigChanges` flag to apply the configuration changes in `log-generation-config.yaml` and restart the existing daemonsets without performing a full cleanup and image build.
+
+Example: <br/>
+Redeploy the Text Logs and Crash Dumps generators with new configuration
+```powershell
+./deploy-log-generators.ps1 -TextLogs -CrashDumps -ApplyConfigChanges
+```
+## 6. Taking Measurements of each component
+Metrics will be automatically sent to your Geneva account.
+To view a metrics summary you can create a [Geneva dashboard](https://portal.microsoftgeneva.com/dashboard/)
+![Example Geneva dashboard with CPU usage, Memory Usage, Number of logs colllected, and Number of Logs Dropped](images/geneva_metrics_dashboard.png)
+
+For the data source setting, set "Account" to your Geneva account and Namespace to "Monitoring Agent". From here you can see a variety of metrics such as CpuUsage, MemoryUsage and EventsLogged. For more info on the available metrics see [eng.ms/docs/products/geneva/collect/manage/agentmetrics](https://eng.ms/docs/products/geneva/collect/manage/agentmetrics#metrics)
+
+![Example Geneva dashboard with CPU usage, Memory Usage, Number of logs colllected, and Number of Logs Dropped](images/geneva_metrics_dashboard_settings.png)
+
+If more precise numbers are needed, it's also possible to view metrics counter logs in [dgrep](https://portal.microsoftgeneva.com/logs/dgrep) under the MACounterSummary metric.
+
+![Geneva metrics counters in DGrep](images/geneva_metrics_dgrep_counters.png)
+
+### Viewing Collected Logs
+If you need to view the collected test logs:
+* Event Logs , ETWs and Text Logs will show up in [dgrep](https://portal.microsoftgeneva.com/logs/dgrep)
+* Crash Dumps will show up in [azure watson](https://portal.watson.azure.com). The easiest way to find your crash dumps is to filter by MdsNamespace (Geneva account namespace). Scale testing crash dumps will show the crash process as "hugedump.exe"
+![Geneva metrics counters in DGrep](images/watson_crash_dumps.png)
+
+## 7. How to clean up scale test infra
 To clean up all the resources you deployed we are going to use `.\Docker-Provider\test\whl-scale-tests\clean-infra.ps1`
 
 ### Using clean-infra.ps1

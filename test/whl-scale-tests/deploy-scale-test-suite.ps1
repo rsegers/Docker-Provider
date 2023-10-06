@@ -14,10 +14,6 @@ Set-Location -Path $PSScriptRoot
 . .\common.ps1
 
 $genevaEnvironment = "DiagnosticsProd"
-$resourceGroupName = [Environment]::UserName + "scaletest"
-$aksClusterName = $resourceGroupName + "aks"
-$acrName = $resourceGroupName + "acr"
-$acrUri = $acrName + ".azurecr.io"
 
 # Login using your microsoft accout
 Write-Host "Login with your Microsoft account"
@@ -27,14 +23,10 @@ az login
 Write-Host "Setting az account to given Subscription"
 az account set --subscription $SubscriptionId
 
-#Use Windows Engine on Docker
-Write-Host "Setting Docker to utilize Windows Engine"
-Start-Process -filePath "Docker Desktop.exe" -WorkingDirectory "C:\Program Files\Docker\Docker"
-Start-Sleep -Seconds 60
-Start-Process -filePath "DockerCli.exe" -WorkingDirectory "C:\Program Files\Docker\Docker" -ArgumentList "-SwitchWindowsEngine"
+Start-Docker
 
 #Login into ACR
-Write-Host "Logining into ACR"
+Write-Host "Logging into ACR"
 az acr login --name $acrName
 
 #Create latest WHL Container Image
