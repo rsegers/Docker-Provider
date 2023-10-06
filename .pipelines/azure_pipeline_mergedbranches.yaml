@@ -161,9 +161,9 @@ jobs:
           docker buildx build --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --load --provenance=false .
         fi
 
-        MEDIA_TYPE=$(docker manifest inspect -v ${{ variables.repoImageName }}:$(linuxImagetag) | jq '.Descriptor.mediaType')
-        DIGEST=$(docker manifest inspect -v ${{ variables.repoImageName }}:$(linuxImagetag) | jq '.Descriptor.digest')
-        SIZE=$(docker manifest inspect -v ${{ variables.repoImageName }}:$(linuxImagetag) | jq '.Descriptor.size')
+        MEDIA_TYPE=$(docker manifest inspect -v ${{ variables.repoImageName }}:$(linuxImagetag) | jq '.[0].Descriptor.mediaType')
+        DIGEST=$(docker manifest inspect -v ${{ variables.repoImageName }}:$(linuxImagetag) | jq '.[0].Descriptor.digest')
+        SIZE=$(docker manifest inspect -v ${{ variables.repoImageName }}:$(linuxImagetag) | jq '.[0].Descriptor.size')
         cat <<EOF >>$(Build.ArtifactStagingDirectory)/linux/payload.json
         {"targetArtifact":{"mediaType":$MEDIA_TYPE,"digest":$DIGEST,"size":$SIZE}}
         EOF
@@ -713,6 +713,7 @@ jobs:
           }
       } | ConvertTo-Json
       $payload | Out-File -FilePath "$(Build.ArtifactStagingDirectory)/windows/payload.json"
+      Get-Content "$(Build.ArtifactStagingDirectory)/windows/payload.json"
     workingDirectory: $(Build.ArtifactStagingDirectory)/windows
     displayName: "Build the payload json file"
 
