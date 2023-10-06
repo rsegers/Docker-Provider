@@ -122,7 +122,7 @@ func ToString(s interface{}) string {
 	}
 }
 
-//mdsdSocketClient to write msgp messages
+// mdsdSocketClient to write msgp messages
 func CreateMDSDClient(dataType DataType, containerType string) {
 	mdsdfluentSocket := "/var/run/mdsd-ci/default_fluent.socket"
 	if containerType != "" && strings.Compare(strings.ToLower(containerType), "prometheussidecar") == 0 {
@@ -204,7 +204,7 @@ func CreateMDSDClient(dataType DataType, containerType string) {
 	}
 }
 
-//ADX client to write to ADX
+// ADX client to write to ADX
 func CreateADXClient() {
 
 	if ADXIngestor != nil {
@@ -288,7 +288,7 @@ func convertMsgPackEntriesToMsgpBytes(fluentForwardTag string, msgPackEntries []
 	return msgpBytes
 }
 
-//namedpipe format => CAgentStream_<pipeNamedDefinedXMLConfig>_<genevaNamespace>
+// namedpipe format => CAgentStream_<pipeNamedDefinedXMLConfig>_<genevaNamespace>
 func getGenevaWindowsNamedPipeName() string {
 	gcsNameSpace := os.Getenv("MONITORING_GCS_NAMESPACE")
 	var namedPipeName string
@@ -300,17 +300,30 @@ func getGenevaWindowsNamedPipeName() string {
 	return namedPipeName
 }
 
-// get the Output stream ID tag value corresponding to the datatype
-func getOutputStreamIdTag(dataType string, streamIdTagName string, refreshTracker *time.Time) string {
-	useFromCache := true
+func checkIfUseFromCache(refreshTracker *time.Time) bool {
 	if refreshTracker != nil {
 		elapsed := time.Now().Sub(*refreshTracker)
-		if !strings.HasPrefix(streamIdTagName, MdsdOutputStreamIdTagPrefix) || elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
-			useFromCache = false
+		if elapsed.Seconds() >= agentConfigRefreshIntervalSeconds {
 			*refreshTracker = time.Now()
+			return false
 		}
 	} else {
-		Log("getOutputStreamIdTag: refreshTracker is nil")
+		Log("refreshTracker is nil")
+		return false
+	}
+	return true
+}
+
+// get the Output stream ID tag value corresponding to the datatype
+func getOutputStreamIdTag(dataType string, streamIdTagName string, refreshTracker *time.Time) string {
+	useFromCache := checkIfUseFromCache(refreshTracker)
+	if !strings.HasPrefix(streamIdTagName, MdsdOutputStreamIdTagPrefix) {
+		useFromCache = false
 	}
 	return extension.GetInstance(FLBLogger, ContainerType).GetOutputStreamId(dataType, useFromCache)
+}
+
+func GetOutputNamedPipe(datatype string, refreshTracker *time.Time) string {
+	useFromCache := checkIfUseFromCache(refreshTracker)
+	return extension.GetInstance(FLBLogger, ContainerType).GetOutputNamedPipe(datatype, useFromCache)
 }
