@@ -210,7 +210,6 @@ module Fluent::Plugin
           retry
         end
         $log.warn "in_kube_podmdminventory:getMDMRecords failed with an error: #{err} after retries: #{maxRetryCount} @  #{Time.now.utc.iso8601}"
-        ApplicationInsightsUtility.sendExceptionTelemetry(err)
       ensure
         f.flock(File::LOCK_UN) if !f.nil?
         f.close if !f.nil?
