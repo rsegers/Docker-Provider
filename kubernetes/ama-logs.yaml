@@ -428,6 +428,8 @@ spec:
             #  value: "my_acs_cluster_name"
             - name: CONTROLLER_TYPE
               value: "DaemonSet"
+            - name: SYSLOG_HOST_PORT
+              value: "28330"
             - name: NODE_IP
               valueFrom:
                 fieldRef:
@@ -451,6 +453,10 @@ spec:
               protocol: TCP
             - containerPort: 25224
               protocol: UDP
+            - name: syslog
+              containerPort: 28330
+              hostPort: 28330
+              protocol: TCP
           volumeMounts:
             - name: kube-api-access
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
