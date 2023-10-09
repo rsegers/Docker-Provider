@@ -93,7 +93,7 @@ ENV AZMON_COLLECT_ENV False
 ENV CI_CERT_LOCATION "C://oms.crt"
 ENV CI_KEY_LOCATION "C://oms.key"
 
-# Delete unnecessary files after installation
+# Delete unnecessary files
 RUN powershell -Command "Remove-Item -Recurse -Force 'C:\ruby31\share\doc\ruby\html\js'; \
 Remove-Item -Force 'C:\ruby31\ridk_use\ridk.ps1'; \
 Remove-Item -Recurse -Force 'C:\ruby31\msys64\usr\share\texinfo\js'; \
