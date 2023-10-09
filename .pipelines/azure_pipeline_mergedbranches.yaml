@@ -716,7 +716,8 @@ jobs:
       $payload = @{
           targetArtifact = $outputObject
       } | ConvertTo-Json -Depth 2
-      $payload | Out-File -FilePath "$(Build.ArtifactStagingDirectory)/windows/payload.json" -Encoding utf8
+      $utf8NoBomEncoding = New-Object System.Text.UTF8Encoding $false
+      [System.IO.File]::WriteAllLines("$(Build.ArtifactStagingDirectory)/windows/payload.json", $payload, $utf8NoBomEncoding)
       Get-Content "$(Build.ArtifactStagingDirectory)/windows/payload.json"
     workingDirectory: $(Build.ArtifactStagingDirectory)/windows
     displayName: "Install oras and build the payload json file"
