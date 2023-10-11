@@ -194,10 +194,11 @@ Log generators can be configured by editing the values in `log-generation-config
 | ETW_EVENTS_NUM | Number of ETW events to generate|
 
 #### Event Logs
-`TODO: Fill out Event Log generator configuration`
 | Option | Description |
 | ------ | ----------- |
-| | |
+| EVTLOGS_JOB_COUNT | Number of event log generation jobs to run in parallel
+| EVTLOGS_LOG_COUNT | Number of event logs to generate per job
+| EVTLOGS_DELAY | Time to wait between writing each event log
 
 #### Crash Dumps
 
