@@ -349,7 +349,16 @@ jobs:
         cd $(Build.ArtifactStagingDirectory)/codeIntegretyScan
 
         echo "Extract whole folder"
-        docker cp signingContainer:C:\ .
+        docker cp signingContainer:C:\dev .
+        docker cp signingContainer:C:\etc .
+        docker cp signingContainer:C:\opt .
+        docker cp signingContainer:C:\Program Files .
+        docker cp signingContainer:C:\Program Files (x86) .
+        docker cp signingContainer:C:\ruby31 .
+        docker cp signingContainer:C:\tools .
+        docker cp signingContainer:C:\Users .
+        docker cp signingContainer:C:\var .
+        docker cp signingContainer:C:\Windows .
 
         echo "Removing container..."
         docker rm signingContainer
@@ -559,7 +568,13 @@ jobs:
         cd $(Build.ArtifactStagingDirectory)/codeIntegretyScan
 
         echo "Extract whole folder"
-        docker cp signingContainer:C:\ .
+        docker cp signingContainer:C:\dev .
+        docker cp signingContainer:C:\etc .
+        docker cp signingContainer:C:\opt .
+        docker cp signingContainer:C:\ruby31 .
+        docker cp signingContainer:C:\tools .
+        docker cp signingContainer:C:\Users .
+        docker cp signingContainer:C:\var .
 
         echo "Removing container..."
         docker rm signingContainer
