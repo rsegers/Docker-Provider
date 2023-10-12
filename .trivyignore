@@ -3,3 +3,7 @@ GHSA-2w8w-qhg4-f78j
 
 # ruby HIGH
 CVE-2017-10784
+
+# golang.org/x/net
+CVE-2023-39325
+CVE-2023-3978
