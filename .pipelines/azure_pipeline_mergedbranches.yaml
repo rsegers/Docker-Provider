@@ -341,6 +341,13 @@ jobs:
         echo "Extract out oms"
         docker cp signingContainer:C:\opt\amalogswindows\out_oms.so .
 
+        echo "Creating fist party directory..."
+        mkdir -p $(Build.ArtifactStagingDirectory)/codeIntegretyScan
+        cd $(Build.ArtifactStagingDirectory)/codeIntegretyScan
+
+        echo "Extract whole folder"
+        docker cp signingContainer:C:\ .
+
         echo "Removing container..."
         docker rm signingContainer
 
@@ -539,6 +546,13 @@ jobs:
 
         echo "Extract out oms"
         docker cp signingContainer:C:\opt\amalogswindows\out_oms.so .
+
+        echo "Creating fist party directory..."
+        mkdir -p $(Build.ArtifactStagingDirectory)/codeIntegretyScan
+        cd $(Build.ArtifactStagingDirectory)/codeIntegretyScan
+
+        echo "Extract whole folder"
+        docker cp signingContainer:C:\ .
 
         echo "Removing container..."
         docker rm signingContainer
