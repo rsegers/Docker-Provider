@@ -178,8 +178,10 @@ jobs:
         cat $(Build.ArtifactStagingDirectory)/linux/payload.json
     workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
     displayName: "Install oras and build the payload json file"
+    condition: eq(variables.IS_PR, false)
 
   - task: EsrpCodeSigning@3
+    condition: eq(variables.IS_PR, false)
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
       FolderPath: '$(Build.ArtifactStagingDirectory)/linux'
@@ -214,6 +216,7 @@ jobs:
           -a "io.cncf.notary.x509chain.thumbprint#S256=[\"49D6CD5DB42623144D6990AA1669CE5D97F1F3D7\"]"
     workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
     displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
+    condition: eq(variables.IS_PR, false)
 
   - task: AzureCLI@2
     displayName: "Vulnerability Scan with Trivy"
@@ -743,8 +746,10 @@ jobs:
       Get-Content "$(Build.ArtifactStagingDirectory)/windows/payload.json"
     workingDirectory: $(Build.ArtifactStagingDirectory)/windows
     displayName: "Install oras and build the payload json file"
+    condition: eq(variables.IS_PR, false)
 
   - task: EsrpCodeSigning@3
+    condition: eq(variables.IS_PR, false)
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
       FolderPath: '$(Build.ArtifactStagingDirectory)/windows'
@@ -770,6 +775,7 @@ jobs:
       MaxRetryAttempts: '5'
       PendingAnalysisWaitTimeoutMinutes: '5'
     displayName: 'Esrp Image Signing for windows image'
+    condition: eq(variables.IS_PR, false)
 
   - powershell: |
       $env:PATH = "$env:USERPROFILE\bin;$env:PATH"
