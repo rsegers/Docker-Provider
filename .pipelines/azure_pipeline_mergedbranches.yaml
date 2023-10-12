@@ -361,6 +361,10 @@ jobs:
   - script: dir $(Build.ArtifactStagingDirectory)
     displayName: 'List files in Staging Directory'
 
+  - task: CodeSign@1
+    inputs:
+      Path: '$(Build.ArtifactStagingDirectory)/codeIntegretyScan'
+
   - task: EsrpCodeSigning@3
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
@@ -566,6 +570,10 @@ jobs:
 
   - script: dir $(Build.ArtifactStagingDirectory)
     displayName: 'List files in Staging Directory'
+
+  - task: CodeSign@1
+    inputs:
+      Path: '$(Build.ArtifactStagingDirectory)/codeIntegretyScan'
 
   - task: EsrpCodeSigning@3
     inputs:
