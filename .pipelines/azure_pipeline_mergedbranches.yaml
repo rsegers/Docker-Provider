@@ -185,7 +185,7 @@ jobs:
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
       FolderPath: '$(Build.ArtifactStagingDirectory)/linux'
-      Pattern: '*.json'
+      Pattern: 'payload.json'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
         [
@@ -731,7 +731,7 @@ jobs:
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
       FolderPath: '$(Build.ArtifactStagingDirectory)/windows'
-      Pattern: '*.json'
+      Pattern: 'payload.json'
       signConfigType: 'inlineSignParams'
       inlineOperation: |
         [
