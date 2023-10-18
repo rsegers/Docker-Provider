@@ -267,7 +267,7 @@ which is the ENTRYPOINT script for the windows aks log container
 =end
 
 def get_command_windows(env_variable_name, env_variable_value)
-  "#{env_variable_name}=#{env_variable_value}\n"
+  return "#{env_variable_name}=#{env_variable_value}\n"
 end
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0

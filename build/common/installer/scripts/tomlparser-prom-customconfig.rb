@@ -48,7 +48,7 @@ require "fileutils"
 @disableRSTelegraf = false
 
 def get_command_windows(env_variable_name, env_variable_value)
-  "#{env_variable_name}=#{env_variable_value}\n"
+  return "#{env_variable_name}=#{env_variable_value}\n"
 end
 
 # Use parser to parse the configmap toml file to a ruby structure

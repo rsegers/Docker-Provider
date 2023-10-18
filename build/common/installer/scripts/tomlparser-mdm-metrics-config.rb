@@ -128,7 +128,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 end
 
 def get_command_windows(env_variable_name, env_variable_value)
-  "#{env_variable_name}=#{env_variable_value}\n"
+  return "#{env_variable_name}=#{env_variable_value}\n"
 end
 
 @configSchemaVersion = ENV["AZMON_AGENT_CFG_SCHEMA_VERSION"]
