@@ -9,6 +9,7 @@ class KubernetesApiClient
   require "uri"
   require "time"
   require "ipaddress"
+  require "jwt"
 
   require_relative "oms_common"
   require_relative "constants"
@@ -39,6 +40,7 @@ class KubernetesApiClient
   @Log = Logger.new(@LogPath, 2, 10 * 1048576) #keep last 2 files, max log file size = 10M
   @@TokenFileName = "/var/run/secrets/kubernetes.io/serviceaccount/token"
   @@TokenStr = nil
+  @@TokenExpiry = DateTime.now.to_time.to_i
   @@cpuLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
@@ -114,16 +116,31 @@ class KubernetesApiClient
     end
 
     def getTokenStr
-      return @@TokenStr if !@@TokenStr.nil?
       begin
-        if File.exist?(@@TokenFileName) && File.readable?(@@TokenFileName)
-          @@TokenStr = File.read(@@TokenFileName).strip
-          return @@TokenStr
-        else
-          @Log.warn("Unable to read token string from #{@@TokenFileName}: #{error}")
-          return nil
+        if (@@TokenStr.nil? || (@@TokenExpiry - DateTime.now.to_time.to_i).abs <= Constants::SERVICE_ACCOUNT_TOKEN_REFRESH_INTERVAL_SECONDS) # refresh token from token file if its near expiry
+          if File.exist?(@@TokenFileName) && File.readable?(@@TokenFileName)
+            @@TokenStr = File.read(@@TokenFileName).strip
+            begin
+              token_info = JWT.decode(@@TokenStr, nil, false)
+              @@TokenExpiry = token_info[0]["exp"]
+            rescue JWT::DecodeError => e
+              @Log.warn("The token is not a JWT.")
+              @@TokenExpiry = DateTime.now.to_time.to_i + Constants::LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS
+            end
+            # By default without explicit token mount, token expiry is one year so setting expiry to 1hour to refresh token periodically
+            if (@@TokenExpiry - DateTime.now.to_time.to_i).abs > Constants::LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS
+              @@TokenExpiry = DateTime.now.to_time.to_i + Constants::LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS
+            end
+          else
+            @Log.warn("Unable to read token string from #{@@TokenFileName}: #{error}")
+            @@TokenExpiry = DateTime.now.to_time.to_i
+            @@TokenStr = nil
+          end
         end
+      rescue => error
+        @Log.warn("getTokenStr failed: #{error}")
       end
+      return @@TokenStr
     end
 
     def getClusterRegion(env = ENV)

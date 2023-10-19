@@ -8,6 +8,67 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 10/13/2023 -
+##### Version microsoft/oms:3.1.15 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.15 (linux)
+##### Version microsoft/oms:win-3.1.15 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.15 (windows)
+##### Current dependencies
+- Linux
+  - [CBL-Mariner 2.0.20230924](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20230924-2.0)
+  - Golang - 1.20.5
+  - Ruby - 3.1.3
+  - MDSD - 1.27.4
+  - Telegraf - 1.27.2
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.14
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.9.43
+  - Golang - 1.20.5
+##### Code change log
+## What's Changed
+- Linux
+  * use omfwd for syslog and update mdsd to 1.27.4 by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1093
+  * syslog fix mounting bug by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1095
+- Windows
+  * Windows AMA <> Container Log/LogV2 integration by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1071
+  * Add tailing of the MonAgentHost logs by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1094
+- Common
+  * Telemetry optimization: Removing the exception writing to AppInsights telemetry by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1092
+  * Update multiline comments in configmap by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1097
+
+### 10/04/2023 -
+##### Version microsoft/oms:3.1.14 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.14 (linux)
+##### Version microsoft/oms:win-3.1.14 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.14 (windows)
+##### Current dependencies
+- Linux
+  - [CBL-Mariner 2.0.20230630](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20230805-2.0)
+  - Golang - 1.20.5
+  - Ruby - 3.1.3
+  - MDSD - 1.26.1
+  - Telegraf - 1.27.2
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.14
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.3.2
+  - Golang - 1.20.5
+##### Code change log
+- Common
+  * Gangams/implement timebound token and token refresh by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1075 
+  * Add nil check for non existence of the fields to avoid nil class exception by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1080
+  * Force 1hour expiry for default 1 year valid tokens by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1086
+  * Remove wait time for stable MCR release by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1077
+  * Fix component governance and sbom generation by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1089
+  * Remove all ApplicationInsights code by @tokaplan in https://github.com/microsoft/Docker-Provider/pull/1088
+- Windows
+  * Update the pipeline to take WINDOWS_AMA_URL from the pipeline by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1059
+  * Moving the thread pool env var to dockerfile by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1079
 ### 09/15/2023 -
 ##### Version microsoft/oms:3.1.13 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.13 (linux)
 ##### Version microsoft/oms:win-3.1.13 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.13 (windows)

@@ -390,7 +390,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.13"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.15"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -428,6 +428,8 @@ spec:
             #  value: "my_acs_cluster_name"
             - name: CONTROLLER_TYPE
               value: "DaemonSet"
+            - name: SYSLOG_HOST_PORT
+              value: "28330"
             - name: NODE_IP
               valueFrom:
                 fieldRef:
@@ -451,7 +453,14 @@ spec:
               protocol: TCP
             - containerPort: 25224
               protocol: UDP
+            - name: syslog
+              containerPort: 28330
+              hostPort: 28330
+              protocol: TCP
           volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
             - mountPath: /var/run/mdsd-PrometheusSidecar
               name: mdsd-prometheus-sock
             - mountPath: /hostfs
@@ -499,7 +508,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: ama-logs-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.13"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.15"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -547,6 +556,9 @@ spec:
           securityContext:
             privileged: true
           volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
             - mountPath: /var/run/mdsd-PrometheusSidecar
               name: mdsd-prometheus-sock
             - mountPath: /etc/kubernetes/host
@@ -597,6 +609,23 @@ spec:
         - operator: "Exists"
           effect: "PreferNoSchedule"
       volumes:
+        - name: kube-api-access
+          projected:
+            sources:
+            - serviceAccountToken:
+                path: token
+                expirationSeconds: 3600
+            - configMap:
+                items:
+                - key: ca.crt
+                  path: ca.crt
+                name: kube-root-ca.crt
+            - downwardAPI:
+                items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace        
         - name: mdsd-prometheus-sock
           emptyDir: {}
         - name: host-root
@@ -741,7 +770,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.13"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.15"
           imagePullPolicy: IfNotPresent
           # comment resources if VPA configured since the VPA will set these values
           resources:
@@ -804,6 +833,9 @@ spec:
             - containerPort: 25224
               protocol: UDP
           volumeMounts:
+            - name: kube-api-access
+              mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+              readOnly: true
             - mountPath: /var/run/host
               name: docker-sock
             - mountPath: /var/log
@@ -873,6 +905,23 @@ spec:
         - operator: "Exists"
           effect: "PreferNoSchedule"
       volumes:
+        - name: kube-api-access
+          projected:
+            sources:
+            - serviceAccountToken:
+                path: token
+                expirationSeconds: 3600
+            - configMap:
+                items:
+                - key: ca.crt
+                  path: ca.crt
+                name: kube-root-ca.crt
+            - downwardAPI:
+                items:
+                - fieldRef:
+                    apiVersion: v1
+                    fieldPath: metadata.namespace
+                  path: namespace            
         - name: docker-sock
           hostPath:
             path: /var/run
@@ -941,8 +990,35 @@ spec:
           - name: ndots
             value: "3"
      containers:
+      # Uncomment below lines for MSI Auth Mode  testing
+      #  - name: addon-token-adapter-win
+      #    command:
+      #     - addon-token-adapter-win
+      #    args:
+      #     - --secret-namespace=kube-system
+      #     - --secret-name=aad-msi-auth-token
+      #     - --token-server-listening-port=7777
+      #     - --health-server-listening-port=9999
+      #    image: "mcr.microsoft.com/aks/hcp/addon-token-adapter:20230120winbeta"
+      #    imagePullPolicy: Always
+      #    livenessProbe:
+      #     httpGet:
+      #       path: /healthz
+      #       port: 9999
+      #     initialDelaySeconds: 10
+      #     periodSeconds: 60
+      #    resources:
+      #     limits:
+      #       memory: 500Mi
+      #     requests:
+      #       cpu: 100m
+      #       memory: 100Mi
+      #    securityContext:
+      #     capabilities:
+      #       add:
+      #         - NET_ADMIN
        - name: ama-logs-windows
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.13"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.15"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
@@ -993,6 +1069,9 @@ spec:
           # - name: USING_AAD_MSI_AUTH
           #   value: "true"
          volumeMounts:
+          - name: kube-api-access
+            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+            readOnly: true
           - mountPath: C:\ProgramData\docker\containers
             name: docker-windows-containers
             readOnly: true
@@ -1028,6 +1107,8 @@ spec:
               - fluentdwinaks
               - "C:\\etc\\amalogswindows\\filesystemwatcher.txt"
               - "C:\\etc\\amalogswindows\\renewcertificate.txt"
+              # Uncomment below lines for MSI Auth Mode  testing
+              # - MonAgentCore.exe
           periodSeconds: 60
           initialDelaySeconds: 180
           timeoutSeconds: 15
@@ -1050,6 +1131,23 @@ spec:
      - operator: "Exists"
        effect: PreferNoSchedule
      volumes:
+      - name: kube-api-access
+        projected:
+          sources:
+          - serviceAccountToken:
+              path: token
+              expirationSeconds: 3600
+          - configMap:
+              items:
+              - key: ca.crt
+                path: ca.crt
+              name: kube-root-ca.crt
+          - downwardAPI:
+              items:
+              - fieldRef:
+                  apiVersion: v1
+                  fieldPath: metadata.namespace
+                path: namespace    
       - name: docker-windows-kuberenetes-container-logs
         hostPath:
           path: C:\var

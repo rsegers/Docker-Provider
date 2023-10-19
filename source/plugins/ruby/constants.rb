@@ -159,4 +159,11 @@ class Constants
   # min and max data collection interval minutes
   EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL_MIN = 1
   EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL_MAX = 30
+
+  # interval to refresh in-memory service account token from file
+  # service account token expiry is 1 hour and we refresh before 10 minutes expiry
+  SERVICE_ACCOUNT_TOKEN_REFRESH_INTERVAL_SECONDS = 600
+
+  # Legacy service account token is not in JWT and hence we cant infer expiry from token
+  LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS = 3600
 end

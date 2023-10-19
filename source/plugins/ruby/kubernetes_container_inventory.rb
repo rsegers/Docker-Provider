@@ -327,7 +327,9 @@ class KubernetesContainerInventory
                 resourceFields = resource.split(".")
                 containerResources = container["resources"]
                 if !containerResources.nil? && !containerResources.empty? && resourceFields.length() == 2
-                  value = containerResources[resourceFields[0]][resourceFields[1]]
+                   if containerResources.key?(resourceFields[0]) && containerResources[resourceFields[0]].key?(resourceFields[1])
+                     value = containerResources[resourceFields[0]][resourceFields[1]]
+                   end
                 end
                 # https://kubernetes.io/docs/concepts/configuration/secret/#using-secrets-as-environment-variables
               elsif valueFrom.key?("secretKeyRef")
