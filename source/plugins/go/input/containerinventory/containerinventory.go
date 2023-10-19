@@ -108,7 +108,7 @@ func (p containerInventoryPlugin) Collect(ctx context.Context, ch chan<- plugin.
 				if addonTokenAdapterImageTag != "" {
 					telemetryProperties["addonTokenAdapterImageTag"] = addonTokenAdapterImageTag
 				}
-				lib.SendTelemetry("ContainerInventory", telemetryProperties) // Replace "PluginName" with the actual plugin name
+				lib.SendTelemetry("ContainerInventory", telemetryProperties)
 			}
 		}
 	}
