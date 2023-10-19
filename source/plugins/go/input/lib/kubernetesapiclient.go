@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"Docker-Provider/source/plugins/go/src/extension"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
@@ -8,11 +9,12 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
+	"math"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-	"Docker-Provider/source/plugins/go/src/extension"
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -39,6 +41,7 @@ var (
 	ResourceLimitsTelemetryHash map[string]interface{}
 	LogPath                     string
 	logger                      *log.Logger
+	TokenExpiry                 int64
 )
 
 func init() {
@@ -54,6 +57,8 @@ func init() {
 	if isTestEnv {
 		LogPath = "./kubernetes_client_log.txt"
 	}
+
+	TokenExpiry = time.Now().Unix()
 
 	// Define logger
 	file, err := os.OpenFile(LogPath, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
@@ -105,55 +110,6 @@ func getKubeResourceInfo(resource string, api_group *string) (*http.Response, er
 	return resp, nil
 }
 
-// func getKubeResourceInfoV2(resource string, api_group *string) (*string, *http.Response, error) {
-// 	logger.Println("KubernetesAPIClient::getKubeResourceInfoV2:")
-
-// 	resourceUri, err := getResourceUri(resource, api_group)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-
-// 	caCert, err := ioutil.ReadFile(CaFile)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-
-// 	caCertPool := x509.NewCertPool()
-// 	caCertPool.AppendCertsFromPEM(caCert)
-
-// 	tlsConfig := &tls.Config{
-// 		RootCAs: caCertPool,
-// 	}
-
-// 	transport := &http.Transport{TLSClientConfig: tlsConfig}
-// 	client := &http.Client{Transport: transport, Timeout: time.Second * 60}
-
-// 	req, err := http.NewRequest("GET", resourceUri, nil)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-
-// 	tokenStr := GetTokenStr()
-
-// 	req.Header.Add("Authorization", "Bearer "+tokenStr)
-// 	logger.Println("Making request to " + resourceUri + " @ " + time.Now().Format(time.RFC3339))
-
-// 	resp, err := client.Do(req)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-// 	defer resp.Body.Close()
-
-// 	logger.Println("Got response of " + resp.Status + " for " + resourceUri + " @ " + time.Now().Format(time.RFC3339))
-
-// 	if resp.StatusCode != http.StatusOK {
-// 		logger.Println("Got empty response from Kube API for " + resource + " @ " + time.Now().Format(time.RFC3339))
-// 	}
-
-// 	responseCode := resp.Status
-// 	return &responseCode, resp, nil
-// }
-
 func getResourceUri(resource string, api_group *string) (string, error) {
 	serviceHost, serviceHostExist := os.LookupEnv("KUBERNETES_SERVICE_HOST")
 	servicePort, servicePortExist := os.LookupEnv("KUBERNETES_PORT_443_TCP_PORT")
@@ -176,22 +132,35 @@ func getResourceUri(resource string, api_group *string) (string, error) {
 }
 
 func GetTokenStr() string {
-	if TokenStr != "" {
-		return TokenStr
-	}
+	if TokenStr == "" || math.Abs(float64(TokenExpiry-time.Now().Unix())) <= float64(SERVICE_ACCOUNT_TOKEN_REFRESH_INTERVAL_SECONDS) { // refresh token from token file if its near expiry
+		if _, err := os.Stat(TokenFileName); err == nil {
+			data, readErr := ioutil.ReadFile(TokenFileName)
+			if readErr == nil {
+				TokenStr = string(data)
+				if token, _ := jwt.Parse(TokenStr, nil); token != nil {
+					if claims, ok := token.Claims.(jwt.MapClaims); ok {
+						if claims["exp"] != nil {
+							TokenExpiry = int64(claims["exp"].(float64))
+						} else {
+							fmt.Println("exp not present in JWT")
+							TokenExpiry = time.Now().Unix() + int64(LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS)
+						}
+					}
+				} else {
+					fmt.Println("The token is not a JSON Web Token (JWT).")
+					TokenExpiry = time.Now().Unix() + int64(LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS)
+				}
 
-	if _, err := os.Stat(TokenFileName); os.IsNotExist(err) {
-		logger.Printf("Unable to read token string from %s: %v\n", TokenFileName, err)
-		return ""
+				if math.Abs(float64(TokenExpiry-time.Now().Unix())) > float64(LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS) {
+					TokenExpiry = time.Now().Unix() + int64(LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS)
+				}
+			} else {
+				logger.Println("Unable to read token string from %s: %v\n", TokenFileName, readErr)
+				TokenExpiry = time.Now().Unix()
+				TokenStr = ""
+			}
+		}
 	}
-
-	data, err := ioutil.ReadFile(TokenFileName)
-	if err != nil {
-		logger.Printf("Unable to read token string from %s: %v\n", TokenFileName, err)
-		return ""
-	}
-
-	TokenStr = string(data)
 	return TokenStr
 }
 

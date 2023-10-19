@@ -12,8 +12,6 @@ import (
 	"time"
 	"log"
 
-	//     extension "Docker-Provider/source/plugins/go/src/extension"
-
 	"github.com/calyptia/plugin"
 )
 
@@ -126,7 +124,7 @@ func (p perfPlugin) Collect(ctx context.Context, ch chan<- plugin.Message) error
 				if addonTokenAdapterImageTag != "" {
 					telemetryProperties["addonTokenAdapterImageTag"] = addonTokenAdapterImageTag
 				}
-				lib.SendTelemetry("Perf", telemetryProperties) // Replace "PluginName" with the actual plugin name
+				lib.SendTelemetry("Perf", telemetryProperties)
 			}
 		}
 	}
