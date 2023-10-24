@@ -146,7 +146,7 @@ func (p perfPlugin) enumerate() ([]map[string]interface{}, []map[string]interfac
 
 	FLBLogger.Printf("perf::enumerate : Begin processing @ %s", time.Now().UTC().Format(time.RFC3339))
 
-	if lib.IsAADMSIAuthMode() && !isWindows {
+	if lib.IsAADMSIAuthMode() {
 		FLBLogger.Print("perf::enumerate: AAD AUTH MSI MODE")
 		e := extension.GetInstance(FLBLogger, containerType)
 

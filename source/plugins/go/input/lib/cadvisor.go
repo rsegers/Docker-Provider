@@ -71,10 +71,12 @@ var (
 	Log                                     *logrus.Logger
 )
 
+var osType string
+
 func init() {
 	Log = logrus.New()
 
-	osType := os.Getenv("OS_TYPE")
+	osType = os.Getenv("OS_TYPE")
 	if osType != "" && osType == "windows" {
 		LogPath = WindowsLogPath + "kubernetes_perf_log.txt"
 	} else {
@@ -267,12 +269,15 @@ func GetMetricsHelper(metricInfo map[string]interface{}, winNode map[string]stri
 		} else {
 			hostName = GetHostname()
 		}
-		operatingSystem = "Linux"
+		if osType != "" && strings.EqualFold(osType, "windows") {
+			operatingSystem = "Windows"
+		} else {
+			operatingSystem = "Linux"
+		}
 	}
 
-	osType := strings.TrimSpace(os.Getenv("OS_TYPE"))
 	// Checking if we are in windows daemonset and sending only a few metrics that are needed for MDM
-	if osType != "" && strings.EqualFold(osType, "windows") {
+	if osType != "" && strings.EqualFold(osType, "windows") && !IsAADMSIAuthMode() {
 		// Container metrics
 		metricDataItems = append(metricDataItems, getContainerMemoryMetricItems(metricInfo, hostName, "workingSetBytes", MEMORY_WORKING_SET_BYTES, metricTime, operatingSystem, namespaceFilteringMode, namespaces)...)
 		containerCpuUsageNanoSecondsRate := getContainerCpuMetricItemRate(metricInfo, hostName, "usageCoreNanoSeconds", CPU_USAGE_NANO_CORES, metricTime, namespaceFilteringMode, namespaces)
@@ -625,7 +630,7 @@ func getNodeMetricItemRate(metricInfo map[string]interface{}, hostName, metricGr
 		return nil
 	} else {
 		metricRateValue := 0.0
-		if operatingSystem == "Linux" {
+		if operatingSystem == "Linux" || (operatingSystem == "Windows" && IsAADMSIAuthMode()) { // For Linux and Windows with MSI mode
 			if nodeCpuUsageNanoSecondsLast == 0 || len(nodeCpuUsageNanoSecondsTimeLast) == 0 || nodeCpuUsageNanoSecondsLast > metricValue.(float64) {
 				metricValueFloat := metricValue.(float64)
 				nodeCpuUsageNanoSecondsLast = metricValueFloat
@@ -649,7 +654,7 @@ func getNodeMetricItemRate(metricInfo map[string]interface{}, hostName, metricGr
 				linuxNodePrevMetricRate = metricRateValue
 				metricValue = metricRateValue
 			}
-		} else if operatingSystem == "Windows" {
+		} else if operatingSystem == "Windows" { // For Windows with non-MSI mode
 			if _, ok := winNodeCpuUsageNanoSecondsLast[hostName]; ok || winNodeCpuUsageNanoSecondsTimeLast[hostName] == nil || winNodeCpuUsageNanoSecondsLast[hostName] > metricValue.(float64) {
 				winNodeCpuUsageNanoSecondsLast[hostName] = metricValue.(float64)
 				winNodeCpuUsageNanoSecondsTimeLast[hostName] = metricTime
@@ -775,20 +780,38 @@ func getNodeLastRebootTimeMetric(metricInfo map[string]interface{}, hostName, me
 		return nodeMetricItem
 	}
 
-	// Read the first value from /proc/uptime and convert it to a float64
-	uptimeStr, err := ioutil.ReadFile("/proc/uptime")
-	if err != nil {
-		Log.Warnf("Error reading /proc/uptime: %s", err)
-		return nodeMetricItem
-	}
-	uptimeSecondsStr := strings.Fields(string(uptimeStr))[0]
-	uptimeSeconds, err := strconv.ParseFloat(uptimeSecondsStr, 64)
-	if err != nil {
-		Log.Warnf("Error parsing uptime value: %s", err)
-		return nodeMetricItem
-	}
+	var timeDifference int64
+	if osType != "" && strings.EqualFold(osType, "windows") && IsAADMSIAuthMode() {
+		//Read from "C:\\etc\\kubernetes\\host\\windowsnodereset.log"
+		uptimeStr, err := ioutil.ReadFile("C:\\etc\\kubernetes\\host\\windowsnodereset.log")
+		if err != nil {
+			Log.Warnf("Error reading C:\\etc\\kubernetes\\host\\windowsnodereset.log: %s", err)
+			return nodeMetricItem
+		}
+		uptimeDateTimeStr := strings.Fields(string(uptimeStr))[0]
+		//convert the string to a time and then to a float
+		uptimeDateTime, err := time.Parse(time.RFC3339, uptimeDateTimeStr)
+		if err != nil {
+			Log.Warnf("Error parsing time: %s", err)
+			return nodeMetricItem
+		}
+		timeDifference = parsedTime.Unix() - uptimeDateTime.Unix()
+	} else {
+		// Read the first value from /proc/uptime and convert it to a float64
+		uptimeStr, err := ioutil.ReadFile("/proc/uptime")
+		if err != nil {
+			Log.Warnf("Error reading /proc/uptime: %s", err)
+			return nodeMetricItem
+		}
+		uptimeSecondsStr := strings.Fields(string(uptimeStr))[0]
+		uptimeSeconds, err := strconv.ParseFloat(uptimeSecondsStr, 64)
+		if err != nil {
+			Log.Warnf("Error parsing uptime value: %s", err)
+			return nodeMetricItem
+		}
 
-	timeDifference := parsedTime.Unix() - int64(uptimeSeconds)
+		timeDifference = parsedTime.Unix() - int64(uptimeSeconds)
+	}
 
 	metricCollection := map[string]interface{}{
 		"CounterName": metricKey,

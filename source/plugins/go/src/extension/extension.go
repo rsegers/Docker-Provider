@@ -219,6 +219,32 @@ func (e *Extension) IsDataCollectionSettingsConfigured() bool {
 	return len(dataCollectionSettings) > 0
 }
 
+func (e *Extension) GetOutputNamedPipe(datatype string, useFromCache bool) string {
+	extensionconfiglock.Lock()
+	defer extensionconfiglock.Unlock()
+	if useFromCache && len(e.datatypeNamedPipeMap) > 0 && e.datatypeNamedPipeMap[datatype] != "" {
+		return e.datatypeNamedPipeMap[datatype]
+	}
+	var err error
+	e.datatypeNamedPipeMap, err = getDataTypeToStreamIdMapping(true)
+	if err != nil {
+		message := fmt.Sprintf("Error getting datatype to named pipe mapping: %s", err.Error())
+		logger.Printf(message)
+	}
+	return e.datatypeNamedPipeMap[datatype]
+}
+
+func (e *Extension) IsDataCollectionSettingsConfigured() bool {
+	var err error
+	dataCollectionSettings, err := getDataCollectionSettingsInterface()
+	if err != nil {
+		message := fmt.Sprintf("Error getting dataCollectionSettings: %s", err.Error())
+		logger.Printf(message)
+		return false
+	}
+	return len(dataCollectionSettings) > 0
+}
+
 func (e *Extension) GetDataCollectionIntervalSeconds() int {
 	collectionIntervalSeconds := 60
 

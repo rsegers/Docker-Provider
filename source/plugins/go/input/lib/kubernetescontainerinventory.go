@@ -21,7 +21,6 @@ var (
 )
 
 func init() {
-	osType := os.Getenv("OS_TYPE")
 	if strings.EqualFold(osType, "windows") {
 		FLBLogger = CreateLogger("/etc/amalogswindows/fluent-bit-input.log")
 	} else {
@@ -225,7 +224,7 @@ func getContainersInfoMap(podItem map[string]interface{}, isWindows bool) map[st
 				}
 				containerInfoMap["Command"] = cmdValueString
 
-				if isWindows {
+				if isWindows && !IsAADMSIAuthMode() {
 					// For Windows container inventory, we don't need to get envvars from the pod's response
 					// since it's already taken care of in KPI as part of the pod optimized item
 					containerInfoMap["EnvironmentVar"] = containerMap["env"].(string)
@@ -483,7 +482,11 @@ func GetContainerInventoryHelper(podList map[string]interface{}, namespaceFilter
 			namespace := metadata["namespace"].(string)
 
 			if !IsExcludeResourceItem(name, namespace, namespaceFilteringMode, namespaces) {
-				containerInventoryRecords := GetContainerInventoryRecords(item.(map[string]interface{}), batchTime, clusterCollectEnvironmentVar, false)
+				isWindows := false
+				if strings.EqualFold(osType, "windows") {
+					isWindows = true
+				}
+				containerInventoryRecords := GetContainerInventoryRecords(item.(map[string]interface{}), batchTime, clusterCollectEnvironmentVar, isWindows)
 
 				for _, containerRecord := range containerInventoryRecords {
 					WriteContainerState(containerRecord)

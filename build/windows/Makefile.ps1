@@ -161,12 +161,50 @@ if ($isCDPxEnvironment) {
   Write-Host("successfully got latest go modules") -ForegroundColor Green
 
   go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o out_oms.so .
+
+  $inputdir = Join-Path -Path $rootdir -ChildPath "source\plugins\go\input"
+  Set-Location -Path $inputdir
+
+  Write-Host("Installing the cmetrics-go package")
+  git clone https://github.com/calyptia/cmetrics-go.git
+  Set-Location -Path $inputdir\cmetrics-go
+  git checkout v0.1.7
+  cp $inputdir\cmetrics_windows.go .
+
+  Set-Location -Path $inputdir
+  # Append a string to go.mod file
+  $goModFile = Get-Content -Path $inputdir\go.mod
+  $goModFile += "replace github.com/calyptia/cmetrics-go => ./cmetrics-go"
+  $goModFile | Set-Content -Path $inputdir\go.mod
+
+  cat $inputdir\go.mod
+
+  Write-Host("getting latest go modules ...")
+  go get
+  Write-Host("successfully got latest go modules") -ForegroundColor Green
+  $containerinventorydir = Join-Path -Path $rootdir -ChildPath "source\plugins\go\input\containerinventory"
+  Remove-Item -Path $containerinventorydir\* -Include *.so,*.h -Force -ErrorAction Stop
+  Set-Location -Path $containerinventorydir
+  go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o containerinventory.so .
+
+  $perfdir = Join-Path -Path $rootdir -ChildPath "source\plugins\go\input\perf"
+  Set-Location -Path $perfdir
+  go build -ldflags "-X 'main.revision=$buildVersionString' -X 'main.builddate=$buildVersionDate'" -buildmode=c-shared -o perf.so .
+
 }
 
 
 Write-Host("copying out_oms.so file to : $publishdir")
 Copy-Item -Path (Join-path -Path $outomsgoplugindir -ChildPath "out_oms.so")  -Destination $publishdir -Force
 Write-Host("successfully copied out_oms.so file to : $publishdir") -ForegroundColor Green
+
+Write-Host("copying containerinventory.so file to : $publishdir")
+Copy-Item -Path (Join-path -Path $containerinventorydir -ChildPath "containerinventory.so")  -Destination $publishdir -Force
+Write-Host("successfully copied containerinventory.so file to : $publishdir") -ForegroundColor Green
+
+Write-Host("copying perf.so file to : $publishdir")
+Copy-Item -Path (Join-path -Path $perfdir -ChildPath "perf.so")  -Destination $publishdir -Force
+Write-Host("successfully copied perf.so file to : $publishdir") -ForegroundColor Green
 
 # compile and build the liveness probe cpp code
 Write-Host("Start:build livenessprobe cpp code")
