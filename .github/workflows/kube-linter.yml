@@ -24,7 +24,7 @@ jobs:
         id: kube-linter-action-scan
         with:
           # Adjust this directory to the location where your kubernetes resources and helm charts are located.
-          directory: charts/, kubernetes/linux/
+          directory: charts/
           # Adjust this to the location of kube-linter config you're using, or remove the setting if you'd like to use
           # the default config.
           # config: sample/.kube-linter-config.yaml
@@ -37,7 +37,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload SARIF report files to GitHub
-        uses: github/codeql-action/upload-sarif@v1
+        uses: github/codeql-action/upload-sarif@v2
 
       # Ensure the workflow eventually fails if files did not pass kube-linter checks.
       - name: Verify kube-linter-action succeeded
