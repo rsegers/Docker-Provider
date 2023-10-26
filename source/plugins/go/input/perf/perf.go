@@ -5,12 +5,12 @@ import (
 	"Docker-Provider/source/plugins/go/src/extension"
 	"context"
 	"errors"
+	"log"
 	"math"
 	"os"
 	"strconv"
 	"strings"
 	"time"
-	"log"
 
 	"github.com/calyptia/plugin"
 )
@@ -27,7 +27,7 @@ type perfPlugin struct {
 }
 
 var (
-	FLBLogger *log.Logger
+	FLBLogger                 *log.Logger
 	namespaceFilteringMode    = "off"
 	namespaces                []string
 	addonTokenAdapterImageTag = ""
@@ -38,8 +38,8 @@ var (
 	containerType             = os.Getenv("CONTAINER_TYPE")
 	hostName                  = ""
 	isWindows                 = false
-	telemetryTimeTracker      int64
-	isFromCache	       = false
+	telemetryTimeTracker      = time.Now().Unix()
+	isFromCache               = false
 )
 
 // Init An instance of the configuration loader will be passed to the Init method so all the required
@@ -90,28 +90,27 @@ func (p perfPlugin) Collect(ctx context.Context, ch chan<- plugin.Message) error
 			return nil
 		case <-tick.C:
 			emitTime := time.Now()
-			telemetryTimeTracker = emitTime.Unix()
 			FLBLogger.Print("perf::enumerate.start @ ", time.Now().UTC().Format(time.RFC3339))
 			perfmessages, insightsmetricsmessages := p.enumerate()
 			FLBLogger.Print("perf::enumerate.end @ ", time.Now().UTC().Format(time.RFC3339))
 
 			ch <- plugin.Message{
-				Record: map[string]any {
-					"tag":     tag,
+				Record: map[string]any{
+					"tag":      tag,
 					"messages": perfmessages,
 				},
 				Time: emitTime,
 			}
-			FLBLogger.Print("perf::emitted ", len(perfmessages) ," perf records @ ", time.Now().UTC().Format(time.RFC3339))
+			FLBLogger.Print("perf::emitted ", len(perfmessages), " perf records @ ", time.Now().UTC().Format(time.RFC3339))
 			ch <- plugin.Message{
-				Record: map[string]any {
-					"tag":     insightsmetricstag,
+				Record: map[string]any{
+					"tag":      insightsmetricstag,
 					"messages": insightsmetricsmessages,
 				},
 				Time: emitTime,
 			}
 
-			FLBLogger.Print("perf::emitted ", len(insightsmetricsmessages) ," insights metrics records @ ", time.Now().UTC().Format(time.RFC3339))
+			FLBLogger.Print("perf::emitted ", len(insightsmetricsmessages), " insights metrics records @ ", time.Now().UTC().Format(time.RFC3339))
 
 			timeDifference := int(math.Abs(float64(time.Now().Unix() - telemetryTimeTracker)))
 			timeDifferenceInMinutes := timeDifference / 60

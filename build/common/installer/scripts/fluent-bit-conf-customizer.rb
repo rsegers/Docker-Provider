@@ -34,8 +34,8 @@ end
 
 def substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
   if !resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true"
-    new_contents = new_contents.gsub("#${ResourceOptimizationEnabled} @INCLUDE", "@INCLUDE")
-    new_contents = new_contents.gsub("#${ResourceOptimizationEnabled}    plugins_file", "    plugins_file")
+    new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/opt/microsoft/docker-cimprov/azm-containers-input-plugins.conf")
+    new_contents = new_contents.gsub("#${ResourceOptimizationFBConfigFile}", "@INCLUDE fluent-bit-input.conf")
   end
 
   return new_contents

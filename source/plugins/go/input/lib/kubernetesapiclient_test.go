@@ -1,8 +1,8 @@
 package lib
 
 import (
-	"testing"
 	"os"
+	"testing"
 )
 
 func TestGetResourceUri(t *testing.T) {

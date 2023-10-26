@@ -1,10 +1,10 @@
 package lib
 
 import (
-	"os"
-	"testing"
 	"io/ioutil"
+	"os"
 	"strings"
+	"testing"
 )
 
 func TestIsAADMSIAuthMode(t *testing.T) {
@@ -59,7 +59,7 @@ func TestLogger(t *testing.T) {
 		t.Error(err)
 	}
 	defer file.Close()
-	
+
 	fileContents, _ := ioutil.ReadAll(file)
 
 	if !strings.Contains(string(fileContents), "Test log message") {

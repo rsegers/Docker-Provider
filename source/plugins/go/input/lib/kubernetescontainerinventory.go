@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
-	"log"
 )
 
 var (
@@ -19,7 +19,6 @@ var (
 	addonTokenAdapterImageTag = ""
 	FLBLogger                 *log.Logger
 )
-
 
 func init() {
 	osType := os.Getenv("OS_TYPE")
@@ -390,13 +389,13 @@ func obtainContainerEnvironmentVarsFromPodsResponse(pod map[string]interface{}, 
 			envValueString = `["AZMON_COLLECT_ENV=FALSE"]`
 			fmt.Printf("Environment Variable collection for container: %s skipped because AZMON_COLLECT_ENV is set to false\n", containerName)
 		} else if len(envValueString) > 200000 { // Restricting the ENV string value to 200kb since the size of this string can go very high
-				envValueStringTruncated := envValueString[:200000]
-				lastIndex := strings.LastIndex(envValueStringTruncated, `",`)
-				if lastIndex != -1 {
-					envValueString = envValueStringTruncated[:lastIndex+2] + "]"
-				} else {
-					envValueString = envValueStringTruncated
-				}
+			envValueStringTruncated := envValueString[:200000]
+			lastIndex := strings.LastIndex(envValueStringTruncated, `",`)
+			if lastIndex != -1 {
+				envValueString = envValueStringTruncated[:lastIndex+2] + "]"
+			} else {
+				envValueString = envValueStringTruncated
+			}
 		}
 	}
 

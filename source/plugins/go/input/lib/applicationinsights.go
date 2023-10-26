@@ -1,7 +1,6 @@
 package lib
 
 import (
-	"context"
 	"encoding/base64"
 	"log"
 	"net/http"
@@ -10,7 +9,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/docker/docker/client"
 	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 )
 
@@ -40,7 +38,7 @@ var (
 )
 
 var controllerType = map[string]string{
-	"daemonset": "DS",
+	"daemonset":  "DS",
 	"replicaset": "RS",
 }
 
@@ -82,13 +80,14 @@ func init() {
 		customProperties["Region"] = os.Getenv(envAksRegion)
 	}
 
-	customProperties["WSID"] = getWorkspaceId()
+	customProperties["WSID"] = os.Getenv("WSID")
 	customProperties["Version"] = os.Getenv(envAgentVersion)
 	customProperties["Controller"] = controllerType[strings.ToLower(os.Getenv(envController))]
 	customProperties["Computer"] = hostName
 	encodedAppInsightsKey := os.Getenv(envAppInsights)
 	appInsightsEndpoint := os.Getenv(envAppEndpoint)
 	customProperties["WSCloud"] = getWorkspaceCloud()
+	customProperties["cri"] = os.Getenv(envContainerRT)
 	isProxyConfigured := false
 	if proxyEndpoint != "" {
 		customProperties["Proxy"] = "true"
@@ -155,14 +154,6 @@ func init() {
 
 }
 
-func getContainerRuntimeInfo() {
-	containerRuntime := os.Getenv(envContainerRT)
-	if containerRuntime != "" {
-		// cri field holds either containerRuntime for non-docker or Dockerversion if its docker
-		customProperties["cri"] = containerRuntime
-	}
-}
-
 func sendHeartBeatEvent(pluginName string) {
 	eventName := pluginName + heartBeat
 	if telemetryClient != nil {
@@ -179,7 +170,7 @@ func sendLastProcessedContainerInventoryCountMetric(pluginName string, propertie
 		metric := appinsights.NewMetricTelemetry("LastProcessedContainerInventoryCount", containerCount)
 		metric.Properties = customProperties
 		telemetryClient.Track(metric)
-		aiLogger.Printf("AppInsights Container Count Telemetry sput successfully into the queue")
+		aiLogger.Printf("AppInsights Container Count Telemetry put successfully into the queue")
 	}
 }
 
@@ -205,10 +196,6 @@ func SendCustomEvent(eventName string, properties map[string]string) {
 }
 
 func SendExceptionTelemetry(errorStr string, properties map[string]string) {
-	if customProperties["cri"] == "" {
-		getContainerRuntimeInfo()
-	}
-
 	telemetryProps := make(map[string]string)
 
 	// add common dimensions
@@ -230,10 +217,6 @@ func SendExceptionTelemetry(errorStr string, properties map[string]string) {
 }
 
 func SendTelemetry(pluginName string, properties map[string]string) {
-	if customProperties["cri"] == "" {
-		getContainerRuntimeInfo()
-	}
-
 	customProperties["Computer"] = properties["Computer"]
 	if v, ok := properties["addonTokenAdapterImageTag"]; ok && v != "" {
 		customProperties["addonTokenAdapterImageTag"] = v
@@ -247,10 +230,6 @@ func SendMetricTelemetry(metricName string, metricValue float64, properties map[
 	if metricName == "" {
 		log.Println("SendMetricTelemetry: metricName is missing")
 		return
-	}
-
-	if customProperties["cri"] == "" {
-		getContainerRuntimeInfo()
 	}
 
 	telemetryProps := make(map[string]string)
@@ -277,14 +256,6 @@ func SendException(err interface{}) {
 	if telemetryClient != nil {
 		telemetryClient.TrackException(err)
 	}
-}
-
-func getWorkspaceId() string {
-	workspaceID := os.Getenv("WSID")
-	if workspaceID == "" {
-		aiLogger.Printf("Exception in AppInsightsUtility: getWorkspaceId - WorkspaceID either nil or empty")
-	}
-	return workspaceID
 }
 
 func getWorkspaceCloud() string {

@@ -2,8 +2,8 @@ package lib
 
 import (
 	"encoding/json"
-	"testing"
 	"io/ioutil"
+	"testing"
 )
 
 func Test_GetMetricsHelper(t *testing.T) {

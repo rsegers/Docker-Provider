@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 )
+
 func TestIsProxyCACertConfigured(t *testing.T) {
 	// Create a test proxy cert file
 	proxyCertPath = "./test-proxy-cert.crt"

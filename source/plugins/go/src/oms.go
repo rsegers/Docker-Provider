@@ -138,7 +138,7 @@ var (
 	// Client for MDSD msgp Unix socket for Insights Metrics
 	MdsdInsightsMetricsMsgpUnixSocketClient net.Conn
 	// Client for MDSD msgp Unix socket for Input Plugin Records
-	MdsdInpuPluginRecordsMsgpUnixSocketClient net.Conn
+	MdsdInputPluginRecordsMsgpUnixSocketClient net.Conn
 	// Ingestor for ADX
 	ADXIngestor *ingest.Ingestion
 	// OMSEndpoint ingestion endpoint
@@ -1136,7 +1136,6 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 	ContainerLogTelemetryMutex.Unlock()
 }
 
-
 func toStringMap(record map[interface{}]interface{}) map[string]interface{} {
 	tag := record["tag"].([]byte)
 	mp := make(map[string]interface{})
@@ -1148,16 +1147,15 @@ func toStringMap(record map[interface{}]interface{}) map[string]interface{} {
 		m := make(map[string]interface{})
 		for k, v := range newEntry {
 			switch t := v.(type) {
-				case []byte:
-					m[k.(string)] = string(t)
-				default:
-					m[k.(string)] = v
+			case []byte:
+				m[k.(string)] = string(t)
+			default:
+				m[k.(string)] = v
 			}
 		}
 		mp["messages"] = append(mp["messages"].([]map[string]interface{}), m)
 	}
 
-		
 	return mp
 }
 
@@ -1169,7 +1167,7 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 	for _, record := range inputPluginRecords {
 		val := toStringMap(record)
 		tag := val["tag"].(string)
-		Log("Info::PostInputPluginRecords tag: %s\n",tag)
+		Log("Info::PostInputPluginRecords tag: %s\n", tag)
 		messages := val["messages"].([]map[string]interface{})
 		for _, message := range messages {
 			stringMap := convertMap(message)
@@ -1182,27 +1180,27 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 		if !IsWindows && len(msgPackEntries) > 0 { //for linux, mdsd route
 			Log("Info::mdsd:: using mdsdsource name for input plugin records: %s", tag)
 			msgpBytes := convertMsgPackEntriesToMsgpBytes(tag, msgPackEntries)
-			if MdsdInpuPluginRecordsMsgpUnixSocketClient == nil {
+			if MdsdInputPluginRecordsMsgpUnixSocketClient == nil {
 				Log("Error::mdsd::mdsd connection for input plugin records does not exist. re-connecting ...")
 				CreateMDSDClient(InputPluginRecords, ContainerType)
-				if MdsdInpuPluginRecordsMsgpUnixSocketClient == nil {
+				if MdsdInputPluginRecordsMsgpUnixSocketClient == nil {
 					Log("Error::mdsd::Unable to create mdsd client for InputPluginRecords. Please check error log.")
 					ContainerLogTelemetryMutex.Lock()
 					defer ContainerLogTelemetryMutex.Unlock()
 					InputPluginRecordsErrors += 1
 				}
 			}
-			if MdsdInpuPluginRecordsMsgpUnixSocketClient != nil {
+			if MdsdInputPluginRecordsMsgpUnixSocketClient != nil {
 				deadline := 10 * time.Second
-				MdsdInpuPluginRecordsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-				bts, er := MdsdInpuPluginRecordsMsgpUnixSocketClient.Write(msgpBytes)
+				MdsdInputPluginRecordsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+				bts, er := MdsdInputPluginRecordsMsgpUnixSocketClient.Write(msgpBytes)
 				elapsed := time.Since(start)
 				if er != nil {
 					message := fmt.Sprintf("Error::mdsd::Failed to write to input plugin mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
 					Log(message)
-					if MdsdInpuPluginRecordsMsgpUnixSocketClient != nil {
-						MdsdInpuPluginRecordsMsgpUnixSocketClient.Close()
-						MdsdInpuPluginRecordsMsgpUnixSocketClient = nil
+					if MdsdInputPluginRecordsMsgpUnixSocketClient != nil {
+						MdsdInputPluginRecordsMsgpUnixSocketClient.Close()
+						MdsdInputPluginRecordsMsgpUnixSocketClient = nil
 					}
 					SendException(message)
 				} else {
@@ -1230,10 +1228,6 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 
 	return 0
 }
-
-
-
-
 
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
 func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {

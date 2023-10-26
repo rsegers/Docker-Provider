@@ -22,8 +22,8 @@ import (
 const (
 	CADVISOR_SECURE_PORT     = "10250"
 	CADVISOR_NON_SECURE_PORT = "10255"
-	CERT_LOCATION            = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-	BEARER_TOKEN_LOCATION    = "/var/run/secrets/kubernetes.io/serviceaccount/token"
+	CA_CERT_PATH             = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
+	BEARER_TOKEN_FILE        = "/var/run/secrets/kubernetes.io/serviceaccount/token"
 )
 
 // Constants for metric keys
@@ -68,7 +68,7 @@ var (
 	winNodePrevMetricRate                   = map[string]float64{}
 	winNodeCpuUsageNanoSecondsLast          = map[string]float64{}
 	winNodeCpuUsageNanoSecondsTimeLast      = map[string]interface{}{}
-	Log 					*logrus.Logger
+	Log                                     *logrus.Logger
 )
 
 func init() {
@@ -102,16 +102,6 @@ func getSummaryStatsFromCAdvisor(winNode map[string]string) (*http.Response, err
 	relativeUri := "/stats/summary"
 	return getResponse(winNode, relativeUri)
 }
-
-// func getCongifzCAdvisor(winNode map[string]string) (*http.Response, error) {
-// 	relativeUri := "/configz"
-// 	return getResponse(winNode, relativeUri)
-// }
-
-// func getAllMetricsCAdvisor(winNode map[string]string) (*http.Response, error) {
-// 	relativeUri := "/metrics/cadvisor"
-// 	return getResponse(winNode, relativeUri)
-// }
 
 func GetPodsFromCAdvisor(winNode map[string]string) (*http.Response, error) {
 	relativeUri := "/pods"
@@ -171,7 +161,7 @@ func isCAdvisorOnSecurePort() bool {
 func getResponse(winNode map[string]string, relativeUri string) (*http.Response, error) {
 	var response *http.Response
 	Log.Infof("Getting CAdvisor Uri Response")
-	bearerToken, _ := ioutil.ReadFile(BEARER_TOKEN_LOCATION)
+	bearerToken, _ := ioutil.ReadFile(BEARER_TOKEN_FILE)
 
 	cAdvisorUri := getCAdvisorUri(winNode, relativeUri)
 	Log.Infof("CAdvisor Uri: %s", cAdvisorUri)
@@ -185,7 +175,7 @@ func getResponse(winNode map[string]string, relativeUri string) (*http.Response,
 
 		var httpClient *http.Client
 		if isCAdvisorOnSecurePort() {
-			caCert, err := ioutil.ReadFile(CERT_LOCATION)
+			caCert, err := ioutil.ReadFile(CA_CERT_PATH)
 			if err != nil {
 				Log.Errorf("Failed to read CA cert: %s", err)
 				return nil, err
@@ -198,8 +188,7 @@ func getResponse(winNode map[string]string, relativeUri string) (*http.Response,
 				Transport: &http.Transport{
 					Proxy: http.ProxyFromEnvironment,
 					DialContext: (&net.Dialer{
-						Timeout:   20 * time.Second,
-						KeepAlive: 0,
+						Timeout: 20 * time.Second,
 					}).DialContext,
 					TLSHandshakeTimeout:   20 * time.Second,
 					ExpectContinueTimeout: 1 * time.Second,
@@ -320,17 +309,6 @@ func GetMetricsHelper(metricInfo map[string]interface{}, winNode map[string]stri
 
 		metricDataItems = append(metricDataItems, getNodeMetricItem(metricInfo, hostName, "memory", "workingSetBytes", MEMORY_WORKING_SET_BYTES, metricTime))
 		metricDataItems = append(metricDataItems, getNodeLastRebootTimeMetric(metricInfo, hostName, "restartTimeEpoch", metricTime))
-		// Disabling networkRxRate and networkTxRate since we don't use it as of now.
-		// metricDataItems = append(metricDataItems, getNodeMetricItem(metricInfo, hostName, "network", "rxBytes", "networkRxBytes"))
-		// metricDataItems = append(metricDataItems, getNodeMetricItem(metricInfo, hostName, "network", "txBytes", "networkTxBytes"))
-		// networkRxRate := getNodeMetricItemRate(metricInfo, hostName, "network", "rxBytes", "networkRxBytesPerSec")
-		// if networkRxRate != nil && len(networkRxRate) > 0 {
-		// 	metricDataItems = append(metricDataItems, networkRxRate...)
-		// }
-		// networkTxRate := getNodeMetricItemRate(metricInfo, hostName, "network", "txBytes", "networkTxBytesPerSec")
-		// if networkTxRate != nil && len(networkTxRate) > 0 {
-		// 	metricDataItems = append(metricDataItems, networkTxRate...)
-		// }
 	}
 
 	return metricDataItems
@@ -663,16 +641,16 @@ func getNodeMetricItemRate(metricInfo map[string]interface{}, hostName, metricGr
 				if timeDifference.Seconds() > 0 && nodeCpuUsageDifference != 0 {
 					metricRateValue = nodeCpuUsageDifference / timeDifference.Seconds()
 				} else if linuxNodePrevMetricRate != 0.0 {
-						metricRateValue = linuxNodePrevMetricRate
+					metricRateValue = linuxNodePrevMetricRate
 				}
-				
+
 				nodeCpuUsageNanoSecondsLast = metricValue.(float64)
 				nodeCpuUsageNanoSecondsTimeLast = metricTime
 				linuxNodePrevMetricRate = metricRateValue
 				metricValue = metricRateValue
 			}
 		} else if operatingSystem == "Windows" {
-			if _, ok := winNodeCpuUsageNanoSecondsLast[hostName]; ok  || winNodeCpuUsageNanoSecondsTimeLast[hostName] == nil || winNodeCpuUsageNanoSecondsLast[hostName] > metricValue.(float64) {
+			if _, ok := winNodeCpuUsageNanoSecondsLast[hostName]; ok || winNodeCpuUsageNanoSecondsTimeLast[hostName] == nil || winNodeCpuUsageNanoSecondsLast[hostName] > metricValue.(float64) {
 				winNodeCpuUsageNanoSecondsLast[hostName] = metricValue.(float64)
 				winNodeCpuUsageNanoSecondsTimeLast[hostName] = metricTime
 				return nil
@@ -686,9 +664,9 @@ func getNodeMetricItemRate(metricInfo map[string]interface{}, hostName, metricGr
 				if timeDifference.Seconds() > 0 && nodeCpuUsageDifference != 0 {
 					metricRateValue = nodeCpuUsageDifference / timeDifference.Seconds()
 				} else if winNodePrevMetricRate[hostName] != 0.0 {
-						metricRateValue = winNodePrevMetricRate[hostName]
+					metricRateValue = winNodePrevMetricRate[hostName]
 				}
-				
+
 				winNodeCpuUsageNanoSecondsLast[hostName] = metricValue.(float64)
 				winNodeCpuUsageNanoSecondsTimeLast[hostName] = metricTime
 				winNodePrevMetricRate[hostName] = metricRateValue
@@ -785,12 +763,6 @@ func getNodeLastRebootTimeMetric(metricInfo map[string]interface{}, hostName, me
 		return nodeMetricItem
 	}
 
-	// metricValue, found := node["startTime"].(string)
-	// if !found {
-	// 	Log.Println("Metric value not found in the metricInfo.")
-	// 	return nodeMetricItem
-	// }
-
 	nodeMetricItem["Timestamp"] = metricTime
 	nodeMetricItem["Host"] = hostName
 	nodeMetricItem["ObjectName"] = OBJECT_NAME_K8S_NODE
@@ -815,7 +787,7 @@ func getNodeLastRebootTimeMetric(metricInfo map[string]interface{}, hostName, me
 		Log.Warnf("Error parsing uptime value: %s", err)
 		return nodeMetricItem
 	}
-	
+
 	timeDifference := parsedTime.Unix() - int64(uptimeSeconds)
 
 	metricCollection := map[string]interface{}{

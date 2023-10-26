@@ -35,8 +35,8 @@ var (
 	runInterval               = 60
 	containerType             = os.Getenv("CONTAINER_TYPE")
 	hostName                  = ""
-	telemetryTimeTracker      int64
-	isFromCache	       = false
+	telemetryTimeTracker      = time.Now().Unix()
+	isFromCache               = false
 )
 
 // Init An instance of the configuration loader will be passed to the Init method so all the required
@@ -83,19 +83,18 @@ func (p containerInventoryPlugin) Collect(ctx context.Context, ch chan<- plugin.
 			return nil
 		case <-tick.C:
 			emitTime := time.Now()
-			telemetryTimeTracker = emitTime.Unix()
 			FLBLogger.Print("containerinventory::enumerate.start @ ", time.Now().UTC().Format(time.RFC3339))
 			messages := p.enumerate()
 			FLBLogger.Print("containerinventory::enumerate.end @ ", time.Now().UTC().Format(time.RFC3339))
 
 			ch <- plugin.Message{
-				Record: map[string]any {
-					"tag":     tag,
+				Record: map[string]any{
+					"tag":      tag,
 					"messages": messages,
 				},
 				Time: emitTime,
 			}
-			FLBLogger.Print("containerinventory::emitted ", len(messages) ," container inventory records @ ", time.Now().UTC().Format(time.RFC3339))
+			FLBLogger.Print("containerinventory::emitted ", len(messages), " container inventory records @ ", time.Now().UTC().Format(time.RFC3339))
 
 			timeDifference := int(math.Abs(float64(time.Now().Unix() - telemetryTimeTracker)))
 			timeDifferenceInMinutes := timeDifference / 60

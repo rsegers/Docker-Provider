@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/golang-jwt/jwt/v5"
 	"io/ioutil"
 	"log"
 	"math"
@@ -14,7 +15,6 @@ import (
 	"os"
 	"strings"
 	"time"
-	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -117,13 +117,13 @@ func getResourceUri(resource string, api_group *string) (string, error) {
 	if serviceHostExist && servicePortExist {
 		switch {
 		case api_group == nil:
-		    return "https://" + serviceHost + ":" + servicePort + "/api/" + ApiVersion + "/" + resource, nil
+			return "https://" + serviceHost + ":" + servicePort + "/api/" + ApiVersion + "/" + resource, nil
 		case *api_group == ApiGroupApps:
-		    return "https://" + serviceHost + ":" + servicePort + "/apis/apps/" + ApiVersionApps + "/" + resource, nil
+			return "https://" + serviceHost + ":" + servicePort + "/apis/apps/" + ApiVersionApps + "/" + resource, nil
 		case *api_group == ApiGroupHPA:
-		    return "https://" + serviceHost + ":" + servicePort + "/apis/" + ApiGroupHPA + "/" + ApiVersionHPA + "/" + resource, nil
+			return "https://" + serviceHost + ":" + servicePort + "/apis/" + ApiGroupHPA + "/" + ApiVersionHPA + "/" + resource, nil
 		default:
-		    return "", fmt.Errorf("unsupported API group: %s", *api_group)
+			return "", fmt.Errorf("unsupported API group: %s", *api_group)
 		}
 	} else {
 		logger.Println("Kubernetes environment variable not set KUBERNETES_SERVICE_HOST: ", serviceHost, " KUBERNETES_PORT_443_TCP_PORT: ", servicePort, ". Unable to form resourceUri")
@@ -329,4 +329,3 @@ func GetClusterName() string {
 	}
 	return ClusterName
 }
-

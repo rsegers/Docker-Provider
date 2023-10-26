@@ -26,7 +26,6 @@ const (
 	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE = "namespaceFilteringMode"
 )
 
-
 var singleton *Extension
 var once sync.Once
 var extensionconfiglock sync.Mutex

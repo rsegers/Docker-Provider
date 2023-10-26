@@ -352,13 +352,15 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         puts "Using config map value: AZMON_MULTILINE_ENABLED = #{@multiline_enabled}"
       end
 
-      resource_optimization_config = parsedConfig[:agent_settings][:resource_optimization]
-      if !resource_optimization_config.nil?
-        resource_optimization_enabled = resource_optimization_config[:enabled]
-        if !resource_optimization_enabled.nil? && resource_optimization_enabled.downcase == "true"
-          @resource_optimization_enabled = resource_optimization_enabled
+      if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
+        resource_optimization_config = parsedConfig[:agent_settings][:resource_optimization]
+        if !resource_optimization_config.nil?
+          resource_optimization_enabled = resource_optimization_config[:enabled]
+          if !resource_optimization_enabled.nil? && resource_optimization_enabled.downcase == "true"
+            @resource_optimization_enabled = resource_optimization_enabled
+          end
+          puts "Using config map value: AZMON_RESOURCE_OPTIMIZATION_ENABLED = #{@resource_optimization_enabled}"
         end
-        puts "Using config map value: AZMON_RESOURCE_OPTIMIZATION_ENABLED = #{@resource_optimization_enabled}"
       end
 
       network_listener_waittime_config = parsedConfig[:agent_settings][:network_listener_waittime]
