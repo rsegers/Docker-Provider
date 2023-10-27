@@ -3,11 +3,6 @@ import { CertificateStoreName, NamespaceName, WebhookDNSEndpoint, WebhookName } 
 import forge from 'node-forge';
 import { logger } from './LoggerWrapper.js';
 
-class CertData {
-    certificate: string;
-    serviceKey: string;
-}
-
 class WebhookCertData {
     caCert: string;
     caKey: string;
