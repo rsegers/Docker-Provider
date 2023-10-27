@@ -20,7 +20,16 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
     }
     
     process.exit();
-} 
+} else if ("secrets-housekeeper".localeCompare(containerMode) === 0) {
+    try {
+        logger.info("Running in certificate housekeeper mode...");
+        await CertificateManager.CreateWebhookAndCertificates();
+    } catch (error) {
+        logger.error(JSON.stringify(error));
+        logger.error("Failed to Update Certificates, Terminating...");
+        throw error;
+    }
+}
 const crs: AppMonitoringConfigCRsCollection = new AppMonitoringConfigCRsCollection();
 
 logger.info("Running in server mode...");
