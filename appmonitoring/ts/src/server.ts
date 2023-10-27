@@ -23,7 +23,7 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
 } else if ("secrets-housekeeper".localeCompare(containerMode) === 0) {
     try {
         logger.info("Running in certificate housekeeper mode...");
-        await CertificateManager.CreateWebhookAndCertificates();
+        await CertificateManager.ReconcileWebhookAndCertificates();
     } catch (error) {
         logger.error(JSON.stringify(error));
         logger.error("Failed to Update Certificates, Terminating...");
