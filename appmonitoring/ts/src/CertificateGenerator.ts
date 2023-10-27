@@ -290,13 +290,14 @@ export class CertificateManager {
     }
 
     private static async PatchWebhookAndCertificates(kc: k8s.KubeConfig, certificates: WebhookCertData) {
-        logger.info('Patching MutatingWebhookConfiguration...');
-        await CertificateManager.PatchMutatingWebhook(kc, certificates)
-        logger.info('MutatingWebhookConfiguration patched successfully');
 
         logger.info('Patching Secret Store...');
         await CertificateManager.PatchSecretStore(kc, certificates);
         logger.info('Secret Store patched successfully');
+        
+        logger.info('Patching MutatingWebhookConfiguration...');
+        await CertificateManager.PatchMutatingWebhook(kc, certificates);
+        logger.info('MutatingWebhookConfiguration patched successfully');
     }
 
 }
