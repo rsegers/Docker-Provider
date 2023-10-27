@@ -109,7 +109,7 @@ export class CertificateManager {
         return newHostCert;
     }
 
-    private static async CreateOrUpdateCertificates(currentCACert?: forge.pki.Certificate, currentHostCertificate?: forge.pki.Certificate): Promise<WebhookCertData> {
+    private static async CreateOrUpdateCertificates(currentCACert?: forge.pki.Certificate): Promise<WebhookCertData> {
         try {
             
             let caCert: forge.pki.Certificate = null;
@@ -294,7 +294,7 @@ export class CertificateManager {
         logger.info('Patching Secret Store...');
         await CertificateManager.PatchSecretStore(kc, certificates);
         logger.info('Secret Store patched successfully');
-        
+
         logger.info('Patching MutatingWebhookConfiguration...');
         await CertificateManager.PatchMutatingWebhook(kc, certificates);
         logger.info('MutatingWebhookConfiguration patched successfully');
