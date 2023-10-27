@@ -113,83 +113,27 @@ export class CertificateManager {
         try {
             
             let caCert: forge.pki.Certificate = null;
-            let caCertResult: CertData = null;
+            let caCertResult: forge.pki.Certificate = currentCACert;
             const timeNowNum: number = Date.now();
 
-            if (!currentCACert) {
-                caCertResult = CertificateManager.GenerateCACertificate()
+            if (!caCertResult) {
+                caCertResult = await CertificateManager.GenerateCACertificate()
             }
 
-            let pemHostCert: string = null;
-            let pemHostKey: string = null;
+            const hostCertificate = await CertificateManager.GenerateHostCertificate(caCertResult);
 
-            if (!currentHostCertificate) {
-                const host_attributes = [{
-                    shortName: 'CN',
-                    value: WebhookDNSEndpoint
-                }];
-            
-                const host_extensions = [{
-                    name: 'basicConstraints',
-                    cA: false
-                }, 
-                {
-                    name: 'authorityKeyIdentifier',
-                    keyIdentifier: caCert.generateSubjectKeyIdentifier().getBytes(),
-                }, 
-                {
-                    name: 'keyUsage',
-                    digitalSignature: true,
-                    keyEncipherment: true
-                },
-                {
-                    name: 'extKeyUsage',
-                    serverAuth: true
-                }, 
-                {
-                    name: 'subjectAltName',
-                    altNames: [{ type: 2, value: WebhookDNSEndpoint }]
-                }];
-    
-                const newHostCert = forge.pki.createCertificate();
-                const hostKeys = forge.pki.rsa.generateKeyPair(4096);
-    
-                // Set the attributes for the new Host Certificate
-                newHostCert.publicKey = hostKeys.publicKey;
-                newHostCert.serialNumber = CertificateManager.randomHexSerialNumber();
-                newHostCert.validity.notBefore = new Date(timeNowNum - (5 * 60 * 1000)); //5 Mins ago
-                newHostCert.validity.notAfter = new Date(timeNowNum + (2 * 365 * 24 * 60 * 60 * 1000)); //2 Years from now
-                newHostCert.setSubject(host_attributes);
-                newHostCert.setIssuer(caCert.subject.attributes);
-                newHostCert.setExtensions(host_extensions);
-    
-                // Sign the new Host Certificate using the CA
-                newHostCert.sign(caCert.privateKey, forge.md.sha256.create());
-    
-                // // Convert to PEM format
-                pemHostCert = forge.pki.certificateToPem(newHostCert);
-                pemHostKey = forge.pki.privateKeyToPem(hostKeys.privateKey);
-            }
-            
             return {
-                caCert: caCertResult.certificate,
-                caKey: caCertResult.serviceKey,
-                tlsCert: pemHostCert,
-                tlsKey: pemHostKey
+                caCert: forge.pki.certificateToPem(caCertResult),
+                caKey: forge.pki.privateKeyToPem(caCertResult.privateKey),
+                tlsCert: forge.pki.certificateToPem(hostCertificate),
+                tlsKey: forge.pki.privateKeyToPem(hostCertificate.privateKey)
             } as WebhookCertData;
+            
         } catch (error) {
             logger.error('Self Signed CA Cert generation failed!');
             logger.error(JSON.stringify(error));
             throw error;
         }
-    }
-
-    public static async RegenerateCACerts(kubeConfig: k8s.KubeConfig, caCertificate: CertData) {
-
-    }
-
-    public static async RegenerateServiceCerts(kubeConfig: k8s.KubeConfig, certificate: WebhookCertData) {
-        
     }
 
     public static async PatchSecretStore(kubeConfig: k8s.KubeConfig, certificate: WebhookCertData) {
@@ -344,8 +288,6 @@ export class CertificateManager {
             CertificateManager.PatchWebhookAndCertificates(kc, webhookCertData);
         }
     }
-
-
 
     private static async PatchWebhookAndCertificates(kc: k8s.KubeConfig, certificates: WebhookCertData) {
         logger.info('Patching MutatingWebhookConfiguration...');
