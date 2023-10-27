@@ -106,10 +106,7 @@ export class CertificateManager {
 
     private static async CreateOrUpdateCertificates(currentCACert?: forge.pki.Certificate): Promise<WebhookCertData> {
         try {
-            
-            let caCert: forge.pki.Certificate = null;
             let caCertResult: forge.pki.Certificate = currentCACert;
-            const timeNowNum: number = Date.now();
 
             if (!caCertResult) {
                 caCertResult = await CertificateManager.GenerateCACertificate()
@@ -238,8 +235,8 @@ export class CertificateManager {
         kc.loadFromDefault();
         let certificates: WebhookCertData = null;
 
-        let webhookCertData: WebhookCertData = await CertificateManager.GetSecretDetails(kc);
-        let mwhcCaBundle: string = await CertificateManager.GetMutatingWebhookCABundle(kc);
+        const webhookCertData: WebhookCertData = await CertificateManager.GetSecretDetails(kc);
+        const mwhcCaBundle: string = await CertificateManager.GetMutatingWebhookCABundle(kc);
 
         const matchValidation: boolean = mwhcCaBundle.localeCompare(webhookCertData.caCert) === 0;
         const certSignedByGivenCA: boolean = matchValidation && CertificateManager.isCertificateSignedByCA(webhookCertData.tlsCert, mwhcCaBundle);
@@ -255,10 +252,10 @@ export class CertificateManager {
 
         const timeNow: number = Date.now();
         const dayVal: number = 24 * 60 * 60 * 1000;
-        let shouldUpdate: boolean = false;
+        let shouldUpdate = false;
         let cACert: forge.pki.Certificate = null;
-        let caPublicCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.caCert);
-        let caKeyPair: forge.pki.rsa.KeyPair = {
+        const caPublicCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.caCert);
+        const caKeyPair: forge.pki.rsa.KeyPair = {
             privateKey: forge.pki.privateKeyFromPem(webhookCertData.caKey),
             publicKey: caPublicCertificate.publicKey as forge.pki.rsa.PublicKey
         }
@@ -270,7 +267,7 @@ export class CertificateManager {
             webhookCertData.caCert = forge.pki.certificateToPem(cACert);
         }
 
-        let hostCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.tlsCert);
+        const hostCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.tlsCert);
         daysToExpiry = (hostCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
             shouldUpdate = true;
