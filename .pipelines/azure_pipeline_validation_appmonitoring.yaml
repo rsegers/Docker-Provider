@@ -26,7 +26,7 @@ jobs:
   variables:
     Codeql.SkipTaskAutoInjection: true
   pool:
-    name: Azure-Pipelines-CI-Test-EO
+    name: rambhatt-test-es-pool
   steps:
   - checkout: self
     fetchDepth: 0
@@ -96,7 +96,7 @@ jobs:
   timeoutInMinutes: 120
   dependsOn: common
   pool:
-    name: Azure-Pipelines-CI-Test-EO
+    name: rambhatt-test-es-pool
   variables:
     imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
     Codeql.Enabled: true
