@@ -15,8 +15,8 @@ pr:
     - ai_prod
 
 variables:
-  armServiceConnectionName: 'ci-1es-acr-connection'
-  subscription: '9b96ebbd-c57a-42d1-bbe9-b69296e4c7fb'
+  armServiceConnectionName: 'ai-acr-validation-rsx'
+  subscription: '66010356-d8a5-42d3-8593-6aaa3aeb1c11'
   containerRegistry: 'containerinsightsprod' # this build pushes the aidev image to the dev ACR (caution: ACR that has "prod" in its name is the dev one, the one without "prod" is prod AME)
   repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/applicationinsights/aidev'
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
@@ -26,7 +26,7 @@ jobs:
   variables:
     Codeql.SkipTaskAutoInjection: true
   pool:
-    name: Azure-Pipelines-CI-Test-EO
+    name: rambhatt-test-es-pool
   steps:
   - checkout: self
     fetchDepth: 0
