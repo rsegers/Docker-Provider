@@ -1,7 +1,7 @@
 #telegraf MEDIUM
-CVE-2023-39325
+CVE-2023-39325 #same as CVE-2023-44487
 CVE-2023-3978
-CVE-2023-44487
+CVE-2023-44487 #false positive according to Mariner team
 GHSA-jq35-85cj-fj4p
 
 #telegraf HIGH
