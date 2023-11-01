@@ -45,5 +45,7 @@ jobs:
 
       dir
 
-      cd $(Build.SourcesDirectory)/deployment
+      cd $(Build.SourcesDirectory)
+      
+      dir
     name: setup
