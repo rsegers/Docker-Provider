@@ -9,21 +9,15 @@ require (
 	github.com/Azure/go-autorest/autorest/azure/auth v0.5.12
 	github.com/Azure/go-autorest/autorest/azure/cli v0.4.6 // indirect
 	github.com/Microsoft/go-winio v0.5.2
-	github.com/elazarl/goproxy v0.0.0-20180725130230-947c36da3153 // indirect
-	github.com/emicklei/go-restful v0.0.0-20170410110728-ff4f55a20633 // indirect
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
 	github.com/fluent/fluent-bit-go v0.0.0-20171103221316-c4a158a6e3a7
 	github.com/go-logr/logr v1.3.0 // indirect
 	github.com/go-openapi/jsonpointer v0.20.0 // indirect
-	github.com/go-openapi/spec v0.19.3 // indirect
 	github.com/golang-jwt/jwt/v4 v4.5.0 // indirect
 	github.com/golang/mock v1.6.0
 	github.com/google/go-cmp v0.6.0 // indirect
 	github.com/google/uuid v1.4.0
-	github.com/googleapis/gnostic v0.4.1 // indirect
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
-	github.com/mitchellh/mapstructure v1.1.2 // indirect
-	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/tinylib/msgp v1.1.8
 	github.com/ugorji/go v1.1.2-0.20180813092308-00b869d2f4a5
 	golang.org/x/oauth2 v0.13.0 // indirect
