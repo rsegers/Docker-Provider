@@ -44,8 +44,7 @@ jobs:
       echo "##vso[task.setvariable variable=imageTag;isOutput=true]$imageTag"
 
       dir
+      cd
 
       cd $(Build.SourcesDirectory)
-      
-      dir
     name: setup
