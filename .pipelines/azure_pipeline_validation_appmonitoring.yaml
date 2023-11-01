@@ -15,8 +15,8 @@ pr:
     - ai_prod
 
 variables:
-  armServiceConnectionName: 'ai-acr-validation-rsx'
-  subscription: '66010356-d8a5-42d3-8593-6aaa3aeb1c11'
+  armServiceConnectionName: 'ci-1es-acr-connection'
+  subscription: '9b96ebbd-c57a-42d1-bbe9-b69296e4c7fb'
   containerRegistry: 'containerinsightsprod' # this build pushes the aidev image to the dev ACR (caution: ACR that has "prod" in its name is the dev one, the one without "prod" is prod AME)
   repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/applicationinsights/aidev'
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
@@ -26,7 +26,7 @@ jobs:
   variables:
     Codeql.SkipTaskAutoInjection: true
   pool:
-    name: rambhatt-test-es-pool
+    name: Azure-Pipelines-CI-Test-EO
   steps:
   - checkout: self
     fetchDepth: 0
@@ -42,9 +42,52 @@ jobs:
       echo "imageTag is $imageTag"
       
       echo "##vso[task.setvariable variable=imageTag;isOutput=true]$imageTag"
-
-      dir
-      cd
-
-      cd $(Build.SourcesDirectory)
+      
+      cd $(Build.SourcesDirectory)/deployment/mergebranch-webhook-deployment/ServiceGroupRoot/Scripts
+      tar -czvf ../artifacts.tar.gz pushWebhookToAcr.sh
     name: setup
+
+  - task: CopyFiles@2
+    displayName: "Copy ev2 deployment artifacts"
+    inputs:
+      SourceFolder: "$(Build.SourcesDirectory)/deployment"
+      Contents: |
+        **/*
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+
+  - task: CopyFiles@2
+    displayName: "Copy ev2 deployment scripts"
+    inputs:
+      SourceFolder: "$(Build.SourcesDirectory)/.pipelines"
+      Contents: |
+        **/*.sh
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+
+  - task: CopyFiles@2
+    displayName: "Copy ev2 deployment scripts"
+    inputs:
+      SourceFolder: "$(Build.SourcesDirectory)/kubernetes"
+      Contents: |
+        *.yaml
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+
+  - task: CopyFiles@2
+    displayName: "Copy ev2 deployment scripts"
+    inputs:
+      SourceFolder: "$(Build.SourcesDirectory)/charts"
+      Contents: |
+        **/*
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+
+  - task: CopyFiles@2
+    displayName: "Copy ev2 deployment scripts"
+    inputs:
+      SourceFolder: "$(Build.SourcesDirectory)/test/e2e"
+      Contents: |
+        *.yaml
+      TargetFolder: '$(Build.ArtifactStagingDirectory)/build'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: drop
