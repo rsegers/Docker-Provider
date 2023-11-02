@@ -97,12 +97,12 @@ register_microsoft_gpg_keys()
 
 install_dotnet_sdk()
 {
-  echo "installing dotnet sdk 3.1 ..."
+  echo "installing dotnet sdk 7.0 ..."
   sudo apt-get update -y
   sudo apt-get install -y apt-transport-https
   sudo apt-get update -y
-  sudo apt-get install -y dotnet-sdk-3.1
-  echo "installation of dotnet sdk 3.1 completed."
+  sudo apt-get install -y dotnet-sdk-7.0
+  echo "installation of dotnet sdk 7.0 completed."
 }
 
 install_gcc_for_windows_platform()
