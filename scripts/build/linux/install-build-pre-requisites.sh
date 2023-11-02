@@ -153,7 +153,7 @@ register_microsoft_gpg_keys
 # install cross platform gcc to build the go code for windows platform
 install_gcc_for_windows_platform
 
-# dotnet core sdk 3.1
+# dotnet core sdk 7.0
 install_dotnet_sdk
 
 # powershell core
