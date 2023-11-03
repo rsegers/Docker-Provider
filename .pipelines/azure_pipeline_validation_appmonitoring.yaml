@@ -61,7 +61,7 @@ jobs:
   steps:
   - task: CodeQL3000Init@0
   - task: AzureCLI@2
-    displayName: "Multi-arch Linux build and Vulnerability Scan"
+    displayName: "Ready Image and push to AKS"
     inputs:
       azureSubscription: ${{ variables.armServiceConnectionName }}
       scriptType: bash
@@ -132,12 +132,12 @@ jobs:
 
         echo "Build reason = $(Build.Reason)"
 
-        targetRepoImage = ${{ variables.repoImageName }}:$(imageTag)-test
+        targetRepoImage=${{ variables.repoImageName }}:$(imageTag)-test
         
         docker buildx build --platform linux/amd64,linux/arm64 --tag $targetRepoImage -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
         docker pull $targetRepoImage
 
         az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
         az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
-
-        kubectl get pods -A
+        export AIDEV_IMAGE_NAME=my-docker-image:1.0.0
+        cat ..\..\helm\appmonitoring-deployment.yaml | envsubst | kubectl apply -f -
