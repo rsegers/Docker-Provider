@@ -132,15 +132,11 @@ jobs:
         az acr login -n ${{ variables.containerRegistry }}
 
         echo "Build reason = $(Build.Reason)"
-        targetRepoImage=${{ variables.repoImageName }}:$(imageTag)-test
-        # echo "##vso[task.setvariable variable=fullImageName]$targetRepoImage"
 
+        echo ${{ variables.fullImageName }}
         
-        echo $targetRepoImage
-        echo $(fullImageName)
-        
-        docker buildx build --platform linux/amd64,linux/arm64 --tag $fullImageName -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
-        docker pull $fullImageName
+        docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.fullImageName }} -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
+        docker pull ${{ variables.fullImageName }}
 
   - task: AzureCLI@2
     displayName: "Create deployment in AKS"
@@ -153,5 +149,5 @@ jobs:
         az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
         kubectl delete -f ../../helm/appmonitoring-deployment.yaml
 
-        export AIDEV_IMAGE_NAME=$fullImageName
+        export AIDEV_IMAGE_NAME=${{ variables.fullImageName }}
         cat ../../helm/appmonitoring-deployment.yaml | envsubst | kubectl apply -f -
