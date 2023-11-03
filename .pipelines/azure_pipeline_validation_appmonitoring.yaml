@@ -133,7 +133,7 @@ jobs:
 
         echo "Build reason = $(Build.Reason)"
         targetRepoImage=${{ variables.repoImageName }}:$(imageTag)-test
-        echo "##vso[task.setvariable variable=fullImageName]$targetRepoImage"
+        # echo "##vso[task.setvariable variable=fullImageName]$targetRepoImage"
 
         
         echo $targetRepoImage
