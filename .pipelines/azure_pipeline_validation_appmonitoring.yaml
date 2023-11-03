@@ -55,6 +55,8 @@ jobs:
     imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
     fullImageName: ${{ variables.repoImageName }}:$(imageTag)-test
     javaTestAppImageName: 'rambhattacr.azurecr.io/demoaks-java-app:latest'
+    testNamespace: 'test-ns'
+    aiConnectionString: 'InstrumentationKey=910190fd-f49a-48e3-b6ac-6f0df84ceb5e;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/'
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
     # This is necessary because of: https://github.com/moby/moby/issues/37965
@@ -162,6 +164,17 @@ jobs:
         sleep 10
 
   - task: AzureCLI@2
+    displayName: "Validate charts deployed to AKS"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        cd appmonitoring/helm
+        pwd
+        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
+
+  - task: AzureCLI@2
     displayName: "Install CR and test apps"
     inputs:
       azureSubscription: ${{ variables.armServiceConnectionName }}
@@ -173,11 +186,19 @@ jobs:
         az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
         az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
         kubectl delete -f java-test-app.yaml
+        kubectl delete -f appmonitoring-cr.yaml
 
         echo "Wait for 10s for everything to clear up..."
         sleep 10
 
         export JAVA_TEST_IMAGE_NAME=${{ variables.javaTestAppImageName }}
+        export TEST_NS="${{ variables.testNamespace }}"
+        export AI_CONNECTION_STRING="${{ variables.aiConnectionString }}"
+
+        cat appmonitoring-cr.yaml | envsubst | kubectl apply -f -
+        echo "Wait for 10s for CR to be applied and picked up..."
+        sleep 10
+
         cat java-test-app.yaml | envsubst | kubectl apply -f -
 
         echo "Wait for 10s for charts to be applied..."
