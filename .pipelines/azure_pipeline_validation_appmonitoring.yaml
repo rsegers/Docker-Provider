@@ -54,6 +54,7 @@ jobs:
   variables:
     imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
     fullImageName: ${{ variables.repoImageName }}:$(imageTag)-test
+    javaTestAppImageName: 'rambhattacr.azurecr.io/demoaks-java-app:latest'
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
     # This is necessary because of: https://github.com/moby/moby/issues/37965
@@ -145,10 +146,39 @@ jobs:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
+        cd appmonitoring/helm
         pwd
         az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
         az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
-        kubectl delete -f ../../helm/appmonitoring-deployment.yaml
+        kubectl delete -f appmonitoring-deployment.yaml
+
+        echo "Wait for 10s for everything to clear up..."
+        sleep 10
 
         export AIDEV_IMAGE_NAME=${{ variables.fullImageName }}
-        cat ../../helm/appmonitoring-deployment.yaml | envsubst | kubectl apply -f -
+        cat appmonitoring-deployment.yaml | envsubst | kubectl apply -f -
+
+        echo "Wait for 10s for charts to be applied..."
+        sleep 10
+
+  - task: AzureCLI@2
+    displayName: "Install CR and test apps"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        cd appmonitoring/helm
+        pwd
+        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
+        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        kubectl delete -f java-test-app.yaml
+
+        echo "Wait for 10s for everything to clear up..."
+        sleep 10
+
+        export JAVA_TEST_IMAGE_NAME=${{ variables.javaTestAppImageName }}
+        cat java-test-app | envsubst | kubectl apply -f -
+
+        echo "Wait for 10s for charts to be applied..."
+        sleep 10
