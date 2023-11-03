@@ -36,7 +36,7 @@ jobs:
   ## prod release are in format Major.Minor.Patch
   ## preview release are in format preview-Major.Minor.Patch
   - bash: |
-      commit=$(git describe --exact-match --tags)
+      commit=$(git describe --tags)
       imageTag="$commit"
             
       echo "imageTag is $imageTag"
