@@ -140,7 +140,7 @@ jobs:
         docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.fullImageName }} -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
         docker pull ${{ variables.fullImageName }}
 
-  - task: AzureCLI@3
+  - task: AzureCLI@2
     displayName: "Create deployment in AKS"
     inputs:
       azureSubscription: ${{ variables.armServiceConnectionName }}
