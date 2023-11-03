@@ -131,9 +131,10 @@ jobs:
         az acr login -n ${{ variables.containerRegistry }}
 
         echo "Build reason = $(Build.Reason)"
-        echo "##vso[task.setvariable variable=fullImageName]${{ variables.repoImageName }}:$(imageTag)-test"
-
         targetRepoImage=${{ variables.repoImageName }}:$(imageTag)-test
+        echo "##vso[task.setvariable variable=fullImageName]$targetRepoImage"
+
+        
         echo $targetRepoImage
         
         docker buildx build --platform linux/amd64,linux/arm64 --tag $(fullImageName) -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
