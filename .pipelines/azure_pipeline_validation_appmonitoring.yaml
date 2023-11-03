@@ -53,6 +53,7 @@ jobs:
     name: rambhatt-test-es-pool
   variables:
     imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
+    fullImageName: 'placeholder'
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
     # This is necessary because of: https://github.com/moby/moby/issues/37965
@@ -61,7 +62,7 @@ jobs:
   steps:
   - task: CodeQL3000Init@0
   - task: AzureCLI@2
-    displayName: "Ready Image and push to AKS"
+    displayName: "Ready Image and push to ACR"
     inputs:
       azureSubscription: ${{ variables.armServiceConnectionName }}
       scriptType: bash
@@ -131,15 +132,24 @@ jobs:
         az acr login -n ${{ variables.containerRegistry }}
 
         echo "Build reason = $(Build.Reason)"
+        echo "##vso[task.setvariable variable=fullImageName]${{ variables.repoImageName }}:$(imageTag)-test"
 
         targetRepoImage=${{ variables.repoImageName }}:$(imageTag)-test
+        echo $targetRepoImage
         
-        docker buildx build --platform linux/amd64,linux/arm64 --tag $targetRepoImage -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
-        docker pull $targetRepoImage
+        docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.fullImageName }} -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
+        docker pull ${{ variables.fullImageName }}
 
+  - task: AzureCLI@3
+    displayName: "Create deployment in AKS"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
         az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
         az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
         kubectl delete -f ../../helm/appmonitoring-deployment.yaml
 
-        export AIDEV_IMAGE_NAME=$targetRepoImage
+        export AIDEV_IMAGE_NAME=${{ variables.fullImageName }}
         cat ../../helm/appmonitoring-deployment.yaml | envsubst | kubectl apply -f -
