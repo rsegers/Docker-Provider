@@ -1,0 +1,45 @@
+variables:
+  armServiceConnectionName: 'ci-1es-acr-connection'
+  subscription: '9b96ebbd-c57a-42d1-bbe9-b69296e4c7fb'
+  containerRegistry: 'containerinsightsprod' # this build pushes the aidev image to the dev ACR (caution: ACR that has "prod" in its name is the dev one, the one without "prod" is prod AME)
+  repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/applicationinsights/aidev'
+  IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
+
+jobs:
+- job: common
+  variables:
+    Codeql.SkipTaskAutoInjection: true
+  pool:
+    name: Azure-Pipelines-CI-Test-EO
+  steps:
+  - checkout: self
+    fetchDepth: 0
+    fetchTags: true
+  - task: ComponentGovernanceComponentDetection@0
+  - script: "../scripts/unzip_script.sh"
+    name: setup
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: '$(Build.ArtifactStagingDirectory)'
+      artifactName: drop
+
+- job: build_linux
+  timeoutInMinutes: 120
+  dependsOn: common
+  pool:
+    name: Azure-Pipelines-CI-Test-EO
+  variables:
+    imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
+    Codeql.Enabled: true
+    Codeql.BuildIdentifier: 'linuxbuild'
+    # This is necessary because of: https://github.com/moby/moby/issues/37965
+    DOCKER_BUILDKIT: 1
+
+  steps:
+  - task: AzureCLI@2
+    displayName: "Multi-arch Linux build and Vulnerability Scan"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptPath: "../scripts/build_image.cmd"
