@@ -178,7 +178,7 @@ jobs:
         sleep 10
 
         export JAVA_TEST_IMAGE_NAME=${{ variables.javaTestAppImageName }}
-        cat java-test-app | envsubst | kubectl apply -f -
+        cat java-test-app.yaml | envsubst | kubectl apply -f -
 
         echo "Wait for 10s for charts to be applied..."
         sleep 10
