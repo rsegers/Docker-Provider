@@ -53,7 +53,6 @@ jobs:
     name: rambhatt-test-es-pool
   variables:
     imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
-    fullImageName: 'placeholder'
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
     # This is necessary because of: https://github.com/moby/moby/issues/37965
@@ -132,7 +131,7 @@ jobs:
         az acr login -n ${{ variables.containerRegistry }}
 
         echo "Build reason = $(Build.Reason)"
-        echo "##vso[task.setvariable variable=fullImageName;isOutput=true]${{ variables.repoImageName }}:$(imageTag)-test"
+        echo "##vso[task.setvariable variable=fullImageName]${{ variables.repoImageName }}:$(imageTag)-test"
 
         targetRepoImage=${{ variables.repoImageName }}:$(imageTag)-test
         echo $targetRepoImage
