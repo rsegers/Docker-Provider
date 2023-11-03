@@ -53,6 +53,7 @@ jobs:
     name: rambhatt-test-es-pool
   variables:
     imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
+    fullImageName: ${{ variables.repoImageName }}:$(imageTag)-test
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
     # This is necessary because of: https://github.com/moby/moby/issues/37965
@@ -136,6 +137,7 @@ jobs:
 
         
         echo $targetRepoImage
+        echo $(fullImageName)
         
         docker buildx build --platform linux/amd64,linux/arm64 --tag $fullImageName -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
         docker pull $fullImageName
