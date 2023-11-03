@@ -132,7 +132,7 @@ jobs:
         az acr login -n ${{ variables.containerRegistry }}
 
         echo "Build reason = $(Build.Reason)"
-        echo "##vso[task.setvariable variable=fullImageName]${{ variables.repoImageName }}:$(imageTag)-test"
+        echo "##vso[task.setvariable variable=fullImageName;isOutput=true]${{ variables.repoImageName }}:$(imageTag)-test"
 
         targetRepoImage=${{ variables.repoImageName }}:$(imageTag)-test
         echo $targetRepoImage
