@@ -170,9 +170,16 @@ jobs:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
-        cd appmonitoring/helm
+        cd appmonitoring/scripts
         pwd
         az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
+        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+
+        echo "Checking for charts..."
+        ./validate-aks-charts.sh
+        
+        echo "Checking for certificate installation..."
+        ./validate-certs.sh
 
   - task: AzureCLI@2
     displayName: "Install CR and test apps"
