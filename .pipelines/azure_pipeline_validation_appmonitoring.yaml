@@ -205,6 +205,8 @@ jobs:
         export TEST_NS="${{ variables.testNamespace }}"
         export AI_CONNECTION_STRING="${{ variables.aiConnectionString }}"
 
+        kubectl create namespace $TEST_NS
+
         cat appmonitoring-cr.yaml | envsubst | kubectl apply -f -
         echo "Wait for 10s for CR to be applied and picked up..."
         sleep 10
