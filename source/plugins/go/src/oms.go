@@ -205,6 +205,8 @@ var (
 	IsGenevaLogsTelemetryServiceMode bool
 	// named pipe connection to ContainerLog for AMA
 	ContainerLogNamedPipe net.Conn
+	// named pipe connection to ContainerInventory for AMA
+	InputPluginNamedPipe net.Conn
 )
 
 var (
@@ -1177,51 +1179,82 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 			msgPackEntries = append(msgPackEntries, msgPackEntry)
 		}
 
-		if !IsWindows && len(msgPackEntries) > 0 { //for linux, mdsd route
-			Log("Info::mdsd:: using mdsdsource name for input plugin records: %s", tag)
+		if (!IsWindows || (IsWindows && IsAADMSIAuthMode)) && len(msgPackEntries) > 0 {
+			//for linux, mdsd route
+			//for Windows with MSI auth mode, AMA route
+			Log("Info::mdsd/AMA:: using mdsdsource name for input plugin records: %s", tag)
 			msgpBytes := convertMsgPackEntriesToMsgpBytes(tag, msgPackEntries)
-			if MdsdInpuPluginRecordsMsgpUnixSocketClient == nil {
-				Log("Error::mdsd::mdsd connection for input plugin records does not exist. re-connecting ...")
-				CreateMDSDClient(InputPluginRecords, ContainerType)
-				if MdsdInpuPluginRecordsMsgpUnixSocketClient == nil {
-					Log("Error::mdsd::Unable to create mdsd client for InputPluginRecords. Please check error log.")
-					ContainerLogTelemetryMutex.Lock()
-					defer ContainerLogTelemetryMutex.Unlock()
-					InputPluginRecordsErrors += 1
-				}
-			}
-			if MdsdInpuPluginRecordsMsgpUnixSocketClient != nil {
-				deadline := 10 * time.Second
-				MdsdInpuPluginRecordsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-				bts, er := MdsdInpuPluginRecordsMsgpUnixSocketClient.Write(msgpBytes)
-				elapsed := time.Since(start)
-				if er != nil {
-					message := fmt.Sprintf("Error::mdsd::Failed to write to input plugin mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
-					Log(message)
-					if MdsdInpuPluginRecordsMsgpUnixSocketClient != nil {
-						MdsdInpuPluginRecordsMsgpUnixSocketClient.Close()
-						MdsdInpuPluginRecordsMsgpUnixSocketClient = nil
-					}
-					SendException(message)
-				} else {
-					telemetryDimensions := make(map[string]string)
-					lowerTag := strings.ToLower(tag)
-					if strings.Contains(lowerTag, strings.ToLower(ContainerInventoryDataType)) {
-						telemetryDimensions["ContainerInventoryCount"] = strconv.Itoa(len(msgPackEntries))
-					} else if strings.Contains(lowerTag, strings.ToLower(InsightsMetricsDataType)) {
-						telemetryDimensions["InsightsMetricsCount"] = strconv.Itoa(len(msgPackEntries))
-					} else if strings.Contains(lowerTag, strings.ToLower(PerfDataType)) {
-						telemetryDimensions["PerfCount"] = strconv.Itoa(len(msgPackEntries))
-					} else {
-						Log("FlushInputPluginRecords::Warn::Flushed records of unknown data type %s", lowerTag)
-					}
-					numRecords := len(msgPackEntries)
-					Log("FlushInputPluginRecords::Info::Successfully flushed %d records that was %d bytes in %s", numRecords, bts, elapsed)
-					// Send telemetry to AppInsights resource
-					SendEvent(InputPluginRecordsFlushedEvent, telemetryDimensions)
+			if !IsWindows {
+				if MdsdInputPluginRecordsMsgpUnixSocketClient == nil {
+					Log("Error::mdsd::mdsd connection for input plugin records does not exist. re-connecting ...")
+					CreateMDSDClient(InputPluginRecords, ContainerType)
 				}
 			} else {
-				Log("Error::mdsd::Unable to create mdsd client for InputPluginRecords. Please check error log.")
+				if InputPluginNamedPipe == nil {
+					EnsureGenevaOr3PNamedPipeExists(&InputPluginNamedPipe, ContainerInventoryDataType, &ContainerLogsWindowsAMAClientCreateErrors, false, &MdsdContainerLogTagRefreshTracker)
+				}
+			}
+
+			if (!IsWindows && MdsdInputPluginRecordsMsgpUnixSocketClient == nil) || (IsWindows && InputPluginNamedPipe == nil) {
+				Log("Error::mdsd/AMA::Unable to create client for InputPluginRecords. Please check error log.")
+				ContainerLogTelemetryMutex.Lock()
+				defer ContainerLogTelemetryMutex.Unlock()
+				InputPluginRecordsErrors += 1
+			}
+
+			var bts int
+			var er error
+			var elapsed time.Duration
+			deadline := 10 * time.Second
+
+			if !IsWindows {
+				if MdsdInputPluginRecordsMsgpUnixSocketClient != nil {
+					MdsdInputPluginRecordsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+					bts, er = MdsdInputPluginRecordsMsgpUnixSocketClient.Write(msgpBytes)
+					elapsed = time.Since(start)
+				} else {
+					Log("Error::mdsd::Unable to create mdsd client for InputPluginRecords. Please check error log.")
+				}
+			}
+
+			if IsWindows {
+				if InputPluginNamedPipe != nil {
+					InputPluginNamedPipe.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+					bts, er = InputPluginNamedPipe.Write(msgpBytes)
+					elapsed = time.Since(start)
+				} else {
+					Log("Error::mdsd::Unable to create mdsd client for InputPluginRecords. Please check error log.")
+				}
+			}
+
+			if er != nil {
+				message := fmt.Sprintf("Error::mdsd/AMA::Failed to write to input plugin %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
+				Log(message)
+				if MdsdInputPluginRecordsMsgpUnixSocketClient != nil {
+					MdsdInputPluginRecordsMsgpUnixSocketClient.Close()
+					MdsdInputPluginRecordsMsgpUnixSocketClient = nil
+				}
+				if InputPluginNamedPipe != nil {
+					InputPluginNamedPipe.Close()
+					InputPluginNamedPipe = nil
+				}
+				SendException(message)
+			} else {
+				telemetryDimensions := make(map[string]string)
+				lowerTag := strings.ToLower(tag)
+				if strings.Contains(lowerTag, strings.ToLower(ContainerInventoryDataType)) {
+					telemetryDimensions["ContainerInventoryCount"] = strconv.Itoa(len(msgPackEntries))
+				} else if strings.Contains(lowerTag, strings.ToLower(InsightsMetricsDataType)) {
+					telemetryDimensions["InsightsMetricsCount"] = strconv.Itoa(len(msgPackEntries))
+				} else if strings.Contains(lowerTag, strings.ToLower(PerfDataType)) {
+					telemetryDimensions["PerfCount"] = strconv.Itoa(len(msgPackEntries))
+				} else {
+					Log("FlushInputPluginRecords::Warn::Flushed records of unknown data type %s", lowerTag)
+				}
+				numRecords := len(msgPackEntries)
+				Log("FlushInputPluginRecords::Info::Successfully flushed %d records that was %d bytes in %s", numRecords, bts, elapsed)
+				// Send telemetry to AppInsights resource
+				SendEvent(InputPluginRecordsFlushedEvent, telemetryDimensions)
 			}
 		}
 	}
