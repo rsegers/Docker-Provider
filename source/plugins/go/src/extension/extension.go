@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -114,6 +115,25 @@ func getDataCollectionSettings() (map[string]string, error) {
 	return dataCollectionSettings, nil
 }
 
+func getDataCollectionSettingsInterface() (map[string]interface{}, error) {
+	dataCollectionSettings := make(map[string]interface{})
+
+	extensionSettings, err := getExtensionSettings()
+	if err != nil {
+		return dataCollectionSettings, err
+	}
+
+	dataCollectionSettingsItr, ok := extensionSettings["dataCollectionSettings"]
+	if ok && len(dataCollectionSettingsItr) > 0 {
+		for k, v := range dataCollectionSettingsItr {
+			lk := strings.ToLower(k)
+			dataCollectionSettings[lk] = v
+		}
+	}
+
+	return dataCollectionSettings, nil
+}
+
 func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) {
 	datatypeOutputStreamMap := make(map[string]string)
 
@@ -185,4 +205,96 @@ func (e *Extension) GetOutputNamedPipe(datatype string, useFromCache bool) strin
 		logger.Printf(message)
 	}
 	return e.datatypeNamedPipeMap[datatype]
+}
+
+func (e *Extension) IsDataCollectionSettingsConfigured() bool {
+	var err error
+	e.datatypeNamedPipeMap, err = getDataTypeToStreamIdMapping(true)
+	if err != nil {
+		message := fmt.Sprintf("Error getting datatype to named pipe mapping: %s", err.Error())
+		logger.Printf(message)
+	}
+	return e.datatypeNamedPipeMap[datatype]
+}
+
+func (e *Extension) GetNamespacesForDataCollection() []string {
+	var namespaces []string
+
+	dataCollectionSettings, err := getDataCollectionSettingsInterface()
+	if err != nil {
+		message := fmt.Sprintf("Error getting dataCollectionSettings: %s", err.Error())
+		logger.Printf(message)
+	}
+
+	if len(dataCollectionSettings) > 0 {
+		namespacesSetting, found := dataCollectionSettings[EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES].([]string)
+		if found {
+			if len(namespacesSetting) > 0 {
+				// Remove duplicates from the namespacesSetting slice
+				uniqNamespaces := make(map[string]bool)
+				for _, ns := range namespacesSetting {
+					uniqNamespaces[strings.ToLower(ns)] = true
+				}
+
+				// Convert the map keys to a new slice
+				for ns := range uniqNamespaces {
+					namespaces = append(namespaces, ns)
+				}
+
+			} else {
+				logger.Println("ExtensionUtils::getNamespacesForDataCollection: namespaces:", namespacesSetting, "not valid hence using default")
+			}
+		}
+	}
+
+	return namespaces
+}
+
+func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
+	namespaceFilteringMode := "off"
+	extensionSettingsDataCollectionSettingsNamespaceFilteringModes := []string{"off", "include", "exclude"}
+
+	dataCollectionSettings, err := getDataCollectionSettingsInterface()
+	if err != nil {
+		message := fmt.Sprintf("Error getting dataCollectionSettings: %s", err.Error())
+		logger.Printf(message)
+	}
+
+	if len(dataCollectionSettings) > 0 {
+		mode, found := dataCollectionSettings[EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE].(string)
+		if found {
+			if mode != "" {
+				lowerMode := strings.ToLower(mode)
+				if contains(extensionSettingsDataCollectionSettingsNamespaceFilteringModes, lowerMode) {
+					return lowerMode
+				} else {
+					fmt.Println("ExtensionUtils::getNamespaceFilteringModeForDataCollection: namespaceFilteringMode:", mode, "not supported hence using default")
+				}
+			}
+		}
+	}
+
+	return namespaceFilteringMode
+}
+
+func toMinutes(interval string) (int, error) {
+	// Trim the trailing "m" from the interval string
+	trimmedInterval := strings.TrimSuffix(interval, "m")
+
+	// Convert the trimmed interval string to an integer
+	intervalMinutes, err := strconv.Atoi(trimmedInterval)
+	if err != nil {
+		return 0, err
+	}
+
+	return intervalMinutes, nil
+}
+
+func contains(slice []string, search string) bool {
+	for _, item := range slice {
+		if item == search {
+			return true
+		}
+	}
+	return false
 }
