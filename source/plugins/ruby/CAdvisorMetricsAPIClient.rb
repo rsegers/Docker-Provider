@@ -951,12 +951,14 @@ class CAdvisorMetricsAPIClient
                             :verify_mode => OpenSSL::SSL::VERIFY_NONE) do |http|
               cAdvisorApiRequest = Net::HTTP::Get.new(uri.request_uri)
               cAdvisorApiRequest["Authorization"] = "Bearer #{bearerToken}"
+              cAdvisorApiRequest["User-Agent"] = getUserAgent()
               response = http.request(cAdvisorApiRequest)
               @Log.info "Got response code #{response.code} from #{uri.request_uri}"
             end
           else
             Net::HTTP.start(uri.host, uri.port, :use_ssl => false, :open_timeout => 20, :read_timeout => 40) do |http|
               cAdvisorApiRequest = Net::HTTP::Get.new(uri.request_uri)
+              cAdvisorApiRequest["User-Agent"] = getUserAgent()
               response = http.request(cAdvisorApiRequest)
               @Log.info "Got response code #{response.code} from #{uri.request_uri}"
             end

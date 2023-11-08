@@ -48,7 +48,7 @@ require "fileutils"
 @disableRSTelegraf = false
 
 def get_command_windows(env_variable_name, env_variable_value)
-  return "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n" + "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
+  return "#{env_variable_name}=#{env_variable_value}\n"
 end
 
 # Use parser to parse the configmap toml file to a ruby structure
@@ -348,7 +348,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
               end
             elsif !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
               # Setting the environment variable for starting telegraf only when monitorKubernetesPods is true 
-              file = File.open("setpromenv.ps1", "w")
+              file = File.open("setpromenv.txt", "w")
               if !file.nil?
                 commands = get_command_windows("TELEMETRY_CUSTOM_PROM_MONITOR_PODS", monitorKubernetesPods)
                 file.write(commands)
