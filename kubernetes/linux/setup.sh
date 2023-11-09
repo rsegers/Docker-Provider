@@ -39,7 +39,7 @@ mv /usr/lib/ruby/gems/3.1.0/specifications/default/uri-0.11.0.gemspec /usr/lib/r
 gem uninstall time --version 0.2.0
 gem uninstall uri --version 0.11.0
 
-sudo tdnf install -y azure-mdsd-1.27.4
+sudo tdnf install -y azure-mdsd-1.28.11
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d
 rm /usr/sbin/telegraf
@@ -61,7 +61,7 @@ sudo tdnf install jq-1.6-1.cm2 -y
 #used to setcaps for ruby process to read /proc/env
 sudo tdnf install libcap -y
 
-sudo tdnf install telegraf-1.27.2 -y
+sudo tdnf install telegraf-1.27.3 -y
 telegraf_version=$(sudo tdnf list installed | grep telegraf | awk '{print $2}')
 echo "telegraf $telegraf_version" >> packages_version.txt
 mv /usr/bin/telegraf /opt/telegraf

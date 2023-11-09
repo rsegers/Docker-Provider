@@ -97,12 +97,12 @@ register_microsoft_gpg_keys()
 
 install_dotnet_sdk()
 {
-  echo "installing dotnet sdk 3.1 ..."
+  echo "installing dotnet sdk 6.0 ..."
   sudo apt-get update -y
   sudo apt-get install -y apt-transport-https
   sudo apt-get update -y
-  sudo apt-get install -y dotnet-sdk-3.1
-  echo "installation of dotnet sdk 3.1 completed."
+  sudo apt-get install -y dotnet-sdk-6.0
+  echo "installation of dotnet sdk 6.0 completed."
 }
 
 install_gcc_for_windows_platform()
@@ -153,7 +153,7 @@ register_microsoft_gpg_keys
 # install cross platform gcc to build the go code for windows platform
 install_gcc_for_windows_platform
 
-# dotnet core sdk 3.1
+# dotnet core sdk 6.0
 install_dotnet_sdk
 
 # powershell core

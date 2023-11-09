@@ -128,7 +128,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 end
 
 def get_command_windows(env_variable_name, env_variable_value)
-  return "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Process\")" + "\n" + "[System.Environment]::SetEnvironmentVariable(\"#{env_variable_name}\", \"#{env_variable_value}\", \"Machine\")" + "\n"
+  return "#{env_variable_name}=#{env_variable_value}\n"
 end
 
 @configSchemaVersion = ENV["AZMON_AGENT_CFG_SCHEMA_VERSION"]
@@ -146,7 +146,7 @@ end
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   # Write the settings to file, so that they can be set as environment variables in windows container
-  file = File.open("setmdmenv.ps1", "w")
+  file = File.open("setmdmenv.txt", "w")
 
   if !file.nil?
     commands = get_command_windows("AZMON_ALERT_CONTAINER_CPU_THRESHOLD", @percentageCpuUsageThreshold)

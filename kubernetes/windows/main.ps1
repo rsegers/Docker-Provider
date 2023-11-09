@@ -422,16 +422,16 @@ function Set-EnvironmentVariables {
 function Read-Configs {
     # run config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
-    .\setenv.ps1
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setenv.txt"
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
-    .\setagentenv.ps1
-
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setagentenv.txt"
+    
     #Replace placeholders in fluent-bit.conf
     ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
-    .\setgenevaconfigenv.ps1
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setgenevaconfigenv.txt"
 
     $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
     if (![string]::IsNullOrEmpty($genevaLogsIntegration)) {
@@ -489,7 +489,29 @@ function Read-Configs {
 
     # run mdm config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-mdm-metrics-config.rb
-    .\setmdmenv.ps1
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setmdmenv.txt"
+}
+
+function Set-EnvironmentVariablesFromFile {
+    param ($filePath)
+
+    if (-not (Test-Path -Path $filePath -PathType Leaf)) {
+        Write-Host "The specified file path '$filePath' does not exist or is not valid."
+        return
+    }
+
+    $envVars = @{}
+    Get-Content -Path $filePath | ForEach-Object {
+        $key, $value = $_ -split '='
+        $envVars[$key] = $value
+    }
+
+    $scopes = @("Process", "Machine")
+    foreach ($key in $envVars.Keys) {
+        foreach ($scope in $scopes) {
+            [System.Environment]::SetEnvironmentVariable($key, $envVars[$key], $scope)
+        }
+    }
 }
 
 function Set-AgentConfigSchemaVersion {
@@ -663,7 +685,9 @@ function Start-Telegraf {
     # run prometheus custom config parser
     Write-Host "**********Running config parser for custom prometheus scraping**********"
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
-    if (Test-Path -Path setpromenv.ps1) { ./setpromenv.ps1}
+
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setpromenv.txt"
+
     Write-Host "**********End running config parser for custom prometheus scraping**********"
 
     $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')

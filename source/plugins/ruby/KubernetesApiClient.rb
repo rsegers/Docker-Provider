@@ -46,6 +46,7 @@ class KubernetesApiClient
   @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@memoryRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@resourceLimitsTelemetryHash = {}
+  @@userAgent = nil
 
   def initialize
   end
@@ -65,6 +66,7 @@ class KubernetesApiClient
             Net::HTTP.start(uri.host, uri.port, :use_ssl => true, :ca_file => @@CaFile, :verify_mode => OpenSSL::SSL::VERIFY_PEER, :open_timeout => 20, :read_timeout => 40) do |http|
               kubeApiRequest = Net::HTTP::Get.new(uri.request_uri)
               kubeApiRequest["Authorization"] = "Bearer " + getTokenStr
+              kubeApiRequest["User-Agent"] = getUserAgent()
               @Log.info "KubernetesAPIClient::getKubeResourceInfo : Making request to #{uri.request_uri} @ #{Time.now.utc.iso8601}"
               response = http.request(kubeApiRequest)
               @Log.info "KubernetesAPIClient::getKubeResourceInfo : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
@@ -97,6 +99,7 @@ class KubernetesApiClient
             Net::HTTP.start(uri.host, uri.port, :use_ssl => true, :ca_file => @@CaFile, :verify_mode => OpenSSL::SSL::VERIFY_PEER, :open_timeout => 20, :read_timeout => 40) do |http|
               kubeApiRequest = Net::HTTP::Get.new(uri.request_uri)
               kubeApiRequest["Authorization"] = "Bearer " + getTokenStr
+              kubeApiRequest["User-Agent"] = getUserAgent()
               @Log.info "KubernetesAPIClient::getKubeResourceInfoV2 : Making request to #{uri.request_uri} @ #{Time.now.utc.iso8601}"
               response = http.request(kubeApiRequest)
               responseCode = response.code
@@ -219,6 +222,16 @@ class KubernetesApiClient
         @Log.warn("getClusterId failed: #{error}")
       end
       return @@ClusterId
+    end
+
+    def getUserAgent()
+      return @@userAgent if !@@userAgent.nil?
+      begin
+          @@userAgent = "ama-logs/#{ENV['AGENT_VERSION'].nil? ? '0.0.0' : ENV['AGENT_VERSION']} (#{ENV['OS_TYPE'].nil? ? 'linux' : ENV['OS_TYPE']}; Ruby #{RUBY_PLATFORM})"
+      rescue => error
+        @Log.warn("KubernetesAPIClient::getUserAgent : getUserAgent failed: #{error}")
+      end
+      return @@userAgent || "ama-logs/0.0.0 ()"
     end
 
     def isAROV3Cluster
@@ -943,6 +956,7 @@ class KubernetesApiClient
         }
         http_headers = {
           Authorization: "Bearer " + getTokenStr,
+          "User-Agent": getUserAgent(),
         }
         ns = ""
         if !options[:namespace].to_s.empty?
