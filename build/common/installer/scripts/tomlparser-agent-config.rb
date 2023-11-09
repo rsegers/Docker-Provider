@@ -96,6 +96,7 @@ require_relative "ConfigParseErrorLogger"
 @ignoreProxySettings = false
 
 @multiline_enabled = "false"
+@resource_optimization_enabled = "false"
 
 @waittime_port_25226 = 45
 @waittime_port_25228 = 120
@@ -351,6 +352,17 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         puts "Using config map value: AZMON_MULTILINE_ENABLED = #{@multiline_enabled}"
       end
 
+      if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
+        resource_optimization_config = parsedConfig[:agent_settings][:resource_optimization]
+        if !resource_optimization_config.nil?
+          resource_optimization_enabled = resource_optimization_config[:enabled]
+          if !resource_optimization_enabled.nil? && resource_optimization_enabled.downcase == "true"
+            @resource_optimization_enabled = resource_optimization_enabled
+          end
+          puts "Using config map value: AZMON_RESOURCE_OPTIMIZATION_ENABLED = #{@resource_optimization_enabled}"
+        end
+      end
+
       network_listener_waittime_config = parsedConfig[:agent_settings][:network_listener_waittime]
       if !network_listener_waittime_config.nil?
         waittime = network_listener_waittime_config[:tcp_port_25226]
@@ -478,6 +490,8 @@ if !file.nil?
   if @multiline_enabled.strip.casecmp("true") == 0
     file.write("export AZMON_MULTILINE_ENABLED=#{@multiline_enabled}\n")
   end
+
+  file.write("export AZMON_RESOURCE_OPTIMIZATION_ENABLED=#{@resource_optimization_enabled}\n")
 
   file.write("export WAITTIME_PORT_25226=#{@waittime_port_25226}\n")
   file.write("export WAITTIME_PORT_25228=#{@waittime_port_25228}\n")

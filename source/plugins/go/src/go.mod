@@ -19,7 +19,7 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
 	github.com/tinylib/msgp v1.1.8
-	github.com/ugorji/go v1.1.2-0.20180813092308-00b869d2f4a5
+	github.com/ugorji/go/codec v1.2.11
 	golang.org/x/oauth2 v0.13.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3

@@ -35,6 +35,15 @@ def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
     return new_contents
 end
 
+def substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
+  if !resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true"
+    new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/opt/microsoft/docker-cimprov/azm-containers-input-plugins.conf")
+    new_contents = new_contents.gsub("#${ResourceOptimizationFBConfigFile}", "@INCLUDE fluent-bit-input.conf")
+  end
+
+  return new_contents
+end
+
 def substituteFluentBitPlaceHolders
   begin
     # Replace the fluentbit config file with custom values if present
@@ -47,6 +56,7 @@ def substituteFluentBitPlaceHolders
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
     stacktraceLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
+    resoureceOptimizationEnabled = ENV["AZMON_RESOURCE_OPTIMIZATION_ENABLED"]
 
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
@@ -84,6 +94,7 @@ def substituteFluentBitPlaceHolders
     end
 
     new_contents = substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
+    new_contents = substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in fluent-bit.conf file"
 

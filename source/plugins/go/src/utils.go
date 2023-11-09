@@ -183,6 +183,23 @@ func CreateMDSDClient(dataType DataType, containerType string) {
 			Log("Successfully created MDSD msgp socket connection for Insights metrics %s", mdsdfluentSocket)
 			MdsdInsightsMetricsMsgpUnixSocketClient = conn
 		}
+	case InputPluginRecords:
+		// incase of geneva logs integration mode, InsightsMetrics ingested via sidecar container socket
+		if IsGenevaLogsIntegrationEnabled {
+			mdsdfluentSocket = "/var/run/mdsd-PrometheusSidecar/default_fluent.socket"
+		}
+		if MdsdInputPluginRecordsMsgpUnixSocketClient != nil {
+			MdsdInputPluginRecordsMsgpUnixSocketClient.Close()
+			MdsdInputPluginRecordsMsgpUnixSocketClient = nil
+		}
+		conn, err := net.DialTimeout("unix",
+			mdsdfluentSocket, 10*time.Second)
+		if err != nil {
+			Log("Error::mdsd::Unable to open MDSD msgp socket connection for input plugin records %s", err.Error())
+		} else {
+			Log("Successfully created MDSD msgp socket connection for input plugin records %s", mdsdfluentSocket)
+			MdsdInputPluginRecordsMsgpUnixSocketClient = conn
+		}
 	}
 }
 
