@@ -50,6 +50,8 @@ var (
 	ContainerLogsWindowsAMAClientCreateErrors float64
 	//Tracks the number of mdsd client create errors for insightsmetrics (uses ContainerLogTelemetryTicker)
 	InsightsMetricsMDSDClientCreateErrors float64
+	//Tracks the number of mdsd client create errors for Input plugin records (uses ContainerLogTelemetryTicker)
+	InputPluginRecordsErrors float64
 	//Tracks the number of mdsd client create errors for kubemonevents (uses ContainerLogTelemetryTicker)
 	KubeMonEventsMDSDClientCreateErrors float64
 	//Tracks the number of write/send errors to ADX for containerlogs (uses ContainerLogTelemetryTicker)

@@ -931,15 +931,19 @@ if [ ! -f /etc/cron.d/ci-agent ]; then
       echo "*/5 * * * * root /usr/sbin/logrotate -s /var/lib/logrotate/ci-agent-status /etc/logrotate.d/ci-agent >/dev/null 2>&1" >/etc/cron.d/ci-agent
 fi
 
-# no dependency on fluentd for prometheus side car container
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
-      if [ ! -e "/etc/config/kube.conf" ]; then
-            echo "*** starting fluentd v1 in daemonset"
-            fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
-      else
-           echo "*** starting fluentd v1 in replicaset"
-           fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
+      # no dependency on fluentd for prometheus side car container
+      if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
+            if [ ! -e "/etc/config/kube.conf" ]; then
+                  echo "*** starting fluentd v1 in daemonset"
+                  fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+            else
+                  echo "*** starting fluentd v1 in replicaset"
+                  fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+            fi
       fi
+else
+      echo "Skipping fluentd since AZMON_RESOURCE_OPTIMIZATION_ENABLED is set to ${AZMON_RESOURCE_OPTIMIZATION_ENABLED}"
 fi
 
 #If config parsing was successful, a copy of the conf file with replaced custom settings file is created

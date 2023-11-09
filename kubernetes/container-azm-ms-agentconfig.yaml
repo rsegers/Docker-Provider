@@ -189,6 +189,11 @@ data:
     # [agent_settings.proxy_config]
     #    ignore_proxy_settings = "true"  # if this is not applied, default value is false
 
+    # Uses fluent-bit for perf and container inventory instead of fluentd
+    # Disables custom metrics
+    # [agent_settings.resource_optimization]
+    #    enabled = "false"
+
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # Configuration settings for the waittime for the network listeners to be available
     # [agent_settings.network_listener_waittime]
