@@ -24,6 +24,7 @@ require_relative "ConfigParseErrorLogger"
 @containerLogsRoute = "v2" # default for linux
 @adxDatabaseName = "containerinsights" # default for all configurations
 @logEnableMultiline = "false"
+@logEnableKubernetesMetadata = false
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
   # This path format is necessary for fluent-bit in windows
@@ -205,6 +206,14 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     rescue => errorStr
       ConfigParseErrorLogger.logError("Exception while reading config map settings for adx database name - #{errorStr}, using default #{@adxDatabaseName}, please check config map for errors")
     end
+
+    #Get Kubernetes Metadata setting
+    begin
+      if !parsedConfig[:log_collection_settings][:metadata_collection].nil? && !parsedConfig[:log_collection_settings][:metadata_collection][:enabled].nil?
+        @logEnableKubernetesMetadata = parsedConfig[:log_collection_settings][:metadata_collection][:enabled]
+        puts "config::Using config map setting for kubernetes metadata"
+      end
+    end
   end
 end
 
@@ -252,6 +261,7 @@ if !file.nil?
   file.write("export AZMON_CONTAINER_LOG_SCHEMA_VERSION=#{@containerLogSchemaVersion}\n")
   file.write("export AZMON_ADX_DATABASE_NAME=#{@adxDatabaseName}\n")
   file.write("export AZMON_MULTILINE_ENABLED=#{@logEnableMultiline}\n")
+  file.write("export AZMON_KUBERNETES_METADATA_ENABLED=#{@logEnableKubernetesMetadata}\n")
   # Close file after writing all environment variables
   file.close
   puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "
@@ -315,6 +325,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows("AZMON_ADX_DATABASE_NAME", @adxDatabaseName)
     file.write(commands)
     commands = get_command_windows("AZMON_MULTILINE_ENABLED", @logEnableMultiline)
+    file.write(commands)
+    commands = get_command_windows("AZMON_KUBERNETES_METADATA_ENABLED ", @logEnableKubernetesMetadata)
     file.write(commands)
     # Close file after writing all environment variables
     file.close
