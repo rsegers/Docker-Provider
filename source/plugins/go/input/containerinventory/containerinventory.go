@@ -165,7 +165,7 @@ func (p containerInventoryPlugin) enumerate() []map[string]interface{} {
 					container[k] = v
 				}
 				container["State"] = "Deleted"
-				if strings.EqualFold(osType, "windows") {
+				if strings.EqualFold(osType, "linux") {
 					lib.DeleteCGroupCacheEntryForDeletedContainer(container["InstanceID"].(string))
 				}
 				containerInventory = append(containerInventory, container)

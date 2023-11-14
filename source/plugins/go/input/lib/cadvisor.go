@@ -69,9 +69,8 @@ var (
 	winNodeCpuUsageNanoSecondsLast          = map[string]float64{}
 	winNodeCpuUsageNanoSecondsTimeLast      = map[string]interface{}{}
 	Log                                     *logrus.Logger
+	osType                                  string
 )
-
-var osType string
 
 func init() {
 	Log = logrus.New()

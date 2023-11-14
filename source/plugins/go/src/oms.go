@@ -1179,7 +1179,15 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 			msgPackEntries = append(msgPackEntries, msgPackEntry)
 		}
 
-		if (!IsWindows || (IsWindows && IsAADMSIAuthMode)) && len(msgPackEntries) > 0 {
+		if len(msgPackEntries) == 0 {
+			continue
+		}
+		var bts int
+		var er error
+		var elapsed time.Duration
+		deadline := 10 * time.Second
+
+		if !IsWindows || (IsWindows && IsAADMSIAuthMode) {
 			//for linux, mdsd route
 			//for Windows with MSI auth mode, AMA route
 			Log("Info::mdsd/AMA:: using mdsdsource name for input plugin records: %s", tag)
@@ -1189,41 +1197,29 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 					Log("Error::mdsd::mdsd connection for input plugin records does not exist. re-connecting ...")
 					CreateMDSDClient(InputPluginRecords, ContainerType)
 				}
+				if MdsdInputPluginRecordsMsgpUnixSocketClient == nil {
+					Log("Error::mdsd::Unable to create mdsd client for input plugin records. Please check error log.")
+					ContainerLogTelemetryMutex.Lock()
+					defer ContainerLogTelemetryMutex.Unlock()
+					InputPluginRecordsErrors += 1
+				} else {
+					MdsdInputPluginRecordsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+					bts, er = MdsdInputPluginRecordsMsgpUnixSocketClient.Write(msgpBytes)
+					elapsed = time.Since(start)
+				}
 			} else {
 				if InputPluginNamedPipe == nil {
 					EnsureGenevaOr3PNamedPipeExists(&InputPluginNamedPipe, ContainerInventoryDataType, &ContainerLogsWindowsAMAClientCreateErrors, false, &MdsdContainerLogTagRefreshTracker)
 				}
-			}
-
-			if (!IsWindows && MdsdInputPluginRecordsMsgpUnixSocketClient == nil) || (IsWindows && InputPluginNamedPipe == nil) {
-				Log("Error::mdsd/AMA::Unable to create client for InputPluginRecords. Please check error log.")
-				ContainerLogTelemetryMutex.Lock()
-				defer ContainerLogTelemetryMutex.Unlock()
-				InputPluginRecordsErrors += 1
-			}
-
-			var bts int
-			var er error
-			var elapsed time.Duration
-			deadline := 10 * time.Second
-
-			if !IsWindows {
-				if MdsdInputPluginRecordsMsgpUnixSocketClient != nil {
-					MdsdInputPluginRecordsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-					bts, er = MdsdInputPluginRecordsMsgpUnixSocketClient.Write(msgpBytes)
-					elapsed = time.Since(start)
+				if InputPluginNamedPipe == nil {
+					Log("Error::mdsd::Unable to create AMA client for input plugin records. Please check error log.")
+					ContainerLogTelemetryMutex.Lock()
+					defer ContainerLogTelemetryMutex.Unlock()
+					InputPluginRecordsErrors += 1
 				} else {
-					Log("Error::mdsd::Unable to create mdsd client for InputPluginRecords. Please check error log.")
-				}
-			}
-
-			if IsWindows {
-				if InputPluginNamedPipe != nil {
 					InputPluginNamedPipe.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
 					bts, er = InputPluginNamedPipe.Write(msgpBytes)
 					elapsed = time.Since(start)
-				} else {
-					Log("Error::mdsd::Unable to create mdsd client for InputPluginRecords. Please check error log.")
 				}
 			}
 
