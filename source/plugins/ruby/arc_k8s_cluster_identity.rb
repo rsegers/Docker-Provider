@@ -6,7 +6,6 @@ require "uri"
 require "json"
 require "base64"
 require "time"
-require_relative "KubernetesApiClient"
 require_relative "ApplicationInsightsUtility"
 
 class ArcK8sClusterIdentity
@@ -34,7 +33,8 @@ class ArcK8sClusterIdentity
     @isLastTokenRenewalUpdatePending = false
     @token_file_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
     @cert_file_path = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-    @kube_api_server_url = KubernetesApiClient.getKubeAPIServerUrl
+    @kube_api_server_url = "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}"
+    @log.info "Kubernetes API Server URL:#{@kube_api_server_url} @ #{Time.now.utc.iso8601}"
     if @kube_api_server_url.nil?
       @log.warn "got api server url nil from KubernetesApiClient.getKubeAPIServerUrl @ #{Time.now.utc.iso8601}"
     end
