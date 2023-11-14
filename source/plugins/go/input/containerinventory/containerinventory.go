@@ -37,6 +37,7 @@ var (
 	hostName                  = ""
 	telemetryTimeTracker      = time.Now().Unix()
 	isFromCache               = false
+	osType                    = os.Getenv("OS_TYPE")
 )
 
 // Init An instance of the configuration loader will be passed to the Init method so all the required
@@ -53,7 +54,6 @@ func (p *containerInventoryPlugin) Init(ctx context.Context, fbit *plugin.Fluent
 		p.runInterval, _ = strconv.Atoi(fbit.Conf.String("run_interval"))
 	}
 
-	osType := os.Getenv("OS_TYPE")
 	if strings.EqualFold(osType, "windows") {
 		FLBLogger = lib.CreateLogger("/etc/amalogswindows/fluent-bit-input.log")
 	} else {
@@ -165,7 +165,9 @@ func (p containerInventoryPlugin) enumerate() []map[string]interface{} {
 					container[k] = v
 				}
 				container["State"] = "Deleted"
-				lib.DeleteCGroupCacheEntryForDeletedContainer(container["InstanceID"].(string))
+				if strings.EqualFold(osType, "linux") {
+					lib.DeleteCGroupCacheEntryForDeletedContainer(container["InstanceID"].(string))
+				}
 				containerInventory = append(containerInventory, container)
 			}
 		}

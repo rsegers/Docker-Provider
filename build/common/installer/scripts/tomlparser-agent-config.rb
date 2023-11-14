@@ -581,6 +581,10 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       commands = get_command_windows("AZMON_MULTILINE_ENABLED", @multiline_enabled)
       file.write(commands)
     end
+    if @resource_optimization_enabled
+      commands = get_command_windows("AZMON_RESOURCE_OPTIMIZATION_ENABLED", @resource_optimization_enabled)
+      file.write(commands)
+    end
     # Close file after writing all environment variables
     file.close
     puts "****************End Config Processing********************"
