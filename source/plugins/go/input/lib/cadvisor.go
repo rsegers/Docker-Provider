@@ -275,6 +275,7 @@ func GetMetricsHelper(metricInfo map[string]interface{}, winNode map[string]stri
 		}
 	}
 
+	//TODO: Remove this DEAD CODE as it was only used by replica set for Windows data
 	// Checking if we are in windows daemonset and sending only a few metrics that are needed for MDM
 	if osType != "" && strings.EqualFold(osType, "windows") && !IsAADMSIAuthMode() {
 		// Container metrics
@@ -654,6 +655,7 @@ func getNodeMetricItemRate(metricInfo map[string]interface{}, hostName, metricGr
 				metricValue = metricRateValue
 			}
 		} else if operatingSystem == "Windows" { // For Windows with non-MSI mode
+			//TODO: Remove this DEAD CODE as it was only used by replica set for Windows data
 			if _, ok := winNodeCpuUsageNanoSecondsLast[hostName]; ok || winNodeCpuUsageNanoSecondsTimeLast[hostName] == nil || winNodeCpuUsageNanoSecondsLast[hostName] > metricValue.(float64) {
 				winNodeCpuUsageNanoSecondsLast[hostName] = metricValue.(float64)
 				winNodeCpuUsageNanoSecondsTimeLast[hostName] = metricTime

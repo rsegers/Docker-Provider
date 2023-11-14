@@ -224,6 +224,7 @@ func getContainersInfoMap(podItem map[string]interface{}, isWindows bool) map[st
 				}
 				containerInfoMap["Command"] = cmdValueString
 
+				//TODO: Remove this DEAD CODE as it was only used by replica set for Windows data
 				if isWindows && !IsAADMSIAuthMode() {
 					// For Windows container inventory, we don't need to get envvars from the pod's response
 					// since it's already taken care of in KPI as part of the pod optimized item
