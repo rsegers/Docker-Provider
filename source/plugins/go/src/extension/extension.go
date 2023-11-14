@@ -4,10 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
-	"sync"
 	"regexp"
 	"strconv"
+	"strings"
+	"sync"
 
 	uuid "github.com/google/uuid"
 )
@@ -19,10 +19,10 @@ type Extension struct {
 }
 
 const (
-	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL = "interval"
-	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL_MIN = 1
-	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL_MAX = 30
-	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES = "namespaces"
+	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL                 = "interval"
+	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL_MIN             = 1
+	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL_MAX             = 30
+	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES               = "namespaces"
 	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE = "namespaceFilteringMode"
 )
 
@@ -255,7 +255,6 @@ func (e *Extension) GetDataCollectionIntervalSeconds() int {
 	return collectionIntervalSeconds
 }
 
-
 func (e *Extension) GetNamespacesForDataCollection() []string {
 	var namespaces []string
 
@@ -274,12 +273,12 @@ func (e *Extension) GetNamespacesForDataCollection() []string {
 				for _, ns := range namespacesSetting {
 					uniqNamespaces[strings.ToLower(ns)] = true
 				}
-		
+
 				// Convert the map keys to a new slice
 				for ns := range uniqNamespaces {
 					namespaces = append(namespaces, ns)
 				}
-		
+
 			} else {
 				logger.Println("ExtensionUtils::getNamespacesForDataCollection: namespaces:", namespacesSetting, "not valid hence using default")
 			}
