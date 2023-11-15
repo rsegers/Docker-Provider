@@ -417,6 +417,15 @@ function Set-EnvironmentVariables {
     else {
         Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
     }
+
+    $kubernetesServiceHost = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_HOST", "process")
+    if (![string]::IsNullOrEmpty($kubernetesServiceHost)) {
+        [System.Environment]::SetEnvironmentVariable("KUBERNETES_SERVICE_HOST", $kubernetesServiceHost, "machine")
+        Write-Host "Successfully set environment variable KUBERNETES_SERVICE_HOST - $($kubernetesServiceHost) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable KUBERNETES_SERVICE_HOST for target 'machine' since it is either null or empty"
+    }
 }
 
 function Read-Configs {
@@ -426,7 +435,7 @@ function Read-Configs {
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
     Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setagentenv.txt"
-    
+
     #Replace placeholders in fluent-bit.conf
     ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
@@ -854,11 +863,11 @@ if ($isGenevaModeVar) {
     Write-Host "Starting Windows AMA in 1P Mode"
     #start Windows AMA
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
-} 
+}
 if (!$isGenevaModeVar -and ![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
     Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
 
-    #start Windows AMA 
+    #start Windows AMA
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
     $version = Get-Content -Path "C:\opt\windowsazuremonitoragent\version.txt"
     Write-Host $version
