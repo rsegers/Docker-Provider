@@ -33,11 +33,15 @@ class ArcK8sClusterIdentity
     @isLastTokenRenewalUpdatePending = false
     @token_file_path = "/var/run/secrets/kubernetes.io/serviceaccount/token"
     @cert_file_path = "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"
-    @kube_api_server_url = "https://#{ENV["KUBERNETES_SERVICE_HOST"]}:#{ENV["KUBERNETES_PORT_443_TCP_PORT"]}"
-    @log.info "Kubernetes API Server URL:#{@kube_api_server_url} @ #{Time.now.utc.iso8601}"
-    if @kube_api_server_url.nil?
-      @log.warn "got api server url nil from KubernetesApiClient.getKubeAPIServerUrl @ #{Time.now.utc.iso8601}"
+    kubernetesServiceHost = ENV["KUBERNETES_SERVICE_HOST"]
+    kubernetesServicePort = ENV["KUBERNETES_PORT_443_TCP_PORT"]
+    @kube_api_server_url = ""
+    if !kubernetesServiceHost.empty? && !kubernetesServicePort.empty?
+      @kube_api_server_url = "https://#{kubernetesServiceHost}:#{kubernetesServicePort}"
+    else
+       @log.warn "got api server url empty since either KUBERNETES_SERVICE_HOST or KUBERNETES_PORT_443_TCP_PORT env var is empty  @ #{Time.now.utc.iso8601}"
     end
+    @log.info "Kubernetes API Server URL:#{@kube_api_server_url} @ #{Time.now.utc.iso8601}"
     @http_client = get_http_client
     @service_account_token = get_service_account_token
     @extensionName = ENV["ARC_K8S_EXTENSION_NAME"]

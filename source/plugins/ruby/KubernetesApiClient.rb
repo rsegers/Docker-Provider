@@ -227,7 +227,7 @@ class KubernetesApiClient
     def getUserAgent()
       return @@userAgent if !@@userAgent.nil?
       begin
-          @@userAgent = "ama-logs/#{ENV['AGENT_VERSION'].nil? ? '0.0.0' : ENV['AGENT_VERSION']} (#{ENV['OS_TYPE'].nil? ? 'linux' : ENV['OS_TYPE']}; Ruby #{RUBY_PLATFORM})"
+        @@userAgent = "ama-logs/#{ENV["AGENT_VERSION"].nil? ? "0.0.0" : ENV["AGENT_VERSION"]} (#{ENV["OS_TYPE"].nil? ? "linux" : ENV["OS_TYPE"]}; Ruby #{RUBY_PLATFORM})"
       rescue => error
         @Log.warn("KubernetesAPIClient::getUserAgent : getUserAgent failed: #{error}")
       end
@@ -893,20 +893,6 @@ class KubernetesApiClient
       end
       return continuationToken, resourceInventory
     end #getResourcesAndContinuationToken
-
-    def getKubeAPIServerUrl(env = ENV)
-      apiServerUrl = nil
-      begin
-        if env["KUBERNETES_SERVICE_HOST"] && env["KUBERNETES_PORT_443_TCP_PORT"]
-          apiServerUrl = "https://#{env["KUBERNETES_SERVICE_HOST"]}:#{env["KUBERNETES_PORT_443_TCP_PORT"]}"
-        else
-          @Log.warn "Kubernetes environment variable not set KUBERNETES_SERVICE_HOST: #{env["KUBERNETES_SERVICE_HOST"]} KUBERNETES_PORT_443_TCP_PORT: #{env["KUBERNETES_PORT_443_TCP_PORT"]}. Unable to form resourceUri"
-        end
-      rescue => errorStr
-        @Log.warn "KubernetesApiClient::getKubeAPIServerUrl:Failed  #{errorStr}"
-      end
-      return apiServerUrl
-    end
 
     def getKubeServicesInventoryRecords(serviceList, batchTime = Time.utc.iso8601)
       kubeServiceRecords = []
