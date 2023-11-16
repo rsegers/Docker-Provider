@@ -39,7 +39,7 @@ class ArcK8sClusterIdentity
     if !kubernetesServiceHost.empty? && !kubernetesServicePort.empty?
       @kube_api_server_url = "https://#{kubernetesServiceHost}:#{kubernetesServicePort}"
     else
-       @log.warn "got api server url empty since either KUBERNETES_SERVICE_HOST or KUBERNETES_PORT_443_TCP_PORT env var is empty  @ #{Time.now.utc.iso8601}"
+      @log.warn "Kubernetes API Server URL is empty since either KUBERNETES_SERVICE_HOST or KUBERNETES_PORT_443_TCP_PORT env var is empty @ #{Time.now.utc.iso8601}"
     end
     @log.info "Kubernetes API Server URL:#{@kube_api_server_url} @ #{Time.now.utc.iso8601}"
     @http_client = get_http_client
