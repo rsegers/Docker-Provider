@@ -25,7 +25,7 @@ require_relative "ConfigParseErrorLogger"
 @adxDatabaseName = "containerinsights" # default for all configurations
 @logEnableMultiline = "false"
 @logEnableKubernetesMetadata = false
-@logKubernetesMetadataiIncludeFields = "podLabels,podAnnotations,poduid,image"
+@logKubernetesMetadataiIncludeFields = "podLabels,podAnnotations,podUid,image"
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
   # This path format is necessary for fluent-bit in windows
@@ -210,7 +210,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
     #Get Kubernetes Metadata setting
     begin
-      if !parsedConfig[:log_collection_settings][:metadata_collection].nil? && !parsedConfig[:log_collection_settings][:metadata_collection][:enabled].nil?
+      if !parsedConfig[:log_collection_settings][:metadata_collection].nil? && !parsedConfig[:log_collection_settings][:metadata_collection][:enabled].nil? && !parsedConfig[:log_collection_settings][:metadata_collection][:include_fields].nil?
         @logEnableKubernetesMetadata = parsedConfig[:log_collection_settings][:metadata_collection][:enabled]
         @logKubernetesMetadataiIncludeFields = parsedConfig[:log_collection_settings][:metadata_collection][:include_fields]
         puts "config::Using config map setting for kubernetes metadata"
