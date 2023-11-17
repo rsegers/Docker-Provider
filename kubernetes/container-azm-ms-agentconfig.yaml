@@ -54,7 +54,7 @@ data:
        #[log_collection_settings.metadata_collection]
           # if enabled will collect kubernetes metadata for ContainerLogv2 schema. Default false
           # enabled = false
-          # include_fields = ["podLabels","podAnnotations","podUID","image"]
+          # include_fields = ["podLabels","podAnnotations","podUid","image"]
 
   prometheus-data-collection-settings: |-
     # Custom Prometheus metrics data collection settings
