@@ -254,7 +254,9 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				TelemetryClient.Track(logLatencyMetric)
 			}
 		}
-		TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount))
+		telegrafEnabled := make(map[string]string)
+		telegrafEnabled["TelegrafEnabled"] = promMonitorPods // If TELEMETRY_CUSTOM_PROM_MONITOR_PODS, then telegraf is enabled
+		SendMetric(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount, telegrafEnabled)
 		if telegrafMetricsSendErrorCount > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSendErrorsTelegrafMetrics, telegrafMetricsSendErrorCount))
 		}
@@ -307,6 +309,19 @@ func SendEvent(eventName string, dimensions map[string]string) {
 	}
 
 	TelemetryClient.Track(event)
+}
+
+// SendMetric sends a metric to App Insights
+func SendMetric(metricName string, metricValue float64, dimensions map[string]string) {
+	Log("Sending Metric : %s\n", metricName)
+	metric := appinsights.NewMetricTelemetry(metricName, metricValue)
+
+	// add any extra Properties
+	for k, v := range dimensions {
+		metric.Properties[k] = v
+	}
+
+	TelemetryClient.Track(metric)
 }
 
 // SendException  send an event to the configured app insights instance
