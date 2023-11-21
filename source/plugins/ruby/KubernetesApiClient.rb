@@ -45,7 +45,9 @@ class KubernetesApiClient
   @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@memoryRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
+  @@kubernetesApiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@resourceLimitsTelemetryHash = {}
+  @@kubernetesApiResponseCodeHash = {}
   @@userAgent = nil
 
   def initialize
@@ -70,6 +72,7 @@ class KubernetesApiClient
               @Log.info "KubernetesAPIClient::getKubeResourceInfo : Making request to #{uri.request_uri} @ #{Time.now.utc.iso8601}"
               response = http.request(kubeApiRequest)
               @Log.info "KubernetesAPIClient::getKubeResourceInfo : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
+              sendKubernetesAPIResonseTelemetry(response)
             end
           end
         end
@@ -104,6 +107,7 @@ class KubernetesApiClient
               response = http.request(kubeApiRequest)
               responseCode = response.code
               @Log.info "KubernetesAPIClient::getKubeResourceInfoV2 : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
+              sendKubernetesAPIResonseTelemetry(response)
             end
           end
         end
@@ -1518,6 +1522,30 @@ class KubernetesApiClient
         end
       rescue => err
         @Log.warn "KubernetesApiClient::sendReplicasetAgentRequestsAndLimitsTelemetry failed with an error: #{err}"
+      end
+    end
+
+    def sendKubernetesAPIResonseTelemetry(response)
+      begin
+        if (!response.nil? && !response.code.nil? && !response.code.empty?)
+          if (@@kubernetesApiResponseCodeHash[response.code].nil?)
+            @@kubernetesApiResponseCodeHash[response.code] = 1
+          else
+            @@kubernetesApiResponseCodeHash[response.code] += 1
+          end
+
+          timeDifference = (DateTime.now.to_time.to_i - @@kubernetesApiResponseTelemetryTimeTracker).abs
+          timeDifferenceInMinutes = timeDifference / 60
+          if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+            @@kubernetesApiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
+            @@kubernetesApiResponseCodeHash.each do |key, value|
+              ApplicationInsightsUtility.sendMetricTelemetry("KubernetesApiResponseCode_#{key}", value)
+            end
+            @@kubernetesApiResponseCodeHash.clear
+          end
+        end
+      rescue => err
+        @Log.warn "KubernetesApiClient::sendKubernetesAPIResonseTelemetry failed with an error: #{err}"
       end
     end
 
