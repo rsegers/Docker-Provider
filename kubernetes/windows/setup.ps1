@@ -23,7 +23,7 @@ Write-Host ('Creating folder structure')
 Write-Host ('Installing Fluent Bit');
 
     try {
-        $fluentBitUri='https://github.com/wanlonghenry/fluent-bit/raw/longw/remove-timer-clear/fluent-bit-lw.zip'
+        $fluentBitUri='https://github.com/wanlonghenry/fluent-bit/raw/87b0d7789b7b07651ef6702b73d09d138ffd948d/fluent-bit-lw-image1.zip'
         Invoke-WebRequest -Uri $fluentBitUri -OutFile /installation/fluent-bit.zip
         Expand-Archive -Path /installation/fluent-bit.zip -Destination /installation/fluent-bit
         Move-Item -Path /installation/fluent-bit/*/* -Destination /opt/fluent-bit/ -ErrorAction SilentlyContinue
