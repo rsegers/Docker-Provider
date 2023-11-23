@@ -1539,7 +1539,7 @@ class KubernetesApiClient
           if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
             @@kubernetesApiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
             @@kubernetesApiResponseCodeHash.each do |key, value|
-              ApplicationInsightsUtility.sendMetricTelemetry("KubernetesApiResponseCode_#{key}", value)
+              ApplicationInsightsUtility.sendMetricTelemetry("KubernetesApiResponseCode_#{key}", value, {})
             end
             @@kubernetesApiResponseCodeHash.clear
           end
