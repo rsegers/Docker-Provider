@@ -255,7 +255,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 			}
 		}
 		telegrafEnabled := make(map[string]string)
-		telegrafEnabled["TelegrafEnabled"] = promMonitorPods // If TELEMETRY_CUSTOM_PROM_MONITOR_PODS, then telegraf is enabled
+		telegrafEnabled["IsTelegrafEnabled"] = os.Getenv("TELEMETRY_CUSTOM_PROM_MONITOR_PODS") // If TELEMETRY_CUSTOM_PROM_MONITOR_PODS, then telegraf is enabled
 		SendMetric(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount, telegrafEnabled)
 		if telegrafMetricsSendErrorCount > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSendErrorsTelegrafMetrics, telegrafMetricsSendErrorCount))
