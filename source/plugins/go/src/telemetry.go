@@ -255,7 +255,9 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 			}
 		}
 		telegrafEnabled := make(map[string]string)
+		Log("TELEMETRY_CUSTOM_PROM_MONITOR_PODS: %s\n", os.Getenv("TELEMETRY_CUSTOM_PROM_MONITOR_PODS"))
 		telegrafEnabled["IsTelegrafEnabled"] = os.Getenv("TELEMETRY_CUSTOM_PROM_MONITOR_PODS") // If TELEMETRY_CUSTOM_PROM_MONITOR_PODS, then telegraf is enabled
+		Log("TelegrafEnabled: %s\n", telegrafEnabled["IsTelegrafEnabled"])
 		SendMetric(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount, telegrafEnabled)
 		if telegrafMetricsSendErrorCount > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSendErrorsTelegrafMetrics, telegrafMetricsSendErrorCount))
@@ -319,6 +321,11 @@ func SendMetric(metricName string, metricValue float64, dimensions map[string]st
 	// add any extra Properties
 	for k, v := range dimensions {
 		metric.Properties[k] = v
+	}
+
+	// print metric.Properties
+	for k, v := range metric.Properties {
+		Log("Metric Property : %s : %s\n", k, v)
 	}
 
 	TelemetryClient.Track(metric)
