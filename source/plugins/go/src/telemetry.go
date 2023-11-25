@@ -255,6 +255,8 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 			}
 		}
 		telegrafEnabled := make(map[string]string)
+		Log("promMonitorPods: %s\n", promMonitorPods)
+		Log("PromMonitorPods: %s\n", PromMonitorPods)
 		Log("TELEMETRY_CUSTOM_PROM_MONITOR_PODS: %s\n", os.Getenv("TELEMETRY_CUSTOM_PROM_MONITOR_PODS"))
 		telegrafEnabled["IsTelegrafEnabled"] = os.Getenv("TELEMETRY_CUSTOM_PROM_MONITOR_PODS") // If TELEMETRY_CUSTOM_PROM_MONITOR_PODS, then telegraf is enabled
 		Log("TelegrafEnabled: %s\n", telegrafEnabled["IsTelegrafEnabled"])

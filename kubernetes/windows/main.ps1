@@ -649,6 +649,15 @@ function Get-ContainerRuntime {
 
 function Start-Fluent-Telegraf {
 
+    Set-ProcessAndMachineEnvVariables "TELEMETRY_CUSTOM_PROM_MONITOR_PODS" "false"
+    # run prometheus custom config parser
+    Write-Host "**********Running config parser for custom prometheus scraping**********"
+    ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
+
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setpromenv.txt"
+
+    Write-Host "**********End running config parser for custom prometheus scraping**********"
+
     $containerRuntime = Get-ContainerRuntime
 
     if (![string]::IsNullOrEmpty($containerRuntime) -and [string]$containerRuntime.StartsWith('docker') -eq $false) {
@@ -689,15 +698,6 @@ function Start-Telegraf {
     # Set default telegraf environment variables for prometheus scraping
     Write-Host "**********Setting default environment variables for telegraf prometheus plugin..."
     .\setdefaulttelegrafenvvariables.ps1
-
-    Set-ProcessAndMachineEnvVariables "TELEMETRY_CUSTOM_PROM_MONITOR_PODS" "false"
-    # run prometheus custom config parser
-    Write-Host "**********Running config parser for custom prometheus scraping**********"
-    ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
-
-    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setpromenv.txt"
-
-    Write-Host "**********End running config parser for custom prometheus scraping**********"
 
     $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
     if (![string]::IsNullOrEmpty($monitorKubernetesPods) -and $monitorKubernetesPods.ToLower() -eq 'true') {
