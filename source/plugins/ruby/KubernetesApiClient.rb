@@ -72,7 +72,7 @@ class KubernetesApiClient
               @Log.info "KubernetesAPIClient::getKubeResourceInfo : Making request to #{uri.request_uri} @ #{Time.now.utc.iso8601}"
               response = http.request(kubeApiRequest)
               @Log.info "KubernetesAPIClient::getKubeResourceInfo : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
-              sendKubernetesAPIResponseTelemetry(response.code, resource)
+              ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus")
             end
           end
         end
@@ -107,7 +107,7 @@ class KubernetesApiClient
               response = http.request(kubeApiRequest)
               responseCode = response.code
               @Log.info "KubernetesAPIClient::getKubeResourceInfoV2 : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
-              sendKubernetesAPIResponseTelemetry(response.code, resource)
+              AppInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus")
             end
           end
         end
@@ -1522,43 +1522,6 @@ class KubernetesApiClient
         end
       rescue => err
         @Log.warn "KubernetesApiClient::sendReplicasetAgentRequestsAndLimitsTelemetry failed with an error: #{err}"
-      end
-    end
-
-    def sendKubernetesAPIResponseTelemetry(responseCode, resource)
-      begin
-        if (!responseCode.nil? && !responseCode.empty?)
-          if (@@kubernetesApiResponseCodeHash.has_key?(response.code))
-            telemetryProps = {}
-            telemetryProps[resource] = 1
-            @@kubernetesApiResponseCodeHash[responseCode] = telemetryProps
-          else
-            telemetryProps = @@kubernetesApiResponseCodeHash[responseCode]
-            if (!telemetryProps.has_key?(resource))
-              telemetryProps[resource] = 1
-            else
-              telemetryProps[resource] += 1
-            end
-            @@kubernetesApiResponseCodeHash[responseCode] = telemetryProps
-          end
-
-          timeDifference = (DateTime.now.to_time.to_i - @@kubernetesApiResponseTelemetryTimeTracker).abs
-          timeDifferenceInMinutes = timeDifference / 60
-          if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
-            @@kubernetesApiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
-            @@kubernetesApiResponseCodeHash.each do |key, value|
-              value.each do |resource, count|
-                telemetryProps = {}
-                telemetryProps["Resource"] = resource
-                telemetryProps["ResponseCode"] = key
-                ApplicationInsightsUtility.sendMetricTelemetry("K8sAPIStatus", count, telemetryProps)
-              end
-            end
-            @@kubernetesApiResponseCodeHash.clear
-          end
-        end
-      rescue => err
-        @Log.warn "KubernetesApiClient::sendKubernetesAPIResponseTelemetry failed with an error: #{err}"
       end
     end
 

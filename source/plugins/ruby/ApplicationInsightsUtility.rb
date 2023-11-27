@@ -323,5 +323,43 @@ class ApplicationInsightsUtility
         $log.warn("Exception in AppInsightsUtility: getWorkspaceCloud - error: #{errorStr}")
       end
     end
+
+    def sendAPIResponseTelemetry(responseCode, resource, metricName)
+      begin
+        if (!responseCode.nil? && !responseCode.empty?)
+          if (@@kubernetesApiResponseCodeHash.has_key?(response.code))
+            telemetryProps = {}
+            telemetryProps[resource] = 1
+            @@kubernetesApiResponseCodeHash[responseCode] = telemetryProps
+          else
+            telemetryProps = @@kubernetesApiResponseCodeHash[responseCode]
+            if (!telemetryProps.has_key?(resource))
+              telemetryProps[resource] = 1
+            else
+              telemetryProps[resource] += 1
+            end
+            @@kubernetesApiResponseCodeHash[responseCode] = telemetryProps
+          end
+
+          timeDifference = (DateTime.now.to_time.to_i - @@kubernetesApiResponseTelemetryTimeTracker).abs
+          timeDifferenceInMinutes = timeDifference / 60
+          if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+            @@kubernetesApiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
+            @@kubernetesApiResponseCodeHash.each do |key, value|
+              value.each do |resource, count|
+                telemetryProps = {}
+                telemetryProps["Resource"] = resource
+                telemetryProps["ResponseCode"] = key
+                sendMetricTelemetry(metricName, count, telemetryProps)
+              end
+            end
+            @@kubernetesApiResponseCodeHash.clear
+          end
+        end
+      rescue => err
+        @Log.warn "KubernetesApiClient::sendKubernetesAPIResponseTelemetry failed with an error: #{err}"
+      end
+    end
+
   end
 end
