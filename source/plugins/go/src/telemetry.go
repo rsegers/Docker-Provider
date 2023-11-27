@@ -52,6 +52,8 @@ var (
 	InsightsMetricsMDSDClientCreateErrors float64
 	//Tracks the number of mdsd client create errors for kubemonevents (uses ContainerLogTelemetryTicker)
 	KubeMonEventsMDSDClientCreateErrors float64
+	//Track the number of windows ama client create errors for kubemonevents (uses ContainerLogTelemetryTicker)
+	KubeMonEventsWindowsAMAClientCreateErrors float64
 	//Tracks the number of write/send errors to ADX for containerlogs (uses ContainerLogTelemetryTicker)
 	ContainerLogsSendErrorsToADXFromFluent float64
 	//Tracks the number of ADX client create errors for containerlogs (uses ContainerLogTelemetryTicker)
@@ -95,6 +97,7 @@ const (
 	metricNameErrorCountInsightsMetricsMDSDClientCreateError          = "InsightsMetricsMDSDClientCreateErrorsCount"
 	metricNameErrorCountContainerLogsSendErrorsToWindowsAMAFromFluent = "ContainerLogsSendErrorsToWindowsAMAFromFluent"
 	metricNameErrorCountContainerLogsWindowsAMAClientCreateError      = "ContainerLogsWindowsAMAClientCreateErrors"
+	metricNameErrorCountKubeMonEventsWindowsAMAClientCreateError      = "KubeMonEventsWindowsAMAClientCreateErrors"
 	metricNameErrorCountKubeMonEventsMDSDClientCreateError            = "KubeMonEventsMDSDClientCreateErrorsCount"
 	metricNameErrorCountContainerLogsSendErrorsToADXFromFluent        = "ContainerLogs2ADXSendErrorCount"
 	metricNameErrorCountContainerLogsADXClientCreateError             = "ContainerLogsADXClientCreateErrorCount"
@@ -140,6 +143,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		containerLogsWindowsAMAClientCreateErrors := ContainerLogsWindowsAMAClientCreateErrors
 		insightsMetricsMDSDClientCreateErrors := InsightsMetricsMDSDClientCreateErrors
 		kubeMonEventsMDSDClientCreateErrors := KubeMonEventsMDSDClientCreateErrors
+		kubeMonEventsWindowsAMAClientCreateErrors := KubeMonEventsWindowsAMAClientCreateErrors
 		osmNamespaceCount := OSMNamespaceCount
 		promMonitorPods := PromMonitorPods
 		promMonitorPodsNamespaceLength := PromMonitorPodsNamespaceLength
@@ -168,6 +172,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		ContainerLogsADXClientCreateErrors = 0.0
 		InsightsMetricsMDSDClientCreateErrors = 0.0
 		KubeMonEventsMDSDClientCreateErrors = 0.0
+		KubeMonEventsWindowsAMAClientCreateErrors = 0.0
 		ContainerLogRecordCountWithEmptyTimeStamp = 0.0
 		ContainerLogTelemetryMutex.Unlock()
 
@@ -284,6 +289,9 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		}
 		if kubeMonEventsMDSDClientCreateErrors > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountKubeMonEventsMDSDClientCreateError, kubeMonEventsMDSDClientCreateErrors))
+		}
+		if kubeMonEventsWindowsAMAClientCreateErrors > 0.0 {
+			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountKubeMonEventsWindowsAMAClientCreateError, kubeMonEventsWindowsAMAClientCreateErrors))
 		}
 		if winTelegrafMetricsCountWithTagsSize64KBorMore > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofWinTelegrafMetricsWithTagsSize64KBorMore, winTelegrafMetricsCountWithTagsSize64KBorMore))
