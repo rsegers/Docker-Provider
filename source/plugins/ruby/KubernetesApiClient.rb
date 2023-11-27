@@ -1552,6 +1552,7 @@ class KubernetesApiClient
                 telemetryProps["Resource"] = resource
                 telemetryProps["ResponseCode"] = key
                 ApplicationInsightsUtility.sendMetricTelemetry("K8sAPIStatus", count, telemetryProps)
+              end
             end
             @@kubernetesApiResponseCodeHash.clear
           end
