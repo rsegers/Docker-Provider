@@ -43,7 +43,7 @@ def substituteFluentBitPlaceHolders
     memBufLimit = ENV["FBIT_TAIL_MEM_BUF_LIMIT"]
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
-    kubernetesMetadataCollection = env["AZMON_KUBERNETES_METADATA_ENABLED"]
+    kubernetesMetadataCollection = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
 
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
