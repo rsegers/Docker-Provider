@@ -185,17 +185,17 @@ jobs:
         echo "Checking for certificate installation..."
         ./validate-certs.sh
 
-  - task: AzureResourceManagerTemplateDeployment@3
-    inputs:
-      deploymentScope: 'Resource Group'
-      azureResourceManagerConnection: 'ai-acr-validation-rsx'
-      subscriptionId: '66010356-d8a5-42d3-8593-6aaa3aeb1c11'
-      action: 'Create Or Update Resource Group'
-      resourceGroupName: 'appmonitoring-pipeline-test'
-      location: 'East US'
-      templateLocation: 'Linked artifact'
-      csmFile: '/path/to/here'
-      deploymentMode: 'Incremental'
+  # - task: AzureResourceManagerTemplateDeployment@3
+  #   inputs:
+  #     deploymentScope: 'Resource Group'
+  #     azureResourceManagerConnection: 'ai-acr-validation-rsx'
+  #     subscriptionId: '66010356-d8a5-42d3-8593-6aaa3aeb1c11'
+  #     action: 'Create Or Update Resource Group'
+  #     resourceGroupName: 'appmonitoring-pipeline-test'
+  #     location: 'East US'
+  #     templateLocation: 'Linked artifact'
+  #     csmFile: '/path/to/here'
+  #     deploymentMode: 'Incremental'
 
   - task: AzureCLI@2
     displayName: "Install CR and test apps"
