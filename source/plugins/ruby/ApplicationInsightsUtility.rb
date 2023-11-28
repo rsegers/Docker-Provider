@@ -39,9 +39,6 @@ class ApplicationInsightsUtility
   end
 
   @@controllerType = {"daemonset" => "DS", "replicaset" => "RS"}
-  @@apiResponseCodeHash = {}
-  @@apiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
-
   def initialize
   end
 
@@ -326,15 +323,15 @@ class ApplicationInsightsUtility
       end
     end
 
-    def sendAPIResponseTelemetry(responseCode, resource, metricName)
+    def sendAPIResponseTelemetry(responseCode, resource, metricName, apiResponseCodeHash, apiResponseTelemetryTimeTracker)
       begin
         if (!responseCode.nil? && !responseCode.empty?)
-          if (@@apiResponseCodeHash.has_key?(responseCode))
+          if (apiResponseCodeHash.has_key?(responseCode))
             telemetryProps = {}
             telemetryProps[resource] = 1
-            @@apiResponseCodeHash[responseCode] = telemetryProps
+            apiResponseCodeHash[responseCode] = telemetryProps
           else
-            telemetryProps = @@apiResponseCodeHash[responseCode]
+            telemetryProps = apiResponseCodeHash[responseCode]
             if (telemetryProps.nil?)
               telemetryProps = {}
             end
@@ -343,14 +340,14 @@ class ApplicationInsightsUtility
             else
               telemetryProps[resource] += 1
             end
-            @@apiResponseCodeHash[responseCode] = telemetryProps
+            apiResponseCodeHash[responseCode] = telemetryProps
           end
 
-          timeDifference = (DateTime.now.to_time.to_i - @@apiResponseTelemetryTimeTracker).abs
+          timeDifference = (DateTime.now.to_time.to_i - apiResponseTelemetryTimeTracker).abs
           timeDifferenceInMinutes = timeDifference / 60
           if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
-            @@apiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
-            @@apiResponseCodeHash.each do |key, value|
+            apiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
+            apiResponseCodeHash.each do |key, value|
               value.each do |resource, count|
                 telemetryProps = {}
                 telemetryProps["Resource"] = resource
@@ -358,7 +355,7 @@ class ApplicationInsightsUtility
                 sendMetricTelemetry(metricName, count, telemetryProps)
               end
             end
-            @@apiResponseCodeHash.clear
+            apiResponseCodeHash.clear
           end
         end
       rescue => err
