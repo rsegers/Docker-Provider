@@ -211,10 +211,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     #Get Kubernetes Metadata setting
     begin
       if !parsedConfig[:log_collection_settings][:metadata_collection].nil? && !parsedConfig[:log_collection_settings][:metadata_collection][:enabled].nil?
+        puts "config::Using config map setting for kubernetes metadata"
         @logEnableKubernetesMetadata = parsedConfig[:log_collection_settings][:metadata_collection][:enabled]
         if !parsedConfig[:log_collection_settings][:metadata_collection][:include_fields].nil?
+          puts "config::Using config map setting for kubernetes metadata include fields"
           @logKubernetesMetadataiIncludeFields = parsedConfig[:log_collection_settings][:metadata_collection][:include_fields]
-        puts "config::Using config map setting for kubernetes metadata"
+        end
       end
     end
   end
