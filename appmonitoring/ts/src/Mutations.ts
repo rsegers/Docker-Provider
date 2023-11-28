@@ -1,6 +1,9 @@
-﻿import { PodInfo } from "./RequestDefinition.js";
+﻿import { IContainer, IVolume, PodInfo } from "./RequestDefinition.js";
 
-export class AddedTypes {
+/**
+ * Contains a collection of mutations necessary to add functionality to a Pod
+ */
+export class Mutations {
     // name of the init container
     private static initContainerNameDotNet = "agent-init-dotnet";
     private static initContainerNameJava = "agent-init-java";
@@ -8,12 +11,12 @@ export class AddedTypes {
     
     // agent image
     private static agentImageDotNet = "mcr.microsoft.com/applicationinsights/opentelemetry-auto-instrumentation/dotnet:1.0.0-beta3";
-    private static agentImageJava = "mcr.microsoft.com/applicationinsights/auto-instrumentation/java:3.4.17-aks";
-    private static agentImageNodeJs = "mcr.microsoft.com/applicationinsights/opentelemetry-auto-instrumentation/nodejs:3.0.0-beta.9";
+    private static agentImageJava = "mcr.microsoft.com/applicationinsights/auto-instrumentation/java:3.4.18-aks";
+    private static agentImageNodeJs = "mcr.microsoft.com/applicationinsights/opentelemetry-auto-instrumentation/nodejs:3.0.0-beta.10";
     
     // path on agent image to copy from
     private static imagePathDotNet = "/dotnet-tracer-home/.";
-    private static imagePathJava = "/agents/java/applicationinsights-agent-codeless.jar";
+    private static imagePathJava = "/agents/java/.";
     private static imagePathNodeJs = "/agents/nodejs/.";
 
     // agent volume (where init containers copy agent binaries to)
@@ -21,7 +24,7 @@ export class AddedTypes {
     private static agentVolumeJava = "agent-volume-java";
     private static agentVolumeNodeJs = "agent-volume-nodejs";
 
-    // agent volume mount path
+    // agent volume mount path (where customer app's runtime loads agents from)
     private static agentVolumeMountPathDotNet = "/agent-dotnet";
     private static agentVolumeMountPathJava = "/agent-java";
     private static agentVolumeMountPathNodeJs = "/agent-nodejs";
@@ -32,46 +35,49 @@ export class AddedTypes {
     // agent logs volume mount path
     private static agentLogsVolumeMountPath = "/var/log/applicationinsights"; // this is hardcoded in Java SDK and NodeJs SDK, can't change this
     
-    public static init_containers(platforms: string[]) {
-        const containers: object[] = [];
+    /**
+     * Creates init containers that are used to copy agent binaries onto a Pod. These containers download the agent image, copy agent binaries from inside of the image, and finish.
+     */
+    public static GenerateInitContainers(platforms: string[]): IContainer[] {
+        const containers: IContainer[] = [];
 
         for (let i = 0; i < platforms.length; i++) {
             switch (platforms[i]) {
                 case "DotNet":
                     containers.push({
-                        name: AddedTypes.initContainerNameDotNet,
-                        image: AddedTypes.agentImageDotNet,
+                        name: Mutations.initContainerNameDotNet,
+                        image: Mutations.agentImageDotNet,
                         command: ["cp"],
-                        args: ["-a", AddedTypes.imagePathDotNet, AddedTypes.agentVolumeMountPathDotNet], // cp -a <source> <destination>
+                        args: ["-a", Mutations.imagePathDotNet, Mutations.agentVolumeMountPathDotNet], // cp -a <source> <destination>
                         volumeMounts: [{
-                            name: AddedTypes.agentVolumeDotNet,
-                            mountPath: AddedTypes.agentVolumeMountPathDotNet
+                            name: Mutations.agentVolumeDotNet,
+                            mountPath: Mutations.agentVolumeMountPathDotNet
                         }]
                     });
                     break;
 
                 case "Java":
                     containers.push({
-                        name: AddedTypes.initContainerNameJava,
-                        image: AddedTypes.agentImageJava,
+                        name: Mutations.initContainerNameJava,
+                        image: Mutations.agentImageJava,
                         command: ["cp"],
-                        args: ["-a", AddedTypes.imagePathJava, AddedTypes.agentVolumeMountPathJava], // cp -a <source> <destination> 
+                        args: ["-a", Mutations.imagePathJava, Mutations.agentVolumeMountPathJava], // cp -a <source> <destination> 
                         volumeMounts: [{
-                            name: AddedTypes.agentVolumeJava,
-                            mountPath: AddedTypes.agentVolumeMountPathJava
+                            name: Mutations.agentVolumeJava,
+                            mountPath: Mutations.agentVolumeMountPathJava
                         }]
                     });
                     break;
 
                 case "NodeJs":
                     containers.push({
-                        name: AddedTypes.initContainerNameNodeJs,
-                        image: AddedTypes.agentImageNodeJs,
+                        name: Mutations.initContainerNameNodeJs,
+                        image: Mutations.agentImageNodeJs,
                         command: ["cp"],
-                        args: ["-a", AddedTypes.imagePathNodeJs, AddedTypes.agentVolumeMountPathNodeJs], // cp -a <source> <destination>
+                        args: ["-a", Mutations.imagePathNodeJs, Mutations.agentVolumeMountPathNodeJs], // cp -a <source> <destination>
                         volumeMounts: [{
-                            name: AddedTypes.agentVolumeNodeJs,
-                            mountPath: AddedTypes.agentVolumeMountPathNodeJs
+                            name: Mutations.agentVolumeNodeJs,
+                            mountPath: Mutations.agentVolumeMountPathNodeJs
                         }]
                     });
                     break;
@@ -88,7 +94,10 @@ export class AddedTypes {
         return containers;
     }
 
-    public static env(podInfo: PodInfo, platforms: string[], connectionString: string, armId: string, armRegion: string, clusterName: string): object {
+    /**
+     * Generates environment variables necessary to configure agents. Agents take configuration from these environment variables once they run.
+     */
+    public static GenerateEnvironmentVariables(podInfo: PodInfo, platforms: string[], connectionString: string, armId: string, armRegion: string, clusterName: string): object[] {
         const ownerNameAttribute: string = podInfo.ownerReference ? `k8s.${podInfo.ownerReference.kind?.toLowerCase()}.name=${podInfo.ownerReference.name}` : null;
         const ownerUidAttribute: string = podInfo.ownerReference ? `k8s.${podInfo.ownerReference.kind?.toLowerCase()}.uid=${podInfo.ownerReference.uid}` : null;
         const deploymentNameAttribute: string = podInfo.deploymentName ? `k8s.deployment.name=${podInfo.deploymentName}` : null;
@@ -164,11 +173,11 @@ ${ownerUidAttribute}`
                     returnValue.push(...[
                         {
                             name: "OTEL_DOTNET_AUTO_LOG_DIRECTORY",
-                            value: AddedTypes.agentLogsVolumeMountPath
+                            value: Mutations.agentLogsVolumeMountPath
                         },
                         {
                             name: "DOTNET_STARTUP_HOOKS",
-                            value: `${AddedTypes.agentVolumeMountPathDotNet}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll`
                         },
                         {
                             name: "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES",
@@ -176,15 +185,15 @@ ${ownerUidAttribute}`
                         },
                         {
                             name: "DOTNET_ADDITIONAL_DEPS",
-                            value: `${AddedTypes.agentVolumeMountPathDotNet}/AdditionalDeps`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/AdditionalDeps`
                         },
                         {
                             name: "DOTNET_SHARED_STORE",
-                            value: `${AddedTypes.agentVolumeMountPathDotNet}/store`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/store`
                         },
                         {
                             name: "OTEL_DOTNET_AUTO_HOME",
-                            value: `${AddedTypes.agentVolumeMountPathDotNet}/`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/`
                         },
                         {
                             name: "OTEL_DOTNET_AUTO_PLUGINS",
@@ -197,7 +206,7 @@ ${ownerUidAttribute}`
                     {
                         returnValue.push(...[{
                             name: "JAVA_TOOL_OPTIONS",
-                            value: `-javaagent:${AddedTypes.agentVolumeMountPathJava}/applicationinsights-agent-codeless.jar`
+                            value: `-javaagent:${Mutations.agentVolumeMountPathJava}/applicationinsights-agent-codeless.jar`
                         }]);
                     }
                     break;
@@ -206,7 +215,7 @@ ${ownerUidAttribute}`
                     returnValue.push(...[
                         {
                             name: "NODE_OPTIONS",
-                            value: `--require ${AddedTypes.agentVolumeMountPathNodeJs}/aks.js`
+                            value: `--require ${Mutations.agentVolumeMountPathNodeJs}/aks.js`
                         }]);
                     break;
 
@@ -222,29 +231,33 @@ ${ownerUidAttribute}`
         return returnValue;
     }
 
-    public static volume_mounts(platforms: string[]) {
+    /**
+     * Generates volume mounts necessary for customer app's runtimes to load agent binaries.
+     * Also generates volume mounts necessary for the agents to dump runtime logs.
+     */
+    public static GenerateVolumeMounts(platforms: string[]): object[] {
         const volumeMounts: object[] = [];
 
         for (let i = 0; i < platforms.length; i++) {
             switch (platforms[i]) {
                 case "DotNet":
                     volumeMounts.push({
-                        name: AddedTypes.agentVolumeDotNet,
-                        mountPath: AddedTypes.agentVolumeMountPathDotNet
+                        name: Mutations.agentVolumeDotNet,
+                        mountPath: Mutations.agentVolumeMountPathDotNet
                     });
                     break;
 
                 case "Java":
                     volumeMounts.push({
-                        name: AddedTypes.agentVolumeJava,
-                        mountPath: AddedTypes.agentVolumeMountPathJava
+                        name: Mutations.agentVolumeJava,
+                        mountPath: Mutations.agentVolumeMountPathJava
                     });
                     break;
 
                 case "NodeJs":
                     volumeMounts.push({
-                        name: AddedTypes.agentVolumeNodeJs,
-                        mountPath: AddedTypes.agentVolumeMountPathNodeJs
+                        name: Mutations.agentVolumeNodeJs,
+                        mountPath: Mutations.agentVolumeMountPathNodeJs
                     });
                     break;
 
@@ -265,8 +278,8 @@ ${ownerUidAttribute}`
                 case "NodeJs":
                     if(!logVolumeMounted) {
                         volumeMounts.push({
-                            name: AddedTypes.agentLogsVolume,
-                            mountPath: AddedTypes.agentLogsVolumeMountPath
+                            name: Mutations.agentLogsVolume,
+                            mountPath: Mutations.agentLogsVolumeMountPath
                         });
 
                         logVolumeMounted = true;
@@ -277,28 +290,31 @@ ${ownerUidAttribute}`
         return volumeMounts;
     }
 
-    public static volumes(platforms: string[]) {
-        const volumes: object[] = [];
+    /**
+     * Generates volumes to place agent binaries, and also volumes for agents to dump runtime logs.
+     */
+    public static GenerateVolumes(platforms: string[]) : IVolume[] {
+        const volumes: IVolume[] = [];
 
         for (let i = 0; i < platforms.length; i++) {
             switch (platforms[i]) {
                 case "DotNet":
                     volumes.push({
-                        name: AddedTypes.agentVolumeDotNet,
+                        name: Mutations.agentVolumeDotNet,
                         emptyDir: {}
                     });
                     break;
 
                 case "Java":
                     volumes.push({
-                        name: AddedTypes.agentVolumeJava,
+                        name: Mutations.agentVolumeJava,
                         emptyDir: {}
                     });
                     break;
 
                 case "NodeJs":
                     volumes.push({
-                        name: AddedTypes.agentVolumeNodeJs,
+                        name: Mutations.agentVolumeNodeJs,
                         emptyDir: {}
                     });
                     break;
@@ -320,7 +336,7 @@ ${ownerUidAttribute}`
                 case "NodeJs":
                     if(!logVolumeAdded) {
                         volumes.push({
-                            name: AddedTypes.agentLogsVolume,
+                            name: Mutations.agentLogsVolume,
                             emptyDir: {}
                         });
 
