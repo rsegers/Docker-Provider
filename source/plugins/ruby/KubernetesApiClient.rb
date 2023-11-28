@@ -45,9 +45,7 @@ class KubernetesApiClient
   @@cpuRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@memoryLimitsTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@memoryRequestsTelemetryTimeTracker = DateTime.now.to_time.to_i
-  @@kubernetesApiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
   @@resourceLimitsTelemetryHash = {}
-  @@kubernetesApiResponseCodeHash = {}
   @@userAgent = nil
 
   def initialize
@@ -107,7 +105,7 @@ class KubernetesApiClient
               response = http.request(kubeApiRequest)
               responseCode = response.code
               @Log.info "KubernetesAPIClient::getKubeResourceInfoV2 : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
-              AppInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus")
+              ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus")
             end
           end
         end
