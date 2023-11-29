@@ -8,6 +8,32 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+
+### 11/29/2023 -
+##### Version microsoft/oms:3.1.15 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.16 (linux)
+##### Version microsoft/oms:win-3.1.15 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.15 (windows)
+##### Current dependencies
+- Linux
+  - [CBL-Mariner 2.0.20231004](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20231004-2.0)
+  - Golang - 1.20.5
+  - Ruby - 3.1.3
+  - MDSD - 1.28.11
+  - Telegraf - 1.27.2
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.14
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.9.43
+  - Golang - 1.20.5
+##### Code change log
+## What's Changed
+## What's Changed
+* Revert token changes for arc due to Telegraf bug by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1101
+* update mdsd to 1.28.11 by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1106
+
 ### 10/13/2023 -
 ##### Version microsoft/oms:3.1.15 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.15 (linux)
 ##### Version microsoft/oms:win-3.1.15 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.15 (windows)
