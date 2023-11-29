@@ -348,9 +348,9 @@ class ApplicationInsightsUtility
           if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
             apiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
             apiResponseCodeHash.each do |key, value|
-              value.each do |resource, count|
+              value.each do |resourceName, count|
                 telemetryProps = {}
-                telemetryProps["Resource"] = resource
+                telemetryProps["Resource"] = resourceName
                 telemetryProps["ResponseCode"] = key
                 sendMetricTelemetry(metricName, count, telemetryProps)
               end
