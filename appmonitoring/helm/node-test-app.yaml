@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name:  nodejs-test-app
-  namespace: default
+  namespace: ${TEST_NS}
   labels:
     app: test-app-nodejs
 spec:
