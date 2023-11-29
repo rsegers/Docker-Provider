@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Define the pod name and namespace
-POD_DOTNET_NAME="dotnet-test-app"
-POD_JAVA_NAME="customer-java-test-app"
-POD_NODEJS_NAME="test-app-nodejs"
-NAMESPACE="default"
+POD_DOTNET_NAME=$1
+POD_JAVA_NAME=$2
+POD_NODEJS_NAME=$3
+NAMESPACE=$4
 
 # Define the property to check for
 PROPERTY="APPLICATIONINSIGHTS_CONNECTION_STRING"
