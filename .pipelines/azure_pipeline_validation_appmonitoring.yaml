@@ -3,16 +3,7 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-trigger:
-  batch: true
-  branches:
-    include:
-    - ai_prod
-
-pr:
-  branches:
-    include:
-    - ai_prod
+pr: none
 
 variables:
   armServiceConnectionName: 'ai-acr-validation-rsx'
