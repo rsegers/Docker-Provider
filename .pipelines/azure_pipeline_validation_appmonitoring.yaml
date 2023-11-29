@@ -210,6 +210,8 @@ jobs:
         az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
         az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
         kubectl delete -f java-test-app.yaml
+        kubectl delete -f dotnet-test-app.yaml
+        kubectl delete -f node-test-app.yaml
         kubectl delete -f appmonitoring-cr.yaml
 
         echo "Wait for 10s for everything to clear up..."
