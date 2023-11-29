@@ -11,11 +11,7 @@ PROPERTY="APPLICATIONINSIGHTS_CONNECTION_STRING"
 
 DOTNET_POD_NAME=$(kubectl get pods -n "$NAMESPACE" -o custom-columns=NAME:.metadata.name | grep "$POD_DOTNET_NAME")
 JAVA_POD_NAME=$(kubectl get pods -n "$NAMESPACE" -o custom-columns=NAME:.metadata.name | grep "$POD_JAVA_NAME")
-# NODEJS_POD_NAME=$(kubectl get pods -n test-ns -o custom-columns=NAME:.metadata.name | grep "$POD_NODEJS_NAME")
-
-echo "$PROPERTY"
-echo "$DOTNET_POD_NAME"
-echo "$JAVA_POD_NAME"
+NODEJS_POD_NAME=$(kubectl get pods -n "$NAMESPACE" -o custom-columns=NAME:.metadata.name | grep "$POD_NODEJS_NAME")
 
 checkit() {
     local podName="$1"  # The first argument to the function is stored in 'name'
@@ -23,13 +19,13 @@ checkit() {
 
     # Check for the property
     if echo "$POD_YAML" | grep -q "$PROPERTY"; then
-        echo "Property $PROPERTY found in pod $POD_NAME"
+        echo "Property $PROPERTY found in pod $podName"
         # You can add additional commands here to process the property
     else
-        echo "Property $PROPERTY not found in pod $POD_NAME"
+        echo "Property $PROPERTY not found in pod $podName"
     fi
 }
 
 checkit "$DOTNET_POD_NAME" 
 checkit "$JAVA_POD_NAME" 
-
+checkit "$NODEJS_POD_NAME" 
