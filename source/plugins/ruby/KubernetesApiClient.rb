@@ -73,7 +73,7 @@ class KubernetesApiClient
               @Log.info "KubernetesAPIClient::getKubeResourceInfo : Making request to #{uri.request_uri} @ #{Time.now.utc.iso8601}"
               response = http.request(kubeApiRequest)
               @Log.info "KubernetesAPIClient::getKubeResourceInfo : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
-              ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus", @@K8sApiResponseCodeHash, @@K8sApiResponseTelemetryTimeTracker)
+              @@K8sApiResponseTelemetryTimeTracker = ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus", @@K8sApiResponseCodeHash, @@K8sApiResponseTelemetryTimeTracker)
             end
           end
         end
@@ -108,7 +108,7 @@ class KubernetesApiClient
               response = http.request(kubeApiRequest)
               responseCode = response.code
               @Log.info "KubernetesAPIClient::getKubeResourceInfoV2 : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
-              ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus", @@K8sApiResponseCodeHash, @@K8sApiResponseTelemetryTimeTracker)
+              @@K8sApiResponseTelemetryTimeTracker = ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus", @@K8sApiResponseCodeHash, @@K8sApiResponseTelemetryTimeTracker)
             end
           end
         end

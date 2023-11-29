@@ -358,6 +358,7 @@ class ApplicationInsightsUtility
             apiResponseCodeHash.clear
           end
         end
+        return apiResponseTelemetryTimeTracker
       rescue => err
         $log.warn("Exception in AppInsightsUtility: sendAPIResponseTelemetry failed with an error: #{err}")
       end
