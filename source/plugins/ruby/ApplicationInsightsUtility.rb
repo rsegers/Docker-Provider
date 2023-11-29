@@ -326,7 +326,7 @@ class ApplicationInsightsUtility
     def sendAPIResponseTelemetry(responseCode, resource, metricName, apiResponseCodeHash, apiResponseTelemetryTimeTracker)
       begin
         if (!responseCode.nil? && !responseCode.empty?)
-          if (apiResponseCodeHash.has_key?(responseCode))
+          if (!apiResponseCodeHash.has_key?(responseCode))
             telemetryProps = {}
             telemetryProps[resource] = 1
             apiResponseCodeHash[responseCode] = telemetryProps
