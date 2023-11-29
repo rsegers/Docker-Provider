@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name:  customer-deployment-3
+  name:  test-app-nodejs
   namespace: default
   labels:
     app: test-app-nodejs
