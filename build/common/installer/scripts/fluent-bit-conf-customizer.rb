@@ -43,7 +43,7 @@ def substituteFluentBitPlaceHolders
     memBufLimit = ENV["FBIT_TAIL_MEM_BUF_LIMIT"]
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
-    kubernetesMetadataCollection = env["AZMON_KUBERNETES_METADATA_ENABLED"]
+    kubernetesMetadataCollection = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
 
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
@@ -81,7 +81,7 @@ def substituteFluentBitPlaceHolders
     end
 
     if !kubernetesMetadataCollection.nil? && kubernetesMetadataCollection.to_s.downcase == "true"
-      new_contents = new_contents.gsub("#${KubernetesMetadataCollection}", "")
+      new_contents = new_contents.gsub("#${KubernetesFilterEnabled}", "")
     end
 
     new_contents = substituteMultiline(multilineLogging, new_contents)
