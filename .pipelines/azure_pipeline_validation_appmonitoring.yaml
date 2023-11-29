@@ -247,6 +247,6 @@ jobs:
         az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
         
         sudo chmod u+x ./validate-mutation.sh
-        ./validate-mutation.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "test-ns"
+        ./validate-mutation.sh "dotnet-test-app" "java-test-app" "nodejs-test-app" "test-ns"
 
 
