@@ -90,6 +90,14 @@ class LocalLogger {
         return LocalLogger.instance;
     }
 
+    public sanitizeException(e: any): any {
+        if(e?.response?.request?.headers?.Authorization) {
+            e.response.request.headers.Authorization = "<redacted>";
+        }
+
+        return e;
+    }
+
     public setUnitTestMode(isUnitTestMode: boolean) {
         this.isUnitTestMode = isUnitTestMode;
     }
@@ -202,7 +210,7 @@ class LocalLogger {
                 this.info(`Sending heartbeat...`, operationId, this.heartbeatRequestMetadata);
                 this.sendHeartbeat();
             } catch (e) {
-                logger.error(`Failed to send out heartbeat: ${e}`, operationId, this.heartbeatRequestMetadata);
+                logger.error(`Failed to send out heartbeat: ${JSON.stringify(logger.sanitizeException(e))}`, operationId, this.heartbeatRequestMetadata);
             } finally {
                 // pause until the next heartbeat
                 if(!this.isUnitTestMode) {
@@ -271,30 +279,6 @@ class LocalLogger {
 
         this.heartbeatAccumulator.logs.clear();
     }
-
-    // public telemetry(metric: Metrics, value: number, uid = "") {
-    //     if (metric == null) {
-    //         this.log.error("invalid metric");
-    //     }
-
-    //     if (this.client == null) {
-    //         this.client = new applicationInsights.TelemetryClient(this.getKey());
-    //     }
-
-    //     const telemetryItem: MetricTelemetry = {
-    //         name: metric,
-    //         value,
-    //         count: 1,
-    //         properties: {
-    //             KUBERNETES_SERVICE_HOST: process.env.KUBERNETES_SERVICE_HOST,
-    //             CLUSTER_RESOURCE_ID: process.env.CLUSTER_RESOURCE_ID,
-    //             UID: uid,
-    //         },
-    //     };
-
-    //     this.client.trackMetric(telemetryItem);
-    //     //this.client.flush();
-    // }
 
     public SendEvent(eventName: string, operationId: string, uid: string, clusterArmId: string, clusterArmRegion: string, flush = false, ...args: unknown[]) {
         const event: EventTelemetry = {
