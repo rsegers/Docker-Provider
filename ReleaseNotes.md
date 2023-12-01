@@ -12,6 +12,8 @@ additional questions or comments.
 ### 11/29/2023 -
 ##### Version microsoft/oms:3.1.15 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.16 (linux)
 ##### Version microsoft/oms:win-3.1.15 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.15 (windows)
+##### Release branch: https://github.com/microsoft/Docker-Provider/commits/user/amagraw/3.1.16
+##### Commit: https://github.com/microsoft/Docker-Provider/commit/7b7335d94a436b086c8fe2a8c883b865deae3990
 ##### Current dependencies
 - Linux
   - [CBL-Mariner 2.0.20231004](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20231004-2.0)
@@ -31,8 +33,14 @@ additional questions or comments.
 ##### Code change log
 ## What's Changed
 ## What's Changed
-* Revert token changes for arc due to Telegraf bug by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1101
 * update mdsd to 1.28.11 by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1106
+
+### 10/25/2023 - HOTFIX
+##### ARC Version - 3.1.15.1
+##### Commit: https://github.com/microsoft/Docker-Provider/commit/fac0c9381f52009bafbcb6fcae52165073e63035 
+##### Code change log
+## What's Changed
+* Revert token changes for arc due to Telegraf bug by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1101
 
 ### 10/13/2023 -
 ##### Version microsoft/oms:3.1.15 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.15 (linux)
