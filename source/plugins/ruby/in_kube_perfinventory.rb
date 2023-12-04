@@ -71,7 +71,7 @@ module Fluent::Plugin
         @podCacheMutex = Mutex.new
         @thread = Thread.new(&method(:run_periodic))
         @watchPodsThread = Thread.new(&method(:watch_pods))
-        @@perfTelemetryTimeTracker = DateTime.now.to_time.to_i
+        @perfTelemetryTimeTracker = DateTime.now.to_time.to_i
       end
     end
 
@@ -93,6 +93,7 @@ module Fluent::Plugin
         @podCount = 0
         currentTime = Time.now
         batchTime = currentTime.utc.iso8601
+        telemetryFlush = false
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_perfinventory::enumerate: AAD AUTH MSI MODE")
           @kubeperfTag, isFromCache = KubernetesApiClient.getOutputStreamIdAndSource(Constants::PERF_DATA_TYPE, @kubeperfTag, @agentConfigRefreshTracker)
@@ -135,7 +136,7 @@ module Fluent::Plugin
         nodeAllocatableRecords = nil
 
         # Adding telemetry to send perfinventory telemetry every 5 minutes
-        timeDifference = (DateTime.now.to_time.to_i - @@perfTelemetryTimeTracker).abs
+        timeDifference = (DateTime.now.to_time.to_i - @perfTelemetryTimeTracker).abs
         timeDifferenceInMinutes = timeDifference / 60
         if (timeDifferenceInMinutes >= 5)
           telemetryFlush = true
@@ -143,7 +144,7 @@ module Fluent::Plugin
 
         if telemetryFlush
           ApplicationInsightsUtility.sendCustomEvent("KubePerfInventoryHeartBeatEvent", {})
-          @@perfTelemetryTimeTracker = DateTime.now.to_time.to_i
+          @perfTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
       rescue => errorStr
         $log.warn "in_kube_perfinventory::enumerate:Failed in enumerate: #{errorStr}"

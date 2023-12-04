@@ -60,7 +60,7 @@ module Fluent::Plugin
         @condition = ConditionVariable.new
         @mutex = Mutex.new
         @thread = Thread.new(&method(:run_periodic))
-        @@kubeStateHPATelemetryTimeTracker = DateTime.now.to_time.to_i
+        @kubeStateHPATelemetryTimeTracker = DateTime.now.to_time.to_i
       end
     end
 
@@ -80,6 +80,7 @@ module Fluent::Plugin
         hpaList = nil
         currentTime = Time.now
         batchTime = currentTime.utc.iso8601
+        telemetryFlush = false
 
         @hpaCount = 0
 
@@ -135,7 +136,7 @@ module Fluent::Plugin
         end
 
         # Adding telemetry to send kubestateHPA telemetry every 5 minutes
-        timeDifference = (DateTime.now.to_time.to_i - @@kubeStateHPATelemetryTimeTracker).abs
+        timeDifference = (DateTime.now.to_time.to_i - @kubeStateHPATelemetryTimeTracker).abs
         timeDifferenceInMinutes = timeDifference / 60
         if (timeDifferenceInMinutes >= 5)
           telemetryFlush = true
@@ -143,7 +144,7 @@ module Fluent::Plugin
 
         if telemetryFlush
           ApplicationInsightsUtility.sendCustomEvent("KubeStateHPAHeartBeatEvent", {})
-          @@kubeStateHPATelemetryTimeTracker = DateTime.now.to_time.to_i
+          @kubeStateHPATelemetryTimeTracker = DateTime.now.to_time.to_i
         end
       rescue => errorStr
         $log.warn "in_kubestate_hpa::enumerate:Failed in enumerate: #{errorStr}"
