@@ -151,7 +151,7 @@ module Fluent::Plugin
         end
 
         if telemetryFlush
-          ApplicationInsightsUtility.sendCustomEvent("KubeStateEventsHeartBeatEvent", {})
+          ApplicationInsightsUtility.sendCustomEvent("KubeEventsHeartBeatEvent", {})
           @@kubeEventsTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
       rescue => errorStr
