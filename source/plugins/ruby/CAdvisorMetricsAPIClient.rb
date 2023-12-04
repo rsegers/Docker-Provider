@@ -967,7 +967,10 @@ class CAdvisorMetricsAPIClient
               @Log.info "Got response code #{response.code} from #{uri.request_uri}"
             end
           end
-          @@CAdvisorApiResponseTelemetryTimeTracker = ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, relativeUri, "CAdvisorAPIStatus", @@CAdvisorApiResponseCodeHash, @@CAdvisorApiResponseTelemetryTimeTracker)
+          # Send telemetry for cAdvisor API response code if it is not success
+          if !response.nil? && !response.code.nil? && !response.code.start_with?("2")
+            @@CAdvisorApiResponseTelemetryTimeTracker = ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, relativeUri, "CAdvisorAPIStatus", @@CAdvisorApiResponseCodeHash, @@CAdvisorApiResponseTelemetryTimeTracker)
+          end
         end
       rescue => error
         @Log.warn("CAdvisor api request for #{cAdvisorUri} failed: #{error}")
