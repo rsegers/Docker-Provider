@@ -144,7 +144,7 @@ module Fluent::Plugin
           ApplicationInsightsUtility.sendMetricTelemetry("EventCount", @eventsCount, {})
         end
 
-        # Adding telemetry to send kubevents telemetry every 5 minutes
+        # Adding telemetry to send kube events telemetry every 5 minutes
         timeDifference = (DateTime.now.to_time.to_i - @kubeEventsTelemetryTimeTracker).abs
         timeDifferenceInMinutes = timeDifference / 60
         if (timeDifferenceInMinutes >= 5)
