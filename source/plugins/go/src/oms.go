@@ -161,6 +161,8 @@ var (
 	ContainerLogSchemaV2 bool
 	// container log schema version from config map
 	ContainerLogV2ConfigMap bool
+	// container log schema version from config map
+	KubernetesMetadataConfigMap bool
 	//ADX Cluster URI
 	AdxClusterUri string
 	// ADX clientID
@@ -272,6 +274,8 @@ type DataItemLAv2 struct {
 	PodNamespace  string `json:"PodNamespace"`
 	LogMessage    string `json:"LogMessage"`
 	LogSource     string `json:"LogSource"`
+	KubernetesMetadata    string `json:"KubernetesMetadata"`
+	//LogLevel     string `json:"LogLevel"`
 	//PodLabels			  string `json:"PodLabels"`
 }
 
@@ -285,6 +289,8 @@ type DataItemADX struct {
 	PodNamespace  string `json:"PodNamespace"`
 	LogMessage    string `json:"LogMessage"`
 	LogSource     string `json:"LogSource"`
+	KubernetesMetadata    string `json:"KubernetesMetadata"`
+	//LogLevel     string `json:"LogLevel"`
 	//PodLabels			  string `json:"PodLabels"`
 	AzureResourceId string `json:"AzureResourceId"`
 }
@@ -1135,6 +1141,24 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	for _, record := range tailPluginRecords {
 		containerID, k8sNamespace, k8sPodName, containerName := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
 		logEntrySource := ToString(record["stream"])
+		kubernetesMetadata := ""
+		if KubernetesMetadataConfigMap {
+			if kubernetesMetadataJson, exists := record["kubernetes"]; exists {
+				kubernetesMetadataBytes, err := json.Marshal(kubernetesMetadataJson)
+				if err != nil {
+					message := fmt.Sprintf("Error while Marshalling kubernetesMetadataBytes to json bytes: %s", err.Error())
+					Log(message)
+					SendException(message)
+				}
+				kubernetesMetadata = string(kubernetesMetadataBytes)
+			} else {
+				message := fmt.Sprintf("Error while fetching kubernetesMetadataJson")
+				Log(message)
+				continue
+			}
+		}
+		//include
+
 
 		if strings.EqualFold(logEntrySource, "stdout") {
 			if containerID == "" || containsKey(StdoutIgnoreNsSet, k8sNamespace) {
@@ -1160,6 +1184,9 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		logEntry := ToString(record["log"])
+		//filter loglevel and define here
+		//add another configmap flag
+		//logLevel := ToString(record["LogLevel"])
 		logEntryTimeStamp := ToString(record["time"])
 
 		if !ContainerLogV2ConfigMap && IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
@@ -1188,6 +1215,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			stringMap["LogMessage"] = logEntry
 			stringMap["LogSource"] = logEntrySource
 			stringMap["TimeGenerated"] = logEntryTimeStamp
+			stringMap["KubernetesMetadata"] = kubernetesMetadata
+			//stringMap["LogLevel"] = logLevel
 		} else {
 			stringMap["LogEntry"] = logEntry
 			stringMap["LogEntrySource"] = logEntrySource
@@ -1237,6 +1266,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				LogMessage:      stringMap["LogMessage"],
 				LogSource:       stringMap["LogSource"],
 				AzureResourceId: stringMap["AzureResourceId"],
+				KubernetesMetadata: stringMap["KubernetesMetadata"],
+				//LogLevel: stringMap["LogLevel"],
 			}
 			//ADX
 			dataItemsADX = append(dataItemsADX, dataItemADX)
@@ -1251,6 +1282,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					PodNamespace:  stringMap["PodNamespace"],
 					LogMessage:    stringMap["LogMessage"],
 					LogSource:     stringMap["LogSource"],
+					KubernetesMetadata: stringMap["KubernetesMetadata"],
+					//LogLevel: stringMap["LogLevel"],
 				}
 				//ODS-v2 schema
 				dataItemsLAv2 = append(dataItemsLAv2, dataItemLAv2)
@@ -1869,6 +1902,11 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	ContainerLogSchemaV2 = false //default is v1 schema
 	ContainerLogV2ConfigMap = (strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0)
+
+	KubernetesMetadataConfigMap = false
+	KubernetesMetadataConfigMap = (strings.Compare(strings.ToLower(os.Getenv(AADMSIAuthMode)), "true") == 0)
+	//include
+
 
 	if ContainerLogV2ConfigMap && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true
