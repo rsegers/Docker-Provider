@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import { CertificateStoreName, NamespaceName, WebhookDNSEndpoint, WebhookName } from './Constants.js'
 import forge from 'node-forge';
-import { logger } from './LoggerWrapper.js';
+import { logger, RequestMetadata } from './LoggerWrapper.js';
 
 class WebhookCertData {
     caCert: string;
@@ -12,6 +12,8 @@ class WebhookCertData {
 
 export class CertificateManager {
     
+    private static requestMetadata = new RequestMetadata(null, null);
+
     // Generate a random serial number for the Certificate
     private static randomHexSerialNumber() {
         return (1001).toString(16) + Math.ceil(Math.random()*100); //Just creates a placeholder hex and randomly increments it with a number between 1 and 100
@@ -122,13 +124,13 @@ export class CertificateManager {
             } as WebhookCertData;
             
         } catch (error) {
-            logger.error('Self Signed CA Cert generation failed!');
-            logger.error(JSON.stringify(error));
+            logger.error('Self Signed CA Cert generation failed!', operationId, this.requestMetadata);
+            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
             throw error;
         }
     }
 
-    public static async PatchSecretStore(kubeConfig: k8s.KubeConfig, certificate: WebhookCertData) {
+    public static async PatchSecretStore(kubeConfig: k8s.KubeConfig, certificate: WebhookCertData, operationId: string) {
         try {
             const secretsApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
             const secretStore = await secretsApi.readNamespacedSecret(CertificateStoreName, NamespaceName);
@@ -143,8 +145,8 @@ export class CertificateManager {
                 headers: { 'Content-Type' : 'application/strategic-merge-patch+json' }
             });
         } catch (error) {
-            logger.error('Failed to patch Secret Store!');
-            logger.error(JSON.stringify(error));
+            logger.error('Failed to patch Secret Store!', operationId, this.requestMetadata);
+            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
             throw error;
         }
     }
@@ -206,8 +208,8 @@ export class CertificateManager {
                 headers: { 'Content-Type' : 'application/strategic-merge-patch+json' }
             });
         } catch (error) {
-            logger.error('Failed to patch MutatingWebhookConfiguration!');
-            logger.error(JSON.stringify(error));
+            logger.error('Failed to patch MutatingWebhookConfiguration!', operationId, this.requestMetadata);
+            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
             throw error;
         }
     }
