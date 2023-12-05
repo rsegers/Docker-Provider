@@ -226,10 +226,12 @@ export class CertificateManager {
         kc.loadFromDefault();
 
         logger.info('Creating certificates...', operationId, this.requestMetadata);
+        logger.SendEvent("CertificateCreating", operationId, null, clusterArmId, clusterArmRegion);
         const certificates: WebhookCertData = await CertificateManager.CreateOrUpdateCertificates(operationId) as WebhookCertData;
         logger.info('Certificates created successfully', operationId, this.requestMetadata);
+        logger.SendEvent("CertificateCreated", operationId, null, clusterArmId, clusterArmRegion);
 
-        CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates);
+        CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates, clusterArmId, clusterArmRegion);
     }
 
     public static async ReconcileWebhookAndCertificates(operationId: string, clusterArmId: string, clusterArmRegion: string) {
@@ -246,9 +248,11 @@ export class CertificateManager {
         if (!certSignedByGivenCA)
         {
             logger.info('Creating certificates...', operationId, this.requestMetadata);
+            logger.SendEvent("CertificateCreating", operationId, null, clusterArmId, clusterArmRegion);
             certificates = await CertificateManager.CreateOrUpdateCertificates(operationId) as WebhookCertData;
             logger.info('Certificates created successfully', operationId, this.requestMetadata);
-            CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates);
+            logger.SendEvent("CertificateCreated", operationId, null, clusterArmId, clusterArmRegion);
+            CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates, clusterArmId, clusterArmRegion);
             return;
         }
 
@@ -279,19 +283,22 @@ export class CertificateManager {
         }
 
         if (shouldUpdate) {
-            CertificateManager.PatchWebhookAndCertificates(operationId, kc, webhookCertData);
+            CertificateManager.PatchWebhookAndCertificates(operationId, kc, webhookCertData, clusterArmId, clusterArmRegion);
         }
     }
 
-    private static async PatchWebhookAndCertificates(operationId: string, kc: k8s.KubeConfig, certificates: WebhookCertData) {
+    private static async PatchWebhookAndCertificates(operationId: string, kc: k8s.KubeConfig, certificates: WebhookCertData, clusterArmId: string, clusterArmRegion: string) {
 
         logger.info('Patching Secret Store...', operationId, this.requestMetadata);
+        logger.SendEvent("CertificatePatchingSecretStore", operationId, null, clusterArmId, clusterArmRegion);
         await CertificateManager.PatchSecretStore(operationId, kc, certificates);
         logger.info('Secret Store patched successfully', operationId, this.requestMetadata);
 
         logger.info('Patching MutatingWebhookConfiguration...', operationId, this.requestMetadata);
+        logger.SendEvent("CertificatePatchingMWHC", operationId, null, clusterArmId, clusterArmRegion);
         await CertificateManager.PatchMutatingWebhook(operationId, kc, certificates);
         logger.info('MutatingWebhookConfiguration patched successfully', operationId, this.requestMetadata);
+        logger.SendEvent("CertificatePatchedMWHC", operationId, null, clusterArmId, clusterArmRegion);
     }
 
 }
