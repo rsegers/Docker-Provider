@@ -92,6 +92,7 @@ export class CertificateManager {
 
         // Set the attributes for the new Host Certificate
         newHostCert.publicKey = hostKeys.publicKey;
+        newHostCert.privateKey = hostKeys.privateKey;
         newHostCert.serialNumber = CertificateManager.randomHexSerialNumber();
         newHostCert.validity.notBefore = new Date(currentTime - (5 * 60 * 1000)); //5 Mins ago
         newHostCert.validity.notAfter = new Date(currentTime + (2 * 365 * 24 * 60 * 60 * 1000)); //2 Years from now
