@@ -37,11 +37,11 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
     process.exit();
 } else if ("secrets-housekeeper".localeCompare(containerMode) === 0) {
     try {
-        logger.info("Running in certificate housekeeper mode...");
-        await CertificateManager.ReconcileWebhookAndCertificates();
+        logger.info("Running in certificate housekeeper mode...", operationId, null);
+        await CertificateManager.ReconcileWebhookAndCertificates(operationId, clusterArmId, clusterArmRegion);
     } catch (error) {
-        logger.error(JSON.stringify(error));
-        logger.error("Failed to Update Certificates, Terminating...");
+        logger.error(JSON.stringify(error), operationId, null);
+        logger.error("Failed to Update Certificates, Terminating...", operationId, null);
         throw error;
     }
 }

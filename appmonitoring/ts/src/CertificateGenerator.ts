@@ -106,7 +106,7 @@ export class CertificateManager {
         return newHostCert;
     }
 
-    private static async CreateOrUpdateCertificates(currentCACert?: forge.pki.Certificate): Promise<WebhookCertData> {
+    private static async CreateOrUpdateCertificates(operationId: string, currentCACert?: forge.pki.Certificate): Promise<WebhookCertData> {
         try {
             let caCertResult: forge.pki.Certificate = currentCACert;
 
@@ -130,7 +130,7 @@ export class CertificateManager {
         }
     }
 
-    public static async PatchSecretStore(kubeConfig: k8s.KubeConfig, certificate: WebhookCertData, operationId: string) {
+    public static async PatchSecretStore(operationId: string, kubeConfig: k8s.KubeConfig, certificate: WebhookCertData) {
         try {
             const secretsApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
             const secretStore = await secretsApi.readNamespacedSecret(CertificateStoreName, NamespaceName);
@@ -151,7 +151,7 @@ export class CertificateManager {
         }
     }
 
-    public static async GetSecretDetails(kubeConfig: k8s.KubeConfig): Promise<WebhookCertData> {
+    public static async GetSecretDetails(operationId: string, kubeConfig: k8s.KubeConfig): Promise<WebhookCertData> {
         try {
             const k8sApi = kubeConfig.makeApiClient(k8s.CoreV1Api);
             const secretStore = await k8sApi.readNamespacedSecret(CertificateStoreName, NamespaceName)
@@ -167,11 +167,11 @@ export class CertificateManager {
                 return certificate;
             }
         } catch (error) {
-            logger.error(error);
+            logger.error(error, operationId, this.requestMetadata);
         }
     }
 
-    public static async GetMutatingWebhookCABundle(kubeConfig: k8s.KubeConfig): Promise<string> {
+    public static async GetMutatingWebhookCABundle(operationId: string, kubeConfig: k8s.KubeConfig): Promise<string> {
         try {
             const webhookApi: k8s.AdmissionregistrationV1Api = kubeConfig.makeApiClient(k8s.AdmissionregistrationV1Api);
             const mutatingWebhook = await webhookApi.readMutatingWebhookConfiguration(WebhookName);
@@ -185,13 +185,13 @@ export class CertificateManager {
 
             return Buffer.from(mutatingWebhookObject.webhooks[0].clientConfig.caBundle, 'base64').toString('utf-8');
         } catch (error) {
-            logger.error('Failed to get MutatingWebhookConfiguration!');
-            logger.error(JSON.stringify(error));
+            logger.error('Failed to get MutatingWebhookConfiguration!', operationId, this.requestMetadata);
+            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
             throw error;
         }
     }
 
-    public static async PatchMutatingWebhook(kubeConfig: k8s.KubeConfig, certificate: WebhookCertData) {
+    public static async PatchMutatingWebhook(operationId: string, kubeConfig: k8s.KubeConfig, certificate: WebhookCertData) {
         try {
             const webhookApi: k8s.AdmissionregistrationV1Api = kubeConfig.makeApiClient(k8s.AdmissionregistrationV1Api);
             const mutatingWebhook = await webhookApi.readMutatingWebhookConfiguration(WebhookName);
@@ -221,34 +221,34 @@ export class CertificateManager {
         return caCertificate.verify(certificate);
     }
 
-    public static async CreateWebhookAndCertificates() {
+    public static async CreateWebhookAndCertificates(operationId: string, clusterArmId: string, clusterArmRegion: string) {
         const kc = new k8s.KubeConfig();
         kc.loadFromDefault();
 
-        logger.info('Creating certificates...');
-        const certificates: WebhookCertData = await CertificateManager.CreateOrUpdateCertificates() as WebhookCertData;
-        logger.info('Certificates created successfully');
+        logger.info('Creating certificates...', operationId, this.requestMetadata);
+        const certificates: WebhookCertData = await CertificateManager.CreateOrUpdateCertificates(operationId) as WebhookCertData;
+        logger.info('Certificates created successfully', operationId, this.requestMetadata);
 
-        CertificateManager.PatchWebhookAndCertificates(kc, certificates);
+        CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates);
     }
 
-    public static async ReconcileWebhookAndCertificates() {
+    public static async ReconcileWebhookAndCertificates(operationId: string, clusterArmId: string, clusterArmRegion: string) {
         const kc = new k8s.KubeConfig();
         kc.loadFromDefault();
         let certificates: WebhookCertData = null;
 
-        const webhookCertData: WebhookCertData = await CertificateManager.GetSecretDetails(kc);
-        const mwhcCaBundle: string = await CertificateManager.GetMutatingWebhookCABundle(kc);
+        const webhookCertData: WebhookCertData = await CertificateManager.GetSecretDetails(operationId, kc);
+        const mwhcCaBundle: string = await CertificateManager.GetMutatingWebhookCABundle(operationId, kc);
 
         const matchValidation: boolean = mwhcCaBundle.localeCompare(webhookCertData.caCert) === 0;
         const certSignedByGivenCA: boolean = matchValidation && CertificateManager.isCertificateSignedByCA(webhookCertData.tlsCert, mwhcCaBundle);
 
         if (!certSignedByGivenCA)
         {
-            logger.info('Creating certificates...');
-            certificates = await CertificateManager.CreateOrUpdateCertificates() as WebhookCertData;
-            logger.info('Certificates created successfully');
-            CertificateManager.PatchWebhookAndCertificates(kc, certificates);
+            logger.info('Creating certificates...', operationId, this.requestMetadata);
+            certificates = await CertificateManager.CreateOrUpdateCertificates(operationId) as WebhookCertData;
+            logger.info('Certificates created successfully', operationId, this.requestMetadata);
+            CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates);
             return;
         }
 
@@ -279,19 +279,19 @@ export class CertificateManager {
         }
 
         if (shouldUpdate) {
-            CertificateManager.PatchWebhookAndCertificates(kc, webhookCertData);
+            CertificateManager.PatchWebhookAndCertificates(operationId, kc, webhookCertData);
         }
     }
 
-    private static async PatchWebhookAndCertificates(kc: k8s.KubeConfig, certificates: WebhookCertData) {
+    private static async PatchWebhookAndCertificates(operationId: string, kc: k8s.KubeConfig, certificates: WebhookCertData) {
 
-        logger.info('Patching Secret Store...');
-        await CertificateManager.PatchSecretStore(kc, certificates);
-        logger.info('Secret Store patched successfully');
+        logger.info('Patching Secret Store...', operationId, this.requestMetadata);
+        await CertificateManager.PatchSecretStore(operationId, kc, certificates);
+        logger.info('Secret Store patched successfully', operationId, this.requestMetadata);
 
-        logger.info('Patching MutatingWebhookConfiguration...');
-        await CertificateManager.PatchMutatingWebhook(kc, certificates);
-        logger.info('MutatingWebhookConfiguration patched successfully');
+        logger.info('Patching MutatingWebhookConfiguration...', operationId, this.requestMetadata);
+        await CertificateManager.PatchMutatingWebhook(operationId, kc, certificates);
+        logger.info('MutatingWebhookConfiguration patched successfully', operationId, this.requestMetadata);
     }
 
 }
