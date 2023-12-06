@@ -38,7 +38,9 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
         logger.error("Failed to Update Certificates, Terminating...", operationId, null);
         throw error;
     }
+    process.exit();
 }
+
 const crs: AppMonitoringConfigCRsCollection = new AppMonitoringConfigCRsCollection();
 
 logger.info("Running in server mode...", operationId, null);

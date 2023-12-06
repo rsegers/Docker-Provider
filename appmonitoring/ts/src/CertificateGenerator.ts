@@ -137,10 +137,10 @@ export class CertificateManager {
             const secretStore = await secretsApi.readNamespacedSecret(CertificateStoreName, NamespaceName);
             const secretsObj: k8s.V1Secret = secretStore.body;
 
-            secretsObj.data['ca.cert'] = btoa(certificate.caCert);
-            secretsObj.data['ca.key'] = btoa(certificate.caKey);
-            secretsObj.data['tls.cert'] = btoa(certificate.tlsCert);
-            secretsObj.data['tls.key'] = btoa(certificate.tlsKey);
+            secretsObj.data['ca.cert'] = Buffer.from(certificate.caCert, 'utf-8').toString('base64');
+            secretsObj.data['ca.key'] = Buffer.from(certificate.caKey, 'utf-8').toString('base64');
+            secretsObj.data['tls.cert'] = Buffer.from(certificate.tlsCert, 'utf-8').toString('base64');
+            secretsObj.data['tls.key'] = Buffer.from(certificate.tlsKey, 'utf-8').toString('base64');
 
             await secretsApi.patchNamespacedSecret(CertificateStoreName, NamespaceName, secretsObj, undefined, undefined, undefined, undefined, undefined, {
                 headers: { 'Content-Type' : 'application/strategic-merge-patch+json' }
@@ -164,7 +164,7 @@ export class CertificateManager {
                     tlsCert: Buffer.from(secretsObj.data['tls.cert'], 'base64').toString('utf-8'),
                     tlsKey: Buffer.from(secretsObj.data['tls.key'], 'base64').toString('utf-8')
                 };
-
+                
                 return certificate;
             }
         } catch (error) {
@@ -232,7 +232,7 @@ export class CertificateManager {
         logger.info('Certificates created successfully', operationId, this.requestMetadata);
         logger.SendEvent("CertificateCreated", operationId, null, clusterArmId, clusterArmRegion);
 
-        CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates, clusterArmId, clusterArmRegion);
+        await CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates, clusterArmId, clusterArmRegion);
     }
 
     public static async ReconcileWebhookAndCertificates(operationId: string, clusterArmId: string, clusterArmRegion: string) {
