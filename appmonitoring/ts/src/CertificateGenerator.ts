@@ -265,6 +265,7 @@ export class CertificateManager {
             logger.info('Certificates created successfully', operationId, this.requestMetadata);
             logger.SendEvent("CertificateCreated", operationId, null, clusterArmId, clusterArmRegion);
             await CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates, clusterArmId, clusterArmRegion);
+            await CertificateManager.DeleteWebhookReplicaset(operationId, kc);
             return;
         }
 
@@ -295,11 +296,35 @@ export class CertificateManager {
         }
 
         if (shouldUpdate) {
-            CertificateManager.PatchWebhookAndCertificates(operationId, kc, webhookCertData, clusterArmId, clusterArmRegion);
+            await CertificateManager.PatchWebhookAndCertificates(operationId, kc, webhookCertData, clusterArmId, clusterArmRegion);
         }
         else {
             logger.info('Nothing to do. All is good. Ending this run...', operationId, this.requestMetadata);
         }
+    }
+
+    private static async DeleteWebhookReplicaset(operationId: string, kc: k8s.KubeConfig) {
+        const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
+
+        let replicaSets: k8s.V1ReplicaSetList;
+        try {
+            replicaSets = (await k8sApi.listNamespacedReplicaSet(NamespaceName)).body;
+            
+        } catch (err) {
+            logger.error('Failed to list ReplicaSets!', operationId, this.requestMetadata);
+            logger.error(JSON.stringify(err), operationId, this.requestMetadata);
+            throw err;
+        }
+
+        const matchingReplicaSets = replicaSets.items.filter(rs => 
+            rs.spec.selector.matchLabels.app === "selector"
+        );
+
+        const rs = matchingReplicaSets[0];
+        logger.info(`Deleting ReplicaSet: ${rs.metadata.name}`, operationId, this.requestMetadata);
+        logger.SendEvent("CertificateDeletingReplicaSet", operationId, null, null, null, false, null, rs.metadata.name);
+        await k8sApi.deleteNamespacedReplicaSet(rs.metadata.name, NamespaceName);
+        logger.info(`Deleted ReplicaSet: ${rs.metadata.name}`, operationId, this.requestMetadata);
     }
 
     private static async PatchWebhookAndCertificates(operationId: string, kc: k8s.KubeConfig, certificates: WebhookCertData, clusterArmId: string, clusterArmRegion: string) {
