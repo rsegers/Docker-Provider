@@ -164,7 +164,7 @@ export class CertificateManager {
                     tlsCert: Buffer.from(secretsObj.data['tls.cert'], 'base64').toString('utf-8'),
                     tlsKey: Buffer.from(secretsObj.data['tls.key'], 'base64').toString('utf-8')
                 };
-                
+
                 return certificate;
             }
         } catch (error) {
@@ -216,6 +216,10 @@ export class CertificateManager {
     }
 
     private static isCertificateSignedByCA(pemCertificate: string, pemCACertificate: string): boolean {
+        if (!pemCertificate || !pemCACertificate) {
+            return false;
+        }
+
         const certificate: forge.pki.Certificate = forge.pki.certificateFromPem(pemCertificate);
         const caCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(pemCACertificate);
         // Verify the signature on the certificate
@@ -239,11 +243,18 @@ export class CertificateManager {
         const kc = new k8s.KubeConfig();
         kc.loadFromDefault();
         let certificates: WebhookCertData = null;
+        let webhookCertData: WebhookCertData = null;
+        let mwhcCaBundle: string = null;
 
-        const webhookCertData: WebhookCertData = await CertificateManager.GetSecretDetails(operationId, kc);
-        const mwhcCaBundle: string = await CertificateManager.GetMutatingWebhookCABundle(operationId, kc);
+        try {
+            webhookCertData = await CertificateManager.GetSecretDetails(operationId, kc);
+            mwhcCaBundle = await CertificateManager.GetMutatingWebhookCABundle(operationId, kc);
+        } catch (error) {
+            logger.error('Error occured while trying to get Secret Store or MutatingWebhookConfiguration!', operationId, this.requestMetadata);
+            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
+        }
 
-        const matchValidation: boolean = mwhcCaBundle.localeCompare(webhookCertData.caCert) === 0;
+        const matchValidation: boolean = mwhcCaBundle && webhookCertData && mwhcCaBundle.localeCompare(webhookCertData.caCert) === 0;
         const certSignedByGivenCA: boolean = matchValidation && CertificateManager.isCertificateSignedByCA(webhookCertData.tlsCert, mwhcCaBundle);
 
         if (!certSignedByGivenCA)
@@ -285,6 +296,9 @@ export class CertificateManager {
 
         if (shouldUpdate) {
             CertificateManager.PatchWebhookAndCertificates(operationId, kc, webhookCertData, clusterArmId, clusterArmRegion);
+        }
+        else {
+            logger.info('Nothing to do. All is good. Ending this run...', operationId, this.requestMetadata);
         }
     }
 
