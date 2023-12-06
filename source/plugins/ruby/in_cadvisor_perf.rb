@@ -116,7 +116,7 @@ module Fluent::Plugin
         end
 
         if telemetryFlush
-          ApplicationInsightsUtility.sendMetricTelemetry("PerfMetricCount", @@totalPerfCount, {"OS" => @@os_type})
+          ApplicationInsightsUtility.sendMetricTelemetry("PerfMetricCount", @@totalPerfCount, {"OS" => @@isWindows ? "Windows" : "Linux"})
           @cadvisorPerfTelemetryTicker = DateTime.now.to_time.to_i
           @@totalPerfCount = 0
         end
