@@ -265,7 +265,7 @@ export class CertificateManager {
             logger.info('Certificates created successfully', operationId, this.requestMetadata);
             logger.SendEvent("CertificateCreated", operationId, null, clusterArmId, clusterArmRegion);
             await CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates, clusterArmId, clusterArmRegion);
-            await CertificateManager.DeleteWebhookReplicaset(operationId, kc);
+            await CertificateManager.RestartWebhookReplicaset(operationId, kc, clusterArmId, clusterArmRegion);
             return;
         }
 
@@ -303,32 +303,40 @@ export class CertificateManager {
         }
     }
 
-    private static async DeleteWebhookReplicaset(operationId: string, kc: k8s.KubeConfig) {
-        const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
+    private static async RestartWebhookReplicaset(operationId: string, kc: k8s.KubeConfig, clusterArmId: string, clusterArmRegion: string) {
+        kc.loadFromDefault();
 
-        let replicaSets: k8s.V1ReplicaSetList;
+        const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
+        const selector = "app=app-monitoring-webhook"
+        let name = "";
+
         try {
-            replicaSets = (await k8sApi.listNamespacedReplicaSet(NamespaceName)).body;
-            
+            const replicaSets: k8s.V1ReplicaSetList = (await k8sApi.listNamespacedReplicaSet(NamespaceName)).body;
+
+            const matchingReplicaSets: k8s.V1ReplicaSet[] = replicaSets.items.filter(rs => 
+                rs.spec.selector.matchLabels.app === selector
+            );
+
+            const replicaSet: k8s.V1ReplicaSet = matchingReplicaSets[0];
+            const annotations = replicaSet.spec.template.metadata.annotations || {};
+            annotations['kubectl.kubernetes.io/restartedAt'] = new Date().toISOString();
+            replicaSet.spec.template.metadata.annotations = annotations;
+            name = replicaSet.metadata.name;
+
+            logger.info(`Restarting ReplicaSet ${name}...`, operationId, this.requestMetadata);
+            logger.SendEvent("CertificateRestartingReplicaSet", operationId, null, clusterArmId, clusterArmRegion);
+            await k8sApi.replaceNamespacedReplicaSet(name, NamespaceName, replicaSet);
+            console.log(`Successfully restarted ReplicaSet ${name}`);
+            logger.SendEvent("CertificateRestartedReplicaSet", operationId, null, clusterArmId, clusterArmRegion);
+
         } catch (err) {
-            logger.error('Failed to list ReplicaSets!', operationId, this.requestMetadata);
-            logger.error(JSON.stringify(err), operationId, this.requestMetadata);
+            logger.error(`Failed to get ReplicaSet ${name}: ${err}`, operationId, this.requestMetadata);
+            logger.SendEvent("CertificateRestartFailedReplicaSet", operationId, null, clusterArmId, clusterArmRegion, true, err);
             throw err;
         }
-
-        const matchingReplicaSets = replicaSets.items.filter(rs => 
-            rs.spec.selector.matchLabels.app === "selector"
-        );
-
-        const rs = matchingReplicaSets[0];
-        logger.info(`Deleting ReplicaSet: ${rs.metadata.name}`, operationId, this.requestMetadata);
-        logger.SendEvent("CertificateDeletingReplicaSet", operationId, null, null, null, false, null, rs.metadata.name);
-        await k8sApi.deleteNamespacedReplicaSet(rs.metadata.name, NamespaceName);
-        logger.info(`Deleted ReplicaSet: ${rs.metadata.name}`, operationId, this.requestMetadata);
     }
 
     private static async PatchWebhookAndCertificates(operationId: string, kc: k8s.KubeConfig, certificates: WebhookCertData, clusterArmId: string, clusterArmRegion: string) {
-
         logger.info('Patching Secret Store...', operationId, this.requestMetadata);
         logger.SendEvent("CertificatePatchingSecretStore", operationId, null, clusterArmId, clusterArmRegion);
         await CertificateManager.PatchSecretStore(operationId, kc, certificates);
