@@ -272,6 +272,7 @@ export class CertificateManager {
         const timeNow: number = Date.now();
         const dayVal: number = 24 * 60 * 60 * 1000;
         let shouldUpdate = false;
+        let shouldRestartReplicaset = false;
         let cACert: forge.pki.Certificate = null;
         const caPublicCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.caCert);
         const caKeyPair: forge.pki.rsa.KeyPair = {
@@ -290,6 +291,7 @@ export class CertificateManager {
         daysToExpiry = (hostCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
             shouldUpdate = true;
+            shouldRestartReplicaset = true;
             const newHostCert: forge.pki.Certificate = await CertificateManager.GenerateHostCertificate(cACert);
             webhookCertData.tlsCert = forge.pki.certificateToPem(newHostCert);
             webhookCertData.tlsKey = forge.pki.privateKeyToPem(newHostCert.privateKey);
@@ -297,6 +299,9 @@ export class CertificateManager {
 
         if (shouldUpdate) {
             await CertificateManager.PatchWebhookAndCertificates(operationId, kc, webhookCertData, clusterArmId, clusterArmRegion);
+            if (shouldRestartReplicaset) {
+                await CertificateManager.RestartWebhookReplicaset(operationId, kc, clusterArmId, clusterArmRegion);
+            }
         }
         else {
             logger.info('Nothing to do. All is good. Ending this run...', operationId, this.requestMetadata);
