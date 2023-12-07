@@ -161,8 +161,10 @@ var (
 	ContainerLogSchemaV2 bool
 	// container log schema version from config map
 	ContainerLogV2ConfigMap bool
-	// container log schema version from config map
+	// Kubernetes Metadata enabled through configmap flag
 	KubernetesMetadataConfigMap bool
+	// Kubernetes Metadata enabled exclude list
+	KubernetesMetadataIncludeList []string
 	//ADX Cluster URI
 	AdxClusterUri string
 	// ADX clientID
@@ -1111,6 +1113,34 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 	ContainerLogTelemetryMutex.Unlock()
 }
 
+func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList []string) map[string]interface{} {
+	includedMetadata := make(map[string]interface{})
+	for _, include := range includesList {
+		switch include {
+		case "podUid":
+			if val, ok := kubernetesMetadataMap["pod_id"]; ok {
+				includedMetadata["podUid"] = val
+			}
+		case "podLabels":
+			if val, ok := kubernetesMetadataMap["labels"]; ok {
+				includedMetadata["podLabels"] = val
+			}
+		case "podAnnotations":
+			if val, ok := kubernetesMetadataMap["annotations"]; ok {
+				includedMetadata["podAnnotations"] = val
+			}
+		case "image":
+			if hash, ok := kubernetesMetadataMap["container_hash"]; ok {
+				includedMetadata["image_hash"] = hash
+			}
+			if image, ok := kubernetesMetadataMap["container_image"]; ok {
+				includedMetadata["image"] = image
+			}
+		}
+	}
+	return includedMetadata
+}
+
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
 func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	start := time.Now()
@@ -1144,7 +1174,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		kubernetesMetadata := ""
 		if KubernetesMetadataConfigMap {
 			if kubernetesMetadataJson, exists := record["kubernetes"]; exists {
-				kubernetesMetadataBytes, err := json.Marshal(kubernetesMetadataJson)
+				kubernetesMetadataMap := kubernetesMetadataJson.(map[string]interface{})
+				includedMetadata := processIncludes(kubernetesMetadataMap, KubernetesMetadataIncludeList)
+
+				kubernetesMetadataBytes, err := json.Marshal(includedMetadata)
 				if err != nil {
 					message := fmt.Sprintf("Error while Marshalling kubernetesMetadataBytes to json bytes: %s", err.Error())
 					Log(message)
@@ -1157,8 +1190,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				continue
 			}
 		}
-		//include
-
 
 		if strings.EqualFold(logEntrySource, "stdout") {
 			if containerID == "" || containsKey(StdoutIgnoreNsSet, k8sNamespace) {
@@ -1904,9 +1935,12 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ContainerLogV2ConfigMap = (strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0)
 
 	KubernetesMetadataConfigMap = false
-	KubernetesMetadataConfigMap = (strings.Compare(strings.ToLower(os.Getenv(AADMSIAuthMode)), "true") == 0)
-	//include
-
+	KubernetesMetadataConfigMap = (strings.Compare(strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")), "true") == 0)
+	//podLabels,podAnnotations,podUid,image
+	KubernetesMetadataIncludeList := os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
+	if len(KubernetesMetadataIncludeList) == 0 {
+		KubernetesMetadataIncludeList = "podLabels,podAnnotations,podUid,image"
+	}
 
 	if ContainerLogV2ConfigMap && ContainerLogsRouteADX != true {
 		ContainerLogSchemaV2 = true
