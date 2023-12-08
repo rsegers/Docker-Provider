@@ -9,7 +9,7 @@ additional questions or comments.
 
 ## Release History
 
-### 11/29/2023 -
+### 12/08/2023 -
 ##### Version microsoft/oms:3.1.16 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.16 (linux)
 ##### Version microsoft/oms:win-3.1.16 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.16 (windows)
 ##### Release branch: https://github.com/microsoft/Docker-Provider/commits/user/amagraw/3.1.16
