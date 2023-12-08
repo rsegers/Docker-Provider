@@ -33,7 +33,7 @@ additional questions or comments.
 ##### Code change log
 ## What's Changed
 - AKS Linux
-    * update mdsd to 1.28.11 by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1106
+    * Update mdsd to 1.28.11 by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1106
 - ARC
     * Change mcr path in mooncake cloud to public mcr by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1132
 
