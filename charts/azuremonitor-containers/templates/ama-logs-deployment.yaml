@@ -44,11 +44,7 @@ spec:
 {{-  .Values.Azure.Identity.MSIAdapterYaml | nindent 7 }}
 {{- end }}
      - name: ama-logs
-       {{- if  eq (.Values.amalogs.domain | lower) "opinsights.azure.cn" }}
-       image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.amalogs.image.tag }}"
-       {{- else }}
        image: {{ printf "%s:%s" .Values.amalogs.image.repo .Values.amalogs.image.tag }}
-       {{- end }}
        imagePullPolicy: IfNotPresent
        resources:
 {{ toYaml .Values.amalogs.resources.deployment | indent 9 }}
