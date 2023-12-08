@@ -3,7 +3,7 @@ import { CertificateStoreName, NamespaceName, WebhookDNSEndpoint, WebhookName } 
 import forge from 'node-forge';
 import { logger, RequestMetadata } from './LoggerWrapper.js';
 
-class WebhookCertData {
+export class WebhookCertData {
     caCert: string;
     caKey: string;
     tlsCert: string;
@@ -203,7 +203,7 @@ export class CertificateManager {
             {
                 throw new Error("MutatingWebhookConfiguration not found or is malformed!");
             }
-            mutatingWebhookObject.webhooks[0].clientConfig.caBundle = btoa(certificate.caCert);
+            mutatingWebhookObject.webhooks[0].clientConfig.caBundle = Buffer.from(certificate.caCert, 'utf-8').toString('base64');
     
             await webhookApi.patchMutatingWebhookConfiguration(WebhookName, mutatingWebhookObject, undefined, undefined, undefined, undefined, undefined, {
                 headers: { 'Content-Type' : 'application/strategic-merge-patch+json' }
@@ -249,6 +249,15 @@ export class CertificateManager {
         try {
             webhookCertData = await CertificateManager.GetSecretDetails(operationId, kc);
             mwhcCaBundle = await CertificateManager.GetMutatingWebhookCABundle(operationId, kc);
+            if (CertificateManager.IsValidateCertificate(operationId, mwhcCaBundle, webhookCertData, clusterArmId, clusterArmRegion)) {
+                logger.info('Certificates are valid, continue validation...', operationId, this.requestMetadata);
+            } else {
+                logger.info('Certificates are not valid, reconciliation not needed at this time...', operationId, this.requestMetadata);
+                logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true);
+                return;
+            }
+
+
         } catch (error) {
             logger.error('Error occured while trying to get Secret Store or MutatingWebhookConfiguration!', operationId, this.requestMetadata);
             logger.error(JSON.stringify(error), operationId, this.requestMetadata);
@@ -308,12 +317,27 @@ export class CertificateManager {
         }
     }
 
+    private static IsValidateCertificate(operationId: string, mwhcCaBundle: string, webhookCertData: WebhookCertData, clusterArmId: string, clusterArmRegion: string): boolean {
+        try {
+            const caBundle = forge.pki.certificateFromPem(mwhcCaBundle);
+            const caCert = forge.pki.certificateFromPem(webhookCertData.caCert);
+            const tlsCert = forge.pki.certificateFromPem(webhookCertData.tlsCert);
+            const tlsKey = forge.pki.privateKeyFromPem(webhookCertData.tlsKey);
+            return true;
+        } catch (error) {
+            logger.error('Error occured while trying to validate certificates!', operationId, this.requestMetadata);
+            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
+            logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true, error);
+            return false;
+        }
+    }
+
     private static async RestartWebhookReplicaset(operationId: string, kc: k8s.KubeConfig, clusterArmId: string, clusterArmRegion: string) {
         kc.loadFromDefault();
 
         const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
         const selector = "app=app-monitoring-webhook"
-        let name = "";
+        let name = null;
 
         try {
             const replicaSets: k8s.V1ReplicaSetList = (await k8sApi.listNamespacedReplicaSet(NamespaceName)).body;
