@@ -1,0 +1,36 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "clusterResourceId": {
+      "value": "/subscriptions/<subscriptionId>/resourceGroups/<resourceGroupName>/providers/Microsoft.Kubernetes/connectedClusters/<clusterName>"
+    },
+    "clusterRegion": {
+      "value": "<clusterRegion>"
+    },
+    "workspaceResourceId": {
+      "value": "/subscriptions/<subscriptionId>/resourcegroups/<resourceGroupName>/providers/microsoft.operationalinsights/workspaces/<workspaceName>"
+    },
+    "workspaceRegion": {
+      "value": "<workspaceRegion>"
+    },
+    "workspaceDomain": {
+      "value": "opinsights.azure.com"
+    },
+    "enableContainerLogV2": {
+      "value": true
+    },
+    "dataCollectionInterval":  {
+      "value" : "1m"
+    },
+    "namespaceFilteringModeForDataCollection": {
+      "value": "Off"
+    },
+    "namespacesForDataCollection": {
+      "value": [ "kube-system", "gatekeeper-system", "azure-arc" ]
+    },
+    "transformKqlForContainerLogV2": {
+      "value": "source | where tostring(LogMessage) !contains \"INFO\" | where tostring(LogMessage) !contains \"DEBUG\""
+    }
+  }
+}
