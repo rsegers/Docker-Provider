@@ -11,7 +11,7 @@ additional questions or comments.
 
 ### 12/08/2023 -
 ##### Version microsoft/oms:3.1.16 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.16 (linux)
-##### Version microsoft/oms:win-3.1.16 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.16 (windows)
+##### Version microsoft/oms:win-3.1.15 Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.15 (windows)
 ##### Release branch: https://github.com/microsoft/Docker-Provider/commits/user/amagraw/3.1.16
 ##### Commit: https://github.com/microsoft/Docker-Provider/commit/7b7335d94a436b086c8fe2a8c883b865deae3990
 ##### Current dependencies
@@ -32,7 +32,7 @@ additional questions or comments.
   - Golang - 1.20.5
 ##### Code change log
 ## What's Changed
-- AKS Linux
+- Linux
     * Update mdsd to 1.28.11 by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1106
 - ARC
     * Change mcr path in mooncake cloud to public mcr by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1132
