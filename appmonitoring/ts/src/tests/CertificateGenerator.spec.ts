@@ -13,29 +13,6 @@ describe('CertificateManager', () => {
         // Set up kubeConfig with necessary configurations
     });
 
-    // describe('GenerateCACertificate', () => {
-    //     it('should generate a CA certificate', async () => {
-    //         const caCert = await CertificateManager.GenerateCACertificate();
-    //         expect(caCert).toBeInstanceOf(forge.pki.Certificate);
-    //     });
-
-    //     it('should generate a CA certificate with existing key pair', async () => {
-    //         const existingKeyPair = forge.pki.rsa.generateKeyPair(2048);
-    //         const caCert = await CertificateManager.GenerateCACertificate(existingKeyPair);
-    //         expect(caCert).toBeInstanceOf(forge.pki.Certificate);
-    //     });
-    // });
-
-    // describe('GenerateHostCertificate', () => {
-    //     it('should generate a host certificate', async () => {
-    //         const caCert = forge.pki.createCertificate();
-    //         const hostCert = await CertificateManager.GenerateHostCertificate(caCert);
-    //         expect(hostCert).toBeInstanceOf(forge.pki.Certificate);
-    //     });
-    // });
-
-    // Add more test cases for other methods in CertificateManager
-
     describe('CreateWebhookAndCertificates', () => {
         it('should create and patch webhook and certificates', async () => {
             const mockKubeConfig = new k8s.KubeConfig();
@@ -145,8 +122,6 @@ describe('CertificateManager', () => {
                 tlsCert: 'mockTLSCert',
                 tlsKey: 'mockTLSKey',
             };
-            const clusterArmId = 'clusterArmId';
-            const clusterArmRegion = 'clusterArmRegion';
             const secretObject = {
                 response: null,
                 body: {
@@ -160,7 +135,7 @@ describe('CertificateManager', () => {
             };
             const readNamespacedSecret = jest.spyOn(k8s.CoreV1Api.prototype, 'readNamespacedSecret').mockResolvedValue(secretObject);
             const patchNamespacedSecret = jest.spyOn(k8s.CoreV1Api.prototype, 'patchNamespacedSecret').mockResolvedValue(null);
-            const mockApiClient = jest.spyOn(k8s.KubeConfig.prototype, 'makeApiClient').mockReturnValue(new k8s.CoreV1Api());
+            jest.spyOn(k8s.KubeConfig.prototype, 'makeApiClient').mockReturnValue(new k8s.CoreV1Api());
 
             // Mock the methods in CertificateManager
             jest.spyOn(CertificateManager, 'PatchSecretStore');
@@ -183,17 +158,57 @@ describe('CertificateManager', () => {
         });
     });
 
-    describe('CreateWebhookAndCertificates', () => {
-        it('should create webhook and certificates', async () => {
+    describe('RestartWebhookReplicaset', () => {
+        it('should restart webhook replicaset', async () => {
+            // Arrange
             const operationId = 'operationId';
             const clusterArmId = 'clusterArmId';
             const clusterArmRegion = 'clusterArmRegion';
+            const mockKubeConfig = new k8s.KubeConfig();
+            const replicaSetList = {
+                body: {
+                    items: [{
+                            metadata: {
+                                name: 'app-monitoring-webhook',
+                                namespace: 'kube-system'
+                            },
+                            spec: {
+                                selector: {
+                                    matchLabels: {
+                                        app: 'app=app-monitoring-webhook'
+                                    }
+                                },
+                                template: {
+                                    metadata: {
+                                        name: 'app-monitoring-webhook',
+                                        annotations: {
+                                            'anno1': 'anno1'
+                                        }
+                                    }
+                                }
+                            }
+                        } as k8s.V1ReplicaSet
+                    ]} as k8s.V1ReplicaSetList
+            } as any;
+            const updatedReplicaSet: k8s.V1ReplicaSet = JSON.parse(JSON.stringify(replicaSetList.body.items[0]));
+            jest.spyOn(Date.prototype, 'toISOString').mockReturnValue('GivenDate');
+            updatedReplicaSet.spec.template.metadata = {
+                name: 'app-monitoring-webhook',
+                annotations: {
+                    'anno1': 'anno1',
+                    'kubectl.kubernetes.io/restartedAt': 'GivenDate'
+                }
+            };
+            const listNamespacedReplicaSet = jest.spyOn(k8s.AppsV1Api.prototype, 'listNamespacedReplicaSet').mockResolvedValue(replicaSetList);
+            const replaceNamespacedReplicaSet = jest.spyOn(k8s.AppsV1Api.prototype, 'replaceNamespacedReplicaSet').mockResolvedValue(null);
+            const mockApiClient = jest.spyOn(k8s.KubeConfig.prototype, 'makeApiClient').mockReturnValue(new k8s.AppsV1Api());
+            
+            // Act
+            await (CertificateManager as any).RestartWebhookReplicaset(operationId, mockKubeConfig, clusterArmId, clusterArmRegion);
 
-
-
-            // Mock necessary dependencies and perform the test
-
-            // Assert the expected behavior
+            // Assert
+            expect(listNamespacedReplicaSet).toHaveBeenCalledWith('kube-system');
+            expect(replaceNamespacedReplicaSet).toHaveBeenCalledWith('app-monitoring-webhook', 'kube-system', updatedReplicaSet);
         });
     });
 
@@ -230,49 +245,5 @@ describe('CertificateManager', () => {
             expect(caCert.verify(hostCert)).toBeTruthy();
         });
     });
-
-    // describe('ReconcileWebhookAndCertificates', () => {
-    //     it('should reconcile webhook and certificates', async () => {
-    //         // Arrange
-    //         const operationId = 'operationId';
-    //         const clusterArmId = 'clusterArmId';
-    //         const clusterArmRegion = 'clusterArmRegion';
-
-    //         // Mock necessary dependencies
-    //         const mockKubeConfig = new k8s.KubeConfig();
-    //         const mockCertificate: WebhookCertData = {
-    //             caCert: 'mockCACert',
-    //             caKey: 'mockCAKey',
-    //             tlsCert: 'mockTLSCert',
-    //             tlsKey: 'mockTLSKey'
-    //         };
-    //         const mockReconciledCertData: WebhookCertData = {
-    //             caCert: 'reconciledCACert',
-    //             caKey: 'reconciledCAKey',
-    //             tlsCert: 'reconciledTLSCert',
-    //             tlsKey: 'reconciledTLSKey'
-    //         };
-    //         const mockRestartedReplicaset = jest.fn();
-    //         const mockPatchWebhookAndCertificates = jest.fn().mockResolvedValue(mockReconciledCertData);
-    //         const mockIsValidateCertificate = jest.fn().mockReturnValue(true);
-    //         const mockGetMutatingWebhookCABundle = jest.fn().mockResolvedValue('mockCABundle');
-
-    //         // Mock the methods in CertificateManager
-    //         jest.spyOn(CertificateManager, 'PatchMutatingWebhook').mockImplementation(mockPatchWebhookAndCertificates);
-    //         jest.spyOn(CertificateManager, 'PatchSecretStore').mockImplementation(mockIsValidateCertificate);
-    //         jest.spyOn(CertificateManager, 'GetMutatingWebhookCABundle').mockImplementation(mockGetMutatingWebhookCABundle);
-
-    //         // Act
-    //         await CertificateManager.ReconcileWebhookAndCertificates(operationId, clusterArmId, clusterArmRegion);
-
-    //         // Assert
-    //         expect(mockPatchWebhookAndCertificates).toHaveBeenCalledWith(operationId, mockKubeConfig, mockCertificate, clusterArmId, clusterArmRegion);
-    //         expect(mockIsValidateCertificate).toHaveBeenCalledWith(operationId, 'mockCABundle', mockReconciledCertData, clusterArmId, clusterArmRegion);
-    //         expect(mockRestartedReplicaset).toHaveBeenCalledWith(operationId, mockKubeConfig, clusterArmId, clusterArmRegion);
-    //         expect(mockGetMutatingWebhookCABundle).toHaveBeenCalledWith(operationId, mockKubeConfig);
-    //     });
-    // });
-
-    // Add more test cases for other methods in CertificateManager
 });
 
