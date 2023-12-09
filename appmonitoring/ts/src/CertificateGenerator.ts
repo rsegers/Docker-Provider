@@ -19,7 +19,7 @@ export class CertificateManager {
         return (1001).toString(16) + Math.ceil(Math.random()*100); //Just creates a placeholder hex and randomly increments it with a number between 1 and 100
     }
 
-    private static async GenerateCACertificate(existingKeyPair?: forge.pki.rsa.KeyPair): Promise<forge.pki.Certificate> {
+    private static GenerateCACertificate(existingKeyPair?: forge.pki.rsa.KeyPair): forge.pki.Certificate {
         const currentTime: number = Date.now();
         const caCert = forge.pki.createCertificate();
         const keys = existingKeyPair || forge.pki.rsa.generateKeyPair();
@@ -58,7 +58,7 @@ export class CertificateManager {
         return caCert;
     }
 
-    private static async GenerateHostCertificate(caCert: forge.pki.Certificate): Promise<forge.pki.Certificate> {
+    private static GenerateHostCertificate(caCert: forge.pki.Certificate): forge.pki.Certificate {
         const currentTime: number = Date.now();
         const host_attributes = [{
             shortName: 'CN',
@@ -107,15 +107,15 @@ export class CertificateManager {
         return newHostCert;
     }
 
-    private static async CreateOrUpdateCertificates(operationId: string, currentCACert?: forge.pki.Certificate): Promise<WebhookCertData> {
+    private static CreateOrUpdateCertificates(operationId: string, currentCACert?: forge.pki.Certificate): WebhookCertData {
         try {
             let caCertResult: forge.pki.Certificate = currentCACert;
 
             if (!caCertResult) {
-                caCertResult = await CertificateManager.GenerateCACertificate()
+                caCertResult = CertificateManager.GenerateCACertificate()
             }
 
-            const hostCertificate = await CertificateManager.GenerateHostCertificate(caCertResult);
+            const hostCertificate = CertificateManager.GenerateHostCertificate(caCertResult);
 
             return {
                 caCert: forge.pki.certificateToPem(caCertResult),
@@ -204,7 +204,6 @@ export class CertificateManager {
                 throw new Error("MutatingWebhookConfiguration not found or is malformed!");
             }
             mutatingWebhookObject.webhooks[0].clientConfig.caBundle = Buffer.from(certificate.caCert, 'utf-8').toString('base64');
-    
             await webhookApi.patchMutatingWebhookConfiguration(WebhookName, mutatingWebhookObject, undefined, undefined, undefined, undefined, undefined, {
                 headers: { 'Content-Type' : 'application/strategic-merge-patch+json' }
             });
@@ -232,7 +231,7 @@ export class CertificateManager {
 
         logger.info('Creating certificates...', operationId, this.requestMetadata);
         logger.SendEvent("CertificateCreating", operationId, null, clusterArmId, clusterArmRegion);
-        const certificates: WebhookCertData = await CertificateManager.CreateOrUpdateCertificates(operationId) as WebhookCertData;
+        const certificates: WebhookCertData = CertificateManager.CreateOrUpdateCertificates(operationId) as WebhookCertData;
         logger.info('Certificates created successfully', operationId, this.requestMetadata);
         logger.SendEvent("CertificateCreated", operationId, null, clusterArmId, clusterArmRegion);
 
@@ -249,15 +248,13 @@ export class CertificateManager {
         try {
             webhookCertData = await CertificateManager.GetSecretDetails(operationId, kc);
             mwhcCaBundle = await CertificateManager.GetMutatingWebhookCABundle(operationId, kc);
-            if (CertificateManager.IsValidateCertificate(operationId, mwhcCaBundle, webhookCertData, clusterArmId, clusterArmRegion)) {
+            if (CertificateManager.IsValidCertificate(operationId, mwhcCaBundle, webhookCertData, clusterArmId, clusterArmRegion)) {
                 logger.info('Certificates are valid, continue validation...', operationId, this.requestMetadata);
             } else {
                 logger.info('Certificates are not valid, reconciliation not needed at this time...', operationId, this.requestMetadata);
                 logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true);
                 return;
             }
-
-
         } catch (error) {
             logger.error('Error occured while trying to get Secret Store or MutatingWebhookConfiguration!', operationId, this.requestMetadata);
             logger.error(JSON.stringify(error), operationId, this.requestMetadata);
@@ -270,7 +267,7 @@ export class CertificateManager {
         {
             logger.info('Creating certificates...', operationId, this.requestMetadata);
             logger.SendEvent("CertificateCreating", operationId, null, clusterArmId, clusterArmRegion);
-            certificates = await CertificateManager.CreateOrUpdateCertificates(operationId) as WebhookCertData;
+            certificates = CertificateManager.CreateOrUpdateCertificates(operationId) as WebhookCertData;
             logger.info('Certificates created successfully', operationId, this.requestMetadata);
             logger.SendEvent("CertificateCreated", operationId, null, clusterArmId, clusterArmRegion);
             await CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates, clusterArmId, clusterArmRegion);
@@ -317,7 +314,7 @@ export class CertificateManager {
         }
     }
 
-    private static IsValidateCertificate(operationId: string, mwhcCaBundle: string, webhookCertData: WebhookCertData, clusterArmId: string, clusterArmRegion: string): boolean {
+    private static IsValidCertificate(operationId: string, mwhcCaBundle: string, webhookCertData: WebhookCertData, clusterArmId: string, clusterArmRegion: string): boolean {
         try {
             const caBundle = forge.pki.certificateFromPem(mwhcCaBundle);
             const caCert = forge.pki.certificateFromPem(webhookCertData.caCert);
