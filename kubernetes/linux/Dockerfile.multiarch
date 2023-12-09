@@ -80,7 +80,7 @@ COPY --from=builder /usr/sbin/setcap /usr/sbin/setcap
 COPY --from=builder /usr/bin/curl /usr/bin/curl
 COPY --from=builder /usr/bin/jq /usr/bin/jq
 COPY --from=builder /usr/bin/base64 /usr/bin/base64
-COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd 
+COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd
 
 # bash dependencies
 COPY --from=builder /lib/libreadline.so.8 /lib/
@@ -98,7 +98,8 @@ COPY --from=builder /lib/libssl.so.1.1 /lib/libcrypto.so.1.1 /lib/libyaml-0.so.2
 COPY --from=builder /lib/libc.so.6 /lib/
 # mdsd dependencies
 COPY --from=builder /usr/lib/libdl.so.2 /usr/lib/librt.so.1 /usr/lib/libpthread.so.0 /usr/lib/libm.so.6 /usr/lib/libstdc++.so.6 /usr/lib/libgcc_s.so.1 /usr/lib/
-COPY --from=builder /usr/local/lib/libtcmalloc_minimal.so.4 /usr/local/lib/
+COPY --from=builder /opt/microsoft/azure-mdsd/lib/libtcmalloc_minimal.so.4 /opt/microsoft/azure-mdsd/lib/
+COPY --from=builder /opt/microsoft/azure-mdsd/lib/libsymcrypt.so.103 /opt/microsoft/azure-mdsd/lib/
 # logrotate dependencies
 COPY --from=builder /lib/libselinux.so.1 /lib/libpopt.so.0 /lib/libc.so.6 /lib/libpcre.so.1 /lib/
 # curl dependencies
