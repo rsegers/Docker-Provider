@@ -2,6 +2,7 @@ import * as k8s from '@kubernetes/client-node';
 import { CertificateStoreName, NamespaceName, WebhookDNSEndpoint, WebhookName } from './Constants.js'
 import forge from 'node-forge';
 import { logger, RequestMetadata } from './LoggerWrapper.js';
+import { error } from 'console';
 
 export class WebhookCertData {
     caCert: string;
@@ -286,6 +287,7 @@ export class CertificateManager {
             publicKey: caPublicCertificate.publicKey as forge.pki.rsa.PublicKey
         }
 
+        // Check if CA Cert is relativekly close to expiration
         let daysToExpiry = (caPublicCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
             shouldUpdate = true;
@@ -293,6 +295,7 @@ export class CertificateManager {
             webhookCertData.caCert = forge.pki.certificateToPem(cACert);
         }
 
+        // Check if Host Cert is relatively close to expiration
         const hostCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.tlsCert);
         daysToExpiry = (hostCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
