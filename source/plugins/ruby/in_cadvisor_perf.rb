@@ -10,7 +10,6 @@ module Fluent::Plugin
     if !@@os_type.nil? && !@@os_type.empty? && @@os_type.strip.casecmp("windows") == 0
       @@isWindows = true
     end
-    @@totalPerfCount = 0
 
     def initialize
       super
@@ -27,6 +26,7 @@ module Fluent::Plugin
       @namespaceFilteringMode = "off"
       @agentConfigRefreshTracker = DateTime.now.to_time.to_i
       @cadvisorPerfTelemetryTicker = DateTime.now.to_time.to_i
+      @totalPerfCount = 0
     end
 
     config_param :run_interval, :time, :default => 60
@@ -105,7 +105,7 @@ module Fluent::Plugin
         end
 
         if metricData.length > 0
-          @@totalPerfCount += metricData.length
+          @totalPerfCount += metricData.length
         end
 
         #send the number of CAdvisor Perf records sent metrics telemetry
@@ -116,9 +116,9 @@ module Fluent::Plugin
         end
 
         if telemetryFlush
-          ApplicationInsightsUtility.sendMetricTelemetry("PerfMetricCount", @@totalPerfCount, {})
+          ApplicationInsightsUtility.sendMetricTelemetry("PerfMetricCount", @totalPerfCount, {})
           @cadvisorPerfTelemetryTicker = DateTime.now.to_time.to_i
-          @@totalPerfCount = 0
+          @totalPerfCount = 0
         end
 
 

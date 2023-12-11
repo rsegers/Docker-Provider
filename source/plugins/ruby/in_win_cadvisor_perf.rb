@@ -8,7 +8,6 @@ module Fluent::Plugin
     Fluent::Plugin.register_input("win_cadvisor_perf", self)
 
     @@winNodes = []
-    @@totalPerfCount = 0
 
     def initialize
       super
@@ -27,6 +26,7 @@ module Fluent::Plugin
       @namespaceFilteringMode = "off"
       @agentConfigRefreshTracker = DateTime.now.to_time.to_i
       @winCadvisorPerfTelemetryTicker = DateTime.now.to_time.to_i
+      @totalPerfCount = 0
     end
 
     config_param :run_interval, :time, :default => 60
@@ -112,7 +112,7 @@ module Fluent::Plugin
           end
 
           if metricData.length > 0
-            @@totalPerfCount += metricData.length
+            @totalPerfCount += metricData.length
           end
   
           #send the number of CAdvisor Perf records sent metrics telemetry
@@ -123,9 +123,9 @@ module Fluent::Plugin
           end
   
           if telemetryFlush
-            ApplicationInsightsUtility.sendMetricTelemetry("PerfMetricCount", @@totalPerfCount, {})
+            ApplicationInsightsUtility.sendMetricTelemetry("PerfMetricCount", @totalPerfCount, {})
             @winCadvisorPerfTelemetryTicker = DateTime.now.to_time.to_i
-            @@totalPerfCount = 0
+            @totalPerfCount = 0
           end
 
           #start GPU InsightsMetrics items

@@ -7,7 +7,6 @@ module Fluent::Plugin
   class Kube_Kubestate_HPA_Input < Input
     Fluent::Plugin.register_input("kubestate_hpa", self)
     @@istestvar = ENV["ISTEST"]
-    @@totalHPACount = 0
 
     def initialize
       super
@@ -36,6 +35,7 @@ module Fluent::Plugin
       @namespaces = []
       @namespaceFilteringMode = "off"
       @agentConfigRefreshTracker = DateTime.now.to_time.to_i
+      @totalHPACount = 0
     end
 
     config_param :run_interval, :time, :default => 60
@@ -132,7 +132,7 @@ module Fluent::Plugin
         # Flush AppInsights telemetry once all the processing is done, only if the number of events flushed is greater than 0
         if (@hpaCount > 0)
           $log.info("in_kubestate_hpa::hpaCount= #{hpaCount}")
-          @@totalHPACount += @hpaCount
+          @totalHPACount += @hpaCount
         end
 
         # Adding telemetry to send kubestateHPA telemetry every 5 minutes
@@ -144,9 +144,9 @@ module Fluent::Plugin
 
         if telemetryFlush
           ApplicationInsightsUtility.sendCustomEvent("KubeStateHPAHeartBeatEvent", {})
-          ApplicationInsightsUtility.sendMetricTelemetry("HPACount", @@totalHPACount, {})
+          ApplicationInsightsUtility.sendMetricTelemetry("HPACount", @totalHPACount, {})
           @kubeStateHPATelemetryTimeTracker = DateTime.now.to_time.to_i
-          @@totalHPACount = 0
+          @totalHPACount = 0
         end
       rescue => errorStr
         $log.warn "in_kubestate_hpa::enumerate:Failed in enumerate: #{errorStr}"
