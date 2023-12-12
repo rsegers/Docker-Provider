@@ -2,6 +2,7 @@ import * as k8s from '@kubernetes/client-node';
 import { CertificateStoreName, NamespaceName, WebhookDNSEndpoint, WebhookName } from './Constants.js'
 import forge from 'node-forge';
 import { logger, RequestMetadata } from './LoggerWrapper.js';
+import { log } from 'console';
 
 export class WebhookCertData {
     caCert: string;
@@ -289,6 +290,7 @@ export class CertificateManager {
         // Check if CA Cert is relativekly close to expiration
         let daysToExpiry = (caPublicCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
+            logger.info('CA Cert is close to expiration, regenerating CA Certificate...', operationId, this.requestMetadata);
             shouldUpdate = true;
             cACert = CertificateManager.GenerateCACertificate(caKeyPair);
             webhookCertData.caCert = forge.pki.certificateToPem(cACert);
@@ -298,6 +300,7 @@ export class CertificateManager {
         const hostCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.tlsCert);
         daysToExpiry = (hostCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
+            logger.info('Host Cert is close to expiration, regenerating Host Certificate...', operationId, this.requestMetadata);
             shouldUpdate = true;
             shouldRestartReplicaset = true;
             const newHostCert: forge.pki.Certificate = CertificateManager.GenerateHostCertificate(cACert);
@@ -308,6 +311,7 @@ export class CertificateManager {
         if (shouldUpdate) {
             await CertificateManager.PatchWebhookAndCertificates(operationId, kc, webhookCertData, clusterArmId, clusterArmRegion);
             if (shouldRestartReplicaset) {
+                logger.info('Restarting ReplicaSet so the pods pick up new certificates...', operationId, this.requestMetadata);
                 await CertificateManager.RestartWebhookReplicaset(operationId, kc, clusterArmId, clusterArmRegion);
             }
         }
