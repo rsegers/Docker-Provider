@@ -244,7 +244,7 @@ describe('CertificateManager', () => {
             const clusterArmRegion = 'clusterArmRegion';
             const patchMutatingWebhook = jest.spyOn(CertificateManager, 'PatchMutatingWebhook').mockResolvedValue(null);
             const patchSecretStore = jest.spyOn(CertificateManager, 'PatchSecretStore').mockResolvedValue(null);
-            const restartWebhookReplicaset = jest.spyOn(CertificateManager as any, 'RestartWebhookReplicaset').mockResolvedValue(null);
+            jest.spyOn(CertificateManager as any, 'RestartWebhookReplicaset').mockResolvedValue(null);
 
             // Act
             await (CertificateManager as any).PatchWebhookAndCertificates(operationId, mockKubeConfig, mockCertificate, clusterArmId, clusterArmRegion);
