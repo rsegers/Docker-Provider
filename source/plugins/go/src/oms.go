@@ -212,6 +212,8 @@ var (
 	StderrIgnoreNsSet map[string]bool
 	// StderrIncludeSystemPodsSet set of included system pods for stderr logs
 	StderrIncludeSystemPodsSet map[string]bool
+	// PodNameToDSDeploymentNameMap stores podName to potential DS and deployment name mapping
+	PodNameToDSDeploymentNameMap map[string][2]string
 	// DataUpdateMutex read and write mutex access to the container id set
 	DataUpdateMutex = &sync.Mutex{}
 	// ContainerLogTelemetryMutex read and write mutex access to the Container Log Telemetry
@@ -1177,14 +1179,13 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		containerID, k8sNamespace, k8sPodName, containerName := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
 		logEntrySource := ToString(record["stream"])
 
-		dsName, deploymentName := "", ""
-		if len(StdoutIncludeSystemPodsSet) > 0 || len(StderrIncludeSystemPodsSet) > 0 {
-			dsName, deploymentName = GetDSNameAndDeploymentNameFromK8sPodName(k8sPodName)
-		}
-
 		if strings.EqualFold(logEntrySource, "stdout") {
 			if containerID == "" { continue }
 			if containsKey(StdoutIgnoreNsSet, k8sNamespace) {
+				dsName, deploymentName := "", ""
+				if len(StdoutIncludeSystemPodsSet) > 0 {
+					dsName, deploymentName = GetDSNameAndDeploymentNameFromK8sPodName(k8sPodName)
+				}
 				if (containsKey(StdoutIncludeSystemPodsSet, dsName) || containsKey(StdoutIncludeSystemPodsSet, deploymentName)) {
 					// do nothing
 				} else {
@@ -1194,6 +1195,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		} else if strings.EqualFold(logEntrySource, "stderr") {
 			if containerID == "" { continue }
 			if containsKey(StderrIgnoreNsSet, k8sNamespace) {
+				dsName, deploymentName := "", ""
+				if len(StderrIncludeSystemPodsSet) > 0 {
+					dsName, deploymentName = GetDSNameAndDeploymentNameFromK8sPodName(k8sPodName)
+				}
 				if (containsKey(StderrIncludeSystemPodsSet, dsName) || containsKey(StderrIncludeSystemPodsSet, deploymentName)) {
 					// do nothing
 				} else {
@@ -1669,6 +1674,9 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 
 // GetDSNameAndDeploymentNameFromK8sPodName tries to extract potential deployment name and daemonset name from the pod name. If its not possible to extract then sends empty string
 func GetDSNameAndDeploymentNameFromK8sPodName(podName string) (string, string) {
+	if values, ok := PodNameToDSDeploymentNameMap[podName]; ok {
+		return values[0], values[1]
+	}
 	dsName := ""
 	deploymentName := ""
 	last := strings.LastIndex(podName, "-")
@@ -1679,6 +1687,7 @@ func GetDSNameAndDeploymentNameFromK8sPodName(podName string) (string, string) {
 			deploymentName = dsName[:last]
 		}
 	}
+	PodNameToDSDeploymentNameMap[podName] = [2]string{dsName, deploymentName}
 	return dsName, deploymentName
 }
 
@@ -1694,7 +1703,10 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		}
 	}()
 	StdoutIgnoreNsSet = make(map[string]bool)
+	StdoutIncludeSystemPodsSet = make(map[string]bool)
 	StderrIgnoreNsSet = make(map[string]bool)
+	StderrIncludeSystemPodsSet = make(map[string]bool)
+	PodNameToDSDeploymentNameMap = make(map[string][2]string)
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
 	// Keeping the two error hashes separate since we need to keep the config error hash for the lifetime of the container
@@ -1989,6 +2001,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		populateExcludedStderrNamespaces()
 		populateIncludedStdoutSystemPods()
 		populateIncludedStderrSystemPods()
+		Log("Included pods set stdout: %v, stderr: %v", StdoutIncludeSystemPodsSet, StderrIncludeSystemPodsSet)
 		//enrichment not applicable for ADX and v2 schema
 		if enrichContainerLogs == true && ContainerLogsRouteADX != true && ContainerLogSchemaV2 != true {
 			Log("ContainerLogEnrichment=true; starting goroutine to update containerimagenamemaps \n")

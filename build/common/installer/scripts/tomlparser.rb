@@ -168,7 +168,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         end
 
         # If we have to collect logs from system pods belonging to exlcuded namespaces from either of the streams we need to reset exclude path to noop
-        if !@stdoutIncludeSystemPods.empty || !@stderrIncludeSystemPods.empty
+        if !@stdoutIncludeSystemPods.empty? || !@stderrIncludeSystemPods.empty?
           @excludePath = "*.csv2"
         end
 
