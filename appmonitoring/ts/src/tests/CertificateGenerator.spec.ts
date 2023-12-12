@@ -1,6 +1,5 @@
 import { CertificateManager, WebhookCertData } from '../CertificateGenerator.js';
 import * as k8s from '@kubernetes/client-node';
-import exp from 'constants';
 import forge from 'node-forge';
 
 describe('CertificateManager', () => {
@@ -196,8 +195,6 @@ describe('CertificateManager', () => {
                 tlsCert: 'mockTLSCert',
                 tlsKey: 'mockTLSKey',
             };
-            const clusterArmId = 'clusterArmId';
-            const clusterArmRegion = 'clusterArmRegion';
             const mutatingwebhookobject = {
                 response: null,
                 body: {
@@ -215,7 +212,7 @@ describe('CertificateManager', () => {
             const mutatingwebhookobjectBodyCopy: k8s.V1MutatingWebhookConfiguration = JSON.parse(JSON.stringify(mutatingwebhookobject.body));
             const patchMutatingWebhookConfiguration  = jest.spyOn(k8s.AdmissionregistrationV1Api.prototype, 'patchMutatingWebhookConfiguration').mockResolvedValue(null);
             mutatingwebhookobjectBodyCopy.webhooks[0].clientConfig.caBundle = Buffer.from(mockCertificate.caCert, 'utf-8').toString('base64');
-            const mockApiClient = jest.spyOn(k8s.KubeConfig.prototype, 'makeApiClient').mockReturnValue(new k8s.AdmissionregistrationV1Api());
+            jest.spyOn(k8s.KubeConfig.prototype, 'makeApiClient').mockReturnValue(new k8s.AdmissionregistrationV1Api());
 
             // Mock the methods in CertificateManager
             jest.spyOn(CertificateManager, 'PatchMutatingWebhook');
