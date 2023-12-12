@@ -232,6 +232,32 @@ describe('CertificateManager', () => {
         });
     });
 
+    describe('PatchWebhookAndCertificates', () => {
+        it('should patch webhook and certificates', async () => {
+            // Arrange
+            const operationId = 'operationId';
+            const mockKubeConfig = new k8s.KubeConfig();
+            const mockCertificate: WebhookCertData = {
+                caCert: 'mockCACert',
+                caKey: 'mockCAKey',
+                tlsCert: 'mockTLSCert',
+                tlsKey: 'mockTLSKey',
+            };
+            const clusterArmId = 'clusterArmId';
+            const clusterArmRegion = 'clusterArmRegion';
+            const patchMutatingWebhook = jest.spyOn(CertificateManager, 'PatchMutatingWebhook').mockResolvedValue(null);
+            const patchSecretStore = jest.spyOn(CertificateManager, 'PatchSecretStore').mockResolvedValue(null);
+            const restartWebhookReplicaset = jest.spyOn(CertificateManager as any, 'RestartWebhookReplicaset').mockResolvedValue(null);
+
+            // Act
+            await (CertificateManager as any).PatchWebhookAndCertificates(operationId, mockKubeConfig, mockCertificate, clusterArmId, clusterArmRegion);
+
+            // Assert
+            expect(patchMutatingWebhook).toHaveBeenCalledWith(operationId, mockKubeConfig, mockCertificate);
+            expect(patchSecretStore).toHaveBeenCalledWith(operationId, mockKubeConfig, mockCertificate);
+        });
+    });
+
     describe('PatchSecretStore', () => {
         it('should patch secret store', async () => {
             // Arrange
@@ -322,7 +348,7 @@ describe('CertificateManager', () => {
             };
             const listNamespacedReplicaSet = jest.spyOn(k8s.AppsV1Api.prototype, 'listNamespacedReplicaSet').mockResolvedValue(replicaSetList);
             const replaceNamespacedReplicaSet = jest.spyOn(k8s.AppsV1Api.prototype, 'replaceNamespacedReplicaSet').mockResolvedValue(null);
-            const mockApiClient = jest.spyOn(k8s.KubeConfig.prototype, 'makeApiClient').mockReturnValue(new k8s.AppsV1Api());
+            jest.spyOn(k8s.KubeConfig.prototype, 'makeApiClient').mockReturnValue(new k8s.AppsV1Api());
             
             // Act
             await (CertificateManager as any).RestartWebhookReplicaset(operationId, mockKubeConfig, clusterArmId, clusterArmRegion);
