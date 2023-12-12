@@ -236,8 +236,7 @@ function Set-EnvironmentVariables {
                 $proxy = [string]$proxy.Trim();
                 $parts = $proxy -split "@"
                 if ($parts.Length -ne 2) {
-                    Write-Host "Invalid ProxyConfiguration. EXITING....."
-                    exit 1
+                    Write-Host "Proxy is not using credentials..."
                 }
                 $subparts1 = $parts[0] -split "//"
                 if ($subparts1.Length -ne 2) {
