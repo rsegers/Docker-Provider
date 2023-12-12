@@ -2,7 +2,6 @@ import * as k8s from '@kubernetes/client-node';
 import { CertificateStoreName, NamespaceName, WebhookDNSEndpoint, WebhookName } from './Constants.js'
 import forge from 'node-forge';
 import { logger, RequestMetadata } from './LoggerWrapper.js';
-import { error } from 'console';
 
 export class WebhookCertData {
     caCert: string;
@@ -291,7 +290,7 @@ export class CertificateManager {
         let daysToExpiry = (caPublicCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
             shouldUpdate = true;
-            cACert = await CertificateManager.GenerateCACertificate(caKeyPair);
+            cACert = CertificateManager.GenerateCACertificate(caKeyPair);
             webhookCertData.caCert = forge.pki.certificateToPem(cACert);
         }
 
@@ -301,7 +300,7 @@ export class CertificateManager {
         if (daysToExpiry < 90) {
             shouldUpdate = true;
             shouldRestartReplicaset = true;
-            const newHostCert: forge.pki.Certificate = await CertificateManager.GenerateHostCertificate(cACert);
+            const newHostCert: forge.pki.Certificate = CertificateManager.GenerateHostCertificate(cACert);
             webhookCertData.tlsCert = forge.pki.certificateToPem(newHostCert);
             webhookCertData.tlsKey = forge.pki.privateKeyToPem(newHostCert.privateKey);
         }
@@ -319,10 +318,10 @@ export class CertificateManager {
 
     private static IsValidCertificate(operationId: string, mwhcCaBundle: string, webhookCertData: WebhookCertData, clusterArmId: string, clusterArmRegion: string): boolean {
         try {
-            const caBundle = forge.pki.certificateFromPem(mwhcCaBundle);
-            const caCert = forge.pki.certificateFromPem(webhookCertData.caCert);
-            const tlsCert = forge.pki.certificateFromPem(webhookCertData.tlsCert);
-            const tlsKey = forge.pki.privateKeyFromPem(webhookCertData.tlsKey);
+            forge.pki.certificateFromPem(mwhcCaBundle);
+            forge.pki.certificateFromPem(webhookCertData.caCert);
+            forge.pki.certificateFromPem(webhookCertData.tlsCert);
+            forge.pki.privateKeyFromPem(webhookCertData.tlsKey);
             return true;
         } catch (error) {
             logger.error('Error occured while trying to validate certificates!', operationId, this.requestMetadata);
