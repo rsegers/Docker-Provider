@@ -280,30 +280,30 @@ export class CertificateManager {
         const dayVal: number = 24 * 60 * 60 * 1000;
         let shouldUpdate = false;
         let shouldRestartReplicaset = false;
-        let cACert: forge.pki.Certificate = null;
-        const caPublicCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.caCert);
-        const caKeyPair: forge.pki.rsa.KeyPair = {
-            privateKey: forge.pki.privateKeyFromPem(webhookCertData.caKey),
-            publicKey: caPublicCertificate.publicKey as forge.pki.rsa.PublicKey
-        }
+        let caPublicCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.caCert);
 
         // Check if CA Cert is relativekly close to expiration
         let daysToExpiry = (caPublicCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
-            logger.info('CA Cert is close to expiration, regenerating CA Certificate...', operationId, this.requestMetadata);
+            logger.info('CA Certificate is close to expiration, regenerating CA Certificate...', operationId, this.requestMetadata);
             shouldUpdate = true;
-            cACert = CertificateManager.GenerateCACertificate(caKeyPair);
-            webhookCertData.caCert = forge.pki.certificateToPem(cACert);
+            const caKeyPair: forge.pki.rsa.KeyPair = {
+                privateKey: forge.pki.privateKeyFromPem(webhookCertData.caKey),
+                publicKey: caPublicCertificate.publicKey as forge.pki.rsa.PublicKey
+            }
+            caPublicCertificate = CertificateManager.GenerateCACertificate(caKeyPair);
+            webhookCertData.caCert = forge.pki.certificateToPem(caPublicCertificate);
         }
 
         // Check if Host Cert is relatively close to expiration
         const hostCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.tlsCert);
         daysToExpiry = (hostCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
-            logger.info('Host Cert is close to expiration, regenerating Host Certificate...', operationId, this.requestMetadata);
+            logger.info('Host Certificate is close to expiration, regenerating Host Certificate...', operationId, this.requestMetadata);
             shouldUpdate = true;
             shouldRestartReplicaset = true;
-            const newHostCert: forge.pki.Certificate = CertificateManager.GenerateHostCertificate(cACert);
+            caPublicCertificate.privateKey = forge.pki.privateKeyFromPem(webhookCertData.caKey);
+            const newHostCert: forge.pki.Certificate = CertificateManager.GenerateHostCertificate(caPublicCertificate);
             webhookCertData.tlsCert = forge.pki.certificateToPem(newHostCert);
             webhookCertData.tlsKey = forge.pki.privateKeyToPem(newHostCert.privateKey);
         }
@@ -339,14 +339,14 @@ export class CertificateManager {
         kc.loadFromDefault();
 
         const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
-        const selector = "app=app-monitoring-webhook"
+        const selector = "app-monitoring-webhook"
         let name = null;
 
         try {
             const replicaSets: k8s.V1ReplicaSetList = (await k8sApi.listNamespacedReplicaSet(NamespaceName)).body;
 
             const matchingReplicaSets: k8s.V1ReplicaSet[] = replicaSets.items.filter(rs => 
-                rs.spec.selector.matchLabels.app === selector
+                rs.spec.selector && rs.spec.selector.matchLabels && selector.localeCompare(rs.spec.selector.matchLabels.app) === 0
             );
 
             const replicaSet: k8s.V1ReplicaSet = matchingReplicaSets[0];
