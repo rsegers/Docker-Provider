@@ -87,21 +87,19 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           end
         end
 
-        if @collectStdoutLogs && !stdoutSystemPods.nil?
-          if stdoutSystemPods.kind_of?(Array)
-            # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
-            if stdoutSystemPods.length > 0 && stdoutSystemPods[0].kind_of?(String)
-              #Empty the array to use the values from configmap
-              stdoutSystemPods.each do |systemPod|
-                if @stdoutIncludeSystemPods.empty?
-                  # To not append , for the first element
-                  @stdoutIncludeSystemPods.concat(systemPod)
-                else
-                  @stdoutIncludeSystemPods.concat("," + systemPod)
-                end
+        if @collectStdoutLogs && !stdoutSystemPods.nil? && stdoutSystemPods.kind_of?(Array)
+          # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+          if stdoutSystemPods.length > 0 && stdoutSystemPods[0].kind_of?(String)
+            #Empty the array to use the values from configmap
+            stdoutSystemPods.each do |systemPod|
+              if @stdoutIncludeSystemPods.empty?
+                # To not append , for the first element
+                @stdoutIncludeSystemPods.concat(systemPod)
+              else
+                @stdoutIncludeSystemPods.concat("," + systemPod)
               end
-              puts "config::Using config map setting for stdout log collection to include system pods"
             end
+            puts "config::Using config map setting for stdout log collection to include system pods"
           end
         end
 
@@ -149,21 +147,19 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           end
         end
 
-        if @collectStderrLogs && !stderrSystemPods.nil?
-          if stderrSystemPods.kind_of?(Array)
-            # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
-            if stderrSystemPods.length > 0 && stderrSystemPods[0].kind_of?(String)
-              #Empty the array to use the values from configmap
-              stderrSystemPods.each do |systemPod|
-                if @stderrIncludeSystemPods.empty?
-                  # To not append , for the first element
-                  @stderrIncludeSystemPods.concat(systemPod)
-                else
-                  @stderrIncludeSystemPods.concat("," + systemPod)
-                end
+        if @collectStderrLogs && !stderrSystemPods.nil? && stderrSystemPods.kind_of?(Array)
+          # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+          if stderrSystemPods.length > 0 && stderrSystemPods[0].kind_of?(String)
+            #Empty the array to use the values from configmap
+            stderrSystemPods.each do |systemPod|
+              if @stderrIncludeSystemPods.empty?
+                # To not append , for the first element
+                @stderrIncludeSystemPods.concat(systemPod)
+              else
+                @stderrIncludeSystemPods.concat("," + systemPod)
               end
-              puts "config::Using config map setting for stderr log collection to include system pods"
             end
+            puts "config::Using config map setting for stderr log collection to include system pods"
           end
         end
 
