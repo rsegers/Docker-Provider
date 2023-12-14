@@ -1,0 +1,8 @@
+apiVersion: azmon.app.monitoring/v1
+kind: appmonitoringconfig
+metadata:
+ name: appmonitoring
+ namespace: ${TEST_NS}
+spec:
+ autoInstrumentationPlatforms: [ NodeJs,  DotNet, Java ]
+ aiConnectionString: ${AI_CONNECTION_STRING}
