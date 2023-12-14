@@ -512,7 +512,7 @@ func populateIncludedStdoutSystemPods() {
 	collectStdoutLogs := os.Getenv("AZMON_COLLECT_STDOUT_LOGS")
 	var stdoutIncludedSystemPodsList []string
 	includeList := os.Getenv("AZMON_STDOUT_INCLUDED_SYSTEM_PODS")
-	if (strings.Compare(collectStdoutLogs, "true") == 0) && (len(includeList) > 0) {
+	if (collectStdoutLogs == "true") && (len(includeList) > 0) {
 		stdoutIncludedSystemPodsList = strings.Split(includeList, ",")
 		for _, pod := range stdoutIncludedSystemPodsList {
 			Log("Including system pod %s for stdout log collection", pod)
@@ -1182,28 +1182,16 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		if strings.EqualFold(logEntrySource, "stdout") {
 			if containerID == "" { continue }
 			if containsKey(StdoutIgnoreNsSet, k8sNamespace) {
-				dsName, deploymentName := "", ""
-				if len(StdoutIncludeSystemPodsSet) > 0 {
-					dsName, deploymentName = GetDSNameAndDeploymentNameFromK8sPodName(k8sPodName)
-				}
-				if (containsKey(StdoutIncludeSystemPodsSet, dsName) || containsKey(StdoutIncludeSystemPodsSet, deploymentName)) {
-					// do nothing
-				} else {
-					continue
-				}
+				if len(StdoutIncludeSystemPodsSet) == 0 { continue }
+				dsName, deploymentName := GetDSNameAndDeploymentNameFromK8sPodName(k8sPodName)
+				if (!containsKey(StdoutIncludeSystemPodsSet, dsName) && !containsKey(StdoutIncludeSystemPodsSet, deploymentName)) { continue }
 			}
 		} else if strings.EqualFold(logEntrySource, "stderr") {
 			if containerID == "" { continue }
 			if containsKey(StderrIgnoreNsSet, k8sNamespace) {
-				dsName, deploymentName := "", ""
-				if len(StderrIncludeSystemPodsSet) > 0 {
-					dsName, deploymentName = GetDSNameAndDeploymentNameFromK8sPodName(k8sPodName)
-				}
-				if (containsKey(StderrIncludeSystemPodsSet, dsName) || containsKey(StderrIncludeSystemPodsSet, deploymentName)) {
-					// do nothing
-				} else {
-					continue
-				}
+				if len(StderrIncludeSystemPodsSet) == 0 { continue }
+				dsName, deploymentName := GetDSNameAndDeploymentNameFromK8sPodName(k8sPodName)
+				if (!containsKey(StderrIncludeSystemPodsSet, dsName) && !containsKey(StderrIncludeSystemPodsSet, deploymentName)) { continue }
 			}
 		}
 
