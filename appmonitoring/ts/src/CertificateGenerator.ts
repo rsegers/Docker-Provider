@@ -2,7 +2,6 @@ import * as k8s from '@kubernetes/client-node';
 import { CertificateStoreName, NamespaceName, WebhookDNSEndpoint, WebhookName } from './Constants.js'
 import forge from 'node-forge';
 import { logger, RequestMetadata } from './LoggerWrapper.js';
-import { log } from 'console';
 
 export class WebhookCertData {
     caCert: string;
