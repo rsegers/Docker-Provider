@@ -1179,21 +1179,20 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					Log(fmt.Sprintf("Error while printing kubernetesMetadataJson: %s", err))
 				}
 				Log(fmt.Sprintf("Printed %d bytes", n))
-				Log("Debug: kubernetesMetadataJson raw:", kubernetesMetadataJson)
+				Log(fmt.Sprintf("Debug: kubernetesMetadataJson raw: %+v", kubernetesMetadataJson))
 				kubernetesMetadataMap := make(map[string]interface{})
 				for k, v := range kubernetesMetadataJson.(map[interface{}]interface{}) {
 					if keyStr, ok := k.(string); ok {
 						kubernetesMetadataMap[keyStr] = v
-						Log("Debug: kubernetesMetadataMap set succ")
+						Log(fmt.Sprintf("Debug: kubernetesMetadataMap set succ"))
 					} else {
-						Log("Error: Key in kubernetesMetadataJson is not a string")
+						Log(fmt.Sprintf("Error: Key in kubernetesMetadataJson is not a string"))
 						continue
 					}
 				}
-				Log("Debug: kubernetesMetadataMap:", kubernetesMetadataMap)
-				Log("Debug: KubernetesMetadataIncludeList: ", KubernetesMetadataIncludeList)
+				Log(fmt.Sprintf("Debug: kubernetesMetadataMap: %+v", kubernetesMetadataMap))
+				Log(fmt.Sprintf("Debug: KubernetesMetadataIncludeList: %+v", KubernetesMetadataIncludeList))
 				includedMetadata := processIncludes(kubernetesMetadataMap, KubernetesMetadataIncludeList)
-
 				kubernetesMetadataBytes, err := json.Marshal(includedMetadata)
 				if err != nil {
 					message := fmt.Sprintf("Error while Marshalling kubernetesMetadataBytes to json bytes: %s", err.Error())
@@ -1958,10 +1957,11 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	KubernetesMetadataConfigMap = false
 	KubernetesMetadataConfigMap = (strings.Compare(strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")), "true") == 0)
-	//podLabels,podAnnotations,podUid,image
-	KubernetesMetadataIncludeList := os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
-	if len(KubernetesMetadataIncludeList) == 0 {
-		KubernetesMetadataIncludeList = "podLabels,podAnnotations,podUid,image"
+	metadataIncludeList := os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
+	if KubernetesMetadataConfigMap && len(metadataIncludeList) > 0 {
+		KubernetesMetadataIncludeList = strings.Split(metadataIncludeList, ",")
+	} else {
+		KubernetesMetadataIncludeList = []string{"podLabels", "podAnnotations", "podUid", "image"}
 	}
 
 	if ContainerLogV2ConfigMap && ContainerLogsRouteADX != true {
