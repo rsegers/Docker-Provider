@@ -1174,12 +1174,15 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		kubernetesMetadata := ""
 		if KubernetesMetadataConfigMap {
 			if kubernetesMetadataJson, exists := record["kubernetes"]; exists {
+				Log("start kubernetesMetadataJson")
 				n, err := fmt.Printf("Debug: kubernetesMetadataJson: %+v\n", kubernetesMetadataJson)
 				if err != nil {
 					Log(fmt.Sprintf("Error while printing kubernetesMetadataJson: %s", err))
 				}
 				Log(fmt.Sprintf("Printed %d bytes", n))
+				Log("LW 1")
 				Log(fmt.Sprintf("Debug: kubernetesMetadataJson raw: %+v", kubernetesMetadataJson))
+				Log("LW 2")
 				kubernetesMetadataMap := make(map[string]interface{})
 				for k, v := range kubernetesMetadataJson.(map[interface{}]interface{}) {
 					if keyStr, ok := k.(string); ok {
@@ -1190,9 +1193,15 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 						continue
 					}
 				}
+				Log("LW 3")
 				Log(fmt.Sprintf("Debug: kubernetesMetadataMap: %+v", kubernetesMetadataMap))
-				Log(fmt.Sprintf("Debug: KubernetesMetadataIncludeList: %+v", KubernetesMetadataIncludeList))
+				k, err := fmt.Printf("Debug: KubernetesMetadataIncludeList: %+v\n", KubernetesMetadataIncludeList)
+				if err != nil {
+					Log(fmt.Sprintf("Error while printing KubernetesMetadataIncludeList: %s", err))
+				}
+				Log(fmt.Sprintf("Printed %d bytes", k))
 				includedMetadata := processIncludes(kubernetesMetadataMap, KubernetesMetadataIncludeList)
+				Log("LW 4")
 				kubernetesMetadataBytes, err := json.Marshal(includedMetadata)
 				if err != nil {
 					message := fmt.Sprintf("Error while Marshalling kubernetesMetadataBytes to json bytes: %s", err.Error())
