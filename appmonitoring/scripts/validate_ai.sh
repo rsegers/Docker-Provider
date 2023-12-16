@@ -12,7 +12,9 @@ client_id="02a35d9f-68ea-4a99-b688-c3a359d7cab0"
 client_secret="__raw__"
 
 # Get an access token
-access_token=$(curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://api.applicationinsights.io/&authority=72f988bf-86f1-41af-91ab-2d7cd011db47' -H Metadata:true -s | jq -r '.access_token')
+result_rsp=$(curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://api.applicationinsights.io&authority=72f988bf-86f1-41af-91ab-2d7cd011db47' -H Metadata:true -s)
+echo "Result: $result_rsp"
+access_token=$(echo $result_rsp | jq -r '.access_token')
 
 # Use the access token
 # curl 'https://management.azure.com/subscriptions/<subscription-id>/resourceGroups/<resource-group>/providers/Microsoft.Compute/virtualMachines/<vm-name>?api-version=2019-03-01' -H Metadata:true -H "Authorization: Bearer $access_token"
