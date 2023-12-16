@@ -12,7 +12,7 @@ client_id="02a35d9f-68ea-4a99-b688-c3a359d7cab0"
 client_secret="__raw__"
 
 # Get an access token
-result_rsp=$(curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://api.applicationinsights.io&authority=72f988bf-86f1-41af-91ab-2d7cd011db47' -H Metadata:true -s)
+result_rsp=$(curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://api.applicationinsights.io&mi_res_id=/subscriptions/66010356-d8a5-42d3-8593-6aaa3aeb1c11/resourceGroups/rambhatt-rnd-v2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/rambhatt-agentpool-es-identity' -H Metadata:true -s)
 echo "Result: $result_rsp"
 access_token=$(echo $result_rsp | jq -r '.access_token')
 
