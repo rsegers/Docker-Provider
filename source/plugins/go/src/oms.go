@@ -1199,24 +1199,10 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		kubernetesMetadata := ""
 		if KubernetesMetadataConfigMap {
 			if kubernetesMetadataJson, exists := record["kubernetes"]; exists {
-				Log("start kubernetesMetadataJson")
-				Log(fmt.Sprintf("Debug: kubernetesMetadataJson raw: %+v", kubernetesMetadataJson))
-				// kubernetesMetadataMap := make(map[string]interface{})
-				// for k, v := range kubernetesMetadataJson.(map[interface{}]interface{}) {
-				// 	if keyStr, ok := k.(string); ok {
-				// 		kubernetesMetadataMap[keyStr] = v
-				// 		Log(fmt.Sprintf("Debug: kubernetesMetadataMap set succ"))
-				// 	} else {
-				// 		Log(fmt.Sprintf("Error: Key in kubernetesMetadataJson is not a string"))
-				// 		continue
-				// 	}
-				// }
 				kubernetesMetadataMap, err := convertKubernetesMetadata(kubernetesMetadataJson)
 				if err != nil {
-					Log(fmt.Sprintf("Error: %v", err))
+					Log(fmt.Sprintf("Error convertKubernetesMetadata: %v", err))
 				}
-				Log(fmt.Sprintf("Debug: kubernetesMetadataMap: %+v", kubernetesMetadataMap))
-				Log(fmt.Sprintf("Debug: KubernetesMetadataIncludeList: %+v\n", KubernetesMetadataIncludeList))
 				includedMetadata := processIncludes(kubernetesMetadataMap, KubernetesMetadataIncludeList)
 				kubernetesMetadataBytes, err := json.Marshal(includedMetadata)
 				if err != nil {
@@ -1225,7 +1211,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					SendException(message)
 				}
 				kubernetesMetadata = string(kubernetesMetadataBytes)
-				Log(fmt.Sprintf("Debug: kubernetesMetadata: %+v\n", kubernetesMetadata))
 			} else {
 				message := fmt.Sprintf("Error while fetching kubernetesMetadataJson")
 				Log(message)
@@ -1979,8 +1964,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	KubernetesMetadataConfigMap = false
 	KubernetesMetadataConfigMap = (strings.Compare(strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")), "true") == 0)
 	metadataIncludeList := os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
-	fmt.Sprintf("Debug: metadataIncludeList from Fetch: %+v\n", metadataIncludeList)
-	Log(fmt.Sprintf("Debug: metadataIncludeList from Fetch: %+v\n", metadataIncludeList))
+	Log(fmt.Sprintf("KubernetesMetadataIncludeList from configmap: %+v\n", metadataIncludeList))
 	if KubernetesMetadataConfigMap && len(metadataIncludeList) > 0 {
 		KubernetesMetadataIncludeList = strings.Split(metadataIncludeList, ",")
 	} else {
