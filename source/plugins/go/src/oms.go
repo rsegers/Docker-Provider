@@ -1153,14 +1153,17 @@ func convertKubernetesMetadata(kubernetesMetadataJson interface{}) (map[string]i
         if !ok {
             continue
         }
-        if subMap, isMap := v.(map[interface{}]interface{}); isMap {
-            convertedMap, err := convertKubernetesMetadata(subMap)
+        switch val := v.(type) {
+        case map[interface{}]interface{}:
+            convertedMap, err := convertKubernetesMetadata(val)
             if err != nil {
                 return nil, err
             }
             strMap[strKey] = convertedMap
-        } else {
-            strMap[strKey] = v // Keep the original value
+        case []byte:
+            strMap[strKey] = string(val)
+        default:
+            strMap[strKey] = val
         }
     }
     return strMap, nil
