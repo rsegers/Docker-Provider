@@ -291,8 +291,6 @@ type DataItemADX struct {
 	PodNamespace  string `json:"PodNamespace"`
 	LogMessage    string `json:"LogMessage"`
 	LogSource     string `json:"LogSource"`
-	KubernetesMetadata    string `json:"KubernetesMetadata"`
-	//LogLevel     string `json:"LogLevel"`
 	//PodLabels			  string `json:"PodLabels"`
 	AzureResourceId string `json:"AzureResourceId"`
 }
@@ -1266,7 +1264,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		//ADX Schema & LAv2 schema are almost the same (except resourceId)
-		if ContainerLogSchemaV2 == true || ContainerLogsRouteADX == true {
+		if ContainerLogSchemaV2 == true {
 			stringMap["Computer"] = Computer
 			stringMap["ContainerId"] = containerID
 			stringMap["ContainerName"] = containerName
@@ -1277,6 +1275,15 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			stringMap["TimeGenerated"] = logEntryTimeStamp
 			stringMap["KubernetesMetadata"] = kubernetesMetadata
 			//stringMap["LogLevel"] = logLevel
+		} else if ContainerLogsRouteADX == true {
+			stringMap["Computer"] = Computer
+			stringMap["ContainerId"] = containerID
+			stringMap["ContainerName"] = containerName
+			stringMap["PodName"] = k8sPodName
+			stringMap["PodNamespace"] = k8sNamespace
+			stringMap["LogMessage"] = logEntry
+			stringMap["LogSource"] = logEntrySource
+			stringMap["TimeGenerated"] = logEntryTimeStamp
 		} else {
 			stringMap["LogEntry"] = logEntry
 			stringMap["LogEntrySource"] = logEntrySource
@@ -1326,8 +1333,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				LogMessage:      stringMap["LogMessage"],
 				LogSource:       stringMap["LogSource"],
 				AzureResourceId: stringMap["AzureResourceId"],
-				KubernetesMetadata: stringMap["KubernetesMetadata"],
-				//LogLevel: stringMap["LogLevel"],
 			}
 			//ADX
 			dataItemsADX = append(dataItemsADX, dataItemADX)
