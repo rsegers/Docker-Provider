@@ -1246,7 +1246,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 		logEntry := ToString(record["log"])
 		//filter loglevel and define here
-		//add another configmap flag
 		//logLevel := ToString(record["LogLevel"])
 		logEntryTimeStamp := ToString(record["time"])
 
