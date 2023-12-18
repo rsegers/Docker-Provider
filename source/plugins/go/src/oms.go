@@ -1979,6 +1979,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	KubernetesMetadataConfigMap = false
 	KubernetesMetadataConfigMap = (strings.Compare(strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")), "true") == 0)
 	metadataIncludeList := os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
+	fmt.Sprintf("Debug: metadataIncludeList from Fetch: %+v\n", metadataIncludeList)
+	Log(fmt.Sprintf("Debug: metadataIncludeList from Fetch: %+v\n", metadataIncludeList))
 	if KubernetesMetadataConfigMap && len(metadataIncludeList) > 0 {
 		KubernetesMetadataIncludeList = strings.Split(metadataIncludeList, ",")
 	} else {
