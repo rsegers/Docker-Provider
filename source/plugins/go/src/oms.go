@@ -1141,6 +1141,31 @@ func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList 
 	return includedMetadata
 }
 
+func convertKubernetesMetadata(kubernetesMetadataJson interface{}) (map[string]interface{}, error) {
+    m, ok := kubernetesMetadataJson.(map[interface{}]interface{})
+    if !ok {
+        return nil, fmt.Errorf("type assertion to map[interface{}]interface{} failed")
+    }
+
+    strMap := make(map[string]interface{})
+    for k, v := range m {
+        strKey, ok := k.(string)
+        if !ok {
+            continue
+        }
+        if subMap, isMap := v.(map[interface{}]interface{}); isMap {
+            convertedMap, err := convertKubernetesMetadata(subMap)
+            if err != nil {
+                return nil, err
+            }
+            strMap[strKey] = convertedMap
+        } else {
+            strMap[strKey] = v // Keep the original value
+        }
+    }
+    return strMap, nil
+}
+
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
 func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	start := time.Now()
@@ -1175,33 +1200,24 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		if KubernetesMetadataConfigMap {
 			if kubernetesMetadataJson, exists := record["kubernetes"]; exists {
 				Log("start kubernetesMetadataJson")
-				n, err := fmt.Printf("Debug: kubernetesMetadataJson: %+v\n", kubernetesMetadataJson)
-				if err != nil {
-					Log(fmt.Sprintf("Error while printing kubernetesMetadataJson: %s", err))
-				}
-				Log(fmt.Sprintf("Printed %d bytes", n))
-				Log("LW 1")
 				Log(fmt.Sprintf("Debug: kubernetesMetadataJson raw: %+v", kubernetesMetadataJson))
-				Log("LW 2")
-				kubernetesMetadataMap := make(map[string]interface{})
-				for k, v := range kubernetesMetadataJson.(map[interface{}]interface{}) {
-					if keyStr, ok := k.(string); ok {
-						kubernetesMetadataMap[keyStr] = v
-						Log(fmt.Sprintf("Debug: kubernetesMetadataMap set succ"))
-					} else {
-						Log(fmt.Sprintf("Error: Key in kubernetesMetadataJson is not a string"))
-						continue
-					}
-				}
-				Log("LW 3")
-				Log(fmt.Sprintf("Debug: kubernetesMetadataMap: %+v", kubernetesMetadataMap))
-				k, err := fmt.Printf("Debug: KubernetesMetadataIncludeList: %+v\n", KubernetesMetadataIncludeList)
+				// kubernetesMetadataMap := make(map[string]interface{})
+				// for k, v := range kubernetesMetadataJson.(map[interface{}]interface{}) {
+				// 	if keyStr, ok := k.(string); ok {
+				// 		kubernetesMetadataMap[keyStr] = v
+				// 		Log(fmt.Sprintf("Debug: kubernetesMetadataMap set succ"))
+				// 	} else {
+				// 		Log(fmt.Sprintf("Error: Key in kubernetesMetadataJson is not a string"))
+				// 		continue
+				// 	}
+				// }
+				kubernetesMetadataMap, err := convertKubernetesMetadata(kubernetesMetadataJson)
 				if err != nil {
-					Log(fmt.Sprintf("Error while printing KubernetesMetadataIncludeList: %s", err))
+					Log(fmt.Sprintf("Error: %v", err))
 				}
-				Log(fmt.Sprintf("Printed %d bytes", k))
+				Log(fmt.Sprintf("Debug: kubernetesMetadataMap: %+v", kubernetesMetadataMap))
+				Log(fmt.Sprintf("Debug: KubernetesMetadataIncludeList: %+v\n", KubernetesMetadataIncludeList))
 				includedMetadata := processIncludes(kubernetesMetadataMap, KubernetesMetadataIncludeList)
-				Log("LW 4")
 				kubernetesMetadataBytes, err := json.Marshal(includedMetadata)
 				if err != nil {
 					message := fmt.Sprintf("Error while Marshalling kubernetesMetadataBytes to json bytes: %s", err.Error())
@@ -1209,11 +1225,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					SendException(message)
 				}
 				kubernetesMetadata = string(kubernetesMetadataBytes)
-				l, err := fmt.Printf("Debug: kubernetesMetadata: %+v\n", kubernetesMetadata)
-				if err != nil {
-					Log(fmt.Sprintf("Error while printing kubernetesMetadata: %s", err))
-				}
-				Log(fmt.Sprintf("Printed %d bytes", l))
+				Log(fmt.Sprintf("Debug: kubernetesMetadata: %+v\n", kubernetesMetadata))
 			} else {
 				message := fmt.Sprintf("Error while fetching kubernetesMetadataJson")
 				Log(message)
