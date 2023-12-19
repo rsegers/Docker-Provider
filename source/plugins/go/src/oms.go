@@ -162,7 +162,7 @@ var (
 	// container log schema version from config map
 	ContainerLogV2ConfigMap bool
 	// Kubernetes Metadata enabled through configmap flag
-	KubernetesMetadataConfigMap bool
+	KubernetesMetadataEnabled bool
 	// Kubernetes Metadata enabled exclude list
 	KubernetesMetadataIncludeList []string
 	//ADX Cluster URI
@@ -1198,7 +1198,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		containerID, k8sNamespace, k8sPodName, containerName := GetContainerIDK8sNamespacePodNameFromFileName(ToString(record["filepath"]))
 		logEntrySource := ToString(record["stream"])
 		kubernetesMetadata := ""
-		if KubernetesMetadataConfigMap {
+		if KubernetesMetadataEnabled {
 			if kubernetesMetadataJson, exists := record["kubernetes"]; exists {
 				kubernetesMetadataMap, err := convertKubernetesMetadata(kubernetesMetadataJson)
 				if err != nil {
@@ -1968,14 +1968,14 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ContainerLogSchemaV2 = false //default is v1 schema
 	ContainerLogV2ConfigMap = (strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0)
 
-	KubernetesMetadataConfigMap = false
-	KubernetesMetadataConfigMap = (strings.Compare(strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")), "true") == 0)
+	KubernetesMetadataEnabled = false
+	KubernetesMetadataEnabled = (strings.Compare(strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")), "true") == 0)
 	metadataIncludeList := os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
 	Log(fmt.Sprintf("KubernetesMetadataIncludeList from configmap: %+v\n", metadataIncludeList))
 	KubernetesMetadataIncludeList = []string{"podLabels", "podAnnotations", "podUid", "image"}
-	if KubernetesMetadataConfigMap && len(metadataIncludeList) > 0 {
+	if KubernetesMetadataEnabled && len(metadataIncludeList) > 0 {
 		KubernetesMetadataIncludeList = strings.Split(metadataIncludeList, ",")
-	} else if KubernetesMetadataConfigMap {
+	} else if KubernetesMetadataEnabled {
 		KubernetesMetadataIncludeList = []string{}
 	}
 
