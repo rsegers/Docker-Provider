@@ -12,15 +12,10 @@ result_rsp=$(curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-ver
 # echo "Result: $result_rsp"
 access_token=$(echo $result_rsp | jq -r '.access_token')
 
-# Print the access_token
-echo "Access Token: $access_token"
-
 # Define your variables
 url="https://api.loganalytics.io/v1/subscriptions/66010356-d8a5-42d3-8593-6aaa3aeb1c11/resourceGroups/rambhatt-rnd-v2/providers/microsoft.insights/components/aks-final-2/query"
 
 # Define the JSON body
-
-
 
 json_body='{
     "query": "traces | where timestamp > ago(5m) | where cloud_RoleName == \"aks-demo-app\" | count",
