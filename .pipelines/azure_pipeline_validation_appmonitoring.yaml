@@ -56,176 +56,176 @@ jobs:
     DOCKER_BUILDKIT: 1
 
   steps:
-  # - task: CodeQL3000Init@0
-  # - task: AzureCLI@2
-  #   displayName: "Ready Image and push to ACR"
-  #   inputs:
-  #     azureSubscription: ${{ variables.armServiceConnectionName }}
-  #     scriptType: bash
-  #     scriptLocation: inlineScript
-  #     inlineScript: |
-  #       mkdir -p $(Build.ArtifactStagingDirectory)/linux
+  - task: CodeQL3000Init@0
+  - task: AzureCLI@2
+    displayName: "Ready Image and push to ACR"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        mkdir -p $(Build.ArtifactStagingDirectory)/linux
 
-  #       echo "Installing NPM..."
-  #       sudo apt-get -y install npm
+        echo "Installing NPM..."
+        sudo apt-get -y install npm
 
-  #       echo "Switching the directory..."
-  #       cd appmonitoring/ts/src
-  #       pwd
-  #       ls -a
+        echo "Switching the directory..."
+        cd appmonitoring/ts/src
+        pwd
+        ls -a
         
-  #       echo "Installing npm packages..."
-  #       sudo npm install
+        echo "Installing npm packages..."
+        sudo npm install
 
-  #       #echo "Updating packages..."
-  #       #npm update
+        #echo "Updating packages..."
+        #npm update
         
-  #       echo "Building the typescript project..."
-  #       tsc --build --force
+        echo "Building the typescript project..."
+        tsc --build --force
         
-  #       if [ $? -ne 0 ]
-  #       then
-  #         echo "Build failed"
-  #         exit 1
-  #       fi
+        if [ $? -ne 0 ]
+        then
+          echo "Build failed"
+          exit 1
+        fi
 
-  #       echo "Build is done"
+        echo "Build is done"
 
-  #       echo "Running ESLint..."
-  #       npx eslint .
+        echo "Running ESLint..."
+        npx eslint .
 
-  #       if [ $? -ne 0 ]
-  #       then
-  #         echo "ESLint failed"
-  #         exit 1
-  #       fi
+        if [ $? -ne 0 ]
+        then
+          echo "ESLint failed"
+          exit 1
+        fi
 
-  #       echo "ESLint is done"
+        echo "ESLint is done"
 
-  #       echo "Running Jest..."
-  #       npm test
+        echo "Running Jest..."
+        npm test
 
-  #       if [ $? -ne 0 ]
-  #       then
-  #         echo "Jest failed"
-  #         exit 1
-  #       fi
+        if [ $? -ne 0 ]
+        then
+          echo "Jest failed"
+          exit 1
+        fi
 
-  #       echo "Jest is done"
+        echo "Jest is done"
         
-  #       pwd
-  #       ls -a
+        pwd
+        ls -a
         
-  #       sudo apt-get update && sudo apt-get -y install qemu binfmt-support qemu-user-static
-  #       docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
+        sudo apt-get update && sudo apt-get -y install qemu binfmt-support qemu-user-static
+        docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
-  #       docker buildx create --name testbuilder
-  #       docker buildx use testbuilder
+        docker buildx create --name testbuilder
+        docker buildx use testbuilder
 
-  #       az --version
-  #       az account show
-  #       az account set -s ${{ variables.subscription }}
-  #       az acr login -n ${{ variables.containerRegistry }}
+        az --version
+        az account show
+        az account set -s ${{ variables.subscription }}
+        az acr login -n ${{ variables.containerRegistry }}
 
-  #       echo "Build reason = $(Build.Reason)"
+        echo "Build reason = $(Build.Reason)"
 
-  #       echo ${{ variables.fullImageName }}
+        echo ${{ variables.fullImageName }}
         
-  #       docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.fullImageName }} -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
-  #       docker pull ${{ variables.fullImageName }}
+        docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.fullImageName }} -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
+        docker pull ${{ variables.fullImageName }}
 
-  # - task: AzureCLI@2
-  #   displayName: "Create deployment in AKS"
-  #   inputs:
-  #     azureSubscription: ${{ variables.armServiceConnectionName }}
-  #     scriptType: bash
-  #     scriptLocation: inlineScript
-  #     inlineScript: |
-  #       cd appmonitoring/helm
-  #       pwd
-  #       az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-  #       az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
-  #       kubectl delete -f appmonitoring-deployment.yaml
+  - task: AzureCLI@2
+    displayName: "Create deployment in AKS"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        cd appmonitoring/helm
+        pwd
+        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
+        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        kubectl delete -f appmonitoring-deployment.yaml
 
-  #       echo "Wait for 10s for everything to clear up..."
-  #       sleep 10
+        echo "Wait for 10s for everything to clear up..."
+        sleep 10
 
-  #       export AIDEV_IMAGE_NAME=${{ variables.fullImageName }}
-  #       cat appmonitoring-deployment.yaml | envsubst | kubectl apply -f -
+        export AIDEV_IMAGE_NAME=${{ variables.fullImageName }}
+        cat appmonitoring-deployment.yaml | envsubst | kubectl apply -f -
 
-  #       echo "Wait for 10s for charts to be applied..."
-  #       sleep 10
+        echo "Wait for 10s for charts to be applied..."
+        sleep 10
 
-  # - task: AzureCLI@2
-  #   displayName: "Validate charts deployed to AKS"
-  #   inputs:
-  #     azureSubscription: ${{ variables.armServiceConnectionName }}
-  #     scriptType: bash
-  #     scriptLocation: inlineScript
-  #     inlineScript: |
-  #       cd appmonitoring/scripts
-  #       pwd
-  #       az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-  #       az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+  - task: AzureCLI@2
+    displayName: "Validate charts deployed to AKS"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        cd appmonitoring/scripts
+        pwd
+        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
+        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
 
-  #       sudo chmod u+x ./validate-aks-charts.sh
-  #       sudo chmod u+x ./validate-certs.sh
+        sudo chmod u+x ./validate-aks-charts.sh
+        sudo chmod u+x ./validate-certs.sh
 
-  #       echo "Checking for charts..."
-  #       ./validate-aks-charts.sh
+        echo "Checking for charts..."
+        ./validate-aks-charts.sh
         
-  #       echo "Checking for certificate installation..."
-  #       ./validate-certs.sh
+        echo "Checking for certificate installation..."
+        ./validate-certs.sh
 
-  # - task: AzureResourceManagerTemplateDeployment@3
-  #   inputs:
-  #     deploymentScope: 'Resource Group'
-  #     azureResourceManagerConnection: 'ai-acr-validation-rsx'
-  #     subscriptionId: '66010356-d8a5-42d3-8593-6aaa3aeb1c11'
-  #     action: 'Create Or Update Resource Group'
-  #     resourceGroupName: 'appmonitoring-pipeline-test'
-  #     location: 'East US'
-  #     templateLocation: 'Linked artifact'
-  #     csmFile: '/path/to/here'
-  #     deploymentMode: 'Incremental'
+  - task: AzureResourceManagerTemplateDeployment@3
+    inputs:
+      deploymentScope: 'Resource Group'
+      azureResourceManagerConnection: 'ai-acr-validation-rsx'
+      subscriptionId: '66010356-d8a5-42d3-8593-6aaa3aeb1c11'
+      action: 'Create Or Update Resource Group'
+      resourceGroupName: 'appmonitoring-pipeline-test'
+      location: 'East US'
+      templateLocation: 'Linked artifact'
+      csmFile: '/path/to/here'
+      deploymentMode: 'Incremental'
 
-  # - task: AzureCLI@2
-  #   displayName: "Install CR and test apps"
-  #   inputs:
-  #     azureSubscription: ${{ variables.armServiceConnectionName }}
-  #     scriptType: bash
-  #     scriptLocation: inlineScript
-  #     inlineScript: |
-  #       cd appmonitoring/helm
-  #       pwd
-  #       az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-  #       az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
-  #       kubectl delete -f java-test-app.yaml
-  #       kubectl delete -f dotnet-test-app.yaml
-  #       kubectl delete -f node-test-app.yaml
-  #       kubectl delete -f appmonitoring-cr.yaml
+  - task: AzureCLI@2
+    displayName: "Install CR and test apps"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        cd appmonitoring/helm
+        pwd
+        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
+        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        kubectl delete -f java-test-app.yaml
+        kubectl delete -f dotnet-test-app.yaml
+        kubectl delete -f node-test-app.yaml
+        kubectl delete -f appmonitoring-cr.yaml
 
-  #       echo "Wait for 10s for everything to clear up..."
-  #       sleep 10
+        echo "Wait for 10s for everything to clear up..."
+        sleep 10
 
-  #       export JAVA_TEST_IMAGE_NAME=${{ variables.javaTestAppImageName }}
-  #       export DOTNET_TEST_IMAGE_NAME=${{ variables.dotnetTestAppImageName }}
-  #       export NODEJS_TEST_IMAGE_NAME=${{ variables.nodeTestAppImageName }}
-  #       export TEST_NS="${{ variables.testNamespace }}"
-  #       export AI_CONNECTION_STRING="${{ variables.aiConnectionString }}"
+        export JAVA_TEST_IMAGE_NAME=${{ variables.javaTestAppImageName }}
+        export DOTNET_TEST_IMAGE_NAME=${{ variables.dotnetTestAppImageName }}
+        export NODEJS_TEST_IMAGE_NAME=${{ variables.nodeTestAppImageName }}
+        export TEST_NS="${{ variables.testNamespace }}"
+        export AI_CONNECTION_STRING="${{ variables.aiConnectionString }}"
 
-  #       kubectl create namespace $TEST_NS
+        kubectl create namespace $TEST_NS
 
-  #       cat appmonitoring-cr.yaml | envsubst | kubectl apply -f -
-  #       echo "Wait for 10s for CR to be applied and picked up..."
-  #       sleep 10
+        cat appmonitoring-cr.yaml | envsubst | kubectl apply -f -
+        echo "Wait for 10s for CR to be applied and picked up..."
+        sleep 10
 
-  #       cat java-test-app.yaml | envsubst | kubectl apply -f -
-  #       cat dotnet-test-app.yaml | envsubst | kubectl apply -f -
-  #       cat node-test-app.yaml | envsubst | kubectl apply -f -
+        cat java-test-app.yaml | envsubst | kubectl apply -f -
+        cat dotnet-test-app.yaml | envsubst | kubectl apply -f -
+        cat node-test-app.yaml | envsubst | kubectl apply -f -
 
-  #       echo "Wait for 10s for charts to be applied..."
-        # sleep 10
+        echo "Wait for 10s for charts to be applied..."
+        sleep 10
 
   - task: AzureCLI@2
     displayName: "Check test apps were mutated correctly"
