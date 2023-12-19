@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: windows-resource-intensive-app
+  namespace: kube-system
+spec:
+  replicas: 10 # 50
+  selector:
+    matchLabels:
+      app: windows-resource-intensive-app
+  template:
+    metadata:
+      labels:
+        app: windows-resource-intensive-app
+        # more labels
+    spec:
+      nodeSelector:
+        kubernetes.io/os: windows
+      containers:
+      - name: windows-resource-intensive-app
+        image: mcr.microsoft.com/windows/servercore:ltsc2022
+        command: ["powershell", "-c"]
+        args:
+          - |
+            while ($true) {
+              $timestamp = Get-Date -Format "yyyy/MM/dd HH:mm:ss.fff"
+              $logEntry = 'Test-' * 200   # Adjusted to create a log entry of about 1000 bytes
+              Write-Output "$timestamp $logEntry"
+              Start-Sleep -Milliseconds 1  # Generates approximately 1000 logs per second
+            }
+
+## thousand logs per second
+## 10 pods in certain nodes combining logs each generate some logs  scale  performance  podlevel
+## multiple 100 pods
+
+## nodes level testing  both windows linux   if api then proabbly node level   kubelet
+## create a branch for current code branch for testing current stage

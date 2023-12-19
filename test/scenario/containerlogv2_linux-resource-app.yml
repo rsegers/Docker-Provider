@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: linux-resource-intensive-app
+  namespace: kube-system
+spec:
+  replicas: 10
+  selector:
+    matchLabels:
+      app: linux-resource-intensive-app
+  template:
+    metadata:
+      labels:
+        app: linux-resource-intensive-app
+    spec:
+      nodeSelector:
+        kubernetes.io/os: linux
+      containers:
+      - name: linux-resource-intensive-app
+        image: ubuntu
+        command: ["/bin/bash", "-c"]
+        args:
+          - |
+            while true; do
+              timestamp=$(date "+%Y/%m/%d %H:%M:%S.%3N")
+              logEntry=$(printf 'Test-%.0s' {1..200})
+              echo "$timestamp $logEntry"
+              sleep 0.001  # Sleep for 1 millisecond
+            done
