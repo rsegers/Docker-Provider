@@ -268,15 +268,15 @@ type DataItemLAv1 struct {
 // DataItemLAv2 == ContainerLogV2 table in LA
 // Please keep the names same as destination column names, to avoid transforming one to another in the pipeline
 type DataItemLAv2 struct {
-	TimeGenerated string `json:"TimeGenerated"`
-	Computer      string `json:"Computer"`
-	ContainerId   string `json:"ContainerId"`
-	ContainerName string `json:"ContainerName"`
-	PodName       string `json:"PodName"`
-	PodNamespace  string `json:"PodNamespace"`
-	LogMessage    string `json:"LogMessage"`
-	LogSource     string `json:"LogSource"`
-	KubernetesMetadata    string `json:"KubernetesMetadata"`
+	TimeGenerated      string `json:"TimeGenerated"`
+	Computer           string `json:"Computer"`
+	ContainerId        string `json:"ContainerId"`
+	ContainerName      string `json:"ContainerName"`
+	PodName            string `json:"PodName"`
+	PodNamespace       string `json:"PodNamespace"`
+	LogMessage         string `json:"LogMessage"`
+	LogSource          string `json:"LogSource"`
+	KubernetesMetadata string `json:"KubernetesMetadata"`
 	//LogLevel     string `json:"LogLevel"`
 	//PodLabels			  string `json:"PodLabels"`
 }
@@ -1140,31 +1140,31 @@ func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList 
 }
 
 func convertKubernetesMetadata(kubernetesMetadataJson interface{}) (map[string]interface{}, error) {
-    m, ok := kubernetesMetadataJson.(map[interface{}]interface{})
-    if !ok {
-        return nil, fmt.Errorf("type assertion to map[interface{}]interface{} failed")
-    }
+	m, ok := kubernetesMetadataJson.(map[interface{}]interface{})
+	if !ok {
+		return nil, fmt.Errorf("type assertion to map[interface{}]interface{} failed")
+	}
 
-    strMap := make(map[string]interface{})
-    for k, v := range m {
-        strKey, ok := k.(string)
-        if !ok {
-            continue
-        }
-        switch val := v.(type) {
-        case map[interface{}]interface{}:
-            convertedMap, err := convertKubernetesMetadata(val)
-            if err != nil {
-                return nil, err
-            }
-            strMap[strKey] = convertedMap
-        case []byte:
-            strMap[strKey] = string(val)
-        default:
-            strMap[strKey] = val
-        }
-    }
-    return strMap, nil
+	strMap := make(map[string]interface{})
+	for k, v := range m {
+		strKey, ok := k.(string)
+		if !ok {
+			continue
+		}
+		switch val := v.(type) {
+		case map[interface{}]interface{}:
+			convertedMap, err := convertKubernetesMetadata(val)
+			if err != nil {
+				return nil, err
+			}
+			strMap[strKey] = convertedMap
+		case []byte:
+			strMap[strKey] = string(val)
+		default:
+			strMap[strKey] = val
+		}
+	}
+	return strMap, nil
 }
 
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
@@ -1339,14 +1339,14 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		} else {
 			if ContainerLogSchemaV2 == true {
 				dataItemLAv2 = DataItemLAv2{
-					TimeGenerated: stringMap["TimeGenerated"],
-					Computer:      stringMap["Computer"],
-					ContainerId:   stringMap["ContainerId"],
-					ContainerName: stringMap["ContainerName"],
-					PodName:       stringMap["PodName"],
-					PodNamespace:  stringMap["PodNamespace"],
-					LogMessage:    stringMap["LogMessage"],
-					LogSource:     stringMap["LogSource"],
+					TimeGenerated:      stringMap["TimeGenerated"],
+					Computer:           stringMap["Computer"],
+					ContainerId:        stringMap["ContainerId"],
+					ContainerName:      stringMap["ContainerName"],
+					PodName:            stringMap["PodName"],
+					PodNamespace:       stringMap["PodNamespace"],
+					LogMessage:         stringMap["LogMessage"],
+					LogSource:          stringMap["LogSource"],
 					KubernetesMetadata: stringMap["KubernetesMetadata"],
 					//LogLevel: stringMap["LogLevel"],
 				}
