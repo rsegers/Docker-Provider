@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name:  nodejs-test-app
+  name: ${NODEJS_TEST_APP_NAME}
   namespace: ${TEST_NS}
   labels:
     app: test-app-nodejs
