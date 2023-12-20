@@ -4,6 +4,7 @@
 # https://aka.ms/yaml
 
 trigger:
+  batch: true
   branches:
     include:
     - ai_prod
@@ -44,7 +45,7 @@ jobs:
     name: setup
 
 - job: build_linux
-  maxParallel: 1
+  
   timeoutInMinutes: 120
   dependsOn: common
   pool:
