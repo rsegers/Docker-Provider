@@ -152,7 +152,7 @@ jobs:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
-        cd appmonitoring/helm
+        cd appmonitoring/validation-helm
         pwd
         az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
         az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai 
@@ -195,7 +195,7 @@ jobs:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
-        cd appmonitoring/helm
+        cd appmonitoring/validation-helm
         pwd
         az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
         az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai 
