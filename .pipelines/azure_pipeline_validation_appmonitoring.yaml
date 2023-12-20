@@ -3,7 +3,13 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-pr: none
+trigger:
+  branches:
+    include:
+    - ai_prod
+  tags:
+    include:
+    - '*-appmonitoring'
 
 variables:
   armServiceConnectionName: 'ai-acr-validation-rsx'
@@ -38,6 +44,7 @@ jobs:
     name: setup
 
 - job: build_linux
+  maxParallel: 1
   timeoutInMinutes: 120
   dependsOn: common
   pool:
@@ -45,15 +52,15 @@ jobs:
   variables:
     imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
     fullImageName: ${{ variables.repoImageName }}:$(imageTag)-test
-    javaTestAppImageName: 'rambhattacr.azurecr.io/demoaks-java-app:latest'
+    javaTestAppImageName: 'aicommon.azurecr.io/demoaks-java-app:latest'
     javaTestAppName: 'test-app-java'
-    dotnetTestAppImageName: 'rambhattacr.azurecr.io/demoaks-dotnet-app:latest'
+    dotnetTestAppImageName: 'aicommon.azurecr.io/demoaks-dotnet-app:latest'
     dotnetTestAppName: 'test-app-dotnet'
-    nodeTestAppImageName: 'rambhattacr.azurecr.io/demoaks-nodejs-app:latest'
+    nodeTestAppImageName: 'aicommon.azurecr.io/demoaks-nodejs-app:latest'
     nodeTestAppName: 'test-app-nodejs'
     testNamespace: 'test-ns'
-    aiConnectionString: 'InstrumentationKey=910190fd-f49a-48e3-b6ac-6f0df84ceb5e;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/'
-    aiResourceId: '/subscriptions/66010356-d8a5-42d3-8593-6aaa3aeb1c11/resourcegroups/appmonitoring-pipeline-test/providers/microsoft.insights/components/appmonitoring-pipeline-testbed-ai'
+    aiConnectionString: 'InstrumentationKey=2b453402-fcfb-408f-8495-c551f0e82f46;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/'
+    aiResourceId: '/subscriptions/5a3b3ba4-3a42-42ae-b2cb-f882345803bc/resourceGroups/aks-appmonitoring-pipeline/providers/microsoft.insights/components/appmonitoring-pipeline-validation-ai'
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
     # This is necessary because of: https://github.com/moby/moby/issues/37965
@@ -147,8 +154,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/helm
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
+        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai 
         kubectl delete -f appmonitoring-deployment.yaml
 
         echo "Wait for 10s for everything to clear up..."
@@ -169,8 +176,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/scripts
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
+        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai 
 
         sudo chmod u+x ./validate-aks-charts.sh
         sudo chmod u+x ./validate-certs.sh
@@ -181,18 +188,6 @@ jobs:
         echo "Checking for certificate installation..."
         ./validate-certs.sh
 
-  # - task: AzureResourceManagerTemplateDeployment@3
-  #   inputs:
-  #     deploymentScope: 'Resource Group'
-  #     azureResourceManagerConnection: 'ai-acr-validation-rsx'
-  #     subscriptionId: '66010356-d8a5-42d3-8593-6aaa3aeb1c11'
-  #     action: 'Create Or Update Resource Group'
-  #     resourceGroupName: 'appmonitoring-pipeline-test'
-  #     location: 'East US'
-  #     templateLocation: 'Linked artifact'
-  #     csmFile: '/path/to/here'
-  #     deploymentMode: 'Incremental'
-
   - task: AzureCLI@2
     displayName: "Install CR and test apps"
     inputs:
@@ -202,8 +197,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/helm
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
+        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai 
         kubectl delete -f java-test-app.yaml
         kubectl delete -f dotnet-test-app.yaml
         kubectl delete -f node-test-app.yaml
@@ -243,13 +238,14 @@ jobs:
       inlineScript: |
         cd appmonitoring/scripts
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
+        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai 
         export DOTNET_TEST_APP_NAME="${{ variables.dotnetTestAppName }}"
         export JAVA_TEST_APP_NAME="${{ variables.javaTestAppName }}"
         export NODEJS_TEST_APP_NAME="${{ variables.nodeTestAppName }}"
+        ex
         
-        sudo chmod u+x ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" 
-        ./validate_ai.sh 
+        sudo chmod u+x ./validate_ai.sh
+        ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}"
 
 
