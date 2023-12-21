@@ -64,6 +64,8 @@ jobs:
     aiResourceId: '/subscriptions/5a3b3ba4-3a42-42ae-b2cb-f882345803bc/resourceGroups/aks-appmonitoring-pipeline/providers/microsoft.insights/components/appmonitoring-pipeline-validation-ai'
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
+    AKSResourceGroup: 'aks-appmonitoring-pipeline'
+    AKSResourceName: 'aks-pipeline-validation-ai'
     # This is necessary because of: https://github.com/moby/moby/issues/37965
     DOCKER_BUILDKIT: 1
 
@@ -155,8 +157,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/validation-helm
         pwd
-        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
-        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai 
+        az account set --subscription ${{ variables.subscription }}
+        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
         kubectl delete -f appmonitoring-deployment.yaml
 
         echo "Wait for 10s for everything to clear up..."
@@ -177,8 +179,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/scripts
         pwd
-        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
-        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai 
+        az account set --subscription ${{ variables.subscription }}
+        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
 
         sudo chmod u+x ./validate-aks-charts.sh
         sudo chmod u+x ./validate-certs.sh
@@ -198,8 +200,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/validation-helm
         pwd
-        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
-        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai 
+        az account set --subscription ${{ variables.subscription }}
+        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
         kubectl delete -f java-test-app.yaml
         kubectl delete -f dotnet-test-app.yaml
         kubectl delete -f node-test-app.yaml
@@ -239,8 +241,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/scripts
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription ${{ variables.subscription }}
+        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }}
         
         sudo chmod u+x ./validate-mutation.sh
         ./validate-mutation.sh "dotnet-test-app" "java-test-app" "nodejs-test-app" "test-ns"
@@ -254,8 +256,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/scripts
         pwd
-        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
-        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai 
+        az account set --subscription ${{ variables.subscription }}
+        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
         export DOTNET_TEST_APP_NAME="${{ variables.dotnetTestAppName }}"
         export JAVA_TEST_APP_NAME="${{ variables.javaTestAppName }}"
         export NODEJS_TEST_APP_NAME="${{ variables.nodeTestAppName }}"
