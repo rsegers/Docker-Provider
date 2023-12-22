@@ -46,11 +46,12 @@ verify_AI_telemetry() {
         echo $count_val
     else
         echo "Not found any appropriate records" >&2
+        echo "Validation for $2 pods failed" >&2
         exit 1
     fi
 }
 
-verify_AI_telemetry "$POD_DOTNET_NAME"
-verify_AI_telemetry "$POD_JAVA_NAME"
-verify_AI_telemetry "$POD_NODEJS_NAME"
+verify_AI_telemetry "$POD_DOTNET_NAME" "dotnet"
+verify_AI_telemetry "$POD_JAVA_NAME" "java"
+verify_AI_telemetry "$POD_NODEJS_NAME" "nodejs"
 

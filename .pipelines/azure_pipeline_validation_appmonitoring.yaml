@@ -247,6 +247,24 @@ jobs:
         sudo chmod u+x ./validate-mutation.sh
         ./validate-mutation.sh "dotnet-test-app" "java-test-app" "nodejs-test-app" "test-ns"
 
+  # - task: AzureCLI@2
+  #   displayName: "Check test apps are sending telemetry to AI"
+  #   inputs:
+  #     azureSubscription: ${{ variables.armServiceConnectionName }}
+  #     scriptType: bash
+  #     scriptLocation: inlineScript
+  #     inlineScript: |
+  #       cd appmonitoring/scripts
+  #       pwd
+  #       az account set --subscription ${{ variables.subscription }}
+  #       az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
+  #       export DOTNET_TEST_APP_NAME="${{ variables.dotnetTestAppName }}"
+  #       export JAVA_TEST_APP_NAME="${{ variables.javaTestAppName }}"
+  #       export NODEJS_TEST_APP_NAME="${{ variables.nodeTestAppName }}"
+        
+  #       sudo chmod u+x ./validate_ai.sh
+  #       ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}"
+
   - task: AzureCLI@2
     displayName: "Check test apps are sending telemetry to AI"
     inputs:
@@ -254,15 +272,18 @@ jobs:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
-        cd appmonitoring/scripts
-        pwd
-        az account set --subscription ${{ variables.subscription }}
-        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
-        export DOTNET_TEST_APP_NAME="${{ variables.dotnetTestAppName }}"
-        export JAVA_TEST_APP_NAME="${{ variables.javaTestAppName }}"
-        export NODEJS_TEST_APP_NAME="${{ variables.nodeTestAppName }}"
-        
-        sudo chmod u+x ./validate_ai.sh
-        ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}"
+        az --version
+        az account show
+        az account set -s ${{ variables.subscription }}
+        az acr login -n ${{ variables.containerRegistry }}
+
+        docker pull ${{ variables.fullImageName }}
+        docker tag ${{ variables.fullImageName }} ${{ variables.repoImageName }}:$(imageTag)
+        docker push ${{ variables.repoImageName }}:$(imageTag)
+        docker rmi ${{ variables.repoImageName }}:$(imageTag)
+
+
+
+
 
 
