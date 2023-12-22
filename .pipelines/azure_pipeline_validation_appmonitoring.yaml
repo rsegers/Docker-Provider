@@ -280,7 +280,7 @@ jobs:
         docker pull ${{ variables.fullImageName }}
         docker tag ${{ variables.fullImageName }} ${{ variables.repoImageName }}:$(imageTag)
         docker push ${{ variables.repoImageName }}:$(imageTag)
-        docker rmi ${{ variables.repoImageName }}:$(imageTag)
+        az acr repository untag -n ${{ variables.containerRegistry }} --image ${{ variables.repoImageName }}:$(imageTag)
 
 
 
