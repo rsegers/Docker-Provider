@@ -266,7 +266,7 @@ jobs:
   #       ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}"
 
   - task: AzureCLI@2
-    displayName: "Check test apps are sending telemetry to AI"
+    displayName: "Retag the image as ready to deploy"
     inputs:
       azureSubscription: ${{ variables.armServiceConnectionName }}
       scriptType: bash
@@ -280,7 +280,6 @@ jobs:
         docker pull ${{ variables.fullImageName }}
         docker tag ${{ variables.fullImageName }} ${{ variables.repoImageName }}:$(imageTag)
         docker push ${{ variables.repoImageName }}:$(imageTag)
-        az acr repository untag -n ${{ variables.containerRegistry }} --image ${{ variables.repoImageName }}:$(imageTag)
 
 
 
