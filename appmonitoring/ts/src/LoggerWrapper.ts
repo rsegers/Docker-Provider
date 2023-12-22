@@ -65,6 +65,12 @@ export enum HeartbeatMetrics {
     AdmissionReviewActionableFailedCount, // number of failed admission reviews that had a relevant CR and lead to actual mutation
     CertificateOperationCount, // number of certificate operations performed
     CertificateOperationFaailedCount, // number of failed certificated operations performed
+    HostCertificateGenerationCount, // number of certificates generated
+    CACertificateGenerationCount, // number of CA certificates generated
+    SecretStoreUpdatedCount, // number of times the secret store was updated
+    SecretStoreUpdateFailedCount, // number of times the secret store update failed
+    MutatingWebhookConfigurationUpdatedCount, // number of times the mutating webhook configuration was updated
+    MutatingWebhookConfigurationUpdateFailedCount, // number of times the mutating webhook configuration update failed
 }
 
 export enum HeartbeatLogs {

@@ -1,7 +1,7 @@
 import * as k8s from '@kubernetes/client-node';
 import { CertificateStoreName, NamespaceName, WebhookDNSEndpoint, WebhookName } from './Constants.js'
 import forge from 'node-forge';
-import { logger, RequestMetadata } from './LoggerWrapper.js';
+import { HeartbeatMetrics, logger, RequestMetadata } from './LoggerWrapper.js';
 
 export class WebhookCertData {
     caCert: string;
@@ -54,6 +54,7 @@ export class CertificateManager {
 
         caCert.setExtensions(extensions);
         caCert.sign(caCert.privateKey,forge.md.sha256.create());
+        logger.addHeartbeatMetric(HeartbeatMetrics.CACertificateGenerationCount, 1);
 
         return caCert;
     }
@@ -103,6 +104,8 @@ export class CertificateManager {
         // Sign the new Host Certificate using the CA
         newHostCert.sign(caCert.privateKey, forge.md.sha256.create());
 
+        logger.addHeartbeatMetric(HeartbeatMetrics.HostCertificateGenerationCount, 1);
+
         // // Convert to PEM format
         return newHostCert;
     }
@@ -145,9 +148,11 @@ export class CertificateManager {
             await secretsApi.patchNamespacedSecret(CertificateStoreName, NamespaceName, secretsObj, undefined, undefined, undefined, undefined, undefined, {
                 headers: { 'Content-Type' : 'application/strategic-merge-patch+json' }
             });
+            logger.addHeartbeatMetric(HeartbeatMetrics.SecretStoreUpdatedCount, 1);
         } catch (error) {
             logger.error('Failed to patch Secret Store!', operationId, this.requestMetadata);
             logger.error(JSON.stringify(error), operationId, this.requestMetadata);
+            logger.addHeartbeatMetric(HeartbeatMetrics.SecretStoreUpdateFailedCount, 1);
             throw error;
         }
     }
@@ -207,9 +212,11 @@ export class CertificateManager {
             await webhookApi.patchMutatingWebhookConfiguration(WebhookName, mutatingWebhookObject, undefined, undefined, undefined, undefined, undefined, {
                 headers: { 'Content-Type' : 'application/strategic-merge-patch+json' }
             });
+            logger.addHeartbeatMetric(HeartbeatMetrics.MutatingWebhookConfigurationUpdatedCount, 1);
         } catch (error) {
             logger.error('Failed to patch MutatingWebhookConfiguration!', operationId, this.requestMetadata);
             logger.error(JSON.stringify(error), operationId, this.requestMetadata);
+            logger.addHeartbeatMetric(HeartbeatMetrics.MutatingWebhookConfigurationUpdateFailedCount, 1);
             throw error;
         }
     }
