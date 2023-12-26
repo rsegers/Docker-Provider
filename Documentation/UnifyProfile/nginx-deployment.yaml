@@ -13,6 +13,10 @@ spec:
     metadata:
       labels:
         app: nginx
+      annotations:
+        app: nginx
+        description: "nginx web server"
+        version: "1.14.2"
     spec:
       nodeSelector:
        kubernetes.io/os: linux
@@ -38,8 +42,16 @@ spec:
            valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-         - name: OTEL_RESOURCE_ATTRIBUTES
-           value: k8s.pod.name=$(POD_NAME),k8s.pod.uid=$(POD_UID),k8s.pod.namespace=$(POD_NAMESPACE),k8s.node.name=$(NODE_NAME)
+        #  - name: POD_LABELS
+        #    valueFrom:
+        #     fieldRef:
+        #       fieldPath: metadata.labels
+        #  - name: POD_ANNOTATIONS
+        #    valueFrom:
+        #       fieldRef:
+        #         fieldPath: metadata.annotations
+        #  - name: OTEL_RESOURCE_ATTRIBUTES
+           value: k8s.pod.name=$(POD_NAME),k8s.pod.uid=$(POD_UID),k8s.namespace.name=$(POD_NAMESPACE),k8s.node.name=$(NODE_NAME)
          # programmatically inject k8s.deployment.name, k8s.replicaset.name, k8s.statefulstate.name, k8s.job.name, k8s.cronjob.name, k8s.daemonset.name dependening parent resource type
 
 
