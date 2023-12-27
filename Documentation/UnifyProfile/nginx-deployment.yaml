@@ -42,6 +42,18 @@ spec:
            valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
+         - name: CONTAINER_NAME
+           value: nginx  #required manually passing container name
+         - name: AKS_RESOURCE_ID
+           value: /subscriptions/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx/resourceGroups/xxxxxx-aks-rg/providers/Microsoft.ContainerService/managedClusters/xxxxxx-aks #required manually passing AKS resource id
+         - name: K8S_CLUSTER_NAME
+           value: xxxxxx-aks #required manually passing AKS cluster name
+         - name: CLOUD_PROVIDER
+           value: azure #required manually passing cloud provider
+         - name: CLOUD_PLATFORM
+           value: azure_aks #required manually passing cloud platform
+         - name: CLOUD_REGION
+           value: eastus #required manually passing cloud region
         #  - name: POD_LABELS
         #    valueFrom:
         #     fieldRef:
@@ -50,9 +62,9 @@ spec:
         #    valueFrom:
         #       fieldRef:
         #         fieldPath: metadata.annotations
-        #  - name: OTEL_RESOURCE_ATTRIBUTES
-           value: k8s.pod.name=$(POD_NAME),k8s.pod.uid=$(POD_UID),k8s.namespace.name=$(POD_NAMESPACE),k8s.node.name=$(NODE_NAME)
-         # programmatically inject k8s.deployment.name, k8s.replicaset.name, k8s.statefulstate.name, k8s.job.name, k8s.cronjob.name, k8s.daemonset.name dependening parent resource type
+         - name: OTEL_RESOURCE_ATTRIBUTES
+           value: cloud.provider=$(CLOUD_PROVIDER),cloud.platform=$(CLOUD_PLATFORM),cloud.region=${CLOUD_REGION},cloud.resource_id=${AKS_RESOURCE_ID},k8s.cluster.name=${K8S_CLUSTER_NAME},k8s.pod.name=$(POD_NAME),k8s.pod.uid=$(POD_UID),k8s.namespace.name=$(POD_NAMESPACE),k8s.node.name=$(NODE_NAME),k8s.container.name=$(CONTAINER_NAME)
+         # downward API doesnt support k8s.pod.labels and k8s.pod.annotations
 
 
 
