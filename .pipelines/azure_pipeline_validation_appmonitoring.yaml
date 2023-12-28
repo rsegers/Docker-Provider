@@ -53,7 +53,8 @@ jobs:
     name: rambhatt-test-es-pool
   variables:
     imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
-    fullImageName: ${{ variables.repoImageName }}:$(imageTag)-${{ variables.repoImageName }}-test
+    testImageName: ${{ variables.repoImageName }}-test:$(imageTag)-${{ variables.runidentifier }}
+    fullImageName: ${{ variables.repoImageName }}:$(imageTag)
     javaTestAppImageName: 'aicommon.azurecr.io/demoaks-java-app:latest'
     javaTestAppName: 'test-app-java'
     dotnetTestAppImageName: 'aicommon.azurecr.io/demoaks-dotnet-app:latest'
@@ -144,10 +145,10 @@ jobs:
 
         echo "Build reason = $(Build.Reason)"
 
-        echo ${{ variables.fullImageName }}
+        echo ${{ variables.testImageName }}
         
-        docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.fullImageName }} -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
-        docker pull ${{ variables.fullImageName }}
+        docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.testImageName }} -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
+        docker pull ${{ variables.testImageName }}
 
   - task: AzureCLI@2
     displayName: "Create deployment in AKS"
@@ -165,7 +166,7 @@ jobs:
         echo "Wait for 10s for everything to clear up..."
         sleep 10
 
-        export AIDEV_IMAGE_NAME=${{ variables.fullImageName }}
+        export AIDEV_IMAGE_NAME=${{ variables.testImageName }}
         cat appmonitoring-deployment.yaml | envsubst | kubectl apply -f -
 
         echo "Wait for 10s for charts to be applied..."
@@ -278,9 +279,9 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker pull ${{ variables.fullImageName }}
-        docker tag ${{ variables.fullImageName }} ${{ variables.repoImageName }}:$(imageTag)
-        docker push ${{ variables.repoImageName }}:$(imageTag)
+        docker pull ${{ variables.testImageName }}
+        docker tag ${{ variables.testImageName }} ${{ variables.fullImageName }}
+        docker push ${{ variables.fullImageName }}
 
 
 
