@@ -18,7 +18,6 @@ variables:
   containerRegistry: 'aicommon' # this build pushes the aidev image to the dev ACR (caution: ACR that has "prod" in its name is the dev one, the one without "prod" is prod AME)
   repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/applicationinsights/aidev'
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
-  runidentifier: $[guid(resourceGroup().id, deployment().name)]
 
 jobs:
 - job: common
@@ -53,7 +52,7 @@ jobs:
     name: rambhatt-test-es-pool
   variables:
     imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
-    testImageName: ${{ variables.repoImageName }}-test:$(imageTag)-${{ variables.runidentifier }}
+    testImageName: ${{ variables.repoImageName }}-test:$(imageTag)-$(Build.BuildId)
     fullImageName: ${{ variables.repoImageName }}:$(imageTag)
     javaTestAppImageName: 'aicommon.azurecr.io/demoaks-java-app:latest'
     javaTestAppName: 'test-app-java'
