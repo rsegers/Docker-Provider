@@ -25,6 +25,8 @@ module Fluent::Plugin
       @namespaces = []
       @namespaceFilteringMode = "off"
       @agentConfigRefreshTracker = DateTime.now.to_time.to_i
+      @cadvisorPerfTelemetryTicker = DateTime.now.to_time.to_i
+      @totalPerfCount = 0
     end
 
     config_param :run_interval, :time, :default => 60
@@ -62,6 +64,7 @@ module Fluent::Plugin
       time = Fluent::Engine.now
       batchTime = currentTime.utc.iso8601
       @@istestvar = ENV["ISTEST"]
+      telemetryFlush = false
       begin
         eventStream = Fluent::MultiEventStream.new
         insightsMetricsEventStream = Fluent::MultiEventStream.new
@@ -100,6 +103,24 @@ module Fluent::Plugin
         if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
           $log.info("cAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
         end
+
+        if metricData.length > 0
+          @totalPerfCount += metricData.length
+        end
+
+        #send the number of CAdvisor Perf records sent metrics telemetry
+        timeDifference = (DateTime.now.to_time.to_i - @cadvisorPerfTelemetryTicker).abs
+        timeDifferenceInMinutes = timeDifference / 60
+        if (timeDifferenceInMinutes >= 5)
+          telemetryFlush = true
+        end
+
+        if telemetryFlush
+          ApplicationInsightsUtility.sendMetricTelemetry("PerfRecordCount", @totalPerfCount, {})
+          @cadvisorPerfTelemetryTicker = DateTime.now.to_time.to_i
+          @totalPerfCount = 0
+        end
+
 
         #start GPU InsightsMetrics items
         begin

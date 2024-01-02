@@ -25,6 +25,8 @@ module Fluent::Plugin
       @namespaces = []
       @namespaceFilteringMode = "off"
       @agentConfigRefreshTracker = DateTime.now.to_time.to_i
+      @winCadvisorPerfTelemetryTicker = DateTime.now.to_time.to_i
+      @totalPerfCount = 0
     end
 
     config_param :run_interval, :time, :default => 60
@@ -107,6 +109,23 @@ module Fluent::Plugin
           router.emit_stream(@tag, eventStream) if !@tag.nil? && !@tag.empty? && eventStream
           if (!@@istestvar.nil? && !@@istestvar.empty? && @@istestvar.casecmp("true") == 0 && eventStream.count > 0)
             $log.info("winCAdvisorPerfEmitStreamSuccess @ #{Time.now.utc.iso8601}")
+          end
+
+          if metricData.length > 0
+            @totalPerfCount += metricData.length
+          end
+  
+          #send the number of CAdvisor Perf records sent metrics telemetry
+          timeDifference = (DateTime.now.to_time.to_i - @winCadvisorPerfTelemetryTicker).abs
+          timeDifferenceInMinutes = timeDifference / 60
+          if (timeDifferenceInMinutes >= 5)
+            telemetryFlush = true
+          end
+  
+          if telemetryFlush
+            ApplicationInsightsUtility.sendMetricTelemetry("PerfRecordCount", @totalPerfCount, {})
+            @winCadvisorPerfTelemetryTicker = DateTime.now.to_time.to_i
+            @totalPerfCount = 0
           end
 
           #start GPU InsightsMetrics items
