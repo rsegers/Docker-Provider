@@ -36,11 +36,8 @@ verify_AI_telemetry() {
     -H "Content-Type: application/json" \
     -d "$json_body")
 
-    # Print the response
-    # echo "Response: $response"
 
     count_val=$(echo $response | jq '.tables[0].rows[0][0]')
-    # echo "Count: $count_val"
 
     if (( count_val > 0 )); then
         echo $count_val
