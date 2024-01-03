@@ -18,7 +18,7 @@ url="https://api.loganalytics.io/v1$AI_RES_ID/query"
 verify_AI_telemetry() {
     echo $1
     json_body="{
-        'query': 'traces | where timestamp > ago(5m) | where cloud_RoleName == \"$1\" | count',
+        'query': 'traces | where timestamp > ago(15m) | where cloud_RoleName == \"$1\" | count',
         'options': {
             'truncationMaxSize': 67108864
         },
