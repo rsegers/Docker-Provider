@@ -23,7 +23,7 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
         logger.info("Certificate manager mode is done", operationId, null);
         logger.SendEvent("CertificateManagerModeRunSuccess", operationId, null, clusterArmId, clusterArmRegion, true);
     } catch (error) {
-        logger.addHeartbeatMetric(HeartbeatMetrics.CertificateOperationFaailedCount, 1);
+        logger.addHeartbeatMetric(HeartbeatMetrics.CertificateOperationFailedCount, 1);
         logger.error(`Certificate manager mode failed: ${JSON.stringify(error)}`, operationId, null);
         logger.SendEvent("CertificateManagerModeRunFailure", operationId, null, clusterArmId, clusterArmRegion, true, error);
         throw error;

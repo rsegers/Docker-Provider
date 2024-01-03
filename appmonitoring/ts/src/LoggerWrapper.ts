@@ -64,7 +64,7 @@ export enum HeartbeatMetrics {
     AdmissionReviewActionableCount, // number of admission reviews that had a relevant CR and lead to actual mutation
     AdmissionReviewActionableFailedCount, // number of failed admission reviews that had a relevant CR and lead to actual mutation
     CertificateOperationCount, // number of certificate operations performed
-    CertificateOperationFaailedCount, // number of failed certificated operations performed
+    CertificateOperationFailedCount, // number of failed certificated operations performed
     HostCertificateGenerationCount, // number of certificates generated
     CACertificateGenerationCount, // number of CA certificates generated
     SecretStoreUpdatedCount, // number of times the secret store was updated
