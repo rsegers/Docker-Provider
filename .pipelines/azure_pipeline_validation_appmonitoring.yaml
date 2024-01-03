@@ -281,6 +281,8 @@ jobs:
         docker pull ${{ variables.testImageName }}
         docker tag ${{ variables.testImageName }} ${{ variables.fullImageName }}
         docker push ${{ variables.fullImageName }}
+        
+  - task: CodeQL3000Finalize@0
 
 
 
