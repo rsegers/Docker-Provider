@@ -30,7 +30,7 @@ func TestIsIgnoreProxySettings(t *testing.T) {
 	os.Setenv("IGNORE_PROXY_SETTINGS", "true")
 
 	// Call the function and check the result
-	if !isIgnoreProxySettings() {
-		t.Errorf("isIgnoreProxySettings returned false, expected true")
+	if !IsIgnoreProxySettings() {
+		t.Errorf("IsIgnoreProxySettings returned false, expected true")
 	}
 }

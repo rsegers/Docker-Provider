@@ -61,12 +61,12 @@ func init() {
 	aiLogger = CreateLogger(logPath)
 	// Initialize customProperties
 	customProperties = make(map[string]string)
-	if !isIgnoreProxySettings() {
+	if !IsIgnoreProxySettings() {
 		if isWindows {
 			proxyEndpoint = os.Getenv("PROXY")
 
 		} else {
-			proxyEndpoint = getProxyEndpoint()
+			proxyEndpoint = GetProxyEndpoint()
 		}
 	}
 
@@ -98,7 +98,7 @@ func init() {
 	} else {
 		customProperties["Proxy"] = "false"
 		isProxyConfigured = false
-		if isIgnoreProxySettings() {
+		if IsIgnoreProxySettings() {
 			customProperties["IsProxyConfigurationIgnored"] = "true"
 		}
 	}

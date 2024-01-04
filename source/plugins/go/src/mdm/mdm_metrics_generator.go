@@ -1,0 +1,282 @@
+package main
+
+import (
+	"fmt"
+	"log"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+)
+
+// TODO: set hashes correctly
+var (
+	OsType                                            string
+	LogPath                                           string
+	Logger                                            *log.Logger
+	HostName                                          string
+	OomKilledContainerCountHash                       map[string]int
+	ContainerRestartCountHash                         map[string]int
+	StaleJobCountHash                                 map[string]int
+	PodReadyHash                                      map[string]int
+	PodNotReadyHash                                   map[string]int
+	PodReadyPercentageHash                            map[string]float64
+	ZeroFillMetricsHash                               map[string]bool
+	NodeMetricNameMetricPercentageNameHash            map[string]string // TODO: define all these hashes
+	NodeMetricNameMetricAllocatablePercentageNameHash map[string]string
+	ContainerMetricNameMetricPercentageNameHash       map[string]string
+	ContainerMetricNameMetricThresholdViolatedHash    map[string]string
+	PodMetricNameMetricPercentageNameHash             map[string]string
+	PodMetricNameMetricThresholdViolatedHash          map[string]string
+	SendZeroFilledMetrics                             bool
+	ZeroFilledMetricsTimeTracker                      time.Time
+)
+
+const (
+	ContainerTerminatedRecentlyInMinutes       = 5
+	ObjectNameK8SContainer                     = "K8SContainer"
+	ObjectNameK8SNode                          = "K8SNode"
+	CPUUsageNanoCores                          = "cpuUsageNanoCores"
+	CPUUsageMilliCores                         = "cpuUsageMillicores"
+	MemoryWorkingSetBytes                      = "memoryWorkingSetBytes"
+	MemoryRssBytes                             = "memoryRssBytes"
+	PvUsedBytes                                = "pvUsedBytes"
+	JobCompletionTime                          = "completedJobTimeMinutes"
+	DefaultMDMCpuUtilizationThreshold          = 95.0
+	DefaultMDMMemoryRssThreshold               = 95.0
+	DefaultMDMMemoryWorkingSetThreshold        = 95.0
+	DefaultMDMPvUtilizationThreshold           = 60.0
+	DefaultMDMJobCompletedTimeThresholdMinutes = 360
+	MDMDiskUsedPercentage = "diskUsedPercentage"
+)
+
+func init() {
+	// Setup log path based on OS type
+	OsType := os.Getenv("OS_TYPE")
+	if strings.EqualFold(OsType, "windows") {
+		LogPath = "/etc/amalogswindows/mdm_metrics_generator.log"
+	} else {
+		LogPath = "/var/opt/microsoft/docker-cimprov/log/mdm_metrics_generator.log"
+	}
+	// Initialize Logger
+	logFile, err := os.OpenFile(LogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatal(err)
+	}
+	Logger = log.New(logFile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
+}
+
+func GetDiskUsageMetricRecords(record map[interface{}]interface{}) ([]*GenericMetricTemplate, error){
+	var metricRecords []*GenericMetricTemplate
+	var tags map[interface{}]interface{}
+	tagMap := make(map[string]string)
+
+	if record["tags"] == nil {
+		Log("translateTelegrafMetrics: tags are missing in the metric record")
+	} else {
+		tags = record["tags"].(map[interface{}]interface{})
+		for k, v := range tags {
+			key := fmt.Sprintf("%s", k)
+			if key == "" {
+				continue
+			}
+			tagMap[key] = fmt.Sprintf("%s", v)
+		}
+	}
+	var fieldMap map[interface{}]interface{}
+	fieldMap = record["fields"].(map[interface{}]interface{})
+	usedPercent, hasUsedPercent := fieldMap["used_percent"].(float64)
+	deviceName, hasDeviceName := tagMap["device"]
+	hostName, hasHostName := tagMap["hostName"]
+
+	if hasUsedPercent && hasDeviceName && hasHostName {
+		timestamp := time.Unix(int64(record["timestamp"].(int64)), 0).UTC().Format(time.RFC3339)
+		diskUsagePercentageRecord := DiskUsedPercentageMetricsTemplate(timestamp, MDMDiskUsedPercentage, hostName, deviceName, usedPercent)
+		metricRecords = append(metricRecords, diskUsagePercentageRecord)
+	}
+	// TODO: error handling
+	return metricRecords, nil
+}
+
+func GetMetricRecords(record map[interface{}]interface{}) ([]*GenericMetricTemplate, error) {
+	var metricRecords []*GenericMetricTemplate
+	var tags map[interface{}]interface{}
+	tagMap := make(map[string]string)
+
+	if record["tags"] == nil {
+		Log("translateTelegrafMetrics: tags are missing in the metric record")
+	} else {
+		tags = record["tags"].(map[interface{}]interface{})
+		for k, v := range tags {
+			key := fmt.Sprintf("%s", k)
+			if key == "" {
+				continue
+			}
+			tagMap[key] = fmt.Sprintf("%s", v)
+		}
+	}
+
+	const maxDim = 10
+	var dimNames, dimValues []string
+	for k, v := range tagMap {
+		if len(dimNames) < maxDim {
+			dimNames = append(dimNames, fmt.Sprintf("\"%s\"", k))
+			if v != "" {
+				dimValues = append(dimValues, fmt.Sprintf("\"%s\"", v))
+			} else {
+				dimValues = append(dimValues, "\"-\"") // Assuming "-" is used for empty values
+			}
+		}
+	}
+
+	var fieldMap map[interface{}]interface{}
+	fieldMap = record["fields"].(map[interface{}]interface{})
+
+	convertedTimestamp := time.Unix(int64(record["timestamp"].(int64)), 0).UTC().Format(time.RFC3339)
+	for k, v := range fieldMap {
+		if isNumeric(v) { //TODO implement this
+			metricValue, _ := v.(float64)
+			m := NewMetricTemplate(convertedTimestamp, k.(string), record["name"].(string), dimNames, dimValues, metricValue)
+			metricRecords = append(metricRecords, m)
+		}
+	}
+	// TODO error handling
+	return metricRecords, nil
+}
+
+func GetContainerResourceUtilizationThresholds() map[string]float64 {
+	metricThresholdHash := map[string]float64{
+		CPUUsageNanoCores:     DefaultMDMCpuUtilizationThreshold,
+		MemoryRssBytes:        DefaultMDMMemoryRssThreshold,
+		MemoryWorkingSetBytes: DefaultMDMMemoryWorkingSetThreshold,
+		PvUsedBytes:           DefaultMDMPvUtilizationThreshold,
+		JobCompletionTime:     float64(DefaultMDMJobCompletedTimeThresholdMinutes),
+	}
+
+	// TODO: do error handling
+
+	if cpuThreshold, err := getEnvFloat("AZMON_ALERT_CONTAINER_CPU_THRESHOLD"); err == nil {
+		metricThresholdHash[CPUUsageNanoCores] = cpuThreshold
+	}
+	if memoryRssThreshold, err := getEnvFloat("AZMON_ALERT_CONTAINER_MEMORY_RSS_THRESHOLD"); err == nil {
+		metricThresholdHash[MemoryRssBytes] = memoryRssThreshold
+	}
+	if memoryWorkingSetThreshold, err := getEnvFloat("AZMON_ALERT_CONTAINER_MEMORY_WORKING_SET_THRESHOLD"); err == nil {
+		metricThresholdHash[MemoryWorkingSetBytes] = memoryWorkingSetThreshold
+	}
+	if pvUsagePercentageThreshold, err := getEnvFloat("AZMON_ALERT_PV_USAGE_THRESHOLD"); err == nil {
+		metricThresholdHash[PvUsedBytes] = pvUsagePercentageThreshold
+	}
+	if jobCompletionTimeThreshold, err := getEnvInt("AZMON_ALERT_JOB_COMPLETION_TIME_THRESHOLD"); err == nil {
+		metricThresholdHash[JobCompletionTime] = float64(jobCompletionTimeThreshold)
+	}
+
+	return metricThresholdHash
+}
+
+func getEnvFloat(key string) (float64, error) {
+	val, exists := os.LookupEnv(key)
+	if !exists {
+		return 0, fmt.Errorf("environment variable %s not found", key)
+	}
+	return strconv.ParseFloat(val, 64)
+}
+
+func getEnvInt(key string) (int, error) {
+	val, exists := os.LookupEnv(key)
+	if !exists {
+		return 0, fmt.Errorf("environment variable %s not found", key)
+	}
+	return strconv.Atoi(val)
+}
+
+func GetNodeResourceMetricRecords(record map[interface{}]interface{},  metricName string, metricValue float64, percentageMetricValue float64, allocatablePercentageMetricValue float64) ([]*GenericMetricTemplate, error) {
+	var metricRecords []*GenericMetricTemplate
+	custommetricrecord := NodeResourceMetricsTemplate(record["Timestamp"].(string), metricName, record["Host"].(string), metricValue)
+	metricRecords = append(metricRecords, custommetricrecord)
+
+	// TODO: is nil check needed here?
+	additionalRecord := NodeResourceMetricsTemplate(record["Timestamp"].(string), NodeMetricNameMetricPercentageNameHash[metricName], record["Host"].(string), percentageMetricValue)
+	metricRecords = append(metricRecords, additionalRecord)
+
+	// TODO: is nil check needed here?
+	additionalRecord = NodeResourceMetricsTemplate(record["Timestamp"].(string), NodeMetricNameMetricAllocatablePercentageNameHash[metricName], record["Host"].(string), allocatablePercentageMetricValue)
+	metricRecords = append(metricRecords, additionalRecord)
+
+	//TODO: error handling
+	return metricRecords, nil
+}
+
+func GetContainerResourceUtilMetricRecords(recordTimeStamp float64, metricName string, percentageMetricValue float64, dims string, thresholdPercentage float64, isZeroFill bool) ([]*GenericMetricTemplate, error) {
+	var records []*GenericMetricTemplate
+	if dims == "" {
+		log.Println("Dimensions nil, returning empty records")
+		return records, nil
+	}
+
+	dimElements := strings.Split(dims, "~~")
+	if len(dimElements) != 4 {
+		return records, nil
+	}
+
+	// Get dimension values
+	containerName := dimElements[0]
+	podName := dimElements[1]
+	controllerName := dimElements[2]
+	podNamespace := dimElements[3]
+
+	resourceUtilRecord := ContainerResourceUtilizationTemplate(fmt.Sprintf("%f", recordTimeStamp), metricName, containerName, podName, controllerName, podNamespace, thresholdPercentage, percentageMetricValue)
+	records = append(records, resourceUtilRecord)
+
+	var containerResourceThresholdViolated int
+	if isZeroFill {
+		containerResourceThresholdViolated = 0
+	} else {
+		containerResourceThresholdViolated = 1
+	}
+	resourceThresholdViolatedRecord := ContainerResourceThresholdViolationTemplate(fmt.Sprintf("%f", recordTimeStamp), ContainerMetricNameMetricThresholdViolatedHash[metricName], containerName, podName, controllerName, podNamespace, thresholdPercentage, float64(containerResourceThresholdViolated))
+	records = append(records, resourceThresholdViolatedRecord)
+
+	// TODO: error handling
+	return records, nil
+
+}
+
+func GetPVResourceUtilMetricRecords(recordTimeStamp float64, metricName string, computer string, percentageMetricValue float64, dims map[string]string, thresholdPercentage float64, isZeroFill bool) ([]*GenericMetricTemplate, error) {
+	var records []*GenericMetricTemplate
+	pvcNamespace := dims["pvcNamespace"]
+	podName := dims["podName"]
+	volumeName := dims["volumeName"]
+
+	resourceUtilRecord := PVResourceUtilizationTemplate(fmt.Sprintf("%f", recordTimeStamp), PodMetricNameMetricPercentageNameHash[metricName], podName, computer, pvcNamespace, volumeName, thresholdPercentage, percentageMetricValue)
+	records = append(records, resourceUtilRecord)
+
+	var pvResourceThresholdViolated int
+	if isZeroFill {
+		pvResourceThresholdViolated = 0
+	} else {
+		pvResourceThresholdViolated = 1
+	}
+
+	resourceThresholdViolatedRecord := PVResourceThresholdViolationTemplate(fmt.Sprintf("%f", recordTimeStamp), PodMetricNameMetricThresholdViolatedHash[metricName], podName, computer, pvcNamespace, volumeName, thresholdPercentage, float64(pvResourceThresholdViolated))
+
+	records = append(records, resourceThresholdViolatedRecord)
+
+	// TODO: error handling
+	return records, nil
+}
+
+func isNumeric(o interface{}) bool {
+	switch v := o.(type) {
+	case float64, float32, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+	    // If it's already a numeric type, no need to parse
+	    return true
+	case string:
+	    // Try to parse the string as a float
+	    _, err := strconv.ParseFloat(v, 64)
+	    return err == nil
+	default:
+	    // Not a numeric type
+	    return false
+	}
+}

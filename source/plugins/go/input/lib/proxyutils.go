@@ -31,7 +31,7 @@ type ProxyConfiguration struct {
 // 	return proxyConfig
 // }
 
-func getProxyEndpoint() string {
+func GetProxyEndpoint() string {
 	amaLogsProxySecretPath := "/etc/ama-logs-secret/PROXY"
 	proxyConfig, err := ioutil.ReadFile(amaLogsProxySecretPath)
 	if err != nil {
@@ -86,6 +86,6 @@ func isProxyCACertConfigured() bool {
 	return err == nil
 }
 
-func isIgnoreProxySettings() bool {
+func IsIgnoreProxySettings() bool {
 	return strings.ToLower(os.Getenv("IGNORE_PROXY_SETTINGS")) == "true"
 }
