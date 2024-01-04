@@ -1476,7 +1476,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				}
 				Log(fmt.Sprintf("Debug: windowsflushfinished: %+v\n", "windowsflushfinished"))
 			} else {
-				Log(fmt.Sprintf("Debug: FLB_RETRY: %+v\n", FLB_RETRY))
+				Log(fmt.Sprintf("Debug: FLB_RETRY: %+v\n", "FLB_RETRY"))
 				return output.FLB_RETRY
 			}
 		} else {
