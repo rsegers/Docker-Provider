@@ -1204,6 +1204,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				if err != nil {
 					Log(fmt.Sprintf("Error convertKubernetesMetadata: %v", err))
 				}
+				Log(fmt.Sprintf("Debug: kubernetesMetadataMap: %+v", kubernetesMetadataMap))
+				Log(fmt.Sprintf("Debug: KubernetesMetadataIncludeList: %+v\n", KubernetesMetadataIncludeList))
 				includedMetadata := processIncludes(kubernetesMetadataMap, KubernetesMetadataIncludeList)
 				kubernetesMetadataBytes, err := json.Marshal(includedMetadata)
 				if err != nil {
@@ -1212,6 +1214,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					SendException(message)
 				}
 				kubernetesMetadata = string(kubernetesMetadataBytes)
+				Log(fmt.Sprintf("Debug: kubernetesMetadata: %+v\n", kubernetesMetadata))
 			} else {
 				message := fmt.Sprintf("Error while fetching kubernetesMetadataJson")
 				Log(message)
@@ -1401,6 +1404,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		MdsdContainerLogTagName = MdsdContainerLogSourceName
 	}
 
+	Log(fmt.Sprintf("Debug: ContainerLogSchemaV2: %+v\n", ContainerLogSchemaV2))
+	Log(fmt.Sprintf("Debug: msgPackEntries: %+v\n", msgPackEntries))
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
 		if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
@@ -1441,6 +1446,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
 		}
 
+		Log(fmt.Sprintf("Debug: ContainerLogSchemaV2: %+v\n", ContainerLogSchemaV2))
 		if IsWindows {
 			var datatype string
 			if ContainerLogSchemaV2 {
@@ -1452,6 +1458,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				Log("Info::AMA::Starting to write container logs to named pipe")
 				deadline := 10 * time.Second
 				ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
+				Log(fmt.Sprintf("Debug: msgpBytes: %+v\n", msgpBytes))
 				n, err := ContainerLogNamedPipe.Write(msgpBytes)
 				if err != nil {
 					Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
@@ -1467,7 +1474,9 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					numContainerLogRecords = len(msgPackEntries)
 					Log("Success::AMA::Successfully flushed %d container log records that was %d bytes to AMA ", numContainerLogRecords, n)
 				}
+				Log(fmt.Sprintf("Debug: windowsflushfinished: %+v\n", "windowsflushfinished"))
 			} else {
+				Log(fmt.Sprintf("Debug: FLB_RETRY: %+v\n", FLB_RETRY))
 				return output.FLB_RETRY
 			}
 		} else {
@@ -1510,6 +1519,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 		}
 	} else if ContainerLogsRouteADX == true && len(dataItemsADX) > 0 {
+		Log(fmt.Sprintf("Debug: ADXRoute: %+v\n", "ADXRoute"))
 		// Route to ADX
 		r, w := io.Pipe()
 		defer r.Close()
@@ -1563,6 +1573,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		Log("Success::ADX::Successfully wrote %d container log records to ADX in %s", numContainerLogRecords, elapsed)
 
 	} else if (ContainerLogSchemaV2 == true && len(dataItemsLAv2) > 0) || len(dataItemsLAv1) > 0 { //ODS
+		Log(fmt.Sprintf("Debug: ODSRoute: %+v\n", "ODSRoute"))
 		var logEntry interface{}
 		recordType := ""
 		loglinesCount := 0
@@ -1573,6 +1584,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				IPName:    IPName,
 				DataItems: dataItemsLAv2}
 			loglinesCount = len(dataItemsLAv2)
+			Log(fmt.Sprintf("Debug: ODS dataItemsLAv2: %+v\n", dataItemsLAv2))
 			recordType = "ContainerLogV2"
 		} else {
 			//schema v1
@@ -1587,6 +1599,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		marshalled, err := json.Marshal(logEntry)
+		Log(fmt.Sprintf("Debug: ODS logEntry: %+v\n", logEntry))
 		//Log("LogEntry::e %s", marshalled)
 		if err != nil {
 			message := fmt.Sprintf("Error while Marshalling log Entry: %s", err.Error())
@@ -1649,6 +1662,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 	}
 
+	Log(fmt.Sprintf("Debug: END: %+v\n", "END"))
 	return output.FLB_OK
 }
 
@@ -1970,6 +1984,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	KubernetesMetadataEnabled = false
 	KubernetesMetadataEnabled = (strings.Compare(strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")), "true") == 0)
+	Log(fmt.Sprintf("KubernetesMetadataEnabled from configmap: %+v\n", KubernetesMetadataEnabled))
 	metadataIncludeList := os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
 	Log(fmt.Sprintf("KubernetesMetadataIncludeList from configmap: %+v\n", metadataIncludeList))
 	KubernetesMetadataIncludeList = []string{"podLabels", "podAnnotations", "podUid", "image"}
