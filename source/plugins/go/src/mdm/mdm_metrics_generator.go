@@ -83,8 +83,7 @@ func GetDiskUsageMetricRecords(record map[interface{}]interface{}) ([]*GenericMe
 			tagMap[key] = fmt.Sprintf("%s", v)
 		}
 	}
-	var fieldMap map[interface{}]interface{}
-	fieldMap = record["fields"].(map[interface{}]interface{})
+	fieldMap := record["fields"].(map[interface{}]interface{})
 	usedPercent, hasUsedPercent := fieldMap["used_percent"].(float64)
 	deviceName, hasDeviceName := tagMap["device"]
 	hostName, hasHostName := tagMap["hostName"]
@@ -129,8 +128,7 @@ func GetMetricRecords(record map[interface{}]interface{}) ([]*GenericMetricTempl
 		}
 	}
 
-	var fieldMap map[interface{}]interface{}
-	fieldMap = record["fields"].(map[interface{}]interface{})
+	fieldMap := record["fields"].(map[interface{}]interface{})
 
 	convertedTimestamp := time.Unix(int64(record["timestamp"].(int64)), 0).UTC().Format(time.RFC3339)
 	for k, v := range fieldMap {

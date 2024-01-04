@@ -76,6 +76,7 @@ var (
 const AADMSIAuthMode = "AAD_MSI_AUTH_MODE"
 const MDM_EXCEPTIONS_METRIC_FLUSH_INTERVAL = 30
 const TelegrafDiskMetrics = "container.azm.ms/disk"
+const retryMDMPostWaitMinutes = 30
 
 var (
 	// FLBLogger stream
@@ -316,6 +317,46 @@ func InitializePlugin(agentVersion string) {
 
 func PostToMDM(records []*GenericMetricTemplate) error {
 	flushMDMExceptionTelemetry()
+    
+	// Check conditions for posting data
+	now := time.Now()
+	if (!firstPostAttemptMade || now.After(lastPostAttemptTime.Add(retryMDMPostWaitMinutes * time.Minute))) && canSendDataToMDM {
+	    var postBody []string
+	    // Assuming chunk is a type that can range over records (implementation depends on your data structure)
+	    for _, record := range records {
+		jsonRecord, err := json.Marshal(record) // Assuming record can be marshalled to JSON
+		if err != nil {
+		    return err
+		}
+		postBody = append(postBody, string(jsonRecord))
+	    }
+    
+	    // Batch processing
+	    for count := len(postBody); count > 0; {
+		currentBatchSize := math.Min(float64(count), float64(recordBatchSize))
+		currentBatch := postBody[:int(currentBatchSize)]
+		postBody = postBody[int(currentBatchSize):]
+		count -= int(currentBatchSize)
+    
+		err := PostToMDMHelper(currentBatch)
+		if err != nil {
+		    return err // Handle or log the error as appropriate
+		}
+	    }
+	} else {
+	    if !canSendDataToMDM {
+		log.Printf("Cannot send data to MDM since all required conditions were not met")
+	    } else {
+		timeSinceLastAttempt := now.Sub(lastPostAttemptTime).Minutes()
+		log.Printf("Last Failed POST attempt to MDM was made %.1f min ago. This is less than the current retry threshold of %d min. NO-OP", timeSinceLastAttempt, retryMDMPostWaitMinutes)
+	    }
+	}
+    
+	return nil
+    }
+
+
+func PostToMDMHelper(batch []string) error {
 	var access_token string
 	if isArcK8sCluster {
 		if isAADMSIAuth && !isWindows {
@@ -354,13 +395,9 @@ func PostToMDM(records []*GenericMetricTemplate) error {
 	}
 
 	requestId := uuid.New().String()
-	marshalled, err := json.Marshal(records)
-	if err != nil {
-		log.Printf("Error marshalling dataHash: %v\n", err)
-		return err
-	}
-	requestSizeKB := len(marshalled) / 1024
-	request, err := http.NewRequest("POST", postRequestURI.String(), bytes.NewBuffer(marshalled))
+	postBody := strings.Join(batch, "\n")
+	requestSizeKB := len(postBody) / 1024
+	request, err := http.NewRequest("POST", postRequestURI.String(), bytes.NewBuffer([]byte(postBody)))
 	if err != nil {
 		log.Printf("Error creating new request: %v", err)
 		return err
@@ -597,10 +634,9 @@ func PostTelegrafMetricsToMDM(telegrafRecords []map[interface{}]interface{}) int
 	for _, record := range telegrafRecords {
 		filtered_records, err := filterTelegraf2MDM(record)
 		if err != nil {
-			// TODO error
-			message := fmt.Sprintf("PostTelegrafMetricsToLA::Error:when translating telegraf metric to log analytics metric %q", err)
+			message := fmt.Sprintf("PostTelegrafMetricsToMDM::Error:when processing telegraf metric %q", err)
 			Log(message)
-			//SendException(message) //This will be too noisy
+			lib.SendException(message)
 		}
 		mdmMetrics = append(mdmMetrics, filtered_records...)
 	}
@@ -614,11 +650,10 @@ func PostTelegrafMetricsToMDM(telegrafRecords []map[interface{}]interface{}) int
 	return output.FLB_OK
 }
 
-func filterTelegraf2MDM(m map[interface{}]interface{}) ([]*GenericMetricTemplate, error) {
-	// TODO: error handling
-	if strings.EqualFold(m["name"].(string), TelegrafDiskMetrics) {
-		return GetDiskUsageMetricRecords(m)
+func filterTelegraf2MDM(record map[interface{}]interface{}) ([]*GenericMetricTemplate, error) {
+	if strings.EqualFold(record["name"].(string), TelegrafDiskMetrics) {
+		return GetDiskUsageMetricRecords(record)
 	} else {
-		return GetMetricRecords(m)
+		return GetMetricRecords(record)
 	}
 }
