@@ -345,7 +345,7 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     file.write(commands)
     commands = get_command_windows("AZMON_MULTILINE_ENABLED", @logEnableMultiline)
     file.write(commands)
-    commands = get_command_windows("AZMON_KUBERNETES_METADATA_ENABLED ", @logEnableKubernetesMetadata)
+    commands = get_command_windows("AZMON_KUBERNETES_METADATA_ENABLED", @logEnableKubernetesMetadata)
     file.write(commands)
     commands = get_command_windows("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS", @logKubernetesMetadataiIncludeFields)
     file.write(commands)
