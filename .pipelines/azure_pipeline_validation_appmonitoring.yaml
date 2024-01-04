@@ -203,13 +203,6 @@ jobs:
         pwd
         az account set --subscription ${{ variables.subscription }}
         az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
-        kubectl delete -f java-test-app.yaml
-        kubectl delete -f dotnet-test-app.yaml
-        kubectl delete -f node-test-app.yaml
-        kubectl delete -f appmonitoring-cr.yaml
-
-        echo "Wait for 10s for everything to clear up..."
-        sleep 10
 
         export JAVA_TEST_IMAGE_NAME=${{ variables.javaTestAppImageName }}
         export DOTNET_TEST_IMAGE_NAME=${{ variables.dotnetTestAppImageName }}
@@ -219,6 +212,14 @@ jobs:
         export DOTNET_TEST_APP_NAME="${{ variables.dotnetTestAppName }}"
         export JAVA_TEST_APP_NAME="${{ variables.javaTestAppName }}"
         export NODEJS_TEST_APP_NAME="${{ variables.nodeTestAppName }}"
+
+        cat java-test-app.yaml | envsubst | kubectl delete -f -
+        cat dotnet-test-app.yaml | envsubst | kubectl delete -f -
+        cat node-test-app.yaml | envsubst | kubectl delete -f -
+        car appmonitoring-cr.yaml | envsubst | kubectl delete -f -
+
+        echo "Wait for 10s for everything to clear up..."
+        sleep 10
 
         kubectl create namespace $TEST_NS
 
@@ -231,7 +232,7 @@ jobs:
         cat node-test-app.yaml | envsubst | kubectl apply -f -
 
         echo "Wait for 10s for charts to be applied..."
-        sleep 10
+        sleep 30
 
   - task: AzureCLI@2
     displayName: "Check test apps were mutated correctly"
