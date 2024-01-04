@@ -232,7 +232,7 @@ jobs:
         cat node-test-app.yaml | envsubst | kubectl apply -f -
 
         echo "Wait for 10s for charts to be applied..."
-        sleep 30
+        sleep 60
 
   - task: AzureCLI@2
     displayName: "Check test apps were mutated correctly"
