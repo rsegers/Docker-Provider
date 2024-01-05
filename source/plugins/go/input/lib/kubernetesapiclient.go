@@ -329,3 +329,27 @@ func GetClusterName() string {
 	}
 	return ClusterName
 }
+
+func GetNodesResourceUri(nodesResourceUri string) string {
+	if isAROV3Cluster() {
+	    if nodesResourceUri != "" && strings.Contains(nodesResourceUri, "?") {
+		nodesResourceUri += "&labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
+	    } else {
+		nodesResourceUri += "labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
+	    }
+	}
+	return nodesResourceUri
+}
+
+func isAROV3Cluster() bool {
+	cluster := GetClusterID()
+	dCluster := strings.ToLower(cluster)
+	if cluster != "" && strings.Contains(dCluster, "/microsoft.containerservice/openshiftmanagedclusters") {
+		IsAROV3Cluster = true
+	}
+	return IsAROV3Cluster
+}
+
+func GetKubeResourceInfo(resource string) (*http.Response, error) {
+	return getKubeResourceInfo(resource, nil)
+}
