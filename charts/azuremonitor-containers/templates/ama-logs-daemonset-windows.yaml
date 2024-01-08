@@ -45,11 +45,7 @@ spec:
    {{- end }}
    containers:
      - name: ama-logs-windows
-       {{- if eq (.Values.amalogs.domain | lower) "opinsights.azure.cn" }}
-       image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.amalogs.image.tagWindows }}"
-       {{- else }}
        image: {{ printf "%s:%s" .Values.amalogs.image.repo .Values.amalogs.image.tagWindows }}
-       {{- end }}
        imagePullPolicy: IfNotPresent
        resources:
 {{ toYaml .Values.amalogs.resources.daemonsetwindows | indent 9 }}

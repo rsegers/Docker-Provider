@@ -39,7 +39,6 @@ class ApplicationInsightsUtility
   end
 
   @@controllerType = {"daemonset" => "DS", "replicaset" => "RS"}
-
   def initialize
   end
 
@@ -323,5 +322,47 @@ class ApplicationInsightsUtility
         $log.warn("Exception in AppInsightsUtility: getWorkspaceCloud - error: #{errorStr}")
       end
     end
+
+    def sendAPIResponseTelemetry(responseCode, resource, metricName, apiResponseCodeHash, apiResponseTelemetryTimeTracker)
+      begin
+        if (!responseCode.nil? && !responseCode.empty?)
+          if (!apiResponseCodeHash.has_key?(responseCode))
+            telemetryProps = {}
+            telemetryProps[resource] = 1
+            apiResponseCodeHash[responseCode] = telemetryProps
+          else
+            telemetryProps = apiResponseCodeHash[responseCode]
+            if (telemetryProps.nil?)
+              telemetryProps = {}
+            end
+            if (!telemetryProps.has_key?(resource))
+              telemetryProps[resource] = 1
+            else
+              telemetryProps[resource] += 1
+            end
+            apiResponseCodeHash[responseCode] = telemetryProps
+          end
+
+          timeDifference = (DateTime.now.to_time.to_i - apiResponseTelemetryTimeTracker).abs
+          timeDifferenceInMinutes = timeDifference / 60
+          if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+            apiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
+            apiResponseCodeHash.each do |key, value|
+              value.each do |resourceName, count|
+                telemetryProps = {}
+                telemetryProps["Resource"] = resourceName
+                telemetryProps["ResponseCode"] = key
+                sendMetricTelemetry(metricName, count, telemetryProps)
+              end
+            end
+            apiResponseCodeHash.clear
+          end
+        end
+        return apiResponseTelemetryTimeTracker
+      rescue => err
+        $log.warn("Exception in AppInsightsUtility: sendAPIResponseTelemetry failed with an error: #{err}")
+      end
+    end
+
   end
 end
