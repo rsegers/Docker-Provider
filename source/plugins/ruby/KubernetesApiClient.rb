@@ -30,6 +30,9 @@ class KubernetesApiClient
   #@@IsValidRunningNode = nil
   #@@IsLinuxCluster = nil
   @@KubeSystemNamespace = "kube-system"
+  @@K8sApiResponseCodeHash = {}
+  @@K8sApiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
+
 
   @os_type = ENV["OS_TYPE"]
   if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -70,6 +73,11 @@ class KubernetesApiClient
               @Log.info "KubernetesAPIClient::getKubeResourceInfo : Making request to #{uri.request_uri} @ #{Time.now.utc.iso8601}"
               response = http.request(kubeApiRequest)
               @Log.info "KubernetesAPIClient::getKubeResourceInfo : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
+
+              # Send telemetry for response code if not success
+              if !response.nil? && !response.code.nil? && !response.code.start_with?("2")
+                @@K8sApiResponseTelemetryTimeTracker = ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus", @@K8sApiResponseCodeHash, @@K8sApiResponseTelemetryTimeTracker)
+              end
             end
           end
         end
@@ -104,6 +112,11 @@ class KubernetesApiClient
               response = http.request(kubeApiRequest)
               responseCode = response.code
               @Log.info "KubernetesAPIClient::getKubeResourceInfoV2 : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
+              
+              # Send telemetry for response code if not success
+              if !response.nil? && !response.code.nil? && !response.code.start_with?("2")
+                @@K8sApiResponseTelemetryTimeTracker = ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus", @@K8sApiResponseCodeHash, @@K8sApiResponseTelemetryTimeTracker)
+              end
             end
           end
         end
@@ -227,7 +240,7 @@ class KubernetesApiClient
     def getUserAgent()
       return @@userAgent if !@@userAgent.nil?
       begin
-          @@userAgent = "ama-logs/#{ENV['AGENT_VERSION'].nil? ? '0.0.0' : ENV['AGENT_VERSION']} (#{ENV['OS_TYPE'].nil? ? 'linux' : ENV['OS_TYPE']}; Ruby #{RUBY_PLATFORM})"
+        @@userAgent = "ama-logs/#{ENV["AGENT_VERSION"].nil? ? "0.0.0" : ENV["AGENT_VERSION"]} (#{ENV["OS_TYPE"].nil? ? "linux" : ENV["OS_TYPE"]}; Ruby #{RUBY_PLATFORM})"
       rescue => error
         @Log.warn("KubernetesAPIClient::getUserAgent : getUserAgent failed: #{error}")
       end
@@ -893,20 +906,6 @@ class KubernetesApiClient
       end
       return continuationToken, resourceInventory
     end #getResourcesAndContinuationToken
-
-    def getKubeAPIServerUrl(env = ENV)
-      apiServerUrl = nil
-      begin
-        if env["KUBERNETES_SERVICE_HOST"] && env["KUBERNETES_PORT_443_TCP_PORT"]
-          apiServerUrl = "https://#{env["KUBERNETES_SERVICE_HOST"]}:#{env["KUBERNETES_PORT_443_TCP_PORT"]}"
-        else
-          @Log.warn "Kubernetes environment variable not set KUBERNETES_SERVICE_HOST: #{env["KUBERNETES_SERVICE_HOST"]} KUBERNETES_PORT_443_TCP_PORT: #{env["KUBERNETES_PORT_443_TCP_PORT"]}. Unable to form resourceUri"
-        end
-      rescue => errorStr
-        @Log.warn "KubernetesApiClient::getKubeAPIServerUrl:Failed  #{errorStr}"
-      end
-      return apiServerUrl
-    end
 
     def getKubeServicesInventoryRecords(serviceList, batchTime = Time.utc.iso8601)
       kubeServiceRecords = []

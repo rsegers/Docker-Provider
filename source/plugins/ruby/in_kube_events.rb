@@ -66,6 +66,7 @@ module Fluent::Plugin
             $log.warn("Normal kube events collection enabled for cluster")
           end
         end
+        @kubeEventsTelemetryTimeTracker = DateTime.now.to_time.to_i
       end
     end
 
@@ -88,6 +89,7 @@ module Fluent::Plugin
         eventQueryState = getEventQueryState
         newEventQueryState = []
         @eventsCount = 0
+        telemetryFlush = false
 
         if ExtensionUtils.isAADMSIAuthMode()
           $log.info("in_kube_events::enumerate: AAD AUTH MSI MODE")
@@ -140,6 +142,18 @@ module Fluent::Plugin
         # Flush AppInsights telemetry once all the processing is done, only if the number of events flushed is greater than 0
         if (@eventsCount > 0)
           ApplicationInsightsUtility.sendMetricTelemetry("EventCount", @eventsCount, {})
+        end
+
+        # Adding telemetry to send kube events telemetry every 5 minutes
+        timeDifference = (DateTime.now.to_time.to_i - @kubeEventsTelemetryTimeTracker).abs
+        timeDifferenceInMinutes = timeDifference / 60
+        if (timeDifferenceInMinutes >= 5)
+          telemetryFlush = true
+        end
+
+        if telemetryFlush
+          ApplicationInsightsUtility.sendCustomEvent("KubeEventsHeartBeatEvent", {})
+          @kubeEventsTelemetryTimeTracker = DateTime.now.to_time.to_i
         end
       rescue => errorStr
         $log.warn "in_kube_events::enumerate:Failed in enumerate: #{errorStr}"

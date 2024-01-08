@@ -41,6 +41,10 @@ class CAdvisorMetricsAPIClient
   @npmIntegrationAdvanced = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_ADVANCED"]
   @subnetIpUsageMetrics = ENV["TELEMETRY_SUBNET_IP_USAGE_INTEGRATION_METRICS"]
 
+  @@CAdvisorApiResponseCodeHash = {}
+  @@CAdvisorApiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
+
+
   @os_type = ENV["OS_TYPE"]
   if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     @LogPath = Constants::WINDOWS_LOG_PATH + "kubernetes_perf_log.txt"
@@ -970,6 +974,10 @@ class CAdvisorMetricsAPIClient
               response = http.request(cAdvisorApiRequest)
               @Log.info "Got response code #{response.code} from #{uri.request_uri}"
             end
+          end
+          # Send telemetry for cAdvisor API response code if it is not success
+          if !response.nil? && !response.code.nil? && !response.code.start_with?("2")
+            @@CAdvisorApiResponseTelemetryTimeTracker = ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, relativeUri, "CAdvisorAPIStatus", @@CAdvisorApiResponseCodeHash, @@CAdvisorApiResponseTelemetryTimeTracker)
           end
         end
       rescue => error

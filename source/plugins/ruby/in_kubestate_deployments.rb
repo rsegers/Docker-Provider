@@ -137,6 +137,7 @@ module Fluent::Plugin
           @@deploymentsCount = @deploymentsRunningTotal
         end
         if (((DateTime.now.to_time.to_i - @@telemetryLastSentTime).abs) / 60) >= Constants::KUBE_STATE_TELEMETRY_FLUSH_INTERVAL_IN_MINUTES
+          ApplicationInsightsUtility.sendCustomEvent("KubeStateDeploymentHeartBeatEvent", {})
           #send telemetry
           $log.info "sending deployemt telemetry..."
           ApplicationInsightsUtility.sendMetricTelemetry("MaxDeploymentCount", @@deploymentsCount, {})
