@@ -3,8 +3,14 @@ kind: Deployment
 metadata:
   name: windows-resource-intensive-app
   namespace: kube-system
+  annotations:
+    description: "Scale test deployment for a resource-intensive app"
+    build-information: "Built on 2023-12-29"
+  labels:
+    purpose: scale-testing
+    environment: test
 spec:
-  replicas: 10 # 50
+  replicas: 5 # 50
   selector:
     matchLabels:
       app: windows-resource-intensive-app
@@ -12,7 +18,25 @@ spec:
     metadata:
       labels:
         app: windows-resource-intensive-app
-        # more labels
+        tier: frontend
+        department: IT
+        managed-by: kubernetes
+        version: "1.0"
+        component: logger
+        role: resource-intensive-task
+        l1: test
+        l2: test
+        l3: test
+        l4: test
+        l5: test
+        l6: test
+        l7: test
+        l8: test
+        l9: test
+        l10: test
+      annotations:
+        notes: "Pods generate high volume logs for stress testing"
+        maintainer: "team@example.com"
     spec:
       nodeSelector:
         kubernetes.io/os: windows
@@ -26,7 +50,7 @@ spec:
               $timestamp = Get-Date -Format "yyyy/MM/dd HH:mm:ss.fff"
               $logEntry = 'Test-' * 200   # Adjusted to create a log entry of about 1000 bytes
               Write-Output "$timestamp $logEntry"
-              Start-Sleep -Milliseconds 1  # Generates approximately 1000 logs per second
+              Start-Sleep -Milliseconds 0.1  # Generates approximately 1000 logs per second
             }
 
 ## thousand logs per second
