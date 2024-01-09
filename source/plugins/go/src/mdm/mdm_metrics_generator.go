@@ -32,24 +32,6 @@ var (
 	ZeroFilledMetricsTimeTracker                      time.Time
 )
 
-const (
-	ContainerTerminatedRecentlyInMinutes       = 5
-	ObjectNameK8SContainer                     = "K8SContainer"
-	ObjectNameK8SNode                          = "K8SNode"
-	CPUUsageNanoCores                          = "cpuUsageNanoCores"
-	CPUUsageMilliCores                         = "cpuUsageMillicores"
-	MemoryWorkingSetBytes                      = "memoryWorkingSetBytes"
-	MemoryRssBytes                             = "memoryRssBytes"
-	PvUsedBytes                                = "pvUsedBytes"
-	JobCompletionTime                          = "completedJobTimeMinutes"
-	DefaultMDMCpuUtilizationThreshold          = 95.0
-	DefaultMDMMemoryRssThreshold               = 95.0
-	DefaultMDMMemoryWorkingSetThreshold        = 95.0
-	DefaultMDMPvUtilizationThreshold           = 60.0
-	DefaultMDMJobCompletedTimeThresholdMinutes = 360
-	MDMDiskUsedPercentage = "diskUsedPercentage"
-)
-
 func init() {
 	// Setup log path based on OS type
 	OsType := os.Getenv("OS_TYPE")
@@ -147,7 +129,7 @@ func GetContainerResourceUtilizationThresholds() map[string]float64 {
 		CPUUsageNanoCores:     DefaultMDMCpuUtilizationThreshold,
 		MemoryRssBytes:        DefaultMDMMemoryRssThreshold,
 		MemoryWorkingSetBytes: DefaultMDMMemoryWorkingSetThreshold,
-		PvUsedBytes:           DefaultMDMPvUtilizationThreshold,
+		PVUsedBytes:           DefaultMDMPvUtilizationThreshold,
 		JobCompletionTime:     float64(DefaultMDMJobCompletedTimeThresholdMinutes),
 	}
 
@@ -163,7 +145,7 @@ func GetContainerResourceUtilizationThresholds() map[string]float64 {
 		metricThresholdHash[MemoryWorkingSetBytes] = memoryWorkingSetThreshold
 	}
 	if pvUsagePercentageThreshold, err := getEnvFloat("AZMON_ALERT_PV_USAGE_THRESHOLD"); err == nil {
-		metricThresholdHash[PvUsedBytes] = pvUsagePercentageThreshold
+		metricThresholdHash[PVUsedBytes] = pvUsagePercentageThreshold
 	}
 	if jobCompletionTimeThreshold, err := getEnvInt("AZMON_ALERT_JOB_COMPLETION_TIME_THRESHOLD"); err == nil {
 		metricThresholdHash[JobCompletionTime] = float64(jobCompletionTimeThreshold)

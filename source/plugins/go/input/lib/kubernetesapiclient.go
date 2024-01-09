@@ -350,6 +350,22 @@ func isAROV3Cluster() bool {
 	return IsAROV3Cluster
 }
 
-func GetKubeResourceInfo(resource string) (*http.Response, error) {
-	return getKubeResourceInfo(resource, nil)
+func GetKubeResourceInfo(resource string) (map[string]interface{}, error) {
+	response, err := getKubeResourceInfo(resource, nil)
+	if (err != nil) {
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	defer response.Body.Close()
+
+	var data map[string]interface{}
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
 }

@@ -15,6 +15,7 @@ import (
 	"net/url"
 	"os"
 	"runtime/debug"
+	"strconv"
 	"strings"
 	"time"
 
@@ -69,14 +70,26 @@ var (
 	mdmExceptionsHash                map[string]int
 	mdmExceptionsCount               int
 	mdmExceptionTelemetryTimeTracker int64
-	// Proxy endpoint in format http(s)://<user>:<pwd>@<proxyserver>:<port>
-	proxyEndpoint string
-)
+	proxyEndpoint                    string // Proxy endpoint in format http(s)://<user>:<pwd>@<proxyserver>:<port>
+	controllerType                   string = strings.ToLower(os.Getenv("CONTROLLER_TYPE"))
+	metricsToCollectHash             map[string]bool
 
-const AADMSIAuthMode = "AAD_MSI_AUTH_MODE"
-const MDM_EXCEPTIONS_METRIC_FLUSH_INTERVAL = 30
-const TelegrafDiskMetrics = "container.azm.ms/disk"
-const retryMDMPostWaitMinutes = 30
+	containerResourceUtilTelemetryTimeTracker int64
+	pvUsageTelemetryTimeTracker               int64
+	containersExceededCpuThreshold            bool
+	containersExceededMemRssThreshold         bool
+	containersExceededMemWorkingSetThreshold  bool
+	pvExceededUsageThreshold                  bool
+	cpuCapacity                               float64
+	memoryCapacity                            float64
+	cpuAllocatable                            float64
+	memoryAllocatable                         float64
+	containerCpuLimitHash                     map[string]float64
+	containerMemoryLimitHash                  map[string]float64
+	containerResourceDimensionHash            map[string]string
+	metricsThresholdHash                      map[string]float64
+	processIncomingStream                     bool
+)
 
 var (
 	// FLBLogger stream
@@ -317,44 +330,43 @@ func InitializePlugin(agentVersion string) {
 
 func PostToMDM(records []*GenericMetricTemplate) error {
 	flushMDMExceptionTelemetry()
-    
+
 	// Check conditions for posting data
 	now := time.Now()
-	if (!firstPostAttemptMade || now.After(lastPostAttemptTime.Add(retryMDMPostWaitMinutes * time.Minute))) && canSendDataToMDM {
-	    var postBody []string
-	    // Assuming chunk is a type that can range over records (implementation depends on your data structure)
-	    for _, record := range records {
-		jsonRecord, err := json.Marshal(record) // Assuming record can be marshalled to JSON
-		if err != nil {
-		    return err
+	if (!firstPostAttemptMade || now.After(lastPostAttemptTime.Add(retryMDMPostWaitMinutes*time.Minute))) && canSendDataToMDM {
+		var postBody []string
+		// Assuming chunk is a type that can range over records (implementation depends on your data structure)
+		for _, record := range records {
+			jsonRecord, err := json.Marshal(record) // Assuming record can be marshalled to JSON
+			if err != nil {
+				return err
+			}
+			postBody = append(postBody, string(jsonRecord))
 		}
-		postBody = append(postBody, string(jsonRecord))
-	    }
-    
-	    // Batch processing
-	    for count := len(postBody); count > 0; {
-		currentBatchSize := math.Min(float64(count), float64(recordBatchSize))
-		currentBatch := postBody[:int(currentBatchSize)]
-		postBody = postBody[int(currentBatchSize):]
-		count -= int(currentBatchSize)
-    
-		err := PostToMDMHelper(currentBatch)
-		if err != nil {
-		    return err // Handle or log the error as appropriate
-		}
-	    }
-	} else {
-	    if !canSendDataToMDM {
-		log.Printf("Cannot send data to MDM since all required conditions were not met")
-	    } else {
-		timeSinceLastAttempt := now.Sub(lastPostAttemptTime).Minutes()
-		log.Printf("Last Failed POST attempt to MDM was made %.1f min ago. This is less than the current retry threshold of %d min. NO-OP", timeSinceLastAttempt, retryMDMPostWaitMinutes)
-	    }
-	}
-    
-	return nil
-    }
 
+		// Batch processing
+		for count := len(postBody); count > 0; {
+			currentBatchSize := math.Min(float64(count), float64(recordBatchSize))
+			currentBatch := postBody[:int(currentBatchSize)]
+			postBody = postBody[int(currentBatchSize):]
+			count -= int(currentBatchSize)
+
+			err := PostToMDMHelper(currentBatch)
+			if err != nil {
+				return err // Handle or log the error as appropriate
+			}
+		}
+	} else {
+		if !canSendDataToMDM {
+			log.Printf("Cannot send data to MDM since all required conditions were not met")
+		} else {
+			timeSinceLastAttempt := now.Sub(lastPostAttemptTime).Minutes()
+			log.Printf("Last Failed POST attempt to MDM was made %.1f min ago. This is less than the current retry threshold of %d min. NO-OP", timeSinceLastAttempt, retryMDMPostWaitMinutes)
+		}
+	}
+
+	return nil
+}
 
 func PostToMDMHelper(batch []string) error {
 	var access_token string
@@ -609,11 +621,397 @@ func flushMDMExceptionTelemetry() {
 }
 
 func PostCAdvisorMetricsToMDM(records []map[interface{}]interface{}) int {
+	Log("PostCAdvisorMetricsToMDM::Info:PostCAdvisorMetricsToMDM starting")
+	if (records == nil) || !(len(records) > 0) {
+		Log("PostCAdvisorMetricsToMDM::Error:no records")
+		return output.FLB_OK
+	}
+	processIncomingStream = CheckCustomMetricsAvailability()
+	metricsToCollectHash = make(map[string]bool)
+	for _, metric := range strings.Split(metricsToCollect, ",") {
+		metricsToCollectHash[metric] = true
+	}
+	log.Printf("After check_custom_metrics_availability process_incoming_stream is %v", processIncomingStream)
+
+	containerResourceUtilTelemetryTimeTracker = time.Now().Unix()
+	pvUsageTelemetryTimeTracker = time.Now().Unix()
+
+	containersExceededCpuThreshold = false
+	containersExceededMemRssThreshold = false
+	containersExceededMemWorkingSetThreshold = false
+	pvExceededUsageThreshold = false
+
+	if processIncomingStream {
+		cpuCapacity = 0.0
+		cpuAllocatable = 0.0
+		memoryCapacity = 0.0
+		memoryAllocatable = 0.0
+		ensureCPUMemoryCapacityAndAllocatableSet()
+		containerCpuLimitHash = make(map[string]float64)
+		containerMemoryLimitHash = make(map[string]float64)
+		containerResourceDimensionHash = make(map[string]string)
+		metricsThresholdHash = GetContainerResourceUtilizationThresholds()
+	}
+
+	ensureCPUMemoryCapacityAndAllocatableSet()
+	if processIncomingStream {
+		var err error
+		containerCpuLimitHash, containerMemoryLimitHash, containerResourceDimensionHash, err = GetAllContainerLimits()
+		if err != nil {
+			log.Printf("Error getting container limits: %v", err)
+			lib.SendExceptionTelemetry(err.Error(), nil)
+		}
+	}
+
+	var mdmMetrics []*GenericMetricTemplate
+	for _, record := range records {
+		filtered_records, err := filterCAdvisor2MDM(record)
+		if err != nil {
+			message := fmt.Sprintf("PostTelegrafMetricsToMDM::Error:when processing telegraf metric %q", err)
+			Log(message)
+			lib.SendException(message)
+		}
+		mdmMetrics = append(mdmMetrics, filtered_records...)
+	}
+	err := PostToMDM(mdmMetrics)
+	if err != nil {
+		Log("PostTelegrafMetricsToMDM::Error:Failed to post to MDM %v", err)
+		return output.FLB_RETRY
+	}
+
 	return output.FLB_OK
 }
 
+func filterCAdvisor2MDM(record map[interface{}]interface{}) ([]*GenericMetricTemplate, error) {
+	if !processIncomingStream {
+		return nil, nil
+	}
+
+	convertedRecord := ConvertMap(record)
+
+	if strings.EqualFold(convertedRecord["name"], PVUsedBytes) {
+		return filterPVInsightsMetrics(convertedRecord)
+	}
+
+	// TODO: is below defer needed?
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Error processing cadvisor metrics record: %v", r)
+			lib.SendExceptionTelemetry(fmt.Sprint("%v", r), nil)
+		}
+	}()
+
+	objectName := convertedRecord["ObjectName"]
+
+	var collections []map[string]interface{}
+	err := json.Unmarshal([]byte(convertedRecord["json_Collections"]), &collections)
+	if err != nil {
+		log.Fatalf("Error parsing json_Collections: %v", err)
+	}
+
+	counterName := collections[0]["CounterName"].(string)
+
+	percentageMetricValue := 0.0
+	allocatablePercentageMetricValue := 0.0
+	metricValue := collections[0]["Value"].(float64)
+
+	if objectName == objectNameK8sNode && metricsToCollectHash[strings.ToLower(counterName)] {
+		var metricName string
+		if counterName == CPUUsageNanoCores {
+			metricName = CPUUsageMilliCores
+			metricValue = metricValue / 1000000
+			var targetNodeCpuCapacityMC float64
+			var targetNodeCpuAllocatableMc float64
+			// TODO: is the below needed? earlier this replicaset check was to get windows ds data
+
+			// if controllerType == "replicaset" {
+			// 	targetNodeCpuCapacityMC =  nil //TODO
+			// 	targetNodeCpuAllocatableMc = 0.0
+			// } else {
+			// 	targetNodeCpuCapacityMC = cpuCapacity
+			// 	targetNodeCpuAllocatableMc = cpuAllocatable
+			// }
+			targetNodeCpuCapacityMC = cpuCapacity
+			targetNodeCpuAllocatableMc = cpuAllocatable
+
+			log.Printf("Metric value: %f CPU Capacity %f CPU Allocatable %f", metricValue, targetNodeCpuCapacityMC, targetNodeCpuAllocatableMc)
+			if targetNodeCpuCapacityMC != 0.0 {
+				percentageMetricValue = (metricValue / targetNodeCpuCapacityMC) * 100
+			}
+			if targetNodeCpuAllocatableMc != 0.0 {
+				allocatablePercentageMetricValue = (metricValue / targetNodeCpuAllocatableMc) * 100
+			}
+		}
+
+		if strings.HasPrefix(counterName, "memory") {
+			metricName = counterName
+			var targetNodeMemoryCapacity float64
+			var targetNodeMemoryAllocatable float64
+			// TODO: is the below needed? earlier this replicaset check was to get windows ds data
+
+			// if controllerType == "replicaset" {
+			// 	targetNodeMemoryCapacity = nil // TODO
+			// 	targetNodeMemoryAllocatable = 0.0
+			// } else {
+			// 	targetNodeMemoryCapacity = memoryCapacity
+			// 	targetNodeMemoryAllocatable = memoryAllocatable
+			// }
+			targetNodeMemoryCapacity = memoryCapacity
+			targetNodeMemoryAllocatable = memoryAllocatable
+
+			log.Printf("Metric_value: %f Memory Capacity %f Memory Allocatable %f", metricValue, targetNodeMemoryCapacity, targetNodeMemoryAllocatable)
+
+			if targetNodeMemoryCapacity != 0.0 {
+				percentageMetricValue = (metricValue / targetNodeMemoryCapacity) * 100
+			}
+			if targetNodeMemoryAllocatable != 0.0 {
+				allocatablePercentageMetricValue = (metricValue / targetNodeMemoryAllocatable) * 100
+			}
+		}
+
+		log.Printf("percentage_metric_value for metric: %s for instance: %s percentage: %f allocatable_percentage: %f", metricName, record["Host"], percentageMetricValue, allocatablePercentageMetricValue)
+
+		if percentageMetricValue > 100.0 {
+			telemetryProperties := map[string]string{}
+			telemetryProperties["Computer"] = record["Host"].(string)
+			telemetryProperties["MetricName"] = metricName
+			telemetryProperties["MetricPercentageValue"] = strconv.FormatFloat(percentageMetricValue, 'f', -1, 64)
+			lib.SendCustomEvent("ErrorPercentageOutOfBounds", telemetryProperties)
+		}
+
+		if allocatablePercentageMetricValue > 100.0 {
+			telemetryProperties := map[string]string{}
+			telemetryProperties["Computer"] = record["Host"].(string)
+			telemetryProperties["MetricName"] = metricName
+			telemetryProperties["MetricAllocatablePercentageValue"] = strconv.FormatFloat(allocatablePercentageMetricValue, 'f', -1, 64)
+			lib.SendCustomEvent("ErrorPercentageOutOfBounds", telemetryProperties)
+		}
+
+		return GetNodeResourceMetricRecords(record, metricName, metricValue, percentageMetricValue, allocatablePercentageMetricValue)
+	} else if objectName == ObjectNameK8SContainer && metricsToCollectHash[strings.ToLower(counterName)] {
+		instanceName := record["InstanceName"].(string)
+		metricName := counterName
+                // Using node cpu capacity in the absence of container cpu capacity since the container will end up using the
+                // node's capacity in this case. Converting this to nanocores for computation purposes, since this is in millicores
+		containerCpuLimit := cpuCapacity * 1000000
+		containerMemoryLimit := memoryCapacity
+
+		if counterName == CPUUsageNanoCores {
+			if instanceName != "" {
+				if val, ok := containerCpuLimitHash[instanceName]; ok {
+					containerCpuLimit = val
+				}
+			}
+
+			// Checking if KubernetesApiClient ran into error while getting the numeric value or if we failed to get the limit
+			if containerCpuLimit != 0.0 {
+				percentageMetricValue = (metricValue / containerCpuLimit) * 100
+			}
+		} else if strings.HasPrefix(counterName, "memory") {
+			if instanceName != "" {
+				if val, ok := containerMemoryLimitHash[instanceName]; ok {
+					containerMemoryLimit = val
+				}
+			}
+
+			// Checking if KubernetesApiClient ran into error while getting the numeric value or if we failed to get the limit
+			if containerMemoryLimit != 0.0 {
+				percentageMetricValue = (metricValue / containerMemoryLimit) * 100
+			}
+		}
+
+		log.Printf("percentage_metric_value for metric: %s for instance: %s percentage: %f", metricName, instanceName, percentageMetricValue)
+		log.Printf("metric_threshold_hash for %s: %f", metricName, metricsThresholdHash[metricName])
+		thresholdPercentage := metricsThresholdHash[metricName]
+
+		flushMetricTelemetry()
+		if percentageMetricValue >= thresholdPercentage {
+			setThresholdExceededTelemetry(metricName)
+			return GetContainerResourceUtilMetricRecords(record["Timestamp"].(float64), metricName, percentageMetricValue, containerResourceDimensionHash[instanceName], thresholdPercentage, false)
+		} else {
+			return nil, nil
+		}
+	} else {
+		return nil, nil
+	}
+}
+
+func filterPVInsightsMetrics(record map[string]string) ([]*GenericMetricTemplate, error) {
+	mdmMetrics := []*GenericMetricTemplate{}
+
+	defer func() {
+		if r := recover(); r != nil {
+			log.Printf("Error processing insights metrics record: %v", r)
+			lib.SendExceptionTelemetry(fmt.Sprint("%v", r), nil)
+			mdmMetrics = nil
+		}
+	}()
+
+	if record["name"] == PVUsedBytes && metricsToCollectHash[strings.ToLower(record["name"])] {
+		metricName := record["name"]
+		usage := record["usage"]
+		fUsage, _ := strconv.ParseFloat(usage, 64)
+
+		var tags map[string]string
+		err := json.Unmarshal([]byte(record["Tags"]), &tags)
+		if err != nil {
+			log.Printf("Error parsing tags: %v", err)
+			lib.SendExceptionTelemetry(err.Error(), nil)
+			return nil, err
+		}
+		capacity, _ := tags[InsightsMetricsTagsPVCapacityBytes]
+		fCapacity, _ := strconv.ParseFloat(capacity, 64)
+
+		percentageMetricValue := 0.0
+		if fCapacity != 0.0 {
+			percentageMetricValue = (fUsage / fCapacity) * 100
+		}
+		log.Printf("percentage metric value for %s is %f", metricName, percentageMetricValue)
+		log.Printf("metricsThresholdHash for %s is %f", metricName, metricsThresholdHash[metricName])
+
+		computer := record["computer"]
+		resourceDimensions := tags
+		thresholdPercentage := metricsThresholdHash[metricName]
+
+		flushMetricTelemetry()
+
+		collectionTime, err := strconv.ParseFloat(record["CollectionTime"], 64)
+		if err != nil {
+			log.Printf("Error parsing CollectionTime: %v", err)
+			lib.SendExceptionTelemetry(err.Error(), nil)
+			return nil, err
+		}
+
+		if percentageMetricValue >= thresholdPercentage {
+			setThresholdExceededTelemetry(metricName)
+			return GetPVResourceUtilMetricRecords(collectionTime, metricName, computer, percentageMetricValue, resourceDimensions, thresholdPercentage, false)
+		} else {
+			return nil, nil
+		}
+	}
+
+	return mdmMetrics, nil
+
+}
+
+func setThresholdExceededTelemetry(metricName string) {
+	switch metricName {
+	case CPUUsageNanoCores:
+		containersExceededCpuThreshold = true
+	case MemoryRssBytes:
+		containersExceededMemRssThreshold = true
+	case MemoryWorkingSetBytes:
+		containersExceededMemWorkingSetThreshold = true
+	case PVUsedBytes:
+		pvExceededUsageThreshold = true
+	}
+}
+
+func flushMetricTelemetry() {
+	timeDifference := math.Abs(float64(time.Now().Unix()) - float64(containerResourceUtilTelemetryTimeTracker))
+	timeDifferenceInMinutes := timeDifference / 60
+	if timeDifferenceInMinutes > TelemetryFlushIntervalInMinutes {
+		properties := map[string]string{}
+		properties["CpuThresholdPercentage"] = strconv.FormatFloat(metricsThresholdHash[CPUUsageNanoCores], 'f', -1, 64)
+		properties["MemoryRssThresholdPercentage"] = strconv.FormatFloat(metricsThresholdHash[MemoryRssBytes], 'f', -1, 64)
+	}
+}
+
+func ensureCPUMemoryCapacityAndAllocatableSet() {
+	if controllerType == "replicaset" {
+		if cpuCapacity != 0.0 && memoryCapacity != 0.0 {
+			log.Printf("CPU And Memory Capacity are already set and their values are as follows cpu_capacity : %f, memory_capacity: %f", cpuCapacity, memoryCapacity)
+			return
+		}
+	} else if controllerType == "daemonset" {
+		if cpuCapacity != 0.0 && memoryCapacity != 0.0 && cpuAllocatable != 0.0 && memoryAllocatable != 0.0 {
+			log.Printf("CPU And Memory Capacity are already set and their values are as follows cpu_capacity : %f, memory_capacity: %f", cpuCapacity, memoryCapacity)
+			log.Printf("CPU And Memory Allocatable are already set and their values are as follows cpu_allocatable : %f, memory_allocatable: %f", cpuAllocatable, memoryAllocatable)
+			return
+		}
+	}
+
+	if controllerType == "replicaset" {
+		log.Printf("ensure_cpu_memory_capacity_set cpu_capacity %f memory_capacity %f", cpuCapacity, memoryCapacity)
+
+		resourceUri := lib.GetNodesResourceUri("nodes?fieldSelector=metadata.name%3D" + os.Getenv("HOSTNAME"))
+		nodeInventory, err := lib.GetKubeResourceInfo(resourceUri)
+		if err != nil {
+			log.Printf("Error when getting nodeInventory from kube API: %v", err)
+			lib.SendExceptionTelemetry(err.Error(), nil)
+			return
+		}
+
+		if nodeInventory != nil {
+			cpuCapacityJSON, err := ParseNodeLimits(nodeInventory, "capacity", "cpu", "cpuCapacityNanoCores", time.Now().UTC().Format(time.RFC3339))
+			if err != nil {
+				log.Println("Error getting cpu_capacity:", err)
+			} else if len(cpuCapacityJSON) > 0 {
+				var metricVal struct {
+					Value string `json:"Value"`
+				}
+
+				jsonCollections, ok := cpuCapacityJSON[0]["json_Collections"].(string)
+				if !ok {
+					log.Println("Error getting cpu capacity JSON")
+				} else {
+					err := json.Unmarshal([]byte(jsonCollections), &metricVal)
+					if err != nil {
+						log.Println("Error parsing cpu capacity JSON:", err)
+					} else {
+						cpuCapacity, _ = strconv.ParseFloat(metricVal.Value, 64)
+						log.Println("CPU Limit", cpuCapacity)
+					}
+				}
+			} else {
+				log.Println("Error getting cpu_capacity")
+			}
+
+			memoryCapacityJSON, err := ParseNodeLimits(nodeInventory, "capacity", "memory", "memoryCapacityBytes", time.Now().UTC().Format(time.RFC3339))
+			if err != nil {
+				log.Println("Error getting memory_capacity:", err)
+			} else if len(memoryCapacityJSON) > 0 {
+				var metricVal struct {
+					Value string `json:"Value"`
+				}
+
+				jsonCollections, ok := memoryCapacityJSON[0]["json_Collections"].(string)
+				if !ok {
+					log.Println("Error getting memory capacity JSON")
+				} else {
+					jsonBytes := []byte(jsonCollections)
+					err := json.Unmarshal(jsonBytes, &metricVal)
+					if err != nil {
+						log.Println("Error parsing memory capacity JSON:", err)
+					} else {
+						memoryCapacity, _ = strconv.ParseFloat(metricVal.Value, 64)
+						log.Println("Memory Limit", memoryCapacity)
+					}
+				}
+			} else {
+				log.Println("Error getting memory_capacity")
+			}
+		}
+	} else if controllerType == "daemonset" {
+		var err error
+		cpuCapacity, memoryCapacity, err = GetNodeCapacity()
+		if err != nil {
+			log.Println("Error getting capacity_from_kubelet: cpu_capacity and memory_capacity")
+			lib.SendExceptionTelemetry(err.Error(), nil)
+			return
+		}
+		cpuAllocatable, memoryAllocatable, err = GetNodeAllocatable(cpuCapacity, memoryCapacity)
+		if err != nil {
+			log.Println("Error getting allocatable_from_kubelet: cpu_allocatable and memory_allocatable")
+			lib.SendExceptionTelemetry(err.Error(), nil)
+			return
+		}
+	}
+
+}
+
 func SendMDMMetrics(pushInterval string) {
-	return
+	// TODO
 }
 
 func PostTelegrafMetricsToMDM(telegrafRecords []map[interface{}]interface{}) int {
@@ -622,9 +1020,9 @@ func PostTelegrafMetricsToMDM(telegrafRecords []map[interface{}]interface{}) int
 		Log("PostTelegrafMetricsToMDM::Error:no timeseries to derive")
 		return output.FLB_OK
 	}
-	processInconingStream := CheckCustomMetricsAvailability()
+	processIncomingStream := CheckCustomMetricsAvailability()
 
-	if !processInconingStream {
+	if !processIncomingStream {
 		Log("PostTelegrafMetricsToMDM::Info:Custom metrics is not enabled for this workspace. Skipping processing of incoming stream")
 		return output.FLB_OK
 	}
