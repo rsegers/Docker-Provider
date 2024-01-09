@@ -369,3 +369,16 @@ func GetKubeResourceInfo(resource string) (map[string]interface{}, error) {
 
 	return data, nil
 }
+
+func GetKubeAPIServerUrl() string {
+	kubernetesServiceHost := os.Getenv("KUBERNETES_SERVICE_HOST")
+	kubernetesPort443TcpPort := os.Getenv("KUBERNETES_PORT_443_TCP_PORT")
+
+	if kubernetesServiceHost != "" && kubernetesPort443TcpPort != "" {
+		return fmt.Sprintf("https://%s:%s", kubernetesServiceHost, kubernetesPort443TcpPort)
+	} else {
+		log.Printf("Kubernetes environment variable not set KUBERNETES_SERVICE_HOST: %s KUBERNETES_PORT_443_TCP_PORT: %s. Unable to form resourceUri", kubernetesServiceHost, kubernetesPort443TcpPort)
+	}
+
+	return ""
+}

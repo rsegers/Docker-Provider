@@ -27,15 +27,6 @@ import (
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
-type ClusterIdentity struct {
-	//stub
-}
-
-func (ci *ClusterIdentity) GetClusterIdentityToken() string {
-	// TODO: Implement the logic to get the cluster identity token
-	return ""
-}
-
 var (
 	tokenResourceURL              string
 	tokenResourceAudience         string
@@ -47,7 +38,6 @@ var (
 	msiEndpointTemplate           string
 	imdsMsiEndpointTemplate       string
 	userAssignedClientID          string
-	pluginName                    string
 	postRequestURI                *url.URL
 	recordBatchSize               int
 	tokenRefreshBackOffInterval   time.Duration
@@ -64,7 +54,6 @@ var (
 	isAADMSIAuth                     bool
 	isWindows                        bool
 	metricsFlushedCount              int
-	clusterIdentity                  *ClusterIdentity
 	isArcK8sCluster                  bool
 	getAccessTokenBackoffExpiry      time.Time
 	mdmExceptionsHash                map[string]int
@@ -89,6 +78,7 @@ var (
 	containerResourceDimensionHash            map[string]string
 	metricsThresholdHash                      map[string]float64
 	processIncomingStream                     bool
+	clusterIdentity			          *lib.ArcK8sClusterIdentity
 )
 
 var (
@@ -154,7 +144,6 @@ func init() {
 	msiEndpointTemplate = "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&client_id=%s&resource=%s"
 	imdsMsiEndpointTemplate = "http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=%s"
 	userAssignedClientID = os.Getenv("USER_ASSIGNED_IDENTITY_CLIENT_ID")
-	pluginName = "AKSCustomMetricsMDM"
 	recordBatchSize = 2000
 	tokenRefreshBackOffInterval = 30 * time.Minute
 
@@ -288,8 +277,7 @@ func InitializePlugin(agentVersion string) {
 			}
 		} else {
 			log.Println("using cluster identity token since cluster is azure arc k8s cluster")
-			// TODO Initialize cluster identity logic here
-			clusterIdentity = nil //&ClusterIdentity{}
+			clusterIdentity = lib.NewArcK8sClusterIdentity()
 		}
 	} else {
 		fileContent, err := os.ReadFile(azureJSONPath)
@@ -375,9 +363,13 @@ func PostToMDMHelper(batch []string) error {
 			access_token = getAccessToken()
 		} else {
 			if clusterIdentity == nil {
-				clusterIdentity = nil // TODO Initialize
+				clusterIdentity = lib.NewArcK8sClusterIdentity()
 			}
-			access_token = clusterIdentity.GetClusterIdentityToken()
+			var err error
+			access_token, err = clusterIdentity.GetClusterIdentityToken()
+			if (err != nil) {
+				return err
+			}
 		}
 	} else {
 		access_token = getAccessToken()
