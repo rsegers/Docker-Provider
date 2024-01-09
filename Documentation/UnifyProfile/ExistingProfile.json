@@ -1,0 +1,26 @@
+{
+    "azureMonitorProfile": {
+        "metrics": {
+            "enabled": "boolean",
+            "kubeStateMetrics": {
+                "metricAnnotationsAllowList": "pods=[k8s-annotation-1,k8s-annotation-n]",
+                "metricLabelsAllowlist": "namespaces=[k8s-label-1,k8s-label-n]"
+            },
+            "appMonitoringOpenTelemetryMetrics": {
+                "enabled": "boolean"
+            }
+        },
+        "logs": {
+            "containerInsights": {
+                "enabled": "boolean",
+                "logAnalyticsWorkspaceResourceID": "<workspaceResourceId>",
+                "windowsHostLogs": {
+                    "enabled": "boolean"
+                }
+            },
+            "appMonitoring": {
+                "enabled": "boolean"
+            }
+        }
+    }
+}
