@@ -539,12 +539,16 @@ func PushToAppInsightsTraces(records []map[interface{}]interface{}, severityLeve
 			populateKubeMonAgentEventHash(record, PromScrapingError)
 		} else if strings.Contains(logEntry, "Lifetime validation failed. The token is expired.") {
 			UpdateMdsdErrorMetrics("MdsdTokenExpired")
-		} else if strings.Contains(logEntry, "Failed to upload to ODS: HTTP response code said error") {
-			UpdateMdsdErrorMetrics("MdsdODSUploadError")
+		} else if strings.Contains(logEntry, "Failed to upload to ODS: Error resolving address") {
+			UpdateMdsdErrorMetrics("MdsdODSUploadErrorResolvingAddress")
 		} else if strings.Contains(logEntry, "Data collection endpoint must be used to access configuration over private link") {
 			UpdateMdsdErrorMetrics("MdsdPrivateLinkNoDCE")
 		} else if strings.Contains(logEntry, "Failed to register certificate with OMS Homing Service:Error resolving address") {
 			UpdateMdsdErrorMetrics("MdsdOMSHomingServiceError")
+		} else if strings.Contains(logEntry, "Could not obtain configuration from") {
+			UpdateMdsdErrorMetrics("MdsdGetConfigError")
+		} else if strings.Contains(logEntry, " Failed to upload to ODS: 403") {
+			UpdateMdsdErrorMetrics("MdsdODSUploadError403")
 		} else {
 			logLines = append(logLines, logEntry)
 		}
