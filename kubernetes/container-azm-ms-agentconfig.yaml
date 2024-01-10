@@ -48,9 +48,11 @@ data:
           # See documentation at https://aka.ms/ContainerLogv2 for benefits of v2 schema over v1 schema before opting for "v2" schema
           # containerlog_schema_version = "v2"
        #[log_collection_settings.enable_multiline_logs]
-          # fluent-bit based multiline log collection for .NET, Go, Java, and Python stacktraces.
+          # fluent-bit based multiline log collection for .NET, Go, Java, and Python stacktraces. Update stacktrace_languages to specificy which languages to collect stacktraces for. Default Go, Java, and Python.
+          # NOTE: for better performance consider enabling only for languages that are needed
           # if enabled will also stitch together container logs split by docker/cri due to size limits(16KB per log line)
           # enabled = "false"
+          # stacktrace_languages = ["go", "java", "python"] 
 
 
   prometheus-data-collection-settings: |-

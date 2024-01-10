@@ -17,9 +17,10 @@ def is_number?(value)
   true if Integer(value) rescue false
 end
 
-def substituteMultiline(multilineLogging, new_contents)
-    if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true"
+def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
+    if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true" && !stacktraceLanguages.nil? && !stacktraceLanguages.empty?
       new_contents = new_contents.gsub("#${MultilineEnabled}", "")
+      new_contents = new_contents.gsub("#${MultilineLanguages}", stacktraceLanguages)
       new_contents = new_contents.gsub("azm-containers-parser.conf", "azm-containers-parser-multiline.conf")
       # replace parser with multiline version. ensure running script multiple times does not have negative impact
       if (/[^\.]Parser\s{1,}docker/).match(new_contents)
@@ -43,6 +44,7 @@ def substituteFluentBitPlaceHolders
     memBufLimit = ENV["FBIT_TAIL_MEM_BUF_LIMIT"]
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
+    stacktraceLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
 
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
@@ -79,13 +81,13 @@ def substituteFluentBitPlaceHolders
       new_contents = new_contents.gsub("\n    ${TAIL_IGNORE_OLDER}\n", "\n")
     end
 
-    new_contents = substituteMultiline(multilineLogging, new_contents)
+    new_contents = substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in fluent-bit.conf file"
 
     puts "config::Starting to substitute the placeholders in fluent-bit-common.conf file for log collection"
     text = File.read(@fluent_bit_common_conf_path)
-    new_contents = substituteMultiline(multilineLogging, text)
+    new_contents = substituteMultiline(multilineLogging, stacktraceLanguages, text)
     File.open(@fluent_bit_common_conf_path, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in fluent-bit-common.conf file"
 

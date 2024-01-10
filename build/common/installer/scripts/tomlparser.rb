@@ -24,6 +24,7 @@ require_relative "ConfigParseErrorLogger"
 @containerLogsRoute = "v2" # default for linux
 @adxDatabaseName = "containerinsights" # default for all configurations
 @logEnableMultiline = "false"
+@stacktraceLanguages = "go,java,python"
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
   # This path format is necessary for fluent-bit in windows
@@ -161,6 +162,26 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "config:: WARN: container logs V2 is disabled and is required for multiline logging. Disabling multiline logging"
           @logEnableMultiline = "false"
         end
+
+        multilineLanguages = parsedConfig[:log_collection_settings][:enable_multiline_logs][:stacktrace_languages]
+        if !multilineLanguages.nil?
+          if multilineLanguages.kind_of?(Array)
+            # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+            if multilineLanguages.length > 0 && multilineLanguages[0].kind_of?(String)
+              #Empty the array to use the values from configmap
+              @stacktraceLanguages.clear
+              multilineLanguages.each do |language|
+                if @stacktraceLanguages.empty?
+                  # To not append , for the first element
+                  @stacktraceLanguages.concat(language)
+                else
+                  @stacktraceLanguages.concat("," + language)
+                end
+              end
+              puts "config::Using config map setting for multiline languages"
+            end
+          end
+        end
       end
     rescue => errorStr
       ConfigParseErrorLogger.logError("Exception while reading config map settings for enabling multiline logs - #{errorStr}, using defaults, please check config map for errors")
@@ -252,6 +273,7 @@ if !file.nil?
   file.write("export AZMON_CONTAINER_LOG_SCHEMA_VERSION=#{@containerLogSchemaVersion}\n")
   file.write("export AZMON_ADX_DATABASE_NAME=#{@adxDatabaseName}\n")
   file.write("export AZMON_MULTILINE_ENABLED=#{@logEnableMultiline}\n")
+  file.write("export AZMON_MULTILINE_LANGUAGES=#{@stacktraceLanguages}\n")
   # Close file after writing all environment variables
   file.close
   puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "
@@ -315,6 +337,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows("AZMON_ADX_DATABASE_NAME", @adxDatabaseName)
     file.write(commands)
     commands = get_command_windows("AZMON_MULTILINE_ENABLED", @logEnableMultiline)
+    file.write(commands)
+    commands = get_command_windows("AZMON_MULTILINE_LANGUAGES", @stacktraceLanguages)
     file.write(commands)
     # Close file after writing all environment variables
     file.close

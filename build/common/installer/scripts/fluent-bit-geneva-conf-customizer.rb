@@ -38,6 +38,7 @@ def substituteFluentBitPlaceHolders(configFilePath)
     memBufLimit = ENV["FBIT_TAIL_MEM_BUF_LIMIT"]
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
+    stacktraceLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
     enableFluentBitThreading = ENV["ENABLE_FBIT_THREADING"]
 
     serviceInterval = is_valid_number?(interval) ? interval : @default_service_interval
@@ -81,8 +82,9 @@ def substituteFluentBitPlaceHolders(configFilePath)
       new_contents = new_contents.gsub("\n    ${TAIL_THREADED}\n", "\n")
     end
 
-    if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true"
+    if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true" && !stacktraceLanguages.nil? && !stacktraceLanguages.empty?
       new_contents = new_contents.gsub("#${MultilineEnabled}", "")
+      new_contents = new_contents.gsub("#${MultilineLanguages}", stacktraceLanguages)
       new_contents = new_contents.gsub("azm-containers-parser.conf", "azm-containers-parser-multiline.conf")
       # replace parser with multiline version. ensure running script multiple times does not have negative impact
       if (/[^\.]Parser\s{1,}docker/).match(text)
