@@ -5,7 +5,9 @@ require_relative "ConfigParseErrorLogger"
 @fluent_bit_common_conf_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf"
 
 @os_type = ENV["OS_TYPE"]
+@isWindows = false
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+  @isWindows = true
   @fluent_bit_conf_path = "/etc/fluent-bit/fluent-bit.conf"
   @fluent_bit_common_conf_path = "/etc/fluent-bit/fluent-bit-common.conf"
 end
@@ -36,9 +38,9 @@ def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
 end
 
 def substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
-  if !resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true"
+  if (!resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true") || (isWindows)
     puts "config::Starting to substitute the placeholders in fluent-bit.conf file for resource optimization"
-    if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+    if isWindows
       new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/fluent-bit/azm-containers-input-plugins.conf")
     else
       new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/opt/microsoft/docker-cimprov/azm-containers-input-plugins.conf")
