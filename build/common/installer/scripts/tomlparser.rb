@@ -24,7 +24,7 @@ require_relative "ConfigParseErrorLogger"
 @containerLogsRoute = "v2" # default for linux
 @adxDatabaseName = "containerinsights" # default for all configurations
 @logEnableMultiline = "false"
-@stacktraceLanguages = "go,java,python"
+@stacktraceLanguages = "go,java,python,dotnet"
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
   # This path format is necessary for fluent-bit in windows
@@ -167,17 +167,11 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         if !multilineLanguages.nil?
           if multilineLanguages.kind_of?(Array)
             # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+            # update stacktraceLanguages only if customer explicity overrode via configmap
             if multilineLanguages.length > 0 && multilineLanguages[0].kind_of?(String)
               #Empty the array to use the values from configmap
               @stacktraceLanguages.clear
-              multilineLanguages.each do |language|
-                if @stacktraceLanguages.empty?
-                  # To not append , for the first element
-                  @stacktraceLanguages.concat(language)
-                else
-                  @stacktraceLanguages.concat("," + language)
-                end
-              end
+              @stacktraceLanguages = multilineLanguages.join(",")
               puts "config::Using config map setting for multiline languages"
             end
           end
