@@ -7,13 +7,12 @@ require_relative 'ConfigParseErrorLogger'
 @os_type = ENV['OS_TYPE']
 @controllerType = ENV['CONTROLLER_TYPE']
 @containerType = ENV['CONTAINER_TYPE']
-@dcrConfigFilePattern = '/etc/mdsd.d/config-cache/configchunks/*.json'
-@logs_and_events_streams = %w[
-  CONTAINER_LOG_BLOB
-  CONTAINERINSIGHTS_CONTAINERLOGV2
-  KUBE_EVENTS_BLOB
-  KUBE_POD_INVENTORY_BLOB
-]
+@logs_and_events_streams = {
+  'CONTAINER_LOG_BLOB' => true,
+  'CONTAINERINSIGHTS_CONTAINERLOGV2' => true,
+  'KUBE_EVENTS_BLOB' => true,
+  'KUBE_POD_INVENTORY_BLOB' => true
+}
 @logs_and_events_only = false
 
 return if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp('windows').zero?
@@ -22,7 +21,16 @@ return unless ENV['USING_AAD_MSI_AUTH'].strip.casecmp('true').zero?
 if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp('daemonset').zero? \
   && @containerType.nil?
   begin
-    file_path = Dir.glob(@dcrConfigFilePattern).first
+    file_path = nil
+    if Dir.exist?('/etc/mdsd.d/config-cache/configchunks')
+      Dir.glob('/etc/mdsd.d/config-cache/configchunks/*.json').each do |file|
+        if File.foreach(file).grep(/ContainerInsightsExtension/).any?
+          file_path = file
+          break # Exit the loop once a matching file is found
+        end
+      end
+    end
+
     # Raise an error if no JSON file is found
     raise 'No JSON file found in the specified directory' unless file_path
 
@@ -37,8 +45,10 @@ if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.cas
                                  .compact
                                  .map { |stream| stream['stream'] if stream.key?('stream') }
                                  .compact
-    streams -= @logs_and_events_streams
-    if streams.empty?
+
+    # Check if there is a stream which is not part of the logs and events streams
+    extra_stream = streams.any? { |stream| !@logs_and_events_streams.include?(stream) }
+    unless extra_stream
       # Write the settings to file, so that they can be set as environment variables
       puts 'DCR config matches Log and Events only profile. Setting LOGS_AND_EVENTS_ONLY to true'
       @logs_and_events_only = true
@@ -46,7 +56,7 @@ if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.cas
       file.write("LOGS_AND_EVENTS_ONLY=#{@logs_and_events_only}\n")
       file.close
     end
-  rescue StandardError => e
+  rescue Exception => e
     ConfigParseErrorLogger.logError("Exception while parsing dcr : #{e}. DCR Json data: #{data}")
   end
 end
