@@ -1,7 +1,7 @@
 # Default base images. If you update them don't forgot to update variables in our build pipelines. Default values can be found in internal wiki. External can use ubuntu 18.04 and golang 1.18.3
 ARG GOLANG_BASE_IMAGE=
-ARG MARINER_BASE_IMAGE=mcr.microsoft.com/cbl-mariner/base/core:2.0
-ARG MARINER_DISTROLESS_IMAGE=mcr.microsoft.com/cbl-mariner/distroless/base:2.0
+ARG MARINER_BASE_IMAGE=mcr.microsoft.com/cbl-mariner/base/core:2.0.20231106
+ARG MARINER_DISTROLESS_IMAGE=mcr.microsoft.com/cbl-mariner/distroless/base:2.0.20231106
 
 FROM --platform=$BUILDPLATFORM ${GOLANG_BASE_IMAGE} AS golang-builder
 ARG TARGETOS TARGETARCH
