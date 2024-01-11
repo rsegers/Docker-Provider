@@ -168,11 +168,18 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           if multilineLanguages.kind_of?(Array)
             # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
             # update stacktraceLanguages only if customer explicity overrode via configmap
+            #Empty the array to use the values from configmap
+            @stacktraceLanguages.clear
             if multilineLanguages.length > 0 && multilineLanguages[0].kind_of?(String)
-              #Empty the array to use the values from configmap
-              @stacktraceLanguages.clear
-              @stacktraceLanguages = multilineLanguages.join(",")
-              puts "config::Using config map setting for multiline languages"
+              invalid_lang = multilineLanguages.any? { |lang| !["java", "python", "go", "dotnet"].include?(lang.downcase) }
+              if invalid_lang
+                puts "config::WARN: stacktrace languages contains invalid languages. Disabling multiline stacktrace logging"
+              else
+                @stacktraceLanguages = multilineLanguages.join(",").downcase
+                puts "config::Using config map setting for multiline languages"
+              end
+            else
+              puts "config::WARN: stacktrace languages is not an array of strings. Disabling multiline stacktrace logging"
             end
           end
         end

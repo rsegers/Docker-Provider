@@ -18,9 +18,11 @@ def is_number?(value)
 end
 
 def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
-    if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true" && !stacktraceLanguages.nil? && !stacktraceLanguages.empty?
-      new_contents = new_contents.gsub("#${MultilineEnabled}", "")
-      new_contents = new_contents.gsub("#${MultilineLanguages}", stacktraceLanguages)
+    if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true"
+      if !stacktraceLanguages.nil? && !stacktraceLanguages.empty?
+        new_contents = new_contents.gsub("#${MultilineEnabled}", "")
+        new_contents = new_contents.gsub("#${MultilineLanguages}", stacktraceLanguages)
+      end
       new_contents = new_contents.gsub("azm-containers-parser.conf", "azm-containers-parser-multiline.conf")
       # replace parser with multiline version. ensure running script multiple times does not have negative impact
       if (/[^\.]Parser\s{1,}docker/).match(new_contents)
