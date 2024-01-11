@@ -1,7 +1,7 @@
 # Default base images. If you update them don't forgot to update variables in our build pipelines. Default values can be found in internal wiki. External can use ubuntu 18.04 and golang 1.18.3
 ARG GOLANG_BASE_IMAGE=
-ARG MARINER_BASE_IMAGE=mcr.microsoft.com/cbl-mariner/base/core:2.0
-ARG MARINER_DISTROLESS_IMAGE=mcr.microsoft.com/cbl-mariner/distroless/base:2.0
+ARG MARINER_BASE_IMAGE=mcr.microsoft.com/cbl-mariner/base/core:2.0.20231004
+ARG MARINER_DISTROLESS_IMAGE=mcr.microsoft.com/cbl-mariner/distroless/base:2.0.20231004
 
 FROM --platform=$BUILDPLATFORM ${GOLANG_BASE_IMAGE} AS golang-builder
 ARG TARGETOS TARGETARCH
@@ -80,7 +80,7 @@ COPY --from=builder /usr/sbin/setcap /usr/sbin/setcap
 COPY --from=builder /usr/bin/curl /usr/bin/curl
 COPY --from=builder /usr/bin/jq /usr/bin/jq
 COPY --from=builder /usr/bin/base64 /usr/bin/base64
-COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd 
+COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd
 
 # bash dependencies
 COPY --from=builder /lib/libreadline.so.8 /lib/
