@@ -21,7 +21,6 @@ ENV tmpdir /opt
 
 RUN tdnf clean all
 RUN tdnf repolist --refresh
-RUN tdnf -y update
 RUN tdnf install -y build-essential wget curl sudo net-tools cronie rsyslog dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
 RUN mkdir /busybin && busybox --install /busybin
 
