@@ -53,5 +53,5 @@ spec:
               timestamp=$(date "+%Y/%m/%d %H:%M:%S.%3N")
               logEntry=$(printf 'Test-%.0s' {1..200}) # Adjusted to create a log entry of about 1000 bytes
               echo "$timestamp $logEntry"
-              sleep 0.0001  # Sleep for 1 millisecond # Generates approximately 1000 logs per second
+              sleep 0.0001  # Sleep for round up to 1 millisecond # Generates approximately 1000 logs per second
             done

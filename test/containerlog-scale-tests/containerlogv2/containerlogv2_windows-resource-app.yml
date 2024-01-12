@@ -10,7 +10,7 @@ metadata:
     purpose: scale-testing
     environment: test
 spec:
-  replicas: 5 # 50
+  replicas: 5
   selector:
     matchLabels:
       app: windows-resource-intensive-app
@@ -50,12 +50,5 @@ spec:
               $timestamp = Get-Date -Format "yyyy/MM/dd HH:mm:ss.fff"
               $logEntry = 'Test-' * 200   # Adjusted to create a log entry of about 1000 bytes
               Write-Output "$timestamp $logEntry"
-              Start-Sleep -Milliseconds 0.1  # Generates approximately 1000 logs per second
+              Start-Sleep -Milliseconds 0.1  # Generates approximately 300 logs per second
             }
-
-## thousand logs per second
-## 10 pods in certain nodes combining logs each generate some logs  scale  performance  podlevel
-## multiple 100 pods
-
-## nodes level testing  both windows linux   if api then proabbly node level   kubelet
-## create a branch for current code branch for testing current stage
