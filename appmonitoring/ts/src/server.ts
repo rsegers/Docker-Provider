@@ -18,24 +18,28 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
     try {
         logger.info("Running in certificate manager mode...", operationId, null);
         logger.SendEvent("CertificateManagerModeRun", operationId, null, clusterArmId, clusterArmRegion);
-
         logger.addHeartbeatMetric(HeartbeatMetrics.CertificateOperationCount, 1);
-
         await CertificateManager.CreateWebhookAndCertificates(operationId, clusterArmId, clusterArmRegion);
-
         logger.info("Certificate manager mode is done", operationId, null);
         logger.SendEvent("CertificateManagerModeRunSuccess", operationId, null, clusterArmId, clusterArmRegion, true);
     } catch (error) {
-        logger.addHeartbeatMetric(HeartbeatMetrics.CertificateOperationFaailedCount, 1);
-
+        logger.addHeartbeatMetric(HeartbeatMetrics.CertificateOperationFailedCount, 1);
         logger.error(`Certificate manager mode failed: ${JSON.stringify(error)}`, operationId, null);
         logger.SendEvent("CertificateManagerModeRunFailure", operationId, null, clusterArmId, clusterArmRegion, true, error);
-        
         throw error;
     }
-    
     process.exit();
-} 
+} else if ("secrets-housekeeper".localeCompare(containerMode) === 0) {
+    try {
+        logger.info("Running in certificate housekeeper mode...", operationId, null);
+        await CertificateManager.ReconcileWebhookAndCertificates(operationId, clusterArmId, clusterArmRegion);
+    } catch (error) {
+        logger.error(JSON.stringify(error), operationId, null);
+        logger.error("Failed to Update Certificates, Terminating...", operationId, null);
+        throw error;
+    }
+    process.exit();
+}
 
 const crs: AppMonitoringConfigCRsCollection = new AppMonitoringConfigCRsCollection();
 
