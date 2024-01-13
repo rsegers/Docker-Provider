@@ -93,7 +93,8 @@ COPY --from=builder /lib/libselinux.so.1 /lib/libpam.so.0 /lib/libc.so.6 /lib/li
 # ruby dependencies
 COPY --from=builder /usr/lib/libruby.so.3.1 /usr/lib/libz.so.1 /usr/lib/libgmp.so.10 /usr/lib/libcrypt.so.1 /usr/lib/libm.so.6 /usr/lib/libc.so.6 /usr/lib/
 # fluent-bit dependencies
-COPY --from=builder /lib/libssl.so.1.1 /lib/libcrypto.so.1.1 /lib/libyaml-0.so.2 /lib/libsystemd.so.0 /lib/libm.so.6 /lib/libgcc_s.so.1 /usr/lib/libc.so.6 /lib/liblzma.so.5 /lib/liblz4.so.1 /lib/libcap.so.2 /lib/libgcrypt.so.20 /lib/libgpg-error.so.0 /lib/
+# libssl.so.1.1 & libcrypto.so.1.1 are already available with openssl from base image and copying them over causes FIPS HMAC verification failure
+COPY --from=builder /lib/libyaml-0.so.2 /lib/libsystemd.so.0 /lib/libm.so.6 /lib/libgcc_s.so.1 /lib/libc.so.6 /lib/liblzma.so.5 /lib/liblz4.so.1 /lib/libcap.so.2 /lib/libgcrypt.so.20 /lib/libgpg-error.so.0 /lib/
 # telegraf dependencies
 COPY --from=builder /lib/libc.so.6 /lib/
 # mdsd dependencies
