@@ -18,7 +18,7 @@
                     "type": "ShellExtensionType",
                     "properties": {
                       "imageName": "adm-ubuntu-2004-l",
-                      "imageVersion": "v18"
+                      "imageVersion": "v4"
                     }
                   }
                 ]
