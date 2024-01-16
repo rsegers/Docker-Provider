@@ -238,7 +238,7 @@
     },
     "resources": [
         {
-            "condition": "[equals(parameters('useAzureMonitorPrivateLinkScope'), true)]",
+            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
             "type": "Microsoft.Insights/dataCollectionEndpoints",
             "apiVersion": "2022-06-01",
             "name": "[variables('dceName')]",
@@ -294,7 +294,7 @@
             }
         },
         {
-            "condition": "[equals(parameters('useAzureMonitorPrivateLinkScope'), true)]",
+            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
             "type": "Microsoft.Resources/deployments",
             "name": "[Concat('aks-monitoring-msi-dcea', '-',  uniqueString(parameters('aksResourceId')))]",
             "apiVersion": "2017-05-10",
@@ -327,7 +327,7 @@
             }
         },
         {
-            "condition": "[equals(parameters('useAzureMonitorPrivateLinkScope'), true)]",
+            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
             "type": "Microsoft.Resources/deployments",
             "name": "[Concat('aks-monitoring-msi-ampls-scope', '-',  uniqueString(parameters('aksResourceId')))]",
             "apiVersion": "2017-05-10",
