@@ -91,6 +91,12 @@
         "Microsoft-ContainerNodeInventory",
         "Microsoft-Perf"
       ]
+    },
+    "useAzureMonitorPrivateLinkScope": {
+      "value": false
+    },
+    "azureMonitorPrivateLinkScopeResourceId": {
+      "value": "/subscriptions/<SubscriptionId>/resourceGroups/<ResourceGroup>/providers/microsoft.insights/privateLinkScopes/<azureMonitorPrivateLinkScopeName>"
     }
   }
 }
