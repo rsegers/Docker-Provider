@@ -131,13 +131,7 @@ jobs:
   steps:
   - task: CodeQL3000Init@0
 
-  - task: AzureCLI@2
-    displayName: "Multi-arch Linux build"
-    inputs:
-      azureSubscription: ${{ variables.armServiceConnectionName }}
-      scriptType: bash
-      scriptLocation: inlineScript
-      inlineScript: |
+  - bash: |
         mkdir -p $(Build.ArtifactStagingDirectory)/linux
 
         sudo apt-get update && sudo apt-get -y install qemu binfmt-support qemu-user-static
@@ -161,6 +155,7 @@ jobs:
           # load the multi-arch image to run tests
           docker buildx build --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --load --provenance=false .
         fi
+    displayName: "Multi-arch Linux build"
 
   - bash: |
         curl -LO "https://github.com/oras-project/oras/releases/download/v1.0.0/oras_1.0.0_linux_amd64.tar.gz"
@@ -216,16 +211,11 @@ jobs:
     displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
     condition: eq(variables.IS_PR, false)
 
-  - task: AzureCLI@2
-    displayName: "Vulnerability Scan with Trivy"
-    inputs:
-      azureSubscription: ${{ variables.armServiceConnectionName }}
-      scriptType: bash
-      scriptLocation: inlineScript
-      inlineScript: |
+  - bash: |
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
         trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
+    displayName: "Trivy Scan"
 
   - task: CodeQL3000Finalize@0
 
