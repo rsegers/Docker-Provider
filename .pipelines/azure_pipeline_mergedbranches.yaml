@@ -132,17 +132,19 @@ jobs:
   - task: CodeQL3000Init@0
 
   - bash: |
+        cd $(System.DefaultWorkingDirectory)/build/windows/
+        ls
+        cd $(System.DefaultWorkingDirectory)/build/linux/
+        ls
+        make
+    displayName: 'Execute Makefile for Linux Build'
+
+  - bash: |
         cd $(System.DefaultWorkingDirectory)/build/linux/
         ls
         chmod +x install-build-pre-requisites.sh
         ./install-build-pre-requisites.sh
     displayName: 'Install Build Prerequisites for Linux'
-
-  - bash: |
-        cd $(System.DefaultWorkingDirectory)/build/linux/
-        ls
-        make
-    displayName: 'Execute Makefile for Linux Build'
 
   - task: AzureCLI@2
     displayName: "Multi-arch Linux build"
