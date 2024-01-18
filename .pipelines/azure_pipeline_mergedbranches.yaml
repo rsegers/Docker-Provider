@@ -261,6 +261,7 @@ jobs:
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'windowsbuild'
   steps:
+  - task: CodeQL3000Init@0
   - task: PowerShell@2
     inputs:
       targetType: 'filePath'
@@ -274,7 +275,6 @@ jobs:
       exit /B %ERRORLEVEL%
     displayName: 'build base'
 
-  - task: CodeQL3000Init@0
   - task: AzureCLI@2
     displayName: "Docker windows build for ltsc2019"
     inputs:
