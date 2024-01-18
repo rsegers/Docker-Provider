@@ -137,13 +137,6 @@ jobs:
         make
     displayName: 'Execute Makefile for Linux Build'
 
-  - bash: |
-        cd $(System.DefaultWorkingDirectory)/scripts/build/linux/
-        ls
-        chmod +x install-build-pre-requisites.sh
-        ./install-build-pre-requisites.sh
-    displayName: 'Install Build Prerequisites for Linux'
-
   - task: AzureCLI@2
     displayName: "Multi-arch Linux build"
     inputs:
