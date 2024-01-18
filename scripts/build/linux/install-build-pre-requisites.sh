@@ -117,9 +117,12 @@ install_gcc_for_windows_platform()
 install_powershell_core()
 {
   echo "installing powershell core ..."
-  # Update the list of products
+  # Check if PowerShell is held
+  if apt-mark showhold | grep -q powershell; then
+    echo "Unholding powershell package..."
+    sudo apt-mark unhold powershell
+  fi
   sudo apt-get update -y
-  # Install PowerShell
   sudo apt-get install -y powershell
   echo "installing powershell core completed"
 }
