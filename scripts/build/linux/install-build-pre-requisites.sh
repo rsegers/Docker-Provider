@@ -82,7 +82,7 @@ install_python()
 {
   echo "installing python ..."
   sudo apt-get update -y
-  sudo apt-get install python -y
+  sudo apt-get install python3 python3-pip -y
   echo "installation of python completed."
 }
 
