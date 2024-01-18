@@ -24,7 +24,7 @@ variables:
 jobs:
 - job: common
   variables:
-    Codeql.SkipTaskAutoInjection: false
+    Codeql.SkipTaskAutoInjection: true
   pool:
     name: Azure-Pipelines-CI-Test-EO
   steps:
@@ -482,7 +482,7 @@ jobs:
     windowsImageTag: $[ dependencies.common.outputs['setup.windowsImageTag'] ]
     windowsTelemetryTag: $[ dependencies.common.outputs['setup.windowsTelemetryTag'] ]
     windows2022BaseImageVersion: ltsc2022
-    Codeql.SkipTaskAutoInjection: false
+    Codeql.SkipTaskAutoInjection: true
   steps:
   - task: PowerShell@2
     inputs:
@@ -682,7 +682,7 @@ jobs:
     windowsTelemetryTag: $[ dependencies.common.outputs['setup.windowsTelemetryTag'] ]
     windows2019BaseImageVersion: ltsc2019
     windows2022BaseImageVersion: ltsc2022
-    Codeql.SkipTaskAutoInjection: false
+    Codeql.SkipTaskAutoInjection: true
   steps:
   - task: AzureCLI@2
     displayName: "Docker windows build for multi-arc image"
