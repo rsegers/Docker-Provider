@@ -20,6 +20,7 @@ variables:
   containerRegistry: 'containerinsightsprod'
   repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/containerinsights/cidev'
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
+  IS_MAIN_BRANCH: $[eq(variables['Build.SourceBranchName'], 'ci_prod')]
 
 jobs:
 - job: common
@@ -130,6 +131,7 @@ jobs:
 
   steps:
   - task: CodeQL3000Init@0
+    condition: eq(variables.IS_MAIN_BRANCH, true)
 
   - bash: |
         cd $(System.DefaultWorkingDirectory)/build/linux/
@@ -234,6 +236,7 @@ jobs:
         trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
 
   - task: CodeQL3000Finalize@0
+    condition: eq(variables.IS_MAIN_BRANCH, true)
 
   - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
     displayName: 'Generation Task'
@@ -277,13 +280,14 @@ jobs:
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'windowsbuild'
   steps:
-  - task: CodeQL3000Init@0
   - task: PowerShell@2
     inputs:
       targetType: 'filePath'
       filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
     displayName: 'install prereqs'
 
+  - task: CodeQL3000Init@0
+    condition: eq(variables.IS_MAIN_BRANCH, false)
   - script: |
       setlocal enabledelayedexpansion
       powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
@@ -464,6 +468,7 @@ jobs:
           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
         }
   - task: CodeQL3000Finalize@0
+    condition: eq(variables.IS_MAIN_BRANCH, false)
 
 - job: build_windows_2022
   timeoutInMinutes: 120
@@ -482,6 +487,9 @@ jobs:
       targetType: 'filePath'
       filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
     displayName: 'install prereqs'
+
+  - task: CodeQL3000Init@0
+    condition: eq(variables.IS_MAIN_BRANCH, false)
 
   - script: |
       setlocal enabledelayedexpansion
@@ -662,6 +670,8 @@ jobs:
         if ("$(Build.Reason)" -ne "PullRequest") {
           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
         }
+  - task: CodeQL3000Finalize@0
+    condition: eq(variables.IS_MAIN_BRANCH, false)
 
 - job: build_windows_multi_arc
   dependsOn:
