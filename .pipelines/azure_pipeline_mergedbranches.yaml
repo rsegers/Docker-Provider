@@ -287,7 +287,7 @@ jobs:
     displayName: 'install prereqs'
 
   - task: CodeQL3000Init@0
-    condition: eq(variables.IS_MAIN_BRANCH, false)
+    condition: eq(variables.IS_MAIN_BRANCH, true)
   - script: |
       setlocal enabledelayedexpansion
       powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
@@ -468,7 +468,7 @@ jobs:
           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
         }
   - task: CodeQL3000Finalize@0
-    condition: eq(variables.IS_MAIN_BRANCH, false)
+    condition: eq(variables.IS_MAIN_BRANCH, true)
 
 - job: build_windows_2022
   timeoutInMinutes: 120
@@ -489,7 +489,7 @@ jobs:
     displayName: 'install prereqs'
 
   - task: CodeQL3000Init@0
-    condition: eq(variables.IS_MAIN_BRANCH, false)
+    condition: eq(variables.IS_MAIN_BRANCH, true)
 
   - script: |
       setlocal enabledelayedexpansion
@@ -671,7 +671,7 @@ jobs:
           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
         }
   - task: CodeQL3000Finalize@0
-    condition: eq(variables.IS_MAIN_BRANCH, false)
+    condition: eq(variables.IS_MAIN_BRANCH, true)
 
 - job: build_windows_multi_arc
   dependsOn:
