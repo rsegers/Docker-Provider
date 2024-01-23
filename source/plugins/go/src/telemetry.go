@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fluent/fluent-bit-go/output"
@@ -75,6 +76,12 @@ var (
 		"daemonset":  "DS",
 		"replicaset": "RS",
 	}
+	//Metrics map for the mdsd traces
+	MdsdErrorMetrics = map[string]float64{}
+	//Time ticker for sending mdsd errors as metrics
+	MdsdErrorMetricsTicker *time.Ticker
+	//Mutex for mdsd error metrics
+	MdsdErrorMetricsMutex = &sync.Mutex{}
 )
 
 const (
@@ -309,6 +316,26 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 	}
 }
 
+// SendMdsdTracesAsMetrics is a go-routine that flushes the mdsd traces as metrics periodically (every 5 mins to App Insights)
+func SendMdsdTracesAsMetrics(telemetryPushIntervalProperty string) {
+	telemetryPushInterval, err := strconv.Atoi(telemetryPushIntervalProperty)
+	if err != nil {
+		Log("Error Converting telemetryPushIntervalProperty %s. Using Default Interval... %d \n", telemetryPushIntervalProperty, defaultTelemetryPushIntervalSeconds)
+		telemetryPushInterval = defaultTelemetryPushIntervalSeconds
+	}
+
+	MdsdErrorMetricsTicker = time.NewTicker(time.Second * time.Duration(telemetryPushInterval))
+
+	for ; true; <-MdsdErrorMetricsTicker.C {
+		MdsdErrorMetricsMutex.Lock()
+		for metricName, metricValue := range MdsdErrorMetrics {
+			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricName, metricValue))
+		}
+		MdsdErrorMetrics = map[string]float64{}
+		MdsdErrorMetricsMutex.Unlock()
+	}
+}
+
 // SendEvent sends an event to App Insights
 func SendEvent(eventName string, dimensions map[string]string) {
 	Log("Sending Event : %s\n", eventName)
@@ -490,6 +517,16 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 	return 0, nil
 }
 
+func UpdateMdsdErrorMetrics(key string) {
+	MdsdErrorMetricsMutex.Lock()
+	if _, ok := MdsdErrorMetrics[key]; ok {
+		MdsdErrorMetrics[key]++
+	} else {
+		MdsdErrorMetrics[key] = 1
+	}
+	MdsdErrorMetricsMutex.Unlock()
+}
+
 // PushToAppInsightsTraces sends the log lines as trace messages to the configured App Insights Instance
 func PushToAppInsightsTraces(records []map[interface{}]interface{}, severityLevel contracts.SeverityLevel, tag string) int {
 	var logLines []string
@@ -500,6 +537,18 @@ func PushToAppInsightsTraces(records []map[interface{}]interface{}, severityLeve
 			populateKubeMonAgentEventHash(record, ConfigError)
 		} else if strings.Contains(logEntry, "E! [inputs.prometheus]") {
 			populateKubeMonAgentEventHash(record, PromScrapingError)
+		} else if strings.Contains(logEntry, "Lifetime validation failed. The token is expired.") {
+			UpdateMdsdErrorMetrics("MdsdTokenExpired")
+		} else if strings.Contains(logEntry, "Failed to upload to ODS: Error resolving address") {
+			UpdateMdsdErrorMetrics("MdsdODSUploadErrorResolvingAddress")
+		} else if strings.Contains(logEntry, "Data collection endpoint must be used to access configuration over private link") {
+			UpdateMdsdErrorMetrics("MdsdPrivateLinkNoDCE")
+		} else if strings.Contains(logEntry, "Failed to register certificate with OMS Homing Service:Error resolving address") {
+			UpdateMdsdErrorMetrics("MdsdOMSHomingServiceError")
+		} else if strings.Contains(logEntry, "Could not obtain configuration from") {
+			UpdateMdsdErrorMetrics("MdsdGetConfigError")
+		} else if strings.Contains(logEntry, " Failed to upload to ODS: 403") {
+			UpdateMdsdErrorMetrics("MdsdODSUploadError403")
 		} else {
 			logLines = append(logLines, logEntry)
 		}

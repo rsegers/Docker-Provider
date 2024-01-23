@@ -24,6 +24,7 @@ require_relative "ConfigParseErrorLogger"
 @containerLogsRoute = "v2" # default for linux
 @adxDatabaseName = "containerinsights" # default for all configurations
 @logEnableMultiline = "false"
+@stacktraceLanguages = "go,java,python,dotnet"
 @logEnableKubernetesMetadata = false
 @logKubernetesMetadataiIncludeFields = "podLabels,podAnnotations,podUid,image"
 @annotationBasedLogFiltering = false
@@ -164,6 +165,27 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "config:: WARN: container logs V2 is disabled and is required for multiline logging. Disabling multiline logging"
           @logEnableMultiline = "false"
         end
+
+        multilineLanguages = parsedConfig[:log_collection_settings][:enable_multiline_logs][:stacktrace_languages]
+        if !multilineLanguages.nil?
+          if multilineLanguages.kind_of?(Array)
+            # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+            # update stacktraceLanguages only if customer explicity overrode via configmap
+            #Empty the array to use the values from configmap
+            @stacktraceLanguages.clear
+            if multilineLanguages.length > 0 && multilineLanguages[0].kind_of?(String)
+              invalid_lang = multilineLanguages.any? { |lang| !["java", "python", "go", "dotnet"].include?(lang.downcase) }
+              if invalid_lang
+                puts "config::WARN: stacktrace languages contains invalid languages. Disabling multiline stacktrace logging"
+              else
+                @stacktraceLanguages = multilineLanguages.join(",").downcase
+                puts "config::Using config map setting for multiline languages"
+              end
+            else
+              puts "config::WARN: stacktrace languages is not an array of strings. Disabling multiline stacktrace logging"
+            end
+          end
+        end
       end
     rescue => errorStr
       ConfigParseErrorLogger.logError("Exception while reading config map settings for enabling multiline logs - #{errorStr}, using defaults, please check config map for errors")
@@ -278,6 +300,7 @@ if !file.nil?
   file.write("export AZMON_CONTAINER_LOG_SCHEMA_VERSION=#{@containerLogSchemaVersion}\n")
   file.write("export AZMON_ADX_DATABASE_NAME=#{@adxDatabaseName}\n")
   file.write("export AZMON_MULTILINE_ENABLED=#{@logEnableMultiline}\n")
+  file.write("export AZMON_MULTILINE_LANGUAGES=#{@stacktraceLanguages}\n")
   file.write("export AZMON_KUBERNETES_METADATA_ENABLED=#{@logEnableKubernetesMetadata}\n")
   file.write("export AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS=#{@logKubernetesMetadataiIncludeFields}\n")
   file.write("export AZMON_ANNOTATION_BASED_LOG_FILTERING=#{@annotationBasedLogFiltering}\n")
@@ -344,6 +367,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows("AZMON_ADX_DATABASE_NAME", @adxDatabaseName)
     file.write(commands)
     commands = get_command_windows("AZMON_MULTILINE_ENABLED", @logEnableMultiline)
+    file.write(commands)
+    commands = get_command_windows("AZMON_MULTILINE_LANGUAGES", @stacktraceLanguages)
     file.write(commands)
     commands = get_command_windows("AZMON_KUBERNETES_METADATA_ENABLED", @logEnableKubernetesMetadata)
     file.write(commands)
