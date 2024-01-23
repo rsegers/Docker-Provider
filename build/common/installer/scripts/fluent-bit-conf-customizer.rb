@@ -38,9 +38,9 @@ def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
 end
 
 def substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
-  if (!resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true") || (isWindows)
+  if (!resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true") || (@isWindows)
     puts "config::Starting to substitute the placeholders in fluent-bit.conf file for resource optimization"
-    if isWindows
+    if @isWindows
       new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/fluent-bit/azm-containers-input-plugins.conf")
     else
       new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/opt/microsoft/docker-cimprov/azm-containers-input-plugins.conf")
