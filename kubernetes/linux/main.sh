@@ -246,6 +246,8 @@ generateGenevaInfraNamespaceConfig() {
       rm /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf
 }
 
+echo "MARINER $(grep 'VERSION=' /etc/os-release)" >> packages_version.txt
+
 #using /var/opt/microsoft/docker-cimprov/state instead of /var/opt/microsoft/ama-logs/state since the latter gets deleted during onboarding
 mkdir -p /var/opt/microsoft/docker-cimprov/state
 echo "disabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
