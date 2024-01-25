@@ -863,21 +863,19 @@ if ($isGenevaModeVar) {
     #start Windows AMA
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
 }
-else {
-    if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
-        Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
+if (!$isGenevaModeVar -and ![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+    Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
 
-        #start Windows AMA
-        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
-        $version = Get-Content -Path "C:\opt\windowsazuremonitoragent\version.txt"
-        Write-Host $version
-    }
-    else {
-        Write-Host "Starting Windows in Cert Auth Mode"
-        Generate-Certificates
-        Test-CertificatePath
-    }
-} 
+    #start Windows AMA
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
+    $version = Get-Content -Path "C:\opt\windowsazuremonitoragent\version.txt"
+    Write-Host $version
+}
+else {
+    Write-Host "Starting Windows in Cert Auth Mode"
+    Generate-Certificates
+    Test-CertificatePath
+}
 
 
 Start-Fluent-Telegraf
