@@ -44,9 +44,10 @@ def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
 end
 
 def substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
-  if (!resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true") || (@isWindows && @using_aad_msi_auth)
+  #Update the config file only in two conditions: 1. Linux and resource optimization is enabled 2. Windows and using aad msi auth
+  if (!@isWindows && !resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true") || (@isWindows && @using_aad_msi_auth)
     puts "config::Starting to substitute the placeholders in fluent-bit.conf file for resource optimization"
-    if (@isWindows && @using_aad_msi_auth)
+    if (@isWindows)
       new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/fluent-bit/azm-containers-input-plugins.conf")
     else
       new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/opt/microsoft/docker-cimprov/azm-containers-input-plugins.conf")
