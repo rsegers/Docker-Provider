@@ -435,9 +435,6 @@ function Read-Configs {
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
     Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setagentenv.txt"
 
-    #Replace placeholders in fluent-bit.conf
-    ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
-
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
     Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setgenevaconfigenv.txt"
 
@@ -451,6 +448,9 @@ function Read-Configs {
     else {
         Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
     }
+
+    #Replace placeholders in fluent-bit.conf
+    ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
     $enableFbitInternalMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", "process")
     if (![string]::IsNullOrEmpty($enableFbitInternalMetrics)) {

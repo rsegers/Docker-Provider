@@ -17,6 +17,11 @@ if !ENV["USING_AAD_MSI_AUTH"].nil? && !ENV["USING_AAD_MSI_AUTH"].empty? && ENV["
   @using_aad_msi_auth = true
 end
 
+@geneva_logs_integration = false
+if !ENV["GENEVA_LOGS_INTEGRATION"].nil? && !ENV["GENEVA_LOGS_INTEGRATION"].empty? && ENV["GENEVA_LOGS_INTEGRATION"].strip.casecmp("true") == 0
+  @geneva_logs_integration = true
+end
+
 
 @default_service_interval = "15"
 @default_mem_buf_limit = "10"
@@ -44,8 +49,8 @@ def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
 end
 
 def substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
-  #Update the config file only in two conditions: 1. Linux and resource optimization is enabled 2. Windows and using aad msi auth
-  if (!@isWindows && !resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true") || (@isWindows && @using_aad_msi_auth)
+  #Update the config file only in two conditions: 1. Linux and resource optimization is enabled 2. Windows and using aad msi auth and not using geneva logs integration
+  if (!@isWindows && !resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true") || (@isWindows && @using_aad_msi_auth && !@geneva_logs_integration)
     puts "config::Starting to substitute the placeholders in fluent-bit.conf file for resource optimization"
     if (@isWindows)
       new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/fluent-bit/azm-containers-input-plugins.conf")
