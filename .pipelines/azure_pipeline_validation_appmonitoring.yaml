@@ -143,8 +143,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/helm
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
+        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai
         kubectl delete -f appmonitoring-deployment.yaml
 
         echo "Wait for 10s for everything to clear up..."
@@ -165,8 +165,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/scripts
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
+        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai
 
         sudo chmod u+x ./validate-aks-charts.sh
         sudo chmod u+x ./validate-certs.sh
@@ -181,9 +181,9 @@ jobs:
   #   inputs:
   #     deploymentScope: 'Resource Group'
   #     azureResourceManagerConnection: 'ai-acr-validation-rsx'
-  #     subscriptionId: '66010356-d8a5-42d3-8593-6aaa3aeb1c11'
+  #     subscriptionId: '5a3b3ba4-3a42-42ae-b2cb-f882345803bc'
   #     action: 'Create Or Update Resource Group'
-  #     resourceGroupName: 'appmonitoring-pipeline-test'
+  #     resourceGroupName: 'aks-appmonitoring-pipeline'
   #     location: 'East US'
   #     templateLocation: 'Linked artifact'
   #     csmFile: '/path/to/here'
@@ -198,8 +198,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/helm
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
+        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai
         kubectl delete -f java-test-app.yaml
         kubectl delete -f dotnet-test-app.yaml
         kubectl delete -f node-test-app.yaml
@@ -236,8 +236,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/scripts
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription 5a3b3ba4-3a42-42ae-b2cb-f882345803bc
+        az aks get-credentials --resource-group aks-appmonitoring-pipeline --name aks-pipeline-validation-ai
         
         sudo chmod u+x ./validate-mutation.sh
         ./validate-mutation.sh "dotnet-test-app" "java-test-app" "nodejs-test-app" "test-ns"
