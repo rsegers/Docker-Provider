@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: windows-resource-intensive-app
-  namespace: kube-system
+  namespace: lwtest
   annotations:
     description: "Scale test deployment for a resource-intensive app"
     build-information: "Built on 2023-12-29"
@@ -10,7 +10,7 @@ metadata:
     purpose: scale-testing
     environment: test
 spec:
-  replicas: 5
+  replicas: 2
   selector:
     matchLabels:
       app: windows-resource-intensive-app

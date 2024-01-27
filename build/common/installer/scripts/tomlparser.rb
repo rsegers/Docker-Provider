@@ -26,7 +26,7 @@ require_relative "ConfigParseErrorLogger"
 @logEnableMultiline = "false"
 @stacktraceLanguages = "go,java,python,dotnet"
 @logEnableKubernetesMetadata = false
-@logKubernetesMetadataiIncludeFields = "podLabels,podAnnotations,podUid,image"
+@logKubernetesMetadataIncludeFields = "podLabels,podAnnotations,podUid,image"
 @annotationBasedLogFiltering = false
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
@@ -240,7 +240,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "config::Using config map setting for kubernetes metadata include fields"
           include_fields = parsedConfig[:log_collection_settings][:metadata_collection][:include_fields]
           if include_fields.kind_of?(Array)
-            @logKubernetesMetadataiIncludeFields = include_fields.join(",")
+            @logKubernetesMetadataIncludeFields = include_fields.join(",")
           end
         end
       end
