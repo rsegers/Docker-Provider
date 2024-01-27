@@ -3,11 +3,18 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
-pr: none
+trigger:
+  batch: true
+  branches:
+    include:
+    - ai_prod
+  tags:
+    include:
+    - '*-appmonitoring'
 
 variables:
-  armServiceConnectionName: 'ai-acr-validation-rsx'
-  subscription: '66010356-d8a5-42d3-8593-6aaa3aeb1c11'
+  armServiceConnectionName: 'Appmonitoring_AKS_connection'
+  subscription: '5a3b3ba4-3a42-42ae-b2cb-f882345803bc'
   containerRegistry: 'aicommon' # this build pushes the aidev image to the dev ACR (caution: ACR that has "prod" in its name is the dev one, the one without "prod" is prod AME)
   repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/applicationinsights/aidev'
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
@@ -38,20 +45,28 @@ jobs:
     name: setup
 
 - job: build_linux
+  
   timeoutInMinutes: 120
   dependsOn: common
   pool:
     name: rambhatt-test-es-pool
   variables:
     imageTag: $[ dependencies.common.outputs['setup.imageTag'] ]
-    fullImageName: ${{ variables.repoImageName }}:$(imageTag)-test
-    javaTestAppImageName: 'rambhattacr.azurecr.io/demoaks-java-app:latest'
-    dotnetTestAppImageName: 'rambhattacr.azurecr.io/demoaks-dotnet-app:latest'
-    nodeTestAppImageName: 'rambhattacr.azurecr.io/demoaks-nodejs-app:latest'
+    testImageName: ${{ variables.repoImageName }}-test:$(imageTag)-$(Build.BuildId)
+    fullImageName: ${{ variables.repoImageName }}:$(imageTag)
+    javaTestAppImageName: 'aicommon.azurecr.io/demoaks-java-app:latest'
+    javaTestAppName: 'test-app-java'
+    dotnetTestAppImageName: 'aicommon.azurecr.io/demoaks-dotnet-app:latest'
+    dotnetTestAppName: 'test-app-dotnet'
+    nodeTestAppImageName: 'aicommon.azurecr.io/demoaks-nodejs-app:latest'
+    nodeTestAppName: 'test-app-nodejs'
     testNamespace: 'test-ns'
-    aiConnectionString: 'InstrumentationKey=910190fd-f49a-48e3-b6ac-6f0df84ceb5e;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/'
+    aiConnectionString: 'InstrumentationKey=2b453402-fcfb-408f-8495-c551f0e82f46;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/'
+    aiResourceId: '/subscriptions/5a3b3ba4-3a42-42ae-b2cb-f882345803bc/resourceGroups/aks-appmonitoring-pipeline/providers/microsoft.insights/components/appmonitoring-pipeline-validation-ai'
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'linuxbuild'
+    AKSResourceGroup: 'aks-appmonitoring-pipeline'
+    AKSResourceName: 'aks-pipeline-validation-ai'
     # This is necessary because of: https://github.com/moby/moby/issues/37965
     DOCKER_BUILDKIT: 1
 
@@ -129,10 +144,10 @@ jobs:
 
         echo "Build reason = $(Build.Reason)"
 
-        echo ${{ variables.fullImageName }}
+        echo ${{ variables.testImageName }}
         
-        docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.fullImageName }} -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
-        docker pull ${{ variables.fullImageName }}
+        docker buildx build --platform linux/amd64,linux/arm64 --tag ${{ variables.testImageName }} -f ./Dockerfile --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --push --provenance=false .
+        docker pull ${{ variables.testImageName }}
 
   - task: AzureCLI@2
     displayName: "Create deployment in AKS"
@@ -141,16 +156,16 @@ jobs:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
-        cd appmonitoring/helm
+        cd appmonitoring/validation-helm
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription ${{ variables.subscription }}
+        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
         kubectl delete -f appmonitoring-deployment.yaml
 
         echo "Wait for 10s for everything to clear up..."
         sleep 10
 
-        export AIDEV_IMAGE_NAME=${{ variables.fullImageName }}
+        export AIDEV_IMAGE_NAME=${{ variables.testImageName }}
         cat appmonitoring-deployment.yaml | envsubst | kubectl apply -f -
 
         echo "Wait for 10s for charts to be applied..."
@@ -165,8 +180,8 @@ jobs:
       inlineScript: |
         cd appmonitoring/scripts
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription ${{ variables.subscription }}
+        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
 
         sudo chmod u+x ./validate-aks-charts.sh
         sudo chmod u+x ./validate-certs.sh
@@ -177,18 +192,6 @@ jobs:
         echo "Checking for certificate installation..."
         ./validate-certs.sh
 
-  # - task: AzureResourceManagerTemplateDeployment@3
-  #   inputs:
-  #     deploymentScope: 'Resource Group'
-  #     azureResourceManagerConnection: 'ai-acr-validation-rsx'
-  #     subscriptionId: '66010356-d8a5-42d3-8593-6aaa3aeb1c11'
-  #     action: 'Create Or Update Resource Group'
-  #     resourceGroupName: 'appmonitoring-pipeline-test'
-  #     location: 'East US'
-  #     templateLocation: 'Linked artifact'
-  #     csmFile: '/path/to/here'
-  #     deploymentMode: 'Incremental'
-
   - task: AzureCLI@2
     displayName: "Install CR and test apps"
     inputs:
@@ -196,23 +199,27 @@ jobs:
       scriptType: bash
       scriptLocation: inlineScript
       inlineScript: |
-        cd appmonitoring/helm
+        cd appmonitoring/validation-helm
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
-        kubectl delete -f java-test-app.yaml
-        kubectl delete -f dotnet-test-app.yaml
-        kubectl delete -f node-test-app.yaml
-        kubectl delete -f appmonitoring-cr.yaml
-
-        echo "Wait for 10s for everything to clear up..."
-        sleep 10
+        az account set --subscription ${{ variables.subscription }}
+        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
 
         export JAVA_TEST_IMAGE_NAME=${{ variables.javaTestAppImageName }}
         export DOTNET_TEST_IMAGE_NAME=${{ variables.dotnetTestAppImageName }}
         export NODEJS_TEST_IMAGE_NAME=${{ variables.nodeTestAppImageName }}
         export TEST_NS="${{ variables.testNamespace }}"
         export AI_CONNECTION_STRING="${{ variables.aiConnectionString }}"
+        export DOTNET_TEST_APP_NAME="${{ variables.dotnetTestAppName }}"
+        export JAVA_TEST_APP_NAME="${{ variables.javaTestAppName }}"
+        export NODEJS_TEST_APP_NAME="${{ variables.nodeTestAppName }}"
+
+        cat java-test-app.yaml | envsubst | kubectl delete -f -
+        cat dotnet-test-app.yaml | envsubst | kubectl delete -f -
+        cat node-test-app.yaml | envsubst | kubectl delete -f -
+        car appmonitoring-cr.yaml | envsubst | kubectl delete -f -
+
+        echo "Wait for 10s for everything to clear up..."
+        sleep 10
 
         kubectl create namespace $TEST_NS
 
@@ -224,8 +231,8 @@ jobs:
         cat dotnet-test-app.yaml | envsubst | kubectl apply -f -
         cat node-test-app.yaml | envsubst | kubectl apply -f -
 
-        echo "Wait for 10s for charts to be applied..."
-        sleep 10
+        echo "Wait for 60s for charts to be applied..."
+        sleep 60
 
   - task: AzureCLI@2
     displayName: "Check test apps were mutated correctly"
@@ -236,10 +243,53 @@ jobs:
       inlineScript: |
         cd appmonitoring/scripts
         pwd
-        az account set --subscription 66010356-d8a5-42d3-8593-6aaa3aeb1c11
-        az aks get-credentials --resource-group appmonitoring-pipeline-test --name aks-pipeline-testbed-ai
+        az account set --subscription ${{ variables.subscription }}
+        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }}
         
         sudo chmod u+x ./validate-mutation.sh
         ./validate-mutation.sh "dotnet-test-app" "java-test-app" "nodejs-test-app" "test-ns"
+
+  - task: AzureCLI@2
+    displayName: "Check test apps are sending telemetry to AI"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        cd appmonitoring/scripts
+        pwd
+        az account set --subscription ${{ variables.subscription }}
+        az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
+        export DOTNET_TEST_APP_NAME="${{ variables.dotnetTestAppName }}"
+        export JAVA_TEST_APP_NAME="${{ variables.javaTestAppName }}"
+        export NODEJS_TEST_APP_NAME="${{ variables.nodeTestAppName }}"
+
+        echo "Wait for 3m for telemetry to flow..."
+        sleep 180
+        
+        sudo chmod u+x ./validate_ai.sh
+        ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}"
+
+  - task: AzureCLI@2
+    displayName: "Retag the image as ready to deploy"
+    inputs:
+      azureSubscription: ${{ variables.armServiceConnectionName }}
+      scriptType: bash
+      scriptLocation: inlineScript
+      inlineScript: |
+        az --version
+        az account show
+        az account set -s ${{ variables.subscription }}
+        az acr login -n ${{ variables.containerRegistry }}
+
+        docker pull ${{ variables.testImageName }}
+        docker tag ${{ variables.testImageName }} ${{ variables.fullImageName }}
+        docker push ${{ variables.fullImageName }}
+        
+  - task: CodeQL3000Finalize@0
+
+
+
+
 
 

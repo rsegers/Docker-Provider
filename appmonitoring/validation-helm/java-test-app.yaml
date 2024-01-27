@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name:  java-test-app
+  name: ${JAVA_TEST_APP_NAME}
   namespace: ${TEST_NS}
   labels:
     app: test-app-java
