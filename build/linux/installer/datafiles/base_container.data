@@ -239,6 +239,10 @@ chmod 666 /var/opt/microsoft/docker-cimprov/log/appinsights_error.log
 touch /var/opt/microsoft/docker-cimprov/log/fluentd.log
 chmod 666 /var/opt/microsoft/docker-cimprov/log/fluentd.log
 
+touch /var/opt/microsoft/docker-cimprov/log/telegraf_error.log
+chmod 666 /var/opt/microsoft/docker-cimprov/log/telegraf_error.log
+
+
 %Postuninstall_10
 # If we're an upgrade, skip all of this cleanup
 if ${{PERFORMING_UPGRADE_NOT}}; then
