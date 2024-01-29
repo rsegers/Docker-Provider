@@ -823,7 +823,7 @@ func getNodeLastRebootTimeMetric(metricInfo map[string]interface{}, hostName, me
 
 	metricCollection := map[string]interface{}{
 		"CounterName": metricKey,
-		"Value":       timeDifference,
+		"Value":       epochTime,
 	}
 
 	metricCollections := []map[string]interface{}{metricCollection}
