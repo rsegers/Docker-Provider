@@ -129,6 +129,7 @@ MAINTAINER:              'Microsoft Corporation'
 
 /etc/fluent/kube.conf;			                                                          build/linux/installer/conf/kube.conf;                  644; root; root
 /etc/fluent/container.conf;			                                                    build/linux/installer/conf/container.conf;                  644; root; root
+/etc/fluent/windows_rs.conf;                                                            build/linux/installer/conf/windows_rs.conf;                  644; root; root
 
 /etc/fluent/plugin/in_cadvisor_perf.rb;			                                        source/plugins/ruby/in_cadvisor_perf.rb;		    	644; root; root
 /etc/fluent/plugin/in_win_cadvisor_perf.rb;			                                     source/plugins/ruby/in_win_cadvisor_perf.rb;		    	644; root; root

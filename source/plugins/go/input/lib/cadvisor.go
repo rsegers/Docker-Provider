@@ -781,22 +781,29 @@ func getNodeLastRebootTimeMetric(metricInfo map[string]interface{}, hostName, me
 		return nodeMetricItem
 	}
 
-	var timeDifference int64
+	var epochTime int64
 	if osType != "" && strings.EqualFold(osType, "windows") && IsAADMSIAuthMode() {
 		//Read from "C:\\etc\\kubernetes\\host\\windowsnodereset.log"
-		uptimeStr, err := ioutil.ReadFile("C:\\etc\\kubernetes\\host\\windowsnodereset.log")
+		startTimeStr, err := ioutil.ReadFile("C:\\etc\\kubernetes\\host\\windowsnodereset.log")
 		if err != nil {
 			Log.Warnf("Error reading C:\\etc\\kubernetes\\host\\windowsnodereset.log: %s", err)
 			return nodeMetricItem
 		}
-		uptimeDateTimeStr := strings.Fields(string(uptimeStr))[0]
-		//convert the string to a time and then to a float
-		uptimeDateTime, err := time.Parse(time.RFC3339, uptimeDateTimeStr)
+		//parse the string with the layout to get the time
+		startDateTimeStr := strings.Fields(string(startTimeStr))[0]
+		layout := "2006-01-02T15:04:05.9999999-07:00:"
+		startDateTime, err := time.Parse(layout, startDateTimeStr)
+		if err != nil {
+			Log.Warnf("Error parsing time according to layout: %s", err)
+			return nodeMetricItem
+		}
+		formattedDateTime := startDateTime.UTC().Format(time.RFC3339)
+		startTime, err := time.Parse(time.RFC3339, formattedDateTime)
 		if err != nil {
 			Log.Warnf("Error parsing time: %s", err)
 			return nodeMetricItem
 		}
-		timeDifference = parsedTime.Unix() - uptimeDateTime.Unix()
+		epochTime = startTime.Unix()
 	} else {
 		// Read the first value from /proc/uptime and convert it to a float64
 		uptimeStr, err := ioutil.ReadFile("/proc/uptime")
@@ -811,7 +818,7 @@ func getNodeLastRebootTimeMetric(metricInfo map[string]interface{}, hostName, me
 			return nodeMetricItem
 		}
 
-		timeDifference = parsedTime.Unix() - int64(uptimeSeconds)
+		epochTime = parsedTime.Unix() - int64(uptimeSeconds)
 	}
 
 	metricCollection := map[string]interface{}{
