@@ -1069,9 +1069,10 @@ spec:
           # - name: USING_AAD_MSI_AUTH
           #   value: "true"
          volumeMounts:
-          - name: kube-api-access
-            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
-            readOnly: true
+          #  Use this when telegraf upgraded to 1.28.5 or higher
+          # - name: kube-api-access
+          #   mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          #   readOnly: true
           - mountPath: C:\ProgramData\docker\containers
             name: docker-windows-containers
             readOnly: true
@@ -1131,23 +1132,24 @@ spec:
      - operator: "Exists"
        effect: PreferNoSchedule
      volumes:
-      - name: kube-api-access
-        projected:
-          sources:
-          - serviceAccountToken:
-              path: token
-              expirationSeconds: 3600
-          - configMap:
-              items:
-              - key: ca.crt
-                path: ca.crt
-              name: kube-root-ca.crt
-          - downwardAPI:
-              items:
-              - fieldRef:
-                  apiVersion: v1
-                  fieldPath: metadata.namespace
-                path: namespace
+      #  Use this when telegraf upgraded to 1.28.5 or higher
+      # - name: kube-api-access
+      #   projected:
+      #     sources:
+      #     - serviceAccountToken:
+      #         path: token
+      #         expirationSeconds: 3600
+      #     - configMap:
+      #         items:
+      #         - key: ca.crt
+      #           path: ca.crt
+      #         name: kube-root-ca.crt
+      #     - downwardAPI:
+      #         items:
+      #         - fieldRef:
+      #             apiVersion: v1
+      #             fieldPath: metadata.namespace
+      #           path: namespace
       - name: docker-windows-kuberenetes-container-logs
         hostPath:
           path: C:\var
