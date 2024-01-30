@@ -26,7 +26,7 @@ TAG_EXISTS_STATUS=0 #Default value for the condition when the echo fails below
 AZ_ACR_IMPORT_FORCE=""
 
 echo "checking tags"
-echo $MCR_TAG_RESULT | jq '.tags' | grep -q \""$WEBHOOK_IMAGE_TAG_SUFFIX"\" || TAG_EXISTS_STATUS=$?
+echo $MCR_TAG_RESULT | jq '.tags' | grep -Fq \""$WEBHOOK_IMAGE_TAG_SUFFIX"\" || TAG_EXISTS_STATUS=$?
 
 echo "TAG_EXISTS_STATUS = $TAG_EXISTS_STATUS; OVERRIDE_TAG = $OVERRIDE_TAG"
 
