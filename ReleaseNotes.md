@@ -8,6 +8,53 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 01/23/2024 -
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.17 (linux)
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.17 (windows)
+##### Release branch: https://github.com/microsoft/Docker-Provider/commits/release-ciprod-3.1.17/
+##### Current dependencies
+- Linux
+  - [CBL-Mariner 2.0.20231004](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20231004-2.0)
+  - Golang - 1.20.5
+  - Ruby - 3.1.3
+  - MDSD - 1.29.4
+  - Telegraf - 1.27.3
+  - Fluent-bit - 2.0.9
+  - Fluentd - 1.14.6
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.14
+  - Telegraf - 1.24.2
+  - Fluentd - 1.14.6
+  - Windows AMA - 46.9.43
+  - Golang - 1.20.5
+##### Code change log
+## What's Changed
+- Common
+    * Longw/esrp signing and dynamic scripts refactoring by @wanlonghenry in #1087
+    * Add user agent to KubeAPI and CAdvisor clients by @pfrcks in #1108
+    * Gangams/dotnet core version update by @ganga1980 in #1110
+    * Fix bug by @pfrcks in #1111
+    * Update pipeline build image from ubuntu 18 to 20 by @wanlonghenry in #1119
+    * Add telegraf enabled/disabled info in TelegrafMetricsSentCount by @jatakiajanvi12 in #1121
+    * Telemetry gap: Adding missing heartbeat telemetry by @jatakiajanvi12 in #1129
+    * Telemetry optimization - Add K8sAPI and CAdvisorAPI response code telemetry in customMetrics by @jatakiajanvi12 in #1122
+    * Telemetry gap: Add PerfMetricsCount and HPACount metrics by @jatakiajanvi12 in #1131
+    * Make multiline languages configurable by @pfrcks in #1149
+    * Telemetry optimization: Sending mdsd error traces as metrics by @jatakiajanvi12 in #1147
+    * Change multiline default config to disable all by @wanlonghenry in #1153
+    * Upgrade pipeline ubuntu image version by @wanlonghenry in #1156
+- Linux
+    * Fix telegraf rs false errors by @pfrcks in #1105
+    * Update the fluent-bit plugins and telegraf to version 1.27.3 by @jatakiajanvi12 in #1107
+    * Gangams/mdsd update for FIPS and FedRamp compliance by @ganga1980 in #1135
+- Windows
+    * Send kubemonagent event using windows ama by @jatakiajanvi12 in #1127
+    * Removing the exit condition if credentials not provided for proxy in Windows by @jatakiajanvi12 in #1136
+    * Removing the certificate creation for geneva non MSI by @jatakiajanvi12 in #1137
+    * Fix the geneva logs multi-tenancy regression in legacy mode by @ganga1980 in #1161
+- Azure Arc K8s Extension
+    * Gangams/fix arc k8s windows custom metrics bug by @ganga1980 in #1118
 
 ### 12/08/2023 -
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.16 (linux)
