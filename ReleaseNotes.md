@@ -8,7 +8,7 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
-### 01/23/2024 -
+### 01/31/2024 -
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.17 (linux)
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.17 (windows)
 ##### Release branch: https://github.com/microsoft/Docker-Provider/commits/release-ciprod-3.1.17/
