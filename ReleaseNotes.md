@@ -40,8 +40,8 @@ additional questions or comments.
     * Telemetry gap: Adding missing heartbeat telemetry by @jatakiajanvi12 in #1129
     * Telemetry optimization - Add K8sAPI and CAdvisorAPI response code telemetry in customMetrics by @jatakiajanvi12 in #1122
     * Telemetry gap: Add PerfMetricsCount and HPACount metrics by @jatakiajanvi12 in #1131
-    * Make multiline languages configurable by @pfrcks in #1149
     * Telemetry optimization: Sending mdsd error traces as metrics by @jatakiajanvi12 in #1147
+    * Make multiline languages configurable by @pfrcks in #1149
     * Change multiline default config to disable all by @wanlonghenry in #1153
     * Upgrade pipeline ubuntu image version by @wanlonghenry in #1156
 - Linux
