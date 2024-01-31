@@ -14,7 +14,7 @@ additional questions or comments.
 ##### Release branch: https://github.com/microsoft/Docker-Provider/commits/release-ciprod-3.1.17/
 ##### Current dependencies
 - Linux
-  - [CBL-Mariner 2.0.20231004](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20231004-2.0)
+  - [CBL-Mariner 2.0.20240123](https://github.com/microsoft/CBL-Mariner/releases/tag/2.0.20240123-2.0)
   - Golang - 1.20.5
   - Ruby - 3.1.3
   - MDSD - 1.29.4
