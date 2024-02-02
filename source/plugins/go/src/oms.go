@@ -283,14 +283,14 @@ type DataItemLAv2 struct {
 
 // DataItemADX == ContainerLogV2 table in ADX
 type DataItemADX struct {
-	TimeGenerated string `json:"TimeGenerated"`
-	Computer      string `json:"Computer"`
-	ContainerId   string `json:"ContainerId"`
-	ContainerName string `json:"ContainerName"`
-	PodName       string `json:"PodName"`
-	PodNamespace  string `json:"PodNamespace"`
-	LogMessage    string `json:"LogMessage"`
-	LogSource     string `json:"LogSource"`
+	TimeGenerated   string `json:"TimeGenerated"`
+	Computer        string `json:"Computer"`
+	ContainerId     string `json:"ContainerId"`
+	ContainerName   string `json:"ContainerName"`
+	PodName         string `json:"PodName"`
+	PodNamespace    string `json:"PodNamespace"`
+	LogMessage      string `json:"LogMessage"`
+	LogSource       string `json:"LogSource"`
 	AzureResourceId string `json:"AzureResourceId"`
 }
 
@@ -1132,25 +1132,25 @@ func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList 
 				includedMetadata["podLabels"] = val
 			}
 		case "podannotations":
-            if val, ok := kubernetesMetadataMap["annotations"]; ok {
-                if annotationsMap, ok := val.(map[string]interface{}); ok {
-                    filteredAnnotations := make(map[string]interface{})
-                    for key, annotationValue := range annotationsMap {
-                        if !strings.Contains(key, "kubernetes.io/config") {
-                            filteredAnnotations[key] = annotationValue
-                        }
-                    }
-                    includedMetadata["podAnnotations"] = filteredAnnotations
-                }
-            }
+			if val, ok := kubernetesMetadataMap["annotations"]; ok {
+				if annotationsMap, ok := val.(map[string]interface{}); ok {
+					filteredAnnotations := make(map[string]interface{})
+					for key, annotationValue := range annotationsMap {
+						if !strings.Contains(key, "kubernetes.io/config") {
+							filteredAnnotations[key] = annotationValue
+						}
+					}
+					includedMetadata["podAnnotations"] = filteredAnnotations
+				}
+			}
 		case "image":
-            // Process Image Hash
+			// Process Image Hash
 			if hash, ok := kubernetesMetadataMap["container_hash"].(string); ok {
 				if atLocation := strings.Index(hash, "@"); atLocation != -1 {
 					includedMetadata["ImageID"] = hash[atLocation+1:]
 				}
 			}
-			
+
 			// Process Image Name
 			if image, ok := kubernetesMetadataMap["container_image"].(string); ok {
 				slashLocation := strings.Index(image, "/")
@@ -1185,7 +1185,7 @@ func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList 
 					}
 				}
 			}
-        }
+		}
 	}
 	return includedMetadata
 }
