@@ -26,7 +26,7 @@ require_relative "ConfigParseErrorLogger"
 @logEnableMultiline = "false"
 @stacktraceLanguages = "go,java,python,dotnet"
 @logEnableKubernetesMetadata = false
-@logKubernetesMetadataIncludeFields = "podLabels,podAnnotations,podUid,image"
+@logKubernetesMetadataIncludeFields = "podlabels,podannotations,poduid,image"
 @annotationBasedLogFiltering = false
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
@@ -239,8 +239,18 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         if !parsedConfig[:log_collection_settings][:metadata_collection][:include_fields].nil?
           puts "config::Using config map setting for kubernetes metadata include fields"
           include_fields = parsedConfig[:log_collection_settings][:metadata_collection][:include_fields]
-          if include_fields.kind_of?(Array)
-            @logKubernetesMetadataIncludeFields = include_fields.join(",")
+          if include_fields.empty?
+            puts "config::Include fields specified for Kubernetes metadata is empty, disabling Kubernetes metadata"
+            @logEnableKubernetesMetadata = false
+          elsif include_fields.kind_of?(Array)
+            include_fields.map!(&:downcase)
+            predefined_fields = @logKubernetesMetadataIncludeFields.downcase.split(',')
+            any_field_match = include_fields.any? { |field| predefined_fields.include?(field) }
+            if any_field_match
+              @logKubernetesMetadataIncludeFields = include_fields.join(",")
+            else
+              puts "config::Include fields specified for Kubernetes metadata does not match any predefined fields, disabling Kubernetes metadata"
+              @logEnableKubernetesMetadata = false
           end
         end
       end
@@ -302,7 +312,7 @@ if !file.nil?
   file.write("export AZMON_MULTILINE_ENABLED=#{@logEnableMultiline}\n")
   file.write("export AZMON_MULTILINE_LANGUAGES=#{@stacktraceLanguages}\n")
   file.write("export AZMON_KUBERNETES_METADATA_ENABLED=#{@logEnableKubernetesMetadata}\n")
-  file.write("export AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS=#{@logKubernetesMetadataiIncludeFields}\n")
+  file.write("export AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS=#{@logKubernetesMetadataIncludeFields}\n")
   file.write("export AZMON_ANNOTATION_BASED_LOG_FILTERING=#{@annotationBasedLogFiltering}\n")
   # Close file after writing all environment variables
   file.close
@@ -372,7 +382,7 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     file.write(commands)
     commands = get_command_windows("AZMON_KUBERNETES_METADATA_ENABLED", @logEnableKubernetesMetadata)
     file.write(commands)
-    commands = get_command_windows("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS", @logKubernetesMetadataiIncludeFields)
+    commands = get_command_windows("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS", @logKubernetesMetadataIncludeFields)
     file.write(commands)
     commands = get_command_windows("AZMON_ANNOTATION_BASED_LOG_FILTERING", @annotationBasedLogFiltering)
     file.write(commands)
