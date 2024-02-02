@@ -302,7 +302,7 @@ if !file.nil?
   file.write("export AZMON_MULTILINE_ENABLED=#{@logEnableMultiline}\n")
   file.write("export AZMON_MULTILINE_LANGUAGES=#{@stacktraceLanguages}\n")
   file.write("export AZMON_KUBERNETES_METADATA_ENABLED=#{@logEnableKubernetesMetadata}\n")
-  file.write("export AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS=#{@logKubernetesMetadataiIncludeFields}\n")
+  file.write("export AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS=#{@logKubernetesMetadataIncludeFields}\n")
   file.write("export AZMON_ANNOTATION_BASED_LOG_FILTERING=#{@annotationBasedLogFiltering}\n")
   # Close file after writing all environment variables
   file.close
@@ -372,7 +372,7 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     file.write(commands)
     commands = get_command_windows("AZMON_KUBERNETES_METADATA_ENABLED", @logEnableKubernetesMetadata)
     file.write(commands)
-    commands = get_command_windows("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS", @logKubernetesMetadataiIncludeFields)
+    commands = get_command_windows("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS", @logKubernetesMetadataIncludeFields)
     file.write(commands)
     commands = get_command_windows("AZMON_ANNOTATION_BASED_LOG_FILTERING", @annotationBasedLogFiltering)
     file.write(commands)
