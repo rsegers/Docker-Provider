@@ -1147,7 +1147,7 @@ func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList 
 			// Process Image Hash
 			if hash, ok := kubernetesMetadataMap["container_hash"].(string); ok {
 				if atLocation := strings.Index(hash, "@"); atLocation != -1 {
-					includedMetadata["ImageID"] = hash[atLocation+1:]
+					includedMetadata["imageID"] = hash[atLocation+1:]
 				}
 			}
 
@@ -1164,24 +1164,24 @@ func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList 
 					// Image with tag
 					if slashLocation != -1 && slashLocation < colonLocation {
 						// repository/image:tag
-						includedMetadata["Repository"] = image[:slashLocation]
-						includedMetadata["Image"] = image[slashLocation+1 : colonLocation]
+						includedMetadata["repository"] = image[:slashLocation]
+						includedMetadata["image"] = image[slashLocation+1 : colonLocation]
 					} else {
 						// image:tag without repository
-						includedMetadata["Image"] = image[:colonLocation]
+						includedMetadata["image"] = image[:colonLocation]
 					}
-					includedMetadata["ImageTag"] = image[colonLocation+1:]
+					includedMetadata["imageTag"] = image[colonLocation+1:]
 				} else {
 					// Image without tag, possibly with repository
 					if slashLocation != -1 {
-						includedMetadata["Repository"] = image[:slashLocation]
-						includedMetadata["Image"] = image[slashLocation+1:]
+						includedMetadata["repository"] = image[:slashLocation]
+						includedMetadata["image"] = image[slashLocation+1:]
 					} else {
 						// Plain image without repository or tag
-						includedMetadata["Image"] = image
+						includedMetadata["image"] = image
 					}
 					if atLocation == -1 {
-						includedMetadata["ImageTag"] = "latest" // No tag specified, default to "latest"
+						includedMetadata["imageTag"] = "latest" // No tag specified, default to "latest"
 					}
 				}
 			}
