@@ -1157,27 +1157,27 @@ func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList 
 				colonLocation := strings.Index(image, ":")
 				atLocation := strings.Index(image, "@")
 				if atLocation != -1 {
-					// Exclude the digest part for repository/image/tag parsing
+					// Exclude the digest part for imageRepo/image/tag parsing
 					image = image[:atLocation]
 				}
 				if colonLocation != -1 {
 					// Image with tag
 					if slashLocation != -1 && slashLocation < colonLocation {
-						// repository/image:tag
-						includedMetadata["repository"] = image[:slashLocation]
+						// imageRepo/image:tag
+						includedMetadata["imageRepo"] = image[:slashLocation]
 						includedMetadata["image"] = image[slashLocation+1 : colonLocation]
 					} else {
-						// image:tag without repository
+						// image:tag without imageRepo
 						includedMetadata["image"] = image[:colonLocation]
 					}
 					includedMetadata["imageTag"] = image[colonLocation+1:]
 				} else {
-					// Image without tag, possibly with repository
+					// Image without tag, possibly with imageRepo
 					if slashLocation != -1 {
-						includedMetadata["repository"] = image[:slashLocation]
+						includedMetadata["imageRepo"] = image[:slashLocation]
 						includedMetadata["image"] = image[slashLocation+1:]
 					} else {
-						// Plain image without repository or tag
+						// Plain image without imageRepo or tag
 						includedMetadata["image"] = image
 					}
 					if atLocation == -1 {
@@ -1270,7 +1270,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				continue
 			}
 			elapsed := time.Since(start)
-			Log(fmt.Sprintf("KubernetesMetadata Processing Time: %s", elapsed))
+			processingTimeMs := elapsed.Milliseconds();
+			SendMetric("K8sMetadataProcessingMs", processingTimeMs)
 		}
 
 		if strings.EqualFold(logEntrySource, "stdout") {
