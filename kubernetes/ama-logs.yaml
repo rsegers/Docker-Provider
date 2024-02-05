@@ -463,6 +463,7 @@ spec:
             - mountPath: /hostfs
               name: host-root
               readOnly: true
+              mountPropagation: HostToContainer
             - mountPath: /var/run/host
               name: docker-sock
             - mountPath: /var/run/mdsd-ci
