@@ -137,8 +137,6 @@ spec:
           name: host-root
           readOnly: true
           mountPropagation: HostToContainer
-        - mountPath: /var/run/host
-          name: docker-sock
         - mountPath: /var/log
           name: host-log
         - mountPath: /var/lib/docker/containers
@@ -265,9 +263,6 @@ spec:
     - name: host-root
       hostPath:
        path: /
-    - name: docker-sock
-      hostPath:
-       path: /var/run
     - name: container-hostname
       hostPath:
        path: /etc/hostname

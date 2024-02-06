@@ -109,8 +109,6 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/fluent/plugin/constants.rb;			                                                source/plugins/ruby/constants.rb;			    	644; root; root
 /etc/fluent/plugin/ContainerInventoryState.rb;								            		source/plugins/ruby/ContainerInventoryState.rb;		644; root; root
 /etc/fluent/plugin/CustomMetricsUtils.rb;											               source/plugins/ruby/CustomMetricsUtils.rb;				644; root; root
-/etc/fluent/plugin/DockerApiClient.rb;											                  source/plugins/ruby/DockerApiClient.rb;				644; root; root
-/etc/fluent/plugin/DockerApiRestHelper.rb;										      	      source/plugins/ruby/DockerApiRestHelper.rb;			644; root; root
 /etc/fluent/plugin/kubelet_utils.rb;			                                          source/plugins/ruby/kubelet_utils.rb;			    	644; root; root
 /etc/fluent/plugin/proxy_utils.rb;			                                             source/plugins/ruby/proxy_utils.rb;			    	644; root; root
 /etc/fluent/plugin/kubernetes_container_inventory.rb;							               source/plugins/ruby/kubernetes_container_inventory.rb;		644; root; root
