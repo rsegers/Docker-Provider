@@ -232,6 +232,35 @@ export class CertificateManager {
         return caCertificate.verify(certificate);
     }
 
+    public static async CheckCertificateJobStatus(kubeConfig: k8s.KubeConfig, operationId: string, clusterArmId: string, clusterArmRegion: string): Promise<boolean> {
+        kubeConfig.loadFromDefault();
+
+        const k8sApi = kubeConfig.makeApiClient(k8s.BatchV1Api);
+
+        async function checkJobStatus(namespace, jobName) : Promise<boolean> {
+            try {
+                const res = await k8sApi.readNamespacedJobStatus(jobName, namespace);
+                const jobStatus = res.body.status;
+                
+                if (jobStatus.conditions) {
+                    for (const condition of jobStatus.conditions) {
+                        if (condition.type === 'Complete' && condition.status === 'True') {
+                            logger.info(`Job ${jobName} has completed.`, operationId, this.requestMetadata);
+                            logger.SendEvent("CertificateJobCompleted", operationId, null, clusterArmId, clusterArmRegion);
+                            return true;
+                        }
+                    }
+                }
+                logger.info(`Job ${jobName} has not completed yet.`, operationId, this.requestMetadata);
+                logger.SendEvent("CertificateJobNotCompleted", operationId, null, clusterArmId, clusterArmRegion);
+            } catch (err) {
+                logger.error(`Failed to get job status: ${err}`, operationId, this.requestMetadata);
+                logger.SendEvent("CertificateJobStatusFailed", operationId, null, clusterArmId, clusterArmRegion, true, err);
+            }
+        }
+        return await checkJobStatus(NamespaceName, 'appmonitoring-cert-manager-hook-install');
+    }
+
     public static async CreateWebhookAndCertificates(operationId: string, clusterArmId: string, clusterArmRegion: string) {
         const kc = new k8s.KubeConfig();
         kc.loadFromDefault();
@@ -255,8 +284,8 @@ export class CertificateManager {
         try {
             webhookCertData = await CertificateManager.GetSecretDetails(operationId, kc);
             mwhcCaBundle = await CertificateManager.GetMutatingWebhookCABundle(operationId, kc);
-            if (CertificateManager.IsValidCertificate(operationId, mwhcCaBundle, webhookCertData, clusterArmId, clusterArmRegion)) {
-                logger.info('Certificates are valid, continue validation...', operationId, this.requestMetadata);
+            if (CertificateManager.CheckCertificateJobStatus(kc, operationId, clusterArmId, clusterArmRegion)) {
+                logger.info('Certificates Installer has completed, continue validation...', operationId, this.requestMetadata);
             } else {
                 logger.info('Certificates are not valid, reconciliation not needed at this time...', operationId, this.requestMetadata);
                 logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true);
