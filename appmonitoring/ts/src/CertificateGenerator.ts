@@ -253,9 +253,11 @@ export class CertificateManager {
                 }
                 logger.info(`Job ${jobName} has not completed yet.`, operationId, this.requestMetadata);
                 logger.SendEvent("CertificateJobNotCompleted", operationId, null, clusterArmId, clusterArmRegion);
+                return false;
             } catch (err) {
                 logger.error(`Failed to get job status: ${err}`, operationId, this.requestMetadata);
                 logger.SendEvent("CertificateJobStatusFailed", operationId, null, clusterArmId, clusterArmRegion, true, err);
+                return false;
             }
         }
         return await checkJobStatus(NamespaceName, 'appmonitoring-cert-manager-hook-install');
