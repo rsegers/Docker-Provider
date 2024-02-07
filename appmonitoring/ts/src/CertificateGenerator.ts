@@ -357,21 +357,6 @@ export class CertificateManager {
         }
     }
 
-    private static IsValidCertificate(operationId: string, mwhcCaBundle: string, webhookCertData: WebhookCertData, clusterArmId: string, clusterArmRegion: string): boolean {
-        try {
-            forge.pki.certificateFromPem(mwhcCaBundle);
-            forge.pki.certificateFromPem(webhookCertData.caCert);
-            forge.pki.certificateFromPem(webhookCertData.tlsCert);
-            forge.pki.privateKeyFromPem(webhookCertData.tlsKey);
-            return true;
-        } catch (error) {
-            logger.error('Error occured while trying to validate certificates!', operationId, this.requestMetadata);
-            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
-            logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true, error);
-            return false;
-        }
-    }
-
     private static async RestartWebhookReplicaset(operationId: string, kc: k8s.KubeConfig, clusterArmId: string, clusterArmRegion: string) {
         kc.loadFromDefault();
 
