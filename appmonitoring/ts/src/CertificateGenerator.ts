@@ -232,7 +232,7 @@ export class CertificateManager {
         return caCertificate.verify(certificate);
     }
 
-    public static async CheckCertificateJobStatus(kubeConfig: k8s.KubeConfig, operationId: string, clusterArmId: string, clusterArmRegion: string): Promise<boolean> {
+    private static async CheckCertificateJobStatus(kubeConfig: k8s.KubeConfig, operationId: string, clusterArmId: string, clusterArmRegion: string): Promise<boolean> {
         kubeConfig.loadFromDefault();
 
         const k8sApi = kubeConfig.makeApiClient(k8s.BatchV1Api);
