@@ -20,6 +20,7 @@ variables:
   containerRegistry: 'containerinsightsprod'
   repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/containerinsights/cidev'
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
+  IS_MAIN_BRANCH: $[eq(variables['Build.SourceBranchName'], 'ci_prod')]
 
 jobs:
 - job: common
@@ -130,6 +131,13 @@ jobs:
 
   steps:
   - task: CodeQL3000Init@0
+    condition: eq(variables.IS_MAIN_BRANCH, true)
+
+  - bash: |
+        cd $(System.DefaultWorkingDirectory)/build/linux/
+        ls
+        make
+    displayName: 'Execute Makefile for Linux Build'
 
   - task: AzureCLI@2
     displayName: "Multi-arch Linux build"
@@ -141,6 +149,7 @@ jobs:
         mkdir -p $(Build.ArtifactStagingDirectory)/linux
 
         sudo apt-get update && sudo apt-get -y install qemu binfmt-support qemu-user-static
+        docker system prune --all -f
         docker run --rm --privileged multiarch/qemu-user-static --reset -p yes
 
         docker buildx create --name testbuilder
@@ -161,8 +170,6 @@ jobs:
           # load the multi-arch image to run tests
           docker buildx build --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --load --provenance=false .
         fi
-
-  - task: CodeQL3000Finalize@0
 
   - bash: |
         curl -LO "https://github.com/oras-project/oras/releases/download/v1.0.0/oras_1.0.0_linux_amd64.tar.gz"
@@ -229,6 +236,9 @@ jobs:
 
         trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
 
+  - task: CodeQL3000Finalize@0
+    condition: eq(variables.IS_MAIN_BRANCH, true)
+
   - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
     displayName: 'Generation Task'
     condition: eq(variables.IS_PR, true)
@@ -277,6 +287,8 @@ jobs:
       filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
     displayName: 'install prereqs'
 
+  - task: CodeQL3000Init@0
+    condition: eq(variables.IS_MAIN_BRANCH, true)
   - script: |
       setlocal enabledelayedexpansion
       powershell.exe -ExecutionPolicy Unrestricted -NoProfile -WindowStyle Hidden -File "build\windows\Makefile.ps1"
@@ -284,7 +296,6 @@ jobs:
       exit /B %ERRORLEVEL%
     displayName: 'build base'
 
-  - task: CodeQL3000Init@0
   - task: AzureCLI@2
     displayName: "Docker windows build for ltsc2019"
     inputs:
@@ -458,6 +469,7 @@ jobs:
           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
         }
   - task: CodeQL3000Finalize@0
+    condition: eq(variables.IS_MAIN_BRANCH, true)
 
 - job: build_windows_2022
   timeoutInMinutes: 120
@@ -476,6 +488,9 @@ jobs:
       targetType: 'filePath'
       filePath: $(System.DefaultWorkingDirectory)/scripts/build/windows/install-build-pre-requisites.ps1
     displayName: 'install prereqs'
+
+  - task: CodeQL3000Init@0
+    condition: eq(variables.IS_MAIN_BRANCH, true)
 
   - script: |
       setlocal enabledelayedexpansion
@@ -656,6 +671,8 @@ jobs:
         if ("$(Build.Reason)" -ne "PullRequest") {
           docker push ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
         }
+  - task: CodeQL3000Finalize@0
+    condition: eq(variables.IS_MAIN_BRANCH, true)
 
 - job: build_windows_multi_arc
   dependsOn:

@@ -857,11 +857,19 @@ if (![string]::IsNullOrEmpty($requiresCertBootstrap) -and `
 
 $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
 $isGenevaModeVar = IsGenevaMode
-# Geneva mode supported on both AAD MSI Auth and Cert Auth
+
 if ($isGenevaModeVar) {
     Write-Host "Starting Windows AMA in 1P Mode"
     #start Windows AMA
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
+    if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+        Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
+    }
+    else {
+        Write-Host "Starting Windows in Cert Auth Mode"
+        Generate-Certificates
+        Test-CertificatePath
+    }
 }
 else {
     if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
@@ -877,7 +885,7 @@ else {
         Generate-Certificates
         Test-CertificatePath
     }
-} 
+}
 
 
 Start-Fluent-Telegraf

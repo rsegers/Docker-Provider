@@ -966,7 +966,7 @@ spec:
       #       add:
       #         - NET_ADMIN
        - name: ama-logs-windows
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.15"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.17"
          imagePullPolicy: IfNotPresent
          resources:
           limits:
