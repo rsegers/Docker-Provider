@@ -37,7 +37,7 @@ if [ -z "$RELEASE_TRAINS_PREVIEW_PATH" ]; then
     echo "-e error preview release train must be provided "
     exit 1
 fi
-MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
+MCR_NAME_PATH="oci://mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
 echo "Pulling chart from MCR:${MCR_NAME_PATH}"
 helm pull ${MCR_NAME_PATH} --version ${CHART_VERSION}
 if [ $? -eq 0 ]; then
@@ -81,7 +81,7 @@ if [ -z "$RELEASE_TRAINS_STABLE_PATH" ]; then
     echo "-e error stable release train must be provided "
     exit 1
 fi
-MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
+MCR_NAME_PATH="oci://mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
 echo "Pulling chart from MCR:${MCR_NAME_PATH}"
 helm pull ${MCR_NAME_PATH} --version ${CHART_VERSION}
 if [ $? -eq 0 ]; then
@@ -145,7 +145,7 @@ if [ -z "$REGISTER_REGIONS_BATCH" ]; then
     echo "-e error stable release regions must be provided "
     exit 1
 fi
-MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
+MCR_NAME_PATH="oci://mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
 echo "Pulling chart from MCR:${MCR_NAME_PATH}"
 helm pull ${MCR_NAME_PATH} --version ${CHART_VERSION}
 if [ $? -eq 0 ]; then
