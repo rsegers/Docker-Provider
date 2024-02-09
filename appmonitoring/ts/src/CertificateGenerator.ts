@@ -174,6 +174,7 @@ export class CertificateManager {
             }
         } catch (error) {
             logger.error(error, operationId, this.requestMetadata);
+            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
         }
     }
 
@@ -232,10 +233,26 @@ export class CertificateManager {
         return caCertificate.verify(certificate);
     }
 
+    private static IsValidCertificate(operationId: string, mwhcCaBundle: string, webhookCertData: WebhookCertData, clusterArmId: string, clusterArmRegion: string): boolean {
+        try {
+            forge.pki.certificateFromPem(mwhcCaBundle);
+            forge.pki.certificateFromPem(webhookCertData.caCert);
+            forge.pki.certificateFromPem(webhookCertData.tlsCert);
+            forge.pki.privateKeyFromPem(webhookCertData.tlsKey);
+            return true;
+        } catch (error) {
+            logger.error('Error occured while trying to validate certificates!', operationId, this.requestMetadata);
+            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
+            logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true, error);
+            return false;
+        }
+    }
+
     private static async CheckCertificateJobStatus(kubeConfig: k8s.KubeConfig, operationId: string, clusterArmId: string, clusterArmRegion: string): Promise<boolean> {
         kubeConfig.loadFromDefault();
 
         const k8sApi = kubeConfig.makeApiClient(k8s.BatchV1Api);
+        const requestMetadata = this.requestMetadata;
 
         async function checkJobStatus(namespace, jobName) : Promise<boolean> {
             try {
@@ -245,17 +262,17 @@ export class CertificateManager {
                 if (jobStatus.conditions) {
                     for (const condition of jobStatus.conditions) {
                         if (condition.type === 'Complete' && condition.status === 'True') {
-                            logger.info(`Job ${jobName} has completed.`, operationId, this.requestMetadata);
+                            logger.info(`Job ${jobName} has completed.`, operationId, requestMetadata);
                             logger.SendEvent("CertificateJobCompleted", operationId, null, clusterArmId, clusterArmRegion);
                             return true;
                         }
                     }
                 }
-                logger.info(`Job ${jobName} has not completed yet.`, operationId, this.requestMetadata);
+                logger.info(`Job ${jobName} has not completed yet.`, operationId, requestMetadata);
                 logger.SendEvent("CertificateJobNotCompleted", operationId, null, clusterArmId, clusterArmRegion);
                 return false;
             } catch (err) {
-                logger.error(`Failed to get job status: ${err}`, operationId, this.requestMetadata);
+                logger.error(`Failed to get job status: ${err}`, operationId, requestMetadata);
                 logger.SendEvent("CertificateJobStatusFailed", operationId, null, clusterArmId, clusterArmRegion, true, err);
                 return false;
             }
@@ -289,7 +306,7 @@ export class CertificateManager {
             if (CertificateManager.CheckCertificateJobStatus(kc, operationId, clusterArmId, clusterArmRegion)) {
                 logger.info('Certificates Installer has completed, continue validation...', operationId, this.requestMetadata);
             } else {
-                logger.info('Certificates are not valid, reconciliation not needed at this time...', operationId, this.requestMetadata);
+                logger.info('Certificates Installer has not completed yet, reconciliation is not needed at this time...', operationId, this.requestMetadata);
                 logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true);
                 return;
             }
@@ -298,7 +315,8 @@ export class CertificateManager {
             logger.error(JSON.stringify(error), operationId, this.requestMetadata);
         }
 
-        const matchValidation: boolean = mwhcCaBundle && webhookCertData && mwhcCaBundle.localeCompare(webhookCertData.caCert) === 0;
+        const validCerts: boolean = CertificateManager.IsValidCertificate(operationId, mwhcCaBundle, webhookCertData, clusterArmId, clusterArmRegion);
+        const matchValidation: boolean = validCerts && mwhcCaBundle && webhookCertData && mwhcCaBundle.localeCompare(webhookCertData.caCert) === 0;
         const certSignedByGivenCA: boolean = matchValidation && CertificateManager.isCertificateSignedByCA(webhookCertData.tlsCert, mwhcCaBundle);
 
         if (!certSignedByGivenCA)
