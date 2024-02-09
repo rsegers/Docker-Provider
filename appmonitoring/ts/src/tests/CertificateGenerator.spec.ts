@@ -82,6 +82,7 @@ describe('CertificateManager', () => {
             await CertificateManager.ReconcileWebhookAndCertificates(operationId, mockClusterArmId, mockClusterArmRegion);
 
             expect(checkCertificateJobStatus).toHaveBeenCalled();
+            expect(IsValidCertificate).not.toBeCalled();
             expect(getMutatingWebhookCABundle).toHaveBeenCalledWith(operationId, mockKubeConfig);
             expect(getSecretDetails).toHaveBeenCalledWith(operationId, mockKubeConfig);
             expect(patchWebhookAndCertificates).not.toBeCalled();
