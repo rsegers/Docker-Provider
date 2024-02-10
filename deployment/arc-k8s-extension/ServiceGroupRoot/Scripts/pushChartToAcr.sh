@@ -11,19 +11,19 @@ fi
 
 # repo paths for arc k8s extension roll-out
 # canary region
-export CANARY_REGION_REPO_PATH="azuremonitor/containerinsights/canary/${REPO_TYPE}/azuremonitor-containers"
+export CANARY_REGION_REPO_PATH="azuremonitor/containerinsights/canary/${REPO_TYPE}"
 # pilot region
-export PILOT_REGION_REPO_PATH="azuremonitor/containerinsights/prod1/${REPO_TYPE}/azuremonitor-containers"
+export PILOT_REGION_REPO_PATH="azuremonitor/containerinsights/prod1/${REPO_TYPE}"
 # light load regions
-export LIGHT_LOAD_REGION_REPO_PATH="azuremonitor/containerinsights/prod2/${REPO_TYPE}/azuremonitor-containers"
+export LIGHT_LOAD_REGION_REPO_PATH="azuremonitor/containerinsights/prod2/${REPO_TYPE}"
 # medium load regions
-export MEDIUM_LOAD_REGION_REPO_PATH="azuremonitor/containerinsights/prod3/${REPO_TYPE}/azuremonitor-containers"
+export MEDIUM_LOAD_REGION_REPO_PATH="azuremonitor/containerinsights/prod3/${REPO_TYPE}"
 # high load regions
-export HIGH_LOAD_REGION_REPO_PATH="azuremonitor/containerinsights/prod4/${REPO_TYPE}/azuremonitor-containers"
+export HIGH_LOAD_REGION_REPO_PATH="azuremonitor/containerinsights/prod4/${REPO_TYPE}"
 # FairFax regions
-export FF_REGION_REPO_PATH="azuremonitor/containerinsights/prod5/${REPO_TYPE}/azuremonitor-containers"
+export FF_REGION_REPO_PATH="azuremonitor/containerinsights/prod5/${REPO_TYPE}"
 # Mooncake regions
-export MC_REGION_REPO_PATH="azuremonitor/containerinsights/prod6/${REPO_TYPE}/azuremonitor-containers"
+export MC_REGION_REPO_PATH="azuremonitor/containerinsights/prod6/${REPO_TYPE}"
 
 # pull chart from previous stage mcr and push chart to next stage acr
 pull_chart_from_source_mcr_to_push_to_dest_acr() {
