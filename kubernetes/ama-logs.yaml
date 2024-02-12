@@ -466,8 +466,7 @@ spec:
             - mountPath: /hostfs
               name: host-root
               readOnly: true
-            - mountPath: /var/run/host
-              name: docker-sock
+              mountPropagation: HostToContainer
             - mountPath: /var/run/mdsd-ci
               name: mdsd-sock
             - mountPath: /var/log
@@ -631,9 +630,6 @@ spec:
         - name: host-root
           hostPath:
             path: /
-        - name: docker-sock
-          hostPath:
-            path: /var/run
         - name: mdsd-sock
           hostPath:
             path: /var/run/mdsd-ci
@@ -836,8 +832,6 @@ spec:
             - name: kube-api-access
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
-            - mountPath: /var/run/host
-              name: docker-sock
             - mountPath: /var/log
               name: host-log
             - mountPath: /etc/kubernetes/host
@@ -922,9 +916,6 @@ spec:
                     apiVersion: v1
                     fieldPath: metadata.namespace
                   path: namespace
-        - name: docker-sock
-          hostPath:
-            path: /var/run
         - name: container-hostname
           hostPath:
             path: /etc/hostname

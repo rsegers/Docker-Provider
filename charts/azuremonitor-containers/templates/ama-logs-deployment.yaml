@@ -127,8 +127,6 @@ spec:
         - name: kube-api-access
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           readOnly: true
-        - mountPath: /var/run/host
-          name: docker-sock
         - mountPath: /var/log
           name: host-log
         - mountPath: /var/lib/docker/containers
@@ -198,9 +196,6 @@ spec:
                 apiVersion: v1
                 fieldPath: metadata.namespace
               path: namespace
-    - name: docker-sock
-      hostPath:
-       path: /var/run
     - name: container-hostname
       hostPath:
        path: /etc/hostname
