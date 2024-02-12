@@ -194,7 +194,7 @@ data:
     # Uses fluent-bit for perf and container inventory instead of fluentd
     # Disables custom metrics
     # [agent_settings.resource_optimization]
-    #    enabled = "false"
+    #    enabled = false
 
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # Configuration settings for the waittime for the network listeners to be available

@@ -96,7 +96,7 @@ require_relative "ConfigParseErrorLogger"
 @ignoreProxySettings = false
 
 @multiline_enabled = "false"
-@resource_optimization_enabled = "false"
+@resource_optimization_enabled = false
 
 @waittime_port_25226 = 45
 @waittime_port_25228 = 120
@@ -357,7 +357,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         if !resource_optimization_config.nil?
           resource_optimization_enabled = resource_optimization_config[:enabled]
           if !resource_optimization_enabled.nil? && resource_optimization_enabled.downcase == "true"
-            @resource_optimization_enabled = resource_optimization_enabled
+            @resource_optimization_enabled = true
           end
           puts "Using config map value: AZMON_RESOURCE_OPTIMIZATION_ENABLED = #{@resource_optimization_enabled}"
         end

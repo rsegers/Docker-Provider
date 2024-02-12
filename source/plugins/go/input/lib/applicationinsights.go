@@ -66,7 +66,11 @@ func init() {
 			proxyEndpoint = os.Getenv("PROXY")
 
 		} else {
-			proxyEndpoint = getProxyEndpoint()
+			var err error
+			proxyEndpoint, err = getProxyEndpoint()
+			if err != nil {
+				aiLogger.Printf("Error getting proxy endpoint: %s", err.Error())
+			}
 		}
 	}
 
