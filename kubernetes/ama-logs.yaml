@@ -1060,7 +1060,7 @@ spec:
           # - name: USING_AAD_MSI_AUTH
           #   value: "true"
          volumeMounts:
-          #  Use this when telegraf upgraded to 1.28.5 or higher
+          #  Uncomment when telegraf upgraded to 1.28.5 or higher
           # - name: kube-api-access
           #   mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           #   readOnly: true
@@ -1123,7 +1123,7 @@ spec:
      - operator: "Exists"
        effect: PreferNoSchedule
      volumes:
-      #  Use this when telegraf upgraded to 1.28.5 or higher
+      #  Uncomment when telegraf upgraded to 1.28.5 or higher
       # - name: kube-api-access
       #   projected:
       #     sources:
