@@ -356,8 +356,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         resource_optimization_config = parsedConfig[:agent_settings][:resource_optimization]
         if !resource_optimization_config.nil?
           resource_optimization_enabled = resource_optimization_config[:enabled]
-          if !resource_optimization_enabled.nil? && resource_optimization_enabled.downcase == "true"
-            @resource_optimization_enabled = true
+          if !resource_optimization_enabled.nil? && (!!resource_optimization_enabled == resource_optimization_enabled) #Checking for Boolean type, since 'Boolean' is not defined as a type in ruby
+            @resource_optimization_enabled = resource_optimization_enabled
           end
           puts "Using config map value: AZMON_RESOURCE_OPTIMIZATION_ENABLED = #{@resource_optimization_enabled}"
         end
