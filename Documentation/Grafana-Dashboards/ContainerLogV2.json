@@ -51,7 +51,8 @@
                 "value": 80
               }
             ]
-          }
+          },
+          "unit": "short"
         },
         "overrides": []
       },
@@ -197,7 +198,8 @@
                 "value": 85
               }
             ]
-          }
+          },
+          "unit": "short"
         },
         "overrides": []
       },
@@ -349,32 +351,7 @@
             ]
           }
         },
-        "overrides": [
-          {
-            "__systemRef": "hideSeriesFrom",
-            "matcher": {
-              "id": "byNames",
-              "options": {
-                "mode": "exclude",
-                "names": [
-                  "Count aks-agentpool-25306613-vmss000000"
-                ],
-                "prefix": "All except:",
-                "readOnly": true
-              }
-            },
-            "properties": [
-              {
-                "id": "custom.hideFrom",
-                "value": {
-                  "legend": false,
-                  "tooltip": false,
-                  "viz": true
-                }
-              }
-            ]
-          }
-        ]
+        "overrides": []
       },
       "gridPos": {
         "h": 10,
@@ -382,7 +359,7 @@
         "x": 0,
         "y": 16
       },
-      "id": 46,
+      "id": 45,
       "options": {
         "legend": {
           "calcs": [],
@@ -398,7 +375,7 @@
       "targets": [
         {
           "azureLogAnalytics": {
-            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey == \"$LabelKey\"\r\n| extend labelVal = tostring(PodLabels[\"$LabelKey\"])\r\n| extend labelValInput  = \"$LabelValue\"\r\n| where labelValInput contains  labelVal\r\n| summarize Count = count() by bin(TimeGenerated, 1s), Computer\r\n| order by TimeGenerated asc \r\n| render timechart",
+            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey == \"$LabelKey\"\r\n| extend labelVal = tostring(PodLabels[\"$LabelKey\"])\r\n| extend labelValInput  = \"$LabelValue\"\r\n| where labelValInput contains  labelVal\r\n| summarize Count = count() by bin(TimeGenerated, 1m), Computer\r\n| order by TimeGenerated asc \r\n| render timechart",
             "resources": [
               "$LAWorkspace"
             ],
@@ -429,7 +406,7 @@
           "refId": "B"
         }
       ],
-      "title": "Logs/sec",
+      "title": "Logs/min by Computer",
       "type": "timeseries"
     },
     {
@@ -511,7 +488,7 @@
       "targets": [
         {
           "azureLogAnalytics": {
-            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey == \"$LabelKey\"\r\n| extend labelVal = tostring(PodLabels[\"$LabelKey\"])\r\n| extend labelValInput  = \"$LabelValue\"\r\n| where labelValInput contains  labelVal\r\n| summarize Count = count() by bin(TimeGenerated, 1m), PodName\r\n| order by TimeGenerated asc \r\n| render timechart",
+            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey == \"$LabelKey\"\r\n| extend labelVal = tostring(PodLabels[\"$LabelKey\"])\r\n| extend labelValInput  = \"$LabelValue\"\r\n| where labelValInput contains  labelVal\r\n| summarize Count = count() by bin(TimeGenerated, 1m), PodName\r\n| order by TimeGenerated asc \r\n| render timechart",
             "resources": [
               "$LAWorkspace"
             ],
@@ -542,7 +519,7 @@
           "refId": "B"
         }
       ],
-      "title": "Log Records by Pod",
+      "title": "Logs/min by Pod",
       "type": "timeseries"
     },
     {
@@ -624,7 +601,7 @@
       "targets": [
         {
           "azureLogAnalytics": {
-            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey == \"$LabelKey\"\r\n| extend labelVal = tostring(PodLabels[\"$LabelKey\"])\r\n| extend labelValInput  = \"$LabelValue\"\r\n| where labelValInput contains  labelVal\r\n| summarize Count = count() by bin(TimeGenerated, 1m), LogSource\r\n| order by TimeGenerated asc \r\n| render timechart",
+            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey == \"$LabelKey\"\r\n| extend labelVal = tostring(PodLabels[\"$LabelKey\"])\r\n| extend labelValInput  = \"$LabelValue\"\r\n| where labelValInput contains  labelVal\r\n| summarize Count = count() by bin(TimeGenerated, 1m), LogSource\r\n| order by TimeGenerated asc \r\n| render timechart",
             "resources": [
               "$LAWorkspace"
             ],
@@ -721,7 +698,7 @@
         "x": 12,
         "y": 26
       },
-      "id": 45,
+      "id": 47,
       "options": {
         "legend": {
           "calcs": [],
@@ -737,7 +714,7 @@
       "targets": [
         {
           "azureLogAnalytics": {
-            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey == \"$LabelKey\"\r\n| extend labelVal = tostring(PodLabels[\"$LabelKey\"])\r\n| extend labelValInput  = \"$LabelValue\"\r\n| where labelValInput contains  labelVal\r\n| summarize Count = count() by bin(TimeGenerated, 1m), PodNamespace\r\n| order by TimeGenerated asc \r\n| render timechart",
+            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey == \"$LabelKey\"\r\n| extend labelVal = tostring(PodLabels[\"$LabelKey\"])\r\n| extend labelValInput  = \"$LabelValue\"\r\n| where labelValInput contains  labelVal\r\n| summarize Count = count() by bin(TimeGenerated, 1m), PodNamespace\r\n| order by TimeGenerated asc \r\n| render timechart",
             "resources": [
               "$LAWorkspace"
             ],
@@ -768,7 +745,7 @@
           "refId": "B"
         }
       ],
-      "title": "Log Records by PodNamespace",
+      "title": "Logs/min by PodNamespace",
       "type": "timeseries"
     },
     {
@@ -1824,7 +1801,7 @@
         "type": "query"
       },
       {
-        "current": {},
+
         "datasource": {
           "type": "grafana-azure-monitor-datasource",
           "uid": "${DataSource}"
@@ -1857,7 +1834,6 @@
         "type": "query"
       },
       {
-        "current": {},
         "datasource": {
           "type": "grafana-azure-monitor-datasource",
           "uid": "${DataSource}"
@@ -1878,7 +1854,9 @@
           },
           "queryType": "Azure Log Analytics",
           "refId": "A",
-          "subscription": ["$Subscription"]
+          "subscription": [
+            "$Subscription"
+          ]
         },
         "refresh": 1,
         "regex": "",
@@ -1887,7 +1865,6 @@
         "type": "query"
       },
       {
-        "current": {},
         "datasource": {
           "type": "grafana-azure-monitor-datasource",
           "uid": "${DataSource}"
@@ -1908,7 +1885,9 @@
           },
           "queryType": "Azure Log Analytics",
           "refId": "A",
-          "subscription": ["$Subscription"]
+          "subscription": [
+            "$Subscription"
+          ]
         },
         "refresh": 1,
         "regex": "",
@@ -1946,7 +1925,9 @@
           },
           "queryType": "Azure Log Analytics",
           "refId": "A",
-          "subscription": ["$Subscription"]
+          "subscription": [
+            "$Subscription"
+          ]
         },
         "refresh": 1,
         "regex": "",
@@ -1964,5 +1945,5 @@
   "timezone": "",
   "title": "Azure Monitor / Container Insights / ContainerLogV2",
   "uid": "ContainerInsightsContainerLogV2",
-  "version": 32
+  "version": 2
 }
