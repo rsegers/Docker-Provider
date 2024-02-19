@@ -825,6 +825,10 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && isGenevaMode; then
     echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
     export SSL_CERT_FILE="/etc/pki/tls/certs/ca-bundle.crt"
     echo "export SSL_CERT_FILE=$SSL_CERT_FILE" >> ~/.bashrc
+    if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
+       export AAD_MSI_AUTH_MODE=true
+       echo "export AAD_MSI_AUTH_MODE=true" >> ~/.bashrc
+    fi
 else
       if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
             echo "*** setting up oneagent in aad auth msi mode ***"

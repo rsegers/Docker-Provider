@@ -94,7 +94,11 @@ class Extension
   def get_extension_configs()
     extensionConfigurations = []
     begin
-      clientSocket = UNIXSocket.open(Constants::ONEAGENT_FLUENT_SOCKET_NAME)
+      if !ENV["GENEVA_LOGS_INTEGRATION"].nil? && !ENV["GENEVA_LOGS_INTEGRATION"].empty? && ENV["GENEVA_LOGS_INTEGRATION"].downcase == "true"
+        clientSocket = UNIXSocket.open(Constants::ONEAGENT_FLUENT_SOCKET_NAME_SIDE_CAR)
+      else
+        clientSocket = UNIXSocket.open(Constants::ONEAGENT_FLUENT_SOCKET_NAME)
+      end
       requestId = SecureRandom.uuid.to_s
       requestBodyJSON = { "Request" => "AgentTaggedData", "RequestId" => requestId, "Tag" => Constants::CI_EXTENSION_NAME, "Version" => Constants::CI_EXTENSION_VERSION }.to_json
       requestBodyMsgPack = requestBodyJSON.to_msgpack
