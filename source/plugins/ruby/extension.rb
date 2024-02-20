@@ -91,14 +91,26 @@ class Extension
 
   private
 
+  def getFluentSocketName()
+    fluentSocketName = Constants::ONEAGENT_FLUENT_SOCKET_NAME
+    begin
+      # in case of Geneve logs integration, sidecar fluent socket will be used for container inventory and perf data
+      if !ENV["GENEVA_LOGS_INTEGRATION"].nil? && !ENV["GENEVA_LOGS_INTEGRATION"].empty? && ENV["GENEVA_LOGS_INTEGRATION"].downcase == "true"
+        fluentSocketName = Constants::ONEAGENT_FLUENT_SOCKET_NAME_SIDE_CAR
+      end
+    rescue => errorStr
+      $log.warn("Extension::getFluentSocketName failed: #{errorStr}")
+      ApplicationInsightsUtility.sendExceptionTelemetry(errorStr)
+    end
+    return fluentSocketName
+  end
+
+  private
+
   def get_extension_configs()
     extensionConfigurations = []
     begin
-      if !ENV["GENEVA_LOGS_INTEGRATION"].nil? && !ENV["GENEVA_LOGS_INTEGRATION"].empty? && ENV["GENEVA_LOGS_INTEGRATION"].downcase == "true"
-        clientSocket = UNIXSocket.open(Constants::ONEAGENT_FLUENT_SOCKET_NAME_SIDE_CAR)
-      else
-        clientSocket = UNIXSocket.open(Constants::ONEAGENT_FLUENT_SOCKET_NAME)
-      end
+      clientSocket = UNIXSocket.open(getFluentSocketName())
       requestId = SecureRandom.uuid.to_s
       requestBodyJSON = { "Request" => "AgentTaggedData", "RequestId" => requestId, "Tag" => Constants::CI_EXTENSION_NAME, "Version" => Constants::CI_EXTENSION_VERSION }.to_json
       requestBodyMsgPack = requestBodyJSON.to_msgpack
