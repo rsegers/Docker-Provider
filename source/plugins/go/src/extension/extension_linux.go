@@ -10,7 +10,7 @@ import (
 )
 
 const FluentSocketAddress = "/var/run/mdsd-ci/default_fluent.socket"
-const FluentSocketAddressPrometheysSidecar = "/var/run/mdsd-PrometheusSidecar/default_fluent.socket"
+const FluentSocketAddressPrometheusSidecar = "/var/run/mdsd-PrometheusSidecar/default_fluent.socket"
 
 func getExtensionConfigResponse(jsonBytes []byte) ([]byte, error) {
 	var data []byte
@@ -24,7 +24,7 @@ func getExtensionConfigResponse(jsonBytes []byte) ([]byte, error) {
 	genevaLogsIntegrationEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("GENEVA_LOGS_INTEGRATION")))
 	if (containerType != "" && strings.Compare(strings.ToLower(containerType), "prometheussidecar") == 0) ||
 		(genevaLogsIntegrationEnabled != "" && strings.Compare(strings.ToLower(genevaLogsIntegrationEnabled), "true") == 0) {
-		fs.sockAddress = FluentSocketAddressPrometheysSidecar
+		fs.sockAddress = FluentSocketAddressPrometheusSidecar
 	}
 	responseBytes, err := FluentSocketWriter.writeAndRead(fs, data)
 	defer FluentSocketWriter.disconnect(fs)
