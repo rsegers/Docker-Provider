@@ -17,7 +17,7 @@ require_relative 'ConfigParseErrorLogger'
 
 return if ENV['GENEVA_LOGS_INTEGRATION']&.strip&.casecmp?('true')
 return if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp('windows').zero?
-return unless ENV['USING_AAD_MSI_AUTH'].strip.casecmp('true').zero?
+return unless ENV['USING_AAD_MSI_AUTH']&.strip&.casecmp?('true')
 
 if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp('daemonset').zero? \
   && @containerType.nil?
