@@ -1847,7 +1847,7 @@
         "options": [],
         "query": {
           "azureLogAnalytics": {
-            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| distinct PodNamespace\r\n",
+            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| distinct PodNamespace",
             "resources": [
               "$LAWorkspace"
             ]
@@ -1879,7 +1879,7 @@
         "options": [],
         "query": {
           "azureLogAnalytics": {
-            "query": "ContainerLogV2 \r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| extend PodNamespace = \"$Namespace\"\r\n| where isnotempty(KubernetesMetadata)\r\n| extend LabelsJson = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand LabelsJson\r\n| extend LabelName = tostring(bag_keys(LabelsJson)[0])\r\n| where isnotempty(LabelName)\r\n| distinct LabelName\r\n\r\n",
+            "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| extend PodNamespace = \"$Namespace\"\r\n| where isnotempty(KubernetesMetadata)\r\n| extend LabelsJson = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand LabelsJson\r\n| extend LabelName = tostring(bag_keys(LabelsJson)[0])\r\n| where isnotempty(LabelName)\r\n| distinct LabelName",
             "resources": [
               "$LAWorkspace"
             ]
@@ -1946,5 +1946,5 @@
   "timezone": "",
   "title": "Azure Monitor / Container Insights / ContainerLogV2",
   "uid": "ContainerInsightsContainerLogV2",
-  "version": 3
+  "version": 1
 }
