@@ -76,6 +76,7 @@ def substituteFluentBitPlaceHolders
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
     stacktraceLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
     resoureceOptimizationEnabled = ENV["AZMON_RESOURCE_OPTIMIZATION_ENABLED"]
+    windowsFluentBitDisabled = ENV["AZMON_WINDOWS_FLUENT_BIT_DISABLED"]
 
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
@@ -113,7 +114,10 @@ def substituteFluentBitPlaceHolders
     end
 
     new_contents = substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
-    new_contents = substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
+
+    if !@isWindows || (@isWindows && windowsFluentBitDisabled.nil? && windowsFluentBitDisabled.to_s.downcase == "false")
+      new_contents = substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
+    end
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in fluent-bit.conf file"
 

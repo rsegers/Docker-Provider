@@ -933,8 +933,9 @@ if [ ! -f /etc/cron.d/ci-agent ]; then
       echo "*/5 * * * * root /usr/sbin/logrotate -s /var/lib/logrotate/ci-agent-status /etc/logrotate.d/ci-agent >/dev/null 2>&1" >/etc/cron.d/ci-agent
 fi
 
+setGlobalEnvVar AZMON_WINDOWS_FLUENT_BIT_DISABLED "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}"
 if [ "${USING_AAD_MSI_AUTH}" != "true" ] || [ "${GENEVA_LOGS_INTEGRATION}" == "true" ]; then
-      if [ -e "/etc/config/kube.conf" ]; then
+      if [ -e "/etc/config/kube.conf" ] && [ "{AZMON_WINDOWS_FLUENT_BIT_DISABLED}" == "true" ]; then
            # Replace a string in the configmap file
             sed -i "s/#@include windows_rs.conf/@include windows_rs.conf/g" /etc/fluent/kube.conf
       fi
