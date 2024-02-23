@@ -596,10 +596,9 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       commands = get_command_windows("AZMON_RESOURCE_OPTIMIZATION_ENABLED", @resource_optimization_enabled)
       file.write(commands)
     end
-    if @windows_fluent_bit_disabled
-      commands = get_command_windows("AZMON_WINDOWS_FLUENT_BIT_DISABLED", @windows_fluent_bit_disabled)
-      file.write(commands)
-    end
+
+    commands = get_command_windows("AZMON_WINDOWS_FLUENT_BIT_DISABLED", @windows_fluent_bit_disabled)
+    file.write(commands)
     # Close file after writing all environment variables
     file.close
     puts "****************End Config Processing********************"
