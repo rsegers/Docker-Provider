@@ -158,11 +158,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         @logEnableMultiline = parsedConfig[:log_collection_settings][:enable_multiline_logs][:enabled]
         puts "config::Using config map setting for multiline logging"
 
-        if @containerLogSchemaVersion.strip.casecmp("v2") != 0
-          puts "config:: WARN: container logs V2 is disabled and is required for multiline logging. Disabling multiline logging"
-          @logEnableMultiline = "false"
-        end
-
         multilineLanguages = parsedConfig[:log_collection_settings][:enable_multiline_logs][:stacktrace_languages]
         if !multilineLanguages.nil?
           if multilineLanguages.kind_of?(Array)
