@@ -1171,6 +1171,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 
 		logEntry := ToString(record["log"])
+		Log("record: %v\n", logEntry)
 		logEntryTimeStamp := ToString(record["time"])
 
 		if !ContainerLogV2ConfigMap && IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
