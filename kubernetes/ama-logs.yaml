@@ -1059,10 +1059,6 @@ spec:
           # Uncomment below lines for MSI Auth Mode  testing
           # - name: USING_AAD_MSI_AUTH
           #   value: "true"
-          - name: HOSTNAME
-            valueFrom:
-               fieldRef:
-                 fieldPath: spec.nodeName
          volumeMounts:
           #  Uncomment below lines when telegraf upgraded to 1.28.5 or higher
           # - name: kube-api-access

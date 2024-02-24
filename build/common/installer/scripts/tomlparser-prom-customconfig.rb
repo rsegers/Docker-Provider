@@ -51,6 +51,10 @@ def get_command_windows(env_variable_name, env_variable_value)
   return "#{env_variable_name}=#{env_variable_value}\n"
 end
 
+def is_windows?
+  return !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+end
+
 # Use parser to parse the configmap toml file to a ruby structure
 def parseConfigMap
   begin
@@ -109,6 +113,12 @@ def createPrometheusPluginsWithNamespaceSetting(monitorKubernetesPods, monitorKu
     new_contents = new_contents.gsub("$AZMON_TELEGRAF_CUSTOM_PROM_KUBERNETES_FIELD_SELECTOR", "# Commenting this out since new plugins will be created per namespace\n  # $AZMON_TELEGRAF_CUSTOM_PROM_KUBERNETES_FIELD_SELECTOR")
     new_contents = new_contents.gsub("$AZMON_TELEGRAF_CUSTOM_PROM_SCRAPE_SCOPE", "# Commenting this out since new plugins will be created per namespace\n  # $AZMON_TELEGRAF_CUSTOM_PROM_SCRAPE_SCOPE")
 
+    timeout_config_key = "timeout"
+    if is_windows?
+      # For windows, the timeout config key is different because of old version of telegraf
+      timeout_config_key = "response_timeout"
+    end
+
     pluginConfigsWithNamespaces = ""
     monitorKubernetesPodsNamespaces.each do |namespace|
       if !namespace.nil?
@@ -128,7 +138,7 @@ def createPrometheusPluginsWithNamespaceSetting(monitorKubernetesPods, monitorKu
   metric_version = #{@metricVersion}
   url_tag = \"#{@urlTag}\"
   bearer_token = \"#{@bearerToken}\"
-  response_timeout = \"#{@responseTimeout}\"
+  #{timeout_config_key} = \"#{@responseTimeout}\"
   tls_ca = \"#{@tlsCa}\"
   insecure_skip_verify = #{@insecureSkipVerify}\n"
         end
@@ -262,7 +272,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         end
       elsif @controller.casecmp(@daemonset) == 0 &&
             ((!@containerType.nil? && @containerType.casecmp(@promSideCar) == 0) ||
-             (!@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0) && @sidecarScrapingEnabled.strip.casecmp("true") == 0) &&
+             (is_windows?) && @sidecarScrapingEnabled.strip.casecmp("true") == 0) &&
             !parsedConfig[:prometheus_data_collection_settings][:cluster].nil?
         #Get prometheus custom config settings for monitor kubernetes pods
         begin
@@ -290,7 +300,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             kubernetesLabelSelectors = (kubernetesLabelSelectors.nil?) ? @defaultCustomPrometheusLabelSelectors : kubernetesLabelSelectors
             kubernetesFieldSelectors = (kubernetesFieldSelectors.nil?) ? @defaultCustomPrometheusFieldSelectors : kubernetesFieldSelectors
 
-            if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+            if is_windows?
               file_name = "/etc/telegraf/telegraf.conf"
             else
               file_name = "/opt/telegraf-test-prom-side-car.conf"
@@ -346,8 +356,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 file.close
                 puts "config::Successfully created telemetry file for prometheus sidecar"
               end
-            elsif !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
-              # Setting the environment variable for starting telegraf only when monitorKubernetesPods is true 
+            elsif is_windows?
+              # Setting the environment variable for starting telegraf only when monitorKubernetesPods is true
               file = File.open("setpromenv.txt", "w")
               if !file.nil?
                 commands = get_command_windows("TELEMETRY_CUSTOM_PROM_MONITOR_PODS", monitorKubernetesPods)
