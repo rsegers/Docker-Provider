@@ -137,7 +137,6 @@ def createPrometheusPluginsWithNamespaceSetting(monitorKubernetesPods, monitorKu
   fielddrop = #{fieldDropSetting}
   metric_version = #{@metricVersion}
   url_tag = \"#{@urlTag}\"
-  bearer_token = \"#{@bearerToken}\"
   #{timeout_config_key} = \"#{@responseTimeout}\"
   tls_ca = \"#{@tlsCa}\"
   insecure_skip_verify = #{@insecureSkipVerify}\n"
