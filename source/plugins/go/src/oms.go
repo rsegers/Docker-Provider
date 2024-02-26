@@ -163,7 +163,7 @@ var (
 	ContainerLogV2ConfigMap bool
 	// Kubernetes Metadata enabled through configmap flag
 	KubernetesMetadataEnabled bool
-	// Kubernetes Metadata enabled exclude list
+	// Kubernetes Metadata enabled include list
 	KubernetesMetadataIncludeList []string
 	//ADX Cluster URI
 	AdxClusterUri string
@@ -1271,7 +1271,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 			elapsed := time.Since(start)
 			processingTimeMs := elapsed.Milliseconds();
-			SendMetric("K8sMetadataProcessingMs", processingTimeMs)
+			SendMetric("K8sMetadataProcessingMs", processingTimeMs, {})
 		}
 
 		if strings.EqualFold(logEntrySource, "stdout") {
