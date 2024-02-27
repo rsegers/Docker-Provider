@@ -37,15 +37,15 @@ if [ -z "$RELEASE_TRAINS_PREVIEW_PATH" ]; then
     echo "-e error preview release train must be provided "
     exit 1
 fi
-MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
+MCR_NAME_PATH="oci://mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
 echo "Pulling chart from MCR:${MCR_NAME_PATH}"
-helm chart pull ${MCR_NAME_PATH}:${CHART_VERSION}
+helm pull ${MCR_NAME_PATH} --version ${CHART_VERSION}
 if [ $? -eq 0 ]; then
   echo "Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} completed successfully."
 else
   echo "-e error Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} failed. Please review Ev2 pipeline logs for more details on the error."
   exit 1
-fi   
+fi
 # Create JSON request body
 cat <<EOF > "request.json"
 {
@@ -81,15 +81,15 @@ if [ -z "$RELEASE_TRAINS_STABLE_PATH" ]; then
     echo "-e error stable release train must be provided "
     exit 1
 fi
-MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
+MCR_NAME_PATH="oci://mcr.microsoft.com/azuremonitor/containerinsights/canary/stable/azuremonitor-containers"
 echo "Pulling chart from MCR:${MCR_NAME_PATH}"
-helm chart pull ${MCR_NAME_PATH}:${CHART_VERSION}
+helm pull ${MCR_NAME_PATH} --version ${CHART_VERSION}
 if [ $? -eq 0 ]; then
   echo "Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} completed successfully."
 else
   echo "-e error Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} failed. Please review Ev2 pipeline logs for more details on the error."
   exit 1
-fi   
+fi
 # Create JSON request body
 cat <<EOF > "request.json"
 {
@@ -145,15 +145,15 @@ if [ -z "$REGISTER_REGIONS_BATCH" ]; then
     echo "-e error stable release regions must be provided "
     exit 1
 fi
-MCR_NAME_PATH="mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
+MCR_NAME_PATH="oci://mcr.microsoft.com/azuremonitor/containerinsights/prod1/stable/azuremonitor-containers"
 echo "Pulling chart from MCR:${MCR_NAME_PATH}"
-helm chart pull ${MCR_NAME_PATH}:${CHART_VERSION}
+helm pull ${MCR_NAME_PATH} --version ${CHART_VERSION}
 if [ $? -eq 0 ]; then
   echo "Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} completed successfully."
 else
   echo "-e error Pulling chart from MCR:${MCR_NAME_PATH}:${CHART_VERSION} failed. Please review Ev2 pipeline logs for more details on the error."
   exit 1
-fi   
+fi
 # Create JSON request body
 cat <<EOF > "request.json"
 {
@@ -211,7 +211,7 @@ cat <<EOF >> "request.json"
 }
 EOF
     ;;
-    
+
   *)
     echo -n "unknown release stage"
     exit 1
@@ -234,7 +234,7 @@ if [ $? -eq 0 ]; then
 else
   echo "-e error failed to login to az with managed identity credentials"
   exit 1
-fi    
+fi
 
 ACCESS_TOKEN=$(az account get-access-token --resource $RESOURCE_AUDIENCE --query accessToken -o json)
 if [ $? -eq 0 ]; then
@@ -242,7 +242,7 @@ if [ $? -eq 0 ]; then
 else
   echo "-e error get access token from resource:$RESOURCE_AUDIENCE failed. Please review Ev2 pipeline logs for more details on the error."
   exit 1
-fi   
+fi
 ACCESS_TOKEN=$(echo $ACCESS_TOKEN | tr -d '"' | tr -d '"\r\n')
 
 ARC_API_URL="https://eastus2euap.dp.kubernetesconfiguration.azure.com"

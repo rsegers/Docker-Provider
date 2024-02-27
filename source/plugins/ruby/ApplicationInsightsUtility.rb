@@ -4,7 +4,6 @@
 class ApplicationInsightsUtility
   require_relative "lib/application_insights"
   require_relative "omslog"
-  require_relative "DockerApiClient"
   require_relative "oms_common"
   require_relative "proxy_utils"
   require "json"
@@ -38,7 +37,8 @@ class ApplicationInsightsUtility
     @@proxy = (ProxyUtils.getProxyConfiguration)
   end
 
-  @@controllerType = {"daemonset" => "DS", "replicaset" => "RS"}
+  @@controllerType = { "daemonset" => "DS", "replicaset" => "RS" }
+
   def initialize
   end
 
@@ -157,15 +157,6 @@ class ApplicationInsightsUtility
         if !containerRuntime.nil? && !containerRuntime.empty?
           # cri field holds either containerRuntime for non-docker or Dockerversion if its docker
           @@CustomProperties["cri"] = containerRuntime
-          # Not doing this for windows since docker is being deprecated soon and we dont want to bring in the socket dependency.
-          if !@@isWindows.nil? && @@isWindows == false
-            if containerRuntime.casecmp("docker") == 0
-              dockerInfo = DockerApiClient.dockerInfo
-              if (!dockerInfo.nil? && !dockerInfo.empty?)
-                @@CustomProperties["cri"] = dockerInfo["Version"]
-              end
-            end
-          end
         end
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: getContainerRuntimeInfo - error: #{errorStr}")
@@ -363,6 +354,5 @@ class ApplicationInsightsUtility
         $log.warn("Exception in AppInsightsUtility: sendAPIResponseTelemetry failed with an error: #{err}")
       end
     end
-
   end
 end

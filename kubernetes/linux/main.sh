@@ -22,6 +22,7 @@ setGlobalEnvVar() {
       echo "export \"$1\"=\"$2\"" >> /opt/env_vars
 }
 touch /opt/env_vars
+touch /opt/dcr_env_var
 echo "source /opt/env_vars" >> ~/.bashrc
 
 waitforlisteneronTCPport() {
@@ -825,6 +826,10 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && isGenevaMode; then
     echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
     export SSL_CERT_FILE="/etc/pki/tls/certs/ca-bundle.crt"
     echo "export SSL_CERT_FILE=$SSL_CERT_FILE" >> ~/.bashrc
+    if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
+       export AAD_MSI_AUTH_MODE=true
+       echo "export AAD_MSI_AUTH_MODE=true" >> ~/.bashrc
+    fi
 else
       if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
             echo "*** setting up oneagent in aad auth msi mode ***"
@@ -933,11 +938,35 @@ if [ ! -f /etc/cron.d/ci-agent ]; then
       echo "*/5 * * * * root /usr/sbin/logrotate -s /var/lib/logrotate/ci-agent-status /etc/logrotate.d/ci-agent >/dev/null 2>&1" >/etc/cron.d/ci-agent
 fi
 
+# Write messages from the liveness probe to stdout (so telemetry picks it up)
+touch /dev/write-to-traces
+
+if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+     checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
+elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+      checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
+else
+      echo "not checking onboarding status (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
+fi
+
+ruby dcr-config-parser.rb
+if [ -e "/opt/dcr_env_var" ]; then
+      cat dcr_env_var | while read line; do
+            echo $line >>~/.bashrc
+      done
+      source /opt/dcr_env_var
+      setGlobalEnvVar LOGS_AND_EVENTS_ONLY "${LOGS_AND_EVENTS_ONLY}"
+fi
+
 # no dependency on fluentd for prometheus side car container
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       if [ ! -e "/etc/config/kube.conf" ]; then
-            echo "*** starting fluentd v1 in daemonset"
-            fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+            if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
+                  echo "*** starting fluentd v1 in daemonset"
+                  fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+            else
+                  echo "Skipping fluentd since LOGS_AND_EVENTS_ONLY is set to true"
+            fi
       else
            echo "*** starting fluentd v1 in replicaset"
            fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
@@ -1091,10 +1120,14 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE
                   echo "no metrics to scrape since MUTE_PROM_SIDECAR is true, not checking for listener on tcp #25229"
             fi
       else
-            echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
-            waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
-            echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
-            waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
+            if [ "${LOGS_AND_EVENTS_ONLY}" == "true" ]; then
+                  echo "LOGS_AND_EVENTS_ONLY is true, not checking for listener on tcp #25226 and tcp #25228"
+            else
+                  echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
+                  waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
+                  echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
+                  waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
+            fi
       fi
 elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
         echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
@@ -1108,6 +1141,8 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
 elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
     if [ "${CONTROLLER_TYPE}" == "ReplicaSet" ] && [ "${TELEMETRY_RS_TELEGRAF_DISABLED}" == "true" ]; then
         echo "not starting telegraf since prom scraping is disabled for replicaset"
+    elif [ "${CONTROLLER_TYPE}" != "ReplicaSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${LOGS_AND_EVENTS_ONLY}" == "true" ]; then
+        echo "not starting telegraf for LOGS_AND_EVENTS_ONLY daemonset"
     else
         /opt/telegraf --config $telegrafConfFile &
     fi
@@ -1115,16 +1150,6 @@ else
     echo "not starting telegraf (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
 fi
 
-# Write messages from the liveness probe to stdout (so telemetry picks it up)
-touch /dev/write-to-traces
-
-if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
-     checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
-elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
-      checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
-else
-      echo "not checking onboarding status (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
-fi
 
 # Get the end time of the setup in seconds
 endTime=$(date +%s)
