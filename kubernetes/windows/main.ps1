@@ -659,6 +659,12 @@ function Start-Fluent-Telegraf {
 
     $containerRuntime = Get-ContainerRuntime
 
+    $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
+    if ([string]::IsNullOrEmpty($monitorKubernetesPods) -or $monitorKubernetesPods.ToLower() -eq 'false') {
+        Write-Host "Disabling telegraf tcp input plugin since TELEMETRY_CUSTOM_PROM_MONITOR_PODS is not set or set to false"
+        Clear-Content C:/etc/fluent-bit/fluent-bit-telegraf-tcp.conf
+    }
+
     if (![string]::IsNullOrEmpty($containerRuntime) -and [string]$containerRuntime.StartsWith('docker') -eq $false) {
         # change parser from docker to cri if the container runtime is not docker
         Write-Host "changing parser from Docker to CRI since container runtime : $($containerRuntime) and which is non-docker"
