@@ -1257,6 +1257,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					Log(fmt.Sprintf("Error convertKubernetesMetadata: %v", err))
 				}
 				includedMetadata := processIncludes(kubernetesMetadataMap, KubernetesMetadataIncludeList)
+				Log(fmt.Sprintf("Debug: kubernetesMetadataMap: %+v", kubernetesMetadataMap))
+				Log(fmt.Sprintf("Debug: KubernetesMetadataIncludeList: %+v\n", KubernetesMetadataIncludeList))
 				kubernetesMetadataBytes, err := json.Marshal(includedMetadata)
 				if err != nil {
 					message := fmt.Sprintf("Error while Marshalling kubernetesMetadataBytes to json bytes: %s", err.Error())
@@ -1264,6 +1266,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					SendException(message)
 				}
 				kubernetesMetadata = string(kubernetesMetadataBytes)
+				Log(fmt.Sprintf("Debug: kubernetesMetadata: %+v\n", kubernetesMetadata))
 			} else {
 				message := fmt.Sprintf("Error while fetching kubernetesMetadataJson")
 				Log(message)
@@ -1451,7 +1454,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	} else {
 		MdsdContainerLogTagName = MdsdContainerLogSourceName
 	}
-
+	Log(fmt.Sprintf("Debug: ContainerLogSchemaV2: %+v\n", ContainerLogSchemaV2))
 	if len(msgPackEntries) > 0 && ContainerLogsRouteV2 == true {
 		//flush to mdsd
 		if IsAADMSIAuthMode == true && !IsGenevaLogsIntegrationEnabled {
@@ -1491,7 +1494,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
 			msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
 		}
-
+		Log(fmt.Sprintf("Debug: ContainerLogSchemaV2: %+v\n", ContainerLogSchemaV2))
 		if IsWindows {
 			var datatype string
 			if ContainerLogSchemaV2 {
@@ -2022,6 +2025,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	KubernetesMetadataEnabled = false
 	KubernetesMetadataEnabled = (strings.Compare(strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")), "true") == 0)
 	metadataIncludeList := os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
+	Log(fmt.Sprintf("KubernetesMetadataEnabled from configmap: %+v\n", KubernetesMetadataEnabled))
 	Log(fmt.Sprintf("KubernetesMetadataIncludeList from configmap: %+v\n", metadataIncludeList))
 	KubernetesMetadataIncludeList = []string{}
 	if KubernetesMetadataEnabled && len(metadataIncludeList) > 0 {
