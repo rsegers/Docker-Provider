@@ -40,6 +40,8 @@ def substituteFluentBitPlaceHolders(configFilePath)
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
     stacktraceLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
     enableFluentBitThreading = ENV["ENABLE_FBIT_THREADING"]
+    kubernetesMetadataCollection = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
+    annotationBasedLogFiltering = ENV["AZMON_ANNOTATION_BASED_LOG_FILTERING"]
 
     serviceInterval = is_valid_number?(interval) ? interval : @default_service_interval
     serviceIntervalSetting = "Flush         " + serviceInterval
@@ -80,6 +82,16 @@ def substituteFluentBitPlaceHolders(configFilePath)
       new_contents = new_contents.gsub("${TAIL_THREADED}", "threaded on")
     else
       new_contents = new_contents.gsub("\n    ${TAIL_THREADED}\n", "\n")
+    end
+
+    if !kubernetesMetadataCollection.nil? && kubernetesMetadataCollection.to_s.downcase == "true"
+      new_contents = new_contents.gsub("#${KubernetesFilterEnabled}", "")
+    end
+
+    if !annotationBasedLogFiltering.nil? && annotationBasedLogFiltering.to_s.downcase == "true"
+      # enabled kubernetes fluent-bit plugin if not already enabled
+      new_contents = new_contents.gsub("#${KubernetesFilterEnabled}", "")
+      new_contents = new_contents.gsub("#${AnnotationBasedLogFilteringEnabled}", "")
     end
 
     if !multilineLogging.nil? && multilineLogging.to_s.downcase == "true"
