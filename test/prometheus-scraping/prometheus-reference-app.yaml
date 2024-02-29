@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-reference-app
+spec:
+  selector:
+    matchLabels:
+      app: prometheus-reference-app
+  replicas: 1
+  template:
+    metadata:
+      annotations:
+        prometheus.io/port: '2112'
+        prometheus.io/scrape: 'true'
+      labels:
+        app: prometheus-reference-app
+    spec:
+      containers:
+        - name: prometheus-reference-app-golang
+          image: mcr.microsoft.com/azuremonitor/containerinsights/cidev/prometheus-collector/images:6.7.5-main-09-12-2023-8fbde9ca-ref-app-golang
+          env:
+            - name: RUN_PERF_TEST
+              value: "false"
+            - name: SCRAPE_INTERVAL
+              value: "15"
+            - name: METRIC_COUNT
+              value: "125000"
+          ports:
+            - containerPort: 2112
+              protocol: TCP
+            - containerPort: 2113
+              protocol: TCP
+          resources:
+             limits:
+               cpu: 100m
+               memory: 100Mi
+             requests:
+               cpu: 100m
+               memory: 100Mi
+      nodeSelector:
+          kubernetes.io/os: linux
+      tolerations:
+        - key: "CriticalAddonsOnly"
+          operator: "Exists"
+        - operator: "Exists"
+          effect: NoExecute
+        - operator: "Exists"
+          effect: NoSchedule
+        - operator: "Exists"
+          effect: PreferNoSchedule

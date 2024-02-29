@@ -60,6 +60,7 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/ConfigParseErrorLogger.rb;                                 build/common/installer/scripts/ConfigParseErrorLogger.rb;           755; root; root
 /opt/tomlparser-npm-config.rb;                                  build/linux/installer/scripts/tomlparser-npm-config.rb;     755; root; root
 /opt/tomlparser-osm-config.rb;                                  build/linux/installer/scripts/tomlparser-osm-config.rb;     755; root; root
+/opt/dcr-config-parser.rb;                                      build/linux/installer/scripts/dcr-config-parser.rb;     755; root; root
 /opt/test.json;			                                        build/linux/installer/conf/test.json;                    644; root; root
 
 /etc/fluent/plugin/lib/application_insights/version.rb;								   source/plugins/ruby/lib/application_insights/version.rb; 644; root; root
@@ -113,8 +114,6 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/fluent/plugin/constants.rb;			                                                source/plugins/ruby/constants.rb;			    	644; root; root
 /etc/fluent/plugin/ContainerInventoryState.rb;								            		source/plugins/ruby/ContainerInventoryState.rb;		644; root; root
 /etc/fluent/plugin/CustomMetricsUtils.rb;											               source/plugins/ruby/CustomMetricsUtils.rb;				644; root; root
-/etc/fluent/plugin/DockerApiClient.rb;											                  source/plugins/ruby/DockerApiClient.rb;				644; root; root
-/etc/fluent/plugin/DockerApiRestHelper.rb;										      	      source/plugins/ruby/DockerApiRestHelper.rb;			644; root; root
 /etc/fluent/plugin/kubelet_utils.rb;			                                          source/plugins/ruby/kubelet_utils.rb;			    	644; root; root
 /etc/fluent/plugin/proxy_utils.rb;			                                             source/plugins/ruby/proxy_utils.rb;			    	644; root; root
 /etc/fluent/plugin/kubernetes_container_inventory.rb;							               source/plugins/ruby/kubernetes_container_inventory.rb;		644; root; root
@@ -244,6 +243,10 @@ chmod 666 /var/opt/microsoft/docker-cimprov/log/appinsights_error.log
 
 touch /var/opt/microsoft/docker-cimprov/log/fluentd.log
 chmod 666 /var/opt/microsoft/docker-cimprov/log/fluentd.log
+
+touch /var/opt/microsoft/docker-cimprov/log/telegraf_error.log
+chmod 666 /var/opt/microsoft/docker-cimprov/log/telegraf_error.log
+
 
 %Postuninstall_10
 # If we're an upgrade, skip all of this cleanup

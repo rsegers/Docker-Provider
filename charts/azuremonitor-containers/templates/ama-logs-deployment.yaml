@@ -124,8 +124,9 @@ spec:
        - containerPort: 25224
          protocol: UDP
        volumeMounts:
-        - mountPath: /var/run/host
-          name: docker-sock
+        - name: kube-api-access
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
         - mountPath: /var/log
           name: host-log
         - mountPath: /var/lib/docker/containers
@@ -178,9 +179,23 @@ spec:
    {{- end }}
    {{- end }}
    volumes:
-    - name: docker-sock
-      hostPath:
-       path: /var/run
+    - name: kube-api-access
+      projected:
+        sources:
+        - serviceAccountToken:
+            path: token
+            expirationSeconds: 3600
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
     - name: container-hostname
       hostPath:
        path: /etc/hostname
