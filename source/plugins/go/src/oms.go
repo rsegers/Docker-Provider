@@ -1121,6 +1121,26 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 
 func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList []string) map[string]interface{} {
 	includedMetadata := make(map[string]interface{})
+	
+	// pre process image related fields
+	var imageRepo, imageName, imageTag, imageID string
+    imageProcessed := false // Flag to check if image processing is required
+	for _, include := range includesList {
+        if include == "imageID" || include == "imageRepo" || include == "image" || include == "imageTag" {
+            imageProcessed = true
+            break
+        }
+    }
+
+	if imageProcessed {
+        if hash, ok := kubernetesMetadataMap["container_hash"].(string); ok {
+            imageID = extractImageID(hash)
+        }
+        if image, ok := kubernetesMetadataMap["container_image"].(string); ok {
+            imageRepo, imageName, imageTag = parseImageDetails(image)
+        }
+    }
+
 	for _, include := range includesList {
 		switch include {
 		case "poduid":
@@ -1143,51 +1163,72 @@ func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList 
 					includedMetadata["podAnnotations"] = filteredAnnotations
 				}
 			}
-		case "image":
-			// Process Image Hash
-			if hash, ok := kubernetesMetadataMap["container_hash"].(string); ok {
-				if atLocation := strings.Index(hash, "@"); atLocation != -1 {
-					includedMetadata["imageID"] = hash[atLocation+1:]
-				}
-			}
-
-			// Process Image Name
-			if image, ok := kubernetesMetadataMap["container_image"].(string); ok {
-				slashLocation := strings.Index(image, "/")
-				colonLocation := strings.Index(image, ":")
-				atLocation := strings.Index(image, "@")
-				if atLocation != -1 {
-					// Exclude the digest part for imageRepo/image/tag parsing
-					image = image[:atLocation]
-				}
-				if colonLocation != -1 {
-					// Image with tag
-					if slashLocation != -1 && slashLocation < colonLocation {
-						// imageRepo/image:tag
-						includedMetadata["imageRepo"] = image[:slashLocation]
-						includedMetadata["image"] = image[slashLocation+1 : colonLocation]
-					} else {
-						// image:tag without imageRepo
-						includedMetadata["image"] = image[:colonLocation]
-					}
-					includedMetadata["imageTag"] = image[colonLocation+1:]
-				} else {
-					// Image without tag, possibly with imageRepo
-					if slashLocation != -1 {
-						includedMetadata["imageRepo"] = image[:slashLocation]
-						includedMetadata["image"] = image[slashLocation+1:]
-					} else {
-						// Plain image without imageRepo or tag
-						includedMetadata["image"] = image
-					}
-					if atLocation == -1 {
-						includedMetadata["imageTag"] = "latest" // No tag specified, default to "latest"
-					}
-				}
-			}
-		}
+		case "imageid":
+            if imageID != "" {
+                includedMetadata["imageID"] = imageID
+            }
+        case "imagerepo":
+            if imageRepo != "" {
+                includedMetadata["imageRepo"] = imageRepo
+            }
+        case "image":
+            if imageName != "" {
+                includedMetadata["image"] = imageName
+            }
+        case "imagetag":
+            if imageTag != "" {
+                includedMetadata["imageTag"] = imageTag
+            }
+        }
 	}
 	return includedMetadata
+}
+
+func extractImageID(hash string) string {
+    if atLocation := strings.Index(hash, "@"); atLocation != -1 {
+        return hash[atLocation+1:]
+    }
+    return ""
+}
+
+func parseImageDetails(image string) (repo, name, tag string) {
+    slashLocation := strings.Index(image, "/")
+    colonLocation := strings.Index(image, ":")
+    atLocation := strings.Index(image, "@")
+
+    // Exclude the digest part for imageRepo/image/tag parsing, if present
+    if atLocation != -1 {
+        image = image[:atLocation]
+    }
+
+    // Process Image Name, Repo, and Tag based on the original logic
+    if colonLocation != -1 {
+        // Image with tag
+        if slashLocation != -1 && slashLocation < colonLocation {
+            // imageRepo/image:tag
+            repo = image[:slashLocation]
+            name = image[slashLocation+1 : colonLocation]
+        } else {
+            // image:tag without imageRepo
+            name = image[:colonLocation]
+        }
+        tag = image[colonLocation+1:]
+    } else {
+        // Image without tag, possibly with imageRepo
+        if slashLocation != -1 {
+            repo = image[:slashLocation]
+            name = image[slashLocation+1:]
+        } else {
+            // Plain image without imageRepo or tag
+            name = image
+        }
+        // Default to "latest" only if no "@" symbol found, aligning with original behavior
+        if atLocation == -1 {
+            tag = "latest"
+        }
+    }
+
+    return repo, name, tag
 }
 
 func convertKubernetesMetadata(kubernetesMetadataJson interface{}) (map[string]interface{}, error) {

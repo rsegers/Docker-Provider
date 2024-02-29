@@ -26,7 +26,7 @@ require_relative "ConfigParseErrorLogger"
 @logEnableMultiline = "false"
 @stacktraceLanguages = "go,java,python,dotnet"
 @logEnableKubernetesMetadata = false
-@logKubernetesMetadataIncludeFields = "podlabels,podannotations,poduid,image"
+@logKubernetesMetadataIncludeFields = "podlabels,podannotations,poduid,image,imageid,imagerepo,imagetag"
 @annotationBasedLogFiltering = false
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama

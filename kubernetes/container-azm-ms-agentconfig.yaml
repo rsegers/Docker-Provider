@@ -56,7 +56,7 @@ data:
        #[log_collection_settings.metadata_collection]
           # if enabled will collect kubernetes metadata for ContainerLogv2 schema. Default false
           # enabled = false
-          # include_fields = ["podLabels","podAnnotations","podUid","image"]
+          # include_fields = ["podLabels","podAnnotations","podUid","image","imageID","imageRepo","imageTag"]
        #[log_collection_settings.filter_using_annotations]
           # if enabled will exclude logs from pods with annotations fluenbit.io/exclude: "true". Read more: https://docs.fluentbit.io/manual/pipeline/filters/kubernetes#kubernetes-annotations
           # enabled = false
