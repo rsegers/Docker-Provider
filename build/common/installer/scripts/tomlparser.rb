@@ -249,7 +249,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             if any_field_match
               @logKubernetesMetadataIncludeFields = include_fields.join(",")
             else
-              puts "config::Include fields specified for Kubernetes metadata does not match any predefined fields, disabling Kubernetes metadata"
+              puts "config:: WARN: Include fields specified for Kubernetes metadata does not match any predefined fields, disabling Kubernetes metadata"
               @logEnableKubernetesMetadata = false
             end
           end
