@@ -75,7 +75,7 @@ echo "$(fluent-bit --version)" >> packages_version.txt
 
 # install fluentd using the mariner package
 # sudo tdnf install rubygem-fluentd-1.14.6 -y
-fluentd_version="1.14.6"
+fluentd_version="1.16.3"
 gem install fluentd -v $fluentd_version --no-document
 
 # remove the test directory from fluentd
