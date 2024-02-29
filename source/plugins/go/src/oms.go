@@ -1121,25 +1121,25 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 
 func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList []string) map[string]interface{} {
 	includedMetadata := make(map[string]interface{})
-	
+
 	// pre process image related fields
 	var imageRepo, imageName, imageTag, imageID string
-    imageProcessed := false // Flag to check if image processing is required
+	imageProcessed := false // Flag to check if image processing is required
 	for _, include := range includesList {
-        if include == "imageID" || include == "imageRepo" || include == "image" || include == "imageTag" {
-            imageProcessed = true
-            break
-        }
-    }
+		if include == "imageID" || include == "imageRepo" || include == "image" || include == "imageTag" {
+			imageProcessed = true
+			break
+		}
+	}
 
 	if imageProcessed {
-        if hash, ok := kubernetesMetadataMap["container_hash"].(string); ok {
-            imageID = extractImageID(hash)
-        }
-        if image, ok := kubernetesMetadataMap["container_image"].(string); ok {
-            imageRepo, imageName, imageTag = parseImageDetails(image)
-        }
-    }
+		if hash, ok := kubernetesMetadataMap["container_hash"].(string); ok {
+			imageID = extractImageID(hash)
+		}
+		if image, ok := kubernetesMetadataMap["container_image"].(string); ok {
+			imageRepo, imageName, imageTag = parseImageDetails(image)
+		}
+	}
 
 	for _, include := range includesList {
 		switch include {
@@ -1164,71 +1164,71 @@ func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList 
 				}
 			}
 		case "imageid":
-            if imageID != "" {
-                includedMetadata["imageID"] = imageID
-            }
-        case "imagerepo":
-            if imageRepo != "" {
-                includedMetadata["imageRepo"] = imageRepo
-            }
-        case "image":
-            if imageName != "" {
-                includedMetadata["image"] = imageName
-            }
-        case "imagetag":
-            if imageTag != "" {
-                includedMetadata["imageTag"] = imageTag
-            }
-        }
+			if imageID != "" {
+				includedMetadata["imageID"] = imageID
+			}
+		case "imagerepo":
+			if imageRepo != "" {
+				includedMetadata["imageRepo"] = imageRepo
+			}
+		case "image":
+			if imageName != "" {
+				includedMetadata["image"] = imageName
+			}
+		case "imagetag":
+			if imageTag != "" {
+				includedMetadata["imageTag"] = imageTag
+			}
+		}
 	}
 	return includedMetadata
 }
 
 func extractImageID(hash string) string {
-    if atLocation := strings.Index(hash, "@"); atLocation != -1 {
-        return hash[atLocation+1:]
-    }
-    return ""
+	if atLocation := strings.Index(hash, "@"); atLocation != -1 {
+		return hash[atLocation+1:]
+	}
+	return ""
 }
 
 func parseImageDetails(image string) (repo, name, tag string) {
-    slashLocation := strings.Index(image, "/")
-    colonLocation := strings.Index(image, ":")
-    atLocation := strings.Index(image, "@")
+	slashLocation := strings.Index(image, "/")
+	colonLocation := strings.Index(image, ":")
+	atLocation := strings.Index(image, "@")
 
-    // Exclude the digest part for imageRepo/image/tag parsing, if present
-    if atLocation != -1 {
-        image = image[:atLocation]
-    }
+	// Exclude the digest part for imageRepo/image/tag parsing, if present
+	if atLocation != -1 {
+		image = image[:atLocation]
+	}
 
-    // Process Image Name, Repo, and Tag based on the original logic
-    if colonLocation != -1 {
-        // Image with tag
-        if slashLocation != -1 && slashLocation < colonLocation {
-            // imageRepo/image:tag
-            repo = image[:slashLocation]
-            name = image[slashLocation+1 : colonLocation]
-        } else {
-            // image:tag without imageRepo
-            name = image[:colonLocation]
-        }
-        tag = image[colonLocation+1:]
-    } else {
-        // Image without tag, possibly with imageRepo
-        if slashLocation != -1 {
-            repo = image[:slashLocation]
-            name = image[slashLocation+1:]
-        } else {
-            // Plain image without imageRepo or tag
-            name = image
-        }
-        // Default to "latest" only if no "@" symbol found, aligning with original behavior
-        if atLocation == -1 {
-            tag = "latest"
-        }
-    }
+	// Process Image Name, Repo, and Tag based on the original logic
+	if colonLocation != -1 {
+		// Image with tag
+		if slashLocation != -1 && slashLocation < colonLocation {
+			// imageRepo/image:tag
+			repo = image[:slashLocation]
+			name = image[slashLocation+1 : colonLocation]
+		} else {
+			// image:tag without imageRepo
+			name = image[:colonLocation]
+		}
+		tag = image[colonLocation+1:]
+	} else {
+		// Image without tag, possibly with imageRepo
+		if slashLocation != -1 {
+			repo = image[:slashLocation]
+			name = image[slashLocation+1:]
+		} else {
+			// Plain image without imageRepo or tag
+			name = image
+		}
+		// Default to "latest" only if no "@" symbol found, aligning with original behavior
+		if atLocation == -1 {
+			tag = "latest"
+		}
+	}
 
-    return repo, name, tag
+	return repo, name, tag
 }
 
 func convertKubernetesMetadata(kubernetesMetadataJson interface{}) (map[string]interface{}, error) {
@@ -1311,7 +1311,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				continue
 			}
 			elapsed := time.Since(start)
-			processingTimeMs := elapsed.Milliseconds();
+			processingTimeMs := elapsed.Milliseconds()
 			SendMetric("K8sMetadataProcessingMs", float64(processingTimeMs), map[string]string{})
 		}
 
