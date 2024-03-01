@@ -101,10 +101,10 @@ checkAgentOnboardingStatus() {
                               return 1
                         fi
 
-                        if grep "$successMessage" "${MDSD_LOG}/mdsd.info"; then
+                        if grep -q "$successMessage" "${MDSD_LOG}/mdsd.info" > /dev/null 2>&1; then
                               echo "Onboarding success"
                               return 0
-                        elif grep "$failureMessage" "${MDSD_LOG}/mdsd.err"; then
+                        elif grep -q "$failureMessage" "${MDSD_LOG}/mdsd.err" > /dev/null 2>&1; then
                               echo "Onboarding Failure: Reason: Failed to onboard the agent"
                               echo "Onboarding Failure: Please verify log analytics workspace configuration such as existence of the workspace, workspace key and workspace enabled for public ingestion"
                               return 1
