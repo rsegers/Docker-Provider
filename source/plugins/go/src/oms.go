@@ -1291,7 +1291,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		logEntrySource := ToString(record["stream"])
 		kubernetesMetadata := ""
 		if KubernetesMetadataEnabled {
-			start := time.Now()
+			//start := time.Now()
 			if kubernetesMetadataJson, exists := record["kubernetes"]; exists {
 				kubernetesMetadataMap, err := convertKubernetesMetadata(kubernetesMetadataJson)
 				if err != nil {
