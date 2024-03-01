@@ -1313,8 +1313,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				Log(message)
 				continue
 			}
-			elapsed := time.Since(start)
-			processingTimeMs := elapsed.Milliseconds()
+			//elapsed := time.Since(start)
+			//processingTimeMs := elapsed.Milliseconds()
 			//SendMetric("K8sMetadataProcessingMs", float64(processingTimeMs), map[string]string{})
 		}
 
