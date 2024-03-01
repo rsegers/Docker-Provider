@@ -48,6 +48,7 @@ def substituteFluentBitPlaceHolders
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
     stacktraceLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
     kubernetesMetadataCollection = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
+    kubernetesMetadataCacheTTL = ENV["AZMON_KUBERNETES_METADATA_CACHE_TTL"]
     annotationBasedLogFiltering = ENV["AZMON_ANNOTATION_BASED_LOG_FILTERING"]
 
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
@@ -93,6 +94,7 @@ def substituteFluentBitPlaceHolders
       # enabled kubernetes fluent-bit plugin if not already enabled
       new_contents = new_contents.gsub("#${KubernetesFilterEnabled}", "")
       new_contents = new_contents.gsub("#${AnnotationBasedLogFilteringEnabled}", "")
+      new_contents = new_contents.gsub("#${KubernetesMetadataCacheTTL}", kubernetesMetadataCacheTTL)
     end
 
     new_contents = substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)

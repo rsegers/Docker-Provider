@@ -27,6 +27,7 @@ require_relative "ConfigParseErrorLogger"
 @stacktraceLanguages = "go,java,python,dotnet"
 @logEnableKubernetesMetadata = false
 @logKubernetesMetadataIncludeFields = "podlabels,podannotations,poduid,image,imageid,imagerepo,imagetag"
+@logEnableKubernetesMetadataCacheTTL = "60"
 @annotationBasedLogFiltering = false
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
@@ -254,6 +255,9 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             end
           end
         end
+        if !parsedConfig[:log_collection_settings][:metadata_collection][:kube_meta_cache_ttl].nil?
+          puts "config::Using config map setting for kubernetes metadata cache ttl"
+          @logEnableKubernetesMetadataCacheTTL = parsedConfig[:log_collection_settings][:metadata_collection][:kube_meta_cache_ttl]
       end
     end
 
@@ -314,6 +318,7 @@ if !file.nil?
   file.write("export AZMON_MULTILINE_LANGUAGES=#{@stacktraceLanguages}\n")
   file.write("export AZMON_KUBERNETES_METADATA_ENABLED=#{@logEnableKubernetesMetadata}\n")
   file.write("export AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS=#{@logKubernetesMetadataIncludeFields}\n")
+  file.write("export AZMON_KUBERNETES_METADATA_CACHE_TTL=#{@logEnableKubernetesMetadataCacheTTL}\n")
   file.write("export AZMON_ANNOTATION_BASED_LOG_FILTERING=#{@annotationBasedLogFiltering}\n")
   # Close file after writing all environment variables
   file.close
@@ -382,6 +387,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows("AZMON_MULTILINE_LANGUAGES", @stacktraceLanguages)
     file.write(commands)
     commands = get_command_windows("AZMON_KUBERNETES_METADATA_ENABLED", @logEnableKubernetesMetadata)
+    file.write(commands)
+    commands = get_command_windows("AZMON_KUBERNETES_METADATA_CACHE_TTL", @logEnableKubernetesMetadataCacheTTL)
     file.write(commands)
     commands = get_command_windows("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS", @logKubernetesMetadataIncludeFields)
     file.write(commands)

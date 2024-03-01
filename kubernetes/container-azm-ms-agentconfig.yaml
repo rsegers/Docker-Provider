@@ -58,6 +58,7 @@ data:
           # enabled = false
           # if include_fields commented out or empty, all fields will be included. If include_fields is set, only the fields listed will be included.
           # include_fields = ["podLabels","podAnnotations","podUid","image","imageID","imageRepo","imageTag"]
+          # kube_meta_cache_ttl = "60"
        #[log_collection_settings.filter_using_annotations]
           # if enabled will exclude logs from pods with annotations fluenbit.io/exclude: "true". Read more: https://docs.fluentbit.io/manual/pipeline/filters/kubernetes#kubernetes-annotations
           # enabled = false
