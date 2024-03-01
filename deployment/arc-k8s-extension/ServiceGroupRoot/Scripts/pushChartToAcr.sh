@@ -25,6 +25,8 @@ export FF_REGION_REPO_PATH="azuremonitor/containerinsights/prod5/${REPO_TYPE}"
 # Mooncake regions
 export MC_REGION_REPO_PATH="azuremonitor/containerinsights/prod6/${REPO_TYPE}"
 
+export CHART_NAME="azuremonitor-containers"
+
 # pull chart from previous stage mcr and push chart to next stage acr
 pull_chart_from_source_mcr_to_push_to_dest_acr() {
     srcMcrFullPath=${1}
@@ -131,7 +133,7 @@ case $RELEASE_STAGE in
 
   Pilot | Prod1)
     echo "START: Release stage - Pilot"
-    srcMcrFullPath=oci://${MCR_NAME}/${CANARY_REGION_REPO_PATH}
+    srcMcrFullPath=oci://${MCR_NAME}/${CANARY_REGION_REPO_PATH}/${CHART_NAME}
     destAcrFullPath=oci://${ACR_NAME}/public/${PILOT_REGION_REPO_PATH}
     pull_chart_from_source_mcr_to_push_to_dest_acr $srcMcrFullPath $destAcrFullPath
     echo "END: Release stage - Pilot"
@@ -139,7 +141,7 @@ case $RELEASE_STAGE in
 
   LightLoad | Pord2)
     echo "START: Release stage - Light Load Regions"
-    srcMcrFullPath=oci://${MCR_NAME}/${PILOT_REGION_REPO_PATH}
+    srcMcrFullPath=oci://${MCR_NAME}/${PILOT_REGION_REPO_PATH}/${CHART_NAME}
     destAcrFullPath=oci://${ACR_NAME}/public/${LIGHT_LOAD_REGION_REPO_PATH}
     pull_chart_from_source_mcr_to_push_to_dest_acr $srcMcrFullPath $destAcrFullPath
     echo "END: Release stage - Light Load Regions"
@@ -147,7 +149,7 @@ case $RELEASE_STAGE in
 
   MediumLoad | Prod3)
     echo  "START: Release stage - Medium Load Regions"
-    srcMcrFullPath=oci://${MCR_NAME}/${LIGHT_LOAD_REGION_REPO_PATH}
+    srcMcrFullPath=oci://${MCR_NAME}/${LIGHT_LOAD_REGION_REPO_PATH}/${CHART_NAME}
     destAcrFullPath=oci://${ACR_NAME}/public/${MEDIUM_LOAD_REGION_REPO_PATH}
     pull_chart_from_source_mcr_to_push_to_dest_acr $srcMcrFullPath $destAcrFullPath
     echo  "END: Release stage - Medium Load Regions"
@@ -155,7 +157,7 @@ case $RELEASE_STAGE in
 
   HighLoad | Prod4)
     echo  "START: Release stage - High Load Regions"
-    srcMcrFullPath=oci://${MCR_NAME}/${MEDIUM_LOAD_REGION_REPO_PATH}
+    srcMcrFullPath=oci://${MCR_NAME}/${MEDIUM_LOAD_REGION_REPO_PATH}/${CHART_NAME}
     destAcrFullPath=oci://${ACR_NAME}/public/${HIGH_LOAD_REGION_REPO_PATH}
     pull_chart_from_source_mcr_to_push_to_dest_acr $srcMcrFullPath $destAcrFullPath
     echo  "END: Release stage - High Load Regions"
@@ -163,7 +165,7 @@ case $RELEASE_STAGE in
 
   FF | Prod5)
     echo  "START: Release stage - FF"
-    srcMcrFullPath=oci://${MCR_NAME}/${HIGH_LOAD_REGION_REPO_PATH}
+    srcMcrFullPath=oci://${MCR_NAME}/${HIGH_LOAD_REGION_REPO_PATH}/${CHART_NAME}
     destAcrFullPath=oci://${ACR_NAME}/public/${FF_REGION_REPO_PATH}
     pull_chart_from_source_mcr_to_push_to_dest_acr $srcMcrFullPath $destAcrFullPath
     echo  "END: Release stage - FF"
@@ -171,7 +173,7 @@ case $RELEASE_STAGE in
 
   MC | Prod6)
     echo "START: Release stage - MC"
-    srcMcrFullPath=oci://${MCR_NAME}/${FF_REGION_REPO_PATH}
+    srcMcrFullPath=oci://${MCR_NAME}/${FF_REGION_REPO_PATH}/${CHART_NAME}
     destAcrFullPath=oci://${ACR_NAME}/public/${MC_REGION_REPO_PATH}
     pull_chart_from_source_mcr_to_push_to_dest_acr $srcMcrFullPath $destAcrFullPath
     echo "END: Release stage - MC"
