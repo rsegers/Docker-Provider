@@ -564,6 +564,12 @@ jobs:
         echo "Extract out oms"
         docker cp signingContainer:C:\opt\amalogswindows\out_oms.so .
 
+        echo "Extract containerinventory.so"
+        docker cp signingContainer:C:\opt\fluent-bit\bin\containerinventory.so .
+
+        echo "Extract perf.so"
+        docker cp signingContainer:C:\opt\fluent-bit\bin\perf.so .
+
         echo "Removing container..."
         docker rm signingContainer
 
