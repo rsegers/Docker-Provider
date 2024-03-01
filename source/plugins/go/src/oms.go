@@ -1126,7 +1126,7 @@ func processIncludes(kubernetesMetadataMap map[string]interface{}, includesList 
 	var imageRepo, imageName, imageTag, imageID string
 	imageProcessed := false // Flag to check if image processing is required
 	for _, include := range includesList {
-		if include == "imageID" || include == "imageRepo" || include == "image" || include == "imageTag" {
+		if include == "imageid" || include == "imagerepo" || include == "image" || include == "imagetag" {
 			imageProcessed = true
 			break
 		}
@@ -1298,6 +1298,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					Log(fmt.Sprintf("Error convertKubernetesMetadata: %v", err))
 				}
 				includedMetadata := processIncludes(kubernetesMetadataMap, KubernetesMetadataIncludeList)
+				Log(fmt.Sprintf("Debug: kubernetesMetadataMap: %+v", kubernetesMetadataMap))
+				Log(fmt.Sprintf("Debug: KubernetesMetadataIncludeList: %+v\n", KubernetesMetadataIncludeList))
 				kubernetesMetadataBytes, err := json.Marshal(includedMetadata)
 				if err != nil {
 					message := fmt.Sprintf("Error while Marshalling kubernetesMetadataBytes to json bytes: %s", err.Error())
@@ -1305,6 +1307,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					SendException(message)
 				}
 				kubernetesMetadata = string(kubernetesMetadataBytes)
+				Log(fmt.Sprintf("Debug: kubernetesMetadata: %+v\n", kubernetesMetadata))
 			} else {
 				message := fmt.Sprintf("Error while fetching kubernetesMetadataJson")
 				Log(message)
@@ -1312,7 +1315,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 			elapsed := time.Since(start)
 			processingTimeMs := elapsed.Milliseconds()
-			SendMetric("K8sMetadataProcessingMs", float64(processingTimeMs), map[string]string{})
+			//SendMetric("K8sMetadataProcessingMs", float64(processingTimeMs), map[string]string{})
 		}
 
 		if strings.EqualFold(logEntrySource, "stdout") {
@@ -2063,6 +2066,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	KubernetesMetadataEnabled = false
 	KubernetesMetadataEnabled = (strings.Compare(strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")), "true") == 0)
 	metadataIncludeList := os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
+	Log(fmt.Sprintf("KubernetesMetadataEnabled from configmap: %+v\n", KubernetesMetadataEnabled))
 	Log(fmt.Sprintf("KubernetesMetadataIncludeList from configmap: %+v\n", metadataIncludeList))
 	KubernetesMetadataIncludeList = []string{}
 	if KubernetesMetadataEnabled && len(metadataIncludeList) > 0 {
