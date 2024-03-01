@@ -94,7 +94,6 @@ require_relative "ConfigParseErrorLogger"
 @promFbitMemBufLimitDefault = "10m" #mb
 
 @ignoreProxySettings = false
-@disableTelemetry = false
 
 @multiline_enabled = "false"
 
@@ -371,11 +370,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           @waittime_port_25229 = waittime.to_i
           puts "Using config map value: WAITTIME_PORT_25229 = #{@waittime_port_25229}"
         end
-        telemetry_config = parseConfigMap[:agent_settings][:telemetry_config]
-        if !telemetry_config.nil? && !telemetry_config[:disable_telemetry].nil?
-          @disableTelemetry = telemetry_config[:disable_telemetry]
-          puts "Using config map value: disable_telemetry = #{@disableTelemetry}"
-        end
       end
     end
   rescue => errorStr
@@ -485,10 +479,6 @@ if !file.nil?
     file.write("export AZMON_MULTILINE_ENABLED=#{@multiline_enabled}\n")
   end
 
-  if @disableTelemetry
-    file.write("export DISABLE_TELEMETRY=#{@disableTelemetry}\n")
-  end
-
   file.write("export WAITTIME_PORT_25226=#{@waittime_port_25226}\n")
   file.write("export WAITTIME_PORT_25228=#{@waittime_port_25228}\n")
   file.write("export WAITTIME_PORT_25229=#{@waittime_port_25229}\n")
@@ -575,10 +565,6 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     end
     if @multiline_enabled.strip.casecmp("true") == 0
       commands = get_command_windows("AZMON_MULTILINE_ENABLED", @multiline_enabled)
-      file.write(commands)
-    end
-    if @disableTelemetry
-      commands = get_command_windows("DISABLE_TELEMETRY", @disableTelemetry)
       file.write(commands)
     end
     # Close file after writing all environment variables

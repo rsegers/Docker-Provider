@@ -326,6 +326,13 @@ if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSide
       fi
 fi
 
+# common agent config settings applicable for all container types
+ruby tomlparser-common-agent-config.rb
+cat common_agent_config_env_var | while read line; do
+      echo $line >> ~/.bashrc
+done
+source common_agent_config_env_var
+
 #Parse the configmap to set the right environment variables for agent config.
 #Note > tomlparser-agent-config.rb has to be parsed first before fluent-bit-conf-customizer.rb for fbit agent settings
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
