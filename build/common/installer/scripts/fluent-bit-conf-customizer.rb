@@ -48,9 +48,9 @@ def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
     return new_contents
 end
 
-def substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
+def substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
   #Update the config file only in two conditions: 1. Linux and resource optimization is enabled 2. Windows and using aad msi auth and not using geneva logs integration
-  if (!@isWindows && !resoureceOptimizationEnabled.nil? && resoureceOptimizationEnabled.to_s.downcase == "true") || (@isWindows && @using_aad_msi_auth && !@geneva_logs_integration)
+  if (!@isWindows && !resourceOptimizationEnabled.nil? && resourceOptimizationEnabled.to_s.downcase == "true") || (@isWindows && @using_aad_msi_auth && !@geneva_logs_integration)
     puts "config::Starting to substitute the placeholders in fluent-bit.conf file for resource optimization"
     if (@isWindows)
       new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/fluent-bit/azm-containers-input-plugins.conf")
@@ -75,7 +75,7 @@ def substituteFluentBitPlaceHolders
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
     stacktraceLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
-    resoureceOptimizationEnabled = ENV["AZMON_RESOURCE_OPTIMIZATION_ENABLED"]
+    resourceOptimizationEnabled = ENV["AZMON_RESOURCE_OPTIMIZATION_ENABLED"]
     windowsFluentBitDisabled = ENV["AZMON_WINDOWS_FLUENT_BIT_DISABLED"]
 
     serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
@@ -116,7 +116,7 @@ def substituteFluentBitPlaceHolders
     new_contents = substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
 
     if !@isWindows || (@isWindows && !windowsFluentBitDisabled.nil? && windowsFluentBitDisabled.to_s.downcase == "false")
-      new_contents = substituteResourceOptimization(resoureceOptimizationEnabled, new_contents)
+      new_contents = substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
     end
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in fluent-bit.conf file"
