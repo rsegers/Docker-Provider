@@ -1291,7 +1291,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		logEntrySource := ToString(record["stream"])
 		kubernetesMetadata := ""
 		if KubernetesMetadataEnabled {
-			//start := time.Now()
 			if kubernetesMetadataJson, exists := record["kubernetes"]; exists {
 				kubernetesMetadataMap, err := convertKubernetesMetadata(kubernetesMetadataJson)
 				if err != nil {
@@ -1310,9 +1309,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				Log(message)
 				continue
 			}
-			//elapsed := time.Since(start)
-			//processingTimeMs := elapsed.Milliseconds()
-			//SendMetric("K8sMetadataProcessingMs", float64(processingTimeMs), map[string]string{})
 		}
 
 		if strings.EqualFold(logEntrySource, "stdout") {
