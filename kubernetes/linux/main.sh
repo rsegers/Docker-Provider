@@ -4,15 +4,15 @@
 startTime=$(date +%s)
 
 gracefulShutdown() {
-      echo "gracefulShutdown start @ `date --rfc-3339=seconds`"
-      echo "gracefulShutdown fluent-bit process start @ `date --rfc-3339=seconds`"
+      echo "gracefulShutdown start @ $(date +'%Y-%m-%dT%H:%M:%S')"
+      echo "gracefulShutdown fluent-bit process start @ $(date +'%Y-%m-%dT%H:%M:%S')"
       pkill -f fluent-bit
-      sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
-      echo "gracefulShutdown fluent-bit process complete @ `date --rfc-3339=seconds`"
-      echo "gracefulShutdown mdsd process start @ `date --rfc-3339=seconds`"
+      sleep "${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}" # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
+      echo "gracefulShutdown fluent-bit process complete @ $(date +'%Y-%m-%dT%H:%M:%S')"
+      echo "gracefulShutdown mdsd process start @ $(date +'%Y-%m-%dT%H:%M:%S')"
       pkill -f mdsd
-      echo "gracefulShutdown mdsd process compelete @ `date --rfc-3339=seconds`"
-      echo "gracefulShutdown complete @ `date --rfc-3339=seconds`"
+      echo "gracefulShutdown mdsd process compelete @ $(date +'%Y-%m-%dT%H:%M:%S')"
+      echo "gracefulShutdown complete @ $(date +'%Y-%m-%dT%H:%M:%S')"
 }
 
 # please use this instead of adding env vars to bashrc directly
