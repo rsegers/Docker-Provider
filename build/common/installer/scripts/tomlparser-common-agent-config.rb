@@ -48,7 +48,7 @@ end
 def populateSettingValuesFromConfigMap(parsedConfig)
   begin
     if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil?
-      telemetry_config = parseConfigMap[:agent_settings][:telemetry_config]
+      telemetry_config = parsedConfig[:agent_settings][:telemetry_config]
       if !telemetry_config.nil? && !telemetry_config[:disable_telemetry].nil?
         @disableTelemetry = telemetry_config[:disable_telemetry]
         puts "Using config map value: disable_telemetry = #{@disableTelemetry}"
@@ -72,21 +72,6 @@ else
   end
 end
 
-# Write the settings to file, so that they can be set as environment variables
-file = File.open("common_agent_config_env_var", "w")
-
-if !file.nil?
-  if @disableTelemetry
-    file.write("export DISABLE_TELEMETRY=#{@disableTelemetry}\n")
-  end
-
-  # Close file after writing all environment variables
-  file.close
-else
-  puts "Exception while opening file for writing config environment variables"
-  puts "****************End Config Processing********************"
-end
-
 def get_command_windows(env_variable_name, env_variable_value)
   return "#{env_variable_name}=#{env_variable_value}\n"
 end
@@ -104,6 +89,20 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     puts "****************End Config Processing********************"
   else
     puts "Exception while opening file for writing config environment variables for WINDOWS LOG"
+    puts "****************End Config Processing********************"
+  end
+else
+  # Write the settings to file, so that they can be set as environment variables
+  file = File.open("common_agent_config_env_var", "w")
+  if !file.nil?
+    if @disableTelemetry
+      file.write("export DISABLE_TELEMETRY=#{@disableTelemetry}\n")
+    end
+
+    # Close file after writing all environment variables
+    file.close
+  else
+    puts "Exception while opening file for writing config environment variables"
     puts "****************End Config Processing********************"
   end
 end
