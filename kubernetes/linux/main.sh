@@ -1158,7 +1158,7 @@ endTime=$(date +%s)
 elapsed=$((endTime-startTime))
 echo "startup script took: $elapsed seconds"
 
-echo "startup script start @ $(date +'%Y-%m-%dT%H:%M:%S')"
+echo "startup script end @ $(date +'%Y-%m-%dT%H:%M:%S')"
 
 shutdown() {
      if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
