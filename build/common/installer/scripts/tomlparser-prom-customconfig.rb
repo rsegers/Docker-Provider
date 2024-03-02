@@ -1,6 +1,6 @@
 #!/usr/local/bin/ruby
 
-#this should be require relative in Linux and require in windows, since it is a gem install on windows
+
 @os_type = ENV["OS_TYPE"]
 require "tomlrb"
 
