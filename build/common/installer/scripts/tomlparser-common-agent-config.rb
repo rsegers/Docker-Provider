@@ -1,6 +1,5 @@
 #!/usr/local/bin/ruby
 
-
 @os_type = ENV["OS_TYPE"]
 require "tomlrb"
 
@@ -10,6 +9,10 @@ require_relative "ConfigParseErrorLogger"
 @configSchemaVersion = ""
 
 @disableTelemetry = false
+
+def is_windows?
+  return !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+end
 
 def is_number?(value)
   true if Integer(value) rescue false
@@ -76,7 +79,7 @@ def get_command_windows(env_variable_name, env_variable_value)
   return "#{env_variable_name}=#{env_variable_value}\n"
 end
 
-if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+if is_windows?
   # Write the settings to file, so that they can be set as environment variables
   file = File.open("setcommonagentenv.txt", "w")
   if !file.nil?
