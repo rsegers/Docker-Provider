@@ -2,8 +2,6 @@ module Docker-Provider/source/plugins/go/src
 
 go 1.21
 
-toolchain go1.21.3
-
 require (
 	github.com/Azure/azure-kusto-go v0.15.1
 	github.com/Microsoft/go-winio v0.5.2
