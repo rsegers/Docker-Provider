@@ -431,6 +431,11 @@ function Read-Configs {
     # run config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
     Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setenv.txt"
+
+    #Parse the configmap to set the right environment variables for agent config.
+    ruby /opt/amalogswindows/scripts/ruby/tomlparser-common-agent-config.rb
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setcommonagentenv.txt"
+
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
     Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setagentenv.txt"

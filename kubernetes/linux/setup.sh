@@ -37,7 +37,7 @@ mv /usr/lib/ruby/gems/3.1.0/specifications/default/uri-0.11.0.gemspec /usr/lib/r
 gem uninstall time --version 0.2.0
 gem uninstall uri --version 0.11.0
 
-sudo tdnf install -y azure-mdsd-1.29.4
+sudo tdnf install -y azure-mdsd-1.29.7
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d
 rm /usr/sbin/telegraf
@@ -75,7 +75,7 @@ echo "$(fluent-bit --version)" >> packages_version.txt
 
 # install fluentd using the mariner package
 # sudo tdnf install rubygem-fluentd-1.14.6 -y
-fluentd_version="1.14.6"
+fluentd_version="1.16.3"
 gem install fluentd -v $fluentd_version --no-document
 
 # remove the test directory from fluentd
