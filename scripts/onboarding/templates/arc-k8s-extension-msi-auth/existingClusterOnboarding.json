@@ -49,13 +49,13 @@
     "streams": {
       "type": "array",
       "metadata": {
-          "description": "Array of default container insights streams"
+        "description": "Array of default container insights streams"
       }
     },
     "enableContainerLogV2": {
       "type": "bool",
       "metadata": {
-          "description": "Enable ContainerLogV2 in Data Collection Rule"
+        "description": "Enable ContainerLogV2 in Data Collection Rule"
       }
     },
     "enableSyslog": {
@@ -79,13 +79,13 @@
     "dataCollectionInterval": {
       "type": "string",
       "metadata": {
-          "description": "Data collection interval e.g. \"5m\" for metrics and inventory. Supported value range from 1m to 30m"
+        "description": "Data collection interval e.g. \"5m\" for metrics and inventory. Supported value range from 1m to 30m"
       }
     },
     "namespaceFilteringModeForDataCollection": {
       "type": "string",
       "metadata": {
-          "description": "Data collection Filtering Mode for the namespaces"
+        "description": "Data collection Filtering Mode for the namespaces"
       },
       "allowedValues": [
         "Off",
@@ -97,8 +97,20 @@
     "namespacesForDataCollection": {
       "type": "array",
       "metadata": {
-          "description": "An array of Kubernetes namespaces for the data collection of inventory, events and metrics"
-    }
+        "description": "An array of Kubernetes namespaces for the data collection of inventory, events and metrics"
+      }
+    },
+    "useAzureMonitorPrivateLinkScope": {
+      "type": "bool",
+      "metadata": {
+        "description": "Flag to indicate if Azure Monitor Private Link Scope should be used or not"
+      }
+    },
+    "azureMonitorPrivateLinkScopeResourceId": {
+      "type": "string",
+      "metadata": {
+        "description": "Specify the Resource Id of the Azure Monitor Private Link Scope."
+      }
     }
   },
   "variables": {
@@ -106,133 +118,155 @@
     "clusterResourceGroup": "[split(parameters('clusterResourceId'),'/')[4]]",
     "clusterName": "[split(parameters('clusterResourceId'),'/')[8]]",
     "clusterLocation": "[replace(parameters('clusterRegion'),' ', '')]",
-    "workspaceLocation":"[replace(parameters('workspaceRegion'),' ', '')]",
+    "workspaceName": "[split(parameters('workspaceResourceId'),'/')[8]]",
+    "workspaceLocation": "[replace(parameters('workspaceRegion'),' ', '')]",
     "dcrNameFull": "[Concat('MSCI', '-', variables('workspaceLocation'), '-', variables('clusterName'))]",
-    "dcrName":"[if(greater(length(variables('dcrNameFull')), 64), substring(variables('dcrNameFull'), 0, 64), variables('dcrNameFull'))]",
+    "dcrName": "[if(greater(length(variables('dcrNameFull')), 64), substring(variables('dcrNameFull'), 0, 64), variables('dcrNameFull'))]",
     "associationName": "ContainerInsightsExtension",
     "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]",
+    "dceName": "[variables('dcrName')]",
+    "dceAssociationName": "configurationAccessEndpoint",
+    "dataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('dceName'))]",
+    "privateLinkScopeName": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[8]]",
+    "privateLinkScopeResourceGroup": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[4]]",
+    "privateLinkScopeSubscriptionId": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[2]]",
     "ciOnlyTemplate": {
-                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                "contentVersion": "1.0.0.0",
-                "parameters": {},
-                "variables": {},
-                "resources": [
-                    {
-                        "type": "Microsoft.Insights/dataCollectionRules",
-                        "apiVersion": "2022-06-01",
-                        "name": "[variables('dcrName')]",
-                        "location": "[parameters('workspaceRegion')]",
-                        "tags": "[parameters('resourceTagValues')]",
-                        "kind": "Linux",
-                        "properties": {
-                            "dataSources": {
-                                "extensions": [
-                                    {
-                                        "name": "ContainerInsightsExtension",
-                                        "streams": "[parameters('streams')]",
-                                        "extensionSettings": {
-                                          "dataCollectionSettings" : {
-                                            "interval": "[parameters('dataCollectionInterval')]",
-                                            "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-                                            "namespaces": "[parameters('namespacesForDataCollection')]",
-                                            "enableContainerLogV2": "[parameters('enableContainerLogV2')]"
-                                          }
-                                        },
-                                        "extensionName": "ContainerInsights"
-                                    }
-                                ]
-                            },
-                            "destinations": {
-                                "logAnalytics": [
-                                    {
-                                        "workspaceResourceId": "[parameters('workspaceResourceId')]",
-                                        "name": "ciworkspace"
-                                    }
-                                ]
-                            },
-                            "dataFlows": [
-                                {
-                                  "streams": "[parameters('streams')]",
-                                    "destinations": [
-                                        "ciworkspace"
-                                    ]
-                                }
-                            ]
-                        }
+      "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {},
+      "variables": {},
+      "resources": [
+        {
+          "type": "Microsoft.Insights/dataCollectionRules",
+          "apiVersion": "2022-06-01",
+          "name": "[variables('dcrName')]",
+          "location": "[parameters('workspaceRegion')]",
+          "tags": "[parameters('resourceTagValues')]",
+          "kind": "Linux",
+          "properties": {
+            "dataSources": {
+              "extensions": [
+                {
+                  "name": "ContainerInsightsExtension",
+                  "streams": "[parameters('streams')]",
+                  "extensionSettings": {
+                    "dataCollectionSettings": {
+                      "interval": "[parameters('dataCollectionInterval')]",
+                      "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                      "namespaces": "[parameters('namespacesForDataCollection')]",
+                      "enableContainerLogV2": "[parameters('enableContainerLogV2')]"
                     }
-                ]
-              },
-        "syslogAndCITemplate": {
-                "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
-                "contentVersion": "1.0.0.0",
-                "parameters": {},
-                "variables": {},
-                "resources": [
-                    {
-                        "type": "Microsoft.Insights/dataCollectionRules",
-                        "apiVersion": "2022-06-01",
-                        "name": "[variables('dcrName')]",
-                        "location": "[parameters('workspaceRegion')]",
-                        "tags": "[parameters('resourceTagValues')]",
-                        "kind": "Linux",
-                        "properties": {
-                            "dataSources": {
-                                "syslog": [
-                                    {
-                                        "streams": [
-                                            "Microsoft-Syslog"
-                                        ],
-                                        "facilityNames": "[parameters('syslogFacilities')]",
-                                        "logLevels": "[parameters('syslogLevels')]",
-                                        "name": "sysLogsDataSource"
-                                    }
-                                ],
-                                "extensions": [
-                                    {
-                                        "name": "ContainerInsightsExtension",
-                                        "streams": "[parameters('streams')]",
-                                        "extensionSettings": {
-                                          "dataCollectionSettings" : {
-                                            "interval": "[parameters('dataCollectionInterval')]",
-                                            "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
-                                            "namespaces": "[parameters('namespacesForDataCollection')]",
-                                            "enableContainerLogV2": "[parameters('enableContainerLogV2')]"
-                                          }
-                                        },
-                                        "extensionName": "ContainerInsights"
-                                    }
-                                ]
-                            },
-                            "destinations": {
-                                "logAnalytics": [
-                                    {
-                                        "workspaceResourceId": "[parameters('workspaceResourceId')]",
-                                        "name": "ciworkspace"
-                                    }
-                                ]
-                            },
-                            "dataFlows": [
-                                {
-                                  "streams": "[parameters('streams')]",
-                                   "destinations": [
-                                        "ciworkspace"
-                                    ]
-                                },
-                                {
-                                  "streams": [
-                                      "Microsoft-Syslog"
-                                  ],
-                                  "destinations": [
-                                      "ciworkspace"
-                                  ]
-                              }
-                            ]
-                        }
-                    }
+                  },
+                  "extensionName": "ContainerInsights"
+                }
+              ]
+            },
+            "destinations": {
+              "logAnalytics": [
+                {
+                  "workspaceResourceId": "[parameters('workspaceResourceId')]",
+                  "name": "ciworkspace"
+                }
+              ]
+            },
+            "dataFlows": [
+              {
+                "streams": "[parameters('streams')]",
+                "destinations": [
+                  "ciworkspace"
                 ]
               }
+            ],
+            "dataCollectionEndpointId": "[if(parameters('useAzureMonitorPrivateLinkScope'), variables('dataCollectionEndpointId'), json('null'))]"
+          }
+        }
+      ]
+    },
+    "syslogAndCITemplate": {
+      "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+      "contentVersion": "1.0.0.0",
+      "parameters": {},
+      "variables": {},
+      "resources": [
+        {
+          "type": "Microsoft.Insights/dataCollectionRules",
+          "apiVersion": "2022-06-01",
+          "name": "[variables('dcrName')]",
+          "location": "[parameters('workspaceRegion')]",
+          "tags": "[parameters('resourceTagValues')]",
+          "kind": "Linux",
+          "properties": {
+            "dataSources": {
+              "syslog": [
+                {
+                  "streams": [
+                    "Microsoft-Syslog"
+                  ],
+                  "facilityNames": "[parameters('syslogFacilities')]",
+                  "logLevels": "[parameters('syslogLevels')]",
+                  "name": "sysLogsDataSource"
+                }
+              ],
+              "extensions": [
+                {
+                  "name": "ContainerInsightsExtension",
+                  "streams": "[parameters('streams')]",
+                  "extensionSettings": {
+                    "dataCollectionSettings": {
+                      "interval": "[parameters('dataCollectionInterval')]",
+                      "namespaceFilteringMode": "[parameters('namespaceFilteringModeForDataCollection')]",
+                      "namespaces": "[parameters('namespacesForDataCollection')]",
+                      "enableContainerLogV2": "[parameters('enableContainerLogV2')]"
+                    }
+                  },
+                  "extensionName": "ContainerInsights"
+                }
+              ]
+            },
+            "destinations": {
+              "logAnalytics": [
+                {
+                  "workspaceResourceId": "[parameters('workspaceResourceId')]",
+                  "name": "ciworkspace"
+                }
+              ]
+            },
+            "dataFlows": [
+              {
+                "streams": "[parameters('streams')]",
+                "destinations": [
+                  "ciworkspace"
+                ]
+              },
+              {
+                "streams": [
+                  "Microsoft-Syslog"
+                ],
+                "destinations": [
+                  "ciworkspace"
+                ]
+              }
+            ],
+            "dataCollectionEndpointId": "[if(parameters('useAzureMonitorPrivateLinkScope'), variables('dataCollectionEndpointId'), json('null'))]"
+          }
+        }
+      ]
+    }
   },
   "resources": [
+    {
+      "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+      "type": "Microsoft.Insights/dataCollectionEndpoints",
+      "apiVersion": "2022-06-01",
+      "name": "[variables('dceName')]",
+      "location": "[variables('workspaceLocation')]",
+      "kind": "Linux",
+      "properties": {
+          "networkAcls": {
+              "publicNetworkAccess": "Disabled"
+          }
+      }
+    },
     {
       "type": "Microsoft.Resources/deployments",
       "name": "[Concat('arc-k8s-monitoring-msi-dcr', '-',  uniqueString(variables('dcrName')))]",
@@ -271,6 +305,100 @@
                 "dataCollectionRuleId": "[variables('dataCollectionRuleId')]"
               }
             }
+          ]
+        },
+        "parameters": {}
+      }
+    },
+    {
+      "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+      "type": "Microsoft.Resources/deployments",
+      "name": "[Concat('arc-k8s-monitoring-msi-dcea', '-',  uniqueString(parameters('clusterResourceId')))]",
+      "apiVersion": "2017-05-10",
+      "subscriptionId": "[variables('clusterSubscriptionId')]",
+      "resourceGroup": "[variables('clusterResourceGroup')]",
+      "dependsOn": [
+          "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('dceName'))]"
+       ],
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+              {
+                  "type": "Microsoft.ContainerService/managedClusters/providers/dataCollectionRuleAssociations",
+                  "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('dceAssociationName'))]",
+                  "apiVersion": "2022-06-01",
+                  "properties": {
+                      "description": "Association of data collection rule endpoint. Deleting this association will break the data collection endpoint for this AKS Cluster.",
+                      "dataCollectionEndpointId": "[variables('dataCollectionEndpointId')]"
+                  }
+              }
+
+          ]
+        },
+        "parameters": {}
+      }
+  },
+  {
+      "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+      "type": "Microsoft.Resources/deployments",
+      "name": "[Concat('arc-k8s-monitoring-msi-ampls-scope', '-',  uniqueString(parameters('clusterResourceId')))]",
+      "apiVersion": "2017-05-10",
+      "subscriptionId": "[variables('privateLinkScopeSubscriptionId')]",
+      "resourceGroup": "[variables('privateLinkScopeResourceGroup')]",
+      "dependsOn": [
+          "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('dceName'))]"
+       ],
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+              {
+                  "type": "microsoft.insights/privatelinkscopes/scopedresources",
+                  "name": "[concat(variables('privateLinkScopeName'), '/', concat(variables('dceName'), '-connection'))]",
+                  "apiVersion": "2021-07-01-preview",
+                  "properties": {
+                      "linkedResourceId": "[variables('dataCollectionEndpointId')]"
+                  }
+              }
+
+          ]
+        },
+        "parameters": {}
+      }
+  },
+  {
+      "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+      "type": "Microsoft.Resources/deployments",
+      "name": "[Concat('arc-k8s-monitoring-msi-ampls-scope', '-',  uniqueString(parameters('workspaceResourceId')))]",
+      "apiVersion": "2017-05-10",
+      "subscriptionId": "[variables('privateLinkScopeSubscriptionId')]",
+      "resourceGroup": "[variables('privateLinkScopeResourceGroup')]",
+      "properties": {
+        "mode": "Incremental",
+        "template": {
+          "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+          "contentVersion": "1.0.0.0",
+          "parameters": {},
+          "variables": {},
+          "resources": [
+              {
+                  "type": "microsoft.insights/privatelinkscopes/scopedresources",
+                  "name": "[concat(variables('privateLinkScopeName'), '/', concat(variables('workspaceName'), '-connection'))]",
+                  "apiVersion": "2021-07-01-preview",
+                  "properties": {
+                      "linkedResourceId": "[parameters('workspaceResourceId')]"
+                  }
+              }
+
           ]
         },
         "parameters": {}
