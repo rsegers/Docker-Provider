@@ -124,7 +124,7 @@
     "dcrName": "[if(greater(length(variables('dcrNameFull')), 64), substring(variables('dcrNameFull'), 0, 64), variables('dcrNameFull'))]",
     "associationName": "ContainerInsightsExtension",
     "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]",
-    "dceName": "[variables('dcrName')]",
+    "dceName":"[if(greater(length(variables('dcrName')), 43), substring(variables('dcrName'), 0, 43), variables('dcrName'))]",
     "dceAssociationName": "configurationAccessEndpoint",
     "dataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('dceName'))]",
     "privateLinkScopeName": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[8]]",
@@ -329,7 +329,7 @@
           "variables": {},
           "resources": [
               {
-                  "type": "Microsoft.ContainerService/managedClusters/providers/dataCollectionRuleAssociations",
+                  "type": "Microsoft.Kubernetes/connectedClusters/providers/dataCollectionRuleAssociations",
                   "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('dceAssociationName'))]",
                   "apiVersion": "2022-06-01",
                   "properties": {
