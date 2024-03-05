@@ -62,17 +62,23 @@ COPY ./amalogswindows/installer/scripts/*.rb /opt/amalogswindows/scripts/ruby/
 # copy out_oms.so file
 COPY ./amalogswindows/out_oms.so /opt/amalogswindows/out_oms.so
 
+# copy containerinventory.so and perf.so file
+COPY ./amalogswindows/containerinventory.so /opt/fluent-bit/bin/containerinventory.so
+COPY ./amalogswindows/perf.so /opt/fluent-bit/bin/perf.so
+
 # copy fluent, fluent-bit and out_oms conf files
 COPY ./amalogswindows/installer/conf/fluent.conf /etc/fluent/
 COPY ./amalogswindows/installer/conf/fluent-bit.conf /etc/fluent-bit
 COPY ./amalogswindows/installer/conf/azm-containers-parser.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/azm-containers-parser-multiline.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/azm-containers-input-plugins.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/out_oms.conf /etc/amalogswindows
 COPY ./amalogswindows/installer/conf/fluent-bit-geneva-logs_*.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/fluent-bit-geneva.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/fluent-bit-common.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/fluent-bit-internal-metrics.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/fluent-bit-telegraf-tcp.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/fluent-bit-input.conf /etc/fluent-bit/
 
 
 # copy telegraf conf file

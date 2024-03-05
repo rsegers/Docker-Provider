@@ -43,6 +43,12 @@ const InsightsMetricsDataType = "INSIGHTS_METRICS_BLOB"
 // DataType for KubeMonAgentEvent
 const KubeMonAgentEventDataType = "KUBE_MON_AGENT_EVENTS_BLOB"
 
+// DataType for Perf
+const PerfDataType = "LINUX_PERF_BLOB"
+
+// DataType for ContainerInventory
+const ContainerInventoryDataType = "CONTAINER_INVENTORY_BLOB"
+
 // env variable which has ResourceId for LA
 const ResourceIdEnv = "AKS_RESOURCE_ID"
 
@@ -77,6 +83,8 @@ const KubeMonAgentEventWarning = "Warning"
 const KubeMonAgentEventInfo = "Info"
 
 const KubeMonAgentEventsFlushedEvent = "KubeMonAgentEventsFlushed"
+
+const InputPluginRecordsFlushedEvent = "InputPluginRecordsFlushed"
 
 // ContainerLogPluginConfFilePath --> config file path for container log plugin
 const DaemonSetContainerLogPluginConfFilePath = "/etc/opt/microsoft/docker-cimprov/out_oms.conf"
@@ -129,6 +137,8 @@ var (
 	MdsdKubeMonMsgpUnixSocketClient net.Conn
 	// Client for MDSD msgp Unix socket for Insights Metrics
 	MdsdInsightsMetricsMsgpUnixSocketClient net.Conn
+	// Client for MDSD msgp Unix socket for Input Plugin Records
+	MdsdInputPluginRecordsMsgpUnixSocketClient net.Conn
 	// Ingestor for ADX
 	ADXIngestor *ingest.Ingestion
 	// OMSEndpoint ingestion endpoint
@@ -197,6 +207,8 @@ var (
 	ContainerLogNamedPipe net.Conn
 	// named pipe connection to send KubeMonAgentEvents for AMA
 	KubeMonAgentEventsNamedPipe net.Conn
+	// named pipe connection to ContainerInventory for AMA
+	InputPluginNamedPipe net.Conn
 )
 
 var (
@@ -381,6 +393,7 @@ const (
 	ContainerLogV2 DataType = iota
 	KubeMonAgentEvents
 	InsightsMetrics
+	InputPluginRecords
 )
 
 func createLogger() *log.Logger {
@@ -520,6 +533,26 @@ func convert(in interface{}) (float64, bool) {
 		Log("returning 0 for %v ", in)
 		return float64(0), false
 	}
+}
+
+func convertMap(inputMap map[string]interface{}) map[string]string {
+	outputMap := make(map[string]string)
+	for key, value := range inputMap {
+		// Use type assertion and convert to string
+		switch v := value.(type) {
+		case string:
+			outputMap[key] = v
+		case int:
+			outputMap[key] = strconv.Itoa(v)
+		case float64:
+			outputMap[key] = strconv.FormatFloat(v, 'f', 2, 64)
+		case bool:
+			outputMap[key] = strconv.FormatBool(v)
+		default:
+			outputMap[key] = fmt.Sprintf("%v", v)
+		}
+	}
+	return outputMap
 }
 
 // PostConfigErrorstoLA sends config/prometheus scraping error log lines to LA
@@ -1114,6 +1147,126 @@ func UpdateNumTelegrafMetricsSentTelemetry(numMetricsSent int, numSendErrors int
 	TelegrafMetricsSend429ErrorCount += float64(numSend429Errors)
 	WinTelegrafMetricsCountWithTagsSize64KBorMore += float64(numWinMetricswith64KBorMoreSize)
 	ContainerLogTelemetryMutex.Unlock()
+}
+
+func toStringMap(record map[interface{}]interface{}) map[string]interface{} {
+	tag := record["tag"].([]byte)
+	mp := make(map[string]interface{})
+	mp["tag"] = string(tag)
+	mp["messages"] = []map[string]interface{}{}
+	message := record["messages"].([]interface{})
+	for _, entry := range message {
+		newEntry := entry.(map[interface{}]interface{})
+		m := make(map[string]interface{})
+		for k, v := range newEntry {
+			switch t := v.(type) {
+			case []byte:
+				m[k.(string)] = string(t)
+			default:
+				m[k.(string)] = v
+			}
+		}
+		mp["messages"] = append(mp["messages"].([]map[string]interface{}), m)
+	}
+
+	return mp
+}
+
+func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) int {
+	start := time.Now()
+	Log("Info::PostInputPluginRecords starting")
+
+	for _, record := range inputPluginRecords {
+		var msgPackEntries []MsgPackEntry
+		val := toStringMap(record)
+		tag := val["tag"].(string)
+		Log("Info::PostInputPluginRecords tag: %s\n", tag)
+		messages := val["messages"].([]map[string]interface{})
+		for _, message := range messages {
+			stringMap := convertMap(message)
+			msgPackEntry := MsgPackEntry{
+				Record: stringMap,
+			}
+			msgPackEntries = append(msgPackEntries, msgPackEntry)
+		}
+
+		if len(msgPackEntries) == 0 {
+			continue
+		}
+		var bts int
+		var er error
+		var elapsed time.Duration
+		deadline := 10 * time.Second
+
+		if !IsWindows || (IsWindows && IsAADMSIAuthMode) {
+			//for linux, mdsd route
+			//for Windows with MSI auth mode, AMA route
+			Log("Info::mdsd/AMA:: using mdsdsource name for input plugin records: %s", tag)
+			msgpBytes := convertMsgPackEntriesToMsgpBytes(tag, msgPackEntries)
+			if !IsWindows {
+				if MdsdInputPluginRecordsMsgpUnixSocketClient == nil {
+					Log("Error::mdsd::mdsd connection for input plugin records does not exist. re-connecting ...")
+					CreateMDSDClient(InputPluginRecords, ContainerType)
+				}
+				if MdsdInputPluginRecordsMsgpUnixSocketClient == nil {
+					Log("Error::mdsd::Unable to create mdsd client for input plugin records. Please check error log.")
+					ContainerLogTelemetryMutex.Lock()
+					defer ContainerLogTelemetryMutex.Unlock()
+					InputPluginRecordsErrors += 1
+				} else {
+					MdsdInputPluginRecordsMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+					bts, er = MdsdInputPluginRecordsMsgpUnixSocketClient.Write(msgpBytes)
+					elapsed = time.Since(start)
+				}
+			} else {
+				if InputPluginNamedPipe == nil {
+					EnsureGenevaOr3PNamedPipeExists(&InputPluginNamedPipe, ContainerInventoryDataType, &ContainerLogsWindowsAMAClientCreateErrors, false, &MdsdContainerLogTagRefreshTracker)
+				}
+				if InputPluginNamedPipe == nil {
+					Log("Error::mdsd::Unable to create AMA client for input plugin records. Please check error log.")
+					ContainerLogTelemetryMutex.Lock()
+					defer ContainerLogTelemetryMutex.Unlock()
+					InputPluginRecordsErrors += 1
+				} else {
+					InputPluginNamedPipe.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+					bts, er = InputPluginNamedPipe.Write(msgpBytes)
+					elapsed = time.Since(start)
+				}
+			}
+
+			if er != nil {
+				message := fmt.Sprintf("Error::mdsd/AMA::Failed to write to input plugin %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
+				Log(message)
+				if MdsdInputPluginRecordsMsgpUnixSocketClient != nil {
+					MdsdInputPluginRecordsMsgpUnixSocketClient.Close()
+					MdsdInputPluginRecordsMsgpUnixSocketClient = nil
+				}
+				if InputPluginNamedPipe != nil {
+					InputPluginNamedPipe.Close()
+					InputPluginNamedPipe = nil
+				}
+				SendException(message)
+			} else {
+				telemetryDimensions := make(map[string]string)
+				lowerTag := strings.ToLower(tag)
+				if strings.Contains(lowerTag, strings.ToLower(ContainerInventoryDataType)) {
+					telemetryDimensions["ContainerInventoryCount"] = strconv.Itoa(len(msgPackEntries))
+				} else if strings.Contains(lowerTag, strings.ToLower(InsightsMetricsDataType)) {
+					telemetryDimensions["InsightsMetricsCount"] = strconv.Itoa(len(msgPackEntries))
+				} else if strings.Contains(lowerTag, strings.ToLower(PerfDataType)) {
+					telemetryDimensions["PerfCount"] = strconv.Itoa(len(msgPackEntries))
+				} else {
+					Log("FlushInputPluginRecords::Warn::Flushed records of unknown data type %s", lowerTag)
+				}
+				numRecords := len(msgPackEntries)
+				Log("FlushInputPluginRecords::Info::Successfully flushed %d records that was %d bytes in %s", numRecords, bts, elapsed)
+				// Send telemetry to AppInsights resource
+				SendEvent(InputPluginRecordsFlushedEvent, telemetryDimensions)
+			}
+		}
+	}
+
+	return 0
 }
 
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
