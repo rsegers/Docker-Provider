@@ -8,6 +8,8 @@ import (
 	"testing"
 )
 
+var inventoryDirectory string
+
 func TestWriteAndReadContainerState(t *testing.T) {
 	// Test case: WriteContainerState and ReadContainerState
 	inventoryDirectory = "./testData" // A temporary test directory to use as inventoryDirectory
