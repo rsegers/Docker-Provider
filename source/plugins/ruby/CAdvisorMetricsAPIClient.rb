@@ -27,6 +27,7 @@ class CAdvisorMetricsAPIClient
   @clusterContainerLogEnrich = ENV["AZMON_CLUSTER_CONTAINER_LOG_ENRICH"]
   @clusterContainerLogSchemaVersion = ENV["AZMON_CONTAINER_LOG_SCHEMA_VERSION"]
   @clusterMultilineEnabled = ENV["AZMON_MULTILINE_ENABLED"]
+  @clusterMultilineLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
 
   @dsPromInterval = ENV["TELEMETRY_DS_PROM_INTERVAL"]
   @dsPromFieldPassCount = ENV["TELEMETRY_DS_PROM_FIELDPASS_LENGTH"]
@@ -38,6 +39,10 @@ class CAdvisorMetricsAPIClient
   @npmIntegrationBasic = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_BASIC"]
   @npmIntegrationAdvanced = ENV["TELEMETRY_NPM_INTEGRATION_METRICS_ADVANCED"]
   @subnetIpUsageMetrics = ENV["TELEMETRY_SUBNET_IP_USAGE_INTEGRATION_METRICS"]
+
+  @@CAdvisorApiResponseCodeHash = {}
+  @@CAdvisorApiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
+
 
   @os_type = ENV["OS_TYPE"]
   if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -295,6 +300,9 @@ class CAdvisorMetricsAPIClient
                     end
                     if (!@clusterMultilineEnabled.nil? && !@clusterMultilineEnabled.empty?)
                       telemetryProps["multilineEnabled"] = @clusterMultilineEnabled
+                      if (!@clusterMultilineLanguages.nil? && !@clusterMultilineLanguages.empty?)
+                        telemetryProps["multilineLanguages"] = @clusterMultilineLanguages
+                      end
                     end
                     ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
                   end
@@ -962,6 +970,10 @@ class CAdvisorMetricsAPIClient
               response = http.request(cAdvisorApiRequest)
               @Log.info "Got response code #{response.code} from #{uri.request_uri}"
             end
+          end
+          # Send telemetry for cAdvisor API response code if it is not success
+          if !response.nil? && !response.code.nil? && !response.code.start_with?("2")
+            @@CAdvisorApiResponseTelemetryTimeTracker = ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, relativeUri, "CAdvisorAPIStatus", @@CAdvisorApiResponseCodeHash, @@CAdvisorApiResponseTelemetryTimeTracker)
           end
         end
       rescue => error

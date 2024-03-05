@@ -1,6 +1,6 @@
 #!/usr/local/bin/ruby
 
-#this should be require relative in Linux and require in windows, since it is a gem install on windows
+
 @os_type = ENV["OS_TYPE"]
 require "tomlrb"
 
@@ -24,6 +24,7 @@ require_relative "ConfigParseErrorLogger"
 @containerLogsRoute = "v2" # default for linux
 @adxDatabaseName = "containerinsights" # default for all configurations
 @logEnableMultiline = "false"
+@stacktraceLanguages = "go,java,python" #supported languages for multiline logs. java is also used for dotnet stacktraces
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
   # This path format is necessary for fluent-bit in windows
@@ -157,9 +158,31 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         @logEnableMultiline = parsedConfig[:log_collection_settings][:enable_multiline_logs][:enabled]
         puts "config::Using config map setting for multiline logging"
 
-        if @containerLogSchemaVersion.strip.casecmp("v2") != 0
-          puts "config:: WARN: container logs V2 is disabled and is required for multiline logging. Disabling multiline logging"
-          @logEnableMultiline = "false"
+        multilineLanguages = parsedConfig[:log_collection_settings][:enable_multiline_logs][:stacktrace_languages]
+        if !multilineLanguages.nil?
+          if multilineLanguages.kind_of?(Array)
+            # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+            # update stacktraceLanguages only if customer explicity overrode via configmap
+            #Empty the array to use the values from configmap
+            @stacktraceLanguages.clear
+            if multilineLanguages.length > 0 && multilineLanguages[0].kind_of?(String)
+              invalid_lang = multilineLanguages.any? { |lang| !["java", "python", "go", "dotnet"].include?(lang.downcase) }
+              if invalid_lang
+                puts "config::WARN: stacktrace languages contains invalid languages. Disabling multiline stacktrace logging"
+              else
+                multilineLanguages = multilineLanguages.map(&:downcase)
+                # the java multiline parser also captures dotnet
+                if multilineLanguages.include?("dotnet")
+                  multilineLanguages.delete("dotnet")
+                  multilineLanguages << "java" unless multilineLanguages.include?("java")
+                end
+                @stacktraceLanguages = multilineLanguages.join(",")
+                puts "config::Using config map setting for multiline languages"
+              end
+            else
+              puts "config::WARN: stacktrace languages is not an array of strings. Disabling multiline stacktrace logging"
+            end
+          end
         end
       end
     rescue => errorStr
@@ -252,6 +275,7 @@ if !file.nil?
   file.write("export AZMON_CONTAINER_LOG_SCHEMA_VERSION=#{@containerLogSchemaVersion}\n")
   file.write("export AZMON_ADX_DATABASE_NAME=#{@adxDatabaseName}\n")
   file.write("export AZMON_MULTILINE_ENABLED=#{@logEnableMultiline}\n")
+  file.write("export AZMON_MULTILINE_LANGUAGES=#{@stacktraceLanguages}\n")
   # Close file after writing all environment variables
   file.close
   puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "
@@ -315,6 +339,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows("AZMON_ADX_DATABASE_NAME", @adxDatabaseName)
     file.write(commands)
     commands = get_command_windows("AZMON_MULTILINE_ENABLED", @logEnableMultiline)
+    file.write(commands)
+    commands = get_command_windows("AZMON_MULTILINE_LANGUAGES", @stacktraceLanguages)
     file.write(commands)
     # Close file after writing all environment variables
     file.close

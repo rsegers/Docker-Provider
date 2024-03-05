@@ -250,6 +250,9 @@ module Fluent::Plugin
           end
           if ExtensionUtils.isAADMSIAuthMode()
             telemetryProperties["dataCollectionProfile"] = ExtensionUtils.getDataCollectionProfile()
+            if ENV['LOGS_AND_EVENTS_ONLY'] == 'true'
+              telemetryProperties['logsOrEventsOnlyProfile'] = ENV['LOGS_AND_EVENTS_ONLY']
+            end
           end
           begin
             if Dir.exist?("/etc/mdsd.d/config-cache/configchunks")

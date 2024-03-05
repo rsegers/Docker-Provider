@@ -4,7 +4,6 @@
 class ApplicationInsightsUtility
   require_relative "lib/application_insights"
   require_relative "omslog"
-  require_relative "DockerApiClient"
   require_relative "oms_common"
   require_relative "proxy_utils"
   require "json"
@@ -38,7 +37,7 @@ class ApplicationInsightsUtility
     @@proxy = (ProxyUtils.getProxyConfiguration)
   end
 
-  @@controllerType = {"daemonset" => "DS", "replicaset" => "RS"}
+  @@controllerType = { "daemonset" => "DS", "replicaset" => "RS" }
 
   def initialize
   end
@@ -158,15 +157,6 @@ class ApplicationInsightsUtility
         if !containerRuntime.nil? && !containerRuntime.empty?
           # cri field holds either containerRuntime for non-docker or Dockerversion if its docker
           @@CustomProperties["cri"] = containerRuntime
-          # Not doing this for windows since docker is being deprecated soon and we dont want to bring in the socket dependency.
-          if !@@isWindows.nil? && @@isWindows == false
-            if containerRuntime.casecmp("docker") == 0
-              dockerInfo = DockerApiClient.dockerInfo
-              if (!dockerInfo.nil? && !dockerInfo.empty?)
-                @@CustomProperties["cri"] = dockerInfo["Version"]
-              end
-            end
-          end
         end
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: getContainerRuntimeInfo - error: #{errorStr}")
@@ -321,6 +311,47 @@ class ApplicationInsightsUtility
         return workspaceCloud
       rescue => errorStr
         $log.warn("Exception in AppInsightsUtility: getWorkspaceCloud - error: #{errorStr}")
+      end
+    end
+
+    def sendAPIResponseTelemetry(responseCode, resource, metricName, apiResponseCodeHash, apiResponseTelemetryTimeTracker)
+      begin
+        if (!responseCode.nil? && !responseCode.empty?)
+          if (!apiResponseCodeHash.has_key?(responseCode))
+            telemetryProps = {}
+            telemetryProps[resource] = 1
+            apiResponseCodeHash[responseCode] = telemetryProps
+          else
+            telemetryProps = apiResponseCodeHash[responseCode]
+            if (telemetryProps.nil?)
+              telemetryProps = {}
+            end
+            if (!telemetryProps.has_key?(resource))
+              telemetryProps[resource] = 1
+            else
+              telemetryProps[resource] += 1
+            end
+            apiResponseCodeHash[responseCode] = telemetryProps
+          end
+
+          timeDifference = (DateTime.now.to_time.to_i - apiResponseTelemetryTimeTracker).abs
+          timeDifferenceInMinutes = timeDifference / 60
+          if (timeDifferenceInMinutes >= Constants::TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+            apiResponseTelemetryTimeTracker = DateTime.now.to_time.to_i
+            apiResponseCodeHash.each do |key, value|
+              value.each do |resourceName, count|
+                telemetryProps = {}
+                telemetryProps["Resource"] = resourceName
+                telemetryProps["ResponseCode"] = key
+                sendMetricTelemetry(metricName, count, telemetryProps)
+              end
+            end
+            apiResponseCodeHash.clear
+          end
+        end
+        return apiResponseTelemetryTimeTracker
+      rescue => err
+        $log.warn("Exception in AppInsightsUtility: sendAPIResponseTelemetry failed with an error: #{err}")
       end
     end
   end

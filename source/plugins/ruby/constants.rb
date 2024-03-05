@@ -126,6 +126,7 @@ class Constants
   #Current CI extension config size is ~5KB and going with 20KB to handle any future scenarios
   CI_EXTENSION_CONFIG_MAX_BYTES = 20480
   ONEAGENT_FLUENT_SOCKET_NAME = "/var/run/mdsd-ci/default_fluent.socket"
+  ONEAGENT_FLUENT_SOCKET_NAME_SIDE_CAR = "/var/run/mdsd-PrometheusSidecar/default_fluent.socket"
   #Tag prefix for output stream
   EXTENSION_OUTPUT_STREAM_ID_TAG_PREFIX = "dcr-"
 

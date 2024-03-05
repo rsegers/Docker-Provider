@@ -3,16 +3,18 @@
 # Get the start time of the setup in seconds
 startTime=$(date +%s)
 
+echo "startup script start @ $(date +'%Y-%m-%dT%H:%M:%S')"
+
 gracefulShutdown() {
-      echo "gracefulShutdown start @ `date --rfc-3339=seconds`"
-      echo "gracefulShutdown fluent-bit process start @ `date --rfc-3339=seconds`"
+      echo "gracefulShutdown start @ $(date +'%Y-%m-%dT%H:%M:%S')"
+      echo "gracefulShutdown fluent-bit process start @ $(date +'%Y-%m-%dT%H:%M:%S')"
       pkill -f fluent-bit
-      sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
-      echo "gracefulShutdown fluent-bit process complete @ `date --rfc-3339=seconds`"
-      echo "gracefulShutdown mdsd process start @ `date --rfc-3339=seconds`"
+      sleep "${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}" # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
+      echo "gracefulShutdown fluent-bit process complete @ $(date +'%Y-%m-%dT%H:%M:%S')"
+      echo "gracefulShutdown mdsd process start @ $(date +'%Y-%m-%dT%H:%M:%S')"
       pkill -f mdsd
-      echo "gracefulShutdown mdsd process compelete @ `date --rfc-3339=seconds`"
-      echo "gracefulShutdown complete @ `date --rfc-3339=seconds`"
+      echo "gracefulShutdown mdsd process compelete @ $(date +'%Y-%m-%dT%H:%M:%S')"
+      echo "gracefulShutdown complete @ $(date +'%Y-%m-%dT%H:%M:%S')"
 }
 
 # please use this instead of adding env vars to bashrc directly
@@ -22,6 +24,7 @@ setGlobalEnvVar() {
       echo "export \"$1\"=\"$2\"" >> /opt/env_vars
 }
 touch /opt/env_vars
+touch /opt/dcr_env_var
 echo "source /opt/env_vars" >> ~/.bashrc
 
 waitforlisteneronTCPport() {
@@ -100,10 +103,10 @@ checkAgentOnboardingStatus() {
                               return 1
                         fi
 
-                        if grep "$successMessage" "${MDSD_LOG}/mdsd.info"; then
+                        if grep -q "$successMessage" "${MDSD_LOG}/mdsd.info" > /dev/null 2>&1; then
                               echo "Onboarding success"
                               return 0
-                        elif grep "$failureMessage" "${MDSD_LOG}/mdsd.err"; then
+                        elif grep -q "$failureMessage" "${MDSD_LOG}/mdsd.err" > /dev/null 2>&1; then
                               echo "Onboarding Failure: Reason: Failed to onboard the agent"
                               echo "Onboarding Failure: Please verify log analytics workspace configuration such as existence of the workspace, workspace key and workspace enabled for public ingestion"
                               return 1
@@ -246,6 +249,8 @@ generateGenevaInfraNamespaceConfig() {
       rm /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf
 }
 
+echo "MARINER $(grep 'VERSION=' /etc/os-release)" >> packages_version.txt
+
 #using /var/opt/microsoft/docker-cimprov/state instead of /var/opt/microsoft/ama-logs/state since the latter gets deleted during onboarding
 mkdir -p /var/opt/microsoft/docker-cimprov/state
 echo "disabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
@@ -322,6 +327,13 @@ if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSide
             echo "AZMON_OSM_CFG_SCHEMA_VERSION:$AZMON_OSM_CFG_SCHEMA_VERSION"
       fi
 fi
+
+# common agent config settings applicable for all container types
+ruby tomlparser-common-agent-config.rb
+cat common_agent_config_env_var | while read line; do
+      echo $line >> ~/.bashrc
+done
+source common_agent_config_env_var
 
 #Parse the configmap to set the right environment variables for agent config.
 #Note > tomlparser-agent-config.rb has to be parsed first before fluent-bit-conf-customizer.rb for fbit agent settings
@@ -823,6 +835,10 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && isGenevaMode; then
     echo "export MDSD_FLUENT_SOCKET_PORT=$MDSD_FLUENT_SOCKET_PORT" >> ~/.bashrc
     export SSL_CERT_FILE="/etc/pki/tls/certs/ca-bundle.crt"
     echo "export SSL_CERT_FILE=$SSL_CERT_FILE" >> ~/.bashrc
+    if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
+       export AAD_MSI_AUTH_MODE=true
+       echo "export AAD_MSI_AUTH_MODE=true" >> ~/.bashrc
+    fi
 else
       if [ "${USING_AAD_MSI_AUTH}" == "true" ]; then
             echo "*** setting up oneagent in aad auth msi mode ***"
@@ -931,13 +947,45 @@ if [ ! -f /etc/cron.d/ci-agent ]; then
       echo "*/5 * * * * root /usr/sbin/logrotate -s /var/lib/logrotate/ci-agent-status /etc/logrotate.d/ci-agent >/dev/null 2>&1" >/etc/cron.d/ci-agent
 fi
 
+setGlobalEnvVar AZMON_WINDOWS_FLUENT_BIT_DISABLED "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}"
+if [ "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" == "true" ] || [ "${USING_AAD_MSI_AUTH}" != "true" ] || [ "${GENEVA_LOGS_INTEGRATION}" == "true" ]; then
+      if [ -e "/etc/config/kube.conf" ]; then
+           # Replace a string in the configmap file
+            sed -i "s/#@include windows_rs/@include windows_rs/g" /etc/fluent/kube.conf
+      fi
+fi
+
+# Write messages from the liveness probe to stdout (so telemetry picks it up)
+touch /dev/write-to-traces
+
+if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+     checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
+elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+      checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
+else
+      echo "not checking onboarding status (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
+fi
+
+ruby dcr-config-parser.rb
+if [ -e "/opt/dcr_env_var" ]; then
+      cat dcr_env_var | while read line; do
+            echo $line >>~/.bashrc
+      done
+      source /opt/dcr_env_var
+      setGlobalEnvVar LOGS_AND_EVENTS_ONLY "${LOGS_AND_EVENTS_ONLY}"
+fi
+
 setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}"
 if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
       # no dependency on fluentd for prometheus side car container
       if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
             if [ ! -e "/etc/config/kube.conf" ]; then
-                  echo "*** starting fluentd v1 in daemonset"
-                  fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+                  if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
+                        echo "*** starting fluentd v1 in daemonset"
+                        fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+                  else
+                        echo "Skipping fluentd since LOGS_AND_EVENTS_ONLY is set to true"
+                  fi
             else
                   echo "*** starting fluentd v1 in replicaset"
                   fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
@@ -1009,7 +1057,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
                   echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
 
-                  if [ -z $FBIT_SERVICE_GRACE_INTERVAL_SECONDS ]; then
+                  if [ -z "$FBIT_SERVICE_GRACE_INTERVAL_SECONDS" ]; then
                        export FBIT_SERVICE_GRACE_INTERVAL_SECONDS="10"
                   fi
                   echo "Using FluentBit Grace Interval seconds:${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
@@ -1017,7 +1065,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
 
                   source ~/.bashrc
                   # Delay FBIT service start to ensure MDSD is ready in 1P mode to avoid data loss
-                  sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}
+                  sleep "${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
@@ -1094,10 +1142,14 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE
                   echo "no metrics to scrape since MUTE_PROM_SIDECAR is true, not checking for listener on tcp #25229"
             fi
       else
-            echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
-            waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
-            echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
-            waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
+            if [ "${LOGS_AND_EVENTS_ONLY}" == "true" ]; then
+                  echo "LOGS_AND_EVENTS_ONLY is true, not checking for listener on tcp #25226 and tcp #25228"
+            else
+                  echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
+                  waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
+                  echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
+                  waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
+            fi
       fi
 elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
         echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
@@ -1111,6 +1163,8 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
 elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
     if [ "${CONTROLLER_TYPE}" == "ReplicaSet" ] && [ "${TELEMETRY_RS_TELEGRAF_DISABLED}" == "true" ]; then
         echo "not starting telegraf since prom scraping is disabled for replicaset"
+    elif [ "${CONTROLLER_TYPE}" != "ReplicaSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${LOGS_AND_EVENTS_ONLY}" == "true" ]; then
+        echo "not starting telegraf for LOGS_AND_EVENTS_ONLY daemonset"
     else
         /opt/telegraf --config $telegrafConfFile &
     fi
@@ -1118,21 +1172,13 @@ else
     echo "not starting telegraf (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
 fi
 
-# Write messages from the liveness probe to stdout (so telemetry picks it up)
-touch /dev/write-to-traces
-
-if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] || [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
-     checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
-elif [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
-      checkAgentOnboardingStatus $AAD_MSI_AUTH_MODE 30
-else
-      echo "not checking onboarding status (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
-fi
 
 # Get the end time of the setup in seconds
 endTime=$(date +%s)
 elapsed=$((endTime-startTime))
 echo "startup script took: $elapsed seconds"
+
+echo "startup script end @ $(date +'%Y-%m-%dT%H:%M:%S')"
 
 shutdown() {
      if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then

@@ -12,8 +12,6 @@ fi
 sudo tdnf install ca-certificates-microsoft -y
 sudo update-ca-trust
 
-echo "MARINER $(grep 'VERSION=' /etc/os-release)" >> packages_version.txt
-
 # sudo tdnf install ruby-3.1.3 -y
 tdnf install -y gcc patch bzip2 openssl-devel libyaml-devel libffi-devel readline-devel zlib-devel gdbm-devel ncurses-devel
 wget https://github.com/rbenv/ruby-build/archive/refs/tags/v20230330.tar.gz -O ruby-build.tar.gz
@@ -39,7 +37,7 @@ mv /usr/lib/ruby/gems/3.1.0/specifications/default/uri-0.11.0.gemspec /usr/lib/r
 gem uninstall time --version 0.2.0
 gem uninstall uri --version 0.11.0
 
-sudo tdnf install -y azure-mdsd-1.28.11
+sudo tdnf install -y azure-mdsd-1.29.7
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d
 rm /usr/sbin/telegraf
@@ -61,7 +59,7 @@ sudo tdnf install jq-1.6-1.cm2 -y
 #used to setcaps for ruby process to read /proc/env
 sudo tdnf install libcap -y
 
-sudo tdnf install telegraf-1.27.3 -y
+sudo tdnf install telegraf-1.28.5 -y
 telegraf_version=$(sudo tdnf list installed | grep telegraf | awk '{print $2}')
 echo "telegraf $telegraf_version" >> packages_version.txt
 mv /usr/bin/telegraf /opt/telegraf
@@ -72,12 +70,12 @@ docker_cimprov_version=$(sudo tdnf list installed | grep docker-cimprov | awk '{
 echo "DOCKER_CIMPROV_VERSION=$docker_cimprov_version" >> packages_version.txt
 
 #install fluent-bit
-sudo tdnf install fluent-bit-2.0.9 -y
+sudo tdnf install fluent-bit-2.1.10 -y
 echo "$(fluent-bit --version)" >> packages_version.txt
 
 # install fluentd using the mariner package
 # sudo tdnf install rubygem-fluentd-1.14.6 -y
-fluentd_version="1.14.6"
+fluentd_version="1.16.3"
 gem install fluentd -v $fluentd_version --no-document
 
 # remove the test directory from fluentd

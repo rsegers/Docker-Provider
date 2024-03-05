@@ -203,8 +203,10 @@ var (
 	IsGenevaLogsIntegrationEnabled bool
 	// flag to check whether Geneva Logs ServiceMode enabled or not
 	IsGenevaLogsTelemetryServiceMode bool
-	// named pipe connection to ContainerLog for AMA
+	// named pipe connection to send ContainerLog for AMA
 	ContainerLogNamedPipe net.Conn
+	// named pipe connection to send KubeMonAgentEvents for AMA
+	KubeMonAgentEventsNamedPipe net.Conn
 	// named pipe connection to ContainerInventory for AMA
 	InputPluginNamedPipe net.Conn
 )
@@ -770,7 +772,7 @@ func flushKubeMonAgentEventRecords() {
 					}
 				}
 			}
-			if IsWindows == false && len(msgPackEntries) > 0 { //for linux, mdsd route
+			if (IsWindows == false || IsAADMSIAuthMode) && len(msgPackEntries) > 0 { //for linux, mdsd route and Windows MSI auth mode, AMA route
 				if IsAADMSIAuthMode == true {
 					MdsdKubeMonAgentEventsTagName = getOutputStreamIdTag(KubeMonAgentEventDataType, MdsdKubeMonAgentEventsTagName, &MdsdKubeMonAgentEventsTagRefreshTracker)
 					if MdsdKubeMonAgentEventsTagName == "" {
@@ -780,37 +782,56 @@ func flushKubeMonAgentEventRecords() {
 				}
 				Log("Info::mdsd:: using mdsdsource name for KubeMonAgentEvents: %s", MdsdKubeMonAgentEventsTagName)
 				msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdKubeMonAgentEventsTagName, msgPackEntries)
-				if MdsdKubeMonMsgpUnixSocketClient == nil {
-					Log("Error::mdsd::mdsd connection for KubeMonAgentEvents does not exist. re-connecting ...")
-					CreateMDSDClient(KubeMonAgentEvents, ContainerType)
+				var er error
+				var bts int
+				if IsWindows == false {
 					if MdsdKubeMonMsgpUnixSocketClient == nil {
+						Log("Error::mdsd::mdsd connection for KubeMonAgentEvents does not exist. re-connecting ...")
+						CreateMDSDClient(KubeMonAgentEvents, ContainerType)
+						if MdsdKubeMonMsgpUnixSocketClient == nil {
+							Log("Error::mdsd::Unable to create mdsd client for KubeMonAgentEvents. Please check error log.")
+							ContainerLogTelemetryMutex.Lock()
+							defer ContainerLogTelemetryMutex.Unlock()
+							KubeMonEventsMDSDClientCreateErrors += 1
+						}
+					}
+					if MdsdKubeMonMsgpUnixSocketClient != nil {
+						deadline := 10 * time.Second
+						MdsdKubeMonMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+						bts, er = MdsdKubeMonMsgpUnixSocketClient.Write(msgpBytes)
+					} else {
 						Log("Error::mdsd::Unable to create mdsd client for KubeMonAgentEvents. Please check error log.")
-						ContainerLogTelemetryMutex.Lock()
-						defer ContainerLogTelemetryMutex.Unlock()
-						KubeMonEventsMDSDClientCreateErrors += 1
+					}
+				} else {
+					if EnsureGenevaOr3PNamedPipeExists(&KubeMonAgentEventsNamedPipe, KubeMonAgentEventDataType, &KubeMonEventsWindowsAMAClientCreateErrors, false, &MdsdKubeMonAgentEventsTagRefreshTracker) {
+						deadline := 10 * time.Second
+						KubeMonAgentEventsNamedPipe.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
+						bts, er = KubeMonAgentEventsNamedPipe.Write(msgpBytes)
+					} else {
+						Log("Error::mdsd::Unable to create ama named pipe for KubeMonAgentEvents. Please check error log.")
 					}
 				}
-				if MdsdKubeMonMsgpUnixSocketClient != nil {
-					deadline := 10 * time.Second
-					MdsdKubeMonMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-					bts, er := MdsdKubeMonMsgpUnixSocketClient.Write(msgpBytes)
-					elapsed = time.Since(start)
-					if er != nil {
-						message := fmt.Sprintf("Error::mdsd::Failed to write to kubemonagent mdsd %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
-						Log(message)
+				elapsed = time.Since(start)
+				if er != nil {
+					message := fmt.Sprintf("Error::mdsd/ama::Failed to write to kubemonagent %d records after %s. Will retry ... error : %s", len(msgPackEntries), elapsed, er.Error())
+					Log(message)
+					if IsWindows == false {
 						if MdsdKubeMonMsgpUnixSocketClient != nil {
 							MdsdKubeMonMsgpUnixSocketClient.Close()
 							MdsdKubeMonMsgpUnixSocketClient = nil
 						}
-						SendException(message)
 					} else {
-						numRecords := len(msgPackEntries)
-						Log("FlushKubeMonAgentEventRecords::Info::Successfully flushed %d records that was %d bytes in %s", numRecords, bts, elapsed)
-						// Send telemetry to AppInsights resource
-						SendEvent(KubeMonAgentEventsFlushedEvent, telemetryDimensions)
+						if KubeMonAgentEventsNamedPipe != nil {
+							KubeMonAgentEventsNamedPipe.Close()
+							KubeMonAgentEventsNamedPipe = nil
+						}
 					}
+					SendException(message)
 				} else {
-					Log("Error::mdsd::Unable to create mdsd client for KubeMonAgentEvents. Please check error log.")
+					numRecords := len(msgPackEntries)
+					Log("FlushKubeMonAgentEventRecords::Info::Successfully flushed %d records that was %d bytes in %s", numRecords, bts, elapsed)
+					// Send telemetry to AppInsights resource
+					SendEvent(KubeMonAgentEventsFlushedEvent, telemetryDimensions)
 				}
 			} else if len(laKubeMonAgentEventsRecords) > 0 { //for windows, ODS direct
 				kubeMonAgentEventEntry := KubeMonAgentEventBlob{
@@ -833,16 +854,6 @@ func flushKubeMonAgentEventRecords() {
 					//expensive to do string len for every request, so use a flag
 					if ResourceCentric == true {
 						req.Header.Set("x-ms-AzureResourceId", ResourceID)
-					}
-
-					if IsAADMSIAuthMode == true {
-						IngestionAuthTokenUpdateMutex.Lock()
-						ingestionAuthToken := ODSIngestionAuthToken
-						IngestionAuthTokenUpdateMutex.Unlock()
-						if ingestionAuthToken == "" {
-							Log("Error::ODS Ingestion Auth Token is empty. Please check error log.")
-						}
-						req.Header.Set("Authorization", "Bearer "+ingestionAuthToken)
 					}
 
 					resp, err := HTTPClient.Do(req)
@@ -2061,6 +2072,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("Creating MDSD clients for KubeMonAgentEvents & InsightsMetrics")
 		CreateMDSDClient(KubeMonAgentEvents, ContainerType)
 		CreateMDSDClient(InsightsMetrics, ContainerType)
+	} else if IsWindows && IsAADMSIAuthMode { // AMA windows specific
+		Log("Creating AMA client for KubeMonAgentEvents")
+		EnsureGenevaOr3PNamedPipeExists(&KubeMonAgentEventsNamedPipe, KubeMonAgentEventDataType, &KubeMonEventsWindowsAMAClientCreateErrors, false, &MdsdKubeMonAgentEventsTagRefreshTracker)
 	}
 
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {

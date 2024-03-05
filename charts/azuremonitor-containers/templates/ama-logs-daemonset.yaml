@@ -48,11 +48,7 @@ spec:
 {{-  .Values.Azure.Identity.MSIAdapterYaml | nindent 7 }}
 {{- end }}
      - name: ama-logs
-       {{- if eq (.Values.amalogs.domain | lower) "opinsights.azure.cn" }}
-       image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.amalogs.image.tag }}"
-       {{- else }}
        image: {{ printf "%s:%s" .Values.amalogs.image.repo .Values.amalogs.image.tag }}
-       {{- end }}
        imagePullPolicy: IfNotPresent
        resources:
 {{ toYaml .Values.amalogs.resources.daemonsetlinux | indent 9 }}
@@ -79,6 +75,10 @@ spec:
        {{- end }}
        - name: CONTROLLER_TYPE
          value: "DaemonSet"
+       {{- if .Values.amalogs.syslog.enabled }}
+       - name: SYSLOG_HOST_PORT
+         value: {{ .Values.amalogs.syslog.syslogPort | quote }}
+       {{- end }}
        - name: NODE_IP
          valueFrom:
             fieldRef:
@@ -136,12 +136,20 @@ spec:
          protocol: TCP
        - containerPort: 25224
          protocol: UDP
+       {{- if .Values.amalogs.syslog.enabled }}
+       - name: syslog
+         containerPort: {{ .Values.amalogs.syslog.syslogPort }}
+         hostPort: {{ .Values.amalogs.syslog.syslogPort }}
+         protocol: TCP
+       {{- end }}
        volumeMounts:
+        - name: kube-api-access
+          mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+          readOnly: true
         - mountPath: /hostfs
           name: host-root
           readOnly: true
-        - mountPath: /var/run/host
-          name: docker-sock
+          mountPropagation: HostToContainer
         - mountPath: /var/log
           name: host-log
         - mountPath: /var/lib/docker/containers
@@ -178,11 +186,7 @@ spec:
         timeoutSeconds: 15
    {{- if .Values.amalogs.sidecarscraping }}
      - name: ama-logs-prometheus
-       {{- if eq (.Values.amalogs.domain | lower) "opinsights.azure.cn" }}
-       image: "mcr.azk8s.cn/azuremonitor/containerinsights/ciprod:{{ .Values.amalogs.image.tag }}"
-       {{- else }}
        image: {{ printf "%s:%s" .Values.amalogs.image.repo .Values.amalogs.image.tag }}
-       {{- end }}
        imagePullPolicy: IfNotPresent
        resources:
 {{ toYaml .Values.amalogs.resources.daemonsetlinuxsidecar | indent 9 }}
@@ -229,6 +233,9 @@ spec:
        securityContext:
          privileged: true
        volumeMounts:
+         - name: kube-api-access
+           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+           readOnly: true
          - mountPath: /etc/kubernetes/host
            name: azure-json-path
          - mountPath: /etc/ama-logs-secret
@@ -269,12 +276,26 @@ spec:
    {{- end }}
    {{- end }}
    volumes:
+    - name: kube-api-access
+      projected:
+        sources:
+         - serviceAccountToken:
+             path: token
+             expirationSeconds: 3600
+         - configMap:
+             items:
+             - key: ca.crt
+               path: ca.crt
+             name: kube-root-ca.crt
+         - downwardAPI:
+             items:
+             - fieldRef:
+                 apiVersion: v1
+                 fieldPath: metadata.namespace
+               path: namespace
     - name: host-root
       hostPath:
        path: /
-    - name: docker-sock
-      hostPath:
-       path: /var/run
     - name: container-hostname
       hostPath:
        path: /etc/hostname

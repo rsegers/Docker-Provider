@@ -236,8 +236,7 @@ function Set-EnvironmentVariables {
                 $proxy = [string]$proxy.Trim();
                 $parts = $proxy -split "@"
                 if ($parts.Length -ne 2) {
-                    Write-Host "Invalid ProxyConfiguration. EXITING....."
-                    exit 1
+                    Write-Host "Proxy is not using credentials..."
                 }
                 $subparts1 = $parts[0] -split "//"
                 if ($subparts1.Length -ne 2) {
@@ -417,18 +416,29 @@ function Set-EnvironmentVariables {
     else {
         Write-Host "Failed to set environment variable KUBERNETES_PORT_443_TCP_PORT for target 'machine' since it is either null or empty"
     }
+
+    $kubernetesServiceHost = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_HOST", "process")
+    if (![string]::IsNullOrEmpty($kubernetesServiceHost)) {
+        [System.Environment]::SetEnvironmentVariable("KUBERNETES_SERVICE_HOST", $kubernetesServiceHost, "machine")
+        Write-Host "Successfully set environment variable KUBERNETES_SERVICE_HOST - $($kubernetesServiceHost) for target 'machine'..."
+    }
+    else {
+        Write-Host "Failed to set environment variable KUBERNETES_SERVICE_HOST for target 'machine' since it is either null or empty"
+    }
 }
 
 function Read-Configs {
     # run config parser
     ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
     Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setenv.txt"
+
+    #Parse the configmap to set the right environment variables for agent config.
+    ruby /opt/amalogswindows/scripts/ruby/tomlparser-common-agent-config.rb
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setcommonagentenv.txt"
+
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
     Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setagentenv.txt"
-    
-    #Replace placeholders in fluent-bit.conf
-    ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-geneva-config.rb
     Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setgenevaconfigenv.txt"
@@ -443,6 +453,9 @@ function Read-Configs {
     else {
         Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
     }
+
+    #Replace placeholders in fluent-bit.conf
+    ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
     $enableFbitInternalMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_FBIT_INTERNAL_METRICS", "process")
     if (![string]::IsNullOrEmpty($enableFbitInternalMetrics)) {
@@ -640,6 +653,15 @@ function Get-ContainerRuntime {
 
 function Start-Fluent-Telegraf {
 
+    Set-ProcessAndMachineEnvVariables "TELEMETRY_CUSTOM_PROM_MONITOR_PODS" "false"
+    # run prometheus custom config parser
+    Write-Host "**********Running config parser for custom prometheus scraping**********"
+    ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
+
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setpromenv.txt"
+
+    Write-Host "**********End running config parser for custom prometheus scraping**********"
+
     $containerRuntime = Get-ContainerRuntime
 
     if (![string]::IsNullOrEmpty($containerRuntime) -and [string]$containerRuntime.StartsWith('docker') -eq $false) {
@@ -680,15 +702,6 @@ function Start-Telegraf {
     # Set default telegraf environment variables for prometheus scraping
     Write-Host "**********Setting default environment variables for telegraf prometheus plugin..."
     .\setdefaulttelegrafenvvariables.ps1
-
-    Set-ProcessAndMachineEnvVariables "TELEMETRY_CUSTOM_PROM_MONITOR_PODS" "false"
-    # run prometheus custom config parser
-    Write-Host "**********Running config parser for custom prometheus scraping**********"
-    ruby /opt/amalogswindows/scripts/ruby/tomlparser-prom-customconfig.rb
-
-    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setpromenv.txt"
-
-    Write-Host "**********End running config parser for custom prometheus scraping**********"
 
     $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
     if (![string]::IsNullOrEmpty($monitorKubernetesPods) -and $monitorKubernetesPods.ToLower() -eq 'true') {
@@ -849,24 +862,34 @@ if (![string]::IsNullOrEmpty($requiresCertBootstrap) -and `
 
 $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
 $isGenevaModeVar = IsGenevaMode
-# Geneva mode supported on both AAD MSI Auth and Cert Auth
+
 if ($isGenevaModeVar) {
     Write-Host "Starting Windows AMA in 1P Mode"
     #start Windows AMA
     Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
-} 
-if (!$isGenevaModeVar -and ![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
-    Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
-
-    #start Windows AMA 
-    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
-    $version = Get-Content -Path "C:\opt\windowsazuremonitoragent\version.txt"
-    Write-Host $version
+    if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+        Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
+    }
+    else {
+        Write-Host "Starting Windows in Cert Auth Mode"
+        Generate-Certificates
+        Test-CertificatePath
+    }
 }
 else {
-    Write-Host "Starting Windows in Cert Auth Mode"
-    Generate-Certificates
-    Test-CertificatePath
+    if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
+        Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
+
+        #start Windows AMA
+        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
+        $version = Get-Content -Path "C:\opt\windowsazuremonitoragent\version.txt"
+        Write-Host $version
+    }
+    else {
+        Write-Host "Starting Windows in Cert Auth Mode"
+        Generate-Certificates
+        Test-CertificatePath
+    }
 }
 
 

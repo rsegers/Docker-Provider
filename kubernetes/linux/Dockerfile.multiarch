@@ -22,7 +22,7 @@ ENV tmpdir /opt
 RUN tdnf clean all
 RUN tdnf repolist --refresh
 RUN tdnf -y update
-RUN tdnf install -y build-essential wget openssl curl sudo net-tools cronie rsyslog dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
+RUN tdnf install -y build-essential wget curl sudo net-tools cronie rsyslog dmidecode gnupg make logrotate busybox gawk tar && rm -rf /var/lib/apt/lists/*
 RUN mkdir /busybin && busybox --install /busybin
 
 COPY --from=golang-builder /src/kubernetes/linux/Linux_ULINUX_1.0_*_64_Release/docker-cimprov-*.*.*-*.*.sh $tmpdir/
@@ -52,7 +52,7 @@ ENV KUBE_CLIENT_BACKOFF_DURATION 0
 ENV RUBY_GC_HEAP_OLDOBJECT_LIMIT_FACTOR 0.9
 
 # default value will be overwritten by pipeline
-ARG IMAGE_TAG=3.1.15
+ARG IMAGE_TAG=3.1.17
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 WORKDIR ${tmpdir}
@@ -80,7 +80,7 @@ COPY --from=builder /usr/sbin/setcap /usr/sbin/setcap
 COPY --from=builder /usr/bin/curl /usr/bin/curl
 COPY --from=builder /usr/bin/jq /usr/bin/jq
 COPY --from=builder /usr/bin/base64 /usr/bin/base64
-COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd 
+COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd
 
 # bash dependencies
 COPY --from=builder /lib/libreadline.so.8 /lib/
@@ -93,16 +93,19 @@ COPY --from=builder /lib/libselinux.so.1 /lib/libpam.so.0 /lib/libc.so.6 /lib/li
 # ruby dependencies
 COPY --from=builder /usr/lib/libruby.so.3.1 /usr/lib/libz.so.1 /usr/lib/libgmp.so.10 /usr/lib/libcrypt.so.1 /usr/lib/libm.so.6 /usr/lib/libc.so.6 /usr/lib/
 # fluent-bit dependencies
-COPY --from=builder /lib/libssl.so.1.1 /lib/libcrypto.so.1.1 /lib/libyaml-0.so.2 /lib/libsystemd.so.0 /lib/libm.so.6 /lib/libgcc_s.so.1 /usr/lib/libc.so.6 /lib/liblzma.so.5 /lib/liblz4.so.1 /lib/libcap.so.2 /lib/libgcrypt.so.20 /lib/libgpg-error.so.0 /lib/
+# libssl.so.1.1 & libcrypto.so.1.1 are already available with openssl in distroless and copying them over causes FIPS HMAC verification failures
+COPY --from=builder /lib/libyaml-0.so.2 /lib/libsystemd.so.0 /lib/libm.so.6 /lib/libgcc_s.so.1 /lib/libc.so.6 /lib/liblzma.so.5 /lib/liblz4.so.1 /lib/libcap.so.2 /lib/libgcrypt.so.20 /lib/libgpg-error.so.0 /lib/libsasl2.so.3 /lib/
 # telegraf dependencies
-COPY --from=builder /lib/libc.so.6 /lib/
+COPY --from=builder /lib/libresolv.so.2 /lib/libc.so.6 /lib/
 # mdsd dependencies
 COPY --from=builder /usr/lib/libdl.so.2 /usr/lib/librt.so.1 /usr/lib/libpthread.so.0 /usr/lib/libm.so.6 /usr/lib/libstdc++.so.6 /usr/lib/libgcc_s.so.1 /usr/lib/
-COPY --from=builder /usr/local/lib/libtcmalloc_minimal.so.4 /usr/local/lib/
+COPY --from=builder /opt/microsoft/azure-mdsd/lib/libtcmalloc_minimal.so.4 /opt/microsoft/azure-mdsd/lib/
+COPY --from=builder /opt/microsoft/azure-mdsd/lib/libsymcrypt.so.103 /opt/microsoft/azure-mdsd/lib/
 # logrotate dependencies
 COPY --from=builder /lib/libselinux.so.1 /lib/libpopt.so.0 /lib/libc.so.6 /lib/libpcre.so.1 /lib/
 # curl dependencies
-COPY --from=builder /lib/libcurl.so.4 /lib/libz.so.1 /usr/lib/libc.so.6 /lib/libnghttp2.so.14 /lib/libssl.so.1.1 /lib/libssh2.so.1 /lib/libcrypto.so.1.1 /lib/libgssapi_krb5.so.2 /lib/libzstd.so.1 /lib/
+# libssl.so.1.1 & libcrypto.so.1.1 are already available with openssl in distroless and copying them over causes FIPS HMAC verification failures
+COPY --from=builder /lib/libcurl.so.4 /lib/libz.so.1 /lib/libc.so.6 /lib/libnghttp2.so.14 /lib/libssh2.so.1 /lib/libgssapi_krb5.so.2 /lib/libzstd.so.1 /lib/
 COPY --from=builder /usr/lib/libkrb5.so.3 /usr/lib/libk5crypto.so.3 /usr/lib/libcom_err.so.2 /usr/lib/libkrb5support.so.0 /usr/lib/libresolv.so.2 /usr/lib/
 # jq dependencies
 COPY --from=builder /lib/libjq.so.1 /lib/libc.so.6 /lib/libm.so.6 /lib/libonig.so.5 /lib/

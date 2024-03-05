@@ -8,6 +8,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/fluent/fluent-bit-go/output"
@@ -54,6 +55,8 @@ var (
 	InputPluginRecordsErrors float64
 	//Tracks the number of mdsd client create errors for kubemonevents (uses ContainerLogTelemetryTicker)
 	KubeMonEventsMDSDClientCreateErrors float64
+	//Track the number of windows ama client create errors for kubemonevents (uses ContainerLogTelemetryTicker)
+	KubeMonEventsWindowsAMAClientCreateErrors float64
 	//Tracks the number of write/send errors to ADX for containerlogs (uses ContainerLogTelemetryTicker)
 	ContainerLogsSendErrorsToADXFromFluent float64
 	//Tracks the number of ADX client create errors for containerlogs (uses ContainerLogTelemetryTicker)
@@ -75,6 +78,12 @@ var (
 		"daemonset":  "DS",
 		"replicaset": "RS",
 	}
+	//Metrics map for the mdsd traces
+	MdsdErrorMetrics = map[string]float64{}
+	//Time ticker for sending mdsd errors as metrics
+	MdsdErrorMetricsTicker *time.Ticker
+	//Mutex for mdsd error metrics
+	MdsdErrorMetricsMutex = &sync.Mutex{}
 )
 
 const (
@@ -97,6 +106,7 @@ const (
 	metricNameErrorCountInsightsMetricsMDSDClientCreateError          = "InsightsMetricsMDSDClientCreateErrorsCount"
 	metricNameErrorCountContainerLogsSendErrorsToWindowsAMAFromFluent = "ContainerLogsSendErrorsToWindowsAMAFromFluent"
 	metricNameErrorCountContainerLogsWindowsAMAClientCreateError      = "ContainerLogsWindowsAMAClientCreateErrors"
+	metricNameErrorCountKubeMonEventsWindowsAMAClientCreateError      = "KubeMonEventsWindowsAMAClientCreateErrors"
 	metricNameErrorCountKubeMonEventsMDSDClientCreateError            = "KubeMonEventsMDSDClientCreateErrorsCount"
 	metricNameErrorCountContainerLogsSendErrorsToADXFromFluent        = "ContainerLogs2ADXSendErrorCount"
 	metricNameErrorCountContainerLogsADXClientCreateError             = "ContainerLogsADXClientCreateErrorCount"
@@ -142,6 +152,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		containerLogsWindowsAMAClientCreateErrors := ContainerLogsWindowsAMAClientCreateErrors
 		insightsMetricsMDSDClientCreateErrors := InsightsMetricsMDSDClientCreateErrors
 		kubeMonEventsMDSDClientCreateErrors := KubeMonEventsMDSDClientCreateErrors
+		kubeMonEventsWindowsAMAClientCreateErrors := KubeMonEventsWindowsAMAClientCreateErrors
 		osmNamespaceCount := OSMNamespaceCount
 		promMonitorPods := PromMonitorPods
 		promMonitorPodsNamespaceLength := PromMonitorPodsNamespaceLength
@@ -170,6 +181,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		ContainerLogsADXClientCreateErrors = 0.0
 		InsightsMetricsMDSDClientCreateErrors = 0.0
 		KubeMonEventsMDSDClientCreateErrors = 0.0
+		KubeMonEventsWindowsAMAClientCreateErrors = 0.0
 		ContainerLogRecordCountWithEmptyTimeStamp = 0.0
 		ContainerLogTelemetryMutex.Unlock()
 
@@ -256,7 +268,12 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				TelemetryClient.Track(logLatencyMetric)
 			}
 		}
-		TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount))
+		telegrafEnabled := make(map[string]string)
+		osType := os.Getenv("OS_TYPE")
+		if osType != "" && strings.EqualFold(osType, "windows") {
+			telegrafEnabled["IsTelegrafEnabled"] = os.Getenv("TELEMETRY_CUSTOM_PROM_MONITOR_PODS") // If TELEMETRY_CUSTOM_PROM_MONITOR_PODS, then telegraf is enabled
+		}
+		SendMetric(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount, telegrafEnabled)
 		if telegrafMetricsSendErrorCount > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSendErrorsTelegrafMetrics, telegrafMetricsSendErrorCount))
 		}
@@ -287,6 +304,9 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		if kubeMonEventsMDSDClientCreateErrors > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountKubeMonEventsMDSDClientCreateError, kubeMonEventsMDSDClientCreateErrors))
 		}
+		if kubeMonEventsWindowsAMAClientCreateErrors > 0.0 {
+			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountKubeMonEventsWindowsAMAClientCreateError, kubeMonEventsWindowsAMAClientCreateErrors))
+		}
 		if winTelegrafMetricsCountWithTagsSize64KBorMore > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofWinTelegrafMetricsWithTagsSize64KBorMore, winTelegrafMetricsCountWithTagsSize64KBorMore))
 		}
@@ -295,6 +315,26 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		}
 
 		start = time.Now()
+	}
+}
+
+// SendMdsdTracesAsMetrics is a go-routine that flushes the mdsd traces as metrics periodically (every 5 mins to App Insights)
+func SendMdsdTracesAsMetrics(telemetryPushIntervalProperty string) {
+	telemetryPushInterval, err := strconv.Atoi(telemetryPushIntervalProperty)
+	if err != nil {
+		Log("Error Converting telemetryPushIntervalProperty %s. Using Default Interval... %d \n", telemetryPushIntervalProperty, defaultTelemetryPushIntervalSeconds)
+		telemetryPushInterval = defaultTelemetryPushIntervalSeconds
+	}
+
+	MdsdErrorMetricsTicker = time.NewTicker(time.Second * time.Duration(telemetryPushInterval))
+
+	for ; true; <-MdsdErrorMetricsTicker.C {
+		MdsdErrorMetricsMutex.Lock()
+		for metricName, metricValue := range MdsdErrorMetrics {
+			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricName, metricValue))
+		}
+		MdsdErrorMetrics = map[string]float64{}
+		MdsdErrorMetricsMutex.Unlock()
 	}
 }
 
@@ -309,6 +349,19 @@ func SendEvent(eventName string, dimensions map[string]string) {
 	}
 
 	TelemetryClient.Track(event)
+}
+
+// SendMetric sends a metric to App Insights
+func SendMetric(metricName string, metricValue float64, dimensions map[string]string) {
+	Log("Sending Metric : %s\n", metricName)
+	metric := appinsights.NewMetricTelemetry(metricName, metricValue)
+
+	// add any extra Properties
+	for k, v := range dimensions {
+		metric.Properties[k] = v
+	}
+
+	TelemetryClient.Track(metric)
 }
 
 // SendException  send an event to the configured app insights instance
@@ -466,6 +519,16 @@ func InitializeTelemetryClient(agentVersion string) (int, error) {
 	return 0, nil
 }
 
+func UpdateMdsdErrorMetrics(key string) {
+	MdsdErrorMetricsMutex.Lock()
+	if _, ok := MdsdErrorMetrics[key]; ok {
+		MdsdErrorMetrics[key]++
+	} else {
+		MdsdErrorMetrics[key] = 1
+	}
+	MdsdErrorMetricsMutex.Unlock()
+}
+
 // PushToAppInsightsTraces sends the log lines as trace messages to the configured App Insights Instance
 func PushToAppInsightsTraces(records []map[interface{}]interface{}, severityLevel contracts.SeverityLevel, tag string) int {
 	var logLines []string
@@ -476,6 +539,18 @@ func PushToAppInsightsTraces(records []map[interface{}]interface{}, severityLeve
 			populateKubeMonAgentEventHash(record, ConfigError)
 		} else if strings.Contains(logEntry, "E! [inputs.prometheus]") {
 			populateKubeMonAgentEventHash(record, PromScrapingError)
+		} else if strings.Contains(logEntry, "Lifetime validation failed. The token is expired.") {
+			UpdateMdsdErrorMetrics("MdsdTokenExpired")
+		} else if strings.Contains(logEntry, "Failed to upload to ODS: Error resolving address") {
+			UpdateMdsdErrorMetrics("MdsdODSUploadErrorResolvingAddress")
+		} else if strings.Contains(logEntry, "Data collection endpoint must be used to access configuration over private link") {
+			UpdateMdsdErrorMetrics("MdsdPrivateLinkNoDCE")
+		} else if strings.Contains(logEntry, "Failed to register certificate with OMS Homing Service:Error resolving address") {
+			UpdateMdsdErrorMetrics("MdsdOMSHomingServiceError")
+		} else if strings.Contains(logEntry, "Could not obtain configuration from") {
+			UpdateMdsdErrorMetrics("MdsdGetConfigError")
+		} else if strings.Contains(logEntry, " Failed to upload to ODS: 403") {
+			UpdateMdsdErrorMetrics("MdsdODSUploadError403")
 		} else {
 			logLines = append(logLines, logEntry)
 		}

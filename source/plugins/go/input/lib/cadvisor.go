@@ -109,16 +109,6 @@ func GetPodsFromCAdvisor(winNode map[string]string) (*http.Response, error) {
 	return getResponse(winNode, relativeUri)
 }
 
-func GetAllMetricsCAdvisor(winNode map[string]string) (*http.Response, error) {
-	relativeUri := "/metrics/cadvisor"
-	return getResponse(winNode, relativeUri)
-}
-
-func GetConfigzCAdvisor(winNode map[string]string) (*http.Response, error) {
-	relativeUri := "/configz"
-	return getResponse(winNode, relativeUri)
-}
-
 func getBaseCAdvisorUrl(winNode map[string]string) string {
 	cAdvisorSecurePort := isCAdvisorOnSecurePort()
 
@@ -791,22 +781,16 @@ func getNodeLastRebootTimeMetric(metricInfo map[string]interface{}, hostName, me
 		return nodeMetricItem
 	}
 
-	var timeDifference int64
+	var epochTime int64
 	if osType != "" && strings.EqualFold(osType, "windows") && IsAADMSIAuthMode() {
-		//Read from "C:\\etc\\kubernetes\\host\\windowsnodereset.log"
-		uptimeStr, err := ioutil.ReadFile("C:\\etc\\kubernetes\\host\\windowsnodereset.log")
+		//Stat the modification time from "C:\\etc\\kubernetes\\host\\windowsnodereset.log"
+		fileStat, err := os.Stat("C:\\etc\\kubernetes\\host\\windowsnodereset.log")
 		if err != nil {
-			Log.Warnf("Error reading C:\\etc\\kubernetes\\host\\windowsnodereset.log: %s", err)
+			Log.Warnf("Error stating C:\\etc\\kubernetes\\host\\windowsnodereset.log: %s", err)
 			return nodeMetricItem
 		}
-		uptimeDateTimeStr := strings.Fields(string(uptimeStr))[0]
-		//convert the string to a time and then to a float
-		uptimeDateTime, err := time.Parse(time.RFC3339, uptimeDateTimeStr)
-		if err != nil {
-			Log.Warnf("Error parsing time: %s", err)
-			return nodeMetricItem
-		}
-		timeDifference = parsedTime.Unix() - uptimeDateTime.Unix()
+		modificationTime := fileStat.ModTime()
+		epochTime = modificationTime.Unix()
 	} else {
 		// Read the first value from /proc/uptime and convert it to a float64
 		uptimeStr, err := ioutil.ReadFile("/proc/uptime")
@@ -821,12 +805,12 @@ func getNodeLastRebootTimeMetric(metricInfo map[string]interface{}, hostName, me
 			return nodeMetricItem
 		}
 
-		timeDifference = parsedTime.Unix() - int64(uptimeSeconds)
+		epochTime = parsedTime.Unix() - int64(uptimeSeconds)
 	}
 
 	metricCollection := map[string]interface{}{
 		"CounterName": metricKey,
-		"Value":       timeDifference,
+		"Value":       epochTime,
 	}
 
 	metricCollections := []map[string]interface{}{metricCollection}

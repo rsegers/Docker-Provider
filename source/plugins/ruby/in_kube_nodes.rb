@@ -181,6 +181,7 @@ module Fluent::Plugin
         timeDifference = (DateTime.now.to_time.to_i - @@nodeInventoryLatencyTelemetryTimeTracker).abs
         timeDifferenceInMinutes = timeDifference / 60
         if (timeDifferenceInMinutes >= @TELEMETRY_FLUSH_INTERVAL_IN_MINUTES)
+          ApplicationInsightsUtility.sendCustomEvent("KubeNodeInventoryHeartBeatEvent", {})
           @applicationInsightsUtility.sendMetricTelemetry("NodeInventoryE2EProcessingLatencyMs", @nodeInventoryE2EProcessingLatencyMs, {})
           @applicationInsightsUtility.sendMetricTelemetry("NodesAPIE2ELatencyMs", @nodesAPIE2ELatencyMs, {})
           telemetryProperties = {}
@@ -602,6 +603,10 @@ module Fluent::Plugin
         end
         properties["NODES_CHUNK_SIZE"] = @NODES_CHUNK_SIZE
         properties["NODES_EMIT_STREAM_BATCH_SIZE"] = @NODES_EMIT_STREAM_BATCH_SIZE
+        nodeLabels = item["metadata"]["labels"]
+        if !nodeLabels.nil? && !nodeLabels.empty? && nodeLabels.key?("kubernetes.azure.com/fips_enabled") && nodeLabels["kubernetes.azure.com/fips_enabled"] == "true"
+          properties["FipsEnabled"] = "true"
+        end
       rescue => errorStr
         $log.warn "in_kube_nodes::getContainerNodeIngetNodeTelemetryPropsventoryRecord:Failed: #{errorStr}"
       end
