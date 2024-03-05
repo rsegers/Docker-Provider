@@ -952,6 +952,7 @@ if [ "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" == "true" ] || [ "${USING_AAD_MSI_AU
       if [ -e "/etc/config/kube.conf" ]; then
            # Replace a string in the configmap file
             sed -i "s/#@include windows_rs/@include windows_rs/g" /etc/fluent/kube.conf
+fi
 
 # Write messages from the liveness probe to stdout (so telemetry picks it up)
 touch /dev/write-to-traces
