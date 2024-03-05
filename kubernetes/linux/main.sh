@@ -975,28 +975,17 @@ if [ -e "/opt/dcr_env_var" ]; then
       setGlobalEnvVar LOGS_AND_EVENTS_ONLY "${LOGS_AND_EVENTS_ONLY}"
 fi
 
-# no dependency on fluentd for prometheus side car container
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
-      if [ ! -e "/etc/config/kube.conf" ]; then
-            if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
-                  echo "*** starting fluentd v1 in daemonset"
-                  fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
-            else
-                  echo "Skipping fluentd since LOGS_AND_EVENTS_ONLY is set to true"
-            fi
-      else
-           echo "*** starting fluentd v1 in replicaset"
-           fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
-      fi
-fi
-
 setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}"
 if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
       # no dependency on fluentd for prometheus side car container
       if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
             if [ ! -e "/etc/config/kube.conf" ]; then
-                  echo "*** starting fluentd v1 in daemonset"
-                  fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+                  if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
+                        echo "*** starting fluentd v1 in daemonset"
+                        fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+                  else
+                        echo "Skipping fluentd since LOGS_AND_EVENTS_ONLY is set to true"
+                  fi
             else
                   echo "*** starting fluentd v1 in replicaset"
                   fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
