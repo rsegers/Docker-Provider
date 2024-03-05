@@ -3,16 +3,18 @@
 # Get the start time of the setup in seconds
 startTime=$(date +%s)
 
+echo "startup script start @ $(date +'%Y-%m-%dT%H:%M:%S')"
+
 gracefulShutdown() {
-      echo "gracefulShutdown start @ `date --rfc-3339=seconds`"
-      echo "gracefulShutdown fluent-bit process start @ `date --rfc-3339=seconds`"
+      echo "gracefulShutdown start @ $(date +'%Y-%m-%dT%H:%M:%S')"
+      echo "gracefulShutdown fluent-bit process start @ $(date +'%Y-%m-%dT%H:%M:%S')"
       pkill -f fluent-bit
-      sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS} # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
-      echo "gracefulShutdown fluent-bit process complete @ `date --rfc-3339=seconds`"
-      echo "gracefulShutdown mdsd process start @ `date --rfc-3339=seconds`"
+      sleep "${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}" # wait for the fluent-bit graceful shutdown before terminating mdsd to complete pending tasks if any
+      echo "gracefulShutdown fluent-bit process complete @ $(date +'%Y-%m-%dT%H:%M:%S')"
+      echo "gracefulShutdown mdsd process start @ $(date +'%Y-%m-%dT%H:%M:%S')"
       pkill -f mdsd
-      echo "gracefulShutdown mdsd process compelete @ `date --rfc-3339=seconds`"
-      echo "gracefulShutdown complete @ `date --rfc-3339=seconds`"
+      echo "gracefulShutdown mdsd process compelete @ $(date +'%Y-%m-%dT%H:%M:%S')"
+      echo "gracefulShutdown complete @ $(date +'%Y-%m-%dT%H:%M:%S')"
 }
 
 # please use this instead of adding env vars to bashrc directly
@@ -22,6 +24,7 @@ setGlobalEnvVar() {
       echo "export \"$1\"=\"$2\"" >> /opt/env_vars
 }
 touch /opt/env_vars
+touch /opt/dcr_env_var
 echo "source /opt/env_vars" >> ~/.bashrc
 
 waitforlisteneronTCPport() {
@@ -100,10 +103,10 @@ checkAgentOnboardingStatus() {
                               return 1
                         fi
 
-                        if grep "$successMessage" "${MDSD_LOG}/mdsd.info"; then
+                        if grep -q "$successMessage" "${MDSD_LOG}/mdsd.info" > /dev/null 2>&1; then
                               echo "Onboarding success"
                               return 0
-                        elif grep "$failureMessage" "${MDSD_LOG}/mdsd.err"; then
+                        elif grep -q "$failureMessage" "${MDSD_LOG}/mdsd.err" > /dev/null 2>&1; then
                               echo "Onboarding Failure: Reason: Failed to onboard the agent"
                               echo "Onboarding Failure: Please verify log analytics workspace configuration such as existence of the workspace, workspace key and workspace enabled for public ingestion"
                               return 1
@@ -324,6 +327,13 @@ if [[ ((! -e "/etc/config/kube.conf") && ("${CONTAINER_TYPE}" == "PrometheusSide
             echo "AZMON_OSM_CFG_SCHEMA_VERSION:$AZMON_OSM_CFG_SCHEMA_VERSION"
       fi
 fi
+
+# common agent config settings applicable for all container types
+ruby tomlparser-common-agent-config.rb
+cat common_agent_config_env_var | while read line; do
+      echo $line >> ~/.bashrc
+done
+source common_agent_config_env_var
 
 #Parse the configmap to set the right environment variables for agent config.
 #Note > tomlparser-agent-config.rb has to be parsed first before fluent-bit-conf-customizer.rb for fbit agent settings
@@ -949,11 +959,11 @@ else
 fi
 
 ruby dcr-config-parser.rb
-if [ -e "dcr_env_var" ]; then
+if [ -e "/opt/dcr_env_var" ]; then
       cat dcr_env_var | while read line; do
             echo $line >>~/.bashrc
       done
-      source dcr_env_var
+      source /opt/dcr_env_var
       setGlobalEnvVar LOGS_AND_EVENTS_ONLY "${LOGS_AND_EVENTS_ONLY}"
 fi
 
@@ -1034,7 +1044,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   AZMON_CONTAINER_LOG_SCHEMA_VERSION="v2"
                   echo "export AZMON_CONTAINER_LOG_SCHEMA_VERSION=$AZMON_CONTAINER_LOG_SCHEMA_VERSION" >>~/.bashrc
 
-                  if [ -z $FBIT_SERVICE_GRACE_INTERVAL_SECONDS ]; then
+                  if [ -z "$FBIT_SERVICE_GRACE_INTERVAL_SECONDS" ]; then
                        export FBIT_SERVICE_GRACE_INTERVAL_SECONDS="10"
                   fi
                   echo "Using FluentBit Grace Interval seconds:${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
@@ -1042,7 +1052,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
 
                   source ~/.bashrc
                   # Delay FBIT service start to ensure MDSD is ready in 1P mode to avoid data loss
-                  sleep ${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}
+                  sleep "${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
@@ -1154,6 +1164,8 @@ fi
 endTime=$(date +%s)
 elapsed=$((endTime-startTime))
 echo "startup script took: $elapsed seconds"
+
+echo "startup script end @ $(date +'%Y-%m-%dT%H:%M:%S')"
 
 shutdown() {
      if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then

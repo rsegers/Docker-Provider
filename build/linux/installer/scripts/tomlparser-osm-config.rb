@@ -112,7 +112,7 @@ def replaceOsmTelegrafConfigPlaceHolders
   metric_version = #{@metricVersion}
   url_tag = \"#{@urlTag}\"
   bearer_token = \"#{@bearerToken}\"
-  response_timeout = \"#{@responseTimeout}\"
+  timeout = \"#{@responseTimeout}\"
   tls_ca = \"#{@tlsCa}\"
   insecure_skip_verify = #{@insecureSkipVerify}\n"
           end

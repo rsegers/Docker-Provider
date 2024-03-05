@@ -1,6 +1,6 @@
 #!/usr/local/bin/ruby
 
-#this should be require relative in Linux and require in windows, since it is a gem install on windows
+
 @os_type = ENV["OS_TYPE"]
 require "tomlrb"
 
@@ -24,7 +24,7 @@ require_relative "ConfigParseErrorLogger"
 @containerLogsRoute = "v2" # default for linux
 @adxDatabaseName = "containerinsights" # default for all configurations
 @logEnableMultiline = "false"
-@stacktraceLanguages = "go,java,python,dotnet"
+@stacktraceLanguages = "go,java,python" #supported languages for multiline logs. java is also used for dotnet stacktraces
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
   # This path format is necessary for fluent-bit in windows
@@ -158,11 +158,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         @logEnableMultiline = parsedConfig[:log_collection_settings][:enable_multiline_logs][:enabled]
         puts "config::Using config map setting for multiline logging"
 
-        if @containerLogSchemaVersion.strip.casecmp("v2") != 0
-          puts "config:: WARN: container logs V2 is disabled and is required for multiline logging. Disabling multiline logging"
-          @logEnableMultiline = "false"
-        end
-
         multilineLanguages = parsedConfig[:log_collection_settings][:enable_multiline_logs][:stacktrace_languages]
         if !multilineLanguages.nil?
           if multilineLanguages.kind_of?(Array)
@@ -175,7 +170,13 @@ def populateSettingValuesFromConfigMap(parsedConfig)
               if invalid_lang
                 puts "config::WARN: stacktrace languages contains invalid languages. Disabling multiline stacktrace logging"
               else
-                @stacktraceLanguages = multilineLanguages.join(",").downcase
+                multilineLanguages = multilineLanguages.map(&:downcase)
+                # the java multiline parser also captures dotnet
+                if multilineLanguages.include?("dotnet")
+                  multilineLanguages.delete("dotnet")
+                  multilineLanguages << "java" unless multilineLanguages.include?("java")
+                end
+                @stacktraceLanguages = multilineLanguages.join(",")
                 puts "config::Using config map setting for multiline languages"
               end
             else
