@@ -1,6 +1,6 @@
 #!/usr/local/bin/ruby
 
-#this should be require relative in Linux and require in windows, since it is a gem install on windows
+
 @os_type = ENV["OS_TYPE"]
 require "tomlrb"
 
@@ -336,7 +336,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           puts "Using config map value: AZMON_FBIT_MEM_BUF_LIMIT = #{@promFbitMemBufLimit.to_s + "m"}"
         end
       end
-      proxy_config = parseConfigMap[:agent_settings][:proxy_config]
+      proxy_config = parsedConfig[:agent_settings][:proxy_config]
       if !proxy_config.nil?
         ignoreProxySettings = proxy_config[:ignore_proxy_settings]
         if !ignoreProxySettings.nil? && ignoreProxySettings.downcase == "true"
