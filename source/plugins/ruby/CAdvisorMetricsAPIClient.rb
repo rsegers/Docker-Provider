@@ -30,6 +30,7 @@ class CAdvisorMetricsAPIClient
   @clusterMultilineLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
   @clusterKubernetesMetadataEnabled = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
   @clusterKubernetesMetadataiIncludeFields = ENV["AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS"]
+  @clusterKubernetesMetadataCacheTTL = ENV["AZMON_KUBERNETES_METADATA_CACHE_TTL"]
 
   @dsPromInterval = ENV["TELEMETRY_DS_PROM_INTERVAL"]
   @dsPromFieldPassCount = ENV["TELEMETRY_DS_PROM_FIELDPASS_LENGTH"]
@@ -311,6 +312,9 @@ class CAdvisorMetricsAPIClient
                     end
                     if (!@clusterKubernetesMetadataiIncludeFields.nil? && !@clusterKubernetesMetadataiIncludeFields.empty?)
                       telemetryProps["metadataIncludeFields"] = @clusterKubernetesMetadataiIncludeFields
+                    end
+                    if (!@clusterKubernetesMetadataCacheTTL.nil? && !@clusterKubernetesMetadataCacheTTL.empty?)
+                      telemetryProps["metadataCacheTTL"] = @clusterKubernetesMetadataCacheTTL
                     end
                     ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
                   end
