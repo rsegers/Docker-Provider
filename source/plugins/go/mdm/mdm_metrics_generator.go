@@ -9,27 +9,58 @@ import (
 	"time"
 )
 
-// TODO: set hashes correctly
 var (
-	OsType                                            string
-	LogPath                                           string
-	Logger                                            *log.Logger
-	HostName                                          string
-	OomKilledContainerCountHash                       map[string]int
-	ContainerRestartCountHash                         map[string]int
-	StaleJobCountHash                                 map[string]int
-	PodReadyHash                                      map[string]int
-	PodNotReadyHash                                   map[string]int
-	PodReadyPercentageHash                            map[string]float64
-	ZeroFillMetricsHash                               map[string]bool
-	NodeMetricNameMetricPercentageNameHash            map[string]string // TODO: define all these hashes
-	NodeMetricNameMetricAllocatablePercentageNameHash map[string]string
-	ContainerMetricNameMetricPercentageNameHash       map[string]string
-	ContainerMetricNameMetricThresholdViolatedHash    map[string]string
-	PodMetricNameMetricPercentageNameHash             map[string]string
-	PodMetricNameMetricThresholdViolatedHash          map[string]string
-	SendZeroFilledMetrics                             bool
-	ZeroFilledMetricsTimeTracker                      time.Time
+	OsType                       string
+	LogPath                      string
+	Logger                       *log.Logger
+	HostName                     string
+	OomKilledContainerCountHash  map[string]int
+	ContainerRestartCountHash    map[string]int
+	StaleJobCountHash            map[string]int
+	PodReadyHash                 map[string]int
+	PodNotReadyHash              map[string]int
+	PodReadyPercentageHash       map[string]float64
+	SendZeroFilledMetrics        bool
+	ZeroFilledMetricsTimeTracker time.Time
+
+	ZeroFillMetricsHash          = map[string]bool{
+		MDMOOMKilledContainerCount: true,
+		MDMContainerRestartCount:   true,
+		MDMStaleCompletedJobCount:  true,
+	}
+	NodeMetricNameMetricPercentageNameHash = map[string]string{
+		CPUUsageMilliCores:    MDMNodeCpuUsagePercentage,
+		MemoryRssBytes:        MDMNodeMemoryRssPercentage,
+		MemoryWorkingSetBytes: MDMNodeMemoryWorkingSetPercentage,
+	}
+
+	NodeMetricNameMetricAllocatablePercentageNameHash = map[string]string{
+		CPUUsageMilliCores:    MDMNodeCpuUsageAllocatablePercentage,
+		MemoryRssBytes:        MDMNodeMemoryRssAllocatablePercentage,
+		MemoryWorkingSetBytes: MDMNodeMemoryWorkingSetAllocatablePercentage,
+	}
+
+	ContainerMetricNameMetricPercentageNameHash = map[string]string{
+		CPUUsageMilliCores:    MDMContainerCpuUtilizationMetric,
+		CPUUsageNanoCores:     MDMContainerCpuUtilizationMetric,
+		MemoryRssBytes:        MDMContainerMemoryRssUtilizationMetric,
+		MemoryWorkingSetBytes: MDMContainerMemoryWorkingSetUtilizationMetric,
+	}
+
+	ContainerMetricNameMetricThresholdViolatedHash = map[string]string{
+		CPUUsageMilliCores:    MDMContainerCpuThresholdViolatedMetric,
+		CPUUsageNanoCores:     MDMContainerCpuThresholdViolatedMetric,
+		MemoryRssBytes:        MDMContainerMemoryRssThresholdViolatedMetric,
+		MemoryWorkingSetBytes: MDMContainerMemoryWorkingSetThresholdViolatedMetric,
+	}
+
+	PodMetricNameMetricPercentageNameHash = map[string]string{
+		PVUsedBytes: MDMPvUtilizationMetric,
+	}
+
+	PodMetricNameMetricThresholdViolatedHash = map[string]string{
+		PVUsedBytes: MDMPvThresholdViolatedMetric,
+	}
 )
 
 func init() {
@@ -114,7 +145,7 @@ func GetMetricRecords(record map[interface{}]interface{}) ([]*GenericMetricTempl
 
 	convertedTimestamp := time.Unix(int64(record["timestamp"].(int64)), 0).UTC().Format(time.RFC3339)
 	for k, v := range fieldMap {
-		if isNumeric(v) { //TODO implement this
+		if isNumeric(v) {
 			metricValue, _ := v.(float64)
 			m := NewMetricTemplate(convertedTimestamp, k.(string), record["name"].(string), dimNames, dimValues, metricValue)
 			metricRecords = append(metricRecords, m)

@@ -21,8 +21,7 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 //export FLBPluginInit
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	Log("Initializing out_mdm go plugin for fluentbit")
-	var agentVersion string
-	agentVersion = os.Getenv("AGENT_VERSION")
+	agentVersion := os.Getenv("AGENT_VERSION")
 	InitializePlugin(agentVersion)
 
 	enableTelemetry := output.FLBPluginConfigKey(ctx, "EnableTelemetry")

@@ -106,7 +106,7 @@ func createLogger() *log.Logger {
 		logfile, err = os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			lib.SendException(err.Error())
-			fmt.Printf(err.Error())
+			fmt.Print(err.Error())
 		}
 	}
 
@@ -115,7 +115,7 @@ func createLogger() *log.Logger {
 		logfile, err = os.Create(logPath)
 		if err != nil {
 			lib.SendException(err.Error())
-			fmt.Printf(err.Error())
+			fmt.Print(err.Error())
 		}
 	}
 
@@ -471,11 +471,7 @@ func handleError(err error, response *http.Response, requestId string) {
 func exceptionAggregator(err error) {
 	if err != nil {
 		exceptionKey := err.Error()
-		if _, ok := mdmExceptionsHash[exceptionKey]; ok {
-			mdmExceptionsHash[exceptionKey]++
-		} else {
-			mdmExceptionsHash[exceptionKey] = 1
-		}
+		mdmExceptionsHash[exceptionKey]++
 		mdmExceptionsCount++
 	}
 }
@@ -646,6 +642,7 @@ func PostCAdvisorMetricsToMDM(records []map[interface{}]interface{}) int {
 		metricsThresholdHash = GetContainerResourceUtilizationThresholds()
 	}
 
+	// TODO why twice?
 	ensureCPUMemoryCapacityAndAllocatableSet()
 	if processIncomingStream {
 		var err error
@@ -690,7 +687,7 @@ func filterCAdvisor2MDM(record map[interface{}]interface{}) ([]*GenericMetricTem
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Error processing cadvisor metrics record: %v", r)
-			lib.SendExceptionTelemetry(fmt.Sprint("%v", r), nil)
+			lib.SendExceptionTelemetry(fmt.Sprintf("%v", r), nil)
 		}
 	}()
 
@@ -835,7 +832,7 @@ func filterPVInsightsMetrics(record map[string]string) ([]*GenericMetricTemplate
 	defer func() {
 		if r := recover(); r != nil {
 			log.Printf("Error processing insights metrics record: %v", r)
-			lib.SendExceptionTelemetry(fmt.Sprint("%v", r), nil)
+			lib.SendExceptionTelemetry(fmt.Sprintf("%v", r), nil)
 			mdmMetrics = nil
 		}
 	}()
@@ -852,8 +849,8 @@ func filterPVInsightsMetrics(record map[string]string) ([]*GenericMetricTemplate
 			lib.SendExceptionTelemetry(err.Error(), nil)
 			return nil, err
 		}
-		capacity, _ := tags[InsightsMetricsTagsPVCapacityBytes]
-		fCapacity, _ := strconv.ParseFloat(capacity, 64)
+
+		fCapacity, _ := strconv.ParseFloat(tags[InsightsMetricsTagsPVCapacityBytes], 64)
 
 		percentageMetricValue := 0.0
 		if fCapacity != 0.0 {
