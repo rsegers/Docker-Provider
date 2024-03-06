@@ -217,6 +217,10 @@ data:
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # [agent_settings.telemetry_config]
     #   disable_telemetry = false  # if this is not applied, default value is false
+    
+    # The following setting is for KubernetesMetadata CacheTTL Settings, default is 60s.
+    # [agent_settings.k8s_metadata_config]
+    #   kube_meta_cache_ttl = 60  # if this is not applied, default value is false
 
 metadata:
   name: container-azm-ms-agentconfig

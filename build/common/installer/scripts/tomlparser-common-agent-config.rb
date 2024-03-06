@@ -9,6 +9,7 @@ require_relative "ConfigParseErrorLogger"
 @configSchemaVersion = ""
 
 @disableTelemetry = false
+@logEnableKubernetesMetadataCacheTTL = "60"
 
 def is_windows?
   return !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -62,12 +63,25 @@ def populateSettingValuesFromConfigMap(parsedConfig)
   end
 end
 
+def getKubernetesMetadataCacheTTL(parsedConfig)
+  begin
+    if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil?
+      k8s_metadata_config = parsedConfig[:agent_settings][:k8s_metadata_config]
+      if !k8s_metadata_config.nil? && !k8s_metadata_config[:kube_meta_cache_ttl].nil?
+        @logEnableKubernetesMetadataCacheTTL = k8s_metadata_config[:kube_meta_cache_ttl]
+        puts "Using config map value: kube_meta_cache_ttl = #{@logEnableKubernetesMetadataCacheTTL}"
+      end
+    end
+  end
+end
+
 @configSchemaVersion = ENV["AZMON_AGENT_CFG_SCHEMA_VERSION"]
 puts "****************Start Config Processing********************"
 if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @configSchemaVersion.strip.casecmp("v1") == 0 #note v1 is the only supported schema version , so hardcoding it
   configMapSettings = parseConfigMap
   if !configMapSettings.nil?
     populateSettingValuesFromConfigMap(configMapSettings)
+    getKubernetesMetadataCacheTTL(configMapSettings)
   end
 else
   if (File.file?(@configMapMountPath))
@@ -87,6 +101,8 @@ if is_windows?
       commands = get_command_windows("DISABLE_TELEMETRY", @disableTelemetry)
       file.write(commands)
     end
+    commands = get_command_windows("AZMON_KUBERNETES_METADATA_CACHE_TTL", @logEnableKubernetesMetadataCacheTTL)
+    file.write(commands)
     # Close file after writing all environment variables
     file.close
     puts "****************End Config Processing********************"
@@ -101,7 +117,7 @@ else
     if @disableTelemetry
       file.write("export DISABLE_TELEMETRY=#{@disableTelemetry}\n")
     end
-
+    file.write("export AZMON_KUBERNETES_METADATA_CACHE_TTL=#{@logEnableKubernetesMetadataCacheTTL}\n")
     # Close file after writing all environment variables
     file.close
   else
