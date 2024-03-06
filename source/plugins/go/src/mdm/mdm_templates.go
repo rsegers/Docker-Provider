@@ -4,76 +4,54 @@ import (
 	"fmt"
 )
 
+type SeriesData struct {
+	DimValues []string `json:"dimValues"`
+	Min       float64  `json:"min"`
+	Max       float64  `json:"max"`
+	Sum       float64  `json:"sum"`
+	Count     int      `json:"count"`
+}
+
+type BaseData struct {
+	Metric    string       `json:"metric"`
+	Namespace string       `json:"namespace"`
+	DimNames  []string     `json:"dimNames"`
+	Series    []SeriesData `json:"series"`
+}
+
 type GenericMetricTemplate struct {
 	Time string `json:"time"`
 	Data struct {
-		BaseData struct {
-			Metric    string   `json:"metric"`
-			Namespace string   `json:"namespace"`
-			DimNames  []string `json:"dimNames"`
-			Series    []struct {
-				DimValues []string `json:"dimValues"`
-				Min       float64  `json:"min"`
-				Max       float64  `json:"max"`
-				Sum       float64  `json:"sum"`
-				Count     int      `json:"count"`
-			} `json:"series"`
-		} `json:"baseData"`
+		BaseData BaseData `json:"baseData"`
 	} `json:"data"`
 }
 
-// Generic constructor function for all templates
+// NewMetricTemplate creates a new metric template with the provided parameters.
 func NewMetricTemplate(time, metric, namespace string, dimNames, dimValues []string, value float64) *GenericMetricTemplate {
-	return &GenericMetricTemplate{
-		Time: time,
-		Data: struct {
-			BaseData struct {
-				Metric    string   `json:"metric"`
-				Namespace string   `json:"namespace"`
-				DimNames  []string `json:"dimNames"`
-				Series    []struct {
-					DimValues []string `json:"dimValues"`
-					Min       float64  `json:"min"`
-					Max       float64  `json:"max"`
-					Sum       float64  `json:"sum"`
-					Count     int      `json:"count"`
-				} `json:"series"`
-			} `json:"baseData"`
-		}{
-			BaseData: struct {
-				Metric    string   `json:"metric"`
-				Namespace string   `json:"namespace"`
-				DimNames  []string `json:"dimNames"`
-				Series    []struct {
-					DimValues []string `json:"dimValues"`
-					Min       float64  `json:"min"`
-					Max       float64  `json:"max"`
-					Sum       float64  `json:"sum"`
-					Count     int      `json:"count"`
-				} `json:"series"`
-			}{
-				Metric:    metric,
-				Namespace: namespace,
-				DimNames:  dimNames,
-				Series: []struct {
-					DimValues []string `json:"dimValues"`
-					Min       float64  `json:"min"`
-					Max       float64  `json:"max"`
-					Sum       float64  `json:"sum"`
-					Count     int      `json:"count"`
-				}{
-					{
-						DimValues: dimValues,
-						Min:       value,
-						Max:       value,
-						Sum:       value,
-						Count:     1,
-					},
-				},
-			},
-		},
-	}
+    return &GenericMetricTemplate{
+        Time: time,
+	Data: struct {
+		BaseData BaseData `json:"baseData"`
+	}{
+            BaseData: BaseData{
+                Metric:    metric,
+                Namespace: namespace,
+                DimNames:  dimNames,
+                Series: []SeriesData{
+                    {
+                        DimValues: dimValues,
+                        Min:       value,
+                        Max:       value,
+                        Sum:       value,
+                        Count:     1,
+                    },
+                },
+            },
+        },
+    }
 }
+
+// TODO: should sprintf below have precision limit?
 
 func PodMetricsTemplate(time, metric string, dimValues []string, value float64) *GenericMetricTemplate {
 	return NewMetricTemplate(time, metric, "insights.container/pods", []string{"controllerName", "Kubernetes namespace"}, dimValues, value)

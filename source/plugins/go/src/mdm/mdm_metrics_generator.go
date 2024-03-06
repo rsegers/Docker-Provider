@@ -23,7 +23,7 @@ var (
 	SendZeroFilledMetrics        bool
 	ZeroFilledMetricsTimeTracker time.Time
 
-	ZeroFillMetricsHash          = map[string]bool{
+	ZeroFillMetricsHash = map[string]bool{
 		MDMOOMKilledContainerCount: true,
 		MDMContainerRestartCount:   true,
 		MDMStaleCompletedJobCount:  true,
@@ -65,7 +65,7 @@ var (
 
 func init() {
 	// Setup log path based on OS type
-	OsType := os.Getenv("OS_TYPE")
+	OsType = os.Getenv("OS_TYPE")
 	if strings.EqualFold(OsType, "windows") {
 		LogPath = "/etc/amalogswindows/mdm_metrics_generator.log"
 	} else {
