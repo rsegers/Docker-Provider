@@ -330,7 +330,7 @@ func GetAllContainerLimits() (map[string]float64, map[string]float64, map[string
 				} `json:"ownerReferences"`
 			} `json:"metadata"`
 			Spec struct {
-				Containers    []Container `json:"containers"`
+				Containers     []Container `json:"containers"`
 				InitContainers []Container `json:"initContainers"`
 			} `json:"spec"`
 		} `json:"items"`
@@ -387,7 +387,7 @@ func GetAllContainerLimits() (map[string]float64, map[string]float64, map[string
 }
 
 type Container struct {
-	Name     string `json:"name"`
+	Name      string `json:"name"`
 	Resources struct {
 		Limits struct {
 			CPU    string `json:"cpu"`

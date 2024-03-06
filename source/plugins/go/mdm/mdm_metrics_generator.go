@@ -48,7 +48,7 @@ func init() {
 	Logger = log.New(logFile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
-func GetDiskUsageMetricRecords(record map[interface{}]interface{}) ([]*GenericMetricTemplate, error){
+func GetDiskUsageMetricRecords(record map[interface{}]interface{}) ([]*GenericMetricTemplate, error) {
 	var metricRecords []*GenericMetricTemplate
 	var tags map[interface{}]interface{}
 	tagMap := make(map[string]string)
@@ -170,7 +170,7 @@ func getEnvInt(key string) (int, error) {
 	return strconv.Atoi(val)
 }
 
-func GetNodeResourceMetricRecords(record map[interface{}]interface{},  metricName string, metricValue float64, percentageMetricValue float64, allocatablePercentageMetricValue float64) ([]*GenericMetricTemplate, error) {
+func GetNodeResourceMetricRecords(record map[interface{}]interface{}, metricName string, metricValue float64, percentageMetricValue float64, allocatablePercentageMetricValue float64) ([]*GenericMetricTemplate, error) {
 	var metricRecords []*GenericMetricTemplate
 	custommetricrecord := NodeResourceMetricsTemplate(record["Timestamp"].(string), metricName, record["Host"].(string), metricValue)
 	metricRecords = append(metricRecords, custommetricrecord)
@@ -249,14 +249,14 @@ func GetPVResourceUtilMetricRecords(recordTimeStamp float64, metricName string, 
 func isNumeric(o interface{}) bool {
 	switch v := o.(type) {
 	case float64, float32, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-	    // If it's already a numeric type, no need to parse
-	    return true
+		// If it's already a numeric type, no need to parse
+		return true
 	case string:
-	    // Try to parse the string as a float
-	    _, err := strconv.ParseFloat(v, 64)
-	    return err == nil
+		// Try to parse the string as a float
+		_, err := strconv.ParseFloat(v, 64)
+		return err == nil
 	default:
-	    // Not a numeric type
-	    return false
+		// Not a numeric type
+		return false
 	}
 }

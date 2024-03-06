@@ -78,7 +78,7 @@ var (
 	containerResourceDimensionHash            map[string]string
 	metricsThresholdHash                      map[string]float64
 	processIncomingStream                     bool
-	clusterIdentity			          *lib.ArcK8sClusterIdentity
+	clusterIdentity                           *lib.ArcK8sClusterIdentity
 )
 
 var (
@@ -368,7 +368,7 @@ func PostToMDMHelper(batch []string) error {
 			}
 			var err error
 			access_token, err = clusterIdentity.GetClusterIdentityToken()
-			if (err != nil) {
+			if err != nil {
 				return err
 			}
 		}
@@ -784,8 +784,8 @@ func filterCAdvisor2MDM(record map[interface{}]interface{}) ([]*GenericMetricTem
 	} else if objectName == ObjectNameK8SContainer && metricsToCollectHash[strings.ToLower(counterName)] {
 		instanceName := record["InstanceName"].(string)
 		metricName := counterName
-                // Using node cpu capacity in the absence of container cpu capacity since the container will end up using the
-                // node's capacity in this case. Converting this to nanocores for computation purposes, since this is in millicores
+		// Using node cpu capacity in the absence of container cpu capacity since the container will end up using the
+		// node's capacity in this case. Converting this to nanocores for computation purposes, since this is in millicores
 		containerCpuLimit := cpuCapacity * 1000000
 		containerMemoryLimit := memoryCapacity
 

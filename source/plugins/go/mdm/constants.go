@@ -42,27 +42,27 @@ const (
 	KubesystemNamespaceZeroFill                         = "kube-system"
 	VolumeNameZeroFill                                  = "-"
 	// Telemetry constants
-	ContainerMetricsHeartBeatEvent           = "ContainerMetricsMDMHeartBeatEvent"
-	PodReadyPercentageHeartBeatEvent         = "PodReadyPercentageMDMHeartBeatEvent"
-	ContainerResourceUtilHeartBeatEvent      = "ContainerResourceUtilMDMHeartBeatEvent"
-	PvUsageHeartBeatEvent                    = "PVUsageMDMHeartBeatEvent"
-	PvKubeSystemMetricsEnabledEvent          = "CollectPVKubeSystemMetricsEnabled"
-	PvInventoryHeartBeatEvent                = "KubePVInventoryHeartBeatEvent"
-	TelemetryFlushIntervalInMinutes          = 10
-	KubeStateTelemetryFlushIntervalInMinutes = 15
-	ZeroFillMetricsIntervalInMinutes         = 30
-	MDMTimeSeriesFlushedInLastHour           = "MDMTimeSeriesFlushedInLastHour"
-	MDMExceptionTelemetryMetric              = "AKSCustomMetricsMDMExceptions"
-	MDMExceptionsMetricFlushInterval         = 30
+	ContainerMetricsHeartBeatEvent                      = "ContainerMetricsMDMHeartBeatEvent"
+	PodReadyPercentageHeartBeatEvent                    = "PodReadyPercentageMDMHeartBeatEvent"
+	ContainerResourceUtilHeartBeatEvent                 = "ContainerResourceUtilMDMHeartBeatEvent"
+	PvUsageHeartBeatEvent                               = "PVUsageMDMHeartBeatEvent"
+	PvKubeSystemMetricsEnabledEvent                     = "CollectPVKubeSystemMetricsEnabled"
+	PvInventoryHeartBeatEvent                           = "KubePVInventoryHeartBeatEvent"
+	TelemetryFlushIntervalInMinutes                     = 10
+	KubeStateTelemetryFlushIntervalInMinutes            = 15
+	ZeroFillMetricsIntervalInMinutes                    = 30
+	MDMTimeSeriesFlushedInLastHour                      = "MDMTimeSeriesFlushedInLastHour"
+	MDMExceptionTelemetryMetric                         = "AKSCustomMetricsMDMExceptions"
+	MDMExceptionsMetricFlushInterval                    = 30
 	// Pod Statuses
-	PodStatusTerminating = "Terminating"
+	PodStatusTerminating                                = "Terminating"
 
-	AADMSIAuthMode                       = "AAD_MSI_AUTH_MODE"
-	MDM_EXCEPTIONS_METRIC_FLUSH_INTERVAL = 30
-	retryMDMPostWaitMinutes              = 30
-	metricsToCollect                     = "cpuUsageNanoCores,memoryWorkingSetBytes,memoryRssBytes,pvUsedBytes"
-	objectNameK8sNode                    = "K8SNode"
-	InsightsMetricsTagsPVCapacityBytes = "pvCapacityBytes"
+	AADMSIAuthMode                                      = "AAD_MSI_AUTH_MODE"
+	MDM_EXCEPTIONS_METRIC_FLUSH_INTERVAL                = 30
+	retryMDMPostWaitMinutes                             = 30
+	metricsToCollect                                    = "cpuUsageNanoCores,memoryWorkingSetBytes,memoryRssBytes,pvUsedBytes"
+	objectNameK8sNode                                   = "K8SNode"
+	InsightsMetricsTagsPVCapacityBytes                  = "pvCapacityBytes"
 )
 
 // PvTypes is an array of strings representing different types of persistent volumes
