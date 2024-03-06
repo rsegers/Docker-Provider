@@ -1,4 +1,4 @@
-package main
+package mdm
 
 import (
 	"bytes"
@@ -24,7 +24,7 @@ import (
 
 	"Docker-Provider/source/plugins/go/input/lib"
 
-	lumberjack "gopkg.in/natefinch/lumberjack.v2"
+	// lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -88,50 +88,50 @@ var (
 	Log = FLBLogger.Printf
 )
 
-func createLogger() *log.Logger {
-	var logfile *os.File
+// func createLogger() *log.Logger {
+// 	var logfile *os.File
 
-	osType := os.Getenv("OS_TYPE")
+// 	osType := os.Getenv("OS_TYPE")
 
-	var logPath string
+// 	var logPath string
 
-	if strings.Compare(strings.ToLower(osType), "windows") != 0 {
-		logPath = "/var/opt/microsoft/docker-cimprov/log/fluent-bit-out-oms-runtime.log"
-	} else {
-		logPath = "/etc/amalogswindows/fluent-bit-out-oms-runtime.log"
-	}
+// 	if strings.Compare(strings.ToLower(osType), "windows") != 0 {
+// 		logPath = "/var/opt/microsoft/docker-cimprov/log/fluent-bit-out-oms-runtime.log"
+// 	} else {
+// 		logPath = "/etc/amalogswindows/fluent-bit-out-oms-runtime.log"
+// 	}
 
-	if _, err := os.Stat(logPath); err == nil {
-		fmt.Printf("File Exists. Opening file in append mode...\n")
-		logfile, err = os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY, 0600)
-		if err != nil {
-			lib.SendException(err.Error())
-			fmt.Print(err.Error())
-		}
-	}
+// 	if _, err := os.Stat(logPath); err == nil {
+// 		fmt.Printf("File Exists. Opening file in append mode...\n")
+// 		logfile, err = os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY, 0600)
+// 		if err != nil {
+// 			lib.SendException(err.Error())
+// 			fmt.Print(err.Error())
+// 		}
+// 	}
 
-	if _, err := os.Stat(logPath); os.IsNotExist(err) {
-		fmt.Printf("File Doesnt Exist. Creating file...\n")
-		logfile, err = os.Create(logPath)
-		if err != nil {
-			lib.SendException(err.Error())
-			fmt.Print(err.Error())
-		}
-	}
+// 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
+// 		fmt.Printf("File Doesnt Exist. Creating file...\n")
+// 		logfile, err = os.Create(logPath)
+// 		if err != nil {
+// 			lib.SendException(err.Error())
+// 			fmt.Print(err.Error())
+// 		}
+// 	}
 
-	logger := log.New(logfile, "", 0)
+// 	logger := log.New(logfile, "", 0)
 
-	logger.SetOutput(&lumberjack.Logger{
-		Filename:   logPath,
-		MaxSize:    10, //megabytes
-		MaxBackups: 1,
-		MaxAge:     28,   //days
-		Compress:   true, // false by default
-	})
+// 	logger.SetOutput(&lumberjack.Logger{
+// 		Filename:   logPath,
+// 		MaxSize:    10, //megabytes
+// 		MaxBackups: 1,
+// 		MaxAge:     28,   //days
+// 		Compress:   true, // false by default
+// 	})
 
-	logger.SetFlags(log.Ltime | log.Lshortfile | log.LstdFlags)
-	return logger
-}
+// 	logger.SetFlags(log.Ltime | log.Lshortfile | log.LstdFlags)
+// 	return logger
+// }
 
 func init() {
 	tokenResourceURL = "https://monitoring.azure.com/"

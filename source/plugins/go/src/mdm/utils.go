@@ -1,4 +1,4 @@
-package main
+package mdm
 
 import (
 	"Docker-Provider/source/plugins/go/input/lib"

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/microsoft/ApplicationInsights-Go/appinsights"
+	"Docker-Provider/source/plugins/go/src/mdm"
 	"github.com/fluent/fluent-bit-go/output"
+	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 )
 import (
 	"C"
@@ -16,13 +17,13 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 	return output.FLBPluginRegister(ctx, "oms", "OMS GO!")
 }
 
-//export FLBPluginInit
 // (fluentbit will call this)
 // ctx (context) pointer to fluentbit context (state/ c code)
+//
+//export FLBPluginInit
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	Log("Initializing out_oms go plugin for fluentbit")
-	var agentVersion string
-	agentVersion = os.Getenv("AGENT_VERSION")
+	agentVersion := os.Getenv("AGENT_VERSION")
 
 	osType := os.Getenv("OS_TYPE")
 	if strings.Compare(strings.ToLower(osType), "windows") == 0 {
@@ -37,6 +38,7 @@ func FLBPluginInit(ctx unsafe.Pointer) int {
 			InitializePlugin(DaemonSetContainerLogPluginConfFilePath, agentVersion)
 		}
 	}
+	mdm.InitializePlugin(agentVersion)
 
 	enableTelemetry := output.FLBPluginConfigKey(ctx, "EnableTelemetry")
 	if strings.Compare(strings.ToLower(enableTelemetry), "true") == 0 {
@@ -70,16 +72,28 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 	}
 
 	incomingTag := strings.ToLower(C.GoString(tag))
-	if strings.Contains(incomingTag, "oms.container.log.flbplugin") {
+	switch {
+	case strings.Contains(incomingTag, "oms.container.log.flbplugin"):
 		// This will also include populating cache to be sent as for config events
 		return PushToAppInsightsTraces(records, appinsights.Information, incomingTag)
-	} else if strings.Contains(incomingTag, "oms.container.perf.telegraf") {
+	case strings.Contains(incomingTag, "oms.container.perf.telegraf"):
 		return PostTelegrafMetricsToLA(records)
-	} else if strings.Contains(incomingTag, "oneagent.containerinsights") {
-		return PostInputPluginRecords(records)
+	case strings.Contains(incomingTag, "mdm.container.perf.telegraf"):
+		return PostTelegrafMetricsToMDMHelper(records)
+	case strings.Contains(incomingTag, "oneagent.containerinsights"):
+		if strings.Contains(incomingTag, "oneagent.containerinsights.LINUX_PERF_BLOB") {
+			retValInputPlugin := PostInputPluginRecords(records)
+			retValCAdvisorMetrics := PostCAdvisorMetricsToMDMHelper(records)
+			if retValInputPlugin == output.FLB_OK && retValCAdvisorMetrics == output.FLB_OK {
+				return output.FLB_OK
+			}
+			return output.FLB_RETRY
+		} else {
+			return PostInputPluginRecords(records)
+		}
+	default:
+		return PostDataHelper(records)
 	}
-
-	return PostDataHelper(records)
 }
 
 // FLBPluginExit exits the plugin

@@ -22,6 +22,7 @@ import (
 	"github.com/tinylib/msgp/msgp"
 
 	"Docker-Provider/source/plugins/go/src/extension"
+	"Docker-Provider/source/plugins/go/src/mdm"
 
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
@@ -1172,6 +1173,14 @@ func toStringMap(record map[interface{}]interface{}) map[string]interface{} {
 	return mp
 }
 
+func PostTelegrafMetricsToMDMHelper(telegrafRecords []map[interface{}]interface{}) int {
+	return mdm.PostTelegrafMetricsToMDM(telegrafRecords)
+}
+
+func PostCAdvisorMetricsToMDMHelper(cadvisorRecords []map[interface{}]interface{}) int {
+	return mdm.PostCAdvisorMetricsToMDM(cadvisorRecords)
+}
+
 func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) int {
 	start := time.Now()
 	Log("Info::PostInputPluginRecords starting")
@@ -1266,7 +1275,7 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 		}
 	}
 
-	return 0
+	return output.FLB_OK
 }
 
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX
