@@ -109,6 +109,16 @@ func GetPodsFromCAdvisor(winNode map[string]string) (*http.Response, error) {
 	return getResponse(winNode, relativeUri)
 }
 
+func GetAllMetricsCAdvisor(winNode map[string]string) (*http.Response, error) {
+	relativeUri := "/metrics/cadvisor"
+	return getResponse(winNode, relativeUri)
+}
+
+func GetConfigzCAdvisor(winNode map[string]string) (*http.Response, error) {
+	relativeUri := "/configz"
+	return getResponse(winNode, relativeUri)
+}
+
 func getBaseCAdvisorUrl(winNode map[string]string) string {
 	cAdvisorSecurePort := isCAdvisorOnSecurePort()
 

@@ -253,7 +253,8 @@ func InitializePlugin(agentVersion string) {
 			proxyEndpoint = os.Getenv("PROXY")
 
 		} else {
-			proxyEndpoint = lib.GetProxyEndpoint()
+			proxyEndpoint, err = lib.GetProxyEndpoint()
+			//TODO handle err
 		}
 
 	}
