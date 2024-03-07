@@ -46,15 +46,15 @@ function Test-FluentbitTcpListener {
     $retryDelaySeconds = 1
     while ($retryAttempts -lt $retryCount) {
         $retryAttempts++
-        Write-Host "Retry attempt $retryAttempts/$retryCount..."
+        Write-Host "Test-FluentbitTcpListener: Retry attempt $retryAttempts/$retryCount..."
         $netstatOutput = netstat -an | Select-String "LISTENING"
         if ($netstatOutput -match ":$port") {
-            Write-Host "Fluentbit TCP listener is UP and running on port $port."
+            Write-Host "Test-FluentbitTcpListener: Fluentbit TCP listener is UP and running on port $port."
             return $true
         }
         Start-Sleep -Seconds $retryDelaySeconds
     }
-    Write-Host "Failed to detect TCP listener after $retryCount attempts. Exiting script."
+    Write-Host "Test-FluentbitTcpListener: Failed to detect TCP listener after $retryCount attempts. Exiting script."
     return $false
 }
 
