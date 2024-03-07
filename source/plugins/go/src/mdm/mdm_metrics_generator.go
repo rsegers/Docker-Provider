@@ -79,15 +79,15 @@ func init() {
 	Logger = log.New(logFile, "INFO: ", log.Ldate|log.Ltime|log.Lshortfile)
 }
 
-func GetDiskUsageMetricRecords(record map[interface{}]interface{}) ([]*GenericMetricTemplate, error) {
+func GetDiskUsageMetricRecords(record map[string]interface{}) ([]*GenericMetricTemplate, error) {
 	var metricRecords []*GenericMetricTemplate
-	var tags map[interface{}]interface{}
+	var tags map[string]interface{}
 	tagMap := make(map[string]string)
 
 	if record["tags"] == nil {
 		Log("translateTelegrafMetrics: tags are missing in the metric record")
 	} else {
-		tags = record["tags"].(map[interface{}]interface{})
+		tags = record["tags"].(map[string]interface{})
 		for k, v := range tags {
 			key := fmt.Sprintf("%s", k)
 			if key == "" {
@@ -96,13 +96,13 @@ func GetDiskUsageMetricRecords(record map[interface{}]interface{}) ([]*GenericMe
 			tagMap[key] = fmt.Sprintf("%s", v)
 		}
 	}
-	fieldMap := record["fields"].(map[interface{}]interface{})
+	fieldMap := record["fields"].(map[string]interface{})
 	usedPercent, hasUsedPercent := fieldMap["used_percent"].(float64)
 	deviceName, hasDeviceName := tagMap["device"]
 	hostName, hasHostName := tagMap["hostName"]
 
 	if hasUsedPercent && hasDeviceName && hasHostName {
-		timestamp := time.Unix(int64(record["timestamp"].(int64)), 0).UTC().Format(time.RFC3339)
+		timestamp := time.Unix(int64(record["timestamp"].(uint64)), 0).UTC().Format(time.RFC3339)
 		diskUsagePercentageRecord := DiskUsedPercentageMetricsTemplate(timestamp, MDMDiskUsedPercentage, hostName, deviceName, usedPercent)
 		metricRecords = append(metricRecords, diskUsagePercentageRecord)
 	}
@@ -110,15 +110,15 @@ func GetDiskUsageMetricRecords(record map[interface{}]interface{}) ([]*GenericMe
 	return metricRecords, nil
 }
 
-func GetMetricRecords(record map[interface{}]interface{}) ([]*GenericMetricTemplate, error) {
+func GetMetricRecords(record map[string]interface{}) ([]*GenericMetricTemplate, error) {
 	var metricRecords []*GenericMetricTemplate
-	var tags map[interface{}]interface{}
+	var tags map[string]interface{}
 	tagMap := make(map[string]string)
 
 	if record["tags"] == nil {
 		Log("translateTelegrafMetrics: tags are missing in the metric record")
 	} else {
-		tags = record["tags"].(map[interface{}]interface{})
+		tags = record["tags"].(map[string]interface{})
 		for k, v := range tags {
 			key := fmt.Sprintf("%s", k)
 			if key == "" {
@@ -141,13 +141,13 @@ func GetMetricRecords(record map[interface{}]interface{}) ([]*GenericMetricTempl
 		}
 	}
 
-	fieldMap := record["fields"].(map[interface{}]interface{})
+	fieldMap := record["fields"].(map[string]interface{})
 
 	convertedTimestamp := time.Unix(int64(record["timestamp"].(int64)), 0).UTC().Format(time.RFC3339)
 	for k, v := range fieldMap {
 		if isNumeric(v) {
 			metricValue, _ := v.(float64)
-			m := NewMetricTemplate(convertedTimestamp, k.(string), record["name"].(string), dimNames, dimValues, metricValue)
+			m := NewMetricTemplate(convertedTimestamp, k, record["name"].(string), dimNames, dimValues, metricValue)
 			metricRecords = append(metricRecords, m)
 		}
 	}
