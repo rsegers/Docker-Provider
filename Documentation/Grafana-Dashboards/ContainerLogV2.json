@@ -1412,7 +1412,7 @@
             "placement": "right",
             "showLegend": true
           },
-          "orientation": "auto",
+          "orientation": "horizontal",
           "showValue": "never",
           "stacking": "none",
           "tooltip": {
@@ -1721,7 +1721,7 @@
             "placement": "right",
             "showLegend": true
           },
-          "orientation": "auto",
+          "orientation": "horizontal",
           "showValue": "never",
           "stacking": "none",
           "tooltip": {
@@ -2471,23 +2471,23 @@
           "current": {
             "selected": true,
             "text": [
-              "windows-resource-intensive-app",
+              "windows-resource-intensive-app5",
               "test",
               "windows-resource-intensive-app2",
-              "windows-resource-intensive-app5",
               "linux-resource-intensive-app",
-              "linux-resource-intensive-app2",
               "windows-resource-intensive-app3",
+              "windows-resource-intensive-app",
+              "linux-resource-intensive-app2",
               "linux-resource-intensive-app3"
             ],
             "value": [
-              "windows-resource-intensive-app",
+              "windows-resource-intensive-app5",
               "test",
               "windows-resource-intensive-app2",
-              "windows-resource-intensive-app5",
               "linux-resource-intensive-app",
-              "linux-resource-intensive-app2",
               "windows-resource-intensive-app3",
+              "windows-resource-intensive-app",
+              "linux-resource-intensive-app2",
               "linux-resource-intensive-app3"
             ]
           },
@@ -2528,6 +2528,6 @@
     "timezone": "",
     "title": "Azure Monitor / Container Insights / ContainerLogV2 LW multiselect",
     "uid": "c1ea0a58-c330-4abf-94a7-821bb0d5c20d",
-    "version": 8,
+    "version": 9,
     "weekStart": ""
   }
