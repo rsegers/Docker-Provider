@@ -6,7 +6,7 @@ require (
 	github.com/Azure/azure-kusto-go v0.5.2
 	github.com/Azure/go-autorest/autorest v0.11.28 // indirect
 	github.com/Azure/go-autorest/autorest/adal v0.9.22 // indirect
-	github.com/Azure/go-autorest/autorest/azure/auth v0.5.12 // indirect
+	github.com/Azure/go-autorest/autorest/azure/auth v0.5.12
 	github.com/Azure/go-autorest/autorest/azure/cli v0.4.6 // indirect
 	github.com/Microsoft/go-winio v0.5.2
 	github.com/emicklei/go-restful/v3 v3.11.0 // indirect
@@ -19,8 +19,7 @@ require (
 	github.com/google/uuid v1.4.0
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
 	github.com/tinylib/msgp v1.1.8
-	github.com/ugorji/go v1.1.2-0.20180813092308-00b869d2f4a5
-	golang.org/x/crypto v0.21.0 // indirect
+	github.com/ugorji/go/codec v1.2.11
 	golang.org/x/oauth2 v0.13.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3

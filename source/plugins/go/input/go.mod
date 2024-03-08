@@ -14,12 +14,12 @@ require (
 	github.com/google/uuid v1.4.0 // indirect
 	github.com/ugorji/go/codec v1.2.11 // indirect
 	golang.org/x/mod v0.12.0 // indirect
-	golang.org/x/sys v0.18.0 // indirect
+	golang.org/x/sys v0.13.0 // indirect
 	golang.org/x/tools v0.13.0 // indirect
 )
 
 require (
-	Docker-Provider/source/plugins/go/src v0.0.1
+	Docker-Provider/source/plugins/go/src v0.0.0
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
 	github.com/sirupsen/logrus v1.9.3
