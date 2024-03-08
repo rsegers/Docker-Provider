@@ -1234,31 +1234,26 @@ func parseImageDetails(image string) (repo, name, tag string) {
 		image = image[:atLocation]
 	}
 
-	// Process Image Name, Repo, and Tag based on the original logic
-	if colonLocation != -1 {
-		// Image with tag
-		if slashLocation != -1 && slashLocation < colonLocation {
-			// imageRepo/image:tag
-			repo = image[:slashLocation]
-			name = image[slashLocation+1 : colonLocation]
-		} else {
-			// image:tag without imageRepo
-			name = image[:colonLocation]
-		}
+	// If colonLocation is -1 (not found), set it to the length of the image string
+	if colonLocation == -1 {
+		colonLocation = len(image)
+	}
+
+	// Processing Image Name, Repo based on the simplified logic
+	if slashLocation != -1 && slashLocation < colonLocation {
+		// imageRepo/image:tag or imageRepo/image
+		repo = image[:slashLocation]
+		name = image[slashLocation+1 : colonLocation]
+	} else {
+		// image:tag without imageRepo or just image
+		name = image[:colonLocation]
+	}
+
+	// Set tag, defaulting to "latest" if colonLocation is at the end of the image string (i.e., no explicit tag)
+	if colonLocation < len(image) {
 		tag = image[colonLocation+1:]
 	} else {
-		// Image without tag, possibly with imageRepo
-		if slashLocation != -1 {
-			repo = image[:slashLocation]
-			name = image[slashLocation+1:]
-		} else {
-			// Plain image without imageRepo or tag
-			name = image
-		}
-		// Default to "latest" only if no "@" symbol found, aligning with original behavior
-		if atLocation == -1 {
-			tag = "latest"
-		}
+		tag = "latest"
 	}
 
 	return repo, name, tag

@@ -55,7 +55,8 @@ data:
           # enabled = "false"
           # stacktrace_languages = []
        #[log_collection_settings.metadata_collection]
-          # if enabled will collect kubernetes metadata for ContainerLogv2 schema. Default is false.
+          # kube_meta_cache_ttl is a configurable option for K8s cached metadata. Default is 60s. You may adjust it in below section [agent_settings.k8s_metadata_config]. Reference link: https://docs.fluentbit.io/manual/pipeline/filters/kubernetes#configuration-parameters
+          # if enabled will collect kubernetes metadata for ContainerLogv2 schema. Default is false. 
           # enabled = false
           # if include_fields commented out or empty, all fields will be included. If include_fields is set, only the fields listed will be included.
           # include_fields = ["podLabels","podAnnotations","podUid","image","imageID","imageRepo","imageTag"]
