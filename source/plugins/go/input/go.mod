@@ -19,7 +19,7 @@ require (
 )
 
 require (
-	Docker-Provider/source/plugins/go/src v0.0.0
+	Docker-Provider/source/plugins/go/src v0.0.1
 	github.com/golang-jwt/jwt/v5 v5.0.0
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
 	github.com/sirupsen/logrus v1.9.3
