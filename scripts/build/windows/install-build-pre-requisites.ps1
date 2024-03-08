@@ -133,6 +133,24 @@ function Install-Docker() {
    Write-Host("installing docker for desktop completed")
 }
 
+function Install-cmetrics() {
+    #Install flex and bison
+    choco install -y winflexbison3
+
+    $destinationPath = Join-Path -Path $env:SYSTEMDRIVE -ChildPath "cmetrics"
+    New-Item -Path $destinationPath -ItemType "directory" -Force -ErrorAction Stop
+    #Clone cmetrics repo and install cmetrics and all its dependencies
+    git clone --recursive https://github.com/calyptia/cmetrics.git
+	cd cmetrics
+	git checkout v0.6.0
+	git submodule sync
+	git -c protocol.version=2 submodule update --init --force --depth=1
+	git submodule foreach git config --local gc.auto 0
+	cmake --fresh -G "MinGW Makefiles" -DCMAKE_INSTALL_PREFIX="$destinationPath" . 
+	make
+	make install
+}
+
 # speed up Invoke-WebRequest
 # https://stackoverflow.com/questions/28682642/powershell-why-is-using-invoke-webrequest-much-slower-than-a-browser-download
 $ProgressPreference = 'SilentlyContinue'
@@ -147,5 +165,8 @@ Install-DotNetCoreSDK
 
 Write-Host "Install Docker"
 Install-Docker
+
+Write-Host "Install cmetrics library"
+Install-cmetrics
 
 Write-Host "successfully installed required pre-requisites" -ForegroundColor Green

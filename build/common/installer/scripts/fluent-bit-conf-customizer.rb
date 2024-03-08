@@ -5,10 +5,23 @@ require_relative "ConfigParseErrorLogger"
 @fluent_bit_common_conf_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf"
 
 @os_type = ENV["OS_TYPE"]
+@isWindows = false
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+  @isWindows = true
   @fluent_bit_conf_path = "/etc/fluent-bit/fluent-bit.conf"
   @fluent_bit_common_conf_path = "/etc/fluent-bit/fluent-bit-common.conf"
 end
+
+@using_aad_msi_auth = false
+if !ENV["USING_AAD_MSI_AUTH"].nil? && !ENV["USING_AAD_MSI_AUTH"].empty? && ENV["USING_AAD_MSI_AUTH"].strip.casecmp("true") == 0
+  @using_aad_msi_auth = true
+end
+
+@geneva_logs_integration = false
+if !ENV["GENEVA_LOGS_INTEGRATION"].nil? && !ENV["GENEVA_LOGS_INTEGRATION"].empty? && ENV["GENEVA_LOGS_INTEGRATION"].strip.casecmp("true") == 0
+  @geneva_logs_integration = true
+end
+
 
 @default_service_interval = "15"
 @default_mem_buf_limit = "10"
@@ -35,6 +48,21 @@ def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
     return new_contents
 end
 
+def substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
+  #Update the config file only in two conditions: 1. Linux and resource optimization is enabled 2. Windows and using aad msi auth and not using geneva logs integration
+  if (!@isWindows && !resourceOptimizationEnabled.nil? && resourceOptimizationEnabled.to_s.downcase == "true") || (@isWindows && @using_aad_msi_auth && !@geneva_logs_integration)
+    puts "config::Starting to substitute the placeholders in fluent-bit.conf file for resource optimization"
+    if (@isWindows)
+      new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/fluent-bit/azm-containers-input-plugins.conf")
+    else
+      new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/opt/microsoft/docker-cimprov/azm-containers-input-plugins.conf")
+    end
+    new_contents = new_contents.gsub("#${ResourceOptimizationFBConfigFile}", "@INCLUDE fluent-bit-input.conf")
+  end
+
+  return new_contents
+end
+
 def substituteFluentBitPlaceHolders
   begin
     # Replace the fluentbit config file with custom values if present
@@ -47,6 +75,8 @@ def substituteFluentBitPlaceHolders
     ignoreOlder = ENV["FBIT_TAIL_IGNORE_OLDER"]
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
     stacktraceLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
+    resourceOptimizationEnabled = ENV["AZMON_RESOURCE_OPTIMIZATION_ENABLED"]
+    windowsFluentBitDisabled = ENV["AZMON_WINDOWS_FLUENT_BIT_DISABLED"]
     kubernetesMetadataCollection = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
     annotationBasedLogFiltering = ENV["AZMON_ANNOTATION_BASED_LOG_FILTERING"]
 
@@ -96,6 +126,10 @@ def substituteFluentBitPlaceHolders
     end
 
     new_contents = substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
+
+    if !@isWindows || (@isWindows && (windowsFluentBitDisabled.nil? || windowsFluentBitDisabled.to_s.downcase == "false"))
+      new_contents = substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
+    end
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in fluent-bit.conf file"
 

@@ -21,12 +21,15 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/opt/microsoft/docker-cimprov/container.conf;			    build/linux/installer/conf/container.conf;                      644; root; root
 
 /opt/fluent-bit/bin/out_oms.so;                                       intermediate/${{BUILD_CONFIGURATION}}/out_oms.so;  	755; root; root
+/opt/fluent-bit/bin/containerinventory.so;                                       intermediate/${{BUILD_CONFIGURATION}}/containerinventory.so;  	755; root; root
+/opt/fluent-bit/bin/perf.so;                                       intermediate/${{BUILD_CONFIGURATION}}/perf.so;  	755; root; root
 /etc/opt/microsoft/docker-cimprov/prometheus-side-car.conf;		         build/linux/installer/conf/prometheus-side-car.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit.conf;			            build/linux/installer/conf/fluent-bit.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-prom-side-car.conf;	   build/linux/installer/conf/fluent-bit-prom-side-car.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-rs.conf;			         build/linux/installer/conf/fluent-bit-rs.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/azm-containers-parser.conf;	         build/common/installer/conf/azm-containers-parser.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/azm-containers-parser-multiline.conf;	 build/common/installer/conf/azm-containers-parser-multiline.conf;                    644; root; root
+/etc/opt/microsoft/docker-cimprov/azm-containers-input-plugins.conf;	         build/common/installer/conf/azm-containers-input-plugins.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/out_oms.conf;			                  build/linux/installer/conf/out_oms.conf;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/test.json;			                     build/linux/installer/conf/test.json;                    644; root; root
 /etc/opt/microsoft/docker-cimprov/telegraf.conf;			               build/linux/installer/conf/telegraf.conf;                    644; root; root
@@ -43,6 +46,7 @@ MAINTAINER:              'Microsoft Corporation'
 /opt/tomlparser-geneva-config.rb;                                       build/common/installer/scripts/tomlparser-geneva-config.rb;     755; root; root
 
 /opt/fluent-bit-geneva-conf-customizer.rb;                            build/common/installer/scripts/fluent-bit-geneva-conf-customizer.rb;     755; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit-input.conf;			    build/linux/installer/conf/fluent-bit-input.conf;                644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-common.conf;			    build/linux/installer/conf/fluent-bit-common.conf;                644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva.conf;			    build/linux/installer/conf/fluent-bit-geneva.conf;                644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf;  build/linux/installer/conf/fluent-bit-geneva-logs_infra.conf;   644; root; root
@@ -125,6 +129,8 @@ MAINTAINER:              'Microsoft Corporation'
 
 /etc/fluent/kube.conf;			                                                          build/linux/installer/conf/kube.conf;                  644; root; root
 /etc/fluent/container.conf;			                                                    build/linux/installer/conf/container.conf;                  644; root; root
+/etc/fluent/windows_rs_containerinventory.conf;                                         build/linux/installer/conf/windows_rs_containerinventory.conf;                  644; root; root
+/etc/fluent/windows_rs_perf.conf;                                                       build/linux/installer/conf/windows_rs_perf.conf;                  644; root; root
 
 /etc/fluent/plugin/in_cadvisor_perf.rb;			                                        source/plugins/ruby/in_cadvisor_perf.rb;		    	644; root; root
 /etc/fluent/plugin/in_win_cadvisor_perf.rb;			                                     source/plugins/ruby/in_win_cadvisor_perf.rb;		    	644; root; root

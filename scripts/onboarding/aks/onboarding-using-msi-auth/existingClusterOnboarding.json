@@ -110,7 +110,7 @@
         "dcrName":"[if(greater(length(variables('dcrNameFull')), 64), substring(variables('dcrNameFull'), 0, 64), variables('dcrNameFull'))]",
         "associationName":  "ContainerInsightsExtension",
         "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]",
-        "dceName": "[variables('dcrName')]",
+        "dceName":"[if(greater(length(variables('dcrName')), 43), substring(variables('dcrName'), 0, 43), variables('dcrName'))]",
         "dceAssociationName": "configurationAccessEndpoint",
         "dataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('dceName'))]",
         "privateLinkScopeName": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[8]]",

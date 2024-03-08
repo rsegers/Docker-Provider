@@ -87,6 +87,12 @@ INSTALLER_TMPDIR := $(INTERMEDIATE_DIR)/installer_tmp
 
 # GO Source dir for custom fluent bit plugin
 GO_SOURCE_DIR := $(SOURCE_DIR)/plugins/go/src
+GO_SOURCE_INPUT_DIR := $(SOURCE_DIR)/plugins/go/input
+
+CMETRICS_VERSION = 0.6.0
+AMD64_DEB_HEADERS = cmetrics_$(CMETRICS_VERSION)_amd64-headers.deb
+AMD64_DEB = cmetrics_$(CMETRICS_VERSION)_amd64.deb
+AMD64_URL = https://github.com/fluent/cmetrics/releases/download/v$(CMETRICS_VERSION)
 
 ifeq ($(ENABLE_DEBUG),1)
 PROV_DEBUG_FLAGS := -g
@@ -103,7 +109,7 @@ OUTPUT_PACKAGE_PREFIX=docker-cimprov-$(CONTAINER_BUILDVERSION_MAJOR).$(CONTAINER
 # Build targets
 # TODO - fix plugintests and enable it back
 # all : PROVIDER_STATUS KIT_STATUS kit fluentbitplugin rubypluginstests
-all : PROVIDER_STATUS KIT_STATUS kit fluentbitplugin
+all : PROVIDER_STATUS KIT_STATUS kit fluentbitinputplugin fluentbitplugin
 
 clean :
 	$(RMDIR) $(BASE_DIR)/build/cppunit_result.* $(BASE_DIR)/installer/intermediate $(BASE_DIR)/intermediate $(BASE_DIR)/target
@@ -111,6 +117,34 @@ clean :
 	make -C $(GO_SOURCE_DIR) clean
 
 distclean : clean
+
+# Define the target
+install_cmetrics:
+# For amd64 architecture
+ifeq ($(PF_ARCH),amd64)
+	# Download and install header files
+	wget $(AMD64_URL)/$(AMD64_DEB_HEADERS)
+	sudo dpkg -i $(AMD64_DEB_HEADERS)
+	# Download and install binary
+	wget $(AMD64_URL)/$(AMD64_DEB)
+	sudo dpkg -i $(AMD64_DEB)
+endif
+
+# For arm64 architecture
+ifeq ($(PF_ARCH),arm64)
+	sudo apt install cmake bison flex -y
+	# Clone the repository and build from source
+	git clone --recursive https://github.com/calyptia/cmetrics.git
+	cd cmetrics && \
+	git checkout v$(CMETRICS_VERSION) && \
+	git submodule sync && \
+	git -c protocol.version=2 submodule update --init --force --depth=1 && \
+	git submodule foreach git config --local gc.auto 0 && \
+	cmake -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+	-DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc . && \
+	make && \
+	make install
+endif
 
 PROVIDER_STATUS:
 	@echo "========================= Performing Building provider"
@@ -130,6 +164,15 @@ fluentbitplugin :
 	make -C $(GO_SOURCE_DIR) fbplugin arch=$(PF_ARCH)
 	$(COPY) $(GO_SOURCE_DIR)/out_oms.so $(INTERMEDIATE_DIR)
 
+fluentbitinputplugin:
+	@echo "========================= Building fluentbit input go plugin"
+	$(MKPATH) $(INTERMEDIATE_DIR)
+
+	make -C $(GO_SOURCE_INPUT_DIR)/containerinventory containerinventory arch=$(PF_ARCH)
+	$(COPY) $(GO_SOURCE_INPUT_DIR)/containerinventory/containerinventory.so $(INTERMEDIATE_DIR)
+	make -C $(GO_SOURCE_INPUT_DIR)/perf perf arch=$(PF_ARCH)
+	$(COPY) $(GO_SOURCE_INPUT_DIR)/perf/perf.so $(INTERMEDIATE_DIR)
+
 rubypluginstests :
 	@echo "========================= Installing pre-reqs for running tests"
 	sudo apt-add-repository ppa:brightbox/ruby-ng -y
@@ -148,7 +191,7 @@ rubypluginstests :
 # Assume we ALWAYS build DPKG, but only build RPM if --enable-ulinux is speified in configure.
 
 kit : CONTAINERLIB_FILENAME = libcontainer.so
-kit : fluentbitplugin
+kit : install_cmetrics fluentbitinputplugin fluentbitplugin
 
 
 	@echo "========================= Performing Building RPM and DPKG packages"
