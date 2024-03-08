@@ -201,7 +201,7 @@ func getEnvInt(key string) (int, error) {
 	return strconv.Atoi(val)
 }
 
-func GetNodeResourceMetricRecords(record map[interface{}]interface{}, metricName string, metricValue float64, percentageMetricValue float64, allocatablePercentageMetricValue float64) ([]*GenericMetricTemplate, error) {
+func GetNodeResourceMetricRecords(record map[string]interface{}, metricName string, metricValue float64, percentageMetricValue float64, allocatablePercentageMetricValue float64) ([]*GenericMetricTemplate, error) {
 	var metricRecords []*GenericMetricTemplate
 	custommetricrecord := NodeResourceMetricsTemplate(record["Timestamp"].(string), metricName, record["Host"].(string), metricValue)
 	metricRecords = append(metricRecords, custommetricrecord)
@@ -218,7 +218,7 @@ func GetNodeResourceMetricRecords(record map[interface{}]interface{}, metricName
 	return metricRecords, nil
 }
 
-func GetContainerResourceUtilMetricRecords(recordTimeStamp float64, metricName string, percentageMetricValue float64, dims string, thresholdPercentage float64, isZeroFill bool) ([]*GenericMetricTemplate, error) {
+func GetContainerResourceUtilMetricRecords(recordTimeStamp string, metricName string, percentageMetricValue float64, dims string, thresholdPercentage float64, isZeroFill bool) ([]*GenericMetricTemplate, error) {
 	var records []*GenericMetricTemplate
 	if dims == "" {
 		log.Println("Dimensions nil, returning empty records")
@@ -236,7 +236,7 @@ func GetContainerResourceUtilMetricRecords(recordTimeStamp float64, metricName s
 	controllerName := dimElements[2]
 	podNamespace := dimElements[3]
 
-	resourceUtilRecord := ContainerResourceUtilizationTemplate(fmt.Sprintf("%f", recordTimeStamp), metricName, containerName, podName, controllerName, podNamespace, thresholdPercentage, percentageMetricValue)
+	resourceUtilRecord := ContainerResourceUtilizationTemplate(recordTimeStamp, metricName, containerName, podName, controllerName, podNamespace, thresholdPercentage, percentageMetricValue)
 	records = append(records, resourceUtilRecord)
 
 	var containerResourceThresholdViolated int
@@ -245,7 +245,7 @@ func GetContainerResourceUtilMetricRecords(recordTimeStamp float64, metricName s
 	} else {
 		containerResourceThresholdViolated = 1
 	}
-	resourceThresholdViolatedRecord := ContainerResourceThresholdViolationTemplate(fmt.Sprintf("%f", recordTimeStamp), ContainerMetricNameMetricThresholdViolatedHash[metricName], containerName, podName, controllerName, podNamespace, thresholdPercentage, float64(containerResourceThresholdViolated))
+	resourceThresholdViolatedRecord := ContainerResourceThresholdViolationTemplate(recordTimeStamp, ContainerMetricNameMetricThresholdViolatedHash[metricName], containerName, podName, controllerName, podNamespace, thresholdPercentage, float64(containerResourceThresholdViolated))
 	records = append(records, resourceThresholdViolatedRecord)
 
 	// TODO: error handling
@@ -253,13 +253,13 @@ func GetContainerResourceUtilMetricRecords(recordTimeStamp float64, metricName s
 
 }
 
-func GetPVResourceUtilMetricRecords(recordTimeStamp float64, metricName string, computer string, percentageMetricValue float64, dims map[string]string, thresholdPercentage float64, isZeroFill bool) ([]*GenericMetricTemplate, error) {
+func GetPVResourceUtilMetricRecords(recordTimeStamp string, metricName string, computer string, percentageMetricValue float64, dims map[string]string, thresholdPercentage float64, isZeroFill bool) ([]*GenericMetricTemplate, error) {
 	var records []*GenericMetricTemplate
 	pvcNamespace := dims["pvcNamespace"]
 	podName := dims["podName"]
 	volumeName := dims["volumeName"]
 
-	resourceUtilRecord := PVResourceUtilizationTemplate(fmt.Sprintf("%f", recordTimeStamp), PodMetricNameMetricPercentageNameHash[metricName], podName, computer, pvcNamespace, volumeName, thresholdPercentage, percentageMetricValue)
+	resourceUtilRecord := PVResourceUtilizationTemplate(recordTimeStamp, PodMetricNameMetricPercentageNameHash[metricName], podName, computer, pvcNamespace, volumeName, thresholdPercentage, percentageMetricValue)
 	records = append(records, resourceUtilRecord)
 
 	var pvResourceThresholdViolated int
@@ -269,7 +269,7 @@ func GetPVResourceUtilMetricRecords(recordTimeStamp float64, metricName string, 
 		pvResourceThresholdViolated = 1
 	}
 
-	resourceThresholdViolatedRecord := PVResourceThresholdViolationTemplate(fmt.Sprintf("%f", recordTimeStamp), PodMetricNameMetricThresholdViolatedHash[metricName], podName, computer, pvcNamespace, volumeName, thresholdPercentage, float64(pvResourceThresholdViolated))
+	resourceThresholdViolatedRecord := PVResourceThresholdViolationTemplate(recordTimeStamp, PodMetricNameMetricThresholdViolatedHash[metricName], podName, computer, pvcNamespace, volumeName, thresholdPercentage, float64(pvResourceThresholdViolated))
 
 	records = append(records, resourceThresholdViolatedRecord)
 

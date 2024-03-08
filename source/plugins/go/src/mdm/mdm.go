@@ -660,13 +660,17 @@ func PostCAdvisorMetricsToMDM(records []map[interface{}]interface{}) int {
 
 	var mdmMetrics []*GenericMetricTemplate
 	for _, record := range records {
-		filtered_records, err := filterCAdvisor2MDM(record)
-		if err != nil {
-			message := fmt.Sprintf("PostTelegrafMetricsToMDM::Error:when processing telegraf metric %q", err)
-			Log(message)
-			lib.SendException(message)
+		convertedRecord := toStringMap(record)
+		messages := convertedRecord["messages"].([]map[string]interface{})
+		for _, message := range messages {
+			filtered_records, err := filterCAdvisor2MDM(message)
+			if err != nil {
+				message := fmt.Sprintf("PostCAdvisorMetricsToMDM::Error:when processing cadvisor metric %q", err)
+				Log(message)
+				lib.SendException(message)
+			}
+			mdmMetrics = append(mdmMetrics, filtered_records...)
 		}
-		mdmMetrics = append(mdmMetrics, filtered_records...)
 	}
 	err := PostToMDM(mdmMetrics)
 	if err != nil {
@@ -677,29 +681,34 @@ func PostCAdvisorMetricsToMDM(records []map[interface{}]interface{}) int {
 	return output.FLB_OK
 }
 
-func filterCAdvisor2MDM(record map[interface{}]interface{}) ([]*GenericMetricTemplate, error) {
+func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate, error) {
 	if !processIncomingStream {
 		return nil, nil
 	}
 
-	convertedRecord := ConvertMap(record)
-
-	if strings.EqualFold(convertedRecord["name"], PVUsedBytes) {
-		return filterPVInsightsMetrics(convertedRecord)
+	if nameValue, ok := record["Name"]; ok {
+		if strings.EqualFold(nameValue.(string), PVUsedBytes) {
+			return filterPVInsightsMetrics(record)
+		}
 	}
 
 	// TODO: is below defer needed?
 	defer func() {
 		if r := recover(); r != nil {
+			stacktrace := debug.Stack()
 			Log("MDMLog: Error processing cadvisor metrics record: %v", r)
-			lib.SendExceptionTelemetry(fmt.Sprintf("%v", r), nil)
+			lib.SendExceptionTelemetry(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace), nil)
 		}
 	}()
 
-	objectName := convertedRecord["ObjectName"]
+	objectName := record["ObjectName"].(string)
 
 	var collections []map[string]interface{}
-	err := json.Unmarshal([]byte(convertedRecord["json_Collections"]), &collections)
+	jsonCollections, ok := record["json_Collections"].(string)
+	if !ok {
+		log.Fatalf("Error parsing json_Collections: expected string, got %T", record["json_Collections"])
+	}
+	err := json.Unmarshal([]byte(jsonCollections), &collections)
 	if err != nil {
 		log.Fatalf("Error parsing json_Collections: %v", err)
 	}
@@ -708,10 +717,10 @@ func filterCAdvisor2MDM(record map[interface{}]interface{}) ([]*GenericMetricTem
 
 	percentageMetricValue := 0.0
 	allocatablePercentageMetricValue := 0.0
-	metricValue := collections[0]["Value"].(float64)
 
 	if objectName == objectNameK8sNode && metricsToCollectHash[strings.ToLower(counterName)] {
 		var metricName string
+		metricValue := collections[0]["Value"].(float64)
 		if counterName == CPUUsageNanoCores {
 			metricName = CPUUsageMilliCores
 			metricValue = metricValue / 1000000
@@ -740,6 +749,7 @@ func filterCAdvisor2MDM(record map[interface{}]interface{}) ([]*GenericMetricTem
 
 		if strings.HasPrefix(counterName, "memory") {
 			metricName = counterName
+			metricValue := collections[0]["Value"].(float64)
 			var targetNodeMemoryCapacity float64
 			var targetNodeMemoryAllocatable float64
 			// TODO: is the below needed? earlier this replicaset check was to get windows ds data
@@ -784,6 +794,7 @@ func filterCAdvisor2MDM(record map[interface{}]interface{}) ([]*GenericMetricTem
 
 		return GetNodeResourceMetricRecords(record, metricName, metricValue, percentageMetricValue, allocatablePercentageMetricValue)
 	} else if objectName == ObjectNameK8SContainer && metricsToCollectHash[strings.ToLower(counterName)] {
+		metricValue := collections[0]["Value"].(float64)
 		instanceName := record["InstanceName"].(string)
 		metricName := counterName
 		// Using node cpu capacity in the absence of container cpu capacity since the container will end up using the
@@ -822,7 +833,7 @@ func filterCAdvisor2MDM(record map[interface{}]interface{}) ([]*GenericMetricTem
 		flushMetricTelemetry()
 		if percentageMetricValue >= thresholdPercentage {
 			setThresholdExceededTelemetry(metricName)
-			return GetContainerResourceUtilMetricRecords(record["Timestamp"].(float64), metricName, percentageMetricValue, containerResourceDimensionHash[instanceName], thresholdPercentage, false)
+			return GetContainerResourceUtilMetricRecords(record["Timestamp"].(string), metricName, percentageMetricValue, containerResourceDimensionHash[instanceName], thresholdPercentage, false)
 		} else {
 			return nil, nil
 		}
@@ -831,7 +842,7 @@ func filterCAdvisor2MDM(record map[interface{}]interface{}) ([]*GenericMetricTem
 	}
 }
 
-func filterPVInsightsMetrics(record map[string]string) ([]*GenericMetricTemplate, error) {
+func filterPVInsightsMetrics(record map[string]interface{}) ([]*GenericMetricTemplate, error) {
 	mdmMetrics := []*GenericMetricTemplate{}
 
 	defer func() {
@@ -842,13 +853,18 @@ func filterPVInsightsMetrics(record map[string]string) ([]*GenericMetricTemplate
 		}
 	}()
 
-	if record["name"] == PVUsedBytes && metricsToCollectHash[strings.ToLower(record["name"])] {
-		metricName := record["name"]
-		usage := record["usage"]
+	if record["Name"] == PVUsedBytes && metricsToCollectHash[strings.ToLower(record["Name"].(string))] {
+		metricName := record["Name"].(string)
+		usage := record["Value"].(string)
 		fUsage, _ := strconv.ParseFloat(usage, 64)
 
 		var tags map[string]string
-		err := json.Unmarshal([]byte(record["Tags"]), &tags)
+		tagsBytes, ok := record["Tags"].([]byte)
+		if !ok {
+			Log("MDMLog: Error converting Tags to []byte")
+			return nil, errors.New("Error converting Tags to []byte")
+		}
+		err := json.Unmarshal(tagsBytes, &tags)
 		if err != nil {
 			Log("MDMLog: Error parsing tags: %v", err)
 			lib.SendExceptionTelemetry(err.Error(), nil)
@@ -864,19 +880,13 @@ func filterPVInsightsMetrics(record map[string]string) ([]*GenericMetricTemplate
 		Log("MDMLog: percentage metric value for %s is %f", metricName, percentageMetricValue)
 		Log("MDMLog: metricsThresholdHash for %s is %f", metricName, metricsThresholdHash[metricName])
 
-		computer := record["computer"]
+		computer := record["Computer"].(string)
 		resourceDimensions := tags
 		thresholdPercentage := metricsThresholdHash[metricName]
 
 		flushMetricTelemetry()
 
-		collectionTime, err := strconv.ParseFloat(record["CollectionTime"], 64)
-		if err != nil {
-			Log("MDMLog: Error parsing CollectionTime: %v", err)
-			lib.SendExceptionTelemetry(err.Error(), nil)
-			return nil, err
-		}
-
+		collectionTime := record["CollectionTime"].(string)
 		if percentageMetricValue >= thresholdPercentage {
 			setThresholdExceededTelemetry(metricName)
 			return GetPVResourceUtilMetricRecords(collectionTime, metricName, computer, percentageMetricValue, resourceDimensions, thresholdPercentage, false)
@@ -1073,4 +1083,27 @@ func convertRecord(record map[interface{}]interface{}) map[string]interface{} {
 	}
 
 	return converted
+}
+
+func toStringMap(record map[interface{}]interface{}) map[string]interface{} {
+	tag := record["tag"].([]byte)
+	mp := make(map[string]interface{})
+	mp["tag"] = string(tag)
+	mp["messages"] = []map[string]interface{}{}
+	message := record["messages"].([]interface{})
+	for _, entry := range message {
+		newEntry := entry.(map[interface{}]interface{})
+		m := make(map[string]interface{})
+		for k, v := range newEntry {
+			switch t := v.(type) {
+			case []byte:
+				m[k.(string)] = string(t)
+			default:
+				m[k.(string)] = v
+			}
+		}
+		mp["messages"] = append(mp["messages"].([]map[string]interface{}), m)
+	}
+
+	return mp
 }

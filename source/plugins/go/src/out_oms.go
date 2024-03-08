@@ -81,7 +81,7 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 	case strings.Contains(incomingTag, "mdm.container.perf.telegraf"):
 		return PostTelegrafMetricsToMDMHelper(records)
 	case strings.Contains(incomingTag, "oneagent.containerinsights"):
-		if strings.Contains(incomingTag, "oneagent.containerinsights.LINUX_PERF_BLOB") {
+		if strings.Contains(incomingTag, "oneagent.containerinsights.linux_perf_blob") {
 			retValInputPlugin := PostInputPluginRecords(records)
 			retValCAdvisorMetrics := PostCAdvisorMetricsToMDMHelper(records)
 			if retValInputPlugin == output.FLB_OK && retValCAdvisorMetrics == output.FLB_OK {
