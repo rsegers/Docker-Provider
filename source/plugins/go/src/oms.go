@@ -1290,6 +1290,7 @@ func convertKubernetesMetadata(kubernetesMetadataJson interface{}) (map[string]i
 		}
 	}
 	return strMap, nil
+}
 
 func toStringMap(record map[interface{}]interface{}) map[string]interface{} {
 	tag := record["tag"].([]byte)
