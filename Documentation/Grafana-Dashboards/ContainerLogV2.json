@@ -98,7 +98,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"critical\"\r\n| count \r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"critical\"\r\n| count \r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -172,7 +172,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"error\"\r\n| count \r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"error\"\r\n| count \r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -246,7 +246,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"warning\"\r\n| count \r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"warning\"\r\n| count \r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -320,7 +320,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"debug\"\r\n| count \r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"debug\"\r\n| count \r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -394,7 +394,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"info\"\r\n| count \r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"info\"\r\n| count \r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -468,7 +468,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"trace\"\r\n| count \r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"trace\"\r\n| count \r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -542,7 +542,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"unknown\"\r\n| count \r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| where LogLevel == \"unknown\"\r\n| count \r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -619,7 +619,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| summarize Count = count() by LogLevel\r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| summarize Count = count() by LogLevel\r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -707,7 +707,8 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "green"
+                  "color": "green",
+                  "value": null
                 },
                 {
                   "color": "transparent",
@@ -745,7 +746,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize TotalCount = count()\r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize TotalCount = count()\r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -781,7 +782,8 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "green"
+                  "color": "green",
+                  "value": null
                 },
                 {
                   "color": "transparent",
@@ -818,7 +820,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where TimeGenerated > ago(20min)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend DataVolumeMB = _BilledSize /1024/1024\r\n| summarize TotalDataVolumeMB = round(sum(DataVolumeMB), 4)",
+              "query": "ContainerLogV2\r\n| where TimeGenerated > ago(20min)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend DataVolumeMB = _BilledSize /1024/1024\r\n| summarize TotalDataVolumeMB = round(sum(DataVolumeMB), 4)",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -884,7 +886,8 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "green"
+                  "color": "green",
+                  "value": null
                 },
                 {
                   "color": "red",
@@ -917,7 +920,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize Count = count() by bin(TimeGenerated, 1m), Computer\r\n| order by TimeGenerated asc \r\n| render timechart",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize Count = count() by bin(TimeGenerated, 1m), Computer\r\n| order by TimeGenerated asc \r\n| render timechart",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -996,7 +999,8 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "green"
+                  "color": "green",
+                  "value": null
                 },
                 {
                   "color": "red",
@@ -1029,7 +1033,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize Count = count() by bin(TimeGenerated, 1m), PodName\r\n| order by TimeGenerated asc \r\n| render timechart",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize Count = count() by bin(TimeGenerated, 1m), PodName\r\n| order by TimeGenerated asc \r\n| render timechart",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -1108,7 +1112,8 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "green"
+                  "color": "green",
+                  "value": null
                 },
                 {
                   "color": "red",
@@ -1141,7 +1146,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize Count = count() by bin(TimeGenerated, 1m), PodNamespace\r\n| order by TimeGenerated asc \r\n| render timechart",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize Count = count() by bin(TimeGenerated, 1m), ContainerName\r\n| order by TimeGenerated asc \r\n| render timechart",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -1172,7 +1177,7 @@
             "refId": "B"
           }
         ],
-        "title": "Logs/min by PodNamespace",
+        "title": "Logs/min by Container",
         "type": "timeseries"
       },
       {
@@ -1220,7 +1225,8 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "green"
+                  "color": "green",
+                  "value": null
                 },
                 {
                   "color": "red",
@@ -1253,7 +1259,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize Count = count() by bin(TimeGenerated, 1m), LogSource\r\n| order by TimeGenerated asc \r\n| render timechart",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level), tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\", \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\", \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\", \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\", \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\", \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\", \"trace\",\r\n    LogSource == \"stderr\", \"error\",\r\n    \"unknown\"\r\n))\r\n| summarize Count = count() by bin(TimeGenerated, 1m), LogLevel\r\n| order by TimeGenerated asc \r\n| render timechart",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -1335,7 +1341,8 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "green"
+                  "color": "green",
+                  "value": null
                 },
                 {
                   "color": "red",
@@ -1418,7 +1425,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize LogCount = count() by PodNamespace\r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize LogCount = count() by ContainerName\r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -1605,7 +1612,7 @@
             "refId": "N"
           }
         ],
-        "title": "Log Records by Namespace",
+        "title": "Log Records by Container",
         "type": "barchart"
       },
       {
@@ -1643,7 +1650,8 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "green"
+                  "color": "green",
+                  "value": null
                 },
                 {
                   "color": "red",
@@ -1726,7 +1734,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize LogCount = count() by Computer\r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| summarize LogCount = count() by Computer\r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -1967,7 +1975,8 @@
               "mode": "absolute",
               "steps": [
                 {
-                  "color": "green"
+                  "color": "green",
+                  "value": null
                 },
                 {
                   "color": "red",
@@ -2160,7 +2169,7 @@
         "targets": [
           {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| extend NamespaceInput = \"$Namespace\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend  PodLabels = KubernetesMetadata[\"podLabels\"]\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend Image = KubernetesMetadata[\"image\"]\r\n| extend ImageHash = KubernetesMetadata[\"image_hash\"]\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level),                                          tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\",         \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\",                         \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\",                      \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\",           \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\",                     \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\",                               \"trace\",\r\n    LogSource == \"stderr\",                                                      \"error\",\r\n    \"unknown\"\r\n))\r\n| project TimeGenerated, LogLevel, Computer, PodNamespace, PodName, ContainerName, ContainerId, LogMessage, Image, ImageHash, KubernetesMetadata\r\n| top 100 by TimeGenerated desc\r\n",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| extend NamespaceInput = \"$Namespace\"\r\n| where PodNamespace =~ \"$Namespace\"\r\n| extend PodLabels = KubernetesMetadata.podLabels\r\n| mv-expand PodLabels\r\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\r\n| where labelKey in ($LabelKey)\r\n| extend labelVal = tostring(PodLabels[labelKey])\r\n| where labelVal in ($LabelValue)\r\n| extend Image = KubernetesMetadata[\"image\"]\r\n| extend ImageHash = KubernetesMetadata[\"image_hash\"]\r\n| extend logMessagePreview = tolower(substring(LogMessage, 0, 100))\r\n| extend LogLevel = iif(isnotempty(LogLevel), LogLevel, case(\r\n    isnotnull(LogMessage.level),                                          tolower(tostring(LogMessage.level)),\r\n    logMessagePreview matches regex @\"\\b(emerg|alert|crit|critical)\\b\",         \"critical\",\r\n    logMessagePreview matches regex @\"\\b(err|error)\\b\",                         \"error\",\r\n    logMessagePreview matches regex @\"\\b(warn|warning)\\b\",                      \"warning\",\r\n    logMessagePreview matches regex @\"\\b(info|information|notice)\\b\",           \"info\",\r\n    logMessagePreview matches regex @\"\\b(debug|verbose)\\b\",                     \"debug\",\r\n    logMessagePreview matches regex @\"\\btrace\\b\",                               \"trace\",\r\n    LogSource == \"stderr\",                                                      \"error\",\r\n    \"unknown\"\r\n))\r\n| project TimeGenerated, LogLevel, Computer, PodNamespace, PodName, ContainerName, ContainerId, LogMessage, Image, ImageHash, KubernetesMetadata\r\n| top 100 by TimeGenerated desc\r\n",
               "resources": [
                 "$LAWorkspace"
               ],
@@ -2421,58 +2430,14 @@
         },
         {
           "current": {
-            "selected": false,
+            "selected": true,
             "text": [
               "app",
-              "component",
-              "department",
-              "l1",
-              "l10",
-              "l2",
-              "l3",
-              "l4",
-              "l5",
-              "l6",
-              "l7",
-              "l8",
-              "l9",
-              "managed-by",
-              "pod-template-hash",
-              "role",
-              "tier",
-              "version",
-              "app.kubernetes.io/name",
-              "controller-revision-hash",
-              "k8s-app",
-              "pod-template-generation",
-              "kubernetes.azure.com/managedby",
-              "name"
+              "l1"
             ],
             "value": [
               "app",
-              "component",
-              "department",
-              "l1",
-              "l10",
-              "l2",
-              "l3",
-              "l4",
-              "l5",
-              "l6",
-              "l7",
-              "l8",
-              "l9",
-              "managed-by",
-              "pod-template-hash",
-              "role",
-              "tier",
-              "version",
-              "app.kubernetes.io/name",
-              "controller-revision-hash",
-              "k8s-app",
-              "pod-template-generation",
-              "kubernetes.azure.com/managedby",
-              "name"
+              "l1"
             ]
           },
           "datasource": {
@@ -2487,7 +2452,7 @@
           "options": [],
           "query": {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| extend PodNamespace = \"$Namespace\"\r\n| where isnotempty(KubernetesMetadata)\r\n| extend LabelsJson = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand LabelsJson\r\n| extend LabelName = tostring(bag_keys(LabelsJson)[0])\r\n| where isnotempty(LabelName)\r\n| distinct LabelName",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| extend PodNamespace = \"$Namespace\"\r\n| where isnotempty(KubernetesMetadata)\r\n| extend LabelsJson = KubernetesMetadata.podLabels\r\n| mv-expand LabelsJson\r\n| extend LabelName = tostring(bag_keys(LabelsJson)[0])\r\n| where isnotempty(LabelName)\r\n| distinct LabelName",
               "resources": [
                 "$LAWorkspace"
               ]
@@ -2504,52 +2469,26 @@
         },
         {
           "current": {
-            "selected": false,
+            "selected": true,
             "text": [
-              "windows-resource-intensive-app2",
-              "logger",
-              "IT",
-              "test",
-              "kubernetes",
-              "7f6f544866",
-              "resource-intensive-task",
-              "frontend",
-              "1.0",
-              "linux-resource-intensive-app",
-              "5995696c45",
-              "windows-resource-intensive-app3",
-              "57c99f968d",
               "windows-resource-intensive-app",
-              "6d86597ddc",
+              "test",
+              "windows-resource-intensive-app2",
               "windows-resource-intensive-app5",
-              "7f875f8756",
+              "linux-resource-intensive-app",
               "linux-resource-intensive-app2",
-              "6c85546fb6",
-              "linux-resource-intensive-app3",
-              "85479d9bc6"
+              "windows-resource-intensive-app3",
+              "linux-resource-intensive-app3"
             ],
             "value": [
-              "windows-resource-intensive-app2",
-              "logger",
-              "IT",
-              "test",
-              "kubernetes",
-              "7f6f544866",
-              "resource-intensive-task",
-              "frontend",
-              "1.0",
-              "linux-resource-intensive-app",
-              "5995696c45",
-              "windows-resource-intensive-app3",
-              "57c99f968d",
               "windows-resource-intensive-app",
-              "6d86597ddc",
+              "test",
+              "windows-resource-intensive-app2",
               "windows-resource-intensive-app5",
-              "7f875f8756",
+              "linux-resource-intensive-app",
               "linux-resource-intensive-app2",
-              "6c85546fb6",
-              "linux-resource-intensive-app3",
-              "85479d9bc6"
+              "windows-resource-intensive-app3",
+              "linux-resource-intensive-app3"
             ]
           },
           "datasource": {
@@ -2564,7 +2503,7 @@
           "options": [],
           "query": {
             "azureLogAnalytics": {
-              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where  PodNamespace == \"$Namespace\"\r\n| where isnotempty(KubernetesMetadata)\r\n| extend LabelsJson = parse_json(KubernetesMetadata).podLabels\r\n| mv-expand LabelsJson\r\n| extend LabelName = tostring(bag_keys(LabelsJson)[0])\r\n| where LabelName in ($LabelKey)\r\n| extend LabelValue = tostring(LabelsJson[LabelName])\r\n| where isnotempty(LabelValue)\r\n| distinct LabelValue",
+              "query": "ContainerLogV2\r\n| where $__timeFilter(TimeGenerated)\r\n| where _ResourceId =~ \"/subscriptions/$Subscription/resourcegroups/$rg/providers/Microsoft.ContainerService/managedClusters/$Cluster\"\r\n| where  PodNamespace == \"$Namespace\"\r\n| where isnotempty(KubernetesMetadata)\r\n| extend LabelsJson = KubernetesMetadata.podLabels\r\n| mv-expand LabelsJson\r\n| extend LabelName = tostring(bag_keys(LabelsJson)[0])\r\n| where LabelName in ($LabelKey)\r\n| extend LabelValue = tostring(LabelsJson[LabelName])\r\n| where isnotempty(LabelValue)\r\n| distinct LabelValue",
               "resources": [
                 "$LAWorkspace"
               ]
@@ -2589,6 +2528,6 @@
     "timezone": "",
     "title": "Azure Monitor / Container Insights / ContainerLogV2 LW multiselect",
     "uid": "c1ea0a58-c330-4abf-94a7-821bb0d5c20d",
-    "version": 3,
+    "version": 8,
     "weekStart": ""
   }
