@@ -39,7 +39,7 @@
             "showLineNumbers": false,
             "showMiniMap": false
           },
-          "content": "## ContainerLogV2 with Kubernetes Metadata \n\nKubernetes Metadata consists of the Pod labels, Pod Annotations, Image, ImageHash, ImageRepo and PodUID etc. \nKubernetes Metadata collection enables  to have rich Metadata with Log record and Metadata enables to co-relate with Kubernetes resources.\n\nThis dashboard visualizes  ContainerLogV2 data with Kubernetes Metadata. Read more in the  documentation here:  \n\nBefore starting, please ensure that: \n1. Container Insights enabled to selected AKS cluster\n2. Kubernetes Metadata collection and ContainerLogV2 enabled\n\nRead more on annotation based filtering: ",
+          "content": "## ContainerLogV2 with Kubernetes Metadata \n\nKubernetes Metadata consists of the Pod labels, Pod Annotations, Image, ImageHash, ImageRepo and PodUID etc. \nKubernetes Metadata collection enables to have rich Metadata with Log record and Metadata enables to co-relate logs with Kubernetes resources.\n\nThis dashboard visualizes ContainerLogV2 data with Kubernetes Metadata. Read more in the documentation here:  \n\nBefore starting, please ensure that: \n1. Container Insights enabled to selected AKS cluster\n2. Kubernetes Metadata collection and ContainerLogV2 enabled\n\nRead more on annotation based filtering: ",
           "mode": "markdown"
         },
         "pluginVersion": "9.5.16",
@@ -1290,7 +1290,7 @@
             "refId": "B"
           }
         ],
-        "title": "Log/min by LogLevel",
+        "title": "Logs/min by LogLevel",
         "type": "timeseries"
       },
       {
@@ -2526,7 +2526,7 @@
     },
     "timepicker": {},
     "timezone": "",
-    "title": "Azure Monitor / Container Insights / ContainerLogV2 LW multiselect",
+    "title": "Azure Monitor / Container Insights / ContainerLogV2",
     "uid": "c1ea0a58-c330-4abf-94a7-821bb0d5c20d",
     "version": 9,
     "weekStart": ""
