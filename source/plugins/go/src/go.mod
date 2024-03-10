@@ -21,6 +21,7 @@ require (
 	github.com/tinylib/msgp v1.1.8
 	github.com/ugorji/go/codec v1.2.11
 	golang.org/x/crypto v0.21.0 // indirect
+	golang.org/x/net v0.21.0 // indirect
 	golang.org/x/oauth2 v0.13.0 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0-20170531160350-a96e63847dc3
