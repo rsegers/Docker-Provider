@@ -431,7 +431,6 @@ elif [ $domain == "opinsights.azure.microsoft.scloud" ]; then
 fi
 export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT
 echo "export CLOUD_ENVIRONMENT=$CLOUD_ENVIRONMENT" >>~/.bashrc
-setCloudSpecificApplicationInsightsConfig $CLOUD_ENVIRONMENT
 
 export PROXY_ENDPOINT=""
 # Check for internet connectivity or workspace deletion
@@ -590,6 +589,8 @@ export DOMAIN=$domain
 echo "export DOMAIN=$DOMAIN" >>~/.bashrc
 export WSID=$workspaceId
 echo "export WSID=$WSID" >>~/.bashrc
+
+setCloudSpecificApplicationInsightsConfig $CLOUD_ENVIRONMENT
 
 source ~/.bashrc
 cat packages_version.txt
