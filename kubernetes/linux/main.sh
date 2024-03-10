@@ -10,15 +10,15 @@ setCloudSpecificApplicationInsightsConfig() {
     case $1 in
         "azurechinacloud")            
             APPLICATIONINSIGHTS_AUTH="MjkzZWY1MDAtMDJiZS1jZWNlLTk0NmMtNTU3OWNhYjZiYzEzCg=="
-            echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc  
             APPLICATIONINSIGHTS_ENDPOINT="https://dc.applicationinsights.azure.cn/v2/track"
+            echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc              
             echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc  
             source ~/.bashrc          
             ;;
         "azureusgovernmentcloud")
             APPLICATIONINSIGHTS_AUTH="ZmQ5MTc2ODktZjlkYi1mNzU3LThiZDQtZDVlODRkNzYxNDQ3Cg=="
-            echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc   
             APPLICATIONINSIGHTS_ENDPOINT="https://dc.applicationinsights.azure.us/v2/track"
+            echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc               
             echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc  
             source ~/.bashrc             
             ;;       
@@ -55,7 +55,7 @@ setCloudSpecificApplicationInsightsConfig() {
             ;;       
        
         *)
-             echo "default is Public cloud"
+            echo "default is Public cloud"
             ;;
     esac
 }

@@ -53,17 +53,21 @@ function Set-CloudSpecificApplicationInsightsConfig {
         "azurechinacloud" {
             $APPLICATIONINSIGHTS_AUTH = "MjkzZWY1MDAtMDJiZS1jZWNlLTk0NmMtNTU3OWNhYjZiYzEzCg=="
             $APPLICATIONINSIGHTS_ENDPOINT = "https://dc.applicationinsights.azure.cn/v2/track"
+           
             [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $APPLICATIONINSIGHTS_AUTH, "Process")
             [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $APPLICATIONINSIGHTS_AUTH, "Machine")
+           
             [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", $APPLICATIONINSIGHTS_ENDPOINT, "Process")
             [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", $APPLICATIONINSIGHTS_ENDPOINT, "Machine")
-             Write-Host "Application Insights configuration set for Azure China Cloud"
+            Write-Host "Application Insights configuration set for Azure China Cloud"
         }
         "azureusgovernmentcloud" {
             $APPLICATIONINSIGHTS_AUTH = "ZmQ5MTc2ODktZjlkYi1mNzU3LThiZDQtZDVlODRkNzYxNDQ3Cg=="
             $APPLICATIONINSIGHTS_ENDPOINT = "https://dc.applicationinsights.azure.us/v2/track"
+           
             [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $APPLICATIONINSIGHTS_AUTH, "Process")
             [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $APPLICATIONINSIGHTS_AUTH, "Machine")
+           
             [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", $APPLICATIONINSIGHTS_ENDPOINT, "Process")
             [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", $APPLICATIONINSIGHTS_ENDPOINT, "Machine")
             Write-Host "Application Insights configuration set for Azure US Government Cloud"
