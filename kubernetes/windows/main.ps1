@@ -118,11 +118,11 @@ function Set-CloudSpecificApplicationInsightsConfig {
             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_ENDPOINT" "https://dc.applicationinsights.azure.us/v2/track"
         }
         "usnat" {
-            Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USNat"
+            Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USNat Cloud"
             Set-AirgapCloudSpecificApplicationInsightsConfig
         }
         "ussec" {
-            Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USSec"
+            Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USSec Cloud"
             Set-AirgapCloudSpecificApplicationInsightsConfig
         }
         default {
