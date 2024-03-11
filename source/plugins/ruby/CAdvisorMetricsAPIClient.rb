@@ -29,8 +29,8 @@ class CAdvisorMetricsAPIClient
   @clusterMultilineEnabled = ENV["AZMON_MULTILINE_ENABLED"]
   @clusterMultilineLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
   @clusterKubernetesMetadataEnabled = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
-  @clusterKubernetesMetadataiIncludeFields = ENV["AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS"]
-  @clusterKubernetesMetadataCacheTTL = ENV["AZMON_KUBERNETES_METADATA_CACHE_TTL"]
+  @clusterKubernetesMetadataIncludeFields = ENV["AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS"]
+  @clusterKubernetesMetadataCacheTTLSeconds = ENV["AZMON_KUBERNETES_METADATA_CACHE_TTL_SECONDS"]
 
   @dsPromInterval = ENV["TELEMETRY_DS_PROM_INTERVAL"]
   @dsPromFieldPassCount = ENV["TELEMETRY_DS_PROM_FIELDPASS_LENGTH"]
@@ -310,11 +310,11 @@ class CAdvisorMetricsAPIClient
                     if (!@clusterKubernetesMetadataEnabled.nil? && !@clusterKubernetesMetadataEnabled.empty?)
                       telemetryProps["metadataEnabled"] = @clusterKubernetesMetadataEnabled
                     end
-                    if (!@clusterKubernetesMetadataiIncludeFields.nil? && !@clusterKubernetesMetadataiIncludeFields.empty?)
-                      telemetryProps["metadataIncludeFields"] = @clusterKubernetesMetadataiIncludeFields
+                    if (!@clusterKubernetesMetadataIncludeFields.nil? && !@clusterKubernetesMetadataIncludeFields.empty?)
+                      telemetryProps["metadataIncludeFields"] = @clusterKubernetesMetadataIncludeFields
                     end
-                    if (!@clusterKubernetesMetadataCacheTTL.nil? && !@clusterKubernetesMetadataCacheTTL.empty?)
-                      telemetryProps["metadataCacheTTL"] = @clusterKubernetesMetadataCacheTTL
+                    if (!@clusterKubernetesMetadataCacheTTLSeconds.nil? && !@clusterKubernetesMetadataCacheTTLSeconds.empty?)
+                      telemetryProps["metadataCacheTTL"] = @clusterKubernetesMetadataCacheTTLSeconds
                     end
                     ApplicationInsightsUtility.sendMetricTelemetry(metricNametoReturn, metricValue, telemetryProps)
                   end

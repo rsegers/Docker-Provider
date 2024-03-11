@@ -235,13 +235,13 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     #Get Kubernetes Metadata setting
     begin
       if !parsedConfig[:log_collection_settings][:metadata_collection].nil? && !parsedConfig[:log_collection_settings][:metadata_collection][:enabled].nil?
-        puts "config::Using config map setting for kubernetes metadata"
+        puts "config::INFO: Using config map setting for kubernetes metadata"
         @logEnableKubernetesMetadata = parsedConfig[:log_collection_settings][:metadata_collection][:enabled]
         if !parsedConfig[:log_collection_settings][:metadata_collection][:include_fields].nil?
-          puts "config::Using config map setting for kubernetes metadata include fields"
+          puts "config::INFO: Using config map setting for kubernetes metadata include fields"
           include_fields = parsedConfig[:log_collection_settings][:metadata_collection][:include_fields]
           if include_fields.empty?
-            puts "config::Include fields specified for Kubernetes metadata is empty, disabling Kubernetes metadata"
+            puts "config::WARN: Include fields specified for Kubernetes metadata is empty, disabling Kubernetes metadata"
             @logEnableKubernetesMetadata = false
           elsif include_fields.kind_of?(Array)
             include_fields.map!(&:downcase)
@@ -256,14 +256,18 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           end
         end
       end
+    rescue => errorStr
+      ConfigParseErrorLogger.logError("config::error: Exception while reading config map settings for kubernetes metadata - #{errorStr}, please check config map for errors")
     end
 
     #Get annotation based log filtering setting
     begin
       if !parsedConfig[:log_collection_settings][:filter_using_annotations].nil? && !parsedConfig[:log_collection_settings][:filter_using_annotations][:enabled].nil?
-        puts "config::Using config map setting for annotation based log filtering"
+        puts "config::INFO: Using config map setting for annotation based log filtering"
         @annotationBasedLogFiltering = parsedConfig[:log_collection_settings][:filter_using_annotations][:enabled]
       end
+    rescue => errorStr
+      ConfigParseErrorLogger.logError("config::error: Exception while reading config map settings for annotation based log filtering - #{errorStr}, please check config map for errors")
     end
   end
 end

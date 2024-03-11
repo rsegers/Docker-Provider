@@ -120,7 +120,7 @@ def substituteFluentBitPlaceHolders
     end
 
     if !annotationBasedLogFiltering.nil? && annotationBasedLogFiltering.to_s.downcase == "true"
-      # enabled kubernetes fluent-bit plugin if not already enabled
+      # enabled kubernetes filter plugin if not already enabled
       new_contents = new_contents.gsub("#${KubernetesFilterEnabled}", "")
       new_contents = new_contents.gsub("#${AnnotationBasedLogFilteringEnabled}", "")
     end

@@ -9,7 +9,7 @@ require_relative "ConfigParseErrorLogger"
 @configSchemaVersion = ""
 
 @disableTelemetry = false
-@logEnableKubernetesMetadataCacheTTL = "60"
+@logEnableKubernetesMetadataCacheTTLSeconds = 60
 
 def is_windows?
   return !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -63,15 +63,22 @@ def populateSettingValuesFromConfigMap(parsedConfig)
   end
 end
 
-def getKubernetesMetadataCacheTTL(parsedConfig)
+def getKubernetesMetadataCacheTTLSeconds(parsedConfig)
   begin
     if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil?
       k8s_metadata_config = parsedConfig[:agent_settings][:k8s_metadata_config]
-      if !k8s_metadata_config.nil? && !k8s_metadata_config[:kube_meta_cache_ttl].nil?
-        @logEnableKubernetesMetadataCacheTTL = k8s_metadata_config[:kube_meta_cache_ttl]
-        puts "Using config map value: kube_meta_cache_ttl = #{@logEnableKubernetesMetadataCacheTTL}"
+      if !k8s_metadata_config.nil? && !k8s_metadata_config[:kube_meta_cache_ttl_secs].nil?
+        ttl_value = k8s_metadata_config[:kube_meta_cache_ttl_secs]
+        if ttl_value.is_a?(Integer) && ttl_value >= 0
+          @logEnableKubernetesMetadataCacheTTLSeconds = ttl_value
+          puts "config::INFO: Using config map value: kube_meta_cache_ttl_secs = #{@logEnableKubernetesMetadataCacheTTLSeconds}"
+        else
+          puts "config::WARN: Invalid kube_meta_cache_ttl_secs value: Must be an integer and >= 0"
+        end
       end
     end
+  rescue => errorStr
+    puts "config::error: Exception while reading config settings for logEnableKubernetesMetadataCacheTTLSeconds - #{errorStr}"
   end
 end
 
@@ -81,7 +88,7 @@ if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @configSchemaVe
   configMapSettings = parseConfigMap
   if !configMapSettings.nil?
     populateSettingValuesFromConfigMap(configMapSettings)
-    getKubernetesMetadataCacheTTL(configMapSettings)
+    getKubernetesMetadataCacheTTLSeconds(configMapSettings)
   end
 else
   if (File.file?(@configMapMountPath))
@@ -101,7 +108,7 @@ if is_windows?
       commands = get_command_windows("DISABLE_TELEMETRY", @disableTelemetry)
       file.write(commands)
     end
-    commands = get_command_windows("AZMON_KUBERNETES_METADATA_CACHE_TTL", @logEnableKubernetesMetadataCacheTTL)
+    commands = get_command_windows("AZMON_KUBERNETES_METADATA_CACHE_TTL_SECONDS", @logEnableKubernetesMetadataCacheTTLSeconds)
     file.write(commands)
     # Close file after writing all environment variables
     file.close
@@ -117,7 +124,7 @@ else
     if @disableTelemetry
       file.write("export DISABLE_TELEMETRY=#{@disableTelemetry}\n")
     end
-    file.write("export AZMON_KUBERNETES_METADATA_CACHE_TTL=#{@logEnableKubernetesMetadataCacheTTL}\n")
+    file.write("export AZMON_KUBERNETES_METADATA_CACHE_TTL_SECONDS=#{@logEnableKubernetesMetadataCacheTTLSeconds}\n")
     # Close file after writing all environment variables
     file.close
   else
