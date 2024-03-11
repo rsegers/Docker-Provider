@@ -502,7 +502,10 @@ if !file.nil?
   end
 
   file.write("export AZMON_RESOURCE_OPTIMIZATION_ENABLED=#{@resource_optimization_enabled}\n")
-  file.write("export AZMON_WINDOWS_FLUENT_BIT_DISABLED=#{@windows_fluent_bit_disabled}\n")
+
+  if @windows_fluent_bit_disabled
+    file.write("export AZMON_WINDOWS_FLUENT_BIT_DISABLED=#{@windows_fluent_bit_disabled}\n")
+  end
 
   file.write("export WAITTIME_PORT_25226=#{@waittime_port_25226}\n")
   file.write("export WAITTIME_PORT_25228=#{@waittime_port_25228}\n")
@@ -597,8 +600,10 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       file.write(commands)
     end
 
-    commands = get_command_windows("AZMON_WINDOWS_FLUENT_BIT_DISABLED", @windows_fluent_bit_disabled)
-    file.write(commands)
+    if @windows_fluent_bit_disabled
+      commands = get_command_windows("AZMON_WINDOWS_FLUENT_BIT_DISABLED", @windows_fluent_bit_disabled)
+      file.write(commands)
+    end
     # Close file after writing all environment variables
     file.close
     puts "****************End Config Processing********************"
