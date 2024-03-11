@@ -1177,20 +1177,26 @@ func PostTelegrafMetricsToMDMHelper(telegrafRecords []map[interface{}]interface{
 	return mdm.PostTelegrafMetricsToMDM(telegrafRecords)
 }
 
-func PostCAdvisorMetricsToMDMHelper(cadvisorRecords []map[interface{}]interface{}) int {
-	return mdm.PostCAdvisorMetricsToMDM(cadvisorRecords)
-}
+// func PostCAdvisorMetricsToMDMHelper(cadvisorRecords []map[interface{}]interface{}) int {
+// 	return mdm.PostCAdvisorMetricsToMDM(cadvisorRecords)
+// }
 
 func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) int {
 	start := time.Now()
 	Log("Info::PostInputPluginRecords starting")
-
+	var success int
 	for _, record := range inputPluginRecords {
 		var msgPackEntries []MsgPackEntry
 		val := toStringMap(record)
 		tag := val["tag"].(string)
 		Log("Info::PostInputPluginRecords tag: %s\n", tag)
 		messages := val["messages"].([]map[string]interface{})
+		if len(messages) == 0 {
+			continue
+		}
+		if strings.Contains(tag, "LINUX_PERF_BLOB") || strings.Contains(tag, "INSIGHTS_METRICS_BLOB") {
+			success = mdm.PostCAdvisorMetricsToMDM(messages)
+		}
 		for _, message := range messages {
 			stringMap := convertMap(message)
 			msgPackEntry := MsgPackEntry{
@@ -1275,7 +1281,7 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 		}
 	}
 
-	return output.FLB_OK
+	return success & output.FLB_OK
 }
 
 // PostDataHelper sends data to the ODS endpoint or oneagent or ADX

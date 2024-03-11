@@ -28,27 +28,27 @@ type GenericMetricTemplate struct {
 
 // NewMetricTemplate creates a new metric template with the provided parameters.
 func NewMetricTemplate(time, metric, namespace string, dimNames, dimValues []string, value float64) *GenericMetricTemplate {
-    return &GenericMetricTemplate{
-        Time: time,
-	Data: struct {
-		BaseData BaseData `json:"baseData"`
-	}{
-            BaseData: BaseData{
-                Metric:    metric,
-                Namespace: namespace,
-                DimNames:  dimNames,
-                Series: []SeriesData{
-                    {
-                        DimValues: dimValues,
-                        Min:       value,
-                        Max:       value,
-                        Sum:       value,
-                        Count:     1,
-                    },
-                },
-            },
-        },
-    }
+	return &GenericMetricTemplate{
+		Time: time,
+		Data: struct {
+			BaseData BaseData `json:"baseData"`
+		}{
+			BaseData: BaseData{
+				Metric:    metric,
+				Namespace: namespace,
+				DimNames:  dimNames,
+				Series: []SeriesData{
+					{
+						DimValues: dimValues,
+						Min:       value,
+						Max:       value,
+						Sum:       value,
+						Count:     1,
+					},
+				},
+			},
+		},
+	}
 }
 
 // TODO: should sprintf below have precision limit?

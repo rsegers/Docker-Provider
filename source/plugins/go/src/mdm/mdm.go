@@ -614,8 +614,8 @@ func flushMDMExceptionTelemetry() {
 	}
 }
 
-func PostCAdvisorMetricsToMDM(records []map[interface{}]interface{}) int {
-	Log("MDMLog: PostCAdvisorMetricsToMDM::Info:PostCAdvisorMetricsToMDM starting")
+func PostCAdvisorMetricsToMDM(records []map[string]interface{}) int {
+	Log("MDMLog: PostCAdvisorMetricsToMDM::Info:PostCAdvisorMetricsToMDM starting: %v", records)
 	if (records == nil) || !(len(records) > 0) {
 		Log("MDMLog: PostCAdvisorMetricsToMDM::Error:no records")
 		return output.FLB_OK
@@ -659,18 +659,14 @@ func PostCAdvisorMetricsToMDM(records []map[interface{}]interface{}) int {
 	}
 
 	var mdmMetrics []*GenericMetricTemplate
-	for _, record := range records {
-		convertedRecord := toStringMap(record)
-		messages := convertedRecord["messages"].([]map[string]interface{})
-		for _, message := range messages {
-			filtered_records, err := filterCAdvisor2MDM(message)
-			if err != nil {
-				message := fmt.Sprintf("PostCAdvisorMetricsToMDM::Error:when processing cadvisor metric %q", err)
-				Log(message)
-				lib.SendException(message)
-			}
-			mdmMetrics = append(mdmMetrics, filtered_records...)
+	for _, message := range records {
+		filtered_records, err := filterCAdvisor2MDM(message)
+		if err != nil {
+			message := fmt.Sprintf("PostCAdvisorMetricsToMDM::Error:when processing cadvisor metric %q", err)
+			Log(message)
+			lib.SendException(message)
 		}
+		mdmMetrics = append(mdmMetrics, filtered_records...)
 	}
 	err := PostToMDM(mdmMetrics)
 	if err != nil {
