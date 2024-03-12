@@ -127,7 +127,7 @@ def substituteFluentBitPlaceHolders
 
     new_contents = substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
 
-    if !@isWindows || (@isWindows && (windowsFluentBitDisabled.nil? || windowsFluentBitDisabled.to_s.downcase == "false"))
+    if !@isWindows || (@isWindows && (!windowsFluentBitDisabled.nil? && windowsFluentBitDisabled.to_s.downcase == "false"))
       new_contents = substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
     end
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
