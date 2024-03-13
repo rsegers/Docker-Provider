@@ -30,6 +30,7 @@ class CAdvisorMetricsAPIClient
   @clusterMultilineLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
   @clusterKubernetesMetadataEnabled = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
   @clusterKubernetesMetadataIncludeFields = ENV["AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS"]
+  @clusterAnnotationBasedFiltering = ENV["AZMON_ANNOTATION_BASED_LOG_FILTERING"]
   @clusterKubernetesMetadataCacheTTLSeconds = ENV["AZMON_KUBERNETES_METADATA_CACHE_TTL_SECONDS"]
 
   @dsPromInterval = ENV["TELEMETRY_DS_PROM_INTERVAL"]
@@ -312,6 +313,9 @@ class CAdvisorMetricsAPIClient
                     end
                     if (!@clusterKubernetesMetadataIncludeFields.nil? && !@clusterKubernetesMetadataIncludeFields.empty?)
                       telemetryProps["metadataIncludeFields"] = @clusterKubernetesMetadataIncludeFields
+                    end
+                    if (!@clusterAnnotationBasedFiltering.nil? && !@clusterAnnotationBasedFiltering.empty?)
+                      telemetryProps["annotationBasedFiltering"] = @clusterAnnotationBasedFiltering
                     end
                     if (!@clusterKubernetesMetadataCacheTTLSeconds.nil? && !@clusterKubernetesMetadataCacheTTLSeconds.empty?)
                       telemetryProps["metadataCacheTTL"] = @clusterKubernetesMetadataCacheTTLSeconds
