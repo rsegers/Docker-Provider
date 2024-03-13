@@ -977,7 +977,7 @@ if [ ! -f /etc/cron.d/ci-agent ]; then
 fi
 
 setGlobalEnvVar AZMON_WINDOWS_FLUENT_BIT_DISABLED "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}"
-if [ "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" == "true" ] || [ "${USING_AAD_MSI_AUTH}" != "true" ] || [ "${GENEVA_LOGS_INTEGRATION}" == "true" ]; then
+if [ "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" == "true" ] || [ -z "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" ] || [ "${USING_AAD_MSI_AUTH}" != "true" ] || [ "${GENEVA_LOGS_INTEGRATION}" == "true" ]; then
       if [ -e "/etc/config/kube.conf" ]; then
            # Replace a string in the configmap file
             sed -i "s/#@include windows_rs/@include windows_rs/g" /etc/fluent/kube.conf

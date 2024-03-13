@@ -194,7 +194,7 @@ data:
 
     # Disables fluent-bit for perf and container inventory for Windows
     #[agent_settings.windows_fluent_bit]
-    #    disabled = "false"
+    #    disabled = "true"
 
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # Configuration settings for the waittime for the network listeners to be available
