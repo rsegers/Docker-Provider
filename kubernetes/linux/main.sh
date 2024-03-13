@@ -6,22 +6,22 @@ startTime=$(date +%s)
 echo "startup script start @ $(date +'%Y-%m-%dT%H:%M:%S')"
 
 setCloudSpecificApplicationInsightsConfig() {
-    echo "Cloud environment: $1"
+    echo "setCloudSpecificApplicationInsightsConfig: Cloud environment: $1"
     case $1 in
-        "azurechinacloud")            
+        "azurechinacloud")
             APPLICATIONINSIGHTS_AUTH="MjkzZWY1MDAtMDJiZS1jZWNlLTk0NmMtNTU3OWNhYjZiYzEzCg=="
             APPLICATIONINSIGHTS_ENDPOINT="https://dc.applicationinsights.azure.cn/v2/track"
-            echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc              
-            echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc  
-            source ~/.bashrc          
+            echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc
+            echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc
+            source ~/.bashrc
             ;;
         "azureusgovernmentcloud")
             APPLICATIONINSIGHTS_AUTH="ZmQ5MTc2ODktZjlkYi1mNzU3LThiZDQtZDVlODRkNzYxNDQ3Cg=="
             APPLICATIONINSIGHTS_ENDPOINT="https://dc.applicationinsights.azure.us/v2/track"
-            echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc               
-            echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc  
-            source ~/.bashrc             
-            ;;       
+            echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc
+            echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc
+            source ~/.bashrc
+            ;;
          "usnat" | "ussec")
            # Check if the instrumentation key needs to be fetched from a storage account (as in airgapped clouds)
             if [ ${#APPLICATIONINSIGHTS_AUTH_URL} -ge 1 ]; then # (check if APPLICATIONINSIGHTS_AUTH_URL has length >=1)
@@ -48,12 +48,12 @@ setCloudSpecificApplicationInsightsConfig() {
                   fi
             fi
 
-            aikey=$(echo $APPLICATIONINSIGHTS_AUTH | base64 -d)
+            aikey=$(echo "$APPLICATIONINSIGHTS_AUTH" | base64 -d)
             export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey
-            echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc    
-            source ~/.bashrc                    
-            ;;       
-       
+            echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc
+            source ~/.bashrc
+            ;;
+
         *)
             echo "default is Public cloud"
             ;;
@@ -590,7 +590,7 @@ echo "export DOMAIN=$DOMAIN" >>~/.bashrc
 export WSID=$workspaceId
 echo "export WSID=$WSID" >>~/.bashrc
 
-setCloudSpecificApplicationInsightsConfig $CLOUD_ENVIRONMENT
+setCloudSpecificApplicationInsightsConfig "$CLOUD_ENVIRONMENT"
 
 source ~/.bashrc
 cat packages_version.txt
