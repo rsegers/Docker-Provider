@@ -58,13 +58,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         puts "Using config map value: disable_telemetry = #{@disableTelemetry}"
       end
     end
-  rescue => errorStr
-    puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
-  end
-end
 
-def getKubernetesMetadataCacheTTLSeconds(parsedConfig)
-  begin
+    # agent config for kube_meta_cache_ttl_secs which used in containerlogv2 kubernetes metadata and annotation based filtering
     if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil?
       k8s_metadata_config = parsedConfig[:agent_settings][:k8s_metadata_config]
       if !k8s_metadata_config.nil? && !k8s_metadata_config[:kube_meta_cache_ttl_secs].nil?
@@ -73,12 +68,12 @@ def getKubernetesMetadataCacheTTLSeconds(parsedConfig)
           @logEnableKubernetesMetadataCacheTTLSeconds = ttl_value
           puts "config::INFO: Using config map value: kube_meta_cache_ttl_secs = #{@logEnableKubernetesMetadataCacheTTLSeconds}"
         else
-          puts "config::WARN: Invalid kube_meta_cache_ttl_secs value: Must be an integer and >= 0"
+          puts "config::WARN: Using the default value for kube_meta_cache_ttl_secs since provided config value is invalid"
         end
       end
     end
   rescue => errorStr
-    puts "config::error: Exception while reading config settings for logEnableKubernetesMetadataCacheTTLSeconds - #{errorStr}"
+    puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
   end
 end
 
@@ -88,7 +83,6 @@ if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @configSchemaVe
   configMapSettings = parseConfigMap
   if !configMapSettings.nil?
     populateSettingValuesFromConfigMap(configMapSettings)
-    getKubernetesMetadataCacheTTLSeconds(configMapSettings)
   end
 else
   if (File.file?(@configMapMountPath))
