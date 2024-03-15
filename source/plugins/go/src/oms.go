@@ -2206,7 +2206,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	KubernetesMetadataEnabled = false
 	KubernetesMetadataEnabled = (strings.Compare(strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")), "true") == 0)
-	metadataIncludeList := os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
+	metadataIncludeList := strings.ToLower(os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS"))
 	Log(fmt.Sprintf("KubernetesMetadataEnabled from configmap: %+v\n", KubernetesMetadataEnabled))
 	Log(fmt.Sprintf("KubernetesMetadataIncludeList from configmap: %+v\n", metadataIncludeList))
 	KubernetesMetadataIncludeList = []string{}
