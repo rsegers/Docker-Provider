@@ -5,13 +5,13 @@
  */
 export class Mutations {
     // name of the init container
-    private static initContainerNameDotNet = "agent-init-dotnet";
-    private static initContainerNameJava = "agent-init-java";
-    private static initContainerNameNodeJs = "agent-init-nodejs";
+    private static initContainerNameDotNet = "opentelemetry-auto-instrumentation-dotnet";
+    private static initContainerNameJava = "opentelemetry-auto-instrumentation-java";
+    private static initContainerNameNodeJs = "opentelemetry-auto-instrumentation-nodejs";
     
     // agent image
     private static agentImageDotNet = "mcr.microsoft.com/applicationinsights/opentelemetry-auto-instrumentation/dotnet:1.0.0-beta3";
-    private static agentImageJava = "mcr.microsoft.com/applicationinsights/auto-instrumentation/java:3.4.18-aks";
+    private static agentImageJava = "mcr.microsoft.com/applicationinsights/auto-instrumentation/java:3.5.1-aks";
     private static agentImageNodeJs = "mcr.microsoft.com/applicationinsights/opentelemetry-auto-instrumentation/nodejs:3.0.0-beta.10";
     
     // path on agent image to copy from
@@ -20,17 +20,17 @@ export class Mutations {
     private static imagePathNodeJs = "/agents/nodejs/.";
 
     // agent volume (where init containers copy agent binaries to)
-    private static agentVolumeDotNet = "agent-volume-dotnet";
-    private static agentVolumeJava = "agent-volume-java";
-    private static agentVolumeNodeJs = "agent-volume-nodejs";
+    private static agentVolumeDotNet = "opentelemetry-auto-instrumentation-volume-dotnet";
+    private static agentVolumeJava = "opentelemetry-auto-instrumentation-volume-java";
+    private static agentVolumeNodeJs = "opentelemetry-auto-instrumentation-volume-nodejs";
 
     // agent volume mount path (where customer app's runtime loads agents from)
-    private static agentVolumeMountPathDotNet = "/agent-dotnet";
-    private static agentVolumeMountPathJava = "/agent-java";
-    private static agentVolumeMountPathNodeJs = "/agent-nodejs";
+    private static agentVolumeMountPathDotNet = "/opentelemetry-auto-instrumentation-dotnet";
+    private static agentVolumeMountPathJava = "/opentelemetry-auto-instrumentation-java";
+    private static agentVolumeMountPathNodeJs = "/opentelemetry-auto-instrumentation-nodejs";
 
     // agent logs volume (where agents dump runtime logs)
-    private static agentLogsVolume = "agent-volume-logs";
+    private static agentLogsVolume = "opentelemetry-auto-instrumentation-volume-logs";
     
     // agent logs volume mount path
     private static agentLogsVolumeMountPath = "/var/log/applicationinsights"; // this is hardcoded in Java SDK and NodeJs SDK, can't change this
@@ -98,10 +98,9 @@ export class Mutations {
      * Generates environment variables necessary to configure agents. Agents take configuration from these environment variables once they run.
      */
     public static GenerateEnvironmentVariables(podInfo: PodInfo, platforms: string[], connectionString: string, armId: string, armRegion: string, clusterName: string): object[] {
-        const ownerNameAttribute: string = podInfo.ownerReference ? `k8s.${podInfo.ownerReference.kind?.toLowerCase()}.name=${podInfo.ownerReference.name}` : null;
-        const ownerUidAttribute: string = podInfo.ownerReference ? `k8s.${podInfo.ownerReference.kind?.toLowerCase()}.uid=${podInfo.ownerReference.uid}` : null;
-        const deploymentNameAttribute: string = podInfo.deploymentName ? `k8s.deployment.name=${podInfo.deploymentName}` : null;
-        const containerNameAttribute: string = podInfo.onlyContainerName ? `k8s.container.name=${podInfo.onlyContainerName}` : null;
+        const ownerNameAttribute = `k8s.${podInfo.ownerKind.toLowerCase()}.name=${podInfo.ownerName}`;
+        const ownerUidAttribute = `k8s.${podInfo.ownerKind.toLowerCase()}.uid=${podInfo.ownerUid}`;
+        const containerNameAttribute = `k8s.container.name=${podInfo.onlyContainerName}`;
 
         const returnValue = [
             // Downward API environment variables must come first as they are referenced later
@@ -153,7 +152,6 @@ ${containerNameAttribute},\
 cloud.provider=Azure,\
 cloud.platform=azure_aks,\
 ${ownerNameAttribute},\
-${deploymentNameAttribute},\
 ${ownerUidAttribute}`
             },
             {

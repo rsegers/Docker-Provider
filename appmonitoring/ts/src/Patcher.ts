@@ -8,7 +8,7 @@ export class Patcher {
     public static async PatchPod(admissionReview: IAdmissionReview, podInfo: PodInfo, platforms: string[], connectionString: string, armId: string, armRegion: string, clusterName: string): Promise<object[]> {
         // create a deep copy of the original (incoming) object to be used for making changes
         // strictly speaking, it's not necessary as we could have made changes to the incoming object, but it's more robust to keep it separate and unchanged
-        const modifiedPodSpec: ISpec = JSON.parse(JSON.stringify(admissionReview.request.object.spec)) as ISpec;
+        const modifiedPodSpec: ISpec = JSON.parse(JSON.stringify(admissionReview.request.object.spec.template.spec)) as ISpec;
         if(!modifiedPodSpec) {
             throw `Unable to parse request.object.spec in AdmissionReview: ${admissionReview}`;
         }
@@ -54,11 +54,11 @@ export class Patcher {
             container.volumeMounts = (container.volumeMounts ?? <IVolume[]>[]).concat(newVolumeMounts);
         });
 
-        // JsonPatch instructing the caller to replace the entire /spec section with the mutated one
+        // JsonPatch instructing the caller to replace the /spec/template/spec section with the mutated one
         const jsonPatch = [
             {
                 op: "replace",
-                path: "/spec",
+                path: "/spec/template/spec",
                 value: modifiedPodSpec
             }];
         

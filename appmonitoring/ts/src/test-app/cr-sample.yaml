@@ -1,0 +1,55 @@
+apiVersion: monitor.azure.com/v1 
+kind: Instrumentation
+metadata:
+  name: default1
+  namespace: default
+spec:  
+
+  settings:
+
+    #imageRepoPath: mycompany.azurecr.io/mcr-replicas/applicationinsights # optional Customers are obliged to keep their ACR in sync with MCR for new versions, or things will break
+
+    autoInstrumentationPlatforms: # required, could be empty
+      - NodeJs
+      - DotNet
+      - Java
+
+    #logCollectionSettings: # optional, defaults are shown below
+    #  disableAppLogs: false # AI log collection. Default is false (enabled)
+    #  disableContainerLogs: false # CI console collection. Default is false (enabled). Webhook will mark pod with annotations to let CI know
+      # once log levels and log filtering are figured out, we’ll add them here 
+
+  destination: # required
+  
+    applicationInsightsConnectionString: "InstrumentationKey=2245ad8d-2342-4482-a296-7e6d3f96811d;IngestionEndpoint=https://eastus2-3.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus2.livediagnostics.monitor.azure.com/"
+---
+
+# apiVersion: azmon.app.monitoring/v2 # introducing a new version, v2 
+# kind: appmonitoringconfig # remains the same as private preview
+# metadata:
+#   name: appmonitoring1   # now support and process any name as multiple CRs per namespace are allowed
+#   namespace: ns1 # this CR will only apply within the namespace it’s declared in
+# spec:  
+
+#   # selector determines which customer pods this CR applies to. It’s loosely modeled after https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#resources-that-support-set-based-requirements. We will currently only support equality-based requirements based on labels defined at the pod level, but may expand into more types in the future.
+#   selector: # optional
+#     deployments: # optional. OR logic
+#       - pet-shop
+#       - car-shop
+
+#   settings: # required
+
+#     imageRepoPath: mycompany.azurecr.io/mcr-replicas/applicationinsights # optional Customers are obliged to keep their ACR in sync with MCR for new versions, or things will break
+
+#     autoInstrumentationPlatforms: # required, could be empty
+#       - NodeJs
+#       - DotNet
+#       - Java
+
+#     logCollectionSettings: # optional, defaults are shown below
+#       disableAppLogs: false # AI log collection. Default is false (enabled)
+#       disableContainerLogs: false # CI console collection. Default is false (enabled). Webhook will mark pod with annotations to let CI know
+#       # once log levels and log filtering are figured out, we’ll add them here 
+
+#   target: # required
+#     aiConnectionString: <AI component connection string> # required

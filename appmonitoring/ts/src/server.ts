@@ -1,9 +1,9 @@
 ﻿import * as https from "https";
 import { Mutator } from "./Mutator.js";
 import { HeartbeatMetrics, HeartbeatLogs, logger, RequestMetadata } from "./LoggerWrapper.js";
-import { AppMonitoringConfigCR, IAdmissionReview } from "./RequestDefinition.js";
+import { InstrumentationCR, IAdmissionReview } from "./RequestDefinition.js";
 import { K8sWatcher } from "./K8sWatcher.js";
-import { AppMonitoringConfigCRsCollection } from "./AppMonitoringConfigCRsCollection.js"
+import { InstrumentationCRsCollection } from "./InstrumentationCRsCollection.js"
 import fs from "fs";
 import { CertificateManager } from "./CertificateGenerator.js";
 import { randomUUID } from 'crypto';
@@ -41,7 +41,7 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
     process.exit();
 }
 
-const crs: AppMonitoringConfigCRsCollection = new AppMonitoringConfigCRsCollection();
+const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
 
 logger.info("Running in server mode...", operationId, null);
 logger.SendEvent("ServerModeRun", operationId, null, clusterArmId, clusterArmRegion,);
@@ -50,14 +50,14 @@ logger.SendEvent("ServerModeRun", operationId, null, clusterArmId, clusterArmReg
 logger.startHeartbeats(operationId);
 
 // don't await, this runs an infinite loop
-K8sWatcher.StartWatchingCRs(crs, (cr: AppMonitoringConfigCR, isRemoved: boolean) => {
+K8sWatcher.StartWatchingCRs(crs, (cr: InstrumentationCR, isRemoved: boolean) => {
     if (isRemoved) {
         crs.Remove(cr);
     } else {
         crs.Upsert(cr);
     }
     
-    const items: AppMonitoringConfigCR[] = crs.ListCRs();
+    const items: InstrumentationCR[] = crs.ListCRs();
     logger.setHeartbeatMetric(HeartbeatMetrics.CRCount, items.length);
     
     const uniqueNamespaces = new Set<string>(items.map(cr => cr.metadata.namespace, this));
@@ -65,7 +65,7 @@ K8sWatcher.StartWatchingCRs(crs, (cr: AppMonitoringConfigCR, isRemoved: boolean)
 
     let log = "CRs: [";
     for (let i = 0; i < items.length; i++) {
-        log += `${items[i].metadata.namespace}/${items[i].metadata.name}, autoInstrumentationPlatforms=${items[i].spec.autoInstrumentationPlatforms}, aiConnectionString=${items[i].spec.aiConnectionString}}, deployments=${JSON.stringify(items[i].spec.deployments)}`;
+        log += `${items[i].metadata.namespace}/${items[i].metadata.name}, autoInstrumentationPlatforms=${items[i].spec.settings.autoInstrumentationPlatforms}, applicationInsightsConnectionString=${items[i].spec.destination.applicationInsightsConnectionString}}`;
     }
 
     log += "]"
@@ -119,7 +119,7 @@ https.createServer(options, (req, res) => {
                     throw `Unable to get request.uid from the incoming admission review: ${admissionReview}`
                 }
 
-                const mutatedPod: string = await Mutator.MutatePod(admissionReview, crs, clusterArmId, clusterArmRegion, operationId);
+                const mutatedPod: string = await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, operationId);
 
                 const end = Date.now();
                 

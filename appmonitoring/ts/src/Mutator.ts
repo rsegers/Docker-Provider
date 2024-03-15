@@ -1,15 +1,15 @@
 ﻿import { Patcher } from "./Patcher.js";
 import { logger, RequestMetadata, HeartbeatMetrics } from "./LoggerWrapper.js";
-import { PodInfo, IOwnerReference, IAdmissionReview, AppMonitoringConfigCR } from "./RequestDefinition.js";
+import { PodInfo, IOwnerReference, IAdmissionReview, InstrumentationCR } from "./RequestDefinition.js";
 import { AdmissionReviewValidator } from "./AdmissionReviewValidator.js";
-import { AppMonitoringConfigCRsCollection } from "./AppMonitoringConfigCRsCollection.js";
+import { InstrumentationCRsCollection } from "./InstrumentationCRsCollection.js";
 
 export class Mutator {
     /**
-     * Mutates the incoming AdmissionReview of a Pod to enable autoattach features on it
+     * Mutates the incoming AdmissionReview of a deployment to enable auto-attach features on its pods
      * @returns An AdmissionReview k8s object that represents a response from the webhook to the API server. Includes the JsonPatch mutation to the incoming AdmissionReview.
      */
-    public static async MutatePod(admissionReview: IAdmissionReview, crs: AppMonitoringConfigCRsCollection, clusterArmId: string, clusterArmRegion: string, operationId: string): Promise<string> {
+    public static async MutatePodTemplate(admissionReview: IAdmissionReview, crs: InstrumentationCRsCollection, clusterArmId: string, clusterArmRegion: string, operationId: string): Promise<string> {
         // this is what we need to return to k8s API server
         const response = {
             apiVersion: "admission.k8s.io/v1",
@@ -46,7 +46,9 @@ export class Mutator {
             }
 
             // find an appropriate CR that dictates whether and how we should mutate
-            const cr: AppMonitoringConfigCR = crs.GetCR(namespace, podInfo.deploymentName);
+            const crToUse: string = mutator.pickCR();
+
+            const cr: InstrumentationCR = crs.GetCR(namespace, crToUse);
             if (!cr) {
                 // no relevant CR found, do not mutate and return with no modifications
                 logger.info(`No governing CR found, will not mutate`, operationId, requestMetadata);
@@ -59,13 +61,13 @@ export class Mutator {
 
                 const clusterName = armIdMatches[5];
 
-                logger.info(`Governing CR for the object to be processed (namespace: ${namespace}, deploymentName: ${podInfo.deploymentName}): ${JSON.stringify(cr)}`, operationId, requestMetadata);
+                logger.info(`Governing CR for the object to be processed (namespace: ${namespace}, deploymentName: ${podInfo.ownerName}): ${JSON.stringify(cr)}`, operationId, requestMetadata);
 
                 const patchData: object[] = await Patcher.PatchPod(
                     mutator.AdmissionReview,
                     podInfo as PodInfo,
-                    cr.spec.autoInstrumentationPlatforms,
-                    cr.spec.aiConnectionString,
+                    cr.spec.settings.autoInstrumentationPlatforms,
+                    cr.spec.destination.applicationInsightsConnectionString,
                     clusterArmId,
                     clusterArmRegion,
                     clusterName);
@@ -110,27 +112,29 @@ export class Mutator {
         const podInfo: PodInfo = new PodInfo();
 
         podInfo.namespace = this.AdmissionReview.request.namespace;
-        podInfo.name = this.AdmissionReview.request.object.metadata.name;
-
-        podInfo.onlyContainerName = this.AdmissionReview.request.object.spec.containers?.length == 1 ? this.AdmissionReview.request.object.spec.containers[0].name : null;
-
-        const ownerReference: IOwnerReference | null = this.AdmissionReview.request.object.metadata?.ownerReferences[0];
-
-        if(ownerReference?.kind) {
-            podInfo.ownerReference = ownerReference;
-            
-            if(ownerReference.kind.localeCompare("ReplicaSet", undefined, { sensitivity: 'accent' }) === 0) {
-                // the owner is a replica set, so we need to try to get to the deployment
-                // while it is possible to name a bare ReplicaSet (not produced by a Deployment) in a way that will fool the regex, we are ignoring that corner case
-                const matches = /^\b(?<!-)(?<role_name>[a-z0-9]+(?:-[a-z0-9]+)*?)(?:-([a-f0-9]{8-12}))?-([a-z0-9]+)$/i.exec(ownerReference.name);
-                if(matches && matches.length > 0) {
-                    podInfo.deploymentName = matches[1];
-                } else {
-                    podInfo.deploymentName = null;
-                }                             
-            }
-        }
+        podInfo.onlyContainerName = this.AdmissionReview.request.object.spec.template.spec.containers?.length == 1 ? this.AdmissionReview.request.object.spec.template.spec.containers[0].name : null;
+        podInfo.ownerKind = this.AdmissionReview.request.object.kind;
+        podInfo.ownerName = this.AdmissionReview.request.object.metadata.name;
+        podInfo.ownerUid = this.AdmissionReview.request.object.metadata.uid;
                 
         return Promise.resolve(podInfo);
+    }
+
+    private pickCR(): string {
+        const injectDotNetAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-dotnet"];
+        const injectJavaAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-java"];
+        const injectNodeJsAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-nodejs"];
+
+        const injectAnnotationValues: string[] = [injectDotNetAnnotation, injectJavaAnnotation, injectNodeJsAnnotation];
+
+        // if any of the annotations contain a value other than "true" or "false", that must be the same value for all annotations, we can't apply multiple CRs to the same pod
+        const specificCRNames: string[] = injectAnnotationValues.filter(value => value && value.toLocaleLowerCase() != "true" && value.toLocaleLowerCase() != "false", this);
+        if(specificCRNames.length > 0 && specificCRNames.filter(value => value?.toLowerCase() === specificCRNames[0].toLowerCase(), this).length != specificCRNames.length) {
+            throw `Multiple specific CR names specified in instrumentation.opentelemetry.io/inject-* annotations, that is not supported.`;
+        }
+
+        // use CR provided in the annotation(s), otherwise use "default"
+        const crToUse: string = specificCRNames.length > 0 ? specificCRNames[0] : "default";
+        return crToUse;
     }
 }

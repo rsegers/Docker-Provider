@@ -21,6 +21,12 @@ export interface ILabels {
     app: string;
 }
 
+export interface IAnnotations {
+    "instrumentation.opentelemetry.io/inject-dotnet": string;
+    "instrumentation.opentelemetry.io/inject-java": string;
+    "instrumentation.opentelemetry.io/inject-nodejs": string;
+}
+
 export interface IOwnerReference {
     kind: string;
     name: string;
@@ -32,8 +38,9 @@ export interface IMetadata {
     namespace: string;
     creationTimestamp: string;
     labels: ILabels;
-    annotations: object;
+    annotations: IAnnotations;
     generateName?: string;
+    uid: string;
     ownerReferences?: IOwnerReference[];
 }
 
@@ -43,15 +50,6 @@ export interface IMatchLabels {
 
 export interface ISelector {
     matchLabels: IMatchLabels;
-}
-
-export interface ILabels2 {
-    app: string;
-}
-
-export interface IMetadata2 {
-    creationTimestamp: string;
-    labels: ILabels2;
 }
 
 export interface IPort {
@@ -91,21 +89,9 @@ export interface IVolume {
     emptyDir?: object;
 }
 
-export interface ISpec2 {
-    containers: IContainer[];
-    restartPolicy: string;
-    terminationGracePeriodSeconds: number;
-    dnsPolicy: string;
-    nodeSelector: object;
-    securityContext: object;
-    schedulerName: string;
-    initContainers?: object;
-    volumes?: IVolume[];
-}
-
 export interface ITemplate {
-    metadata: IMetadata2;
-    spec: ISpec2;
+    metadata: IMetadata;
+    spec: ISpec;
 }
 
 export interface IRollingUpdate {
@@ -141,6 +127,7 @@ export interface IObjectType {
 
 export interface IEnvironmentVariable {
     name: string;
+    value: string;
 }
 
 export interface IRequest {
@@ -164,21 +151,24 @@ export interface IAdmissionReview {
 
 export class PodInfo {
     namespace: string;
-    name: string;
-    deploymentName: string;
+    ownerKind: string;
+    ownerUid: string;
+    ownerName: string;
     onlyContainerName: string;
-    ownerReference: IOwnerReference;
 }
 
-export class AppMonitoringConfigCR {
+export class InstrumentationCR {
     metadata: {
         name: string,
         namespace: string
     };
     spec: {
-        autoInstrumentationPlatforms: string[];
-        aiConnectionString: string;
-        deployments: string[]
+        settings: {
+            autoInstrumentationPlatforms: string[];
+        },
+        destination: {
+            applicationInsightsConnectionString: string;
+        }
     }
 }
 
@@ -188,6 +178,6 @@ export class ListResponse {
         metadata: {
             resourceVersion: string
         };
-        items: AppMonitoringConfigCR[]
+        items: InstrumentationCR[]
     }
 }
