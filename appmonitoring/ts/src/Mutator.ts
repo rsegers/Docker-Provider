@@ -1,6 +1,6 @@
 ﻿import { Patcher } from "./Patcher.js";
 import { logger, RequestMetadata, HeartbeatMetrics } from "./LoggerWrapper.js";
-import { PodInfo, IOwnerReference, IAdmissionReview, InstrumentationCR } from "./RequestDefinition.js";
+import { PodInfo, IAdmissionReview, InstrumentationCR, AutoInstrumentationPlatforms, DefaultInstrumentationCRName } from "./RequestDefinition.js";
 import { AdmissionReviewValidator } from "./AdmissionReviewValidator.js";
 import { InstrumentationCRsCollection } from "./InstrumentationCRsCollection.js";
 
@@ -18,7 +18,11 @@ export class Mutator {
                 allowed: true, // we only mutate, not admit, so this should always be true as we never want to block any of the customer's API calls
                 patch: undefined, // JsonPatch document describing the mutation
                 patchType: "JSONPatch",
-                uid: "" // must match the uid of the incoming AdmissionReview
+                uid: "", // must match the uid of the incoming AdmissionReview,
+                status: {
+                    code: 200,
+                    message: "OK"
+                  }
             },
         };
 
@@ -51,7 +55,7 @@ export class Mutator {
             const cr: InstrumentationCR = crs.GetCR(namespace, crToUse);
             if (!cr) {
                 // no relevant CR found, do not mutate and return with no modifications
-                logger.info(`No governing CR found, will not mutate`, operationId, requestMetadata);
+                logger.info(`No governing CR found (best guess was ${crToUse}, but couldn't locate it), will not mutate`, operationId, requestMetadata);
                 response.response.patch = Buffer.from(JSON.stringify([])).toString("base64");
             } else {
                 const armIdMatches = /^\/subscriptions\/(?<SubscriptionId>[^/]+)\/resourceGroups\/(?<ResourceGroup>[^/]+)\/providers\/(?<Provider>[^/]+)\/(?<ResourceType>[^/]+)\/(?<ResourceName>[^/]+).*$/i.exec(clusterArmId);
@@ -61,12 +65,14 @@ export class Mutator {
 
                 const clusterName = armIdMatches[5];
 
-                logger.info(`Governing CR for the object to be processed (namespace: ${namespace}, deploymentName: ${podInfo.ownerName}): ${JSON.stringify(cr)}`, operationId, requestMetadata);
+                const platforms: AutoInstrumentationPlatforms[] = mutator.pickInstrumentationPlatforms(cr);
+
+                logger.info(`Governing CR for the object to be processed (namespace: ${namespace}, deploymentName: ${podInfo.ownerName}): ${JSON.stringify(cr)} with platforms: ${JSON.stringify(platforms)}`, operationId, requestMetadata);
 
                 const patchData: object[] = await Patcher.PatchPod(
                     mutator.AdmissionReview,
                     podInfo as PodInfo,
-                    cr.spec.settings.autoInstrumentationPlatforms,
+                    platforms,
                     cr.spec.destination.applicationInsightsConnectionString,
                     clusterArmId,
                     clusterArmRegion,
@@ -82,11 +88,16 @@ export class Mutator {
         
             return result;
         } catch (e) {
+            const exceptionMessage = `Exception encountered: ${e}`;
+
             logger.addHeartbeatMetric(HeartbeatMetrics.AdmissionReviewActionableFailedCount, 1);
         
-            logger.error(`Exception encountered: ${e}`, operationId, requestMetadata);
+            logger.error(exceptionMessage, operationId, requestMetadata);
             
             response.response.patch = undefined;
+            response.response.status.code = 400;
+            response.response.status.message = exceptionMessage;
+
             return JSON.stringify(response);
         }
     }
@@ -128,13 +139,44 @@ export class Mutator {
         const injectAnnotationValues: string[] = [injectDotNetAnnotation, injectJavaAnnotation, injectNodeJsAnnotation];
 
         // if any of the annotations contain a value other than "true" or "false", that must be the same value for all annotations, we can't apply multiple CRs to the same pod
-        const specificCRNames: string[] = injectAnnotationValues.filter(value => value && value.toLocaleLowerCase() != "true" && value.toLocaleLowerCase() != "false", this);
+        const specificCRNames: string[] = injectAnnotationValues.filter(value => value && value.toLowerCase() != "true" && value.toLowerCase() != "false", this);
         if(specificCRNames.length > 0 && specificCRNames.filter(value => value?.toLowerCase() === specificCRNames[0].toLowerCase(), this).length != specificCRNames.length) {
             throw `Multiple specific CR names specified in instrumentation.opentelemetry.io/inject-* annotations, that is not supported.`;
         }
 
-        // use CR provided in the annotation(s), otherwise use "default"
-        const crToUse: string = specificCRNames.length > 0 ? specificCRNames[0] : "default";
+        // use CR provided in the annotation(s), otherwise use default
+        const crToUse: string = specificCRNames.length > 0 ? specificCRNames[0] : DefaultInstrumentationCRName;
         return crToUse;
+    }
+
+    private pickInstrumentationPlatforms(cr: InstrumentationCR): AutoInstrumentationPlatforms[] {
+        // assuming annotation set is valid
+        const injectDotNetAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-dotnet"];
+        const injectJavaAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-java"];
+        const injectNodeJsAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-nodejs"];
+
+        const injectAnnotationValues: string[] = [injectDotNetAnnotation, injectJavaAnnotation, injectNodeJsAnnotation];
+
+        if(injectAnnotationValues.filter(value => value).length == 0) {
+            // no annotations specified, use platform list from the CR
+            // this is only possible for the default CR (it was assumed in the absence of annotations)
+            return cr.spec.settings.autoInstrumentationPlatforms;
+        }
+
+        const platforms: AutoInstrumentationPlatforms[] = [];
+
+        if (injectDotNetAnnotation && injectDotNetAnnotation.toLowerCase() !== "false") {
+            platforms.push(AutoInstrumentationPlatforms.DotNet);
+        }
+
+        if (injectJavaAnnotation && injectJavaAnnotation.toLowerCase() !== "false") {
+            platforms.push(AutoInstrumentationPlatforms.Java);
+        }
+
+        if (injectNodeJsAnnotation && injectNodeJsAnnotation.toLowerCase() !== "false") {
+            platforms.push(AutoInstrumentationPlatforms.NodeJs);
+        }
+
+        return platforms;
     }
 }

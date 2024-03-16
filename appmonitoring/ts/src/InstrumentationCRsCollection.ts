@@ -1,4 +1,4 @@
-﻿import { InstrumentationCR } from "./RequestDefinition.js"
+﻿import { InstrumentationCR, DefaultInstrumentationCRName } from "./RequestDefinition.js"
 
 export class InstrumentationCRsCollection {
 
@@ -9,8 +9,8 @@ export class InstrumentationCRsCollection {
     }
 
     public GetCR(namespace: string, crName: string): InstrumentationCR {
-        // return the exact name match or "default" within the namespace
-        return this.crs.find(cr => cr.metadata.namespace === namespace && (crName && cr.metadata.name === crName || !crName && cr.metadata.name === "default"), this);
+        // return the exact name match or DefaultInstrumentationCRName within the namespace
+        return this.crs.find(cr => cr.metadata.namespace === namespace && (crName && cr.metadata.name === crName || !crName && cr.metadata.name === DefaultInstrumentationCRName), this);
     }
 
     public Upsert(cr: InstrumentationCR): void {

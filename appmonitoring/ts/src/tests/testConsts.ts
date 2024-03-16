@@ -1,5 +1,5 @@
 ﻿/* tslint:disable */
-import { IAdmissionReview, InstrumentationCR, PodInfo, IContainer, IVolume, IEnvironmentVariable } from "../RequestDefinition.js";
+import { InstrumentationCR, AutoInstrumentationPlatforms } from "../RequestDefinition.js";
 import { InstrumentationCRsCollection } from "../InstrumentationCRsCollection.js";
 
 export const clusterArmId = "/subscriptions/66010356-d8a5-42d3-8593-6aaa3aeb1c11/resourceGroups/rambhatt-rnd-v2/providers/Microsoft.ContainerService/managedClusters/aks-rambhatt-test";
@@ -13,7 +13,7 @@ export const cr: InstrumentationCR = {
     },
     spec: {
         settings: {
-            autoInstrumentationPlatforms: ["DotNet", "Java", "NodeJs"]
+            autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
         },
         destination: {
             applicationInsightsConnectionString: "InstrumentationKey=823201eb-fdbf-468a-bc7b-e685639439b2;IngestionEndpoint=https://uaecentral-0.in.applicationinsights.azure.com/"
@@ -392,6 +392,7 @@ export const TestObject3 =
             "kind": "Deployment",
             "apiVersion": "v1",
             "metadata": {
+                "namespace": "default",
                 "generateName": "statistics-service-5547698479-",
                 "creationTimestamp": null,
                 "labels": {

@@ -1,11 +1,11 @@
 ﻿import { Mutations } from "./Mutations.js";
-import { PodInfo, IAdmissionReview, IContainer, ISpec, IVolume, IEnvironmentVariable } from "./RequestDefinition.js";
+import { PodInfo, IAdmissionReview, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms } from "./RequestDefinition.js";
 
 export class Patcher {
     /**
      * Calculates a JsonPatch string describing the difference between the old (incoming) and new (outgoing) objects
     */
-    public static async PatchPod(admissionReview: IAdmissionReview, podInfo: PodInfo, platforms: string[], connectionString: string, armId: string, armRegion: string, clusterName: string): Promise<object[]> {
+    public static async PatchPod(admissionReview: IAdmissionReview, podInfo: PodInfo, platforms: AutoInstrumentationPlatforms[], connectionString: string, armId: string, armRegion: string, clusterName: string): Promise<object[]> {
         // create a deep copy of the original (incoming) object to be used for making changes
         // strictly speaking, it's not necessary as we could have made changes to the incoming object, but it's more robust to keep it separate and unchanged
         const modifiedPodSpec: ISpec = JSON.parse(JSON.stringify(admissionReview.request.object.spec.template.spec)) as ISpec;

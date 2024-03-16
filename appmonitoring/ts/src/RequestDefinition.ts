@@ -22,9 +22,9 @@ export interface ILabels {
 }
 
 export interface IAnnotations {
-    "instrumentation.opentelemetry.io/inject-dotnet": string;
-    "instrumentation.opentelemetry.io/inject-java": string;
-    "instrumentation.opentelemetry.io/inject-nodejs": string;
+    "instrumentation.opentelemetry.io/inject-dotnet"?: string;
+    "instrumentation.opentelemetry.io/inject-java"?: string;
+    "instrumentation.opentelemetry.io/inject-nodejs"?: string;
 }
 
 export interface IOwnerReference {
@@ -157,6 +157,14 @@ export class PodInfo {
     onlyContainerName: string;
 }
 
+export enum AutoInstrumentationPlatforms {
+    DotNet,
+    Java,
+    NodeJs
+}
+
+export const DefaultInstrumentationCRName = "default";
+
 export class InstrumentationCR {
     metadata: {
         name: string,
@@ -164,7 +172,7 @@ export class InstrumentationCR {
     };
     spec: {
         settings: {
-            autoInstrumentationPlatforms: string[];
+            autoInstrumentationPlatforms: AutoInstrumentationPlatforms[];
         },
         destination: {
             applicationInsightsConnectionString: string;
