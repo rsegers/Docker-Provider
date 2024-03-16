@@ -39,7 +39,18 @@ function Test-FluentbitTcpListener {
     param (
         [int]$port
     )
-    $retryCount = 30
+
+    $waitTimeSecs = [System.Environment]::GetEnvironmentVariable("WAITTIME_PORT_25229", "process")
+    if (![string]::IsNullOrEmpty($waitTimeSecs)) {
+        [System.Environment]::SetEnvironmentVariable("WAITTIME_PORT_25229", $waitTimeSecs, "Process")
+        [System.Environment]::SetEnvironmentVariable("WAITTIME_PORT_25229", $waitTimeSecs, "Machine")
+        Write-Host "Successfully set environment variable WAITTIME_PORT_25229 - $($waitTimeSecs) for target 'machine'..."
+    } else {
+        Write-Host "Failed to set environment variable WAITTIME_PORT_25229 for target 'machine' since it is either null or empty"
+        $waitTimeSecs = 30
+    }
+
+    $retryCount = [int]$waitTimeSecs
     $retryAttempts = 0
     $retryDelaySeconds = 1
     while ($retryAttempts -lt $retryCount) {
