@@ -326,11 +326,14 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 		return namespaceStreamIdMap, err
 	}
 
+	logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: Requesting extension config data for ContainerLogV2Extension")
+
 	responseBytes, err := getExtensionConfigResponse(jsonBytes)
 	if err != nil {
 		logger.Printf("Error::mdsd/ama::Failed to get config response data. Error message: %s", string(err.Error()))
 		return namespaceStreamIdMap, err
 	}
+	logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: getExtensionConfigResponse : %s", string(responseBytes))
 	var responseObject AgentTaggedDataResponse
 	err = json.Unmarshal(responseBytes, &responseObject)
 	if err != nil {
@@ -341,6 +344,7 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 	extensionConfigs := extensionData.ExtensionConfigs
 	for _, extensionConfig := range extensionConfigs {
+		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: extensionConfigs : %v", extensionConfig)
 		outputStreamId := extensionConfig.OutputStreams["CONTAINERINSIGHTS_CONTAINERLOGV2"]
 		extensionSettings := extensionConfig.ExtensionSettings
 		dataCollectionSettingsItr := extensionSettings["dataCollectionSettings"]
@@ -360,6 +364,7 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 		}
 	}
 
+	logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: namespaceStreamIdMap : %v", namespaceStreamIdMap)
 	return namespaceStreamIdMap, err
 }
 

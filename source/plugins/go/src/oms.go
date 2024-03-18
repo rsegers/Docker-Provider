@@ -1734,6 +1734,7 @@ func GetMsgPackBytes(msgPackEntries []MsgPackEntry) []byte {
 
 func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
 	msgPackEntriesByNamespace := make(map[string][]MsgPackEntry)
+	Log("GetMsgPackBytesByNamespace: Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
 	namespaceStreamIdMap, _ := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdMap()
 	message := fmt.Sprintf("GetMsgPackBytesByNamespace: namespaceStreamIdMap : %v \n", namespaceStreamIdMap)
 	Log(message)
@@ -1748,6 +1749,9 @@ func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
 	for namespace, entries := range msgPackEntriesByNamespace {
 		var msgpBytes []byte
 		streamTag := namespaceStreamIdMap[namespace]
+		msg := fmt.Sprintf("GetMsgPackBytesByNamespace: namespace : %s streamTag: %s \n", namespace, streamTag)
+		Log(msg)
+
 		fluentForward := MsgPackForward{
 			Tag:     streamTag,
 			Entries: entries,
