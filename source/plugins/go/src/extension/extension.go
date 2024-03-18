@@ -315,6 +315,54 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 	return namespaceFilteringMode
 }
 
+func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string]string, error) {
+	namespaceStreamIdMap := make(map[string]string)
+	guid := uuid.New()
+	var extensionData TaggedData
+	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerLogV2Extension", "Version": "1"}
+	jsonBytes, err := json.Marshal(taggedData)
+	if err != nil {
+		logger.Printf("Error::mdsd/ama::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdMap, err
+	}
+
+	responseBytes, err := getExtensionConfigResponse(jsonBytes)
+	if err != nil {
+		logger.Printf("Error::mdsd/ama::Failed to get config response data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdMap, err
+	}
+	var responseObject AgentTaggedDataResponse
+	err = json.Unmarshal(responseBytes, &responseObject)
+	if err != nil {
+		logger.Printf("Error::mdsd/ama::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdMap, err
+	}
+
+	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
+	extensionConfigs := extensionData.ExtensionConfigs
+	for _, extensionConfig := range extensionConfigs {
+		outputStreamId := extensionConfig.OutputStreams["CONTAINERINSIGHTS_CONTAINERLOGV2"]
+		extensionSettings := extensionConfig.ExtensionSettings
+		dataCollectionSettingsItr := extensionSettings["dataCollectionSettings"]
+		collectionSettings := make(map[string]interface{})
+		if len(dataCollectionSettingsItr) > 0 {
+			for k, v := range dataCollectionSettingsItr {
+				lk := strings.ToLower(k)
+				lv := strings.ToLower(fmt.Sprintf("%v", v))
+				collectionSettings[lk] = fmt.Sprintf("%v", lv)
+			}
+		}
+		namespaces, found := collectionSettings["namespaces"].([]string)
+		if found && len(namespaces) > 0 {
+			for _, ns := range namespaces {
+				namespaceStreamIdMap[ns] = outputStreamId.(string)
+			}
+		}
+	}
+
+	return namespaceStreamIdMap, err
+}
+
 func toMinutes(interval string) (int, error) {
 	// Trim the trailing "m" from the interval string
 	trimmedInterval := strings.TrimSuffix(interval, "m")

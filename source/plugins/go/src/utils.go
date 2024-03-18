@@ -17,8 +17,8 @@ import (
 
 	"github.com/Azure/azure-kusto-go/kusto"
 	"github.com/Azure/azure-kusto-go/kusto/ingest"
-	"github.com/tinylib/msgp/msgp"
 	"github.com/Azure/go-autorest/autorest/azure/auth"
+	"github.com/tinylib/msgp/msgp"
 )
 
 // ReadConfiguration reads a property file
