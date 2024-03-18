@@ -26,7 +26,6 @@
       <Column name="ContainerName" type="str" mdstype="mt:wstr" />
       <Column name="AzureResourceId" type="str" mdstype="mt:wstr" />
       <Column name="KubernetesMetadata" type="str" mdstype="mt:wstr" />
-      <Column name="LogLevel" type="str" mdstype="mt:wstr" />
     </Schema>
   </Schemas>
   <Sources>

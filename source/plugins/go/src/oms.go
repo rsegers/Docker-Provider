@@ -1453,9 +1453,9 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				}
 				kubernetesMetadata = string(kubernetesMetadataBytes)
 			} else {
-				message := fmt.Sprintf("Error while fetching kubernetesMetadataJson")
+				message := fmt.Sprintf("Error while getting kubernetesMetadata")
 				Log(message)
-				continue
+				SendException(message)
 			}
 		}
 

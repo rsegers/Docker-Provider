@@ -4,15 +4,19 @@ require_relative "ConfigParseErrorLogger"
 LINUX_CONFIG_PATHS = {
   "common" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva.conf",
   "infra" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf",
+  "infra_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra_filter.conf",
   "tenant" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf",
+  "tenant_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant_filter.conf",
 }
 
 WINDOWS_CONFIG_PATHS = {
   "common" => "/etc/fluent-bit/fluent-bit-geneva.conf",
   "infra" => "/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf",
+  "infra_filter" => "/etc/fluent-bit/fluent-bit-geneva-logs_infra_filter.conf",
   "tenant" => "/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf",
+  "tenant_filter" => "/etc/fluent-bit/fluent-bit-geneva-logs_tenant_filter.conf",
 }
-SUPPORTED_CONFIG_TYPES = ["common", "infra", "tenant"]
+SUPPORTED_CONFIG_TYPES = ["common", "infra", "tenant", "infra_filter", "tenant_filter"]
 
 @default_service_interval = "15"
 @default_mem_buf_limit = "10"
