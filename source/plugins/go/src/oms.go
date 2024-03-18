@@ -1733,14 +1733,16 @@ func GetMsgPackBytes(msgPackEntries []MsgPackEntry) []byte {
 }
 
 func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
-	msgpBytesArray := make([][]byte, 0)
 	msgPackEntriesByNamespace := make(map[string][]MsgPackEntry)
 	namespaceStreamIdMap, _ := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdMap()
-	Log("GetMsgPackBytesByNamespace::Info:: namespaceDCRMa: %v", namespaceStreamIdMap)
+	message := fmt.Sprintf("GetMsgPackBytesByNamespace: namespaceStreamIdMap : %v \n", namespaceStreamIdMap)
+	Log(message)
 
 	for _, entry := range msgPackEntries {
 		msgPackEntriesByNamespace[entry.Record["PodNamespace"]] = append(msgPackEntriesByNamespace[entry.Record["PodNamespace"]], entry)
 	}
+
+	msgpBytesArray := make([][]byte, len(msgPackEntriesByNamespace))
 
 	index := 0
 	for namespace, entries := range msgPackEntriesByNamespace {
