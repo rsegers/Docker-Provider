@@ -326,14 +326,14 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 		return namespaceStreamIdMap, err
 	}
 
-	logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: Requesting extension config data for ContainerLogV2Extension")
+	//logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: Requesting extension config data for ContainerLogV2Extension")
 
 	responseBytes, err := getExtensionConfigResponse(jsonBytes)
 	if err != nil {
 		logger.Printf("Error::mdsd/ama::Failed to get config response data. Error message: %s", string(err.Error()))
 		return namespaceStreamIdMap, err
 	}
-	logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: getExtensionConfigResponse : %s", string(responseBytes))
+	//logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: getExtensionConfigResponse : %s", string(responseBytes))
 	var responseObject AgentTaggedDataResponse
 	err = json.Unmarshal(responseBytes, &responseObject)
 	if err != nil {
@@ -343,11 +343,21 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 
 	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 	extensionConfigs := extensionData.ExtensionConfigs
+
 	for _, extensionConfig := range extensionConfigs {
-		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: extensionConfigs : %v", extensionConfig)
-		outputStreamId := extensionConfig.OutputStreams["CONTAINERINSIGHTS_CONTAINERLOGV2"]
+		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::extensionConfig ID: %s, extensionSettings: %v, outputStrems: %v", extensionConfig.ID, extensionConfig.ExtensionSettings, extensionConfig.OutputStreams)
+		outputStreamId := ""
+		outputStreams := extensionConfig.OutputStreams
+		for dataType, outputStreamID := range outputStreams {
+			logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::extensionConfig datatype: %s, outputStreamID: %s", dataType, outputStreamID.(string))
+			if strings.Compare(strings.ToLower(dataType), "containerinsights_containerlogv2") == 0 {
+				logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap:: extensionConfig found for ContainerLogV2Extension")
+				outputStreamId = outputStreamID.(string)
+			}
+		}
 		extensionSettings := extensionConfig.ExtensionSettings
 		dataCollectionSettingsItr := extensionSettings["dataCollectionSettings"]
+		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: dataCollectionSettings : %v", dataCollectionSettingsItr)
 		collectionSettings := make(map[string]interface{})
 		if len(dataCollectionSettingsItr) > 0 {
 			for k, v := range dataCollectionSettingsItr {
@@ -359,12 +369,16 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 		namespaces, found := collectionSettings["namespaces"].([]string)
 		if found && len(namespaces) > 0 {
 			for _, ns := range namespaces {
-				namespaceStreamIdMap[ns] = outputStreamId.(string)
+				namespaceStreamIdMap[ns] = outputStreamId
+				logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: namespace: %s, streamId: %s", ns, outputStreamId)
 			}
 		}
 	}
 
-	logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: namespaceStreamIdMap : %v", namespaceStreamIdMap)
+	for k, v := range namespaceStreamIdMap {
+		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::namespaceStreamIdMap:: namespace: %s, streamId: %s", k, v)
+	}
+
 	return namespaceStreamIdMap, err
 }
 
