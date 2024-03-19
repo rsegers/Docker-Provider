@@ -43,7 +43,7 @@ export class Mutations {
         const containers: IContainer[] = [];
 
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
                 case AutoInstrumentationPlatforms.DotNet:
                     containers.push({
                         name: Mutations.initContainerNameDotNet,
@@ -137,7 +137,6 @@ export class Mutations {
             // now we can reference Downward API values from environment variables above
             {
                 name: "OTEL_RESOURCE_ATTRIBUTES",
-                //!!! 
                 value: `cloud.resource_id=${armId},\
 cloud.region=${armRegion},\
 k8s.cluster.name=${clusterName},\
@@ -163,7 +162,7 @@ ${ownerUidAttribute}`
 
         // platform-specific environment variables
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
                 case AutoInstrumentationPlatforms.DotNet:
                     returnValue.push(...[
                         {
@@ -230,7 +229,7 @@ ${ownerUidAttribute}`
         const volumeMounts: object[] = [];
 
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
                 case AutoInstrumentationPlatforms.DotNet:
                     volumeMounts.push({
                         name: Mutations.agentVolumeDotNet,
@@ -259,7 +258,7 @@ ${ownerUidAttribute}`
 
         let logVolumeMounted = false;
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
                 case AutoInstrumentationPlatforms.DotNet:
                 case AutoInstrumentationPlatforms.Java:
                 case AutoInstrumentationPlatforms.NodeJs:
@@ -284,7 +283,7 @@ ${ownerUidAttribute}`
         const volumes: IVolume[] = [];
 
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
                 case AutoInstrumentationPlatforms.DotNet:
                     volumes.push({
                         name: Mutations.agentVolumeDotNet,
@@ -313,7 +312,7 @@ ${ownerUidAttribute}`
 
         let logVolumeAdded = false;
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
                 case AutoInstrumentationPlatforms.DotNet:
                 case AutoInstrumentationPlatforms.Java:
                 case AutoInstrumentationPlatforms.NodeJs:

@@ -1,11 +1,39 @@
 ﻿import { Mutations } from "./Mutations.js";
-import { PodInfo, IAdmissionReview, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms } from "./RequestDefinition.js";
+import { PodInfo, IAdmissionReview, IObjectType, IMetadata, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IAnnotations } from "./RequestDefinition.js";
 
 export class Patcher {
     /**
-     * Calculates a JsonPatch string describing the difference between the old (incoming) and new (outgoing) objects
+     * Calculates a JsonPatch string describing the difference between the old (incoming) and new (outgoing) deployments
     */
-    public static async PatchPod(admissionReview: IAdmissionReview, podInfo: PodInfo, platforms: AutoInstrumentationPlatforms[], connectionString: string, armId: string, armRegion: string, clusterName: string): Promise<object[]> {
+    public static async PatchDeployment(admissionReview: IAdmissionReview, crName: string, platforms: AutoInstrumentationPlatforms[]): Promise<object[]> {
+        // create a deep copy of the original (incoming) object to be used for making changes
+        // strictly speaking, it's not necessary as we could have made changes to the incoming object, but it's more robust to keep it separate and unchanged
+        const modifiedDeployment: IObjectType = JSON.parse(JSON.stringify(admissionReview.request.object)) as IObjectType;
+        if(!modifiedDeployment) {
+            throw `Unable to parse request.object in AdmissionReview: ${admissionReview}`;
+        }
+        
+        // add or modify the annotation
+        modifiedDeployment.metadata = modifiedDeployment.metadata ?? <IMetadata>{};
+        modifiedDeployment.metadata.annotations = modifiedDeployment.metadata.annotations ?? <IAnnotations>{};
+        modifiedDeployment.metadata.annotations["monitor.azure.com/instrumentation-cr"] = crName ?? undefined;
+        modifiedDeployment.metadata.annotations["monitor.azure.com/instrumentation-platforms"] = platforms?.length > 0 ? platforms.join(",") : undefined;
+      
+        // JsonPatch instructing the caller to replace the /spec/template/spec section with the mutated one
+        const jsonPatch = [
+            {
+                op: "replace",
+                path: "/metadata/annotations",
+                value: modifiedDeployment.metadata.annotations
+            }];
+        
+        return jsonPatch;
+    }
+
+    /**
+     * Calculates a JsonPatch string describing the difference between the old (incoming) and new (outgoing) pod specs
+    */
+    public static async PatchReplicaSet(admissionReview: IAdmissionReview, podInfo: PodInfo, platforms: AutoInstrumentationPlatforms[], connectionString: string, armId: string, armRegion: string, clusterName: string): Promise<object[]> {
         // create a deep copy of the original (incoming) object to be used for making changes
         // strictly speaking, it's not necessary as we could have made changes to the incoming object, but it's more robust to keep it separate and unchanged
         const modifiedPodSpec: ISpec = JSON.parse(JSON.stringify(admissionReview.request.object.spec.template.spec)) as ISpec;
@@ -44,7 +72,7 @@ export class Patcher {
             });
 
             // set all environment variables contained within the dictionary on the container
-            container.env = <IEnvironmentVariable[]>[];
+            //container.env = <IEnvironmentVariable[]>[];
             for (const envVariableName in allEnvironmentVariables) { 
                 container.env.push(allEnvironmentVariables[envVariableName]); 
             }
@@ -64,5 +92,4 @@ export class Patcher {
         
         return jsonPatch;
     }
-
 }

@@ -25,6 +25,9 @@ export interface IAnnotations {
     "instrumentation.opentelemetry.io/inject-dotnet"?: string;
     "instrumentation.opentelemetry.io/inject-java"?: string;
     "instrumentation.opentelemetry.io/inject-nodejs"?: string;
+    "monitor.azure.com/instrumentation-cr"?: string;
+    "monitor.azure.com/instrumentation-platforms"?: string;
+    [key: string]: string;
 }
 
 export interface IOwnerReference {
@@ -108,10 +111,10 @@ export interface ISpec {
     replicas: number;
     selector: ISelector;
     template: ITemplate;
-    strategy: IStrategy;
-    minReadySeconds: number;
-    revisionHistoryLimit: number;
-    progressDeadlineSeconds: number;
+    strategy?: IStrategy;
+    minReadySeconds?: number;
+    revisionHistoryLimit?: number;
+    progressDeadlineSeconds?: number;
     initContainers?: IContainer[];
     volumes?: IVolume[];
     containers?: IContainer[];
@@ -158,9 +161,9 @@ export class PodInfo {
 }
 
 export enum AutoInstrumentationPlatforms {
-    DotNet,
-    Java,
-    NodeJs
+    DotNet = "DotNet",
+    Java = "Java",
+    NodeJs = "NodeJs"
 }
 
 export const DefaultInstrumentationCRName = "default";

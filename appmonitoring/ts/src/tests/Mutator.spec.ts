@@ -1,7 +1,7 @@
 ﻿import { expect, describe, it } from "@jest/globals";
 import { Mutator } from "../Mutator.js";
-import { IAdmissionReview, IAnnotations, IMetadata, ISpec, InstrumentationCR, AutoInstrumentationPlatforms } from "../RequestDefinition.js";
-import { TestObject2, TestObject3, TestObject4, crs, clusterArmId, clusterArmRegion } from "./testConsts.js";
+import { IAdmissionReview, IAnnotations, IMetadata, ISpec, InstrumentationCR, AutoInstrumentationPlatforms, IObjectType, DefaultInstrumentationCRName } from "../RequestDefinition.js";
+import { TestObject2, TestObject3, TestObject4, crs, clusterArmId, clusterArmRegion, TestReplicaSet1 } from "./testConsts.js";
 import { logger } from "../LoggerWrapper.js"
 import { InstrumentationCRsCollection } from "../InstrumentationCRsCollection.js";
 
@@ -15,81 +15,51 @@ afterEach(() => {
 
 describe("Mutator", () => {
     it("Null admission review", async () => {
-        const result = JSON.parse(await Mutator.MutatePodTemplate(null, crs, clusterArmId, clusterArmRegion, null));
+        const result = JSON.parse(await new Mutator(null, crs, clusterArmId, clusterArmRegion, null).Mutate());
 
         expect(result.response.allowed).toBe(true);
         expect(result.response.patchType).toBe("JSONPatch");
-        expect(result.response.uid).toBe("");
+        expect(result.response.uid).toBeFalsy();
         expect(result.response.status.code).toBe(400);
         expect(result.response.status.message).toBe("Exception encountered: Admission review can't be null");
-    })
+    });
 
     it("Unsupported object kind", async () => {
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject2));
-        admissionReview.request.kind.kind = "Not a pod!";
+        admissionReview.request.resource.resource = "Not a pod!";
 
-        const result = JSON.parse(await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, null));
+        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
 
         expect(result.response.allowed).toBe(true);
         expect(result.response.patchType).toBe("JSONPatch");
         expect(result.response.uid).toBe(admissionReview.request.uid);
         expect(result.response.status.code).toBe(400);
-        expect(result.response.status.message).toBe("Exception encountered: Validation of the incoming AdmissionReview failed");
-    })
+        expect(result.response.status.message).toContain("Exception encountered: Validation of the incoming AdmissionReview failed");
+    });
 
     it("Unsupported operation", async () => {
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject2));
         admissionReview.request.operation = "DELETE";
 
-        const result = JSON.parse(await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, null));
+        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
 
         expect(result.response.allowed).toBe(true);
         expect(result.response.patchType).toBe("JSONPatch");
         expect(result.response.uid).toBe(admissionReview.request.uid);
         expect(result.response.status.code).toBe(400);
-        expect(result.response.status.message).toBe("Exception encountered: Validation of the incoming AdmissionReview failed");
-    })
-    
-    it("Valid object2", async () => {
-        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject2));
-        const result = JSON.parse(await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, null));
-        
-        expect(result.response.allowed).toBe(true);
-        expect(result.response.patchType).toBe("JSONPatch");
-        expect(result.response.uid).toBe(admissionReview.request.uid);
-        expect(result.response.status.code).toBe(200);
-        expect(result.response.status.message).toBe("OK");
-    })
-
-    it("ValidObject3", async () => {
-        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject3));
-        const result = JSON.parse(await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, null));
-       
-        expect(result.response.allowed).toBe(true);
-        expect(result.response.patchType).toBe("JSONPatch");
-        expect(result.response.uid).toBe(admissionReview.request.uid);
-        expect(result.response.status.code).toBe(200);
-        expect(result.response.status.message).toBe("OK");
+        expect(result.response.status.message).toContain("Exception encountered: Validation of the incoming AdmissionReview failed");
     });
 
-    it("ValidObject4", async () => {
-        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject4));
-        const result = JSON.parse(await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, null));
-        
-        expect(result.response.allowed).toBe(true);
-        expect(result.response.patchType).toBe("JSONPatch");
-        expect(result.response.uid).toBe(admissionReview.request.uid);
-        expect(result.response.status.code).toBe(200);
-        expect(result.response.status.message).toBe("OK");
-    });
-
-    it("Inject annotations - no annotations", async () => {
+    it("Mutating deployment - no annotations, default CR found", async () => {
         // ASSUME
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject4));
 
         // no annotations
-        admissionReview.request.object.spec.template.metadata = <IMetadata> { annotations: null };
+        admissionReview.request.object.spec.template.metadata = <IMetadata>{ annotations: <IAnnotations>{} };
         admissionReview.request.object.metadata.namespace = "ns1";
+
+        admissionReview.request.object.metadata.annotations = <IAnnotations>{};
+        admissionReview.request.object.metadata.annotations.preExistingAnnotationName = "preExistingAnnotationValue";
 
         const crDefault: InstrumentationCR = {
             metadata: {
@@ -120,14 +90,14 @@ describe("Mutator", () => {
                 }
             }
         };
-        
+
         const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
-        crs.Upsert(cr1);       
+        crs.Upsert(cr1);
         crs.Upsert(crDefault);
 
         // ACT
-        const result = JSON.parse(await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, null));
-        
+        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+
         // ASSERT
         expect(result.response.allowed).toBe(true);
         expect(result.response.patchType).toBe("JSONPatch");
@@ -135,13 +105,62 @@ describe("Mutator", () => {
         expect(result.response.status.code).toBe(200);
         expect(result.response.status.message).toBe("OK");
 
-        // confirm default CR was used
+        // confirm default CR and its platforms were written into the annotations
         const patchString: string = atob(result.response.patch);
-        const resultAR: ISpec = JSON.parse(patchString)[0].value as ISpec;
-        expect(resultAR.containers[0].env.find(e => e.name === "APPLICATIONINSIGHTS_CONNECTION_STRING").value).toEqual(crDefault.spec.destination.applicationInsightsConnectionString);
+        const annotations: IAnnotations = JSON.parse(patchString)[0].value as IAnnotations;
+        expect(annotations.preExistingAnnotationName).toBe("preExistingAnnotationValue");
+        expect(annotations["monitor.azure.com/instrumentation-cr"]).toBe(DefaultInstrumentationCRName);
+        expect(annotations["monitor.azure.com/instrumentation-platforms"]).toBe("DotNet,Java,NodeJs");
     });
 
-    it("Inject annotations - invalid annotations - multiple CRs", async () => {
+    it("Mutating deployment - no annotations, default CR not found", async () => {
+        // ASSUME
+        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject4));
+
+        // no annotations
+        admissionReview.request.object.spec.template.metadata = <IMetadata>{ annotations: <IAnnotations>{} };
+        admissionReview.request.object.metadata.namespace = "ns1";
+
+        admissionReview.request.object.metadata.annotations = <IAnnotations>{};
+        admissionReview.request.object.metadata.annotations.preExistingAnnotationName = "preExistingAnnotationValue";
+
+        const cr1: InstrumentationCR = {
+            metadata: {
+                name: "cr1",
+                namespace: "ns1"
+            },
+            spec: {
+                settings: {
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                },
+                destination: {
+                    applicationInsightsConnectionString: "InstrumentationKey=cr1"
+                }
+            }
+        };
+
+        const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
+        crs.Upsert(cr1);
+
+        // ACT
+        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+
+        // ASSERT
+        expect(result.response.allowed).toBe(true);
+        expect(result.response.patchType).toBe("JSONPatch");
+        expect(result.response.uid).toBe(admissionReview.request.uid);
+        expect(result.response.status.code).toBe(200);
+        expect(result.response.status.message).toBe("OK");
+
+        // confirm both annotations are empty
+        const patchString: string = atob(result.response.patch);
+        const annotations: IAnnotations = JSON.parse(patchString)[0].value as IAnnotations;
+        expect(annotations.preExistingAnnotationName).toBe("preExistingAnnotationValue");
+        expect(annotations["monitor.azure.com/instrumentation-cr"]).toBeUndefined();
+        expect(annotations["monitor.azure.com/instrumentation-platforms"]).toBeUndefined();
+    });
+
+    it("Mutating deployment - invalid annotations - multiple CRs", async () => {
         // ASSUME
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject4));
 
@@ -189,7 +208,7 @@ describe("Mutator", () => {
             admissionReview.request.object.spec.template.metadata = metadata;
 
              // ACT
-            const result = JSON.parse(await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, null));
+            const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
             
             // ASSERT
             expect(result.response.allowed).toBe(true);
@@ -200,7 +219,7 @@ describe("Mutator", () => {
         });
     });
 
-    it("Inject annotations - per language configuration with default CR", async () => {
+    it("Mutating deployment - per language configuration with default CR", async () => {
         // ASSUME
         const crDefault: InstrumentationCR = {
             metadata: {
@@ -209,7 +228,7 @@ describe("Mutator", () => {
             },
             spec: {
                 settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.NodeJs]
                 },
                 destination: {
                     applicationInsightsConnectionString: "InstrumentationKey=default"
@@ -224,7 +243,7 @@ describe("Mutator", () => {
             },
             spec: {
                 settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                    autoInstrumentationPlatforms: []
                 },
                 destination: {
                     applicationInsightsConnectionString: "InstrumentationKey=cr1"
@@ -239,6 +258,7 @@ describe("Mutator", () => {
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject4));
 
         admissionReview.request.object.metadata.namespace = "ns1";
+        admissionReview.request.object.metadata.annotations = { preExistingAnnotationName: "preExistingAnnotationValue" };
 
         const metadata: IMetadata = <IMetadata>{
             annotations: {
@@ -251,7 +271,7 @@ describe("Mutator", () => {
         admissionReview.request.object.spec.template.metadata = metadata;
 
         // ACT
-        const result = JSON.parse(await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, null));
+        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
 
         // ASSERT
         expect(result.response.allowed).toBe(true);
@@ -259,18 +279,16 @@ describe("Mutator", () => {
         expect(result.response.uid).toBe(admissionReview.request.uid);
         expect(result.response.status.code).toBe(200);
         expect(result.response.status.message).toBe("OK");
-        
+
+        // confirm default CR and annotation-enabled platforms were written into the annotations
         const patchString: string = atob(result.response.patch);
-        const resultAR: ISpec = JSON.parse(patchString)[0].value as ISpec;
-
-        expect(resultAR.initContainers.length).toBe(2);
-        expect(resultAR.initContainers[0].image).toMatch("/java:");
-        expect(resultAR.initContainers[1].image).toMatch("/nodejs:");
-
-        expect(resultAR.containers[0].env.find(e => e.name === "APPLICATIONINSIGHTS_CONNECTION_STRING").value).toEqual(crDefault.spec.destination.applicationInsightsConnectionString);
+        const annotations: IAnnotations = JSON.parse(patchString)[0].value as IAnnotations;
+        expect(annotations.preExistingAnnotationName).toBe("preExistingAnnotationValue");
+        expect(annotations["monitor.azure.com/instrumentation-cr"]).toBe(DefaultInstrumentationCRName);
+        expect(annotations["monitor.azure.com/instrumentation-platforms"]).toBe("Java,NodeJs");
     });
 
-    it("Inject annotations - per language configuration with specific CR", async () => {
+    it("Mutating deployment - per language configuration with specific CR", async () => {
         // ASSUME
         const crDefault: InstrumentationCR = {
             metadata: {
@@ -279,7 +297,7 @@ describe("Mutator", () => {
             },
             spec: {
                 settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
                 },
                 destination: {
                     applicationInsightsConnectionString: "InstrumentationKey=default"
@@ -294,7 +312,7 @@ describe("Mutator", () => {
             },
             spec: {
                 settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet]
                 },
                 destination: {
                     applicationInsightsConnectionString: "InstrumentationKey=cr1"
@@ -309,6 +327,7 @@ describe("Mutator", () => {
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject4));
 
         admissionReview.request.object.metadata.namespace = "ns1";
+        admissionReview.request.object.metadata.annotations = { preExistingAnnotationName: "preExistingAnnotationValue" };
 
         const metadata: IMetadata = <IMetadata>{
             annotations: {
@@ -321,7 +340,7 @@ describe("Mutator", () => {
         admissionReview.request.object.spec.template.metadata = metadata;
 
         // ACT
-        const result = JSON.parse(await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, null));
+        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
 
         // ASSERT
         expect(result.response.allowed).toBe(true);
@@ -329,13 +348,198 @@ describe("Mutator", () => {
         expect(result.response.uid).toBe(admissionReview.request.uid);
         expect(result.response.status.code).toBe(200);
         expect(result.response.status.message).toBe("OK");
+
+        // confirm default CR and annotation-enabled platforms were written into the annotations
+        const patchString: string = atob(result.response.patch);
+        const annotations: IAnnotations = JSON.parse(patchString)[0].value as IAnnotations;
+        expect(annotations.preExistingAnnotationName).toBe("preExistingAnnotationValue");
+        expect(annotations["monitor.azure.com/instrumentation-cr"]).toBe(cr1.metadata.name);
+        expect(annotations["monitor.azure.com/instrumentation-platforms"]).toBe("DotNet,NodeJs");
+    });
+
+    it("Mutating replicaset - no instrumentation-cr annotation", async () => {
+        // ASSUME
+        const crDefault: InstrumentationCR = {
+            metadata: {
+                name: "default",
+                namespace: "ns1"
+            },
+            spec: {
+                settings: {
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                },
+                destination: {
+                    applicationInsightsConnectionString: "InstrumentationKey=default"
+                }
+            }
+        };
+
+        const cr1: InstrumentationCR = {
+            metadata: {
+                name: "cr1",
+                namespace: "ns1"
+            },
+            spec: {
+                settings: {
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet]
+                },
+                destination: {
+                    applicationInsightsConnectionString: "InstrumentationKey=cr1"
+                }
+            }
+        };
         
+        const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
+        crs.Upsert(cr1);       
+        crs.Upsert(crDefault);
+
+        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestReplicaSet1));
+
+        admissionReview.request.object.metadata.namespace = "ns1";
+        admissionReview.request.object.metadata.annotations = { 
+            preExistingAnnotationName: "preExistingAnnotationValue",
+
+            "monitor.azure.com/instrumentation-platforms": "Java,DotNet" // this shouldn't matter without the instrumentation-cr annotation
+        };
+        
+        // ACT
+        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+
+        // ASSERT
+        expect(result.response.allowed).toBe(true);
+        expect(result.response.patchType).toBe("JSONPatch");
+        expect(result.response.uid).toBe(admissionReview.request.uid);
+        expect(result.response.status.code).toBe(200);
+        expect(result.response.status.message).toBe("OK");
+
+        // confirm that no mutation occured
+        const patchString: string = atob(result.response.patch);
+        expect((<[]>JSON.parse(patchString)).length).toBe(0);
+    });
+
+    it("Mutating replicaset - empty instrumentation-cr annotation", async () => {
+        // ASSUME
+        const crDefault: InstrumentationCR = {
+            metadata: {
+                name: "default",
+                namespace: "ns1"
+            },
+            spec: {
+                settings: {
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                },
+                destination: {
+                    applicationInsightsConnectionString: "InstrumentationKey=default"
+                }
+            }
+        };
+
+        const cr1: InstrumentationCR = {
+            metadata: {
+                name: "cr1",
+                namespace: "ns1"
+            },
+            spec: {
+                settings: {
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet]
+                },
+                destination: {
+                    applicationInsightsConnectionString: "InstrumentationKey=cr1"
+                }
+            }
+        };
+        
+        const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
+        crs.Upsert(cr1);       
+        crs.Upsert(crDefault);
+
+        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestReplicaSet1));
+
+        admissionReview.request.object.metadata.namespace = "ns1";
+        admissionReview.request.object.metadata.annotations = { 
+            preExistingAnnotationName: "preExistingAnnotationValue",
+
+            "monitor.azure.com/instrumentation-cr": "",
+            "monitor.azure.com/instrumentation-platforms": "Java,DotNet" // this shouldn't matter since the instrumentation-cr annotation is empty
+        };
+        
+        // ACT
+        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+
+        // ASSERT
+        expect(result.response.allowed).toBe(true);
+        expect(result.response.patchType).toBe("JSONPatch");
+        expect(result.response.uid).toBe(admissionReview.request.uid);
+        expect(result.response.status.code).toBe(200);
+        expect(result.response.status.message).toBe("OK");
+
+        // confirm that no mutation occured
+        const patchString: string = atob(result.response.patch);
+        expect((<[]>JSON.parse(patchString)).length).toBe(0);
+    });
+
+    it("Mutating replicaset - instrumentation-cr annotation points at an existing CR", async () => {
+        // ASSUME
+        const crDefault: InstrumentationCR = {
+            metadata: {
+                name: "default",
+                namespace: "ns1"
+            },
+            spec: {
+                settings: {
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                },
+                destination: {
+                    applicationInsightsConnectionString: "InstrumentationKey=default"
+                }
+            }
+        };
+
+        const cr1: InstrumentationCR = {
+            metadata: {
+                name: "cr1",
+                namespace: "ns1"
+            },
+            spec: {
+                settings: {
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet]
+                },
+                destination: {
+                    applicationInsightsConnectionString: "InstrumentationKey=cr1"
+                }
+            }
+        };
+        
+        const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
+        crs.Upsert(cr1);       
+        crs.Upsert(crDefault);
+
+        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestReplicaSet1));
+
+        admissionReview.request.object.metadata.namespace = "ns1";
+        admissionReview.request.object.metadata.annotations = { 
+            preExistingAnnotationName: "preExistingAnnotationValue",
+
+            "monitor.azure.com/instrumentation-cr": "cr1",
+            "monitor.azure.com/instrumentation-platforms": "DotNet,Java" // this shouldn't matter since the instrumentation-cr annotation is empty
+        };
+        
+        // ACT
+        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+
+        // ASSERT
+        expect(result.response.allowed).toBe(true);
+        expect(result.response.patchType).toBe("JSONPatch");
+        expect(result.response.uid).toBe(admissionReview.request.uid);
+        expect(result.response.status.code).toBe(200);
+        expect(result.response.status.message).toBe("OK");
+
+        // confirm that mutation correctly occured
         const patchString: string = atob(result.response.patch);
         const resultAR: ISpec = JSON.parse(patchString)[0].value as ISpec;
-
         expect(resultAR.initContainers.length).toBe(2);
         expect(resultAR.initContainers[0].image).toMatch("/dotnet:");
-        expect(resultAR.initContainers[1].image).toMatch("/nodejs:");
+        expect(resultAR.initContainers[1].image).toMatch("/java:");
 
         expect(resultAR.containers[0].env.find(e => e.name === "APPLICATIONINSIGHTS_CONNECTION_STRING").value).toEqual(cr1.spec.destination.applicationInsightsConnectionString);
     });

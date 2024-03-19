@@ -1,8 +1,8 @@
 ﻿import { expect, describe, it } from "@jest/globals";
 import { Mutations } from "../Mutations.js";
-import { IAdmissionReview, PodInfo, IContainer, IVolume } from "../RequestDefinition.js";
+import { IAdmissionReview, PodInfo, IContainer, IVolume, AutoInstrumentationPlatforms, IAnnotations } from "../RequestDefinition.js";
 import { Patcher } from "../Patcher.js";
-import { TestObject2, cr, clusterArmId, clusterArmRegion, clusterName } from "./testConsts.js";
+import { TestObject2, cr, clusterArmId, clusterArmRegion, clusterName, TestReplicaSet2 } from "./testConsts.js";
 import { logger } from "../LoggerWrapper.js"
 
 beforeEach(() => {
@@ -14,8 +14,31 @@ afterEach(() => {
 });
 
 describe("Patcher", () => {
-    it("Patches a pod correctly", async () => {
+    it("Patches a deployment correctly", async () => {
+        // ASSUME
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject2));
+        admissionReview.request.object.metadata.annotations = <IAnnotations | any>{
+            preExistingAnnotationName: "preExistingAnnotationValue"            
+        };
+        const platforms = [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.NodeJs];
+
+        // ACT
+        const result: object[] = await Patcher.PatchDeployment(admissionReview, "cr1", platforms);
+
+        // ASSERT
+        expect((<[]>result).length).toBe(1);
+        expect((<any>result[0]).op).toBe("replace");
+        expect((<any>result[0]).path).toBe("/metadata/annotations");
+        expect((<any>result[0]).value).not.toBeNull(); 
+
+        const annotations: IAnnotations = (<any>result[0]).value as IAnnotations;
+        expect(annotations.preExistingAnnotationName).toBe("preExistingAnnotationValue");
+        expect(annotations["monitor.azure.com/instrumentation-cr"]).toBe("cr1");
+        expect(annotations["monitor.azure.com/instrumentation-platforms"]).toBe("DotNet,NodeJs");
+    });
+
+    it("Patches a replicaset correctly", async () => {
+        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestReplicaSet2));
         const platforms = cr.spec.settings.autoInstrumentationPlatforms;
         const podInfo: PodInfo = <PodInfo>{
             namespace: "default",
@@ -24,7 +47,16 @@ describe("Patcher", () => {
             ownerUid: "ownerUid",
             onlyContainerName: "container1"
         };
-        const result: object[] = await Patcher.PatchPod(admissionReview, podInfo, platforms, "connection-string", clusterArmId, clusterArmRegion, clusterName);
+
+        admissionReview.request.object.metadata.namespace = "ns1";
+        admissionReview.request.object.metadata.annotations = { 
+            preExistingAnnotationName: "preExistingAnnotationValue",
+
+            "monitor.azure.com/instrumentation-cr": "cr1",
+            "monitor.azure.com/instrumentation-platforms": "DotNet,Java" // this shouldn't matter since the instrumentation-cr annotation is empty
+        };
+
+        const result: object[] = await Patcher.PatchReplicaSet(admissionReview, podInfo, platforms, "connection-string", clusterArmId, clusterArmRegion, clusterName);
 
         expect((<[]>result).length).toBe(1);
         expect((<any>result[0]).op).toBe("replace");

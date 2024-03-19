@@ -2,17 +2,19 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    app: test-app-java
+    app: zakima-java-1
     app1: app1
-  name: customer-java-2
-  namespace: default
+  annotations:
+    ann1: ann1
+  name: zakima-java-1
+  namespace: zakima1
 spec:
   progressDeadlineSeconds: 600
-  replicas: 1
-  revisionHistoryLimit: 10
+  replicas: 4
+  revisionHistoryLimit: 100
   selector:
     matchLabels:
-      app: test-app-java
+      app: zakima-java-1
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -21,20 +23,15 @@ spec:
   template:
     metadata:
       labels:
-        app: test-app-java
+        app: zakima-java-1
+        app1: app1
     spec:
       containers:
-      - image: aicommon.azurecr.io/demoaks-java-app:latest
-        imagePullPolicy: Always
-        name: test-app-java
+      - image: aicommon.azurecr.io/demoaks-dotnet-app:latest
+        #imagePullPolicy: Always
+        name: zakima-java-1
         ports:
         - containerPort: 8080
           protocol: TCP
         resources: {}
-        terminationMessagePath: /dev/termination-log
-        terminationMessagePolicy: File
-      dnsPolicy: ClusterFirst
-      restartPolicy: Always
-      schedulerName: default-scheduler
-      securityContext: {}
-      terminationGracePeriodSeconds: 30
+      # initContainers: # cannot currently be added, removed, or modified

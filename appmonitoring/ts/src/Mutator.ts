@@ -3,96 +3,64 @@ import { logger, RequestMetadata, HeartbeatMetrics } from "./LoggerWrapper.js";
 import { PodInfo, IAdmissionReview, InstrumentationCR, AutoInstrumentationPlatforms, DefaultInstrumentationCRName } from "./RequestDefinition.js";
 import { AdmissionReviewValidator } from "./AdmissionReviewValidator.js";
 import { InstrumentationCRsCollection } from "./InstrumentationCRsCollection.js";
+import cluster from "cluster";
+import { platform } from "os";
 
 export class Mutator {
-    /**
-     * Mutates the incoming AdmissionReview of a deployment to enable auto-attach features on its pods
-     * @returns An AdmissionReview k8s object that represents a response from the webhook to the API server. Includes the JsonPatch mutation to the incoming AdmissionReview.
-     */
-    public static async MutatePodTemplate(admissionReview: IAdmissionReview, crs: InstrumentationCRsCollection, clusterArmId: string, clusterArmRegion: string, operationId: string): Promise<string> {
-        // this is what we need to return to k8s API server
-        const response = {
-            apiVersion: "admission.k8s.io/v1",
-            kind: "AdmissionReview",
-            response: {
-                allowed: true, // we only mutate, not admit, so this should always be true as we never want to block any of the customer's API calls
-                patch: undefined, // JsonPatch document describing the mutation
-                patchType: "JSONPatch",
-                uid: "", // must match the uid of the incoming AdmissionReview,
-                status: {
-                    code: 200,
-                    message: "OK"
-                  }
-            },
-        };
+    private readonly admissionReview: IAdmissionReview;
+    private readonly crs: InstrumentationCRsCollection;
+    private readonly clusterArmId: string;
+    private readonly clusterArmRegion: string;
+    private readonly operationId: string;
+    private readonly requestMetadata: RequestMetadata;
 
-        let requestMetadata = new RequestMetadata(null, crs);
+    public constructor(admissionReview: IAdmissionReview, crs: InstrumentationCRsCollection, clusterArmId: string, clusterArmRegion: string, operationId: string) {
+        this.admissionReview = admissionReview;
+        this.crs = crs;
+        this.clusterArmId = clusterArmId;
+        this.clusterArmRegion = clusterArmRegion;
+        this.operationId = operationId;
+        this.requestMetadata = new RequestMetadata(this.admissionReview?.request?.uid, this.crs);
+    }
+
+    public async Mutate(): Promise<string> {
+        const response = this.newResponse();
 
         try {
-            const mutator: Mutator = new Mutator(admissionReview);
-            logger.info(`Original AdmissionReview: ${JSON.stringify(admissionReview)}`, operationId, requestMetadata);
-
-            response.apiVersion = mutator.AdmissionReview.apiVersion;
-            response.response.uid = mutator.AdmissionReview.request.uid;
-            response.kind = mutator.AdmissionReview.kind;
-
-            requestMetadata = new RequestMetadata(mutator.AdmissionReview.request.uid, crs);
-            
-            if(!AdmissionReviewValidator.Validate(mutator.AdmissionReview, operationId, requestMetadata)) {
-                throw `Validation of the incoming AdmissionReview failed`;
+            if (!this.admissionReview) {
+                throw `Admission review can't be null`;
             }
 
-            const podInfo: PodInfo = await mutator.getPodInfo();
-            
-            const namespace: string = mutator.AdmissionReview.request.object.metadata.namespace;
-            if (!namespace) {
-                throw `Could not determine the namespace of the incoming object: ${mutator.AdmissionReview}`;
-            }
-
-            // find an appropriate CR that dictates whether and how we should mutate
-            const crToUse: string = mutator.pickCR();
-
-            const cr: InstrumentationCR = crs.GetCR(namespace, crToUse);
-            if (!cr) {
-                // no relevant CR found, do not mutate and return with no modifications
-                logger.info(`No governing CR found (best guess was ${crToUse}, but couldn't locate it), will not mutate`, operationId, requestMetadata);
-                response.response.patch = Buffer.from(JSON.stringify([])).toString("base64");
+            if (!AdmissionReviewValidator.Validate(this.admissionReview, this.operationId, this.requestMetadata)) {
+                throw `Validation of the incoming AdmissionReview failed: ${JSON.stringify(this.admissionReview)}`;
             } else {
-                const armIdMatches = /^\/subscriptions\/(?<SubscriptionId>[^/]+)\/resourceGroups\/(?<ResourceGroup>[^/]+)\/providers\/(?<Provider>[^/]+)\/(?<ResourceType>[^/]+)\/(?<ResourceName>[^/]+).*$/i.exec(clusterArmId);
-                if (!armIdMatches || armIdMatches.length != 6) {
-                    throw `ARM ID is in a wrong format: ${clusterArmId}`;
-                }
-
-                const clusterName = armIdMatches[5];
-
-                const platforms: AutoInstrumentationPlatforms[] = mutator.pickInstrumentationPlatforms(cr);
-
-                logger.info(`Governing CR for the object to be processed (namespace: ${namespace}, deploymentName: ${podInfo.ownerName}): ${JSON.stringify(cr)} with platforms: ${JSON.stringify(platforms)}`, operationId, requestMetadata);
-
-                const patchData: object[] = await Patcher.PatchPod(
-                    mutator.AdmissionReview,
-                    podInfo as PodInfo,
-                    platforms,
-                    cr.spec.destination.applicationInsightsConnectionString,
-                    clusterArmId,
-                    clusterArmRegion,
-                    clusterName);
-
-                response.response.patch = Buffer.from(JSON.stringify(patchData)).toString("base64");
-
-                logger.addHeartbeatMetric(HeartbeatMetrics.AdmissionReviewActionableCount, 1);
+                logger.info(`Validation passed on original AdmissionReview: ${JSON.stringify(this.admissionReview)}`, this.operationId, this.requestMetadata);
             }
 
-            const result = JSON.stringify(response);
-            logger.info(`Determined final response ${mutator.uid}, ${result}`, operationId, requestMetadata);
-        
-            return result;
+            let patch: string;
+
+            switch (this.admissionReview.request.resource?.resource?.toLowerCase()) {
+                case "deployments":
+                    patch = await this.mutateDeployment();
+                    break;
+
+                case "replicasets":
+                    patch = await this.mutateReplicaSet();
+                    break;
+
+                default:
+                    throw `Unsupported resource type in AdmissionReview: ${this.admissionReview.request.resource?.resource}`;
+            }
+
+            response.response.patch = patch;
+            return JSON.stringify(response);
+
         } catch (e) {
             const exceptionMessage = `Exception encountered: ${e}`;
 
             logger.addHeartbeatMetric(HeartbeatMetrics.AdmissionReviewActionableFailedCount, 1);
         
-            logger.error(exceptionMessage, operationId, requestMetadata);
+            logger.error(exceptionMessage, this.operationId, this.requestMetadata);
             
             response.response.patch = undefined;
             response.response.status.code = 400;
@@ -102,39 +70,145 @@ export class Mutator {
         }
     }
 
-    public readonly AdmissionReview: IAdmissionReview;
-
-    private constructor(message: IAdmissionReview) {
-        if(!message) {
-            throw `Admission review can't be null`;
+    /**
+     * Pick a CR that should be used to mutate thid deployment and set its name in an annotation on the deployment
+     * That annotation will be propagated to newly created replicasets and will aid in mutating those replicasets
+     */
+    private async mutateDeployment(): Promise<string> {
+        const namespace: string = this.admissionReview.request.object.metadata.namespace;
+        if (!namespace) {
+            throw `Could not determine the namespace of the incoming object: ${this.admissionReview}`;
         }
 
-        this.AdmissionReview = message;
+        // find an appropriate CR that dictates whether and how we should mutate
+        const crNameToUse: string = this.pickCR();
+
+        const cr: InstrumentationCR = this.crs.GetCR(namespace, crNameToUse);
+
+        let platforms: AutoInstrumentationPlatforms[];
+
+        if (!cr) {
+            // no relevant CR found, but still need to mutate to ensure annotations are cleared out
+            logger.info(`No governing CR found for the deployment (best guess was ${crNameToUse}, but couldn't locate it)`, this.operationId, this.requestMetadata);
+
+            platforms = [];
+        } else {
+            platforms = this.pickInstrumentationPlatforms(cr);
+
+            logger.info(`Governing CR for the deployment (namespace: ${namespace}, platforms: ${JSON.stringify(platforms)}, deploymentName: ${this.admissionReview.request.object.metadata.name}): ${JSON.stringify(cr)}`, this.operationId, this.requestMetadata);
+
+            logger.addHeartbeatMetric(HeartbeatMetrics.AdmissionReviewActionableCount, 1);
+        }
+
+        const patchData: object[] = await Patcher.PatchDeployment(this.admissionReview, cr?.metadata?.name, platforms);
+        const patchDataString: string = JSON.stringify(patchData);
+        
+        logger.info(`Mutated a deployment, returning: ${patchDataString}`, this.operationId, this.requestMetadata);
+        
+        return Buffer.from(patchDataString).toString("base64");
     }
 
-    public get uid() {
-        if (this.AdmissionReview && this.AdmissionReview.request && this.AdmissionReview.request.uid) {
-            return this.AdmissionReview.request.uid;
+    /**
+     * Mutates the incoming AdmissionReview to enable auto-attach features on its pods
+     * @returns An AdmissionReview k8s object that represents a response from the webhook to the API server. Includes the JsonPatch mutation to the incoming AdmissionReview.
+     */
+    private async mutateReplicaSet(): Promise<string> {
+        let patch: string;
+        const podInfo: PodInfo = this.getPodInfo();
+        
+        const namespace: string = this.admissionReview.request.object.metadata.namespace;
+        if (!namespace) {
+            throw `Could not determine the namespace of the incoming object`;
+        }
+
+        // get the name of the governing CR and instrumentation platforms from the annotation (may not be there)
+        const crNameToUse: string = this.admissionReview.request.object?.metadata?.annotations?.["monitor.azure.com/instrumentation-cr"];
+        const platformNames = this.admissionReview.request.object?.metadata?.annotations?.["monitor.azure.com/instrumentation-platforms"];
+
+        const cr: InstrumentationCR = this.crs.GetCR(namespace, crNameToUse);
+        if (!crNameToUse || !cr || podInfo.ownerKind?.toLowerCase() !== "deployment") {
+            // no relevant CR found or unsupported replicaset, do not mutate
+            logger.info(`No governing CR found (${crNameToUse ? "annotation was " + crNameToUse + ", but couldn't find it" : "no annotation exists"}), or owner kind is wrong (${podInfo.ownerKind}), so will not mutate.`, this.operationId, this.requestMetadata);
+            patch = Buffer.from(JSON.stringify([])).toString("base64");
+        } else {
+            const armIdMatches = /^\/subscriptions\/(?<SubscriptionId>[^/]+)\/resourceGroups\/(?<ResourceGroup>[^/]+)\/providers\/(?<Provider>[^/]+)\/(?<ResourceType>[^/]+)\/(?<ResourceName>[^/]+).*$/i.exec(this.clusterArmId);
+            if (!armIdMatches || armIdMatches.length != 6) {
+                throw `ARM ID is in a wrong format: ${this.clusterArmId}`;
+            }
+
+            const clusterName = armIdMatches[5];
+
+            const platforms: AutoInstrumentationPlatforms[] = [];
+            platformNames.split(",").forEach(platformName => platforms.push(AutoInstrumentationPlatforms[platformName]));
+
+            logger.info(`Governing CR for the object to be processed (namespace: ${namespace}, deploymentName: ${podInfo.ownerName}): ${JSON.stringify(cr)} with platforms: ${JSON.stringify(platforms)}`, this.operationId, this.requestMetadata);
+
+            const patchData: object[] = await Patcher.PatchReplicaSet(
+                this.admissionReview,
+                podInfo as PodInfo,
+                platforms,
+                cr.spec.destination.applicationInsightsConnectionString,
+                this.clusterArmId,
+                this.clusterArmRegion,
+                clusterName);
+
+            const patchDataString: string = JSON.stringify(patchData);
+            logger.info(`Mutated a replicaset, returning: ${patchDataString}`, this.operationId, this.requestMetadata);
+
+            patch = Buffer.from(patchDataString).toString("base64");
+
+            logger.addHeartbeatMetric(HeartbeatMetrics.AdmissionReviewActionableCount, 1);
+        }
+
+        return patch;
+    }           
+
+    private newResponse() {
+        const response = {
+            apiVersion: "admission.k8s.io/v1",
+            kind: "AdmissionReview",
+            response: {
+                allowed: true, // we only mutate, not admit, so this should always be true as we never want to block any of the customer's API calls
+                patch: undefined, // JsonPatch document describing the mutation
+                patchType: "JSONPatch",
+                uid: "", // must match the uid of the incoming AdmissionReview,
+                status: {
+                    code: 200, // indicate the type of success/error to k8s
+                    message: "OK"
+                }
+            },
+        };
+
+        response.apiVersion = this.admissionReview?.apiVersion;
+        response.response.uid = this.admissionReview?.request?.uid;
+        response.kind = this.admissionReview?.kind;
+
+        return response;
+    }
+
+    private get uid() {
+        if (this.admissionReview && this.admissionReview.request && this.admissionReview.request.uid) {
+            return this.admissionReview.request.uid;
         }
         return "";
     }
 
-    private async getPodInfo(): Promise<PodInfo> {
+    private getPodInfo(): PodInfo {
         const podInfo: PodInfo = new PodInfo();
 
-        podInfo.namespace = this.AdmissionReview.request.namespace;
-        podInfo.onlyContainerName = this.AdmissionReview.request.object.spec.template.spec.containers?.length == 1 ? this.AdmissionReview.request.object.spec.template.spec.containers[0].name : null;
-        podInfo.ownerKind = this.AdmissionReview.request.object.kind;
-        podInfo.ownerName = this.AdmissionReview.request.object.metadata.name;
-        podInfo.ownerUid = this.AdmissionReview.request.object.metadata.uid;
+        podInfo.namespace = this.admissionReview.request.object.metadata.namespace;
+        podInfo.onlyContainerName = this.admissionReview.request.object.spec.template.spec.containers?.length === 1 ? this.admissionReview.request.object.spec.template.spec.containers[0].name : null;
+        podInfo.ownerKind = this.admissionReview.request.object.metadata.ownerReferences[0]?.kind;
+        podInfo.ownerName = this.admissionReview.request.object.metadata.ownerReferences[0]?.name;
+        podInfo.ownerUid = this.admissionReview.request.object.metadata.ownerReferences[0]?.uid;
                 
-        return Promise.resolve(podInfo);
+        return podInfo;
     }
 
     private pickCR(): string {
-        const injectDotNetAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-dotnet"];
-        const injectJavaAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-java"];
-        const injectNodeJsAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-nodejs"];
+        const injectDotNetAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-dotnet"];
+        const injectJavaAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-java"];
+        const injectNodeJsAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-nodejs"];
 
         const injectAnnotationValues: string[] = [injectDotNetAnnotation, injectJavaAnnotation, injectNodeJsAnnotation];
 
@@ -150,10 +224,11 @@ export class Mutator {
     }
 
     private pickInstrumentationPlatforms(cr: InstrumentationCR): AutoInstrumentationPlatforms[] {
-        // assuming annotation set is valid
-        const injectDotNetAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-dotnet"];
-        const injectJavaAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-java"];
-        const injectNodeJsAnnotation: string = this.AdmissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-nodejs"];
+        // assuming annotation set is valid (we validated it already when mutating deployment)
+        // annotations are on the pod template spec
+        const injectDotNetAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-dotnet"];
+        const injectJavaAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-java"];
+        const injectNodeJsAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-nodejs"];
 
         const injectAnnotationValues: string[] = [injectDotNetAnnotation, injectJavaAnnotation, injectNodeJsAnnotation];
 

@@ -44,7 +44,14 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
 const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
 
 logger.info("Running in server mode...", operationId, null);
-logger.SendEvent("ServerModeRun", operationId, null, clusterArmId, clusterArmRegion,);
+logger.SendEvent("ServerModeRun", operationId, null, clusterArmId, clusterArmRegion);
+
+const armIdMatches = /^\/subscriptions\/(?<SubscriptionId>[^/]+)\/resourceGroups\/(?<ResourceGroup>[^/]+)\/providers\/(?<Provider>[^/]+)\/(?<ResourceType>[^/]+)\/(?<ResourceName>[^/]+).*$/i.exec(clusterArmId);
+if (!armIdMatches || armIdMatches.length != 6) {
+    logger.error(`Cluster ARM ID is in a wrong format: ${clusterArmId}`, operationId, null);
+    logger.SendEvent("ArmIdIncorrect", operationId, null, clusterArmId, clusterArmRegion, true);
+    throw `Cluster ARM ID is in a wrong format: ${clusterArmId}`;
+}
 
 // don't await, this runs an infinite loop in the background
 logger.startHeartbeats(operationId);
@@ -119,14 +126,15 @@ https.createServer(options, (req, res) => {
                     throw `Unable to get request.uid from the incoming admission review: ${admissionReview}`
                 }
 
-                const mutatedPod: string = await Mutator.MutatePodTemplate(admissionReview, crs, clusterArmId, clusterArmRegion, operationId);
+                const mutator: Mutator = new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, operationId);
+                const mutatedObject: string = await mutator.Mutate();
 
                 const end = Date.now();
                 
-                logger.info(`Done processing request in ${end - begin} ms for ${uid}`, operationId, requestMetadata);
+                logger.info(`Done processing request in ${end - begin} ms for ${uid}. ${JSON.stringify(mutatedObject)}`, operationId, requestMetadata);
                 
                 res.writeHead(200, { "Content-Type": "application/json" });
-                res.end(mutatedPod);
+                res.end(mutatedObject);
             } catch (e) {
                 const ex = logger.sanitizeException(e);
 
