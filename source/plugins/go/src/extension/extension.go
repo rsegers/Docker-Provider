@@ -23,7 +23,7 @@ const (
 	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL_MIN             = 1
 	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_INTERVAL_MAX             = 30
 	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES               = "namespaces"
-	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE = "namespaceFilteringMode"
+	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE = "namespacefilteringmode"
 )
 
 var singleton *Extension
@@ -265,13 +265,18 @@ func (e *Extension) GetNamespacesForDataCollection() []string {
 	}
 
 	if len(dataCollectionSettings) > 0 {
-		namespacesSetting, found := dataCollectionSettings[EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES].([]string)
+		namespacesSetting, found := dataCollectionSettings[EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES].([]interface{})
 		if found {
 			if len(namespacesSetting) > 0 {
 				// Remove duplicates from the namespacesSetting slice
 				uniqNamespaces := make(map[string]bool)
 				for _, ns := range namespacesSetting {
-					uniqNamespaces[strings.ToLower(ns)] = true
+					str, ok := ns.(string)
+					if !ok {
+						logger.Println("ExtensionUtils::getNamespacesForDataCollection: namespace:", ns, "not valid hence skipping")
+						continue
+					}
+					uniqNamespaces[strings.ToLower(str)] = true
 				}
 
 				// Convert the map keys to a new slice
