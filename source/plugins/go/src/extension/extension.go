@@ -356,17 +356,17 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 			}
 		}
 		extensionSettings := extensionConfig.ExtensionSettings
-		dataCollectionSettingsItr := extensionSettings["dataCollectionSettings"]
-		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: dataCollectionSettings : %v", dataCollectionSettingsItr)
-		collectionSettings := make(map[string]interface{})
-		for k, v := range dataCollectionSettingsItr {
-			lk := strings.ToLower(k)
-			lv := strings.ToLower(fmt.Sprintf("%v", v))
-			collectionSettings[lk] = fmt.Sprintf("%v", lv)
-			logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: dataCollectionSettings key: %s val: %v", k, v)
-		}
-		namespaces, found := collectionSettings["namespaces"].([]string)
-		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: found: %v namespaces key: %v", found, namespaces)
+		dataCollectionSettings := extensionSettings["dataCollectionSettings"]
+		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: dataCollectionSettings : %v", dataCollectionSettings)
+		// collectionSettings := make(map[string]interface{})
+		// // for k, v := range dataCollectionSettingsItr {
+		// // 	lk := strings.ToLower(k)
+		// // 	lv := strings.ToLower(fmt.Sprintf("%v", v))
+		// // 	collectionSettings[lk] = fmt.Sprintf("%v", lv)
+		// // 	logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: dataCollectionSettings key: %s val: %v", k, v)
+		// // }
+		namespaces, found := dataCollectionSettings["namespaces"].([]string)
+		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: found: %v namespaces: %v", found, namespaces)
 		for _, ns := range namespaces {
 			namespaceStreamIdMap[ns] = outputStreamId
 			logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: namespace: %s, streamId: %s", ns, outputStreamId)
