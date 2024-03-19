@@ -1752,6 +1752,11 @@ func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
 		msg := fmt.Sprintf("GetMsgPackBytesByNamespace: namespace : %s streamTag: %s \n", namespace, streamTag)
 		Log(msg)
 
+		if streamTag == "" {
+			streamTag = MdsdContainerLogTagName
+			Log("GetMsgPackBytesByNamespace: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, streamTag)
+		}
+
 		fluentForward := MsgPackForward{
 			Tag:     streamTag,
 			Entries: entries,
