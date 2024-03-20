@@ -42,17 +42,17 @@ const (
 	KubesystemNamespaceZeroFill                         = "kube-system"
 	VolumeNameZeroFill                                  = "-"
 	// Telemetry constants
-	ContainerMetricsHeartBeatEvent                      = "ContainerMetricsMDMHeartBeatEvent"
-	PodReadyPercentageHeartBeatEvent                    = "PodReadyPercentageMDMHeartBeatEvent"
-	ContainerResourceUtilHeartBeatEvent                 = "ContainerResourceUtilMDMHeartBeatEvent"
-	PvUsageHeartBeatEvent                               = "PVUsageMDMHeartBeatEvent"
+	ContainerMetricsHeartBeatEvent                      = "ContainerMetricsMdmHeartBeatEvent"
+	PodReadyPercentageHeartBeatEvent                    = "PodReadyPercentageMdmHeartBeatEvent"
+	ContainerResourceUtilHeartBeatEvent                 = "ContainerResourceUtilMdmHeartBeatEvent"
+	PvUsageHeartBeatEvent                               = "PVUsageMdmHeartBeatEvent"
 	PvKubeSystemMetricsEnabledEvent                     = "CollectPVKubeSystemMetricsEnabled"
 	PvInventoryHeartBeatEvent                           = "KubePVInventoryHeartBeatEvent"
 	TelemetryFlushIntervalInMinutes                     = 10
 	KubeStateTelemetryFlushIntervalInMinutes            = 15
 	ZeroFillMetricsIntervalInMinutes                    = 30
-	MDMTimeSeriesFlushedInLastHour                      = "MDMTimeSeriesFlushedInLastHour"
-	MDMExceptionTelemetryMetric                         = "AKSCustomMetricsMDMExceptions"
+	MDMTimeSeriesFlushedInLastHour                      = "MdmTimeSeriesFlushedInLastHour"
+	MDMExceptionTelemetryMetric                         = "AKSCustomMetricsMdmExceptions"
 	MDMExceptionsMetricFlushInterval                    = 30
 	// Pod Statuses
 	PodStatusTerminating                                = "Terminating"

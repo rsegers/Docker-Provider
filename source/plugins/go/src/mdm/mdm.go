@@ -607,7 +607,7 @@ func flushMDMExceptionTelemetry() {
 		telemetryProperties := map[string]string{}
 		telemetryProperties["ExceptionsHashForFlushInterval"] = fmt.Sprintf("%v", mdmExceptionsHash)
 		telemetryProperties["FlushInterval"] = fmt.Sprintf("%v", MDM_EXCEPTIONS_METRIC_FLUSH_INTERVAL)
-		lib.SendMetricTelemetry("AKSCustomMetricsMdmExceptions", float64(mdmExceptionsCount), telemetryProperties)
+		lib.SendMetricTelemetry(MDMExceptionTelemetryMetric, float64(mdmExceptionsCount), telemetryProperties)
 		mdmExceptionsCount = 0
 		mdmExceptionsHash = make(map[string]int)
 		mdmExceptionTelemetryTimeTracker = time.Now().Unix()
