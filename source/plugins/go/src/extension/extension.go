@@ -345,7 +345,6 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 	extensionConfigs := extensionData.ExtensionConfigs
 
 	for _, extensionConfig := range extensionConfigs {
-		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::extensionConfig ID: %s, extensionSettings: %v, outputStrems: %v", extensionConfig.ID, extensionConfig.ExtensionSettings, extensionConfig.OutputStreams)
 		outputStreamId := ""
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
@@ -355,26 +354,32 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 				outputStreamId = outputStreamID.(string)
 			}
 		}
-		extensionSettings := extensionConfig.ExtensionSettings
-		dataCollectionSettings := extensionSettings["dataCollectionSettings"]
-		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: dataCollectionSettings : %v", dataCollectionSettings)
-		// collectionSettings := make(map[string]interface{})
-		// // for k, v := range dataCollectionSettingsItr {
-		// // 	lk := strings.ToLower(k)
-		// // 	lv := strings.ToLower(fmt.Sprintf("%v", v))
-		// // 	collectionSettings[lk] = fmt.Sprintf("%v", lv)
-		// // 	logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: dataCollectionSettings key: %s val: %v", k, v)
-		// // }
-		namespaces, found := dataCollectionSettings["namespaces"].([]string)
-		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: found: %v namespaces: %v", found, namespaces)
-		for _, ns := range namespaces {
-			namespaceStreamIdMap[ns] = outputStreamId
-			logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: namespace: %s, streamId: %s", ns, outputStreamId)
-		}
-	}
 
-	for k, v := range namespaceStreamIdMap {
-		logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::namespaceStreamIdMap:: namespace: %s, streamId: %s", k, v)
+		extensionSettings := extensionConfig.ExtensionSettings
+		dataCollectionSettingsItr, ok := extensionSettings["dataCollectionSettings"]
+
+		dataCollectionSettings := make(map[string]interface{})
+		if ok && len(dataCollectionSettingsItr) > 0 {
+			for k, v := range dataCollectionSettingsItr {
+				lk := strings.ToLower(k)
+				dataCollectionSettings[lk] = v
+			}
+		}
+
+		namespaces, ok := dataCollectionSettings["namespaces"].([]interface{})
+		if !ok {
+			logger.Printf("Interface does not contain a []interface{}")
+			return namespaceStreamIdMap, err
+		}
+
+		for _, v := range namespaces {
+			namespace, ok := v.(string)
+			if !ok {
+				logger.Printf("namespaces in  dataCollectionSettings does not contain a string")
+				return namespaceStreamIdMap, err
+			}
+			namespaceStreamIdMap[namespace] = outputStreamId
+		}
 	}
 
 	return namespaceStreamIdMap, err
