@@ -78,6 +78,7 @@ COPY ./amalogswindows/installer/conf/fluent-bit-geneva.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/fluent-bit-common.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/fluent-bit-internal-metrics.conf /etc/fluent-bit/
 COPY ./amalogswindows/installer/conf/fluent-bit-input.conf /etc/fluent-bit/
+COPY ./amalogswindows/installer/conf/fluent-bit-telegraf-tcp.conf /etc/fluent-bit/
 
 
 # copy telegraf conf file
@@ -90,7 +91,7 @@ COPY ./amalogswindows/installer/scripts/rubyKeepCertificateAlive/*.rb /etc/fluen
 COPY ./amalogswindows/ruby/ /etc/fluent/plugin/
 
 # default value will be overwritten by pipeline
-ARG IMAGE_TAG=win-3.1.17
+ARG IMAGE_TAG=win-3.1.18
 ENV AGENT_VERSION ${IMAGE_TAG}
 
 ENV OS_TYPE "windows"

@@ -35,6 +35,38 @@ function Remove-WindowsServiceIfItExists($name) {
     }
 }
 
+function Test-FluentbitTcpListener {
+    param (
+        [int]$port
+    )
+
+    $waitTimeSecs = [System.Environment]::GetEnvironmentVariable("WAITTIME_PORT_25229", "process")
+    if (![string]::IsNullOrEmpty($waitTimeSecs)) {
+        [System.Environment]::SetEnvironmentVariable("WAITTIME_PORT_25229", $waitTimeSecs, "Process")
+        [System.Environment]::SetEnvironmentVariable("WAITTIME_PORT_25229", $waitTimeSecs, "Machine")
+        Write-Host "Successfully set environment variable WAITTIME_PORT_25229 - $($waitTimeSecs) for target 'machine'..."
+    } else {
+        Write-Host "Failed to set environment variable WAITTIME_PORT_25229 for target 'machine' since it is either null or empty"
+        $waitTimeSecs = 30
+    }
+
+    $retryCount = [int]$waitTimeSecs
+    $retryAttempts = 0
+    $retryDelaySeconds = 1
+    while ($retryAttempts -lt $retryCount) {
+        $retryAttempts++
+        Write-Host "Test-FluentbitTcpListener: Retry attempt $retryAttempts/$retryCount..."
+        $netstatOutput = netstat -an | Select-String "LISTENING"
+        if ($netstatOutput -match ":$port") {
+            Write-Host "Test-FluentbitTcpListener: Fluentbit TCP listener is UP and running on port $port."
+            return $true
+        }
+        Start-Sleep -Seconds $retryDelaySeconds
+    }
+    Write-Host "Test-FluentbitTcpListener: Failed to detect TCP listener after $retryCount attempts. Exiting script."
+    return $false
+}
+
 function Start-FileSystemWatcher {
     Start-Process powershell -NoNewWindow .\filesystemwatcher.ps1
 }
@@ -42,6 +74,93 @@ function Start-FileSystemWatcher {
 function Set-ProcessAndMachineEnvVariables($name, $value) {
     [System.Environment]::SetEnvironmentVariable($name, $value, "Process")
     [System.Environment]::SetEnvironmentVariable($name, $value, "Machine")
+}
+
+function Set-AirgapCloudSpecificApplicationInsightsConfig {
+     # Need to do this before the SA fetch for AI key for airgapped clouds so that it is not overwritten with defaults.
+     $appInsightsAuth = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", "process")
+     if (![string]::IsNullOrEmpty($appInsightsAuth)) {
+         [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $appInsightsAuth, "machine")
+         Write-Host "Successfully set environment variable APPLICATIONINSIGHTS_AUTH - $($appInsightsAuth) for target 'machine'..."
+     }
+     else {
+         Write-Host "Failed to set environment variable APPLICATIONINSIGHTS_AUTH for target 'machine' since it is either null or empty"
+     }
+
+     $appInsightsEndpoint = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", "process")
+     if (![string]::IsNullOrEmpty($appInsightsEndpoint)) {
+         [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", $appInsightsEndpoint, "machine")
+         Write-Host "Successfully set environment variable APPLICATIONINSIGHTS_ENDPOINT - $($appInsightsEndpoint) for target 'machine'..."
+     }
+
+     # Check if the instrumentation key needs to be fetched from a storage account (as in airgapped clouds)
+     $aiKeyURl = [System.Environment]::GetEnvironmentVariable('APPLICATIONINSIGHTS_AUTH_URL')
+     if ($aiKeyURl) {
+         $aiKeyFetched = ""
+         # retry up to 5 times
+         for ( $i = 1; $i -le 4; $i++) {
+             try {
+                 $response = Invoke-WebRequest -uri $aiKeyURl -UseBasicParsing -TimeoutSec 5 -ErrorAction:Stop
+
+                 if ($response.StatusCode -ne 200) {
+                     Write-Host "Expecting reponse code 200, was: $($response.StatusCode), retrying"
+                     Start-Sleep -Seconds ([MATH]::Pow(2, $i) / 4)
+                 }
+                 else {
+                     $aiKeyFetched = $response.Content
+                     break
+                 }
+             }
+             catch {
+                 Write-Host "Exception encountered fetching instrumentation key:"
+                 Write-Host $_.Exception
+             }
+         }
+
+         # Check if the fetched IKey was properly encoded. if not then turn off telemetry
+         if ($aiKeyFetched -match '^[A-Za-z0-9=]+$') {
+             Write-Host "Using cloud-specific instrumentation key"
+             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_AUTH" $aiKeyFetched
+         }
+         else {
+             # Couldn't fetch the Ikey, turn telemetry off
+             Write-Host "Could not get cloud-specific instrumentation key (network error?). Disabling telemetry"
+             Set-ProcessAndMachineEnvVariables "DISABLE_TELEMETRY" "True"
+         }
+     }
+
+     $aiKeyDecoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:APPLICATIONINSIGHTS_AUTH))
+     Set-ProcessAndMachineEnvVariables "TELEMETRY_APPLICATIONINSIGHTS_KEY" $aiKeyDecoded
+}
+function Set-CloudSpecificApplicationInsightsConfig {
+    param (
+        [string]$CloudEnvironment
+    )
+    Write-Host "Set-CloudSpecificApplicationInsightsConfig: Cloud environment: $CloudEnvironment"
+    switch ($CloudEnvironment) {
+        "azurechinacloud" {
+            Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for Azure China Cloud"
+            Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_AUTH" "MjkzZWY1MDAtMDJiZS1jZWNlLTk0NmMtNTU3OWNhYjZiYzEzCg=="
+            Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_ENDPOINT" "https://dc.applicationinsights.azure.cn/v2/track"
+            Write-Host "Set-CloudSpecificApplicationInsightsConfig: Application Insights configuration set for Azure China Cloud"
+        }
+        "azureusgovernmentcloud" {
+            Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for Azure US Government Cloud"
+            Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_AUTH" "ZmQ5MTc2ODktZjlkYi1mNzU3LThiZDQtZDVlODRkNzYxNDQ3Cg=="
+            Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_ENDPOINT" "https://dc.applicationinsights.azure.us/v2/track"
+        }
+        "usnat" {
+            Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USNat Cloud"
+            Set-AirgapCloudSpecificApplicationInsightsConfig
+        }
+        "ussec" {
+            Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USSec Cloud"
+            Set-AirgapCloudSpecificApplicationInsightsConfig
+        }
+        default {
+            Write-Host "Set-CloudSpecificApplicationInsightsConfig: defaulting to Public Cloud Application Insights configuration"
+        }
+    }
 }
 
 function Set-CommonAMAEnvironmentVariables {
@@ -265,63 +384,7 @@ function Set-EnvironmentVariables {
         [System.Environment]::SetEnvironmentVariable("PROXY", $proxy, "Machine")
     }
 
-    # Need to do this before the SA fetch for AI key for airgapped clouds so that it is not overwritten with defaults.
-    $appInsightsAuth = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", "process")
-    if (![string]::IsNullOrEmpty($appInsightsAuth)) {
-        [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $appInsightsAuth, "machine")
-        Write-Host "Successfully set environment variable APPLICATIONINSIGHTS_AUTH - $($appInsightsAuth) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable APPLICATIONINSIGHTS_AUTH for target 'machine' since it is either null or empty"
-    }
-
-    $appInsightsEndpoint = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", "process")
-    if (![string]::IsNullOrEmpty($appInsightsEndpoint)) {
-        [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", $appInsightsEndpoint, "machine")
-        Write-Host "Successfully set environment variable APPLICATIONINSIGHTS_ENDPOINT - $($appInsightsEndpoint) for target 'machine'..."
-    }
-
-    # Check if the instrumentation key needs to be fetched from a storage account (as in airgapped clouds)
-    $aiKeyURl = [System.Environment]::GetEnvironmentVariable('APPLICATIONINSIGHTS_AUTH_URL')
-    if ($aiKeyURl) {
-        $aiKeyFetched = ""
-        # retry up to 5 times
-        for ( $i = 1; $i -le 4; $i++) {
-            try {
-                $response = Invoke-WebRequest -uri $aiKeyURl -UseBasicParsing -TimeoutSec 5 -ErrorAction:Stop
-
-                if ($response.StatusCode -ne 200) {
-                    Write-Host "Expecting reponse code 200, was: $($response.StatusCode), retrying"
-                    Start-Sleep -Seconds ([MATH]::Pow(2, $i) / 4)
-                }
-                else {
-                    $aiKeyFetched = $response.Content
-                    break
-                }
-            }
-            catch {
-                Write-Host "Exception encountered fetching instrumentation key:"
-                Write-Host $_.Exception
-            }
-        }
-
-        # Check if the fetched IKey was properly encoded. if not then turn off telemetry
-        if ($aiKeyFetched -match '^[A-Za-z0-9=]+$') {
-            Write-Host "Using cloud-specific instrumentation key"
-            [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $aiKeyFetched, "Process")
-            [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $aiKeyFetched, "Machine")
-        }
-        else {
-            # Couldn't fetch the Ikey, turn telemetry off
-            Write-Host "Could not get cloud-specific instrumentation key (network error?). Disabling telemetry"
-            [System.Environment]::SetEnvironmentVariable("DISABLE_TELEMETRY", "True", "Process")
-            [System.Environment]::SetEnvironmentVariable("DISABLE_TELEMETRY", "True", "Machine")
-        }
-    }
-
-    $aiKeyDecoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:APPLICATIONINSIGHTS_AUTH))
-    [System.Environment]::SetEnvironmentVariable("TELEMETRY_APPLICATIONINSIGHTS_KEY", $aiKeyDecoded, "Process")
-    [System.Environment]::SetEnvironmentVariable("TELEMETRY_APPLICATIONINSIGHTS_KEY", $aiKeyDecoded, "Machine")
+    Set-CloudSpecificApplicationInsightsConfig $cloud_environment
 
     # Setting environment variables required by the fluentd plugins
     $aksResourceId = [System.Environment]::GetEnvironmentVariable("AKS_RESOURCE_ID", "process")
@@ -489,6 +552,8 @@ function Read-Configs {
             ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "common"
             ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "tenant"
             ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "infra"
+            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "tenant_filter"
+            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "infra_filter"
             Generate-GenevaTenantNameSpaceConfig
             Generate-GenevaInfraNameSpaceConfig
         }
@@ -664,6 +729,12 @@ function Start-Fluent-Telegraf {
 
     $containerRuntime = Get-ContainerRuntime
 
+    $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
+    if ([string]::IsNullOrEmpty($monitorKubernetesPods) -or $monitorKubernetesPods.ToLower() -eq 'false') {
+        Write-Host "Disabling telegraf tcp input plugin since TELEMETRY_CUSTOM_PROM_MONITOR_PODS is not set or set to false"
+        Clear-Content C:/etc/fluent-bit/fluent-bit-telegraf-tcp.conf
+    }
+
     if (![string]::IsNullOrEmpty($containerRuntime) -and [string]$containerRuntime.StartsWith('docker') -eq $false) {
         # change parser from docker to cri if the container runtime is not docker
         Write-Host "changing parser from Docker to CRI since container runtime : $($containerRuntime) and which is non-docker"
@@ -689,7 +760,6 @@ function Start-Fluent-Telegraf {
     # Start telegraf only in sidecar scraping mode
     $sidecarScrapingEnabled = [System.Environment]::GetEnvironmentVariable('SIDECAR_SCRAPING_ENABLED')
     if (![string]::IsNullOrEmpty($sidecarScrapingEnabled) -and $sidecarScrapingEnabled.ToLower() -eq 'true') {
-        Write-Host "Starting telegraf..."
         Start-Telegraf
     }
 
@@ -705,6 +775,7 @@ function Start-Telegraf {
 
     $monitorKubernetesPods = [System.Environment]::GetEnvironmentVariable('TELEMETRY_CUSTOM_PROM_MONITOR_PODS')
     if (![string]::IsNullOrEmpty($monitorKubernetesPods) -and $monitorKubernetesPods.ToLower() -eq 'true') {
+        Write-Host "Starting telegraf..."
         # Set required environment variable for telegraf prometheus plugin to run properly
         Write-Host "Setting required environment variables for telegraf prometheus input plugin to run properly..."
         $kubernetesServiceHost = [System.Environment]::GetEnvironmentVariable("KUBERNETES_SERVICE_HOST", "process")
@@ -741,37 +812,42 @@ function Start-Telegraf {
         Write-Host "Installing telegraf service"
         C:\opt\telegraf\telegraf.exe --service install --config "C:\etc\telegraf\telegraf.conf"
 
-        # Setting delay auto start for telegraf since there have been known issues with windows server and telegraf -
-        # https://github.com/influxdata/telegraf/issues/4081
-        # https://github.com/influxdata/telegraf/issues/3601
-        try {
-            $serverName = [System.Environment]::GetEnvironmentVariable("PODNAME", "process")
-            if (![string]::IsNullOrEmpty($serverName)) {
-                sc.exe \\$serverName config telegraf start= delayed-auto
-                Write-Host "Successfully set delayed start for telegraf"
+        if (Test-FluentbitTcpListener -port 25229) {
+            Write-Host "Fluentbit tcp listener is running on port 25229"
+            # Setting delay auto start for telegraf since there have been known issues with windows server and telegraf -
+            # https://github.com/influxdata/telegraf/issues/4081
+            # https://github.com/influxdata/telegraf/issues/3601
+            try {
+                $serverName = [System.Environment]::GetEnvironmentVariable("PODNAME", "process")
+                if (![string]::IsNullOrEmpty($serverName)) {
+                    sc.exe \\$serverName config telegraf start= delayed-auto
+                    Write-Host "Successfully set delayed start for telegraf"
 
+                }
+                else {
+                    Write-Host "Failed to get environment variable PODNAME to set delayed telegraf start"
+                }
             }
-            else {
-                Write-Host "Failed to get environment variable PODNAME to set delayed telegraf start"
+            catch {
+                $e = $_.Exception
+                Write-Host $e
+                Write-Host "exception occured in delayed telegraf start.. continuing without exiting"
             }
-        }
-        catch {
-            $e = $_.Exception
-            Write-Host $e
-            Write-Host "exception occured in delayed telegraf start.. continuing without exiting"
-        }
-        Write-Host "Running telegraf service in test mode"
-        C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --test
-        Write-Host "Starting telegraf service"
-        C:\opt\telegraf\telegraf.exe --service start
-
-        # Trying to start telegraf again if it did not start due to fluent bit not being ready at startup
-        Get-Service telegraf | findstr Running
-        if ($? -eq $false) {
-            Write-Host "trying to start telegraf in again in 30 seconds, since fluentbit might not have been ready..."
-            Start-Sleep -s 30
+            Write-Host "Running telegraf service in test mode"
+            C:\opt\telegraf\telegraf.exe --config "C:\etc\telegraf\telegraf.conf" --test
+            Write-Host "Starting telegraf service"
             C:\opt\telegraf\telegraf.exe --service start
-            Get-Service telegraf
+
+            # Trying to start telegraf again if it did not start due to fluent bit not being ready at startup
+            Get-Service telegraf | findstr Running
+            if ($? -eq $false) {
+                Write-Host "trying to start telegraf in again in 30 seconds, since fluentbit might not have been ready..."
+                Start-Sleep -s 30
+                C:\opt\telegraf\telegraf.exe --service start
+                Get-Service telegraf
+            }
+        } else {
+            Write-Host "Telegraf not started since Fluentbit tcp listener is not up and running on port 25229"
         }
     }
 }

@@ -97,7 +97,7 @@ require_relative "ConfigParseErrorLogger"
 
 @multiline_enabled = "false"
 @resource_optimization_enabled = false
-@windows_fluent_bit_disabled = false
+@windows_fluent_bit_disabled = true
 
 @waittime_port_25226 = 45
 @waittime_port_25228 = 120
@@ -367,8 +367,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       windows_fluent_bit_config = parsedConfig[:agent_settings][:windows_fluent_bit]
       if !windows_fluent_bit_config.nil?
         windows_fluent_bit_disabled = windows_fluent_bit_config[:disabled]
-        if !windows_fluent_bit_disabled.nil? && windows_fluent_bit_disabled.downcase == "true"
-          @windows_fluent_bit_disabled = true
+        if !windows_fluent_bit_disabled.nil? && windows_fluent_bit_disabled.downcase == "false"
+          @windows_fluent_bit_disabled = false
         end
         puts "Using config map value: AZMON_WINDOWS_FLUENT_BIT_DISABLED = #{@windows_fluent_bit_disabled}"
       end
@@ -503,7 +503,7 @@ if !file.nil?
 
   file.write("export AZMON_RESOURCE_OPTIMIZATION_ENABLED=#{@resource_optimization_enabled}\n")
 
-  if @windows_fluent_bit_disabled
+  if !@windows_fluent_bit_disabled
     file.write("export AZMON_WINDOWS_FLUENT_BIT_DISABLED=#{@windows_fluent_bit_disabled}\n")
   end
 
@@ -600,10 +600,14 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       file.write(commands)
     end
 
-    if @windows_fluent_bit_disabled
+    if !@windows_fluent_bit_disabled
       commands = get_command_windows("AZMON_WINDOWS_FLUENT_BIT_DISABLED", @windows_fluent_bit_disabled)
       file.write(commands)
     end
+
+    commands = get_command_windows("WAITTIME_PORT_25229", @waittime_port_25229)
+    file.write(commands)
+
     # Close file after writing all environment variables
     file.close
     puts "****************End Config Processing********************"

@@ -15,11 +15,13 @@ genevaLogsConfig:
 
 image:
   repository: mcr.microsoft.com/azuremonitor/containerinsights/ciprod
-  tag: "3.1.17"
+  tag: "3.1.18"
   pullPolicy: IfNotPresent
-  agentVersion: "azure-mdsd-1.29.4"
+  agentVersion: "azure-mdsd-1.29.7"
 nameOverride: ""
 enableInternalMetrics: false
+enableKubernetesMetadata: false
+kubernetesMetadataIncludeFields: "podlabels,podannotations,poduid,image,imageid,imagerepo,imagetag"
 fullnameOverride: ""
 podAnnotations: {}
 service:

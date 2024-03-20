@@ -68,6 +68,10 @@ var (
 	winNodePrevMetricRate                   = map[string]float64{}
 	winNodeCpuUsageNanoSecondsLast          = map[string]float64{}
 	winNodeCpuUsageNanoSecondsTimeLast      = map[string]interface{}{}
+	winContainerIdCache                     = map[string]bool{}
+	winContainerCpuUsageNanoSecondsLast     = make(map[string]float64)
+	winContainerCpuUsageNanoSecondsTimeLast = make(map[string]time.Time)
+	winContainerPrevMetricRate              = make(map[string]float64)
 	Log                                     *logrus.Logger
 	osType                                  string
 )
@@ -535,8 +539,38 @@ func getContainerCpuMetricItemRate(metricInfo map[string]interface{}, hostName, 
 
 				metricCollection := map[string]interface{}{
 					"CounterName": metricName,
-					"Value":       metricValue,
 				}
+
+				containerId := podUid + "/" + containerName
+				winContainerIdCache[containerId] = true
+				metricTimeParsed, _ := time.Parse(time.RFC3339, metricTime)
+				if lastTime, exists := winContainerCpuUsageNanoSecondsTimeLast[containerId]; !exists || winContainerCpuUsageNanoSecondsLast[containerId] > metricValue {
+					winContainerCpuUsageNanoSecondsLast[containerId] = metricValue
+					winContainerCpuUsageNanoSecondsTimeLast[containerId] = metricTimeParsed
+					// Equivalent of 'next' in Ruby:
+					continue
+				} else {
+					timeDifference := metricTimeParsed.Sub(lastTime)
+					containerCpuUsageDifference := metricValue - winContainerCpuUsageNanoSecondsLast[containerId]
+					var metricRateValue float64
+					if timeDifference.Seconds() != 0 && containerCpuUsageDifference != 0 {
+						metricRateValue = containerCpuUsageDifference / timeDifference.Seconds()
+					} else {
+						Log.Warnf("Error: timeDifference.Seconds() is 0 or containerCpuUsageDifference is 0")
+						if value, exists := winContainerPrevMetricRate[containerId]; exists {
+							metricRateValue = value
+						} else {
+							metricRateValue = 0
+						}
+					}
+
+					winContainerCpuUsageNanoSecondsLast[containerId] = metricValue
+					winContainerCpuUsageNanoSecondsTimeLast[containerId] = metricTimeParsed
+					metricValue = metricRateValue
+					winContainerPrevMetricRate[containerId] = metricRateValue
+				}
+
+				metricCollection["Value"] = metricValue
 
 				metricCollections := []map[string]interface{}{metricCollection}
 				metricCollectionsJSON, err := json.Marshal(metricCollections)
@@ -874,6 +908,7 @@ func getContainerStartTimeMetricItems(metricInfo map[string]interface{}, hostNam
 
 				containerName, _ := containerData["name"].(string)
 				metricValue, _ := containerData["startTime"].(string)
+				metricValueParsed, _ := time.Parse(time.RFC3339, metricValue)
 
 				metricItem := metricDataItem{}
 				metricItem["Timestamp"] = metricTime
@@ -883,7 +918,7 @@ func getContainerStartTimeMetricItems(metricInfo map[string]interface{}, hostNam
 
 				metricCollection := map[string]interface{}{
 					"CounterName": metricName,
-					"Value":       metricValue,
+					"Value":       metricValueParsed.Unix(),
 				}
 				metricCollections := []map[string]interface{}{metricCollection}
 				metricCollectionsJSON, err := json.Marshal(metricCollections)
@@ -1025,6 +1060,18 @@ func getContainerCpuMetricItems(metricInfo map[string]interface{}, hostName, met
 						}
 						if len(os.Getenv("AZMON_RESOURCE_OPTIMIZATION_ENABLED")) > 0 {
 							telemetryProps["resoureceOptimizationEnabled"] = os.Getenv("AZMON_RESOURCE_OPTIMIZATION_ENABLED")
+						}
+						if len(os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")) > 0 {
+							telemetryProps["metadataEnabled"] = os.Getenv("AZMON_KUBERNETES_METADATA_ENABLED")
+						}
+						if len(os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")) > 0 {
+							telemetryProps["metadataIncludeFields"] = os.Getenv("AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS")
+						}
+						if len(os.Getenv("AZMON_ANNOTATION_BASED_LOG_FILTERING")) > 0 {
+							telemetryProps["annotationBasedFiltering"] = os.Getenv("AZMON_ANNOTATION_BASED_LOG_FILTERING")
+						}
+						if len(os.Getenv("AZMON_KUBERNETES_METADATA_CACHE_TTL_SECONDS")) > 0 {
+							telemetryProps["metadataCacheTTL"] = os.Getenv("AZMON_KUBERNETES_METADATA_CACHE_TTL_SECONDS")
 						}
 						SendMetricTelemetry(metricName, metricValue, telemetryProps)
 					}
@@ -1216,4 +1263,33 @@ func getPersistentVolumeMetrics(metricInfo map[string]interface{}, hostName, met
 	}
 
 	return metricItems
+}
+
+func ResetWinContainerIdCache() {
+	for key := range winContainerIdCache {
+		delete(winContainerIdCache, key)
+	}
+}
+
+func ClearDeletedWinContainersFromCache() {
+	var winCpuUsageNanoSecondsKeys []string
+	for key := range winContainerCpuUsageNanoSecondsLast {
+		winCpuUsageNanoSecondsKeys = append(winCpuUsageNanoSecondsKeys, key)
+	}
+
+	winContainersToBeCleared := []string{}
+	for _, containerId := range winCpuUsageNanoSecondsKeys {
+		if _, exists := winContainerIdCache[containerId]; !exists {
+			winContainersToBeCleared = append(winContainersToBeCleared, containerId)
+		}
+	}
+
+	if len(winContainersToBeCleared) > 0 {
+		Log.Println("Stale containers found in cache, clearing...: %v", winContainersToBeCleared)
+	}
+
+	for _, containerId := range winContainersToBeCleared {
+		delete(winContainerCpuUsageNanoSecondsLast, containerId)
+		delete(winContainerCpuUsageNanoSecondsTimeLast, containerId)
+	}
 }
