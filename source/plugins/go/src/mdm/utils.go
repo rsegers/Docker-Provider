@@ -379,10 +379,6 @@ func GetAllContainerLimits() (map[string]float64, map[string]float64, map[string
 		}
 	}
 
-	// Log("MDMLog: containerCpuLimitHash: %+v", containerCpuLimitHash)
-	// Log("MDMLog: containerMemoryLimitHash: %+v", containerMemoryLimitHash)
-	// Log("MDMLog: containerResourceDimensionHash: %+v", containerResourceDimensionHash)
-
 	return containerCpuLimitHash, containerMemoryLimitHash, containerResourceDimensionHash, nil
 }
 

@@ -87,51 +87,6 @@ var (
 	Log = FLBLogger.Printf
 )
 
-// func createLogger() *log.Logger {
-// 	var logfile *os.File
-
-// 	osType := os.Getenv("OS_TYPE")
-
-// 	var logPath string
-
-// 	if strings.Compare(strings.ToLower(osType), "windows") != 0 {
-// 		logPath = "/var/opt/microsoft/docker-cimprov/log/fluent-bit-out-oms-runtime.log"
-// 	} else {
-// 		logPath = "/etc/amalogswindows/fluent-bit-out-oms-runtime.log"
-// 	}
-
-// 	if _, err := os.Stat(logPath); err == nil {
-// 		fmt.Printf("File Exists. Opening file in append mode...\n")
-// 		logfile, err = os.OpenFile(logPath, os.O_APPEND|os.O_WRONLY, 0600)
-// 		if err != nil {
-// 			lib.SendException(err.Error())
-// 			fmt.Print(err.Error())
-// 		}
-// 	}
-
-// 	if _, err := os.Stat(logPath); os.IsNotExist(err) {
-// 		fmt.Printf("File Doesnt Exist. Creating file...\n")
-// 		logfile, err = os.Create(logPath)
-// 		if err != nil {
-// 			lib.SendException(err.Error())
-// 			fmt.Print(err.Error())
-// 		}
-// 	}
-
-// 	logger := log.New(logfile, "", 0)
-
-// 	logger.SetOutput(&lumberjack.Logger{
-// 		Filename:   logPath,
-// 		MaxSize:    10, //megabytes
-// 		MaxBackups: 1,
-// 		MaxAge:     28,   //days
-// 		Compress:   true, // false by default
-// 	})
-
-// 	logger.SetFlags(log.Ltime | log.Lshortfile | log.LstdFlags)
-// 	return logger
-// }
-
 func init() {
 	tokenResourceURL = "https://monitoring.azure.com/"
 	tokenResourceAudience = "https://monitor.azure.com/"
@@ -270,7 +225,6 @@ func InitializePlugin(agentVersion string) {
 				tokenResourceAudience = strings.TrimSpace(customResourceEndpoint)
 			}
 
-			// msiEndpoint := strings.Replace(imdsMsiEndpointTemplate, "%{resource}", tokenResourceAudience, 1)
 			msiEndpoint := fmt.Sprintf(imdsMsiEndpointTemplate, tokenResourceAudience)
 			var err error
 			parsedTokenURI, err = url.Parse(msiEndpoint)
@@ -305,12 +259,9 @@ func InitializePlugin(agentVersion string) {
 			}
 		} else {
 			useMsi = true
-			// msiEndpoint := strings.Replace(imdsMsiEndpointTemplate, "%{resource}", tokenResourceAudience, 1)
 			msiEndpoint := fmt.Sprintf(imdsMsiEndpointTemplate, tokenResourceAudience)
 			if userAssignedClientID != "" {
-				// msiEndpoint = strings.Replace(msiEndpointTemplate, "%{user_assigned_client_id}", userAssignedClientID, 1)
 				msiEndpoint = fmt.Sprintf(msiEndpointTemplate, userAssignedClientID, tokenResourceURL)
-				// msiEndpoint = strings.Replace(msiEndpoint, "%{resource}", tokenResourceURL, 1)
 			}
 			parsedTokenURI, err = url.Parse(msiEndpoint)
 			Log("MDMLog: MSI Endpoint: %s\n", msiEndpoint)

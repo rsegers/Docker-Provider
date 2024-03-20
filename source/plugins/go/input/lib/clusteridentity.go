@@ -52,7 +52,7 @@ func NewArcK8sClusterIdentity() *ArcK8sClusterIdentity {
 		logPath = "/etc/amalogswindows/arc_k8s_cluster_identity.log"
 	}
 
-	logger := log.New(os.Stdout, "", log.LstdFlags)
+	logger := CreateLogger(logPath)
 
 	arcK8sClusterIdentity := &ArcK8sClusterIdentity{
 		LogPath:                         logPath,

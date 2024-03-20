@@ -1315,10 +1315,6 @@ func PostTelegrafMetricsToMDMHelper(telegrafRecords []map[interface{}]interface{
 	return mdm.PostTelegrafMetricsToMDM(telegrafRecords)
 }
 
-// func PostCAdvisorMetricsToMDMHelper(cadvisorRecords []map[interface{}]interface{}) int {
-// 	return mdm.PostCAdvisorMetricsToMDM(cadvisorRecords)
-// }
-
 func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) int {
 	start := time.Now()
 	Log("Info::PostInputPluginRecords starting")
