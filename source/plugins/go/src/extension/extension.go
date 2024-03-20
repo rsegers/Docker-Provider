@@ -269,18 +269,18 @@ func (e *Extension) GetNamespacesForDataCollection() []string {
 		if found {
 			if len(namespacesSetting) > 0 {
 				// Remove duplicates from the namespacesSetting slice
-				uniqNamespaces := make(map[string]bool)
+				uniqueNamespaces := make(map[string]bool)
 				for _, ns := range namespacesSetting {
 					str, ok := ns.(string)
 					if !ok {
 						logger.Println("ExtensionUtils::getNamespacesForDataCollection: namespace:", ns, "not valid hence skipping")
 						continue
 					}
-					uniqNamespaces[strings.ToLower(str)] = true
+					uniqueNamespaces[strings.ToLower(str)] = true
 				}
 
 				// Convert the map keys to a new slice
-				for ns := range uniqNamespaces {
+				for ns := range uniqueNamespaces {
 					namespaces = append(namespaces, ns)
 				}
 
