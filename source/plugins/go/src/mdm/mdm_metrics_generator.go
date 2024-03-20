@@ -71,6 +71,12 @@ func init() {
 	} else {
 		LogPath = "/var/opt/microsoft/docker-cimprov/log/mdm_metrics_generator.log"
 	}
+
+	isTestEnv := os.Getenv("ISTEST") == "true"
+	if isTestEnv {
+		LogPath = "./mdm_metrics_generator.log"
+	}
+
 	// Initialize Logger
 	logFile, err := os.OpenFile(LogPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
@@ -85,7 +91,8 @@ func GetDiskUsageMetricRecords(record map[string]interface{}) ([]*GenericMetricT
 	tagMap := make(map[string]string)
 
 	if record["tags"] == nil {
-		Log("translateTelegrafMetrics: tags are missing in the metric record")
+		Log.Printf("translateTelegrafMetrics: tags are missing in the metric record")
+		return metricRecords, nil
 	} else {
 		tags = record["tags"].(map[string]interface{})
 		for k, v := range tags {
@@ -106,7 +113,6 @@ func GetDiskUsageMetricRecords(record map[string]interface{}) ([]*GenericMetricT
 		diskUsagePercentageRecord := DiskUsedPercentageMetricsTemplate(timestamp, MDMDiskUsedPercentage, hostName, deviceName, usedPercent)
 		metricRecords = append(metricRecords, diskUsagePercentageRecord)
 	}
-	// TODO: error handling
 	return metricRecords, nil
 }
 
@@ -116,7 +122,8 @@ func GetMetricRecords(record map[string]interface{}) ([]*GenericMetricTemplate, 
 	tagMap := make(map[string]string)
 
 	if record["tags"] == nil {
-		Log("translateTelegrafMetrics: tags are missing in the metric record")
+		Log.Printf("translateTelegrafMetrics: tags are missing in the metric record")
+		return metricRecords, nil
 	} else {
 		tags = record["tags"].(map[string]interface{})
 		for k, v := range tags {
@@ -151,7 +158,6 @@ func GetMetricRecords(record map[string]interface{}) ([]*GenericMetricTemplate, 
 			metricRecords = append(metricRecords, m)
 		}
 	}
-	// TODO error handling
 	return metricRecords, nil
 }
 
@@ -163,8 +169,6 @@ func GetContainerResourceUtilizationThresholds() map[string]float64 {
 		PVUsedBytes:           DefaultMDMPvUtilizationThreshold,
 		JobCompletionTime:     float64(DefaultMDMJobCompletedTimeThresholdMinutes),
 	}
-
-	// TODO: do error handling
 
 	if cpuThreshold, err := getEnvFloat("AZMON_ALERT_CONTAINER_CPU_THRESHOLD"); err == nil {
 		metricThresholdHash[CPUUsageNanoCores] = cpuThreshold
@@ -206,22 +210,19 @@ func GetNodeResourceMetricRecords(record map[string]interface{}, metricName stri
 	custommetricrecord := NodeResourceMetricsTemplate(record["Timestamp"].(string), metricName, record["Host"].(string), metricValue)
 	metricRecords = append(metricRecords, custommetricrecord)
 
-	// TODO: is nil check needed here?
 	additionalRecord := NodeResourceMetricsTemplate(record["Timestamp"].(string), NodeMetricNameMetricPercentageNameHash[metricName], record["Host"].(string), percentageMetricValue)
 	metricRecords = append(metricRecords, additionalRecord)
 
-	// TODO: is nil check needed here?
 	additionalRecord = NodeResourceMetricsTemplate(record["Timestamp"].(string), NodeMetricNameMetricAllocatablePercentageNameHash[metricName], record["Host"].(string), allocatablePercentageMetricValue)
 	metricRecords = append(metricRecords, additionalRecord)
 
-	//TODO: error handling
 	return metricRecords, nil
 }
 
 func GetContainerResourceUtilMetricRecords(recordTimeStamp string, metricName string, percentageMetricValue float64, dims string, thresholdPercentage float64, isZeroFill bool) ([]*GenericMetricTemplate, error) {
 	var records []*GenericMetricTemplate
 	if dims == "" {
-		log.Println("Dimensions nil, returning empty records")
+		Log.Printf("Dimensions nil, returning empty records")
 		return records, nil
 	}
 
@@ -248,7 +249,6 @@ func GetContainerResourceUtilMetricRecords(recordTimeStamp string, metricName st
 	resourceThresholdViolatedRecord := ContainerResourceThresholdViolationTemplate(recordTimeStamp, ContainerMetricNameMetricThresholdViolatedHash[metricName], containerName, podName, controllerName, podNamespace, thresholdPercentage, float64(containerResourceThresholdViolated))
 	records = append(records, resourceThresholdViolatedRecord)
 
-	// TODO: error handling
 	return records, nil
 
 }
@@ -273,7 +273,6 @@ func GetPVResourceUtilMetricRecords(recordTimeStamp string, metricName string, c
 
 	records = append(records, resourceThresholdViolatedRecord)
 
-	// TODO: error handling
 	return records, nil
 }
 

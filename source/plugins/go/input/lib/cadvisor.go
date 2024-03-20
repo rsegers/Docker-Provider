@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -30,7 +31,7 @@ const (
 const (
 	MEMORY_WORKING_SET_BYTES               = "memoryWorkingSetBytes"
 	CPU_USAGE_NANO_CORES                   = "cpuUsageNanoCores"
-	MEMORY_RSS_BYTES                       = "memoryRSSBytes"
+	MEMORY_RSS_BYTES                       = "memoryRssBytes"
 	OBJECT_NAME_K8S_NODE                   = "K8SNode"
 	OBJECT_NAME_K8S_CONTAINER              = "K8SContainer"
 	PV_USED_BYTES                          = "pvUsedBytes"
@@ -240,6 +241,14 @@ func getResponse(winNode map[string]string, relativeUri string) (*http.Response,
 }
 
 func GetMetrics(winNode map[string]string, namespaceFilteringMode string, namespaces []string, metricTime string) []metricDataItem {
+	defer func() {
+		if r := recover(); r != nil {
+			stacktrace := debug.Stack()
+			Log.Printf("GetMetrics: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
+			SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+		}
+	}()
+
 	cAdvisorStats, err := getSummaryStatsFromCAdvisor(winNode)
 
 	if err != nil {
@@ -334,6 +343,14 @@ func GetMetricsHelper(metricInfo map[string]interface{}, winNode map[string]stri
 }
 
 func GetInsightsMetrics(winNode map[string]string, namespaceFilteringMode string, namespaces []string, metricTime string) []metricDataItem {
+	defer func() {
+		if r := recover(); r != nil {
+			stacktrace := debug.Stack()
+			Log.Printf("GetInsightsMetrics: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
+			SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+		}
+	}()
+
 	metricDataItems := []metricDataItem{}
 	cAdvisorStats, err := getSummaryStatsFromCAdvisor(winNode)
 	if err != nil {
@@ -428,7 +445,13 @@ func getContainerMemoryMetricItems(metricInfo map[string]interface{}, hostName, 
 
 				containerName, _ := containerData["name"].(string)
 				containerDataMemory := containerData["memory"]
-				metricValue := containerDataMemory.(map[string]interface{})[metricKey].(float64)
+				metricValue, ok := containerDataMemory.(map[string]interface{})[metricKey].(float64)
+				if !ok {
+					Log.Warnf("CHECK::Error: metricValue is not a float64. %v", containerDataMemory)
+					continue
+				}
+
+
 
 				metricItem := metricDataItem{}
 				metricItem["Timestamp"] = metricTime
@@ -529,7 +552,10 @@ func getContainerCpuMetricItemRate(metricInfo map[string]interface{}, hostName, 
 
 				containerName, _ := containerData["name"].(string)
 				containerDataCpu := containerData["cpu"]
-				metricValue := containerDataCpu.(map[string]interface{})[metricKey].(float64)
+				metricValue, ok := containerDataCpu.(map[string]interface{})[metricKey].(float64)
+				if !ok {
+					continue
+				}
 
 				metricItem := metricDataItem{}
 				metricItem["Timestamp"] = metricTime
@@ -980,7 +1006,10 @@ func getContainerCpuMetricItems(metricInfo map[string]interface{}, hostName, met
 
 				containerName, _ := containerData["name"].(string)
 				containerDataCpu := containerData["cpu"]
-				metricValue := containerDataCpu.(map[string]interface{})[metricKey].(float64)
+				metricValue, ok := containerDataCpu.(map[string]interface{})[metricKey].(float64)
+				if !ok {
+					continue
+				}
 
 				metricItem := metricDataItem{}
 				metricItem["Timestamp"] = metricTime
@@ -1135,7 +1164,7 @@ func getContainerGpuMetricsAsInsightsMetrics(metricInfo map[string]interface{}, 
 					continue
 				}
 				for _, accelerator := range accelerators {
-					metricValue := accelerator.(map[string]interface{})[metricKey]
+					metricValue, ok := accelerator.(map[string]interface{})[metricKey]
 					if !ok {
 						continue
 					}
@@ -1213,12 +1242,12 @@ func getPersistentVolumeMetrics(metricInfo map[string]interface{}, hostName, met
 				excludeNamespace = true
 			}
 
-			podVolume, ok := podData["volume"].(map[string]interface{})
+			podVolume, ok := podData["volume"].([]interface{})
 			if !excludeNamespace && ok {
 				for _, volume := range podVolume {
-					pvcRef, ok := volume.(map[string]interface{})["pvcRef"].(map[string]interface{})
+					parsedVolume := volume.(map[string]interface{})
+					pvcRef, ok := parsedVolume["pvcRef"].(map[string]interface{})
 					if !ok {
-						Log.Warnf("Error: pvcRef data is not a map")
 						continue
 					}
 
@@ -1235,7 +1264,7 @@ func getPersistentVolumeMetrics(metricInfo map[string]interface{}, hostName, met
 					metricItem["CollectionTime"] = metricTime
 					metricItem["Computer"] = hostName
 					metricItem["Name"] = metricName
-					metricItem["Value"] = volume.(map[string]interface{})[metricKey]
+					metricItem["Value"] = parsedVolume[metricKey].(float64)
 					metricItem["Origin"] = INSIGHTSMETRICS_TAGS_ORIGIN
 					metricItem["Namespace"] = INSIGHTSMETRICS_TAGS_PV_NAMESPACE
 
@@ -1246,11 +1275,15 @@ func getPersistentVolumeMetrics(metricInfo map[string]interface{}, hostName, met
 					metricTags[INSIGHTSMETRICS_TAGS_POD_NAME] = podName
 					metricTags[INSIGHTSMETRICS_TAGS_PVC_NAME] = pvcName
 					metricTags[INSIGHTSMETRICS_TAGS_PVC_NAMESPACE] = pvcNamespace
-					metricTags[INSIGHTSMETRICS_TAGS_VOLUME_NAME] = volume.(map[string]interface{})["name"].(string)
-					metricTags[INSIGHTSMETRICS_TAGS_PV_CAPACITY_BYTES] = volume.(map[string]interface{})["capacityBytes"].(string)
+					metricTags[INSIGHTSMETRICS_TAGS_VOLUME_NAME] = parsedVolume["name"].(string)
+					metricTags[INSIGHTSMETRICS_TAGS_PV_CAPACITY_BYTES] = fmt.Sprintf("%.0f", parsedVolume["capacityBytes"].(float64))
 
-					metricItem["Tags"] = metricTags
-
+					jsonTags, err := json.Marshal(metricTags)
+					if err != nil {
+						Log.Warnf("Error marshaling metricTags: %s", err)
+						continue
+					}
+					metricItem["Tags"] = string(jsonTags)
 					metricItems = append(metricItems, metricItem)
 				}
 			}
@@ -1285,7 +1318,7 @@ func ClearDeletedWinContainersFromCache() {
 	}
 
 	if len(winContainersToBeCleared) > 0 {
-		Log.Println("Stale containers found in cache, clearing...: %v", winContainersToBeCleared)
+		Log.Printf("Stale containers found in cache, clearing...: %v", winContainersToBeCleared)
 	}
 
 	for _, containerId := range winContainersToBeCleared {

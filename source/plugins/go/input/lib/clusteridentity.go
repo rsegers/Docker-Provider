@@ -19,29 +19,29 @@ import (
 
 // Constants
 const (
-	ClusterConfigCRDAPIVersion             = "clusterconfig.azure.com/v1beta1"
-	ClusterIdentityResourceName            = "container-insights-clusteridentityrequest"
-	ClusterIdentityResourceNamespace       = "azure-arc"
-	ClusterIdentityTokenSecretNamespace    = "azure-arc"
-	CRResourceURITemplate                  = "%s/apis/%s/namespaces/%s/azureclusteridentityrequests/%s"
-	SecretResourceURITemplate              = "%s/api/v1/namespaces/%s/secrets/%s"
-	AzureMonitorCustomMetricsAudience      = "https://monitoring.azure.com/"
-	ClusterIdentityRequestKind             = "AzureClusterIdentityRequest"
+	ClusterConfigCRDAPIVersion          = "clusterconfig.azure.com/v1beta1"
+	ClusterIdentityResourceName         = "container-insights-clusteridentityrequest"
+	ClusterIdentityResourceNamespace    = "azure-arc"
+	ClusterIdentityTokenSecretNamespace = "azure-arc"
+	CRResourceURITemplate               = "%s/apis/%s/namespaces/%s/azureclusteridentityrequests/%s"
+	SecretResourceURITemplate           = "%s/api/v1/namespaces/%s/secrets/%s"
+	AzureMonitorCustomMetricsAudience   = "https://monitoring.azure.com/"
+	ClusterIdentityRequestKind          = "AzureClusterIdentityRequest"
 )
 
 // ArcK8sClusterIdentity struct represents the Ruby class
 type ArcK8sClusterIdentity struct {
-	LogPath                          string
-	Logger                           *log.Logger
-	TokenExpiryTime                  time.Time
-	CachedAccessToken                string
-	IsLastTokenRenewalUpdatePending  bool
-	TokenFilePath                    string
-	CertFilePath                     string
-	KubeAPIServerURL                 string
-	HTTPClient                       *http.Client
-	ServiceAccountToken              string
-	ExtensionName                    string
+	LogPath                         string
+	Logger                          *log.Logger
+	TokenExpiryTime                 time.Time
+	CachedAccessToken               string
+	IsLastTokenRenewalUpdatePending bool
+	TokenFilePath                   string
+	CertFilePath                    string
+	KubeAPIServerURL                string
+	HTTPClient                      *http.Client
+	ServiceAccountToken             string
+	ExtensionName                   string
 }
 
 // NewArcK8sClusterIdentity creates a new instance of ArcK8sClusterIdentity
@@ -52,7 +52,12 @@ func NewArcK8sClusterIdentity() *ArcK8sClusterIdentity {
 		logPath = "/etc/amalogswindows/arc_k8s_cluster_identity.log"
 	}
 
-	logger := log.New(os.Stdout, "", log.LstdFlags)
+	isTestEnv := os.Getenv("ISTEST") == "true"
+	if isTestEnv {
+		logPath = "./arc_k8s_cluster_identity.log"
+	}
+
+	logger := CreateLogger(logPath)
 
 	arcK8sClusterIdentity := &ArcK8sClusterIdentity{
 		LogPath:                         logPath,
@@ -126,6 +131,7 @@ func (a *ArcK8sClusterIdentity) GetTokenFromSecret(tokenSecretName, tokenSecretD
 	a.Logger.Printf("Making GET request to %s", secretResourceURI)
 	resp, err := a.HTTPClient.Do(req)
 	if err != nil {
+		SendExceptionTelemetry(err.Error(), map[string]string{"FeatureArea": "MDMGo"})
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -233,7 +239,7 @@ func (a *ArcK8sClusterIdentity) GetServiceAccountToken() string {
 	tokenStr, err := ioutil.ReadFile(a.TokenFilePath)
 	if err != nil {
 		a.Logger.Printf("get_service_account_token call failed: %v", err)
-		// Send telemetry error here
+		SendExceptionTelemetry(err.Error(), map[string]string{"FeatureArea": "MDMGo"})
 		return ""
 	}
 
@@ -244,7 +250,6 @@ func (a *ArcK8sClusterIdentity) GetHTTPClient() *http.Client {
 	baseAPIServerURL, err := url.Parse(a.KubeAPIServerURL)
 	if err != nil {
 		a.Logger.Printf("Unable to parse API server URL %s: %v", a.KubeAPIServerURL, err)
-		// Send telemetry error here
 		return nil
 	}
 
@@ -258,14 +263,12 @@ func (a *ArcK8sClusterIdentity) GetHTTPClient() *http.Client {
 
 	if _, err := os.Stat(a.CertFilePath); os.IsNotExist(err) {
 		a.Logger.Printf("%s doesn't exist: %v", a.CertFilePath, err)
-		// Send telemetry error here
 		return nil
 	}
 
 	caCert, err := ioutil.ReadFile(a.CertFilePath)
 	if err != nil {
 		a.Logger.Printf("Unable to read cert file %s: %v", a.CertFilePath, err)
-		// Send telemetry error here
 		return nil
 	}
 

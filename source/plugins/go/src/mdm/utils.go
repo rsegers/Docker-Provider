@@ -13,26 +13,6 @@ import (
 	"strings"
 )
 
-// var logPath string
-// var logger *log.Logger
-
-// func init() {
-// 	// osType := os.Getenv("OS_TYPE")
-// 	// if osType != "" && strings.EqualFold(strings.TrimSpace(osType), "windows") {
-// 	// 	logPath = "/etc/amalogswindows/filter_cadvisor2mdm.log"
-// 	// } else {
-// 	// 	logPath = "/var/opt/microsoft/docker-cimprov/log/filter_cadvisor2mdm.log"
-// 	// }
-
-// 	// file, err := os.OpenFile(logPath, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0666)
-// 	// if err != nil {
-// 	// 	log.Fatalf("error opening log file: %v", err)
-// 	// }
-// 	// FLBLogger = lib.CreateLogger(logPath)
-
-// 	// logger = log.New(file, "", log.LstdFlags)
-// }
-
 func CheckCustomMetricsAvailability() bool {
 	aksRegion := os.Getenv("AKS_REGION")
 	aksResourceID := os.Getenv("AKS_RESOURCE_ID")
@@ -61,7 +41,7 @@ func GetNodeCapacity() (float64, float64, error) {
 
 	response, err := lib.GetAllMetricsCAdvisor(nil)
 	if err != nil {
-		Log("MDMLog: Error get_node_capacity: %s", err)
+		Log.Printf("MDMLog: Error get_node_capacity: %s", err)
 		lib.SendExceptionTelemetry(err.Error(), nil)
 		return cpuCapacity, memoryCapacity, err
 	}
@@ -69,7 +49,7 @@ func GetNodeCapacity() (float64, float64, error) {
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		Log("MDMLog: Error reading response body: %s", err)
+		Log.Printf("MDMLog: Error reading response body: %s", err)
 		lib.SendExceptionTelemetry(err.Error(), nil)
 		return cpuCapacity, memoryCapacity, err
 	}
@@ -80,12 +60,12 @@ func GetNodeCapacity() (float64, float64, error) {
 			cpuValue := strings.Fields(metric)[1]
 			cpuCapacity, err = strconv.ParseFloat(cpuValue, 64)
 			if err != nil {
-				Log("MDMLog: Error parsing CPU capacity: %s", err)
+				Log.Printf("MDMLog: Error parsing CPU capacity: %s", err)
 				lib.SendExceptionTelemetry(err.Error(), nil)
 				return cpuCapacity, memoryCapacity, err
 			}
 			cpuCapacity *= 1000
-			Log("MDMLog: CPU Capacity %f", cpuCapacity)
+			Log.Printf("MDMLog: CPU Capacity %f", cpuCapacity)
 		}
 
 		if strings.HasPrefix(metric, "machine_memory_bytes") {
@@ -93,12 +73,12 @@ func GetNodeCapacity() (float64, float64, error) {
 			memoryValueBig, ok := new(big.Float).SetString(memoryValue)
 			if !ok {
 				err := fmt.Errorf("invalid memory value: %s", memoryValue)
-				Log("MDMLog: Error parsing Memory capacity: %s", err)
+				Log.Printf("MDMLog: Error parsing Memory capacity: %s", err)
 				lib.SendExceptionTelemetry(err.Error(), nil)
 				return cpuCapacity, memoryCapacity, err
 			}
 			memoryCapacity, _ = memoryValueBig.Float64()
-			Log("MDMLog: Memory Capacity %f", memoryCapacity)
+			Log.Printf("MDMLog: Memory Capacity %f", memoryCapacity)
 		}
 	}
 
@@ -107,7 +87,7 @@ func GetNodeCapacity() (float64, float64, error) {
 
 func GetNodeAllocatable(cpuCapacity, memoryCapacity float64) (float64, float64, error) {
 	if cpuCapacity == 0.0 || memoryCapacity == 0.0 {
-		Log("MDMLog: cpu_capacity or memory_capacity values not set. Hence we cannot calculate allocatable values")
+		Log.Printf("MDMLog: cpu_capacity or memory_capacity values not set. Hence we cannot calculate allocatable values")
 		return 0.0, 0.0, errors.New("cpu_capacity or memory_capacity values not set")
 	}
 
@@ -132,37 +112,37 @@ func GetNodeAllocatable(cpuCapacity, memoryCapacity float64) (float64, float64, 
 
 	kubereservedCPU, err := extractValue(parsedResponse, []string{"kubeletconfig", "kubeReserved", "cpu"}, "0.0")
 	if err != nil {
-		Log("MDMLog: %v", err)
+		Log.Printf("MDMLog: %v", err)
 		kubereservedCPU = "0.0"
 	}
 
 	kubereservedMemory, err := extractValue(parsedResponse, []string{"kubeletconfig", "kubeReserved", "memory"}, "0.0")
 	if err != nil {
-		Log("MDMLog: %v", err)
+		Log.Printf("MDMLog: %v", err)
 		kubereservedMemory = "0.0"
 	}
 
 	systemReservedCPU, err := extractValue(parsedResponse, []string{"kubeletconfig", "systemReserved", "cpu"}, "0.0")
 	if err != nil {
-		Log("MDMLog: %v", err)
+		Log.Printf("MDMLog: %v", err)
 		systemReservedCPU = "0.0"
 	}
 
 	explicitlyReservedCPU, err := extractValue(parsedResponse, []string{"kubeletconfig", "reservedCPUs"}, "0.0")
 	if err != nil {
-		Log("MDMLog: %v", err)
+		Log.Printf("MDMLog: %v", err)
 		explicitlyReservedCPU = "0.0"
 	}
 
 	systemReservedMemory, err := extractValue(parsedResponse, []string{"kubeletconfig", "systemReserved", "memory"}, "0.0")
 	if err != nil {
-		Log("MDMLog: %v", err)
+		Log.Printf("MDMLog: %v", err)
 		systemReservedMemory = "0.0"
 	}
 
 	evictionHardMemory, err := extractValue(parsedResponse, []string{"kubeletconfig", "evictionHard", "memory.available"}, "0.0")
 	if err != nil {
-		Log("MDMLog: %v", err)
+		Log.Printf("MDMLog: %v", err)
 		evictionHardMemory = "0.0"
 	}
 
@@ -179,8 +159,8 @@ func GetNodeAllocatable(cpuCapacity, memoryCapacity float64) (float64, float64, 
 	cpuAllocatableRounded, _ := big.NewFloat(cpuAllocatable).SetPrec(2).Float64()
 	memoryAllocatableRounded, _ := big.NewFloat(memoryAllocatable).SetPrec(2).Float64()
 
-	Log("MDMLog: CPU Allocatable %f", cpuAllocatableRounded)
-	Log("MDMLog: Memory Allocatable %f", memoryAllocatableRounded)
+	Log.Printf("MDMLog: CPU Allocatable %f", cpuAllocatableRounded)
+	Log.Printf("MDMLog: Memory Allocatable %f", memoryAllocatableRounded)
 
 	return cpuAllocatableRounded, memoryAllocatableRounded, nil
 }
@@ -206,7 +186,7 @@ func getMetricNumericValue(metricName, metricVal string) float64 {
 	case "memory":
 		metricValue, err := convertMemoryMetric(metricValue, metricVal)
 		if err != nil {
-			Log("MDMLog: Error converting memory metric: %v", err)
+			Log.Printf("MDMLog: Error converting memory metric: %v", err)
 			return 0
 		}
 		return metricValue
@@ -214,7 +194,7 @@ func getMetricNumericValue(metricName, metricVal string) float64 {
 	case "cpu":
 		metricValue, err := convertCPUMetric(metricValue)
 		if err != nil {
-			Log("MDMLog: Error converting CPU metric: %v", err)
+			Log.Printf("MDMLog: Error converting CPU metric: %v", err)
 			return 0
 		}
 		return metricValue
@@ -225,7 +205,7 @@ func getMetricNumericValue(metricName, metricVal string) float64 {
 		}
 
 	default:
-		Log("MDMLog: Unsupported metric %s. Returning 0 for metric value", metricName)
+		Log.Printf("MDMLog: Unsupported metric %s. Returning 0 for metric value", metricName)
 		return 0
 	}
 
@@ -286,7 +266,7 @@ func convertCPUMetric(metricValue string) (float64, error) {
 	default:
 		defVal, err := convertToFloat(metricValue)
 		if err != nil {
-			Log("MDMLog: Error converting metric value: %v", err)
+			Log.Printf("MDMLog: Error converting metric value: %v", err)
 			return 0.0, err
 		}
 		return defVal * 1000.0 * 1000.0 * 1000.0, nil
@@ -296,7 +276,7 @@ func convertCPUMetric(metricValue string) (float64, error) {
 func trimAndMultiply(metricValue, suffix string, multiplier float64) float64 {
 	value, err := convertToFloat(strings.TrimSuffix(metricValue, suffix))
 	if err != nil {
-		Log("MDMLog: Error converting metric value: %v", err)
+		Log.Printf("MDMLog: Error converting metric value: %v", err)
 		return 0
 	}
 	return value * multiplier
@@ -307,7 +287,7 @@ func convertToFloat(value string) (float64, error) {
 }
 
 func GetAllContainerLimits() (map[string]float64, map[string]float64, map[string]string, error) {
-	Log("MDMLog: in get_all_container_limits...")
+	Log.Printf("MDMLog: in get_all_container_limits...")
 
 	clusterID := lib.GetClusterID()
 	containerCpuLimitHash := make(map[string]float64)
@@ -320,95 +300,104 @@ func GetAllContainerLimits() (map[string]float64, map[string]float64, map[string
 	}
 	defer response.Body.Close()
 
-	var podInventory struct {
-		Items []struct {
-			Metadata struct {
-				Namespace       string `json:"namespace"`
-				Name            string `json:"name"`
-				OwnerReferences []struct {
-					Name string `json:"name"`
-				} `json:"ownerReferences"`
-			} `json:"metadata"`
-			Spec struct {
-				Containers     []Container `json:"containers"`
-				InitContainers []Container `json:"initContainers"`
-			} `json:"spec"`
-		} `json:"items"`
-	}
+	var podInventory map[string]interface{}
 
 	err = json.NewDecoder(response.Body).Decode(&podInventory)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	for _, item := range podInventory.Items {
-		Log("MDMLog: in pod inventory items...")
-		podNamespace := item.Metadata.Namespace
-		podName := item.Metadata.Name
-		podUid, err := getPodUid(podNamespace, map[string]interface{}{
-			"namespace": podNamespace,
-			"name":      podName,
-		})
-		if err != nil {
-			Log("MDMLog: %v", err)
+	for _, item := range podInventory["items"].([]interface{}) {
+		Log.Printf("MDMLog: in pod inventory items...")
+		metadata := item.(map[string]interface{})["metadata"].(map[string]interface{})
+		podNamespace := metadata["namespace"].(string)
+		podName := metadata["name"].(string)
+		podUid, _ := getPodUid(podNamespace, metadata)
+		Log.Printf("MDMLog: podName, podNamespace, podUid: %s, %s, %s", podName, podNamespace, podUid)
+		if podUid == "" {
 			continue
 		}
-		Log("MDMLog: podUid: %s", podUid)
 
 		controllerName := "No Controller"
-		if len(item.Metadata.OwnerReferences) > 0 && item.Metadata.OwnerReferences[0].Name != "" {
-			controllerName = item.Metadata.OwnerReferences[0].Name
+		if _, ok := metadata["ownerReferences"]; ok {
+			ownerReferences := metadata["ownerReferences"].([]interface{})
+			if len(ownerReferences) > 0 {
+				if _, ok := ownerReferences[0].(map[string]interface{})["name"]; ok {
+					val := ownerReferences[0].(map[string]interface{})["name"].(string)
+					if val != "" {
+						controllerName = val
+					}
+				}
+			}
 		}
 
-		podContainers := append(item.Spec.Containers, item.Spec.InitContainers...)
+		spec := item.(map[string]interface{})["spec"].(map[string]interface{})
+		podContainers := make([]interface{}, 0)
+		if _, ok := spec["containers"]; ok {
+			podContainers = spec["containers"].([]interface{})
+		}
+		if _, ok := spec["initContainers"]; ok {
+			podContainers = append(podContainers, spec["initContainers"].([]interface{})...)
+		}
+
 		for _, container := range podContainers {
-			Log("MDMLog: in podContainers for loop...")
-			containerName := container.Name
+			Log.Printf("MDMLog: in podContainers for loop...")
+			containerName := ""
+			if name, ok := container.(map[string]interface{})["name"]; ok {
+				containerName = name.(string)
+			}
 			key := clusterID + "/" + podUid + "/" + containerName
 			containerResourceDimensionHash[key] = containerName + "~~" + podName + "~~" + controllerName + "~~" + podNamespace
 
-			if container.Resources.Limits.CPU != "" {
-				cpuLimit := container.Resources.Limits.CPU
-				memoryLimit := container.Resources.Limits.Memory
-				Log("MDMLog: cpuLimit: %s", cpuLimit)
-				Log("MDMLog: memoryLimit: %s", memoryLimit)
+			if containerName == "" {
+				continue
+			}
 
-				containerCpuLimitHash[key] = getMetricNumericValue("cpu", cpuLimit)
-				containerMemoryLimitHash[key] = getMetricNumericValue("memory", memoryLimit)
+			if _, ok := container.(map[string]interface{})["resources"]; ok {
+				resources := container.(map[string]interface{})["resources"].(map[string]interface{})
+				if _, ok := resources["limits"]; ok {
+					limits := resources["limits"].(map[string]interface{})
+					if _, ok := limits["cpu"]; ok {
+						cpuLimit := limits["cpu"].(string)
+						if cpuLimit != "" {
+							containerCpuLimitHash[key] = getMetricNumericValue("cpu", cpuLimit)
+							Log.Printf("MDMLog: cpuLimit: %s", cpuLimit)
+						}
+					}
+					if _, ok := limits["memory"]; ok {
+						memoryLimit := limits["memory"].(string)
+						if memoryLimit != "" {
+							containerMemoryLimitHash[key] = getMetricNumericValue("memory", memoryLimit)
+							Log.Printf("MDMLog: memoryLimit: %s", memoryLimit)
+						}
+					}
+				}
 			}
 		}
 	}
 
-	// Log("MDMLog: containerCpuLimitHash: %+v", containerCpuLimitHash)
-	// Log("MDMLog: containerMemoryLimitHash: %+v", containerMemoryLimitHash)
-	// Log("MDMLog: containerResourceDimensionHash: %+v", containerResourceDimensionHash)
+	Log.Printf("MDMLog: containerCpuLimitHash: %v", containerCpuLimitHash)
+	Log.Printf("MDMLog: containerMemoryLimitHash: %v", containerMemoryLimitHash)
+	Log.Printf("MDMLog: containerResourceDimensionHash: %v", containerResourceDimensionHash)
 
 	return containerCpuLimitHash, containerMemoryLimitHash, containerResourceDimensionHash, nil
-}
-
-type Container struct {
-	Name      string `json:"name"`
-	Resources struct {
-		Limits struct {
-			CPU    string `json:"cpu"`
-			Memory string `json:"memory"`
-		} `json:"limits"`
-	} `json:"resources"`
 }
 
 func getPodUid(podNamespace string, podMetadata map[string]interface{}) (string, error) {
 	var podUid string
 
-	if podNamespace == "kube-system" {
-		// Handle special case for kube-system namespace
-		if _, ok := podMetadata["ownerReferences"]; !ok {
-			annotations, ok := podMetadata["annotations"].(map[string]interface{})
-			if !ok || annotations == nil {
-				return "", nil // Returning empty string for nil UID
-			}
-			if hash, ok := annotations["kubernetes.io/config.hash"].(string); ok {
-				podUid = hash
-			}
+	if _, ok := podMetadata["ownerReferences"]; !ok && podNamespace == "kube-system" {
+		//    The above case seems to be the only case where you have horizontal scaling of pods
+		//    but no controller, in which case cAdvisor picks up kubernetes.io/config.hash
+		//    instead of the actual poduid. Since this uid is not being surface into the UX
+		//    its ok to use this.
+		//    Use kubernetes.io/config.hash to be able to correlate with cadvisor data
+		annotations, ok := podMetadata["annotations"].(map[string]interface{})
+		if !ok || annotations == nil {
+			return "", nil // Returning empty string for nil UID
+		}
+		if hash, ok := annotations["kubernetes.io/config.hash"].(string); ok {
+			podUid = hash
 		}
 	} else {
 		if uid, ok := podMetadata["uid"].(string); ok {
@@ -417,8 +406,7 @@ func getPodUid(podNamespace string, podMetadata map[string]interface{}) (string,
 	}
 
 	if podUid == "" {
-		Log("MDMLog: KubernetesApiClient::getPodUid: Failed to get podUid, podUid is empty.")
-		// TODO: Add telemetry
+		Log.Printf("MDMLog: getPodUid: Failed to get podUid, podUid is empty.")
 		return "", nil // Returning empty string for nil UID
 	}
 
@@ -432,7 +420,7 @@ func ParseNodeLimits(metricJSON map[string]interface{}, metricCategory, metricNa
 		for _, item := range items {
 			metricItem, err := ParseNodeLimitsFromNodeItem(item, metricCategory, metricNameToCollect, metricNametoReturn, metricTime)
 			if err != nil {
-				Log("MDMLog: Error parsing node limits from node item: %v", err)
+				Log.Printf("MDMLog: Error parsing node limits from node item: %v", err)
 				continue
 			}
 			if metricItem != nil {
@@ -440,7 +428,7 @@ func ParseNodeLimits(metricJSON map[string]interface{}, metricCategory, metricNa
 			}
 		}
 	} else {
-		Log("MDMLog: Invalid format for 'items' in metricJSON")
+		Log.Printf("MDMLog: Invalid format for 'items' in metricJSON")
 		return nil, nil // or return an appropriate error
 	}
 
@@ -452,26 +440,26 @@ func ParseNodeLimitsFromNodeItem(node interface{}, metricCategory, metricNameToC
 
 	nodeMap, ok := node.(map[string]interface{})
 	if !ok {
-		Log("MDMLog: Error: Node is not a map")
+		Log.Printf("MDMLog: Error: Node is not a map")
 		return nil, nil // Or return an appropriate error
 	}
 
 	clusterID := lib.GetClusterID()
 	status, ok := nodeMap["status"].(map[string]interface{})
 	if !ok {
-		Log("MDMLog: Error: Status is not a map")
+		Log.Printf("MDMLog: Error: Status is not a map")
 		return nil, nil // Or return an appropriate error
 	}
 
 	category, ok := status[metricCategory].(map[string]interface{})
 	if !ok {
-		Log("MDMLog: Error: %s is not a map", metricCategory)
+		Log.Printf("MDMLog: Error: %s is not a map", metricCategory)
 		return nil, nil // Or return an appropriate error
 	}
 
 	metricVal, ok := category[metricNameToCollect]
 	if !ok {
-		Log("MDMLog: Error: %s not found in %s", metricNameToCollect, metricCategory)
+		Log.Printf("MDMLog: Error: %s not found in %s", metricNameToCollect, metricCategory)
 		return nil, nil // Or return an appropriate error
 	}
 
@@ -479,13 +467,13 @@ func ParseNodeLimitsFromNodeItem(node interface{}, metricCategory, metricNameToC
 
 	metadata, ok := nodeMap["metadata"].(map[string]interface{})
 	if !ok {
-		Log("MDMLog: Error: Metadata is not a map")
+		Log.Printf("MDMLog: Error: Metadata is not a map")
 		return nil, nil // Or return an appropriate error
 	}
 
 	host, ok := metadata["name"].(string)
 	if !ok {
-		Log("MDMLog: Error: Name is not a string in metadata")
+		Log.Printf("MDMLog: Error: Name is not a string in metadata")
 		return nil, nil // Or return an appropriate error
 	}
 
@@ -504,7 +492,7 @@ func ParseNodeLimitsFromNodeItem(node interface{}, metricCategory, metricNameToC
 
 	metricCollectionsJSON, err := json.Marshal(metricCollections)
 	if err != nil {
-		Log("MDMLog: Error marshalling metricCollections: %v", err)
+		Log.Printf("MDMLog: Error marshalling metricCollections: %v", err)
 		return nil, nil // Or return an appropriate error
 	}
 

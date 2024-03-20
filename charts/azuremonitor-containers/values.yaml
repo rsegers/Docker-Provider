@@ -24,8 +24,8 @@ Azure:
 amalogs:
   image:
     repo: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod"
-    tag: "3.1.18"
-    tagWindows: "win-3.1.18"
+    tag: "3.1.19"
+    tagWindows: "win-3.1.19"
     pullPolicy: IfNotPresent
     dockerProviderVersion: "18.0.1-0"
     agentVersion: "azure-mdsd-1.29.7"
@@ -59,6 +59,9 @@ amalogs:
 
   # This flag allows ama-logs pods to be scheduled on nodes with taints
   scheduleOnTaintedNodes: false
+
+  # This flag to enable and disable service account timebound token and default is enabled
+  enableServiceAccountTimeBoundToken: true
 
   ## To get your workspace id and key do the following
   ## You can create a Azure Loganalytics workspace from portal.azure.com and get its ID & PRIMARY KEY from 'Advanced Settings' tab in the Ux.

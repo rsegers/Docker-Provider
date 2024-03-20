@@ -5,9 +5,11 @@ import (
 	"Docker-Provider/source/plugins/go/src/extension"
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"math"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -63,11 +65,21 @@ func (p *perfPlugin) Init(ctx context.Context, fbit *plugin.Fluentbit) error {
 	}
 
 	osType := os.Getenv("OS_TYPE")
+
+	var logPath string
 	if strings.EqualFold(osType, "windows") {
-		FLBLogger = lib.CreateLogger("/etc/amalogswindows/fluent-bit-input.log")
+		logPath = "/etc/amalogswindows/fluent-bit-input.log"
 	} else {
-		FLBLogger = lib.CreateLogger("/var/opt/microsoft/docker-cimprov/log/fluent-bit-input.log")
+		logPath = "/var/opt/microsoft/docker-cimprov/log/fluent-bit-input.log"
 	}
+
+	isTestEnv := os.Getenv("ISTEST") == "true"
+	if isTestEnv {
+		logPath = "./fluent-bit-input-test.log"
+	}
+
+	FLBLogger = lib.CreateLogger(logPath)
+
 	return nil
 }
 
@@ -142,8 +154,6 @@ func (p perfPlugin) enumerate() ([]map[string]interface{}, []map[string]interfac
 	currentTime := time.Now()
 	batchTime := currentTime.UTC().Format(time.RFC3339)
 	hostName = ""
-	namespaceFilteringMode = "off"
-	namespaces = []string{}
 	eventStream := []map[string]interface{}{}
 	insightsMetricsEventStream := []map[string]interface{}{}
 	osType := strings.TrimSpace(os.Getenv("OS_TYPE"))
@@ -154,6 +164,14 @@ func (p perfPlugin) enumerate() ([]map[string]interface{}, []map[string]interfac
 	insightsmetricstag = p.insightsmetricstag
 
 	FLBLogger.Printf("perf::enumerate : Begin processing @ %s", time.Now().UTC().Format(time.RFC3339))
+
+	defer func() {
+		if r := recover(); r != nil {
+			stacktrace := debug.Stack()
+			FLBLogger.Printf("perf::enumerate: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
+			lib.SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+		}
+	}()
 
 	if lib.IsAADMSIAuthMode() {
 		FLBLogger.Print("perf::enumerate: AAD AUTH MSI MODE")
@@ -174,13 +192,13 @@ func (p perfPlugin) enumerate() ([]map[string]interface{}, []map[string]interfac
 		}
 
 		if e.IsDataCollectionSettingsConfigured() {
-			runInterval := e.GetDataCollectionIntervalSeconds()
+			runInterval = e.GetDataCollectionIntervalSeconds()
 			FLBLogger.Print("perf::enumerate: using data collection interval(seconds):", runInterval, "@", time.Now().UTC().Format(time.RFC3339))
 
-			namespaces := e.GetNamespacesForDataCollection()
+			namespaces = e.GetNamespacesForDataCollection()
 			FLBLogger.Print("perf::enumerate: using data collection namespaces:", namespaces, "@", time.Now().UTC().Format(time.RFC3339))
 
-			namespaceFilteringMode := e.GetNamespaceFilteringModeForDataCollection()
+			namespaceFilteringMode = e.GetNamespaceFilteringModeForDataCollection()
 			FLBLogger.Print("perf::enumerate: using data collection filtering mode for namespaces:", namespaceFilteringMode, "@", time.Now().UTC().Format(time.RFC3339))
 		}
 	}
