@@ -250,6 +250,10 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				if mdsdCompressionLevel != "" {
 					telemetryDimensions["mdsdCompressionLevel"] = mdsdCompressionLevel
 				}
+				logsAndEventsOnly := os.Getenv("LOGS_AND_EVENTS_ONLY")
+				if logsAndEventsOnly != "" {
+					telemetryDimensions["logsAndEventsOnly"] = logsAndEventsOnly
+				}
 
 				telemetryDimensions["PromFbitChunkSize"] = os.Getenv("AZMON_FBIT_CHUNK_SIZE")
 				telemetryDimensions["PromFbitBufferSize"] = os.Getenv("AZMON_FBIT_BUFFER_SIZE")
