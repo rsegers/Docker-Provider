@@ -5,6 +5,26 @@ startTime=$(date +%s)
 
 echo "startup script start @ $(date +'%Y-%m-%dT%H:%M:%S')"
 
+startAMACoreAgent() {
+      echo "startAMACoreAgent: Starting AMA Core Agent"
+      export PA_FLUENT_SOCKET_PORT=13000
+      export PA_DATA_PORT=13000
+      export PA_GIG_BRIDGE_MODE=true
+      export GIG_PA_ENABLE_OPTIMIZATION=true
+      export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+
+      {
+         echo "export PA_FLUENT_SOCKET_PORT=$PA_FLUENT_SOCKET_PORT"
+         echo "export PA_DATA_PORT=$PA_DATA_PORT"
+         echo "export PA_GIG_BRIDGE_MODE=$PA_GIG_BRIDGE_MODE"
+         echo "export GIG_PA_ENABLE_OPTIMIZATION=$GIG_PA_ENABLE_OPTIMIZATION" >> ~/.bashrc
+         echo "export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=$DOTNET_SYSTEM_GLOBALIZATION_INVARIANT"
+      } >> ~/.bashrc
+
+      source ~/.bashrc
+      /opt/microsoft/azure-mdsd/bin/amacoreagent -c /etc/opt/microsoft/azuremonitoragent/amacoreagent --configport 12563 --amacalog /var/opt/microsoft/linuxmonagent/log/amaca.log > /dev/null 2>&1 &
+}
+
 setCloudSpecificApplicationInsightsConfig() {
     echo "setCloudSpecificApplicationInsightsConfig: Cloud environment: $1"
     case $1 in
@@ -952,6 +972,9 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
     fi
 else
       echo "starting mdsd in main container..."
+      if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${USING_AAD_MSI_AUTH}" == "true" ] && [ "${HIGH_LOG_SCALE_MODE}" == "true" ]; then
+                startAMACoreAgent
+      fi
       # add -T 0xFFFF for full traces
       export MDSD_ROLE_PREFIX=/var/run/mdsd-ci/default
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
