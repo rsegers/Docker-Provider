@@ -1240,6 +1240,9 @@ shutdown() {
          gracefulShutdown
       else
          pkill -f mdsd
+         if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${USING_AAD_MSI_AUTH}" == "true" ] && [ "${HIGH_LOG_SCALE_MODE}" == "true" ]; then
+            pkill -f amacoreagent
+         fi
       fi
 }
 
