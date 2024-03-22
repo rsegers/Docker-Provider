@@ -186,7 +186,6 @@ MAINTAINER:              'Microsoft Corporation'
 
 /etc/opt/microsoft/azuremonitoragent/amacoreagent;      755; root; root
 
-
 /opt/fluent-bit;                          755; root; root;sysdir
 /opt/fluent-bit/bin;                      755; root; root;sysdir
 /etc/telegraf;                              755; root; root;sysdir

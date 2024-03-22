@@ -400,7 +400,7 @@ spec:
               cpu: 75m
               memory: 325Mi
           env:
-            - name: HIGH_LOG_SCALE_MODE
+            - name: ENABLE_HIGH_LOG_SCALE_MODE
               value: "true"
             - name: CONTAINER_MEMORY_LIMIT_IN_BYTES
               valueFrom:

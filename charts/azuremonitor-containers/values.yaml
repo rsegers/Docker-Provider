@@ -45,7 +45,7 @@ amalogs:
   priority: 10
 
   # This flag used to determine whether to run is high log scale mode or not
-  isHighLogScaleMode: false
+  enableHighLogScaleMode: false
 
   # This used for running agent pods in test mode.
   # if set to true additional agent workflow logs will be emitted which are used for e2e and arc k8s conformance testing

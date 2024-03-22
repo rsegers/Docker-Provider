@@ -972,7 +972,7 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
     fi
 else
       echo "starting mdsd in main container..."
-      if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${USING_AAD_MSI_AUTH}" == "true" ] && [ "${HIGH_LOG_SCALE_MODE}" == "true" ]; then
+      if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${USING_AAD_MSI_AUTH}" == "true" ] && [ "${ENABLE_HIGH_LOG_SCALE_MODE}" == "true" ]; then
                 startAMACoreAgent
       fi
       # add -T 0xFFFF for full traces
@@ -1240,7 +1240,7 @@ shutdown() {
          gracefulShutdown
       else
          pkill -f mdsd
-         if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${USING_AAD_MSI_AUTH}" == "true" ] && [ "${HIGH_LOG_SCALE_MODE}" == "true" ]; then
+         if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${USING_AAD_MSI_AUTH}" == "true" ] && [ "${ENABLE_HIGH_LOG_SCALE_MODE}" == "true" ]; then
             pkill -f amacoreagent
          fi
       fi
