@@ -183,6 +183,8 @@ MAINTAINER:              'Microsoft Corporation'
 /var/opt/microsoft/docker-cimprov/state/ContainerInventory; 755; root; root
 /var/opt/microsoft/docker-cimprov/log;                  755; root; root
 /var/opt/microsoft/linuxmonagent/log;                   755; root; root
+/var/opt/microsoft/linuxmonagent/amaca;                 755; root; root
+/var/opt/microsoft/linuxmonagent/amaca/log;             755; root; root
 
 /etc/opt/microsoft/azuremonitoragent/amacoreagent;      755; root; root
 

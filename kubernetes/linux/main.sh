@@ -22,7 +22,8 @@ startAMACoreAgent() {
       } >> ~/.bashrc
 
       source ~/.bashrc
-      /opt/microsoft/azure-mdsd/bin/amacoreagent -c /etc/opt/microsoft/azuremonitoragent/amacoreagent --configport 12563 --amacalog /var/opt/microsoft/linuxmonagent/log/amaca.log > /dev/null 2>&1 &
+      /opt/microsoft/azure-mdsd/bin/amacoreagent -c /etc/opt/microsoft/azuremonitoragent/amacoreagent --configport 12563 --amacalog /var/opt/microsoft/linuxmonagent/amaca/log/amaca.log > /dev/null 2>&1 &
+      waitforlisteneronTCPport 13000 30
 }
 
 setCloudSpecificApplicationInsightsConfig() {
