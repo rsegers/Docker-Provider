@@ -6,7 +6,8 @@ startTime=$(date +%s)
 echo "startup script start @ $(date +'%Y-%m-%dT%H:%M:%S')"
 
 startAMACoreAgent() {
-      echo "startAMACoreAgent: Starting AMA Core Agent"
+      echo "AMACoreAgent: Starting AMA Core Agent since High Log scale mode is enabled"
+
       export PA_FLUENT_SOCKET_PORT=13000
       export PA_DATA_PORT=13000
       export PA_GIG_BRIDGE_MODE=true
@@ -28,6 +29,8 @@ startAMACoreAgent() {
 
       waitforlisteneronTCPport "$PA_FLUENT_SOCKET_PORT" "$WAITTIME_PORT_13000"
       waitforlisteneronTCPport "$PA_CONFIG_PORT" "$WAITTIME_PORT_12563"
+
+      echo "AMACoreAgent: AMA Core Agent started successfully."
 }
 
 setCloudSpecificApplicationInsightsConfig() {

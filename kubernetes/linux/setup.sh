@@ -37,16 +37,18 @@ mv /usr/lib/ruby/gems/3.1.0/specifications/default/uri-0.11.0.gemspec /usr/lib/r
 gem uninstall time --version 0.2.0
 gem uninstall uri --version 0.11.0
 
-if [ "${ARCH}" != "arm64" ]; then
-    # mdsd version with 50k eps changes for x64
-    # TODO - For PROD release, make sure to consume the MDSD version from Mariner package repo
-    # wget "https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.31.0/azure-mdsd-1.31.0-build.master.2741.x86_64.rpm" -O azure-mdsd.rpm
-    # sudo tdnf install -y azure-mdsd.rpm
-    # validate latest version and see if this works
-    sudo tdnf install -y azure-mdsd-1.30.3
-else
-    sudo tdnf install -y azure-mdsd-1.29.7
-fi
+# if [ "${ARCH}" != "arm64" ]; then
+#     # mdsd version with 50k eps changes for x64
+#     # TODO - For PROD release, make sure to consume the MDSD version from Mariner package repo
+#     # wget "https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.31.0/azure-mdsd-1.31.0-build.master.2741.x86_64.rpm" -O azure-mdsd.rpm
+#     # sudo tdnf install -y azure-mdsd.rpm
+
+# else
+#     sudo tdnf install -y azure-mdsd-1.29.7
+# fi
+
+# validate latest version of MDSD and see if this works in GIG mode
+sudo tdnf install -y azure-mdsd-1.30.3
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d
 rm /usr/sbin/telegraf
