@@ -1,6 +1,5 @@
 #!/usr/local/bin/ruby
 
-
 @os_type = ENV["OS_TYPE"]
 require "tomlrb"
 
@@ -102,6 +101,7 @@ require_relative "ConfigParseErrorLogger"
 @waittime_port_25226 = 45
 @waittime_port_25228 = 120
 @waittime_port_25229 = 45
+@waittime_port_13000 = 45 # default waittime for AMACA port
 
 def is_number?(value)
   true if Integer(value) rescue false
@@ -392,6 +392,11 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           @waittime_port_25229 = waittime.to_i
           puts "Using config map value: WAITTIME_PORT_25229 = #{@waittime_port_25229}"
         end
+        waittime = network_listener_waittime_config[:tcp_port_13000]
+        if is_valid_waittime?(waittime, @waittime_port_13000)
+          @waittime_port_13000 = waittime.to_i
+          puts "Using config map value: WAITTIME_PORT_13000 = #{@waittime_port_13000}"
+        end
       end
     end
   rescue => errorStr
@@ -510,6 +515,7 @@ if !file.nil?
   file.write("export WAITTIME_PORT_25226=#{@waittime_port_25226}\n")
   file.write("export WAITTIME_PORT_25228=#{@waittime_port_25228}\n")
   file.write("export WAITTIME_PORT_25229=#{@waittime_port_25229}\n")
+  file.write("export WAITTIME_PORT_13000=#{@waittime_port_13000}\n")
 
   # Close file after writing all environment variables
   file.close
