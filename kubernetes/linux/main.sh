@@ -12,19 +12,22 @@ startAMACoreAgent() {
       export PA_GIG_BRIDGE_MODE=true
       export GIG_PA_ENABLE_OPTIMIZATION=true
       export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+      export PA_CONFIG_PORT=12563
 
       {
          echo "export PA_FLUENT_SOCKET_PORT=$PA_FLUENT_SOCKET_PORT"
          echo "export PA_DATA_PORT=$PA_DATA_PORT"
          echo "export PA_GIG_BRIDGE_MODE=$PA_GIG_BRIDGE_MODE"
-         echo "export GIG_PA_ENABLE_OPTIMIZATION=$GIG_PA_ENABLE_OPTIMIZATION" >> ~/.bashrc
+         echo "export GIG_PA_ENABLE_OPTIMIZATION=$GIG_PA_ENABLE_OPTIMIZATION"
          echo "export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=$DOTNET_SYSTEM_GLOBALIZATION_INVARIANT"
+         echo "export PA_CONFIG_PORT=$PA_CONFIG_PORT"
       } >> ~/.bashrc
 
       source ~/.bashrc
       /opt/microsoft/azure-mdsd/bin/amacoreagent -c /etc/opt/microsoft/azuremonitoragent/amacoreagent --configport 12563 --amacalog /var/opt/microsoft/linuxmonagent/amaca/log/amaca.log > /dev/null 2>&1 &
 
       waitforlisteneronTCPport "$PA_FLUENT_SOCKET_PORT" "$WAITTIME_PORT_13000"
+      waitforlisteneronTCPport "$PA_CONFIG_PORT" "$WAITTIME_PORT_12563"
 }
 
 setCloudSpecificApplicationInsightsConfig() {
