@@ -115,6 +115,7 @@ amalogs:
     - key: "node-role.kubernetes.io/master"
       operator: "Exists"
       effect: "PreferNoSchedule"
+
   tolerationsUnrestricted:
     - operator: "Exists"
       effect: "NoSchedule"
@@ -122,6 +123,7 @@ amalogs:
       effect: "NoExecute"
     - operator: "Exists"
       effect: "PreferNoSchedule"
+
   ## Pod scheduling preferences.
   ## ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
   ##
