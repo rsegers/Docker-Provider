@@ -4,6 +4,9 @@ schedules:
   branches:
     include:
     - ci_prod
+  always: true
+trigger: none
+pr: none  
 jobs:
     - job: test
       variables:
