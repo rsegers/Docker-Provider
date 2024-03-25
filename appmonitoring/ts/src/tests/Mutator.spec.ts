@@ -50,7 +50,7 @@ describe("Mutator", () => {
         expect(result.response.status.message).toContain("Exception encountered: Validation of the incoming AdmissionReview failed");
     });
 
-    it("Mutating deployment - no annotations, default CR found", async () => {
+    it("Mutating deployment - no inject- annotations, default CR found", async () => {
         // ASSUME
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject4));
 
@@ -107,13 +107,19 @@ describe("Mutator", () => {
 
         // confirm default CR and its platforms were written into the annotations
         const patchString: string = atob(result.response.patch);
-        const annotations: IAnnotations = JSON.parse(patchString)[0].value as IAnnotations;
-        expect(annotations.preExistingAnnotationName).toBe("preExistingAnnotationValue");
-        expect(annotations["monitor.azure.com/instrumentation-cr"]).toBe(DefaultInstrumentationCRName);
-        expect(annotations["monitor.azure.com/instrumentation-platforms"]).toBe("DotNet,Java,NodeJs");
+        const patches: object[] = JSON.parse(patchString);
+
+        expect((<[]>patches).length).toBe(3);
+        expect((<any>patches[0]).op).toBe("add");
+        expect((<any>patches[0]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation-cr");
+        expect((<any>patches[0]).value).toBe(DefaultInstrumentationCRName);
+
+        expect((<any>patches[1]).op).toBe("add");
+        expect((<any>patches[1]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation-platforms");
+        expect((<any>patches[1]).value).toBe("DotNet,Java,NodeJs");
     });
 
-    it("Mutating deployment - no annotations, default CR not found", async () => {
+    it("Mutating deployment - no inject- annotations, default CR not found", async () => {
         // ASSUME
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject4));
 
@@ -154,10 +160,16 @@ describe("Mutator", () => {
 
         // confirm both annotations are empty
         const patchString: string = atob(result.response.patch);
-        const annotations: IAnnotations = JSON.parse(patchString)[0].value as IAnnotations;
-        expect(annotations.preExistingAnnotationName).toBe("preExistingAnnotationValue");
-        expect(annotations["monitor.azure.com/instrumentation-cr"]).toBeUndefined();
-        expect(annotations["monitor.azure.com/instrumentation-platforms"]).toBeUndefined();
+        const patches: object[] = JSON.parse(patchString);
+
+        expect((<[]>patches).length).toBe(3);
+        expect((<any>patches[0]).op).toBe("add");
+        expect((<any>patches[0]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation-cr");
+        expect((<any>patches[0]).value).toBeUndefined();
+
+        expect((<any>patches[1]).op).toBe("add");
+        expect((<any>patches[1]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation-platforms");
+        expect((<any>patches[1]).value).toBeUndefined();
     });
 
     it("Mutating deployment - invalid annotations - multiple CRs", async () => {
@@ -219,7 +231,7 @@ describe("Mutator", () => {
         });
     });
 
-    it("Mutating deployment - per language configuration with default CR", async () => {
+    it("Mutating deployment - per language inject - annotations with default CR", async () => {
         // ASSUME
         const crDefault: InstrumentationCR = {
             metadata: {
@@ -282,13 +294,19 @@ describe("Mutator", () => {
 
         // confirm default CR and annotation-enabled platforms were written into the annotations
         const patchString: string = atob(result.response.patch);
-        const annotations: IAnnotations = JSON.parse(patchString)[0].value as IAnnotations;
-        expect(annotations.preExistingAnnotationName).toBe("preExistingAnnotationValue");
-        expect(annotations["monitor.azure.com/instrumentation-cr"]).toBe(DefaultInstrumentationCRName);
-        expect(annotations["monitor.azure.com/instrumentation-platforms"]).toBe("Java,NodeJs");
+        const patches: object[] = JSON.parse(patchString);
+
+        expect((<[]>patches).length).toBe(3);
+        expect((<any>patches[0]).op).toBe("add");
+        expect((<any>patches[0]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation-cr");
+        expect((<any>patches[0]).value).toBe(DefaultInstrumentationCRName);
+
+        expect((<any>patches[1]).op).toBe("add");
+        expect((<any>patches[1]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation-platforms");
+        expect((<any>patches[1]).value).toBe("Java,NodeJs");
     });
 
-    it("Mutating deployment - per language configuration with specific CR", async () => {
+    it("Mutating deployment - per language inject - annotations with specific CR", async () => {
         // ASSUME
         const crDefault: InstrumentationCR = {
             metadata: {
@@ -351,13 +369,19 @@ describe("Mutator", () => {
 
         // confirm default CR and annotation-enabled platforms were written into the annotations
         const patchString: string = atob(result.response.patch);
-        const annotations: IAnnotations = JSON.parse(patchString)[0].value as IAnnotations;
-        expect(annotations.preExistingAnnotationName).toBe("preExistingAnnotationValue");
-        expect(annotations["monitor.azure.com/instrumentation-cr"]).toBe(cr1.metadata.name);
-        expect(annotations["monitor.azure.com/instrumentation-platforms"]).toBe("DotNet,NodeJs");
+        const patches: object[] = JSON.parse(patchString);
+
+        expect((<[]>patches).length).toBe(3);
+        expect((<any>patches[0]).op).toBe("add");
+        expect((<any>patches[0]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation-cr");
+        expect((<any>patches[0]).value).toBe(cr1.metadata.name);
+
+        expect((<any>patches[1]).op).toBe("add");
+        expect((<any>patches[1]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation-platforms");
+        expect((<any>patches[1]).value).toBe("DotNet,NodeJs");
     });
 
-    it("Mutating replicaset - no instrumentation-cr annotation", async () => {
+    it("Mutating deployment - per language inject - single inject - annotations is set to false", async () => {
         // ASSUME
         const crDefault: InstrumentationCR = {
             metadata: {
@@ -373,35 +397,23 @@ describe("Mutator", () => {
                 }
             }
         };
-
-        const cr1: InstrumentationCR = {
-            metadata: {
-                name: "cr1",
-                namespace: "ns1"
-            },
-            spec: {
-                settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet]
-                },
-                destination: {
-                    applicationInsightsConnectionString: "InstrumentationKey=cr1"
-                }
-            }
-        };
         
         const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
-        crs.Upsert(cr1);       
         crs.Upsert(crDefault);
 
-        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestReplicaSet1));
+        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject4));
 
         admissionReview.request.object.metadata.namespace = "ns1";
-        admissionReview.request.object.metadata.annotations = { 
-            preExistingAnnotationName: "preExistingAnnotationValue",
+        admissionReview.request.object.metadata.annotations = { preExistingAnnotationName: "preExistingAnnotationValue" };
 
-            "monitor.azure.com/instrumentation-platforms": "Java,DotNet" // this shouldn't matter without the instrumentation-cr annotation
+        const metadata: IMetadata = <IMetadata>{
+            annotations: {
+                "instrumentation.opentelemetry.io/inject-dotnet": "false"
+            }
         };
-        
+
+        admissionReview.request.object.spec.template.metadata = metadata;
+
         // ACT
         const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
 
@@ -412,135 +424,19 @@ describe("Mutator", () => {
         expect(result.response.status.code).toBe(200);
         expect(result.response.status.message).toBe("OK");
 
-        // confirm that no mutation occured
+        // confirm default CR and annotation-enabled platforms were written into the annotations
         const patchString: string = atob(result.response.patch);
-        expect((<[]>JSON.parse(patchString)).length).toBe(0);
-    });
+        const patches: object[] = JSON.parse(patchString);
 
-    it("Mutating replicaset - empty instrumentation-cr annotation", async () => {
-        // ASSUME
-        const crDefault: InstrumentationCR = {
-            metadata: {
-                name: "default",
-                namespace: "ns1"
-            },
-            spec: {
-                settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
-                },
-                destination: {
-                    applicationInsightsConnectionString: "InstrumentationKey=default"
-                }
-            }
-        };
+        expect((<[]>patches).length).toBe(3);
+        expect((<any>patches[0]).op).toBe("add");
+        expect((<any>patches[0]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation-cr");
+        expect((<any>patches[0]).value).toBe(DefaultInstrumentationCRName);
 
-        const cr1: InstrumentationCR = {
-            metadata: {
-                name: "cr1",
-                namespace: "ns1"
-            },
-            spec: {
-                settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet]
-                },
-                destination: {
-                    applicationInsightsConnectionString: "InstrumentationKey=cr1"
-                }
-            }
-        };
-        
-        const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
-        crs.Upsert(cr1);       
-        crs.Upsert(crDefault);
+        expect((<any>patches[1]).op).toBe("add");
+        expect((<any>patches[1]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation-platforms");
+        expect((<any>patches[1]).value).toBe("");
 
-        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestReplicaSet1));
-
-        admissionReview.request.object.metadata.namespace = "ns1";
-        admissionReview.request.object.metadata.annotations = { 
-            preExistingAnnotationName: "preExistingAnnotationValue",
-
-            "monitor.azure.com/instrumentation-cr": "",
-            "monitor.azure.com/instrumentation-platforms": "Java,DotNet" // this shouldn't matter since the instrumentation-cr annotation is empty
-        };
-        
-        // ACT
-        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
-
-        // ASSERT
-        expect(result.response.allowed).toBe(true);
-        expect(result.response.patchType).toBe("JSONPatch");
-        expect(result.response.uid).toBe(admissionReview.request.uid);
-        expect(result.response.status.code).toBe(200);
-        expect(result.response.status.message).toBe("OK");
-
-        // confirm that no mutation occured
-        const patchString: string = atob(result.response.patch);
-        expect((<[]>JSON.parse(patchString)).length).toBe(0);
-    });
-
-    it("Mutating replicaset - instrumentation-cr annotation points at an existing CR", async () => {
-        // ASSUME
-        const crDefault: InstrumentationCR = {
-            metadata: {
-                name: "default",
-                namespace: "ns1"
-            },
-            spec: {
-                settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
-                },
-                destination: {
-                    applicationInsightsConnectionString: "InstrumentationKey=default"
-                }
-            }
-        };
-
-        const cr1: InstrumentationCR = {
-            metadata: {
-                name: "cr1",
-                namespace: "ns1"
-            },
-            spec: {
-                settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet]
-                },
-                destination: {
-                    applicationInsightsConnectionString: "InstrumentationKey=cr1"
-                }
-            }
-        };
-        
-        const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
-        crs.Upsert(cr1);       
-        crs.Upsert(crDefault);
-
-        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestReplicaSet1));
-
-        admissionReview.request.object.metadata.namespace = "ns1";
-        admissionReview.request.object.metadata.annotations = { 
-            preExistingAnnotationName: "preExistingAnnotationValue",
-
-            "monitor.azure.com/instrumentation-cr": "cr1",
-            "monitor.azure.com/instrumentation-platforms": "DotNet,Java" // this shouldn't matter since the instrumentation-cr annotation is empty
-        };
-        
-        // ACT
-        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
-
-        // ASSERT
-        expect(result.response.allowed).toBe(true);
-        expect(result.response.patchType).toBe("JSONPatch");
-        expect(result.response.uid).toBe(admissionReview.request.uid);
-        expect(result.response.status.code).toBe(200);
-        expect(result.response.status.message).toBe("OK");
-
-        // confirm that mutation correctly occured
-        const patchString: string = atob(result.response.patch);
-        const resultAR: ISpec = JSON.parse(patchString)[0].value as ISpec;
-        expect(resultAR.initContainers.length).toBe(2);
-        expect(resultAR.initContainers[0].image).toMatch("/dotnet:");
-        expect(resultAR.initContainers[1].image).toMatch("/java:");
-
-        expect(resultAR.containers[0].env.find(e => e.name === "APPLICATIONINSIGHTS_CONNECTION_STRING").value).toEqual(cr1.spec.destination.applicationInsightsConnectionString);
+        expect((<any>patches[2]).value.initContainers).toBeUndefined();
     });
 });

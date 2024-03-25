@@ -731,20 +731,20 @@ export const TestReplicaSet1 =
     }
 };
 
-export const TestReplicaSet2 = {
-    "kind": "Replicaset",
+export const TestDeployment2 = {
+    "kind": "Deployment",
     "apiVersion": "admission.k8s.io/v1",
     "request": {
         "uid": "cf481665-e586-11e9-8636-beff4de305b8",
         "kind": {
             "group": "",
             "version": "v1",
-            "kind": "Replicaset"
+            "kind": "Deployment"
         },
         "resource": {
             "group": "",
             "version": "v1",
-            "resource": "replicasets"
+            "resource": "deployments"
         },
         "namespace": "default",
         "operation": "CREATE",
@@ -756,7 +756,7 @@ export const TestReplicaSet2 = {
             ]
         },
         "object": {
-            "kind": "Replicaset",
+            "kind": "Deployment",
             "apiVersion": "v1",
             "metadata": {
                 "generateName": "quieting-garfish-ibm-ope-7459f598b4-",
@@ -926,14 +926,14 @@ export const TestReplicaSet2 = {
                                 ]
                             }
                         ],
-                        initContainers: [
+                        "initContainers": [
                             {
-                                name: "initContainer1",
-                                image: "image1"
+                                "name": "initContainer1",
+                                "image": "image1"
                             },
                             {
-                                name: "initContainer2",
-                                image: "image2"
+                                "name": "initContainer2",
+                                "image": "image2"
                             }
                         ],
                         "restartPolicy": "Always",

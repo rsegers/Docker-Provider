@@ -22,7 +22,7 @@ export class AdmissionReviewValidator {
             || isNullOrUndefined(content.request.object.spec.template.spec)) {
             logger.error(`Missing object or object.spec in template, DELETE operations are not supported ${this.uid(content)}, ${content}`, operationId, requestMetadata);
             returnValue = false;
-        } else if(content.request.resource?.resource?.toLowerCase() !== "deployments" && content.request.resource?.resource?.toLowerCase() !== "replicasets") {
+        } else if(content.request.resource?.resource?.toLowerCase() !== "deployments") {
             logger.error(`Invalid incoming resource type: ${content.request.resource.resource}`, operationId, requestMetadata);
             returnValue = false;
         } else if(content.request.operation.toUpperCase() !== "CREATE" && content.request.operation.toUpperCase() !== "UPDATE") {
