@@ -145,9 +145,11 @@ spec:
          protocol: TCP
        {{- end }}
        volumeMounts:
+        {{- if .Values.amalogs.enableServiceAccountTimeBoundToken }}
         - name: kube-api-access
           mountPath: /var/run/secrets/kubernetes.io/serviceaccount
           readOnly: true
+        {{- end }}
         - mountPath: /hostfs
           name: host-root
           readOnly: true
@@ -235,9 +237,11 @@ spec:
        securityContext:
          privileged: true
        volumeMounts:
+         {{- if .Values.amalogs.enableServiceAccountTimeBoundToken }}
          - name: kube-api-access
            mountPath: /var/run/secrets/kubernetes.io/serviceaccount
            readOnly: true
+         {{- end }}
          - mountPath: /etc/kubernetes/host
            name: azure-json-path
          - mountPath: /etc/ama-logs-secret
@@ -278,6 +282,7 @@ spec:
    {{- end }}
    {{- end }}
    volumes:
+    {{- if .Values.amalogs.enableServiceAccountTimeBoundToken }}
     - name: kube-api-access
       projected:
         sources:
@@ -295,6 +300,7 @@ spec:
                  apiVersion: v1
                  fieldPath: metadata.namespace
                path: namespace
+    {{- end }}
     - name: host-root
       hostPath:
        path: /
