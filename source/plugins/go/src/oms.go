@@ -1603,7 +1603,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		var msgPackEntry MsgPackEntry
 
 		FlushedRecordsSize += float64(len(stringMap["LogEntry"]))
-		if ContainerLogSchemaV2 == true {
+		if KubernetesMetadataEnabled {
 			FlushedMetadataSize += float64(len(stringMap["KubernetesMetadata"]))
 		}
 

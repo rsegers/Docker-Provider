@@ -274,8 +274,10 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				Log("Log Size Rate: %f\n", logSizeRate)
 				TelemetryClient.Track(logSizeMetric)
 
-				metadataSizeMetric := appinsights.NewMetricTelemetry(metricNameMetadataSize, metadataSizeRate)
-				TelemetryClient.Track(metadataSizeMetric)
+				if KubernetesMetadataEnabled {
+					metadataSizeMetric := appinsights.NewMetricTelemetry(metricNameMetadataSize, metadataSizeRate)
+					TelemetryClient.Track(metadataSizeMetric)
+				}
 
 				logLatencyMetric := appinsights.NewMetricTelemetry(metricNameAgentLogProcessingMaxLatencyMs, logLatencyMs)
 				logLatencyMetric.Properties["Container"] = logLatencyMsContainer
