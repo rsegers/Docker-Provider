@@ -1,7 +1,7 @@
 ﻿import { expect, describe, it } from "@jest/globals";
 import { Mutator } from "../Mutator.js";
-import { IAdmissionReview, IAnnotations, IMetadata, ISpec, InstrumentationCR, AutoInstrumentationPlatforms, IObjectType, DefaultInstrumentationCRName } from "../RequestDefinition.js";
-import { TestObject2, TestObject3, TestObject4, crs, clusterArmId, clusterArmRegion, TestReplicaSet1 } from "./testConsts.js";
+import { IAdmissionReview, IAnnotations, IMetadata, InstrumentationCR, AutoInstrumentationPlatforms, DefaultInstrumentationCRName } from "../RequestDefinition.js";
+import { TestObject2, TestObject4, crs, clusterArmId, clusterArmRegion } from "./testConsts.js";
 import { logger } from "../LoggerWrapper.js"
 import { InstrumentationCRsCollection } from "../InstrumentationCRsCollection.js";
 

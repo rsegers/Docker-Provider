@@ -1,5 +1,5 @@
 ﻿import { Mutations } from "./Mutations.js";
-import { PodInfo, IAdmissionReview, IObjectType, IMetadata, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationCrAnnotationName, InstrumentationPlatformsAnnotationName, InstrumentationCR } from "./RequestDefinition.js";
+import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationCrAnnotationName, InstrumentationPlatformsAnnotationName, InstrumentationCR } from "./RequestDefinition.js";
 
 export class Patcher {
 
