@@ -16,6 +16,7 @@ type Extension struct {
 	datatypeStreamIdMap    map[string]string
 	dataCollectionSettings map[string]string
 	datatypeNamedPipeMap   map[string]string
+	namespaceStreamIdMap   map[string]string
 }
 
 const (
@@ -38,6 +39,7 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 			datatypeStreamIdMap:    make(map[string]string),
 			dataCollectionSettings: make(map[string]string),
 			datatypeNamedPipeMap:   make(map[string]string),
+			namespaceStreamIdMap:   make(map[string]string),
 		}
 		flbLogger.Println("Extension Instance created")
 	})
@@ -46,10 +48,10 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 	return singleton
 }
 
-func getExtensionData() (TaggedData, error) {
+func getExtensionData(extensioName string) (TaggedData, error) {
 	guid := uuid.New()
 	var extensionData TaggedData
-	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerInsights", "Version": "1"}
+	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": extensioName, "Version": "1"}
 	jsonBytes, err := json.Marshal(taggedData)
 	if err != nil {
 		logger.Printf("Error::mdsd/ama::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
@@ -73,18 +75,18 @@ func getExtensionData() (TaggedData, error) {
 	return extensionData, err
 }
 
-func getExtensionConfigs() ([]ExtensionConfig, error) {
-	extensionData, err := getExtensionData()
+func getExtensionConfigs(extensionName string) ([]ExtensionConfig, error) {
+	extensionData, err := getExtensionData(extensionName)
 	if err != nil {
 		return nil, err
 	}
 	return extensionData.ExtensionConfigs, nil
 }
 
-func getExtensionSettings() (map[string]map[string]interface{}, error) {
+func getExtensionSettings(extensionName string) (map[string]map[string]interface{}, error) {
 	extensionSettings := make(map[string]map[string]interface{})
 
-	extensionConfigs, err := getExtensionConfigs()
+	extensionConfigs, err := getExtensionConfigs(extensionName)
 	if err != nil {
 		return extensionSettings, err
 	}
@@ -98,10 +100,10 @@ func getExtensionSettings() (map[string]map[string]interface{}, error) {
 	return extensionSettings, nil
 }
 
-func getDataCollectionSettings() (map[string]string, error) {
+func getDataCollectionSettings(extensionName string) (map[string]string, error) {
 	dataCollectionSettings := make(map[string]string)
 
-	extensionSettings, err := getExtensionSettings()
+	extensionSettings, err := getExtensionSettings(extensionName)
 	if err != nil {
 		return dataCollectionSettings, err
 	}
@@ -116,10 +118,10 @@ func getDataCollectionSettings() (map[string]string, error) {
 	return dataCollectionSettings, nil
 }
 
-func getDataCollectionSettingsInterface() (map[string]interface{}, error) {
+func getDataCollectionSettingsInterface(extensionName string) (map[string]interface{}, error) {
 	dataCollectionSettings := make(map[string]interface{})
 
-	extensionSettings, err := getExtensionSettings()
+	extensionSettings, err := getExtensionSettings(extensionName)
 	if err != nil {
 		return dataCollectionSettings, err
 	}
@@ -138,13 +140,13 @@ func getDataCollectionSettingsInterface() (map[string]interface{}, error) {
 func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) {
 	datatypeOutputStreamMap := make(map[string]string)
 
-	extensionConfigs, err := getExtensionConfigs()
+	extensionConfigs, err := getExtensionConfigs("ContainerInsights")
 	if err != nil {
 		return datatypeOutputStreamMap, err
 	}
 	outputStreamDefinitions := make(map[string]StreamDefinition)
 	if hasNamedPipe == true {
-		extensionData, err := getExtensionData()
+		extensionData, err := getExtensionData("ContainerInsights")
 		if err != nil {
 			return datatypeOutputStreamMap, err
 		}
@@ -170,7 +172,7 @@ func (e *Extension) IsContainerLogV2(useFromCache bool) bool {
 		return e.dataCollectionSettings["enablecontainerlogv2"] == "true"
 	}
 	var err error
-	e.dataCollectionSettings, err = getDataCollectionSettings()
+	e.dataCollectionSettings, err = getDataCollectionSettings("ContainerInsights")
 	if err != nil {
 		message := fmt.Sprintf("Error getting isContainerLogV2: %s", err.Error())
 		logger.Printf(message)
@@ -222,7 +224,7 @@ func (e *Extension) IsDataCollectionSettingsConfigured() bool {
 func (e *Extension) GetDataCollectionIntervalSeconds() int {
 	collectionIntervalSeconds := 60
 
-	dataCollectionSettings, err := getDataCollectionSettingsInterface()
+	dataCollectionSettings, err := getDataCollectionSettingsInterface("ContainerInsights")
 	if err != nil {
 		message := fmt.Sprintf("Error getting dataCollectionSettings: %s", err.Error())
 		logger.Printf(message)
@@ -258,7 +260,7 @@ func (e *Extension) GetDataCollectionIntervalSeconds() int {
 func (e *Extension) GetNamespacesForDataCollection() []string {
 	var namespaces []string
 
-	dataCollectionSettings, err := getDataCollectionSettingsInterface()
+	dataCollectionSettings, err := getDataCollectionSettingsInterface("ContainerInsights")
 	if err != nil {
 		message := fmt.Sprintf("Error getting dataCollectionSettings: %s", err.Error())
 		logger.Printf(message)
@@ -297,7 +299,7 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 	namespaceFilteringMode := "off"
 	extensionSettingsDataCollectionSettingsNamespaceFilteringModes := []string{"off", "include", "exclude"}
 
-	dataCollectionSettings, err := getDataCollectionSettingsInterface()
+	dataCollectionSettings, err := getDataCollectionSettingsInterface("ContainerInsights")
 	if err != nil {
 		message := fmt.Sprintf("Error getting dataCollectionSettings: %s", err.Error())
 		logger.Printf(message)
@@ -319,6 +321,75 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 
 	return namespaceFilteringMode
 }
+
+func (e *Extension) GetNamespaceStreamIdMap() (map[string]string, error) {
+	namespaceStreamIdMap := make(map[string]string)
+	guid := uuid.New()
+	var extensionData TaggedData
+	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerLogV2Extension", "Version": "1"}
+	jsonBytes, err := json.Marshal(taggedData)
+	if err != nil {
+		logger.Printf("Error::mdsd/ama::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdMap, err
+	}
+
+	responseBytes, err := getExtensionConfigResponse(jsonBytes)
+	if err != nil {
+		logger.Printf("Error::mdsd/ama::Failed to get config response data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdMap, err
+	}
+	//logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::Info::mdsd/ama::: getExtensionConfigResponse : %s", string(responseBytes))
+	var responseObject AgentTaggedDataResponse
+	err = json.Unmarshal(responseBytes, &responseObject)
+	if err != nil {
+		logger.Printf("Error::mdsd/ama::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdMap, err
+	}
+
+	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
+	extensionConfigs := extensionData.ExtensionConfigs
+
+	for _, extensionConfig := range extensionConfigs {
+		outputStreamId := ""
+		outputStreams := extensionConfig.OutputStreams
+		for dataType, outputStreamID := range outputStreams {
+			logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::extensionConfig datatype: %s, outputStreamID: %s", dataType, outputStreamID.(string))
+			if strings.Compare(strings.ToLower(dataType), "containerinsights_containerlogv2") == 0 {
+				logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap:: extensionConfig found for ContainerLogV2Extension")
+				outputStreamId = outputStreamID.(string)
+			}
+		}
+
+		extensionSettings := extensionConfig.ExtensionSettings
+		dataCollectionSettingsItr, ok := extensionSettings["dataCollectionSettings"]
+
+		dataCollectionSettings := make(map[string]interface{})
+		if ok && len(dataCollectionSettingsItr) > 0 {
+			for k, v := range dataCollectionSettingsItr {
+				lk := strings.ToLower(k)
+				dataCollectionSettings[lk] = v
+			}
+		}
+
+		namespaces, ok := dataCollectionSettings["namespaces"].([]interface{})
+		if !ok {
+			logger.Printf("Interface does not contain a []interface{}")
+			return namespaceStreamIdMap, err
+		}
+
+		for _, v := range namespaces {
+			namespace, ok := v.(string)
+			if !ok {
+				logger.Printf("namespaces in  dataCollectionSettings does not contain a string")
+				return namespaceStreamIdMap, err
+			}
+			namespaceStreamIdMap[namespace] = outputStreamId
+		}
+	}
+
+	return namespaceStreamIdMap, err
+}
+
 
 func toMinutes(interval string) (int, error) {
 	// Trim the trailing "m" from the interval string
