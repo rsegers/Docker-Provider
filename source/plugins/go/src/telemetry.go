@@ -98,7 +98,7 @@ const (
 	metricNameAvgFlushRate                                            = "ContainerLogAvgRecordsFlushedPerSec"
 	metricNameAvgLogGenerationRate                                    = "ContainerLogsGeneratedPerSec"
 	metricNameLogSize                                                 = "ContainerLogsSize"
-	metricNameMetadataSize											  = "ContainerLogsMetadataSize"
+	metricNameMetadataSize                                            = "ContainerLogsMetadataSize"
 	metricNameAgentLogProcessingMaxLatencyMs                          = "ContainerLogsAgentSideLatencyMs"
 	metricNameNumberofTelegrafMetricsSentSuccessfully                 = "TelegrafMetricsSentCount"
 	metricNameNumberofSendErrorsTelegrafMetrics                       = "TelegrafMetricsSendErrorCount"

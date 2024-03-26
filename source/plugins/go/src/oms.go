@@ -2010,7 +2010,7 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 // For sample pod name kube-proxy-dgcx7 it returns kube and kube-proxy.
 // For sample pod name coredns-77d8fb66dd-hsgbb returns coredns-77d8fb66dd and coredns
 // The returned values are matched against configmap inputs eg kube-system:coredns and kube-system:kube-proxy
-func GetControllerNameFromK8sPodName (podName string) (string, string) {
+func GetControllerNameFromK8sPodName(podName string) (string, string) {
 	// clear cache if it exceeds the cache size
 	if len(PodNameToControllerNameMap) > PodNameToControllerNameMapCacheSize {
 		Log("Clearing PodNameToControllerNameMap cache")
