@@ -97,6 +97,12 @@
             "metadata": {
               "description": "Specify the Resource Id of the Azure Monitor Private Link Scope."
             }
+        },
+        "enableHighLogScaleMode": {
+            "type": "bool",
+            "metadata": {
+                "description": "Flag to indicate if Azure Monitor High Log scale mode should be enabled or not"
+            }
         }
     },
     "variables": {
@@ -163,7 +169,7 @@
                                     ]
                                 }
                             ],
-                            "dataCollectionEndpointId": "[if(parameters('useAzureMonitorPrivateLinkScope'), variables('dataCollectionEndpointId'), json('null'))]"
+                            "dataCollectionEndpointId": "[if(or(parameters('useAzureMonitorPrivateLinkScope'), parameters('enableHighLogScaleMode')), variables('dataCollectionEndpointId'), json('null'))]"
                         }
                     }
                 ]
@@ -233,7 +239,7 @@
                                     ]
                                 }
                             ],
-                            "dataCollectionEndpointId": "[if(parameters('useAzureMonitorPrivateLinkScope'), variables('dataCollectionEndpointId'), json('null'))]"
+                            "dataCollectionEndpointId": "[if(or(parameters('useAzureMonitorPrivateLinkScope'), parameters('enableHighLogScaleMode')), variables('dataCollectionEndpointId'), json('null'))]"
                         }
                     }
                 ]
@@ -241,7 +247,7 @@
     },
     "resources": [
         {
-            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+            "condition": "[or(parameters('useAzureMonitorPrivateLinkScope'), parameters('enableHighLogScaleMode'))]",
             "type": "Microsoft.Insights/dataCollectionEndpoints",
             "apiVersion": "2022-06-01",
             "name": "[variables('dceName')]",
@@ -249,7 +255,7 @@
             "kind": "Linux",
             "properties": {
                 "networkAcls": {
-                    "publicNetworkAccess": "Disabled"
+                    "publicNetworkAccess": "[if(parameters('useAzureMonitorPrivateLinkScope'), 'Disabled', 'Enabled')]"
                 }
             }
         },
@@ -298,7 +304,7 @@
             }
         },
         {
-            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+            "condition": "[or(parameters('useAzureMonitorPrivateLinkScope'), parameters('enableHighLogScaleMode'))]",
             "type": "Microsoft.Resources/deployments",
             "name": "[Concat('aks-monitoring-msi-dcea', '-',  uniqueString(parameters('aksResourceId')))]",
             "apiVersion": "2017-05-10",
