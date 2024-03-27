@@ -215,6 +215,8 @@ var (
 	KubeMonAgentEventsNamedPipe net.Conn
 	// named pipe connection to ContainerInventory for AMA
 	InputPluginNamedPipe net.Conn
+	// flag to check whether Multi-tenancy mode enabled or not
+	IsMultiTenancyMode bool
 )
 
 var (
@@ -1709,32 +1711,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 		}
 
-		fluentForward := MsgPackForward{
-			Tag:     MdsdContainerLogTagName,
-			Entries: msgPackEntries,
-		}
-
-		//determine the size of msgp message
-		msgpSize := 1 + msgp.StringPrefixSize + len(fluentForward.Tag) + msgp.ArrayHeaderSize
-		for i := range fluentForward.Entries {
-			msgpSize += 1 + msgp.Int64Size + msgp.GuessSize(fluentForward.Entries[i].Record)
-		}
-
-		//allocate buffer for msgp message
-		var msgpBytes []byte
-		msgpBytes = msgp.Require(nil, msgpSize)
-
-		//construct the stream
-		msgpBytes = append(msgpBytes, 0x92)
-		msgpBytes = msgp.AppendString(msgpBytes, fluentForward.Tag)
-		msgpBytes = msgp.AppendArrayHeader(msgpBytes, uint32(len(fluentForward.Entries)))
-		batchTime := time.Now().Unix()
-		for entry := range fluentForward.Entries {
-			msgpBytes = append(msgpBytes, 0x92)
-			msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
-			msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
-		}
-
 		if IsWindows {
 			var datatype string
 			if ContainerLogSchemaV2 {
@@ -1746,7 +1722,20 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				Log("Info::AMA::Starting to write container logs to named pipe")
 				deadline := 10 * time.Second
 				ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
-				n, err := ContainerLogNamedPipe.Write(msgpBytes)
+				var n int
+				var err error
+				if IsMultiTenancyMode {
+					totalBytes := 0
+					msgpBytesArray := GetMsgPackBytesByNamespace(msgPackEntries)
+					for _, msgpBytes := range msgpBytesArray {
+						n, err = ContainerLogNamedPipe.Write(msgpBytes)
+						totalBytes = totalBytes + n
+					}
+					n = totalBytes
+				} else {
+					msgpBytes := GetMsgPackBytes(msgPackEntries)
+					n, err = ContainerLogNamedPipe.Write(msgpBytes)
+				}
 				if err != nil {
 					Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
 					if ContainerLogNamedPipe != nil {
@@ -1782,7 +1771,20 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			deadline := 10 * time.Second
 			MdsdMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
 
-			bts, er := MdsdMsgpUnixSocketClient.Write(msgpBytes)
+			var bts int
+			var er error
+			if IsMultiTenancyMode {
+				totalBytes := 0
+				msgpBytesArray := GetMsgPackBytesByNamespace(msgPackEntries)
+				for _, msgpBytes := range msgpBytesArray {
+					bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
+					totalBytes = totalBytes + bts
+				}
+				bts = totalBytes
+			} else {
+				msgpBytes := GetMsgPackBytes(msgPackEntries)
+				bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
+			}
 
 			elapsed = time.Since(start)
 
@@ -1946,6 +1948,85 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	return output.FLB_OK
 }
 
+func GetMsgPackBytes(msgPackEntries []MsgPackEntry) []byte {
+	fluentForward := MsgPackForward{
+		Tag:     MdsdContainerLogTagName,
+		Entries: msgPackEntries,
+	}
+
+	msgpSize := 1 + msgp.StringPrefixSize + len(fluentForward.Tag) + msgp.ArrayHeaderSize
+	for i := range fluentForward.Entries {
+		msgpSize += 1 + msgp.Int64Size + msgp.GuessSize(fluentForward.Entries[i].Record)
+	}
+
+	var msgpBytes []byte
+	msgpBytes = msgp.Require(nil, msgpSize)
+
+	msgpBytes = append(msgpBytes, 0x92)
+	msgpBytes = msgp.AppendString(msgpBytes, fluentForward.Tag)
+	msgpBytes = msgp.AppendArrayHeader(msgpBytes, uint32(len(fluentForward.Entries)))
+	batchTime := time.Now().Unix()
+	for entry := range fluentForward.Entries {
+		msgpBytes = append(msgpBytes, 0x92)
+		msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
+		msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
+	}
+	return msgpBytes
+}
+
+func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
+	msgPackEntriesByNamespace := make(map[string][]MsgPackEntry)
+	Log("GetMsgPackBytesByNamespace: Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
+	namespaceStreamIdMap, _ := extension.GetInstance(FLBLogger, ContainerType).GetNamespaceStreamIdMap(IsWindows)
+	message := fmt.Sprintf("GetMsgPackBytesByNamespace: namespaceStreamIdMap : %v \n", namespaceStreamIdMap)
+	Log(message)
+
+	for _, entry := range msgPackEntries {
+		msgPackEntriesByNamespace[entry.Record["PodNamespace"]] = append(msgPackEntriesByNamespace[entry.Record["PodNamespace"]], entry)
+	}
+
+	msgpBytesArray := make([][]byte, len(msgPackEntriesByNamespace))
+
+	index := 0
+	for namespace, entries := range msgPackEntriesByNamespace {
+		var msgpBytes []byte
+		streamTag := namespaceStreamIdMap[namespace]
+		msg := fmt.Sprintf("GetMsgPackBytesByNamespace: namespace : %s streamTag: %s \n", namespace, streamTag)
+		Log(msg)
+
+		if streamTag == "" {
+			streamTag = MdsdContainerLogTagName
+			Log("GetMsgPackBytesByNamespace: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, streamTag)
+		}
+
+		fluentForward := MsgPackForward{
+			Tag:     streamTag,
+			Entries: entries,
+		}
+
+		msgpSize := 1 + msgp.StringPrefixSize + len(fluentForward.Tag) + msgp.ArrayHeaderSize
+		for i := range fluentForward.Entries {
+			msgpSize += 1 + msgp.Int64Size + msgp.GuessSize(fluentForward.Entries[i].Record)
+		}
+
+		msgpBytes = msgp.Require(nil, msgpSize)
+
+		msgpBytes = append(msgpBytes, 0x92)
+		msgpBytes = msgp.AppendString(msgpBytes, fluentForward.Tag)
+		msgpBytes = msgp.AppendArrayHeader(msgpBytes, uint32(len(fluentForward.Entries)))
+		batchTime := time.Now().Unix()
+		for entry := range fluentForward.Entries {
+			msgpBytes = append(msgpBytes, 0x92)
+			msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
+			msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
+		}
+		msgpBytesArray[index] = msgpBytes
+		index = index + 1
+	}
+
+	return msgpBytesArray
+}
+
 func containsKey(currentMap map[string]bool, key string) bool {
 	_, c := currentMap[key]
 	return c
@@ -2007,7 +2088,7 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 // For sample pod name kube-proxy-dgcx7 it returns kube and kube-proxy.
 // For sample pod name coredns-77d8fb66dd-hsgbb returns coredns-77d8fb66dd and coredns
 // The returned values are matched against configmap inputs eg kube-system:coredns and kube-system:kube-proxy
-func GetControllerNameFromK8sPodName (podName string) (string, string) {
+func GetControllerNameFromK8sPodName(podName string) (string, string) {
 	// clear cache if it exceeds the cache size
 	if len(PodNameToControllerNameMap) > PodNameToControllerNameMapCacheSize {
 		Log("Clearing PodNameToControllerNameMap cache")
@@ -2369,7 +2450,14 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("Running in replicaset. Disabling container enrichment caching & updates \n")
 	}
 
-	Log("ContainerLogsRouteADX: %v, IsWindows: %v, IsAADMSIAuthMode = %v IsGenevaLogsIntegrationEnabled = %v \n", ContainerLogsRouteADX, IsWindows, IsAADMSIAuthMode, IsGenevaLogsIntegrationEnabled)
+	IsMultiTenancyMode = false
+	multiTenancyModeEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("MULTI_TENENANCY_MODE_ENABLED")))
+	if multiTenancyModeEnabled != "" && strings.Compare(strings.ToLower(multiTenancyModeEnabled), "true") == 0 {
+		IsMultiTenancyMode = true
+		Log("Logs Multitenancy mode Enabled")
+	}
+
+	Log("ContainerLogsRouteADX: %v, IsWindows: %v, IsAADMSIAuthMode = %v IsGenevaLogsIntegrationEnabled = %v, IsMultiTenancyMode = %v \n", ContainerLogsRouteADX, IsWindows, IsAADMSIAuthMode, IsGenevaLogsIntegrationEnabled, IsMultiTenancyMode)
 	if !ContainerLogsRouteADX && IsWindows && IsAADMSIAuthMode {
 		Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)
 		IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
