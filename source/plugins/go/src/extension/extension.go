@@ -16,7 +16,6 @@ type Extension struct {
 	datatypeStreamIdMap    map[string]string
 	dataCollectionSettings map[string]string
 	datatypeNamedPipeMap   map[string]string
-	namespaceStreamIdMap   map[string]string
 }
 
 const (
