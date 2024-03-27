@@ -99,9 +99,11 @@ spec:
          value: {{ .Values.amalogs.sidecarscraping | quote }}
        volumeMounts:
         #  Uncomment when telegraf upgraded to 1.28.5 or higher
+        # {{- if .Values.amalogs.enableServiceAccountTimeBoundToken }}
         # - name: kube-api-access
         #   mountPath: /var/run/secrets/kubernetes.io/serviceaccount
         #   readOnly: true
+        # {{- end }}
         - mountPath: C:\ProgramData\docker\containers
           name: docker-windows-containers
           readOnly: true
@@ -137,6 +139,7 @@ spec:
    {{- end }}
    volumes:
     #  Uncomment when telegraf upgraded to 1.28.5 or higher
+    # {{- if .Values.amalogs.enableServiceAccountTimeBoundToken }}
     # - name: kube-api-access
     #   projected:
     #     sources:
@@ -154,6 +157,7 @@ spec:
     #              apiVersion: v1
     #              fieldPath: metadata.namespace
     #            path: namespace
+    # {{- end }}
     - name: docker-windows-kuberenetes-container-logs
       hostPath:
         path: C:\var
