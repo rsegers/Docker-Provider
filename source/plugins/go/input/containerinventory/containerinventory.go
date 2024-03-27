@@ -117,8 +117,6 @@ func (p containerInventoryPlugin) enumerate() []map[string]interface{} {
 	currentTime := time.Now()
 	batchTime := currentTime.UTC().Format(time.RFC3339)
 	hostName = ""
-	namespaceFilteringMode = "off"
-	namespaces = []string{}
 	tag = p.tag
 
 	FLBLogger.Printf("containerinventory::enumerate: Begin processing @ %s", time.Now().UTC().Format(time.RFC3339))
@@ -138,13 +136,13 @@ func (p containerInventoryPlugin) enumerate() []map[string]interface{} {
 		}
 
 		if e.IsDataCollectionSettingsConfigured() {
-			runInterval := e.GetDataCollectionIntervalSeconds()
+			runInterval = e.GetDataCollectionIntervalSeconds()
 			FLBLogger.Print("containerinventory::enumerate: using data collection interval(seconds):", runInterval, "@", time.Now().UTC().Format(time.RFC3339))
 
-			namespaces := e.GetNamespacesForDataCollection()
+			namespaces = e.GetNamespacesForDataCollection()
 			FLBLogger.Print("containerinventory::enumerate: using data collection namespaces:", namespaces, "@", time.Now().UTC().Format(time.RFC3339))
 
-			namespaceFilteringMode := e.GetNamespaceFilteringModeForDataCollection()
+			namespaceFilteringMode = e.GetNamespaceFilteringModeForDataCollection()
 			FLBLogger.Print("containerinventory::enumerate: using data collection filtering mode for namespaces:", namespaceFilteringMode, "@", time.Now().UTC().Format(time.RFC3339))
 		}
 	}

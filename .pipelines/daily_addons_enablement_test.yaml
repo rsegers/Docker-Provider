@@ -1,0 +1,67 @@
+schedules:
+- cron: '0 0 * * *'
+  displayName: Daily midnight test
+  branches:
+    include:
+    - ci_prod
+  always: true
+trigger: none
+pr: none
+jobs:
+    - job: test
+      variables:
+        armServiceConnectionName: 'ci-1es-acr-connection'
+        subscription: '9b96ebbd-c57a-42d1-bbe9-b69296e4c7fb'
+      pool:
+        name: Azure-Pipelines-CI-Test-EO
+      steps:
+          - task: AzureCLI@2
+            inputs:
+              azureSubscription: '${{ variables.armServiceConnectionName }}'
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              inlineScript: |
+                az --version
+                az account show
+                az account set -s ${{ variables.subscription }}
+                
+                # Check if the omsagent addon is enabled
+                addonEnabled=$(az aks show --resource-group $(RESOURCEGROUP) --name $(AKSCLUSTERNAME) --query addonProfiles.omsagent.enabled -o tsv)
+                
+                if [ "$addonEnabled" == "true" ]; then
+                    echo "OMSAgent addon is enabled on the AKS cluster."
+                    disable=$(az aks disable-addons --addons monitoring --name $(AKSCLUSTERNAME) --resource-group $(RESOURCEGROUP))
+                    omsagentEnabled=$(echo $disable | jq '.addonProfiles.omsagent.enabled')
+                    if [ $omsagentEnabled == "true" ]; then
+                      echo "Omsagent is not disabled."
+                      exit -1
+                    fi
+                    
+                    echo "Re-enabling the OMSAgent addon..."
+                    enable=$(az aks enable-addons --addons monitoring --name $(AKSCLUSTERNAME) --resource-group $(RESOURCEGROUP) --workspace-resource-id $(LOGANALYTICSWORKSPACE))
+                    omsagentEnabled=$(echo $enable | jq '.addonProfiles.omsagent.enabled')
+                    if [ $omsagentEnabled == "false" ]; then
+                      echo "Omsagent is not enabled"
+                      exit -1
+                    fi
+                    omsagentWorkspace=$(az aks show --resource-group $(RESOURCEGROUP) --name $(AKSCLUSTERNAME) --query addonProfiles.omsagent.config.logAnalyticsWorkspaceResourceID -o tsv)
+                    if [ "$omsagentWorkspace" != "$(LOGANALYTICSWORKSPACE)" ]; then
+                      echo "Omsagent is not enabled with the correct log analytics workspace - $omsagentWorkspace"
+                      exit -1
+                    fi
+                    
+                    echo "Sleeping for everything to get set up and logs start flowing"
+                    sleep $(SLEEPDURATION)
+                    # Check if there is data in the Log Analytics workspace
+                    dataCount=$(az monitor log-analytics query --workspace $(WORKSPACEID) --analytics-query "ContainerInventory | where TimeGenerated > ago(5m) and _ResourceId contains 'daily_enable_disable_test' | count")
+                    countValue=$(echo "$dataCount" | jq -r '.[0].Count')
+                    if [ $countValue -gt 0 ]; then
+                      echo "Data is present in the Log Analytics workspace."
+                    else
+                      echo "No data is present in the Log Analytics workspace."
+                      exit -1
+                    fi
+                else
+                    echo "OMSAgent addon is not enabled on the AKS cluster."
+                    exit -1
+                fi

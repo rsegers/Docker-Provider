@@ -127,6 +127,8 @@ const ContainerTypeEnv = "CONTAINER_TYPE"
 // Default ADX destination database name, can be overriden through configuration
 const DefaultAdxDatabaseName = "containerinsights"
 
+const PodNameToControllerNameMapCacheSize = 300 // AKS 250 pod per node limit + 50 extra
+
 var (
 	// PluginConfiguration the plugins configuration
 	PluginConfiguration map[string]string
@@ -223,8 +225,18 @@ var (
 	NameIDMap map[string]string
 	// StdoutIgnoreNamespaceSet set of  excluded K8S namespaces for stdout logs
 	StdoutIgnoreNsSet map[string]bool
+	// StdoutIncludeSystemResourceSet set of included system pods for stdout logs
+	StdoutIncludeSystemResourceSet map[string]bool
 	// StderrIgnoreNamespaceSet set of  excluded K8S namespaces for stderr logs
 	StderrIgnoreNsSet map[string]bool
+	// StderrIncludeSystemResourceSet set of included system pods for stderr logs
+	StderrIncludeSystemResourceSet map[string]bool
+	// StdoutIncludeSystemNamespaceSet set of included system namespaces for stdout logs
+	StdoutIncludeSystemNamespaceSet map[string]bool
+	// StderrIncludeSystemNamespaceSet  set of included system namespaces for stderr logs
+	StderrIncludeSystemNamespaceSet map[string]bool
+	// PodNameToControllerNameMap stores podName to potential controller name mapping
+	PodNameToControllerNameMap map[string][2]string
 	// DataUpdateMutex read and write mutex access to the container id set
 	DataUpdateMutex = &sync.Mutex{}
 	// ContainerLogTelemetryMutex read and write mutex access to the Container Log Telemetry
@@ -517,6 +529,36 @@ func populateExcludedStderrNamespaces() {
 			StderrIgnoreNsSet[strings.TrimSpace(ns)] = true
 		}
 	}
+}
+
+// Helper function to populate included system resources for both stdout and stderr.
+func populateIncludedSystemResource(collectLogs string, includeListEnvVar string, includeSystemResourceSet map[string]bool, includeSystemNamespaceSet map[string]bool) {
+	if collectLogs == "true" && len(includeListEnvVar) > 0 {
+		includedSystemResourceList := strings.Split(includeListEnvVar, ",")
+		for _, resource := range includedSystemResourceList {
+			colonLoc := strings.Index(resource, ":")
+			if colonLoc == -1 {
+				Log("Skipping invalid system resource namespace:controller %s for log collection", resource)
+				continue
+			}
+			namespace := resource[:colonLoc]
+			Log("Including system resource namespace:controller %s for log collection", resource)
+			includeSystemResourceSet[strings.TrimSpace(resource)] = true
+			includeSystemNamespaceSet[strings.TrimSpace(namespace)] = true
+		}
+	}
+}
+
+func populateIncludedStdoutSystemResource() {
+	collectStdoutLogs := os.Getenv("AZMON_COLLECT_STDOUT_LOGS")
+	includeList := os.Getenv("AZMON_STDOUT_INCLUDED_SYSTEM_PODS")
+	populateIncludedSystemResource(collectStdoutLogs, includeList, StdoutIncludeSystemResourceSet, StdoutIncludeSystemNamespaceSet)
+}
+
+func populateIncludedStderrSystemResource() {
+	collectStderrLogs := os.Getenv("AZMON_COLLECT_STDERR_LOGS")
+	includeList := os.Getenv("AZMON_STDERR_INCLUDED_SYSTEM_PODS")
+	populateIncludedSystemResource(collectStderrLogs, includeList, StderrIncludeSystemResourceSet, StderrIncludeSystemNamespaceSet)
 }
 
 // Azure loganalytics metric values have to be numeric, so string values are dropped
@@ -1474,9 +1516,25 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			if containerID == "" || containsKey(StdoutIgnoreNsSet, k8sNamespace) {
 				continue
 			}
+			if len(StdoutIncludeSystemNamespaceSet) > 0 && containsKey(StdoutIncludeSystemNamespaceSet, k8sNamespace) {
+				if len(StdoutIncludeSystemResourceSet) != 0 {
+					candidate1, candidate2 := GetControllerNameFromK8sPodName(k8sPodName)
+					if !containsKey(StdoutIncludeSystemResourceSet, k8sNamespace+":"+candidate1) && !containsKey(StdoutIncludeSystemResourceSet, k8sNamespace+":"+candidate2) {
+						continue
+					}
+				}
+			}
 		} else if strings.EqualFold(logEntrySource, "stderr") {
 			if containerID == "" || containsKey(StderrIgnoreNsSet, k8sNamespace) {
 				continue
+			}
+			if len(StderrIncludeSystemNamespaceSet) > 0 && containsKey(StderrIncludeSystemNamespaceSet, k8sNamespace) {
+				if len(StderrIncludeSystemResourceSet) != 0 {
+					candidate1, candidate2 := GetControllerNameFromK8sPodName(k8sPodName)
+					if !containsKey(StderrIncludeSystemResourceSet, k8sNamespace+":"+candidate1) && !containsKey(StderrIncludeSystemResourceSet, k8sNamespace+":"+candidate2) {
+						continue
+					}
+				}
 			}
 		}
 
@@ -1556,6 +1614,9 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		var msgPackEntry MsgPackEntry
 
 		FlushedRecordsSize += float64(len(stringMap["LogEntry"]))
+		if KubernetesMetadataEnabled {
+			FlushedMetadataSize += float64(len(stringMap["KubernetesMetadata"]))
+		}
 
 		if ContainerLogsRouteV2 == true {
 			msgPackEntry = MsgPackEntry{
@@ -1956,6 +2017,35 @@ func GetContainerIDK8sNamespacePodNameFromFileName(filename string) (string, str
 	return id, ns, podName, containerName
 }
 
+// GetControllerNameFromK8sPodName tries to extract potential controller name from the pod name. If its not possible to extract then sends empty string
+// For sample pod name kube-proxy-dgcx7 it returns kube and kube-proxy.
+// For sample pod name coredns-77d8fb66dd-hsgbb returns coredns-77d8fb66dd and coredns
+// The returned values are matched against configmap inputs eg kube-system:coredns and kube-system:kube-proxy
+func GetControllerNameFromK8sPodName(podName string) (string, string) {
+	// clear cache if it exceeds the cache size
+	if len(PodNameToControllerNameMap) > PodNameToControllerNameMapCacheSize {
+		Log("Clearing PodNameToControllerNameMap cache")
+		PodNameToControllerNameMap = make(map[string][2]string)
+	}
+
+	if values, ok := PodNameToControllerNameMap[podName]; ok {
+		return values[0], values[1]
+	}
+
+	dsNameType := ""
+	deploymentNameType := ""
+	last := strings.LastIndex(podName, "-")
+	if last != -1 {
+		dsNameType = podName[:last]
+		last = strings.LastIndex(dsNameType, "-")
+		if last != -1 {
+			deploymentNameType = dsNameType[:last]
+		}
+	}
+	PodNameToControllerNameMap[podName] = [2]string{dsNameType, deploymentNameType}
+	return dsNameType, deploymentNameType
+}
+
 // InitializePlugin reads and populates plugin configuration
 func InitializePlugin(pluginConfPath string, agentVersion string) {
 	go func() {
@@ -1968,7 +2058,12 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		}
 	}()
 	StdoutIgnoreNsSet = make(map[string]bool)
+	StdoutIncludeSystemResourceSet = make(map[string]bool)
+	StdoutIncludeSystemNamespaceSet = make(map[string]bool)
 	StderrIgnoreNsSet = make(map[string]bool)
+	StderrIncludeSystemResourceSet = make(map[string]bool)
+	StderrIncludeSystemNamespaceSet = make(map[string]bool)
+	PodNameToControllerNameMap = make(map[string][2]string)
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
 	// Keeping the two error hashes separate since we need to keep the config error hash for the lifetime of the container
@@ -2270,6 +2365,10 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
 		populateExcludedStdoutNamespaces()
 		populateExcludedStderrNamespaces()
+		populateIncludedStdoutSystemResource()
+		populateIncludedStderrSystemResource()
+		Log("Included resources set stdout: %v, stderr: %v", StdoutIncludeSystemResourceSet, StderrIncludeSystemResourceSet)
+		Log("Included system namespaces set stdout: %v, stderr: %v", StdoutIncludeSystemNamespaceSet, StderrIncludeSystemNamespaceSet)
 		//enrichment not applicable for ADX and v2 schema
 		if enrichContainerLogs == true && ContainerLogsRouteADX != true && ContainerLogSchemaV2 != true {
 			Log("ContainerLogEnrichment=true; starting goroutine to update containerimagenamemaps \n")

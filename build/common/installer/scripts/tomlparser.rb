@@ -12,8 +12,10 @@ require_relative "ConfigParseErrorLogger"
 # Setting default values which will be used in case they are not set in the configmap or if configmap doesnt exist
 @collectStdoutLogs = true
 @stdoutExcludeNamespaces = "kube-system,gatekeeper-system"
+@stdoutIncludeSystemPods = ""
 @collectStderrLogs = true
 @stderrExcludeNamespaces = "kube-system,gatekeeper-system"
+@stderrIncludeSystemPods = ""
 @collectClusterEnvVariables = true
 @logTailPath = "/var/log/containers/*.log"
 @logExclusionRegexPattern = "(^((?!stdout|stderr).)*$)"
@@ -28,6 +30,9 @@ require_relative "ConfigParseErrorLogger"
 @logEnableKubernetesMetadata = false
 @logKubernetesMetadataIncludeFields = "podlabels,podannotations,poduid,image,imageid,imagerepo,imagetag"
 @annotationBasedLogFiltering = false
+@allowed_system_namespaces = ['kube-system', 'gatekeeper-system', 'calico-system', 'azure-arc', 'kube-public', 'kube-node-lease']
+
+
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
   # This path format is necessary for fluent-bit in windows
@@ -63,6 +68,11 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         @collectStdoutLogs = parsedConfig[:log_collection_settings][:stdout][:enabled]
         puts "config::Using config map setting for stdout log collection"
         stdoutNamespaces = parsedConfig[:log_collection_settings][:stdout][:exclude_namespaces]
+        
+        stdoutSystemPods = Array.new
+        if !parsedConfig[:log_collection_settings][:stdout][:collect_system_pod_logs].nil?
+          stdoutSystemPods = parsedConfig[:log_collection_settings][:stdout][:collect_system_pod_logs]
+        end
 
         #Clearing it, so that it can be overridden with the config map settings
         @stdoutExcludeNamespaces.clear
@@ -83,6 +93,33 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             end
           end
         end
+
+        if @collectStdoutLogs && stdoutSystemPods.is_a?(Array) && !stdoutSystemPods.empty?
+          # Using is_a? for type checking and directly checking if the array is not empty
+          filtered_entries = stdoutSystemPods.each_with_object([]) do |pod, entries|
+            namespace, controller = pod.split(':') # Split once and use the result
+            if namespace && @allowed_system_namespaces.include?(namespace) && !@stdoutExcludeNamespaces.include?(namespace) && controller && !controller.empty?
+              entries << pod
+            else
+              puts "config:: invalid entry for collect_system_pod_logs: #{pod}"
+              unless @allowed_system_namespaces.include?(namespace)
+                puts "config:: collect_system_pod_logs only works for system namespaces #{@allowed_system_namespaces}"
+              end
+              if @stdoutExcludeNamespaces.include?(namespace)
+                puts "config:: please remove #{namespace} from exclude_namespaces to use collect_system_pod_logs"
+              end
+              if !controller || controller.empty?
+                puts "config:: Please provide valid controller name. controller name is empty"
+              end
+            end
+          end
+
+          @stdoutIncludeSystemPods = filtered_entries.join(",")
+          puts "config::Using config map setting for stdout log collection to include system pods" if filtered_entries.any?
+        else
+          puts "config::Stdout log collection is not enabled or stdoutSystemPods is not properly configured." unless @collectStdoutLogs
+        end
+
       end
     rescue => errorStr
       ConfigParseErrorLogger.logError("Exception while reading config map settings for stdout log collection - #{errorStr}, using defaults, please check config map for errors")
@@ -94,6 +131,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         @collectStderrLogs = parsedConfig[:log_collection_settings][:stderr][:enabled]
         puts "config::Using config map setting for stderr log collection"
         stderrNamespaces = parsedConfig[:log_collection_settings][:stderr][:exclude_namespaces]
+
+        stderrSystemPods = Array.new
+        if !parsedConfig[:log_collection_settings][:stderr][:collect_system_pod_logs].nil?
+          stderrSystemPods = parsedConfig[:log_collection_settings][:stderr][:collect_system_pod_logs]
+        end
+
         stdoutNamespaces = Array.new
         #Clearing it, so that it can be overridden with the config map settings
         @stderrExcludeNamespaces.clear
@@ -120,6 +163,33 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             end
           end
         end
+
+        if @collectStderrLogs && stderrSystemPods.is_a?(Array) && !stderrSystemPods.empty?
+          # Using is_a? for type checking and directly checking if the array is not empty
+          filtered_entries = stderrSystemPods.each_with_object([]) do |pod, entries|
+            namespace, controller = pod.split(':') # Split once and use the result
+            if namespace && @allowed_system_namespaces.include?(namespace) && !@stderrExcludeNamespaces.include?(namespace) && controller && !controller.empty?
+              entries << pod
+            else
+              puts "config:: invalid entry for collect_system_pod_logs: #{pod}"
+              unless @allowed_system_namespaces.include?(namespace)
+                puts "config:: collect_system_pod_logs only works for system namespaces #{@allowed_system_namespaces}"
+              end
+              if @stdoutExcludeNamespaces.include?(namespace)
+                puts "config:: please remove #{namespace} from exclude_namespaces to use collect_system_pod_logs"
+              end
+              if !controller || controller.empty?
+                puts "config:: Please provide valid controller name. controller name is empty"
+              end
+            end
+          end
+
+          @stderrIncludeSystemPods = filtered_entries.join(",")
+          puts "config::Using config map setting for stderr log collection to include system pods" if filtered_entries.any?
+        else
+          puts "config::stderr log collection is not enabled or stderrSystemPods is not properly configured." unless @collectStderrLogs
+        end
+
       end
     rescue => errorStr
       ConfigParseErrorLogger.logError("Exception while reading config map settings for stderr log collection - #{errorStr}, using defaults, please check config map for errors")
@@ -306,8 +376,10 @@ if !file.nil?
   file.write("export AZMON_LOG_TAIL_PATH_DIR=#{logTailPathDir}\n")
   file.write("export AZMON_LOG_EXCLUSION_REGEX_PATTERN=\"#{@logExclusionRegexPattern}\"\n")
   file.write("export AZMON_STDOUT_EXCLUDED_NAMESPACES=#{@stdoutExcludeNamespaces}\n")
+  file.write("export AZMON_STDOUT_INCLUDED_SYSTEM_PODS=#{@stdoutIncludeSystemPods}\n")
   file.write("export AZMON_COLLECT_STDERR_LOGS=#{@collectStderrLogs}\n")
   file.write("export AZMON_STDERR_EXCLUDED_NAMESPACES=#{@stderrExcludeNamespaces}\n")
+  file.write("export AZMON_STDERR_INCLUDED_SYSTEM_PODS=#{@stderrIncludeSystemPods}\n")
   file.write("export AZMON_CLUSTER_COLLECT_ENV_VAR=#{@collectClusterEnvVariables}\n")
   file.write("export AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH=#{@excludePath}\n")
   file.write("export AZMON_CLUSTER_CONTAINER_LOG_ENRICH=#{@enrichContainerLogs}\n")
@@ -364,9 +436,13 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     file.write(commands)
     commands = get_command_windows("AZMON_STDOUT_EXCLUDED_NAMESPACES", @stdoutExcludeNamespaces)
     file.write(commands)
+    commands = get_command_windows("AZMON_STDOUT_INCLUDED_SYSTEM_PODS", @stdoutIncludeSystemPods)
+    file.write(commands)
     commands = get_command_windows("AZMON_COLLECT_STDERR_LOGS", @collectStderrLogs)
     file.write(commands)
     commands = get_command_windows("AZMON_STDERR_EXCLUDED_NAMESPACES", @stderrExcludeNamespaces)
+    file.write(commands)
+    commands = get_command_windows("AZMON_STDERR_INCLUDED_SYSTEM_PODS", @stderrIncludeSystemPods)
     file.write(commands)
     commands = get_command_windows("AZMON_CLUSTER_COLLECT_ENV_VAR", @collectClusterEnvVariables)
     file.write(commands)

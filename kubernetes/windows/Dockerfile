@@ -1,6 +1,5 @@
 # Supported values of windows version are ltsc2019 or ltsc2022 which are being passed by the build script or build pipeline
 ARG WINDOWS_VERSION=
-ARG WINDOWS_AMA_URL=
 FROM mcr.microsoft.com/windows/servercore:${WINDOWS_VERSION}
 LABEL maintainer="OMSContainers@microsoft.com"
 LABEL vendor=Microsoft\ Corp \
@@ -40,7 +39,8 @@ RUN powershell -Command "Remove-Item -Force C:\ruby31\lib\ruby\gems\3.1.0\cache\
 SHELL ["powershell"]
 
 ENV tmpdir /opt/amalogswindows/scripts/powershell
-ENV WINDOWS_AMA_URL ${WINDOWS_AMA_URL}
+ARG WINDOWS_AMA_URL=
+ENV WINDOWS_AMA_URL_NEW ${WINDOWS_AMA_URL}
 ENV COMPlus_ThreadPool_UnfairSemaphoreSpinLimit 0
 
 WORKDIR /opt/amalogswindows/scripts/powershell

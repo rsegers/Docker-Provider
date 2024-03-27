@@ -142,8 +142,6 @@ func (p perfPlugin) enumerate() ([]map[string]interface{}, []map[string]interfac
 	currentTime := time.Now()
 	batchTime := currentTime.UTC().Format(time.RFC3339)
 	hostName = ""
-	namespaceFilteringMode = "off"
-	namespaces = []string{}
 	eventStream := []map[string]interface{}{}
 	insightsMetricsEventStream := []map[string]interface{}{}
 	osType := strings.TrimSpace(os.Getenv("OS_TYPE"))
@@ -174,13 +172,13 @@ func (p perfPlugin) enumerate() ([]map[string]interface{}, []map[string]interfac
 		}
 
 		if e.IsDataCollectionSettingsConfigured() {
-			runInterval := e.GetDataCollectionIntervalSeconds()
+			runInterval = e.GetDataCollectionIntervalSeconds()
 			FLBLogger.Print("perf::enumerate: using data collection interval(seconds):", runInterval, "@", time.Now().UTC().Format(time.RFC3339))
 
-			namespaces := e.GetNamespacesForDataCollection()
+			namespaces = e.GetNamespacesForDataCollection()
 			FLBLogger.Print("perf::enumerate: using data collection namespaces:", namespaces, "@", time.Now().UTC().Format(time.RFC3339))
 
-			namespaceFilteringMode := e.GetNamespaceFilteringModeForDataCollection()
+			namespaceFilteringMode = e.GetNamespaceFilteringModeForDataCollection()
 			FLBLogger.Print("perf::enumerate: using data collection filtering mode for namespaces:", namespaceFilteringMode, "@", time.Now().UTC().Format(time.RFC3339))
 		}
 	}

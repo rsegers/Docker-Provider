@@ -69,6 +69,16 @@ jobs:
     
       cd $(Build.SourcesDirectory)/deployment/arc-k8s-extension-release-v2/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz arcExtensionRelease.sh
+
+      windowsAMAUrl=""
+      if [ -z "$WINDOWS_AMA_URL" ]
+        then
+          echo "\$WINDOWS_AMA_URL variable is not set"
+        else
+          windowsAMAUrl=$WINDOWS_AMA_URL
+          echo "\$WINDOWS_AMA_URL is $WINDOWS_AMA_URL"
+      fi
+      echo "##vso[task.setvariable variable=windowsAMAUrl;isOutput=true]$windowsAMAUrl"
     name: setup
 
   - task: CopyFiles@2
@@ -280,6 +290,7 @@ jobs:
     windows2019BaseImageVersion: ltsc2019
     Codeql.Enabled: true
     Codeql.BuildIdentifier: 'windowsbuild'
+    windowsAMAUrl: $[ dependencies.common.outputs['setup.windowsAMAUrl'] ]
   steps:
   - task: PowerShell@2
     inputs:
@@ -311,7 +322,7 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) --build-arg WINDOWS_AMA_URL=$(WINDOWS_AMA_URL) .
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)-unsigned --build-arg WINDOWS_VERSION=$(windows2019BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) --build-arg WINDOWS_AMA_URL=$(windowsAMAUrl) .
 
   - task: PowerShell@2
     displayName: Extract files to sign
@@ -488,6 +499,7 @@ jobs:
     windowsTelemetryTag: $[ dependencies.common.outputs['setup.windowsTelemetryTag'] ]
     windows2022BaseImageVersion: ltsc2022
     Codeql.SkipTaskAutoInjection: true
+    windowsAMAUrl: $[ dependencies.common.outputs['setup.windowsAMAUrl'] ]
   steps:
   - task: PowerShell@2
     inputs:
@@ -520,7 +532,7 @@ jobs:
         az account set -s ${{ variables.subscription }}
         az acr login -n ${{ variables.containerRegistry }}
 
-        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) --build-arg WINDOWS_AMA_URL=$(WINDOWS_AMA_URL) .
+        docker build --isolation=hyperv --tag ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)-unsigned --build-arg WINDOWS_VERSION=$(windows2022BaseImageVersion) --build-arg IMAGE_TAG=$(windowsTelemetryTag) --build-arg WINDOWS_AMA_URL=$(windowsAMAUrl) .
 
   - task: PowerShell@2
     displayName: Extract files to sign

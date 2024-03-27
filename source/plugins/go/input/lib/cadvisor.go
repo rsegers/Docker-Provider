@@ -30,7 +30,7 @@ const (
 const (
 	MEMORY_WORKING_SET_BYTES               = "memoryWorkingSetBytes"
 	CPU_USAGE_NANO_CORES                   = "cpuUsageNanoCores"
-	MEMORY_RSS_BYTES                       = "memoryRSSBytes"
+	MEMORY_RSS_BYTES                       = "memoryRssBytes"
 	OBJECT_NAME_K8S_NODE                   = "K8SNode"
 	OBJECT_NAME_K8S_CONTAINER              = "K8SContainer"
 	PV_USED_BYTES                          = "pvUsedBytes"
