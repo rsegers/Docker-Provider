@@ -9,7 +9,8 @@ export const clusterName = "aks-rambhatt-test";
 export const cr: InstrumentationCR = {
     metadata: {
         name: "cr1",
-        namespace: "default"
+        namespace: "default",
+        resourceVersion: "1"
     },
     spec: {
         settings: {

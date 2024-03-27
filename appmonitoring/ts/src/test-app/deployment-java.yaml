@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   labels:
     app: zakima-java-1
+    someLabel25: some-label25
   annotations:
     version-annotation: v1
   name: zakima-java-1
@@ -24,7 +25,7 @@ spec:
       labels:
         app: zakima-java-1
       #annotations:
-        #instrumentation.opentelemetry.io/inject-nodejs: "cr1"
+      #  instrumentation.opentelemetry.io/inject-nodejs: "cr1"
     spec:
       containers:
       - image: aicommon.azurecr.io/demoaks-dotnet-app:latest

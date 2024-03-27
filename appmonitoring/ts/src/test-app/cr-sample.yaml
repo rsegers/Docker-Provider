@@ -10,9 +10,9 @@ spec:
     #imageRepoPath: mycompany.azurecr.io/mcr-replicas/applicationinsights # optional Customers are obliged to keep their ACR in sync with MCR for new versions, or things will break
 
     autoInstrumentationPlatforms: # required, could be empty
+      - DotNet
+      # - Java
       #- NodeJs
-      #- DotNet
-      - Java
 
     #logCollectionSettings: # optional, defaults are shown below
     #  disableAppLogs: false # AI log collection. Default is false (enabled)
@@ -36,9 +36,9 @@ spec:
     #imageRepoPath: mycompany.azurecr.io/mcr-replicas/applicationinsights # optional Customers are obliged to keep their ACR in sync with MCR for new versions, or things will break
 
     autoInstrumentationPlatforms: # required, could be empty
-      #- NodeJs
       - DotNet
-      # - Java
+      #- Java
+      - NodeJs
 
     #logCollectionSettings: # optional, defaults are shown below
     #  disableAppLogs: false # AI log collection. Default is false (enabled)

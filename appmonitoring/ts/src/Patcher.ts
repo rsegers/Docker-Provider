@@ -1,5 +1,5 @@
 ﻿import { Mutations } from "./Mutations.js";
-import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationCrAnnotationName, InstrumentationPlatformsAnnotationName, InstrumentationCR } from "./RequestDefinition.js";
+import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationAnnotationName, InstrumentationCR, IInstrumentationAnnotationValue } from "./RequestDefinition.js";
 
 export class Patcher {
 
@@ -92,26 +92,44 @@ export class Patcher {
             });
         }
 
-        const jsonPatch: object[] = [
-            // add annotations to the object describing what mutation was applied
-            {
-                op: "add", // add will create an element if missing, or overwrite if present
-                path: `/metadata/annotations/${InstrumentationCrAnnotationName.replace("/", "~1")}`, // a slash is escaped as ~1 in Json Patch
-                value: cr?.metadata?.name
-            },
-            {
-                op: "add", // add will create an element if missing, or overwrite if present
-                path: `/metadata/annotations/${InstrumentationPlatformsAnnotationName.replace("/", "~1")}`, // a slash is escaped as ~1 in Json Patch
-                value: cr ? platforms.join(",") : undefined
-            },
+        const jsonPatch: object[] = [];
+        const annotationName = `/metadata/annotations/${InstrumentationAnnotationName.replace("/", "~1")}`;  // a slash is escaped as ~1 in Json Patch
+        if (cr && platforms.length > 0) {
+            jsonPatch.push(...[
+                // add annotation to the object describing what mutation was applied
+                {
+                    op: "add", // add will create an element if missing, or overwrite if present
+                    path: annotationName,
+                    value: JSON.stringify(<IInstrumentationAnnotationValue> {
+                        crName: cr.metadata.name,
+                        crResourceVersion: cr.metadata.resourceVersion,
+                        platforms: <string[]>platforms
+                    })
+                }
+            ]);
+        } else {
+            // no CR to apply or no instrumentation platforms, we must remove the annotation
+            jsonPatch.push(...[
+                {
+                    op: "add", // add will create an element if missing, or overwrite if present, this is required because remove below will fail if the element doesn't exist
+                    path: annotationName,
+                    value: undefined
+                },
+                {
+                    op: "remove", // remove will delete the element if it exists, otherwise it will fail, which is why the add above is required
+                    path: annotationName
+                }
+            ]);
+        }
 
+        jsonPatch.push(
             // replace the pod spec section with the mutated one
             {
                 op: "replace",
                 path: "/spec/template/spec",
                 value: spec
             }
-        ];
+        );
 
         return jsonPatch;
     }
