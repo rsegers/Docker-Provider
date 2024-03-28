@@ -78,9 +78,9 @@ func FLBPluginFlush(data unsafe.Pointer, length C.int, tag *C.char) int {
 		return PushToAppInsightsTraces(records, appinsights.Information, incomingTag)
 	case strings.Contains(incomingTag, "oms.container.perf.telegraf"):
 		return PostTelegrafMetricsToLA(records)
-	case strings.Contains(incomingTag, "mdm.container.perf.telegraf"):
+	case strings.Contains(incomingTag, "oms.container.mdm.perf.telegraf"):
 		return PostTelegrafMetricsToMDMHelper(records)
-	case strings.Contains(incomingTag, "oneagent.containerinsights"):
+	case strings.Contains(incomingTag, "oms.container.oneagent.containerinsights"):
 		return PostInputPluginRecords(records)
 	default:
 		return PostDataHelper(records)
