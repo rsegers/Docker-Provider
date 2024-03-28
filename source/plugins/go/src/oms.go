@@ -99,6 +99,7 @@ const defaultContainerInventoryRefreshInterval = 60
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
 const agentConfigRefreshIntervalSeconds = 300
+const defaultNamespaceStreamIdMapUpdateIntervalSeconds = 300
 
 // Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -256,6 +257,10 @@ var (
 	IngestionAuthTokenUpdateMutex = &sync.Mutex{}
 	// ODSIngestionAuthToken for windows agent AAD MSI Auth
 	ODSIngestionAuthToken string
+	// Namespace to StreamId map for ContainerLogV2 extension
+	NamespaceStreamIdMap map[string]string
+	// NamespaceStreamIdMapUpdateMutex read and write mutex access for NamespaceStreamIdMap
+	NamespaceStreamIdMapUpdateMutex = &sync.Mutex{}
 )
 
 var (
@@ -265,6 +270,8 @@ var (
 	KubeMonAgentConfigEventsSendTicker *time.Ticker
 	// IngestionAuthTokenRefreshTicker to refresh ingestion token
 	IngestionAuthTokenRefreshTicker *time.Ticker
+	// NamespaceStreamIdMapRefreshTicker to refresh namespace to stream id mapping
+	NamespaceStreamIdMapRefreshTicker *time.Ticker
 )
 
 var (
@@ -503,6 +510,23 @@ func updateContainerImageNameMaps() {
 		NameIDMap = _nameIDMap
 		DataUpdateMutex.Unlock()
 		Log("Unlocking after updating image and name maps")
+	}
+}
+
+func updateNamespaceStreamIdMap() {
+	for ; true; <-NamespaceStreamIdMapRefreshTicker.C {
+		Log("Updating NamespaceStreamIdMap")
+		_namespaceStreamIdMap, err := extension.GetInstance(FLBLogger, ContainerType).GetNamespaceStreamIdMap(IsWindows)
+		if err != nil {
+			message := fmt.Sprintf("Error getting NamespaceStreamIdMap %s", err.Error())
+			Log(message)
+			continue
+		}
+		Log("Locking to Updating NamespaceStreamIdMap")
+		NamespaceStreamIdMapUpdateMutex.Lock()
+		NamespaceStreamIdMap = _namespaceStreamIdMap
+		NamespaceStreamIdMapUpdateMutex.Unlock()
+		Log("Unlocking after updating Updating NamespaceStreamIdMap")
 	}
 }
 
@@ -1979,13 +2003,9 @@ func GetMsgPackBytes(msgPackEntries []MsgPackEntry) []byte {
 
 func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
 	msgPackEntriesByNamespace := make(map[string][]MsgPackEntry)
-	Log("GetMsgPackBytesByNamespace: Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
-	namespaceStreamIdMap, _ := extension.GetInstance(FLBLogger, ContainerType).GetNamespaceStreamIdMap(IsWindows)
-	message := fmt.Sprintf("GetMsgPackBytesByNamespace: namespaceStreamIdMap : %v \n", namespaceStreamIdMap)
-	Log(message)
-
 	for _, entry := range msgPackEntries {
-		msgPackEntriesByNamespace[entry.Record["PodNamespace"]] = append(msgPackEntriesByNamespace[entry.Record["PodNamespace"]], entry)
+		podNamespace := entry.Record["PodNamespace"]
+		msgPackEntriesByNamespace[podNamespace] = append(msgPackEntriesByNamespace[podNamespace], entry)
 	}
 
 	msgpBytesArray := make([][]byte, len(msgPackEntriesByNamespace))
@@ -1993,13 +2013,13 @@ func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
 	index := 0
 	for namespace, entries := range msgPackEntriesByNamespace {
 		var msgpBytes []byte
-		streamTag := namespaceStreamIdMap[namespace]
+		streamTag := NamespaceStreamIdMap[namespace]
 		msg := fmt.Sprintf("GetMsgPackBytesByNamespace: namespace : %s streamTag: %s \n", namespace, streamTag)
 		Log(msg)
 
 		if streamTag == "" {
 			streamTag = MdsdContainerLogTagName
-			Log("GetMsgPackBytesByNamespace: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, streamTag)
+			Log(fmt.Sprintf("GetMsgPackBytesByNamespace: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, streamTag))
 		}
 
 		fluentForward := MsgPackForward{
@@ -2458,6 +2478,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	if multiTenancyModeEnabled != "" && strings.Compare(strings.ToLower(multiTenancyModeEnabled), "true") == 0 {
 		IsMultiTenancyMode = true
 		Log("Logs Multitenancy mode Enabled")
+		Log("defaultNamespaceStreamIdMapUpdateIntervalSeconds = %d \n", defaultNamespaceStreamIdMapUpdateIntervalSeconds)
+		NamespaceStreamIdMapRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultNamespaceStreamIdMapUpdateIntervalSeconds))
+		go updateNamespaceStreamIdMap()
 	}
 
 	Log("ContainerLogsRouteADX: %v, IsWindows: %v, IsAADMSIAuthMode = %v IsGenevaLogsIntegrationEnabled = %v, IsMultiTenancyMode = %v \n", ContainerLogsRouteADX, IsWindows, IsAADMSIAuthMode, IsGenevaLogsIntegrationEnabled, IsMultiTenancyMode)

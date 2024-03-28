@@ -26,6 +26,11 @@ const (
 	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE = "namespacefilteringmode"
 )
 
+const (
+	CONTAINERINSIGHTS_EXTENSION = "ContainerInsights"
+	CONTAINERLOGV2_EXTENSION    = "ContainerLogV2Extension"
+)
+
 var singleton *Extension
 var once sync.Once
 var extensionconfiglock sync.Mutex
@@ -138,13 +143,13 @@ func getDataCollectionSettingsInterface(extensionName string) (map[string]interf
 func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) {
 	datatypeOutputStreamMap := make(map[string]string)
 
-	extensionConfigs, err := getExtensionConfigs("ContainerInsights")
+	extensionConfigs, err := getExtensionConfigs(CONTAINERINSIGHTS_EXTENSION)
 	if err != nil {
 		return datatypeOutputStreamMap, err
 	}
 	outputStreamDefinitions := make(map[string]StreamDefinition)
 	if hasNamedPipe {
-		extensionData, err := getExtensionData("ContainerInsights")
+		extensionData, err := getExtensionData(CONTAINERINSIGHTS_EXTENSION)
 		if err != nil {
 			return datatypeOutputStreamMap, err
 		}
@@ -170,7 +175,7 @@ func (e *Extension) IsContainerLogV2(useFromCache bool) bool {
 		return e.dataCollectionSettings["enablecontainerlogv2"] == "true"
 	}
 	var err error
-	e.dataCollectionSettings, err = getDataCollectionSettings("ContainerInsights")
+	e.dataCollectionSettings, err = getDataCollectionSettings(CONTAINERINSIGHTS_EXTENSION)
 	if err != nil {
 		message := fmt.Sprintf("Error getting isContainerLogV2: %s", err.Error())
 		logger.Printf(message)
@@ -210,7 +215,7 @@ func (e *Extension) GetOutputNamedPipe(datatype string, useFromCache bool) strin
 
 func (e *Extension) IsDataCollectionSettingsConfigured() bool {
 	var err error
-	dataCollectionSettings, err := getDataCollectionSettingsInterface("ContainerInsights")
+	dataCollectionSettings, err := getDataCollectionSettingsInterface(CONTAINERINSIGHTS_EXTENSION)
 	if err != nil {
 		message := fmt.Sprintf("Error getting dataCollectionSettings: %s", err.Error())
 		logger.Printf(message)
@@ -222,7 +227,7 @@ func (e *Extension) IsDataCollectionSettingsConfigured() bool {
 func (e *Extension) GetDataCollectionIntervalSeconds() int {
 	collectionIntervalSeconds := 60
 
-	dataCollectionSettings, err := getDataCollectionSettingsInterface("ContainerInsights")
+	dataCollectionSettings, err := getDataCollectionSettingsInterface(CONTAINERINSIGHTS_EXTENSION)
 	if err != nil {
 		message := fmt.Sprintf("Error getting dataCollectionSettings: %s", err.Error())
 		logger.Printf(message)
@@ -258,7 +263,7 @@ func (e *Extension) GetDataCollectionIntervalSeconds() int {
 func (e *Extension) GetNamespacesForDataCollection() []string {
 	var namespaces []string
 
-	dataCollectionSettings, err := getDataCollectionSettingsInterface("ContainerInsights")
+	dataCollectionSettings, err := getDataCollectionSettingsInterface(CONTAINERINSIGHTS_EXTENSION)
 	if err != nil {
 		message := fmt.Sprintf("Error getting dataCollectionSettings: %s", err.Error())
 		logger.Printf(message)
@@ -297,7 +302,7 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 	namespaceFilteringMode := "off"
 	extensionSettingsDataCollectionSettingsNamespaceFilteringModes := []string{"off", "include", "exclude"}
 
-	dataCollectionSettings, err := getDataCollectionSettingsInterface("ContainerInsights")
+	dataCollectionSettings, err := getDataCollectionSettingsInterface(CONTAINERINSIGHTS_EXTENSION)
 	if err != nil {
 		message := fmt.Sprintf("Error getting dataCollectionSettings: %s", err.Error())
 		logger.Printf(message)
@@ -322,7 +327,7 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 
 func (e *Extension) GetNamespaceStreamIdMap(hasNamedPipe bool) (map[string]string, error) {
 	namespaceStreamIdMap := make(map[string]string)
-	extensionData, err := getExtensionData("ContainerLogV2Extension")
+	extensionData, err := getExtensionData(CONTAINERLOGV2_EXTENSION)
 	if err != nil {
 		return namespaceStreamIdMap, err
 	}
@@ -352,7 +357,7 @@ func (e *Extension) GetNamespaceStreamIdMap(hasNamedPipe bool) (map[string]strin
 				dataCollectionSettings[lk] = v
 			}
 		}
-		namespaces, ok := dataCollectionSettings["namespaces"].([]interface{})
+		namespaces, ok := dataCollectionSettings[EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES].([]interface{})
 		if !ok {
 			logger.Printf("Interface does not contain a []interface{}")
 			return namespaceStreamIdMap, err
