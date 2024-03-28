@@ -271,6 +271,33 @@ func InitializePlugin(agentVersion string) {
 			}
 		}
 	}
+
+	processIncomingStream = CheckCustomMetricsAvailability()
+	metricsToCollectHash = make(map[string]bool)
+	for _, metric := range strings.Split(metricsToCollect, ",") {
+		metricsToCollectHash[strings.ToLower(metric)] = true
+	}
+	Log("MDMLog: After check_custom_metrics_availability process_incoming_stream is %v", processIncomingStream)
+
+	containerResourceUtilTelemetryTimeTracker = time.Now().Unix()
+	pvUsageTelemetryTimeTracker = time.Now().Unix()
+
+	containersExceededCpuThreshold = false
+	containersExceededMemRssThreshold = false
+	containersExceededMemWorkingSetThreshold = false
+	pvExceededUsageThreshold = false
+
+	if processIncomingStream {
+		cpuCapacity = 0.0
+		cpuAllocatable = 0.0
+		memoryCapacity = 0.0
+		memoryAllocatable = 0.0
+		ensureCPUMemoryCapacityAndAllocatableSet()
+		containerCpuLimitHash = make(map[string]float64)
+		containerMemoryLimitHash = make(map[string]float64)
+		containerResourceDimensionHash = make(map[string]string)
+		metricsThresholdHash = GetContainerResourceUtilizationThresholds()
+	}
 }
 
 func PostToMDM(records []*GenericMetricTemplate) error {
@@ -566,39 +593,12 @@ func flushMDMExceptionTelemetry() {
 }
 
 func PostCAdvisorMetricsToMDM(records []map[string]interface{}) int {
-	Log("MDMLog: PostCAdvisorMetricsToMDM::Info:PostCAdvisorMetricsToMDM starting: %v", records)
+	Log("MDMLog: PostCAdvisorMetricsToMDM::Info:PostCAdvisorMetricsToMDM starting")
 	if (records == nil) || !(len(records) > 0) {
 		Log("MDMLog: PostCAdvisorMetricsToMDM::Error:no records")
 		return output.FLB_OK
 	}
-	processIncomingStream = CheckCustomMetricsAvailability()
-	metricsToCollectHash = make(map[string]bool)
-	for _, metric := range strings.Split(metricsToCollect, ",") {
-		metricsToCollectHash[metric] = true
-	}
-	Log("MDMLog: After check_custom_metrics_availability process_incoming_stream is %v", processIncomingStream)
 
-	containerResourceUtilTelemetryTimeTracker = time.Now().Unix()
-	pvUsageTelemetryTimeTracker = time.Now().Unix()
-
-	containersExceededCpuThreshold = false
-	containersExceededMemRssThreshold = false
-	containersExceededMemWorkingSetThreshold = false
-	pvExceededUsageThreshold = false
-
-	if processIncomingStream {
-		cpuCapacity = 0.0
-		cpuAllocatable = 0.0
-		memoryCapacity = 0.0
-		memoryAllocatable = 0.0
-		ensureCPUMemoryCapacityAndAllocatableSet()
-		containerCpuLimitHash = make(map[string]float64)
-		containerMemoryLimitHash = make(map[string]float64)
-		containerResourceDimensionHash = make(map[string]string)
-		metricsThresholdHash = GetContainerResourceUtilizationThresholds()
-	}
-
-	// TODO why twice?
 	ensureCPUMemoryCapacityAndAllocatableSet()
 	if processIncomingStream {
 		var err error
@@ -666,6 +666,7 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 	allocatablePercentageMetricValue := 0.0
 
 	if objectName == objectNameK8sNode && metricsToCollectHash[strings.ToLower(counterName)] {
+		Log("MDMLog: Processing node metric: %s", counterName)
 		var metricName string
 		metricValue := collections[0]["Value"].(float64)
 		if counterName == CPUUsageNanoCores {
@@ -741,6 +742,7 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 
 		return GetNodeResourceMetricRecords(record, metricName, metricValue, percentageMetricValue, allocatablePercentageMetricValue)
 	} else if objectName == ObjectNameK8SContainer && metricsToCollectHash[strings.ToLower(counterName)] {
+		Log("MDMLog: Processing container metric: %s", counterName)
 		metricValue := collections[0]["Value"].(float64)
 		instanceName := record["InstanceName"].(string)
 		metricName := counterName
@@ -866,6 +868,29 @@ func flushMetricTelemetry() {
 		properties := map[string]string{}
 		properties["CpuThresholdPercentage"] = strconv.FormatFloat(metricsThresholdHash[CPUUsageNanoCores], 'f', -1, 64)
 		properties["MemoryRssThresholdPercentage"] = strconv.FormatFloat(metricsThresholdHash[MemoryRssBytes], 'f', -1, 64)
+		properties["MemoryWorkingSetThresholdPercentage"] = strconv.FormatFloat(metricsThresholdHash[MemoryWorkingSetBytes], 'f', -1, 64)
+		// Keeping track of any containers that have exceeded threshold in the last flush interval
+		properties["CpuThresholdExceededInLastFlushInterval"] = strconv.FormatBool(containersExceededCpuThreshold)
+		properties["MemRssThresholdExceededInLastFlushInterval"] = strconv.FormatBool(containersExceededMemRssThreshold)
+		properties["MemWSetThresholdExceededInLastFlushInterval"] = strconv.FormatBool(containersExceededMemWorkingSetThreshold)
+		lib.SendCustomEvent(ContainerResourceUtilHeartBeatEvent, properties)
+		containersExceededCpuThreshold = false
+		containersExceededMemRssThreshold = false
+		containersExceededMemWorkingSetThreshold = false
+		containerResourceUtilTelemetryTimeTracker = time.Now().Unix()
+	}
+
+	if !isWindows {
+		timeDifference := math.Abs(float64(time.Now().Unix()) - float64(pvUsageTelemetryTimeTracker))
+		timeDifferenceInMinutes := timeDifference / 60
+		if timeDifferenceInMinutes > TelemetryFlushIntervalInMinutes {
+			properties := map[string]string{}
+			properties["PVUsageThresholdPercentage"] = strconv.FormatFloat(metricsThresholdHash[PVUsedBytes], 'f', -1, 64)
+			properties["PVUsageThresholdExceededInLastFlushInterval"] = strconv.FormatBool(pvExceededUsageThreshold)
+			lib.SendCustomEvent(PvUsageHeartBeatEvent, properties)
+			pvExceededUsageThreshold = false
+			pvUsageTelemetryTimeTracker = time.Now().Unix()
+		}
 	}
 }
 

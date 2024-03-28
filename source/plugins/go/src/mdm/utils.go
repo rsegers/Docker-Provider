@@ -320,61 +320,78 @@ func GetAllContainerLimits() (map[string]float64, map[string]float64, map[string
 	}
 	defer response.Body.Close()
 
-	var podInventory struct {
-		Items []struct {
-			Metadata struct {
-				Namespace       string `json:"namespace"`
-				Name            string `json:"name"`
-				OwnerReferences []struct {
-					Name string `json:"name"`
-				} `json:"ownerReferences"`
-			} `json:"metadata"`
-			Spec struct {
-				Containers     []Container `json:"containers"`
-				InitContainers []Container `json:"initContainers"`
-			} `json:"spec"`
-		} `json:"items"`
-	}
+	var podInventory map[string]interface{}
 
 	err = json.NewDecoder(response.Body).Decode(&podInventory)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	for _, item := range podInventory.Items {
+	for _, item := range podInventory["items"].([]interface{}) {
 		Log("MDMLog: in pod inventory items...")
-		podNamespace := item.Metadata.Namespace
-		podName := item.Metadata.Name
-		podUid, err := getPodUid(podNamespace, map[string]interface{}{
-			"namespace": podNamespace,
-			"name":      podName,
-		})
-		if err != nil {
-			Log("MDMLog: %v", err)
+		metadata := item.(map[string]interface{})["metadata"].(map[string]interface{})
+		podNamespace := metadata["namespace"].(string)
+		podName := metadata["name"].(string)
+		podUid, _ := getPodUid(podNamespace, metadata)
+		if podUid == "" {
 			continue
 		}
-		Log("MDMLog: podUid: %s", podUid)
+		Log("MDMLog: podName, podNamespace, podUid: %s, %s, %s", podName, podNamespace, podUid) 
 
 		controllerName := "No Controller"
-		if len(item.Metadata.OwnerReferences) > 0 && item.Metadata.OwnerReferences[0].Name != "" {
-			controllerName = item.Metadata.OwnerReferences[0].Name
+		if _, ok := metadata["ownerReferences"]; ok {
+			ownerReferences := metadata["ownerReferences"].([]interface{})
+			if len(ownerReferences) > 0 {
+				if _, ok := ownerReferences[0].(map[string]interface{})["name"]; ok {
+					val := ownerReferences[0].(map[string]interface{})["name"].(string)
+					if val != "" {
+						controllerName = val
+					}
+				}
+			}
 		}
 
-		podContainers := append(item.Spec.Containers, item.Spec.InitContainers...)
+		spec := item.(map[string]interface{})["spec"].(map[string]interface{})
+		podContainers := make([]interface{}, 0)
+		if _, ok := spec["containers"]; ok {
+			podContainers = spec["containers"].([]interface{})
+		}
+		if _, ok := spec["initContainers"]; ok {
+			podContainers = append(podContainers, spec["initContainers"].([]interface{})...)
+		}
+
 		for _, container := range podContainers {
 			Log("MDMLog: in podContainers for loop...")
-			containerName := container.Name
+			containerName := ""
+			if name, ok := container.(map[string]interface{})["name"]; !ok {
+				containerName = name.(string)
+			}
 			key := clusterID + "/" + podUid + "/" + containerName
 			containerResourceDimensionHash[key] = containerName + "~~" + podName + "~~" + controllerName + "~~" + podNamespace
 
-			if container.Resources.Limits.CPU != "" {
-				cpuLimit := container.Resources.Limits.CPU
-				memoryLimit := container.Resources.Limits.Memory
-				Log("MDMLog: cpuLimit: %s", cpuLimit)
-				Log("MDMLog: memoryLimit: %s", memoryLimit)
+			if containerName == "" {
+				continue
+			}
 
-				containerCpuLimitHash[key] = getMetricNumericValue("cpu", cpuLimit)
-				containerMemoryLimitHash[key] = getMetricNumericValue("memory", memoryLimit)
+			if _, ok := container.(map[string]interface{})["resources"]; ok {
+				resources := container.(map[string]interface{})["resources"].(map[string]interface{})
+				if _, ok := resources["limits"]; ok {
+					limits := resources["limits"].(map[string]interface{})
+					if _, ok := limits["cpu"]; ok {
+						cpuLimit := limits["cpu"].(string)
+						if cpuLimit != "" {
+							containerCpuLimitHash[key] = getMetricNumericValue("cpu", cpuLimit)
+							Log("MDMLog: cpuLimit: %s", cpuLimit)
+						}
+					}
+					if _, ok := limits["memory"]; ok {
+						memoryLimit := limits["memory"].(string)
+						if memoryLimit != "" {
+							containerMemoryLimitHash[key] = getMetricNumericValue("memory", memoryLimit)
+							Log("MDMLog: memoryLimit: %s", memoryLimit)
+						}
+					}
+				}
 			}
 		}
 	}
@@ -382,29 +399,21 @@ func GetAllContainerLimits() (map[string]float64, map[string]float64, map[string
 	return containerCpuLimitHash, containerMemoryLimitHash, containerResourceDimensionHash, nil
 }
 
-type Container struct {
-	Name      string `json:"name"`
-	Resources struct {
-		Limits struct {
-			CPU    string `json:"cpu"`
-			Memory string `json:"memory"`
-		} `json:"limits"`
-	} `json:"resources"`
-}
-
 func getPodUid(podNamespace string, podMetadata map[string]interface{}) (string, error) {
 	var podUid string
 
-	if podNamespace == "kube-system" {
-		// Handle special case for kube-system namespace
-		if _, ok := podMetadata["ownerReferences"]; !ok {
-			annotations, ok := podMetadata["annotations"].(map[string]interface{})
-			if !ok || annotations == nil {
-				return "", nil // Returning empty string for nil UID
-			}
-			if hash, ok := annotations["kubernetes.io/config.hash"].(string); ok {
-				podUid = hash
-			}
+	if _, ok := podMetadata["ownerReferences"]; !ok && podNamespace == "kube-system" {
+		//    The above case seems to be the only case where you have horizontal scaling of pods
+		//    but no controller, in which case cAdvisor picks up kubernetes.io/config.hash
+		//    instead of the actual poduid. Since this uid is not being surface into the UX
+		//    its ok to use this.
+		//    Use kubernetes.io/config.hash to be able to correlate with cadvisor data
+		annotations, ok := podMetadata["annotations"].(map[string]interface{})
+		if !ok || annotations == nil {
+			return "", nil // Returning empty string for nil UID
+		}
+		if hash, ok := annotations["kubernetes.io/config.hash"].(string); ok {
+			podUid = hash
 		}
 	} else {
 		if uid, ok := podMetadata["uid"].(string); ok {
@@ -413,8 +422,7 @@ func getPodUid(podNamespace string, podMetadata map[string]interface{}) (string,
 	}
 
 	if podUid == "" {
-		Log("MDMLog: KubernetesApiClient::getPodUid: Failed to get podUid, podUid is empty.")
-		// TODO: Add telemetry
+		Log("MDMLog: getPodUid: Failed to get podUid, podUid is empty.")
 		return "", nil // Returning empty string for nil UID
 	}
 
