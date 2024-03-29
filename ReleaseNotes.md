@@ -8,6 +8,43 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 03/29/2024 -
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.19 (linux)
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.19 (windows)
+##### Current dependencies
+- Linux
+  - [CBL-Mariner 2.0.20240301](https://github.com/microsoft/azurelinux/releases/tag/2.0.20240301-2.0)
+  - Golang - 1.20.5
+  - Ruby - 3.1.3
+  - MDSD - 1.29.7
+  - Telegraf - 1.28.5
+  - Fluent-bit - 2.1.10
+  - Fluentd - 1.16.3
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.14
+  - Telegraf - 1.24.2
+  - Fluentd - 1.16.3
+  - Windows AMA - 46.9.43
+  - Golang - 1.20.5
+##### Code change log
+## What's Changed
+- Common
+    * Gangams/telemetry cloud specific by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1199
+    * Bump github.com/docker/docker from 24.0.6+incompatible to 24.0.7+incompatible in /source/plugins/go/input by @dependabot in https://github.com/microsoft/Docker-Provider/pull/1194 
+    * Containerlogv2 Metadata and annotations based filtering by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1148
+    * Move LOGS_AND_EVENTS_ONLY telemetry to DS by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1212
+    * Fix input plugin bugs by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1207
+    * collect logs from pods from excluded system ns (#1138) by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1146
+    * Enable disable addon test pipeline by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1208
+    * Update the pipeline to not trigger for builds by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1214
+    * Gangams/add flag to enable service account timebound token by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1213
+    * Bump github.com/docker/docker from 24.0.7+incompatible to 24.0.9+incompatible in /source/plugins/go/input by @dependabot in https://github.com/microsoft/Docker-Provider/pull/1209
+    * Add telemetry for KubernetesMetadata size by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1216
+- Windows
+    * Start telegraf only when fluent tcp listener up and running by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1205
+    * Solving pipeline bugs for windows ama url variable by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1215
+
 ### 03/13/2024 -
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.18 (linux)
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.18 (windows)
