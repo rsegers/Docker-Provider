@@ -763,7 +763,13 @@ function Start-Fluent-Telegraf {
         Start-Telegraf
     }
 
-    fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'
+    $windowsFluentBitDisabled = [System.Environment]::GetEnvironmentVariable("AZMON_WINDOWS_FLUENT_BIT_DISABLED", "process")
+    $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
+
+    # Start fluentd as a windows service only if windowsFluentBitDisabled is false or isAADMSIAuth is false or genevaLogsIntegration is true
+    if ($windowsFluentBitDisabled.ToLower() -ne 'false' -or $genevaLogsIntegration.ToLower() -eq "true" -or $isAADMSIAuth.ToLower() -ne "true") {
+        fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'
+    }
 
     Notepad.exe | Out-Null
 }
