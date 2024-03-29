@@ -16,6 +16,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"runtime/debug"
 
 	"github.com/fluent/fluent-bit-go/output"
 	"github.com/google/uuid"
@@ -1360,6 +1361,15 @@ func PostTelegrafMetricsToMDMHelper(telegrafRecords []map[interface{}]interface{
 func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) int {
 	start := time.Now()
 	Log("Info::PostInputPluginRecords starting")
+
+	defer func() {
+		if r := recover(); r != nil {
+			stacktrace := debug.Stack()
+			Log("MDMLog: Error processing cadvisor metrics records: %v, stacktrace: %v", r, stacktrace)
+			SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+		}
+	}()
+
 	var success int
 	for _, record := range inputPluginRecords {
 		var msgPackEntries []MsgPackEntry

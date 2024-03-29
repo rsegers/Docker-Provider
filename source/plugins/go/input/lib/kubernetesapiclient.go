@@ -155,7 +155,7 @@ func GetTokenStr() string {
 					TokenExpiry = time.Now().Unix() + int64(LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS)
 				}
 			} else {
-				logger.Println("Unable to read token string from %s: %v\n", TokenFileName, readErr)
+				logger.Printf("Unable to read token string from %s: %v\n", TokenFileName, readErr)
 				TokenExpiry = time.Now().Unix()
 				TokenStr = ""
 			}
@@ -332,11 +332,11 @@ func GetClusterName() string {
 
 func GetNodesResourceUri(nodesResourceUri string) string {
 	if isAROV3Cluster() {
-	    if nodesResourceUri != "" && strings.Contains(nodesResourceUri, "?") {
-		nodesResourceUri += "&labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
-	    } else {
-		nodesResourceUri += "labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
-	    }
+		if nodesResourceUri != "" && strings.Contains(nodesResourceUri, "?") {
+			nodesResourceUri += "&labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
+		} else {
+			nodesResourceUri += "labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
+		}
 	}
 	return nodesResourceUri
 }
@@ -352,7 +352,7 @@ func isAROV3Cluster() bool {
 
 func GetKubeResourceInfo(resource string) (map[string]interface{}, error) {
 	response, err := getKubeResourceInfo(resource, nil)
-	if (err != nil) {
+	if err != nil {
 		return nil, err
 	}
 	body, err := ioutil.ReadAll(response.Body)

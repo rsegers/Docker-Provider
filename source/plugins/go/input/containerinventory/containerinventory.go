@@ -54,11 +54,19 @@ func (p *containerInventoryPlugin) Init(ctx context.Context, fbit *plugin.Fluent
 		p.runInterval, _ = strconv.Atoi(fbit.Conf.String("run_interval"))
 	}
 
+	var logPath string
 	if strings.EqualFold(osType, "windows") {
-		FLBLogger = lib.CreateLogger("/etc/amalogswindows/fluent-bit-input.log")
+		logPath = "/etc/amalogswindows/fluent-bit-input.log"
 	} else {
-		FLBLogger = lib.CreateLogger("/var/opt/microsoft/docker-cimprov/log/fluent-bit-input.log")
+		logPath = "/var/opt/microsoft/docker-cimprov/log/fluent-bit-input.log"
 	}
+
+	isTestEnv := os.Getenv("ISTEST") == "true"
+	if isTestEnv {
+		logPath = "./fluent-bit-input-test.log"
+	}
+
+	FLBLogger = lib.CreateLogger(logPath)
 
 	return nil
 }

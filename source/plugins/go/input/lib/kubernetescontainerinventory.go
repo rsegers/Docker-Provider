@@ -26,6 +26,11 @@ func init() {
 	} else {
 		FLBLogger = CreateLogger("/var/opt/microsoft/docker-cimprov/log/fluent-bit-input.log")
 	}
+
+	isTestEnv := os.Getenv("ISTEST") == "true"
+	if isTestEnv {
+		FLBLogger = CreateLogger("./fluent-bit-input.txt")
+	}
 }
 
 func GetContainerInventoryRecords(podItem map[string]interface{}, batchTime string, clusterCollectEnvironmentVar string, isWindows bool) []map[string]interface{} {

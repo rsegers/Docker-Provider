@@ -19,29 +19,29 @@ import (
 
 // Constants
 const (
-	ClusterConfigCRDAPIVersion             = "clusterconfig.azure.com/v1beta1"
-	ClusterIdentityResourceName            = "container-insights-clusteridentityrequest"
-	ClusterIdentityResourceNamespace       = "azure-arc"
-	ClusterIdentityTokenSecretNamespace    = "azure-arc"
-	CRResourceURITemplate                  = "%s/apis/%s/namespaces/%s/azureclusteridentityrequests/%s"
-	SecretResourceURITemplate              = "%s/api/v1/namespaces/%s/secrets/%s"
-	AzureMonitorCustomMetricsAudience      = "https://monitoring.azure.com/"
-	ClusterIdentityRequestKind             = "AzureClusterIdentityRequest"
+	ClusterConfigCRDAPIVersion          = "clusterconfig.azure.com/v1beta1"
+	ClusterIdentityResourceName         = "container-insights-clusteridentityrequest"
+	ClusterIdentityResourceNamespace    = "azure-arc"
+	ClusterIdentityTokenSecretNamespace = "azure-arc"
+	CRResourceURITemplate               = "%s/apis/%s/namespaces/%s/azureclusteridentityrequests/%s"
+	SecretResourceURITemplate           = "%s/api/v1/namespaces/%s/secrets/%s"
+	AzureMonitorCustomMetricsAudience   = "https://monitoring.azure.com/"
+	ClusterIdentityRequestKind          = "AzureClusterIdentityRequest"
 )
 
 // ArcK8sClusterIdentity struct represents the Ruby class
 type ArcK8sClusterIdentity struct {
-	LogPath                          string
-	Logger                           *log.Logger
-	TokenExpiryTime                  time.Time
-	CachedAccessToken                string
-	IsLastTokenRenewalUpdatePending  bool
-	TokenFilePath                    string
-	CertFilePath                     string
-	KubeAPIServerURL                 string
-	HTTPClient                       *http.Client
-	ServiceAccountToken              string
-	ExtensionName                    string
+	LogPath                         string
+	Logger                          *log.Logger
+	TokenExpiryTime                 time.Time
+	CachedAccessToken               string
+	IsLastTokenRenewalUpdatePending bool
+	TokenFilePath                   string
+	CertFilePath                    string
+	KubeAPIServerURL                string
+	HTTPClient                      *http.Client
+	ServiceAccountToken             string
+	ExtensionName                   string
 }
 
 // NewArcK8sClusterIdentity creates a new instance of ArcK8sClusterIdentity
@@ -50,6 +50,11 @@ func NewArcK8sClusterIdentity() *ArcK8sClusterIdentity {
 	logPath := "/var/opt/microsoft/docker-cimprov/log/arc_k8s_cluster_identity.log"
 	if strings.ToLower(strings.TrimSpace(osType)) == "windows" {
 		logPath = "/etc/amalogswindows/arc_k8s_cluster_identity.log"
+	}
+
+	isTestEnv := os.Getenv("ISTEST") == "true"
+	if isTestEnv {
+		logPath = "./arc_k8s_cluster_identity.txt"
 	}
 
 	logger := CreateLogger(logPath)

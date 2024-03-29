@@ -78,13 +78,7 @@ var (
 	metricsThresholdHash                      map[string]float64
 	processIncomingStream                     bool
 	clusterIdentity                           *lib.ArcK8sClusterIdentity
-)
-
-var (
-	// FLBLogger stream
-	FLBLogger = lib.CreateLogger("/var/opt/microsoft/docker-cimprov/log/fluent-bit-mdm.log")
-	// Log wrapper function
-	Log = FLBLogger.Printf
+	Log 					  *log.Logger
 )
 
 func init() {
@@ -116,67 +110,71 @@ func init() {
 	mdmExceptionsHash = make(map[string]int)
 	mdmExceptionsCount = 0
 	mdmExceptionTelemetryTimeTracker = time.Now().Unix()
+
+	isWindows = strings.Contains(strings.ToLower(os.Getenv("OS_TYPE")), "windows")
+	var logPath string
+	if isWindows {
+		logPath = "/etc/amalogswindows/fluent-bit-mdm.log"
+	} else {
+		logPath = "/var/opt/microsoft/docker-cimprov/log/fluent-bit-mdm.log"
+	}
+
+	isTestEnv := strings.EqualFold(os.Getenv("ISTEST"), "true")
+	if isTestEnv {
+		logPath = "./fluent-bit-mdm.log"
+	}
+
+	Log = lib.CreateLogger(logPath)
 }
 
 // InitializePlugin reads and populates plugin configuration
 func InitializePlugin(agentVersion string) {
-	// go func() {
-	// 	isTest := os.Getenv("ISTEST")
-	// 	if strings.Compare(strings.ToLower(strings.TrimSpace(isTest)), "true") == 0 {
-	// 		e1 := http.ListenAndServe("localhost:6060", nil)
-	// 		if e1 != nil {
-	// 			Log("MDMLog: HTTP Listen Error: %s \n", e1.Error())
-	// 		}
-	// 	}
-	// }()
 
-	// pluginConfig, err := ReadConfiguration(pluginConfPath)
-	// if err != nil {
-	// 	message := fmt.Sprintf("Error Reading plugin config path : %s \n", err.Error())
-	// 	Log(message)
-	// 	SendException(message)
-	// 	time.Sleep(30 * time.Second)
-	// 	log.Fatalln(message)
-	// }
+	defer func() {
+		if r := recover(); r != nil {
+			stacktrace := debug.Stack()
+			Log.Printf("MDMLog: Error initializing mdm plugin: %v, stacktrace: %v", r, stacktrace)
+			lib.SendExceptionTelemetry(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace), map[string]string{ "FeatureArea": "MDMGo" })
+		}
+	}()
 
 	aksResourceID := os.Getenv("AKS_RESOURCE_ID")
 	aksRegion := os.Getenv("AKS_REGION")
 
 	if aksResourceID == "" {
-		Log("MDMLog: Environment Variable AKS_RESOURCE_ID is not set..")
+		Log.Printf("MDMLog: Environment Variable AKS_RESOURCE_ID is not set..")
 		canSendDataToMDM = false
 	} else if !strings.Contains(strings.ToLower(aksResourceID), "/microsoft.containerservice/managedclusters/") &&
 		!strings.Contains(strings.ToLower(aksResourceID), "/microsoft.kubernetes/connectedclusters/") &&
 		!strings.Contains(strings.ToLower(aksResourceID), "/microsoft.hybridcontainerservice/provisionedclusters/") {
-		Log("MDMLog: MDM Metrics not supported for this cluster type resource: %s\n", aksResourceID)
+		Log.Printf("MDMLog: MDM Metrics not supported for this cluster type resource: %s\n", aksResourceID)
 		canSendDataToMDM = false
 	}
 
 	if aksRegion == "" {
-		Log("MDMLog: Environment Variable AKS_REGION is not set..")
+		Log.Printf("MDMLog: Environment Variable AKS_REGION is not set..")
 		canSendDataToMDM = false
 	} else {
 		aksRegion = strings.ReplaceAll(aksRegion, " ", "")
 	}
 
 	if !canSendDataToMDM {
-		Log("MDMLog: MDM Metrics not supported for this cluster")
+		Log.Printf("MDMLog: MDM Metrics not supported for this cluster")
 		return
 	}
 
-	isWindows = strings.Contains(strings.ToLower(os.Getenv("OS_TYPE")), "windows")
 	isAADMSIAuth = false
 	if strings.Compare(strings.ToLower(os.Getenv(AADMSIAuthMode)), "true") == 0 {
 		isAADMSIAuth = true
-		Log("MDMLog: AAD MSI Auth Mode Configured")
+		Log.Printf("MDMLog: AAD MSI Auth Mode Configured")
 	}
 
-	Log("MDMLog: MDM Metrics supported in %s region\n", aksRegion)
+	Log.Printf("MDMLog: MDM Metrics supported in %s region\n", aksRegion)
 
 	if strings.Contains(strings.ToLower(aksResourceID), "microsoft.kubernetes/connectedclusters") ||
 		strings.Contains(strings.ToLower(aksResourceID), "microsoft.hybridcontainerservice/provisionedclusters") {
 		isArcK8sCluster = true
-		Log("MDMLog: inside Arc K8S cluster")
+		Log.Printf("MDMLog: inside Arc K8S cluster")
 	}
 
 	customMetricsEndpoint := os.Getenv("CUSTOM_METRICS_ENDPOINT")
@@ -185,7 +183,7 @@ func InitializePlugin(agentVersion string) {
 		metricsEndpoint = strings.TrimSpace(customMetricsEndpoint)
 		// URL parsing for validation
 		if _, err := url.Parse(metricsEndpoint); err != nil {
-			Log("MDMLog: Error parsing CUSTOM_METRICS_ENDPOINT: %v\n", err)
+			Log.Printf("MDMLog: Error parsing CUSTOM_METRICS_ENDPOINT: %v\n", err)
 			return
 		}
 	} else {
@@ -195,12 +193,12 @@ func InitializePlugin(agentVersion string) {
 	var err error
 	postRequestURI, err = url.Parse(postRequestURL)
 	if err != nil {
-		Log("MDMLog: Error parsing post request URL: %v\n", err)
+		Log.Printf("MDMLog: Error parsing post request URL: %v\n", err)
 		return
 	}
 
 	if lib.IsIgnoreProxySettings() {
-		Log("MDMLog: Ignoring reading of proxy configuration since ignoreProxySettings is true")
+		Log.Printf("MDMLog: Ignoring reading of proxy configuration since ignoreProxySettings is true")
 	} else {
 		// read proxyEndpoint if proxy configured
 		proxyEndpoint = ""
@@ -209,15 +207,17 @@ func InitializePlugin(agentVersion string) {
 
 		} else {
 			proxyEndpoint, err = lib.GetProxyEndpoint()
-			//TODO handle err
+			if err != nil {
+				Log.Printf("MDMLog: Error reading proxy endpoint: %v\n", err)
+			}
 		}
 
 	}
-	// TODO: set proxy and application insights event
+	lib.SendCustomEvent("AKSCustomMetricsMDMGoPluginStart", nil)
 
 	if isArcK8sCluster {
 		if isAADMSIAuth && !isWindows {
-			Log("MDMLog: using IMDS sidecar endpoint for MSI token since its Arc k8s and Linux node")
+			Log.Printf("MDMLog: using IMDS sidecar endpoint for MSI token since its Arc k8s and Linux node")
 			useMsi = true
 
 			customResourceEndpoint := os.Getenv("customResourceEndpoint")
@@ -229,22 +229,22 @@ func InitializePlugin(agentVersion string) {
 			var err error
 			parsedTokenURI, err = url.Parse(msiEndpoint)
 			if err != nil {
-				Log("MDMLog: Error parsing MSI endpoint URL: %v\n", err)
+				Log.Printf("MDMLog: Error parsing MSI endpoint URL: %v\n", err)
 			}
 		} else {
-			Log("MDMLog: using cluster identity token since cluster is azure arc k8s cluster")
+			Log.Printf("MDMLog: using cluster identity token since cluster is azure arc k8s cluster")
 			clusterIdentity = lib.NewArcK8sClusterIdentity()
 		}
 	} else {
 		fileContent, err := os.ReadFile(azureJSONPath)
 		if err != nil {
-			Log("MDMLog: Error reading Azure JSON file: %v\n", err)
+			Log.Printf("MDMLog: Error reading Azure JSON file: %v\n", err)
 			return
 		}
 
 		var dataHash map[string]interface{}
 		if err := json.Unmarshal(fileContent, &dataHash); err != nil {
-			Log("MDMLog: Error parsing JSON file: %v\n", err)
+			Log.Printf("MDMLog: Error parsing JSON file: %v\n", err)
 			return
 		}
 
@@ -255,7 +255,7 @@ func InitializePlugin(agentVersion string) {
 			aadTokenURL := fmt.Sprintf(aadTokenURLTemplate, dataHash["tenantId"].(string))
 			parsedTokenURI, err = url.Parse(aadTokenURL)
 			if err != nil {
-				Log("MDMLog: Error parsing AAD token URL: %v\n", err)
+				Log.Printf("MDMLog: Error parsing AAD token URL: %v\n", err)
 			}
 		} else {
 			useMsi = true
@@ -264,10 +264,10 @@ func InitializePlugin(agentVersion string) {
 				msiEndpoint = fmt.Sprintf(msiEndpointTemplate, userAssignedClientID, tokenResourceURL)
 			}
 			parsedTokenURI, err = url.Parse(msiEndpoint)
-			Log("MDMLog: MSI Endpoint: %s\n", msiEndpoint)
-			Log("MDMLog: Parsed MSI Endpoint: %v\n", parsedTokenURI)
+			Log.Printf("MDMLog: MSI Endpoint: %s\n", msiEndpoint)
+			Log.Printf("MDMLog: Parsed MSI Endpoint: %v\n", parsedTokenURI)
 			if err != nil {
-				Log("MDMLog: Error parsing MSI endpoint URL: %v\n", err)
+				Log.Printf("MDMLog: Error parsing MSI endpoint URL: %v\n", err)
 			}
 		}
 	}
@@ -277,7 +277,7 @@ func InitializePlugin(agentVersion string) {
 	for _, metric := range strings.Split(metricsToCollect, ",") {
 		metricsToCollectHash[strings.ToLower(metric)] = true
 	}
-	Log("MDMLog: After check_custom_metrics_availability process_incoming_stream is %v", processIncomingStream)
+	Log.Printf("MDMLog: After check_custom_metrics_availability process_incoming_stream is %v", processIncomingStream)
 
 	containerResourceUtilTelemetryTimeTracker = time.Now().Unix()
 	pvUsageTelemetryTimeTracker = time.Now().Unix()
@@ -330,10 +330,10 @@ func PostToMDM(records []*GenericMetricTemplate) error {
 		}
 	} else {
 		if !canSendDataToMDM {
-			Log("MDMLog: Cannot send data to MDM since all required conditions were not met")
+			Log.Printf("MDMLog: Cannot send data to MDM since all required conditions were not met")
 		} else {
 			timeSinceLastAttempt := now.Sub(lastPostAttemptTime).Minutes()
-			Log("MDMLog: Last Failed POST attempt to MDM was made %.1f min ago. This is less than the current retry threshold of %d min. NO-OP", timeSinceLastAttempt, retryMDMPostWaitMinutes)
+			Log.Printf("MDMLog: Last Failed POST attempt to MDM was made %.1f min ago. This is less than the current retry threshold of %d min. NO-OP", timeSinceLastAttempt, retryMDMPostWaitMinutes)
 		}
 	}
 
@@ -365,10 +365,10 @@ func PostToMDMHelper(batch []string) error {
 		httpClient = &http.Client{}
 	} else {
 		aksResourceID := os.Getenv("AKS_RESOURCE_ID")
-		Log("MDMLog: Proxy configured on this cluster: %s\n", aksResourceID)
+		Log.Printf("MDMLog: Proxy configured on this cluster: %s\n", aksResourceID)
 		proxyURL, err := url.Parse(proxyEndpoint)
 		if err != nil {
-			Log("MDMLog: Error parsing proxy URL: %v\n", err)
+			Log.Printf("MDMLog: Error parsing proxy URL: %v\n", err)
 			return err
 		}
 		httpClient = &http.Client{
@@ -387,23 +387,23 @@ func PostToMDMHelper(batch []string) error {
 	requestSizeKB := len(postBody) / 1024
 	request, err := http.NewRequest("POST", postRequestURI.String(), bytes.NewBuffer([]byte(postBody)))
 	if err != nil {
-		Log("MDMLog: Error creating new request: %v", err)
+		Log.Printf("MDMLog: Error creating new request: %v", err)
 		return err
 	}
 	request.Header.Set("Content-Type", "application/x-ndjson")
 	request.Header.Set("Authorization", "Bearer "+access_token)
 	request.Header.Set("x-request-id", requestId)
 
-	Log("MDMLog: REQUEST BODY SIZE %d KB for requestId: %s\n", requestSizeKB, requestId)
+	Log.Printf("MDMLog: REQUEST BODY SIZE %d KB for requestId: %s\n", requestSizeKB, requestId)
 
 	response, err := httpClient.Do(request)
 	if err != nil {
-		Log("MDMLog: Error sending request: %v", err)
+		Log.Printf("MDMLog: Error sending request: %v", err)
 		handleError(err, response, requestId)
 		return err
 	}
 	defer response.Body.Close()
-	Log("MDMLog: HTTP Post Response Code: %d for requestId: %s\n", response.StatusCode, requestId)
+	Log.Printf("MDMLog: HTTP Post Response Code: %d for requestId: %s\n", response.StatusCode, requestId)
 	if lastTelemetrySentTime.IsZero() || lastTelemetrySentTime.Add(60*time.Minute).Before(time.Now()) {
 		lib.SendCustomEvent("AKSCustomMetricsMDMSendSuccessful", nil)
 		lastTelemetrySentTime = time.Now()
@@ -415,24 +415,24 @@ func PostToMDMHelper(batch []string) error {
 func handleError(err error, response *http.Response, requestId string) {
 	if response != nil && response.Body != nil {
 		bodyBytes, _ := ioutil.ReadAll(response.Body)
-		Log("MDMLog: Failed to Post Metrics to MDM for requestId: %s, exception: %v, Response.body: %s", requestId, err, string(bodyBytes))
+		Log.Printf("MDMLog: Failed to Post Metrics to MDM for requestId: %s, exception: %v, Response.body: %s", requestId, err, string(bodyBytes))
 	} else {
-		Log("MDMLog: Failed to Post Metrics to MDM for requestId: %s, exception: %v", requestId, err)
+		Log.Printf("MDMLog: Failed to Post Metrics to MDM for requestId: %s, exception: %v", requestId, err)
 	}
 	stackTrace := debug.Stack()
-	Log("MDMLog: %s\n", string(stackTrace))
+	Log.Printf("MDMLog: %s\n", string(stackTrace))
 
 	if response != nil {
 		statusCode := response.StatusCode
 		switch {
 		case statusCode == http.StatusForbidden:
-			Log("MDMLog: Response Code %d for requestId: %s, Updating last post attempt time", statusCode, requestId)
+			Log.Printf("MDMLog: Response Code %d for requestId: %s, Updating last post attempt time", statusCode, requestId)
 			lastPostAttemptTime = time.Now()
 			firstPostAttemptMade = true
 		case statusCode >= 400 && statusCode < 500:
-			Log("MDMLog: Non-retryable HTTPClientException when POSTing Metrics to MDM for requestId: %s, exception: %v, Response: %v", requestId, err, response)
+			Log.Printf("MDMLog: Non-retryable HTTPClientException when POSTing Metrics to MDM for requestId: %s, exception: %v, Response: %v", requestId, err, response)
 		default:
-			Log("MDMLog: HTTPServerException when POSTing Metrics to MDM for requestId: %s, exception: %v, Response: %v", requestId, err, response)
+			Log.Printf("MDMLog: HTTPServerException when POSTing Metrics to MDM for requestId: %s, exception: %v, Response: %v", requestId, err, response)
 		}
 	}
 
@@ -440,13 +440,13 @@ func handleError(err error, response *http.Response, requestId string) {
 
 	// Additional logic for handling Errno::ETIMEDOUT and generic exceptions
 	if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
-		Log("MDMLog: Timed out when POSTing Metrics to MDM for requestId: %s, exception: %v", requestId, err)
+		Log.Printf("MDMLog: Timed out when POSTing Metrics to MDM for requestId: %s, exception: %v", requestId, err)
 		stackTrace := debug.Stack()
-		Log("MDMLog: %s\n", string(stackTrace))
+		Log.Printf("MDMLog: %s\n", string(stackTrace))
 	} else if err != nil {
-		Log("MDMLog: Exception POSTing Metrics to MDM for requestId: %s, exception: %v", requestId, err)
+		Log.Printf("MDMLog: Exception POSTing Metrics to MDM for requestId: %s, exception: %v", requestId, err)
 		stackTrace := debug.Stack()
-		Log("MDMLog: %s\n", string(stackTrace))
+		Log.Printf("MDMLog: %s\n", string(stackTrace))
 	}
 
 }
@@ -466,15 +466,15 @@ func getAccessToken() string {
 	for ; retries < 2; retries++ {
 		accessToken, err = getAccessTokenHelper()
 		if err != nil {
-			Log("MDMLog: Error getting access token: %v\n", err)
-			Log("MDMLog: Retrying request to get token - retry number: %d\n", retries)
+			Log.Printf("MDMLog: Error getting access token: %v\n", err)
+			Log.Printf("MDMLog: Retrying request to get token - retry number: %d\n", retries)
 			time.Sleep(time.Duration(retries) * time.Second)
 			continue
 		}
 	}
 	if err != nil && retries >= 2 {
 		getAccessTokenBackoffExpiry = time.Now().Add(tokenRefreshBackOffInterval)
-		Log("MDMLog: getAccessTokenBackoffExpiry set to: %s\n", getAccessTokenBackoffExpiry)
+		Log.Printf("MDMLog: getAccessTokenBackoffExpiry set to: %s\n", getAccessTokenBackoffExpiry)
 		lib.SendExceptionTelemetry(err.Error(), map[string]string{"FeatureArea": "MDM"})
 	}
 	return accessToken
@@ -489,41 +489,41 @@ func getAccessTokenHelper() (token string, err error) {
 	var tokenRequest *http.Request
 	properties := map[string]string{}
 	if cachedAccessToken == "" || time.Now().Add(5*time.Minute).After(tokenExpiryTime) {
-		Log("MDMLog: Refreshing access token for out_mdm plugin..")
+		Log.Printf("MDMLog: Refreshing access token for out_mdm plugin..")
 		if isAADMSIAuth {
 			properties["isMSI"] = "true"
 		}
 		if isAADMSIAuth && isWindows {
-			Log("MDMLog: Reading the token from IMDS token file since it's Windows..")
+			Log.Printf("MDMLog: Reading the token from IMDS token file since it's Windows..")
 			if tokenContent, err := ioutil.ReadFile("c:/etc/imds-access-token/token"); err == nil {
 				var parsedJson map[string]interface{}
 				if err := json.Unmarshal(tokenContent, &parsedJson); err == nil {
 					tokenExpiryTime = time.Now().Add(tokenRefreshBackOffInterval)
 					cachedAccessToken = parsedJson["access_token"].(string)
-					Log("MDMLog: Successfully got access token")
+					Log.Printf("MDMLog: Successfully got access token")
 					lib.SendCustomEvent("AKSCustomMetricsMDMToken-MSI", properties)
 				} else {
-					Log("MDMLog: Error parsing the token file content: ", err)
+					Log.Printf("MDMLog: Error parsing the token file content: ", err)
 					return "", err
 				}
 			} else {
-				Log("MDMLog: either MSI Token file path doesn't exist or not readable: ", err)
+				Log.Printf("MDMLog: either MSI Token file path doesn't exist or not readable: ", err)
 				return "", err
 			}
 		} else {
 			if useMsi {
-				Log("MDMLog: Using MSI to get the token to post MDM data")
+				Log.Printf("MDMLog: Using MSI to get the token to post MDM data")
 				lib.SendCustomEvent("AKSCustomMetricsMDMToken-MSI", properties)
 
 				httpAccessToken = &http.Client{}
 				tokenRequest, err = http.NewRequest("GET", parsedTokenURI.String(), nil)
 				if err != nil {
-					Log("MDMLog: Error creating request: %v\n", err)
+					Log.Printf("MDMLog: Error creating request: %v\n", err)
 					return
 				}
 				tokenRequest.Header.Set("Metadata", "true")
 			} else {
-				Log("MDMLog: Using SP to get the token to post MDM data")
+				Log.Printf("MDMLog: Using SP to get the token to post MDM data")
 				lib.SendCustomEvent("AKSCustomMetricsMDMToken-SP", properties)
 
 				httpAccessToken = &http.Client{Transport: &http.Transport{
@@ -537,39 +537,39 @@ func getAccessTokenHelper() (token string, err error) {
 				}
 				tokenRequest, err = http.NewRequest("POST", parsedTokenURI.String(), bytes.NewBufferString(formData.Encode()))
 				if err != nil {
-					Log("MDMLog: Error creating request: %v\n", err)
+					Log.Printf("MDMLog: Error creating request: %v\n", err)
 					return
 				}
 				tokenRequest.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 			}
 
-			Log("MDMLog: Making request to get token..")
+			Log.Printf("MDMLog: Making request to get token..")
 			tokenResponse, err := httpAccessToken.Do(tokenRequest)
 			if err != nil {
-				Log("MDMLog: Error sending request: %v\n", err)
+				Log.Printf("MDMLog: Error sending request: %v\n", err)
 				return "", err
 			}
 			defer tokenResponse.Body.Close()
 
 			responseBody, err := ioutil.ReadAll(tokenResponse.Body)
 			if err != nil {
-				Log("MDMLog: Error reading response body: %v\n", err)
+				Log.Printf("MDMLog: Error reading response body: %v\n", err)
 				return "", err
 			}
 
 			var parsedJSON map[string]interface{}
 			err = json.Unmarshal(responseBody, &parsedJSON)
 			if err != nil {
-				Log("MDMLog: Error parsing JSON response: %v\n", err)
+				Log.Printf("MDMLog: Error parsing JSON response: %v\n", err)
 				return "", err
 			}
 
 			if accessToken, ok := parsedJSON["access_token"].(string); ok {
 				cachedAccessToken = accessToken
 				tokenExpiryTime = time.Now().Add(tokenRefreshBackOffInterval)
-				Log("MDMLog: Successfully got access token")
+				Log.Printf("MDMLog: Successfully got access token")
 			} else {
-				Log("MDMLog: Error: access token not found in response")
+				Log.Printf("MDMLog: Error: access token not found in response")
 				return "", errors.New("access token not found in response")
 			}
 		}
@@ -593,18 +593,26 @@ func flushMDMExceptionTelemetry() {
 }
 
 func PostCAdvisorMetricsToMDM(records []map[string]interface{}) int {
-	Log("MDMLog: PostCAdvisorMetricsToMDM::Info:PostCAdvisorMetricsToMDM starting")
+	Log.Printf("MDMLog: PostCAdvisorMetricsToMDM::Info:PostCAdvisorMetricsToMDM starting")
 	if (records == nil) || !(len(records) > 0) {
-		Log("MDMLog: PostCAdvisorMetricsToMDM::Error:no records")
+		Log.Printf("MDMLog: PostCAdvisorMetricsToMDM::Error:no records")
 		return output.FLB_OK
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			stacktrace := debug.Stack()
+			Log.Printf("MDMLog: Error processing cadvisor metrics records: %v, stacktrace: %v", r, stacktrace)
+			lib.SendExceptionTelemetry(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace), nil)
+		}
+	}()
 
 	ensureCPUMemoryCapacityAndAllocatableSet()
 	if processIncomingStream {
 		var err error
 		containerCpuLimitHash, containerMemoryLimitHash, containerResourceDimensionHash, err = GetAllContainerLimits()
 		if err != nil {
-			Log("MDMLog: Error getting container limits: %v", err)
+			Log.Printf("MDMLog: Error getting container limits: %v", err)
 			lib.SendExceptionTelemetry(err.Error(), nil)
 		}
 	}
@@ -614,14 +622,14 @@ func PostCAdvisorMetricsToMDM(records []map[string]interface{}) int {
 		filtered_records, err := filterCAdvisor2MDM(message)
 		if err != nil {
 			message := fmt.Sprintf("PostCAdvisorMetricsToMDM::Error:when processing cadvisor metric %q", err)
-			Log(message)
+			Log.Printf(message)
 			lib.SendException(message)
 		}
 		mdmMetrics = append(mdmMetrics, filtered_records...)
 	}
 	err := PostToMDM(mdmMetrics)
 	if err != nil {
-		Log("MDMLog: PostTelegrafMetricsToMDM::Error:Failed to post to MDM %v", err)
+		Log.Printf("MDMLog: PostCAdvisorMetricsToMDM::Error:Failed to post to MDM %v", err)
 		return output.FLB_RETRY
 	}
 
@@ -638,15 +646,6 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 			return filterPVInsightsMetrics(record)
 		}
 	}
-
-	// TODO: is below defer needed?
-	defer func() {
-		if r := recover(); r != nil {
-			stacktrace := debug.Stack()
-			Log("MDMLog: Error processing cadvisor metrics record: %v", r)
-			lib.SendExceptionTelemetry(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace), nil)
-		}
-	}()
 
 	objectName := record["ObjectName"].(string)
 
@@ -666,7 +665,7 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 	allocatablePercentageMetricValue := 0.0
 
 	if objectName == objectNameK8sNode && metricsToCollectHash[strings.ToLower(counterName)] {
-		Log("MDMLog: Processing node metric: %s", counterName)
+		Log.Printf("MDMLog: Processing node metric: %s", counterName)
 		var metricName string
 		metricValue := collections[0]["Value"].(float64)
 		if counterName == CPUUsageNanoCores {
@@ -677,7 +676,7 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 			// TODO: is the below needed? earlier this replicaset check was to get windows ds data
 
 			// if controllerType == "replicaset" {
-			// 	targetNodeCpuCapacityMC =  nil //TODO
+			// 	targetNodeCpuCapacityMC =  nil
 			// 	targetNodeCpuAllocatableMc = 0.0
 			// } else {
 			// 	targetNodeCpuCapacityMC = cpuCapacity
@@ -686,7 +685,7 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 			targetNodeCpuCapacityMC = cpuCapacity
 			targetNodeCpuAllocatableMc = cpuAllocatable
 
-			Log("MDMLog: Metric value: %f CPU Capacity %f CPU Allocatable %f", metricValue, targetNodeCpuCapacityMC, targetNodeCpuAllocatableMc)
+			Log.Printf("MDMLog: Metric value: %f CPU Capacity %f CPU Allocatable %f", metricValue, targetNodeCpuCapacityMC, targetNodeCpuAllocatableMc)
 			if targetNodeCpuCapacityMC != 0.0 {
 				percentageMetricValue = (metricValue / targetNodeCpuCapacityMC) * 100
 			}
@@ -703,7 +702,7 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 			// TODO: is the below needed? earlier this replicaset check was to get windows ds data
 
 			// if controllerType == "replicaset" {
-			// 	targetNodeMemoryCapacity = nil // TODO
+			// 	targetNodeMemoryCapacity = nil
 			// 	targetNodeMemoryAllocatable = 0.0
 			// } else {
 			// 	targetNodeMemoryCapacity = memoryCapacity
@@ -712,7 +711,7 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 			targetNodeMemoryCapacity = memoryCapacity
 			targetNodeMemoryAllocatable = memoryAllocatable
 
-			Log("MDMLog: Metric_value: %f Memory Capacity %f Memory Allocatable %f", metricValue, targetNodeMemoryCapacity, targetNodeMemoryAllocatable)
+			Log.Printf("MDMLog: Metric_value: %f Memory Capacity %f Memory Allocatable %f", metricValue, targetNodeMemoryCapacity, targetNodeMemoryAllocatable)
 
 			if targetNodeMemoryCapacity != 0.0 {
 				percentageMetricValue = (metricValue / targetNodeMemoryCapacity) * 100
@@ -722,7 +721,7 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 			}
 		}
 
-		Log("MDMLog: percentage_metric_value for metric: %s for instance: %s percentage: %f allocatable_percentage: %f", metricName, record["Host"], percentageMetricValue, allocatablePercentageMetricValue)
+		Log.Printf("MDMLog: percentage_metric_value for metric: %s for instance: %s percentage: %f allocatable_percentage: %f", metricName, record["Host"], percentageMetricValue, allocatablePercentageMetricValue)
 
 		if percentageMetricValue > 100.0 {
 			telemetryProperties := map[string]string{}
@@ -742,7 +741,7 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 
 		return GetNodeResourceMetricRecords(record, metricName, metricValue, percentageMetricValue, allocatablePercentageMetricValue)
 	} else if objectName == ObjectNameK8SContainer && metricsToCollectHash[strings.ToLower(counterName)] {
-		Log("MDMLog: Processing container metric: %s", counterName)
+		Log.Printf("MDMLog: Processing container metric: %s", counterName)
 		metricValue := collections[0]["Value"].(float64)
 		instanceName := record["InstanceName"].(string)
 		metricName := counterName
@@ -775,8 +774,8 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 			}
 		}
 
-		Log("MDMLog: percentage_metric_value for metric: %s for instance: %s percentage: %f", metricName, instanceName, percentageMetricValue)
-		Log("MDMLog: metric_threshold_hash for %s: %f", metricName, metricsThresholdHash[metricName])
+		Log.Printf("MDMLog: percentage_metric_value for metric: %s for instance: %s percentage: %f", metricName, instanceName, percentageMetricValue)
+		Log.Printf("MDMLog: metric_threshold_hash for %s: %f", metricName, metricsThresholdHash[metricName])
 		thresholdPercentage := metricsThresholdHash[metricName]
 
 		flushMetricTelemetry()
@@ -794,28 +793,19 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 func filterPVInsightsMetrics(record map[string]interface{}) ([]*GenericMetricTemplate, error) {
 	mdmMetrics := []*GenericMetricTemplate{}
 
-	defer func() {
-		if r := recover(); r != nil {
-			Log("MDMLog: Error processing insights metrics record: %v", r)
-			lib.SendExceptionTelemetry(fmt.Sprintf("%v", r), nil)
-			mdmMetrics = nil
-		}
-	}()
-
 	if record["Name"] == PVUsedBytes && metricsToCollectHash[strings.ToLower(record["Name"].(string))] {
 		metricName := record["Name"].(string)
-		usage := record["Value"].(string)
-		fUsage, _ := strconv.ParseFloat(usage, 64)
+		usage := record["Value"].(float64)
 
 		var tags map[string]string
-		tagsBytes, ok := record["Tags"].([]byte)
+		tagsBytes, ok := record["Tags"].(string)
 		if !ok {
-			Log("MDMLog: Error converting Tags to []byte")
-			return nil, errors.New("Error converting Tags to []byte")
+			return nil, errors.New("error getting tags")
 		}
-		err := json.Unmarshal(tagsBytes, &tags)
+		tagsBytesSlice := []byte(tagsBytes)
+		err := json.Unmarshal(tagsBytesSlice, &tags)
 		if err != nil {
-			Log("MDMLog: Error parsing tags: %v", err)
+			Log.Printf("MDMLog: Error parsing tags: %v", err)
 			lib.SendExceptionTelemetry(err.Error(), nil)
 			return nil, err
 		}
@@ -824,10 +814,10 @@ func filterPVInsightsMetrics(record map[string]interface{}) ([]*GenericMetricTem
 
 		percentageMetricValue := 0.0
 		if fCapacity != 0.0 {
-			percentageMetricValue = (fUsage / fCapacity) * 100
+			percentageMetricValue = (usage / fCapacity) * 100
 		}
-		Log("MDMLog: percentage metric value for %s is %f", metricName, percentageMetricValue)
-		Log("MDMLog: metricsThresholdHash for %s is %f", metricName, metricsThresholdHash[metricName])
+		Log.Printf("MDMLog: percentage metric value for %s is %f", metricName, percentageMetricValue)
+		Log.Printf("MDMLog: metricsThresholdHash for %s is %f", metricName, metricsThresholdHash[metricName])
 
 		computer := record["Computer"].(string)
 		resourceDimensions := tags
@@ -897,24 +887,24 @@ func flushMetricTelemetry() {
 func ensureCPUMemoryCapacityAndAllocatableSet() {
 	if controllerType == "replicaset" {
 		if cpuCapacity != 0.0 && memoryCapacity != 0.0 {
-			Log("MDMLog: CPU And Memory Capacity are already set and their values are as follows cpu_capacity : %f, memory_capacity: %f", cpuCapacity, memoryCapacity)
+			Log.Printf("MDMLog: CPU And Memory Capacity are already set and their values are as follows cpu_capacity : %f, memory_capacity: %f", cpuCapacity, memoryCapacity)
 			return
 		}
 	} else if controllerType == "daemonset" {
 		if cpuCapacity != 0.0 && memoryCapacity != 0.0 && cpuAllocatable != 0.0 && memoryAllocatable != 0.0 {
-			Log("MDMLog: CPU And Memory Capacity are already set and their values are as follows cpu_capacity : %f, memory_capacity: %f", cpuCapacity, memoryCapacity)
-			Log("MDMLog: CPU And Memory Allocatable are already set and their values are as follows cpu_allocatable : %f, memory_allocatable: %f", cpuAllocatable, memoryAllocatable)
+			Log.Printf("MDMLog: CPU And Memory Capacity are already set and their values are as follows cpu_capacity : %f, memory_capacity: %f", cpuCapacity, memoryCapacity)
+			Log.Printf("MDMLog: CPU And Memory Allocatable are already set and their values are as follows cpu_allocatable : %f, memory_allocatable: %f", cpuAllocatable, memoryAllocatable)
 			return
 		}
 	}
 
 	if controllerType == "replicaset" {
-		Log("MDMLog: ensure_cpu_memory_capacity_set cpu_capacity %f memory_capacity %f", cpuCapacity, memoryCapacity)
+		Log.Printf("MDMLog: ensure_cpu_memory_capacity_set cpu_capacity %f memory_capacity %f", cpuCapacity, memoryCapacity)
 
 		resourceUri := lib.GetNodesResourceUri("nodes?fieldSelector=metadata.name%3D" + os.Getenv("HOSTNAME"))
 		nodeInventory, err := lib.GetKubeResourceInfo(resourceUri)
 		if err != nil {
-			Log("MDMLog: Error when getting nodeInventory from kube API: %v", err)
+			Log.Printf("MDMLog: Error when getting nodeInventory from kube API: %v", err)
 			lib.SendExceptionTelemetry(err.Error(), nil)
 			return
 		}
@@ -922,7 +912,7 @@ func ensureCPUMemoryCapacityAndAllocatableSet() {
 		if nodeInventory != nil {
 			cpuCapacityJSON, err := ParseNodeLimits(nodeInventory, "capacity", "cpu", "cpuCapacityNanoCores", time.Now().UTC().Format(time.RFC3339))
 			if err != nil {
-				Log("MDMLog: Error getting cpu_capacity:", err)
+				Log.Printf("MDMLog: Error getting cpu_capacity:", err)
 			} else if len(cpuCapacityJSON) > 0 {
 				var metricVal struct {
 					Value string `json:"Value"`
@@ -930,23 +920,23 @@ func ensureCPUMemoryCapacityAndAllocatableSet() {
 
 				jsonCollections, ok := cpuCapacityJSON[0]["json_Collections"].(string)
 				if !ok {
-					Log("MDMLog: Error getting cpu capacity JSON")
+					Log.Printf("MDMLog: Error getting cpu capacity JSON")
 				} else {
 					err := json.Unmarshal([]byte(jsonCollections), &metricVal)
 					if err != nil {
-						Log("MDMLog: Error parsing cpu capacity JSON:", err)
+						Log.Printf("MDMLog: Error parsing cpu capacity JSON:", err)
 					} else {
 						cpuCapacity, _ = strconv.ParseFloat(metricVal.Value, 64)
-						Log("MDMLog: CPU Limit", cpuCapacity)
+						Log.Printf("MDMLog: CPU Limit", cpuCapacity)
 					}
 				}
 			} else {
-				Log("MDMLog: Error getting cpu_capacity")
+				Log.Printf("MDMLog: Error getting cpu_capacity")
 			}
 
 			memoryCapacityJSON, err := ParseNodeLimits(nodeInventory, "capacity", "memory", "memoryCapacityBytes", time.Now().UTC().Format(time.RFC3339))
 			if err != nil {
-				Log("MDMLog: Error getting memory_capacity:", err)
+				Log.Printf("MDMLog: Error getting memory_capacity:", err)
 			} else if len(memoryCapacityJSON) > 0 {
 				var metricVal struct {
 					Value string `json:"Value"`
@@ -954,32 +944,32 @@ func ensureCPUMemoryCapacityAndAllocatableSet() {
 
 				jsonCollections, ok := memoryCapacityJSON[0]["json_Collections"].(string)
 				if !ok {
-					Log("MDMLog: Error getting memory capacity JSON")
+					Log.Printf("MDMLog: Error getting memory capacity JSON")
 				} else {
 					jsonBytes := []byte(jsonCollections)
 					err := json.Unmarshal(jsonBytes, &metricVal)
 					if err != nil {
-						Log("MDMLog: Error parsing memory capacity JSON:", err)
+						Log.Printf("MDMLog: Error parsing memory capacity JSON:", err)
 					} else {
 						memoryCapacity, _ = strconv.ParseFloat(metricVal.Value, 64)
-						Log("MDMLog: Memory Limit", memoryCapacity)
+						Log.Printf("MDMLog: Memory Limit", memoryCapacity)
 					}
 				}
 			} else {
-				Log("MDMLog: Error getting memory_capacity")
+				Log.Printf("MDMLog: Error getting memory_capacity")
 			}
 		}
 	} else if controllerType == "daemonset" {
 		var err error
 		cpuCapacity, memoryCapacity, err = GetNodeCapacity()
 		if err != nil {
-			Log("MDMLog: Error getting capacity_from_kubelet: cpu_capacity and memory_capacity")
+			Log.Printf("MDMLog: Error getting capacity_from_kubelet: cpu_capacity and memory_capacity")
 			lib.SendExceptionTelemetry(err.Error(), nil)
 			return
 		}
 		cpuAllocatable, memoryAllocatable, err = GetNodeAllocatable(cpuCapacity, memoryCapacity)
 		if err != nil {
-			Log("MDMLog: Error getting allocatable_from_kubelet: cpu_allocatable and memory_allocatable")
+			Log.Printf("MDMLog: Error getting allocatable_from_kubelet: cpu_allocatable and memory_allocatable")
 			lib.SendExceptionTelemetry(err.Error(), nil)
 			return
 		}
@@ -987,20 +977,25 @@ func ensureCPUMemoryCapacityAndAllocatableSet() {
 
 }
 
-func SendMDMMetrics(pushInterval string) {
-	// TODO
-}
-
 func PostTelegrafMetricsToMDM(telegrafRecords []map[interface{}]interface{}) int {
-	Log("MDMLog: PostTelegrafMetricsToMDM::Info:PostTelegrafMetricsToMDM starting")
+	Log.Printf("MDMLog: PostTelegrafMetricsToMDM::Info:PostTelegrafMetricsToMDM starting")
 	if (telegrafRecords == nil) || !(len(telegrafRecords) > 0) {
-		Log("MDMLog: PostTelegrafMetricsToMDM::Error:no timeseries to derive")
+		Log.Printf("MDMLog: PostTelegrafMetricsToMDM::Error:no timeseries to derive")
 		return output.FLB_OK
 	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			stacktrace := debug.Stack()
+			Log.Printf("MDMLog: Error processing telegraf MDM metrics records: %v, stacktrace: %v", r, stacktrace)
+			lib.SendExceptionTelemetry(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace), nil)
+		}
+	}()
+
 	processIncomingStream := CheckCustomMetricsAvailability()
 
 	if !processIncomingStream {
-		Log("MDMLog: PostTelegrafMetricsToMDM::Info:Custom metrics is not enabled for this workspace. Skipping processing of incoming stream")
+		Log.Printf("MDMLog: PostTelegrafMetricsToMDM::Info:Custom metrics is not enabled for this workspace. Skipping processing of incoming stream")
 		return output.FLB_OK
 	}
 
@@ -1010,7 +1005,7 @@ func PostTelegrafMetricsToMDM(telegrafRecords []map[interface{}]interface{}) int
 		filtered_records, err := filterTelegraf2MDM(record)
 		if err != nil {
 			message := fmt.Sprintf("PostTelegrafMetricsToMDM::Error:when processing telegraf metric %q", err)
-			Log(message)
+			Log.Printf(message)
 			lib.SendException(message)
 		}
 		mdmMetrics = append(mdmMetrics, filtered_records...)
@@ -1018,7 +1013,7 @@ func PostTelegrafMetricsToMDM(telegrafRecords []map[interface{}]interface{}) int
 
 	err := PostToMDM(mdmMetrics)
 	if err != nil {
-		Log("MDMLog: PostTelegrafMetricsToMDM::Error:Failed to post to MDM %v", err)
+		Log.Printf("MDMLog: PostTelegrafMetricsToMDM::Error:Failed to post to MDM %v", err)
 		return output.FLB_RETRY
 	}
 

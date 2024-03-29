@@ -1250,7 +1250,7 @@ func getPersistentVolumeMetrics(metricInfo map[string]interface{}, hostName, met
 					metricTags[INSIGHTSMETRICS_TAGS_PV_CAPACITY_BYTES] = fmt.Sprintf("%.0f", parsedVolume["capacityBytes"].(float64))
 
 					jsonTags, err := json.Marshal(metricTags)
-					if (err != nil) {
+					if err != nil {
 						Log.Warnf("Error marshaling metricTags: %s", err)
 						continue
 					}
@@ -1289,7 +1289,7 @@ func ClearDeletedWinContainersFromCache() {
 	}
 
 	if len(winContainersToBeCleared) > 0 {
-		Log.Println("Stale containers found in cache, clearing...: %v", winContainersToBeCleared)
+		Log.Printf("Stale containers found in cache, clearing...: %v", winContainersToBeCleared)
 	}
 
 	for _, containerId := range winContainersToBeCleared {

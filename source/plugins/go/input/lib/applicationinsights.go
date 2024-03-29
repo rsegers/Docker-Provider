@@ -58,6 +58,11 @@ func init() {
 		logPath = "/var/opt/microsoft/docker-cimprov/log/appinsights_error.log"
 	}
 
+	isTestEnv := os.Getenv("ISTEST") == "true"
+	if isTestEnv {
+		logPath = "./appinsights_error.log"
+	}
+
 	aiLogger = CreateLogger(logPath)
 	// Initialize customProperties
 	customProperties = make(map[string]string)
