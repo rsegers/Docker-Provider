@@ -21,6 +21,8 @@ var (
 	FlushedRecordsCount float64
 	// FlushedRecordsSize indicates the size of the flushed records in the current period
 	FlushedRecordsSize float64
+	// FlushedMetadataSize indicates the size of the KubernetesMetadata records in the current period
+	FlushedMetadataSize float64
 	// FlushedRecordsTimeTaken indicates the cumulative time taken to flush the records for the current period
 	FlushedRecordsTimeTaken float64
 	// This is telemetry for how old/latent logs we are processing in milliseconds (max over a period of time)
@@ -96,6 +98,7 @@ const (
 	metricNameAvgFlushRate                                            = "ContainerLogAvgRecordsFlushedPerSec"
 	metricNameAvgLogGenerationRate                                    = "ContainerLogsGeneratedPerSec"
 	metricNameLogSize                                                 = "ContainerLogsSize"
+	metricNameMetadataSize                                            = "ContainerLogsMetadataSize"
 	metricNameAgentLogProcessingMaxLatencyMs                          = "ContainerLogsAgentSideLatencyMs"
 	metricNameNumberofTelegrafMetricsSentSuccessfully                 = "TelegrafMetricsSentCount"
 	metricNameNumberofSendErrorsTelegrafMetrics                       = "TelegrafMetricsSendErrorCount"
@@ -140,6 +143,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		flushRate := FlushedRecordsCount / FlushedRecordsTimeTaken * 1000
 		logRate := FlushedRecordsCount / float64(elapsed/time.Second)
 		logSizeRate := FlushedRecordsSize / float64(elapsed/time.Second)
+		metadataSizeRate := FlushedMetadataSize / float64(elapsed/time.Second)
 		telegrafMetricsSentCount := TelegrafMetricsSentCount
 		telegrafMetricsSendErrorCount := TelegrafMetricsSendErrorCount
 		telegrafMetricsSend429ErrorCount := TelegrafMetricsSend429ErrorCount
@@ -166,6 +170,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		WinTelegrafMetricsCountWithTagsSize64KBorMore = 0.0
 		FlushedRecordsCount = 0.0
 		FlushedRecordsSize = 0.0
+		FlushedMetadataSize = 0.0
 		FlushedRecordsTimeTaken = 0.0
 		logLatencyMs := AgentLogProcessingMaxLatencyMs
 		logLatencyMsContainer := AgentLogProcessingMaxLatencyMsContainer
@@ -262,11 +267,18 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				SendEvent(eventNameDaemonSetHeartbeat, telemetryDimensions)
 				flushRateMetric := appinsights.NewMetricTelemetry(metricNameAvgFlushRate, flushRate)
 				TelemetryClient.Track(flushRateMetric)
+
 				logRateMetric := appinsights.NewMetricTelemetry(metricNameAvgLogGenerationRate, logRate)
 				logSizeMetric := appinsights.NewMetricTelemetry(metricNameLogSize, logSizeRate)
 				TelemetryClient.Track(logRateMetric)
 				Log("Log Size Rate: %f\n", logSizeRate)
 				TelemetryClient.Track(logSizeMetric)
+
+				if KubernetesMetadataEnabled {
+					metadataSizeMetric := appinsights.NewMetricTelemetry(metricNameMetadataSize, metadataSizeRate)
+					TelemetryClient.Track(metadataSizeMetric)
+				}
+
 				logLatencyMetric := appinsights.NewMetricTelemetry(metricNameAgentLogProcessingMaxLatencyMs, logLatencyMs)
 				logLatencyMetric.Properties["Container"] = logLatencyMsContainer
 				TelemetryClient.Track(logLatencyMetric)
