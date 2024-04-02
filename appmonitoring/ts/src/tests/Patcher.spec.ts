@@ -16,7 +16,11 @@ afterEach(() => {
 describe("Patcher", () => {
     it("Patches a deployment correctly", async () => {
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestDeployment2));
-        const platforms = cr.spec.settings.autoInstrumentationPlatforms;
+
+        const cr1: InstrumentationCR = JSON.parse(JSON.stringify(cr));
+        const platforms = cr1.spec.settings.autoInstrumentationPlatforms;
+        cr1.spec.settings.logCollectionSettings = { disableAppLogs: true };
+
         const podInfo: PodInfo = <PodInfo>{
             namespace: "default",
             ownerName: "deployment1",
@@ -30,11 +34,11 @@ describe("Patcher", () => {
             preExistingAnnotationName: "preExistingAnnotationValue"
         };
 
-        const result: object[] = Patcher.PatchSpec(JSON.parse(JSON.stringify(admissionReview.request.object.spec)), cr, podInfo, platforms, "connection-string", clusterArmId, clusterArmRegion, clusterName);
+        const result: object[] = Patcher.PatchSpec(JSON.parse(JSON.stringify(admissionReview.request.object.spec)), cr1, podInfo, platforms, "connection-string", clusterArmId, clusterArmRegion, clusterName);
 
         expect((<[]>result).length).toBe(2);
         const annotationValue: IInstrumentationAnnotationValue = JSON.parse((<any>result[0]).value) as IInstrumentationAnnotationValue;
-        expect(annotationValue.crName).toBe(cr.metadata.name);
+        expect(annotationValue.crName).toBe(cr1.metadata.name);
         expect(annotationValue.crResourceVersion).toBe("1");
         expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]);        
 
@@ -52,7 +56,7 @@ describe("Patcher", () => {
         newVolumes.forEach(vol => expect((<any>result[1]).value.template.spec.volumes).toContainEqual(vol));
         admissionReview.request.object.spec.template.spec.volumes.forEach(vol => expect((<any>result[1]).value.template.spec.volumes).toContainEqual(vol));
 
-        const newEnvironmentVariables: object[] = Mutations.GenerateEnvironmentVariables(podInfo, platforms, "connection-string", clusterArmId, clusterArmRegion, clusterName);
+        const newEnvironmentVariables: object[] = Mutations.GenerateEnvironmentVariables(podInfo, platforms, true, "connection-string", clusterArmId, clusterArmRegion, clusterName);
         expect((<any>result[1]).value.template.spec.containers.length).toBe(admissionReview.request.object.spec.template.spec.containers.length);
         newEnvironmentVariables.forEach(env => expect((<any>result[1]).value.template.spec.containers[0].env).toContainEqual(env));
         newEnvironmentVariables.forEach(env => expect((<any>result[1]).value.template.spec.containers[1].env).toContainEqual(env));
@@ -207,15 +211,31 @@ describe("Patcher", () => {
             {
                 "name": "NODE_NAME",
                 "value": "original conflicting value for node name"
-            }];
+            },
+            {
+                "name": "OTEL_DOTNET_AUTO_LOGS_ENABLED",
+                "value": "original conflicting value for dotnet auto logs enabled"
+            },
+            {
+                "name": "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED",
+                "value": "original conflicting value for Java logging enabled"
+            },
+            {
+                "name": "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT",
+                "value": "original conflicting value for NodeJs configuration content"
+            }
+        ];
 
         // ACT
         const patchedResult: object[] = JSON.parse(JSON.stringify(Patcher.PatchSpec(admissionReview.request.object.spec, cr, podInfo, platforms, "connection-string", clusterArmId, clusterArmRegion, clusterName)));
         const unpatchedResult: object[] = JSON.parse(JSON.stringify(Patcher.PatchSpec(admissionReview.request.object.spec, null, podInfo, [] as AutoInstrumentationPlatforms[], "connection-string", clusterArmId, clusterArmRegion, clusterName)));
 
         // ASSERT
-        expect((<any>unpatchedResult[2]).value.template.spec.containers[0].env.length).toBe(1);
+        expect((<any>unpatchedResult[2]).value.template.spec.containers[0].env.length).toBe(4);
         expect((<any>unpatchedResult[2]).value.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "NODE_NAME").value).toBe("original conflicting value for node name");
+        expect((<any>unpatchedResult[2]).value.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "OTEL_DOTNET_AUTO_LOGS_ENABLED").value).toBe("original conflicting value for dotnet auto logs enabled");
+        expect((<any>unpatchedResult[2]).value.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED").value).toBe("original conflicting value for Java logging enabled");
+        expect((<any>unpatchedResult[2]).value.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT").value).toBe("original conflicting value for NodeJs configuration content");
     });
 
     it("Handles empty environment variable list", async () => {

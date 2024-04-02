@@ -93,7 +93,7 @@ export class Mutations {
     /**
      * Generates environment variables necessary to configure agents. Agents take configuration from these environment variables once they run.
      */
-    public static GenerateEnvironmentVariables(podInfo: PodInfo, platforms: AutoInstrumentationPlatforms[], connectionString: string, armId: string, armRegion: string, clusterName: string): IEnvironmentVariable[] {
+    public static GenerateEnvironmentVariables(podInfo: PodInfo, platforms: AutoInstrumentationPlatforms[], disableAppLogs: boolean, connectionString: string, armId: string, armRegion: string, clusterName: string): IEnvironmentVariable[] {
         const ownerNameAttribute = `k8s.${podInfo.ownerKind?.toLowerCase()}.name=${podInfo.ownerName}`;
         const ownerUidAttribute = `k8s.${podInfo.ownerKind?.toLowerCase()}.uid=${podInfo.ownerUid}`;
         const containerNameAttribute = `k8s.container.name=${podInfo.onlyContainerName}`;
@@ -214,6 +214,40 @@ ${ownerUidAttribute}`
 
                 default:
                     throw `Unsupported platform in env(): ${platforms[i]}`;
+            }
+        }
+
+        // disable app logs
+        if (disableAppLogs) {
+            for (let i = 0; i < platforms.length; i++) {
+                switch (platforms[i] as AutoInstrumentationPlatforms) {
+                    case AutoInstrumentationPlatforms.DotNet:
+                        returnValue.push(
+                            {
+                                name: "OTEL_DOTNET_AUTO_LOGS_ENABLED",
+                                value: "false"
+                            });
+                        break;
+
+                    case AutoInstrumentationPlatforms.Java:
+                        returnValue.push(
+                            {
+                                name: "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED",
+                                value: "false"
+                            });
+                        break;
+
+                    case AutoInstrumentationPlatforms.NodeJs:
+                        returnValue.push(
+                            {
+                                name: "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT",
+                                value: `{"logInstrumentationOptions":{"console": { "enabled": false }, "bunyan": { "enabled": false },"winston": { "enabled": false }}}`
+                            });
+                        break;
+
+                    default:
+                        throw `Unsupported platform in env(): ${platforms[i]}`;
+                }
             }
         }
 

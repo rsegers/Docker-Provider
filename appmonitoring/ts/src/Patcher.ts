@@ -92,7 +92,7 @@ export class Patcher {
             podSpec.initContainers = (podSpec.initContainers ?? <IContainer[]>[]).concat(newInitContainers);
 
             // add new environment variables (used to configure agents)
-            const newEnvironmentVariables: IEnvironmentVariable[] = Mutations.GenerateEnvironmentVariables(podInfo, platforms, connectionString, armId, armRegion, clusterName);
+            const newEnvironmentVariables: IEnvironmentVariable[] = Mutations.GenerateEnvironmentVariables(podInfo, platforms, cr.spec?.settings?.logCollectionSettings?.disableAppLogs ?? false, connectionString, armId, armRegion, clusterName);
 
             podSpec.containers?.forEach(container => {
                 // hold all environment variables in a dictionary, both existing and new ones
@@ -189,8 +189,8 @@ export class Patcher {
         podSpec.initContainers = podSpec.initContainers?.filter(ic => !initContainersToRemove.find(ictr => ic.name === ictr.name));
 
         // remove environment variables and volume mounts from all containers by name
-        // we don't care about values of environment variables here, we just need all names
-        const environmentVariablesToRemove: IEnvironmentVariable[] = Mutations.GenerateEnvironmentVariables(new PodInfo(), allPlatforms, "", "", "", "");
+        // we don't care about values of environment variables here, we just need all names, so set parameters to get all of them
+        const environmentVariablesToRemove: IEnvironmentVariable[] = Mutations.GenerateEnvironmentVariables(new PodInfo(), allPlatforms, true, "", "", "", "");
         const volumeMountsToRemove: IVolumeMount[] = Mutations.GenerateVolumeMounts(allPlatforms);
 
         podSpec.containers?.forEach(container => {
