@@ -512,6 +512,16 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
                         export PROXY_CA_CERT=/etc/ama-logs-secret/PROXYCERT.crt
                         echo "export PROXY_CA_CERT=$PROXY_CA_CERT" >> ~/.bashrc
                   fi
+                  # Proxy config for AMA core agent
+                  if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${USING_AAD_MSI_AUTH}" == "true" ] && [ "${ENABLE_HIGH_LOG_SCALE_MODE}" == "true" ]; then
+                     if [ "$proxyprotocol" == "http://" ]; then
+                           export HTTP_PROXY=$PROXY_ENDPOINT
+                           echo "export HTTP_PROXY=$HTTP_PROXY" >> ~/.bashrc
+                     elif [ "$proxyprotocol" == "https://" ]; then
+                          export HTTPS_PROXY=$PROXY_ENDPOINT
+                          echo "export HTTPS_PROXY=$HTTPS_PROXY" >> ~/.bashrc
+                     fi
+                  fi
             fi
       fi
 
