@@ -1,26 +1,9 @@
 {
-  "annotations": {
-    "list": [
-      {
-        "builtIn": 1,
-        "datasource": {
-          "type": "grafana",
-          "uid": "-- Grafana --"
-        },
-        "enable": true,
-        "hide": true,
-        "iconColor": "rgba(0, 211, 255, 1)",
-        "name": "Annotations & Alerts",
-        "type": "dashboard"
-      }
-    ]
-  },
   "description": "Dashboard visualizing ContainerLogV2 records collected by Azure Monitor",
   "editable": true,
-  "fiscalYearStartMonth": 0,
   "gnetId": 19866,
   "graphTooltip": 0,
-  "id": 59,
+  "id": null,
   "links": [],
   "liveNow": false,
   "panels": [
@@ -42,7 +25,6 @@
         "content": "## Kubernetes Logs Metadata \n\nKubernetes Logs Metadata encompasses essential information such as Pod labels, Pod Annotations, Image, ImageHash, ImageRepo, and PodUID. This metadata plays a crucial role in enabling rich context for log records, allowing seamless correlation with Kubernetes resources.\n\nThe dashboard presented here visualizes ContainerLogV2 data alongside Kubernetes Metadata. \n\nBefore diving in, ensure the following prerequisites:\n\n1. [Container Insights](https://learn.microsoft.com/en-us/azure/azure-monitor/containers/kubernetes-monitoring-enable?tabs=cli#enable-container-insights) is enabled for your selected AKS cluster.\n2. [ContainerLogV2](https://learn.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-logs-schema#enable-the-containerlogv2-schema) and the [log_collection_settings.metadata_collection](https://aka.ms/container-azm-ms-agentconfig) setting via [configmap](https://learn.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-data-collection-configmap#configure-and-deploy-configmap) are both enabled.\n\nFor further details and step by step onboarding guide, please refer to the documentation here:\n[Kubernetes Metadata Private Preview Onboarding Guide](https://aka.ms/KubernetesMetadataOnboardingGuide).",
         "mode": "markdown"
       },
-      "pluginVersion": "10.3.4",
       "type": "text"
     },
     {
@@ -121,7 +103,6 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.4",
       "targets": [
         {
           "datasource": {
@@ -218,7 +199,6 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.4",
       "targets": [
         {
           "datasource": {
@@ -315,7 +295,6 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.4",
       "targets": [
         {
           "datasource": {
@@ -412,7 +391,6 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.4",
       "targets": [
         {
           "datasource": {
@@ -509,7 +487,6 @@
         "textMode": "value",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.4",
       "targets": [
         {
           "datasource": {
@@ -606,7 +583,6 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.4",
       "targets": [
         {
           "datasource": {
@@ -703,7 +679,6 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.4",
       "targets": [
         {
           "datasource": {
@@ -1314,7 +1289,6 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.4",
       "targets": [
         {
           "azureLogAnalytics": {
@@ -1837,7 +1811,6 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.4",
       "targets": [
         {
           "azureLogAnalytics": {
@@ -2255,7 +2228,6 @@
         "textMode": "auto",
         "wideLayout": true
       },
-      "pluginVersion": "10.3.4",
       "targets": [
         {
           "azureLogAnalytics": {
@@ -2772,11 +2744,7 @@
   "templating": {
     "list": [
       {
-        "current": {
-          "selected": false,
-          "text": "Azure Monitor",
-          "value": "azure-monitor-oob"
-        },
+        "current": {},
         "hide": 0,
         "includeAll": false,
         "label": "DataSource",
@@ -2791,11 +2759,7 @@
         "type": "datasource"
       },
       {
-        "current": {
-          "selected": false,
-          "text": "ContainerInsights_Dev_Janvi",
-          "value": "81895b44-c46d-44c3-9368-42f0386af28e"
-        },
+        "current": {},
         "datasource": {
           "type": "grafana-azure-monitor-datasource",
           "uid": "azure-monitor-oob"
@@ -2822,11 +2786,7 @@
         "type": "query"
       },
       {
-        "current": {
-          "selected": true,
-          "text": "DefaultResourceGroup-SUK",
-          "value": "DefaultResourceGroup-SUK"
-        },
+        "current": {},
         "datasource": {
           "type": "grafana-azure-monitor-datasource",
           "uid": "azure-monitor-oob"
@@ -2854,11 +2814,7 @@
         "type": "query"
       },
       {
-        "current": {
-          "selected": false,
-          "text": "All",
-          "value": "$__all"
-        },
+        "current": {},
         "datasource": {
           "type": "grafana-azure-monitor-datasource",
           "uid": "azure-monitor-oob"
@@ -2894,12 +2850,7 @@
         "type": "query"
       },
       {
-        "current": {
-          "isNone": true,
-          "selected": false,
-          "text": "None",
-          "value": ""
-        },
+        "current": {},
         "datasource": {
           "type": "grafana-azure-monitor-datasource",
           "uid": "azure-monitor-oob"
@@ -2954,7 +2905,7 @@
           },
           "queryType": "Azure Log Analytics",
           "refId": "A",
-          "subscription": "E98D0648-F21A-417D-8470-DB17AAB036A7"
+          "subscription": ""
         },
         "refresh": 1,
         "regex": "",
@@ -2985,7 +2936,7 @@
           },
           "queryType": "Azure Log Analytics",
           "refId": "A",
-          "subscription": "E98D0648-F21A-417D-8470-DB17AAB036A7"
+          "subscription": ""
         },
         "refresh": 1,
         "regex": "",
@@ -3016,7 +2967,7 @@
           },
           "queryType": "Azure Log Analytics",
           "refId": "A",
-          "subscription": "E98D0648-F21A-417D-8470-DB17AAB036A7"
+          "subscription": ""
         },
         "refresh": 1,
         "regex": "",
@@ -3033,8 +2984,8 @@
   "timeRangeUpdatedDuringEditOrView": false,
   "timepicker": {},
   "timezone": "",
-  "title": "Azure Monitor / Container Insights / ContainerLogV2 Metadata Cleanup",
-  "uid": "ContainerLogV2MetadataDashboard2",
+  "title": "Azure Monitor / Container Insights / ContainerLogV2",
+  "uid": "ContainerLogV2MetadataDashboard",
   "version": 6,
   "weekStart": ""
 }
