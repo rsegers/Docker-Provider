@@ -11,13 +11,13 @@ spec:
 
     autoInstrumentationPlatforms: # required, could be empty
       - DotNet
-      # - Java
-      #- NodeJs
+      - Java
+      - NodeJs
 
     logCollectionSettings: # optional, defaults are shown below
-    #  disableAppLogs: false # AI log collection. Default is false (enabled)
-      disableContainerLogs: true # CI console collection. Default is false (enabled). Webhook will mark pod with annotations to let CI know
-      # once log levels and log filtering are figured out, we’ll add them here 
+      disableAppLogs: true # AI log collection. Default is false (enabled)
+    #   disableContainerLogs: true # CI console collection. Default is false (enabled). Webhook will mark pod with annotations to let CI know
+    #   # once log levels and log filtering are figured out, we’ll add them here 
 
   destination: # required
   

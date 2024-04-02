@@ -191,6 +191,11 @@ ${ownerUidAttribute}`
                         {
                             name: "OTEL_DOTNET_AUTO_PLUGINS",
                             value: "Azure.Monitor.OpenTelemetry.AutoInstrumentation.AzureMonitorPlugin, Azure.Monitor.OpenTelemetry.AutoInstrumentation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+                        },
+                        {
+                            name: "OTEL_DOTNET_AUTO_LOGS_ENABLED",
+                            value: "false",
+                            doNotSet: !disableAppLogs
                         }]
                     );
                     break;
@@ -200,6 +205,11 @@ ${ownerUidAttribute}`
                         returnValue.push(...[{
                             name: "JAVA_TOOL_OPTIONS",
                             value: `-javaagent:${Mutations.agentVolumeMountPathJava}/applicationinsights-agent-codeless.jar`
+                        },
+                        {
+                            name: "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED",
+                            value: "false",
+                            doNotSet: !disableAppLogs
                         }]);
                     }
                     break;
@@ -209,45 +219,16 @@ ${ownerUidAttribute}`
                         {
                             name: "NODE_OPTIONS",
                             value: `--require ${Mutations.agentVolumeMountPathNodeJs}/aks.js`
+                        },
+                        {
+                            name: "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT",
+                            value: `{"logInstrumentationOptions":{"console": { "enabled": false }, "bunyan": { "enabled": false },"winston": { "enabled": false }}}`,
+                            doNotSet: !disableAppLogs
                         }]);
                     break;
 
                 default:
                     throw `Unsupported platform in env(): ${platforms[i]}`;
-            }
-        }
-
-        // disable app logs
-        if (disableAppLogs) {
-            for (let i = 0; i < platforms.length; i++) {
-                switch (platforms[i] as AutoInstrumentationPlatforms) {
-                    case AutoInstrumentationPlatforms.DotNet:
-                        returnValue.push(
-                            {
-                                name: "OTEL_DOTNET_AUTO_LOGS_ENABLED",
-                                value: "false"
-                            });
-                        break;
-
-                    case AutoInstrumentationPlatforms.Java:
-                        returnValue.push(
-                            {
-                                name: "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED",
-                                value: "false"
-                            });
-                        break;
-
-                    case AutoInstrumentationPlatforms.NodeJs:
-                        returnValue.push(
-                            {
-                                name: "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT",
-                                value: `{"logInstrumentationOptions":{"console": { "enabled": false }, "bunyan": { "enabled": false },"winston": { "enabled": false }}}`
-                            });
-                        break;
-
-                    default:
-                        throw `Unsupported platform in env(): ${platforms[i]}`;
-                }
             }
         }
 

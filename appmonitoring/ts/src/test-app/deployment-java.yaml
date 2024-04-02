@@ -36,6 +36,12 @@ spec:
           value: val1
         - name: NODE_NAME
           value: Original node name value
+        - name: OTEL_DOTNET_AUTO_LOGS_ENABLED
+          value: Original value of OTEL_DOTNET_AUTO_LOGS_ENABLED
+        - name: APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED
+          value: Original value of APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED
+        # - name: APPLICATIONINSIGHTS_CONFIGURATION_CONTENT
+        #   value: Original value of APPLICATIONINSIGHTS_CONFIGURATION_CONTENT
         #imagePullPolicy: Always
         name: zakima-java-1
         ports:

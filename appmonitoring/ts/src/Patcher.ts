@@ -104,8 +104,10 @@ export class Patcher {
                 // add new environment variables to the dictionary
                 newEnvironmentVariables.forEach(newEnv => {
                     if (!allEnvironmentVariables[newEnv.name]) {
-                        // this mutation environment variable is not present in the container originally, so just add it
-                        allEnvironmentVariables[newEnv.name] = newEnv;
+                        // this mutation environment variable is not present in the container originally, so just add it unless it's not supposed to be set
+                        if (!newEnv.doNotSet) {
+                            allEnvironmentVariables[newEnv.name] = newEnv;
+                        }
                     } else {
                         // we are overwriting an environment variable which already exists in the container
                         // save the original value into a backup environment variable
@@ -114,13 +116,16 @@ export class Patcher {
                         backupEV.name = backupName;
                         allEnvironmentVariables[backupName] = backupEV;
 
-                        allEnvironmentVariables[newEnv.name] = newEnv;
+                        // if it's not supposed to be set - just keep the original value, otherwise set the new value
+                        if (!newEnv.doNotSet) {
+                            allEnvironmentVariables[newEnv.name] = newEnv;
+                        }
                     }
                 });
 
                 // set all environment variables contained within the dictionary on the container
                 container.env = <IEnvironmentVariable[]>[];
-                for (const envVariableName in allEnvironmentVariables) {
+                for (const envVariableName in allEnvironmentVariables) {                    
                     container.env.push(allEnvironmentVariables[envVariableName]);
                 }
 

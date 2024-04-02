@@ -143,6 +143,7 @@ export interface IEnvironmentVariable {
     name: string;
     value?: string;
     valueFrom?: object;
+    doNotSet?: boolean; // indicates we shouldn't use this environment variable during mutation
 }
 
 export interface IRequest {
