@@ -2821,7 +2821,7 @@
         },
         "definition": "",
         "hide": 0,
-        "includeAll": true,
+        "includeAll": false,
         "label": "Cluster",
         "multi": false,
         "name": "Cluster",
@@ -2889,9 +2889,8 @@
           "uid": "azure-monitor-oob"
         },
         "definition": "",
-        "error": {},
         "hide": 0,
-        "includeAll": true,
+        "includeAll": false,
         "label": "Namespace",
         "multi": false,
         "name": "Namespace",
@@ -2920,7 +2919,6 @@
           "uid": "azure-monitor-oob"
         },
         "definition": "",
-        "error": {},
         "hide": 0,
         "includeAll": false,
         "label": "LabelKey",
@@ -2951,7 +2949,6 @@
           "uid": "azure-monitor-oob"
         },
         "definition": "",
-        "error": {},
         "hide": 0,
         "includeAll": false,
         "label": "LabelValue",
