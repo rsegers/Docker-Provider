@@ -40,7 +40,7 @@ gem uninstall uri --version 0.11.0
 if [ "${ARCH}" != "arm64" ]; then
     # mdsd version with 50k eps changes for x64
     # TODO - For PROD release, make sure to consume the MDSD version from Mariner package repo
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.31.0/azure-mdsd-1.31.0-build.master.2741.x86_64.rpm" -O azure-mdsd.rpm
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.31.0/azure-mdsd-1.31.0-build.master.2821.x86_64.rpm" -O azure-mdsd.rpm
     sudo tdnf install -y azure-mdsd.rpm
 else
     sudo tdnf install -y azure-mdsd-1.30.3
