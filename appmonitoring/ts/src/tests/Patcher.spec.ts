@@ -305,7 +305,7 @@ describe("Patcher", () => {
         expect(mutatedSpec3.template.metadata.annotations["fluentbit.io/exclude"]).toBeUndefined();
     });
 
-    it("Removes CE logs disabling correctly", async () => {
+    it("Removes CI logs disabling correctly", async () => {
         // ASSUME
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestDeployment2));
         admissionReview.request.object.spec.template.metadata.annotations["preExistingAnnotation"] = "preExistingAnnotationValue";
@@ -407,7 +407,60 @@ describe("Patcher", () => {
         expect(unmutatedSpec2.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName]).toBeUndefined();
     });
 
-    it("Restores CI logs disabling correctly with preexisting conflicting value when a value is not specified in the CR", async () => {
+    it("Restores CI logs disabling correctly with preexisting conflicting value when a value is not specified in the CR - option 1", async () => {
+        // ASSUME
+        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestDeployment2));
+        const podInfo: PodInfo = <PodInfo>{
+            namespace: "default",
+            ownerName: "deployment1",
+            ownerKind: "Deployment",
+            ownerUid: "ownerUid",
+            onlyContainerName: "container1"
+        };
+
+        admissionReview.request.object.spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName] = "original"
+
+        const cr1: InstrumentationCR = {
+            metadata: {
+                name: "default",
+                namespace: "default",
+                resourceVersion: "1"
+            },
+            spec: {
+                settings: {
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs],
+                    /*logCollectionSettings: {
+                        disableContainerLogs: false
+                    }*/
+                },
+                destination: {
+                    applicationInsightsConnectionString: "InstrumentationKey=823201eb-fdbf-468a-bc7b-e685639439b2;IngestionEndpoint=https://uaecentral-0.in.applicationinsights.azure.com/"
+                }
+            }
+        };
+
+        const cr2: InstrumentationCR = JSON.parse(JSON.stringify(cr1));
+        cr2.spec.settings.autoInstrumentationPlatforms = [];
+
+        // ACT
+        // patch
+        const result1: object[] = JSON.parse(JSON.stringify(Patcher.PatchSpec(admissionReview.request.object.spec, cr1, podInfo, cr1.spec.settings.autoInstrumentationPlatforms, "connection-string", clusterArmId, clusterArmRegion, clusterName)));
+
+        // unpatch
+        const result2: object[] = JSON.parse(JSON.stringify(Patcher.PatchSpec(admissionReview.request.object.spec, cr2, podInfo, cr2.spec.settings.autoInstrumentationPlatforms, "connection-string", clusterArmId, clusterArmRegion, clusterName)));
+
+        // ASSERT
+        const mutatedSpec1 = (<any>result1[1]).value as ISpec;
+        const unmutatedSpec2 = (<any>result2[2]).value as ISpec;
+       
+        expect(mutatedSpec1.template.metadata.annotations[FluentBitIoExcludeAnnotationName]).toBe("original");
+        expect(mutatedSpec1.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName]).toBe("original");
+
+        expect(unmutatedSpec2.template.metadata.annotations[FluentBitIoExcludeAnnotationName]).toBe("original");
+        expect(unmutatedSpec2.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName]).toBeUndefined();
+    });
+
+    it("Restores CI logs disabling correctly with preexisting conflicting value when a value is not specified in the CR - option 2", async () => {
         // ASSUME
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestDeployment2));
         const podInfo: PodInfo = <PodInfo>{
