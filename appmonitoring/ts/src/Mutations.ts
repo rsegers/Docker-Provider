@@ -52,7 +52,17 @@ export class Mutations {
                         volumeMounts: [{
                             name: Mutations.agentVolumeDotNet,
                             mountPath: Mutations.agentVolumeMountPathDotNet
-                        }]
+                        }],
+                        resources: {
+                            requests: {
+                                cpu: "100m",
+                                memory: "128Mi"
+                            },
+                            limits: {
+                                cpu: "2",
+                                memory: "1Gi"
+                            }
+                        }
                     });
                     break;
 
@@ -65,7 +75,17 @@ export class Mutations {
                         volumeMounts: [{
                             name: Mutations.agentVolumeJava,
                             mountPath: Mutations.agentVolumeMountPathJava
-                        }]
+                        }],
+                        resources: {
+                            requests: {
+                                cpu: "100m",
+                                memory: "128Mi"
+                            },
+                            limits: {
+                                cpu: "2",
+                                memory: "1Gi"
+                            }
+                        }
                     });
                     break;
 
@@ -78,7 +98,17 @@ export class Mutations {
                         volumeMounts: [{
                             name: Mutations.agentVolumeNodeJs,
                             mountPath: Mutations.agentVolumeMountPathNodeJs
-                        }]
+                        }],
+                        resources: {
+                            requests: {
+                                cpu: "100m",
+                                memory: "128Mi"
+                            },
+                            limits: {
+                                cpu: "2",
+                                memory: "1Gi"
+                            }
+                        }
                     });
                     break;
 

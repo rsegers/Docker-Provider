@@ -68,15 +68,17 @@ export interface IPort {
 
 export interface ILimits {
     cpu: string;
+    memory: string;
 }
 
 export interface IRequests {
     cpu: string;
+    memory: string;
 }
 
 export interface IResources {
-    limits: ILimits;
     requests: IRequests;
+    limits: ILimits;
 }
 
 export interface IContainer {
