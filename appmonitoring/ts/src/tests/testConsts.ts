@@ -778,6 +778,10 @@ export const TestDeployment2 = {
             },
             "spec": {
                 "template": {
+                    "metadata": {
+                        "annotations": {
+                        }
+                    },
                     "spec": {
                         "volumes": [
                             {

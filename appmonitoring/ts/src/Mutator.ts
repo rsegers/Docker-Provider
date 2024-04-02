@@ -92,7 +92,7 @@ export class Mutator {
         }
 
         const patchData: object[] = Patcher.PatchSpec(
-            this.admissionReview.request.object.spec.template.spec,
+            this.admissionReview.request.object.spec,
             cr, // null to unpatch
             podInfo as PodInfo,
             platforms,

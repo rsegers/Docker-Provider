@@ -1,5 +1,6 @@
-﻿import { Mutations } from "./Mutations.js";
-import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationAnnotationName, InstrumentationCR, IInstrumentationAnnotationValue } from "./RequestDefinition.js";
+﻿import { isNull } from "util";
+import { Mutations } from "./Mutations.js";
+import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationAnnotationName, InstrumentationCR, IInstrumentationAnnotationValue, FluentBitIoExcludeAnnotationName, IMetadata, IAnnotations, FluentBitIoExcludeBeforeMutationAnnotationName } from "./RequestDefinition.js";
 
 export class Patcher {
 
@@ -17,80 +18,9 @@ export class Patcher {
         }
 
         // remove all mutation (in case it is already mutated)
-        this.UnpatchSpec(spec);
+        this.Unpatch(spec);
 
-        // currently we don't mutate if no auto-instrumentation platforms are used
-        // going forward, we'll have to ensure we still do auto-wiring in that case
-        if (cr && platforms?.length > 0) {
-            // add new volumes (used to store agent binaries)
-            const newVolumes: IVolume[] = Mutations.GenerateVolumes(platforms);
-            spec.volumes = (spec.volumes ?? <IVolume[]>[]).concat(newVolumes);
-
-            // add new initcontainers (used to copy agent binaries over to the pod)
-            const newInitContainers: IContainer[] = Mutations.GenerateInitContainers(platforms);
-            spec.initContainers = (spec.initContainers ?? <IContainer[]>[]).concat(newInitContainers);
-
-            // add new environment variables (used to configure agents)
-            const newEnvironmentVariables: IEnvironmentVariable[] = Mutations.GenerateEnvironmentVariables(podInfo, platforms, connectionString, armId, armRegion, clusterName);
-
-            spec.containers?.forEach(container => {
-                // hold all environment variables in a dictionary, both existing and new ones
-                const allEnvironmentVariables: Record<string, IEnvironmentVariable> = {};
-
-                // add existing environment variables to the dictionary
-                container.env?.forEach(env => allEnvironmentVariables[env.name] = env);
-
-                // add new environment variables to the dictionary
-                newEnvironmentVariables.forEach(newEnv => {
-                    if (!allEnvironmentVariables[newEnv.name]) {
-                        // this mutation environment variable is not present in the container originally, so just add it
-                        allEnvironmentVariables[newEnv.name] = newEnv;
-                    } else {
-                        // we are overwriting an environment variable which already exists in the container
-
-                        // save the original value into a backup environment variable
-                        const backupName = `${newEnv.name}${Patcher.EnvironmentVariableBackupSuffix}`;
-                        const backupEV: IEnvironmentVariable = JSON.parse(JSON.stringify(allEnvironmentVariables[newEnv.name])) as IEnvironmentVariable
-                        backupEV.name = backupName;
-                        allEnvironmentVariables[backupName] = backupEV;
-
-                        allEnvironmentVariables[newEnv.name] = newEnv;
-                    }
-                });
-
-                // set all environment variables contained within the dictionary on the container
-                container.env = <IEnvironmentVariable[]>[];
-                for (const envVariableName in allEnvironmentVariables) {
-                    container.env.push(allEnvironmentVariables[envVariableName]);
-                }
-
-                /*
-                    We could be receiving customer's original set of environment variables (e.g. in case of kubectl apply),
-                    or we could be receiving a mutated version of environment variables (e.g. in case of kubectl rollout restart for an object that is already mutated).
-
-                    For each instrumentation-related environment variable we will use a backup environment variable which has name of the format `${envVariableName}${Patcher.EnvironmentVariableBackupSuffix}`
-                    and stores the original customer's value (if any). The backup environment variable only exists if there is an original value to store.
-
-                    Additionally, during mutation we will add an additional environment variable to indicate that the entire list of environment variables is mutated.
-
-                    When reverting mutation, the presence of this additional environment variable will tell us what to do with instrumentation-related environment variables that have no backup environment variable.
-                    If the additional environment variable is present - we must remove such environment variable. Otherwise, we must keep it with the present value.
-
-                    The reason we are using an additional environment variable to indicate mutation and not an annnotation or a similar mechanism is because
-                    depending on a way the change is made there could be discrepancies between environment variable list specifically and other parts of the object (e.g. the customer could remove our custom annotation and reapply YAML)
-                */
-                if (!container.env.find(ev => ev.name === this.MutatedMarkerEnvironmentVariableName)) {
-                    container.env?.push({
-                        name: this.MutatedMarkerEnvironmentVariableName,
-                        value: ""
-                    });
-                }
-
-                // add new volume mounts (used by customer's application runtimes to load agent binaries)
-                const newVolumeMounts: IVolumeMount[] = Mutations.GenerateVolumeMounts(platforms);
-                container.volumeMounts = (container.volumeMounts ?? <IVolumeMount[]>[]).concat(newVolumeMounts);
-            });
-        }
+        this.Patch(cr, platforms, spec, podInfo, connectionString, armId, armRegion, clusterName);
 
         const jsonPatch: object[] = [];
         const annotationName = `/metadata/annotations/${InstrumentationAnnotationName.replace("/", "~1")}`;  // a slash is escaped as ~1 in Json Patch
@@ -126,7 +56,7 @@ export class Patcher {
             // replace the pod spec section with the mutated one
             {
                 op: "replace",
-                path: "/spec/template/spec",
+                path: "/spec",
                 value: spec
             }
         );
@@ -134,12 +64,116 @@ export class Patcher {
         return jsonPatch;
     }
 
+    private static Patch(cr: InstrumentationCR, platforms: AutoInstrumentationPlatforms[], spec: ISpec, podInfo: PodInfo, connectionString: string, armId: string, armRegion: string, clusterName: string) {
+        // currently we don't mutate if no auto-instrumentation platforms are used
+        // going forward, we'll have to ensure we still do auto-wiring in that case
+        if (cr && platforms?.length > 0) {
+            const podSpec = spec.template.spec;
+
+            // add new pod annotations to disable CI logs if requested
+            spec.template.metadata = spec.template.metadata ?? <IMetadata>{};
+            spec.template.metadata.annotations = spec.template.metadata?.annotations ?? <IAnnotations>{};
+            if (spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName] != null) {
+                // a value is provided and must be saved to be restored during unpatching
+                spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName] = spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName];
+            }
+
+            if (cr.spec?.settings?.logCollectionSettings?.disableContainerLogs != null) {
+                // we have a setting to use
+                spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName] = cr.spec.settings.logCollectionSettings.disableContainerLogs ? "true" : "false";
+            }
+
+            // add new volumes (used to store agent binaries)
+            const newVolumes: IVolume[] = Mutations.GenerateVolumes(platforms);
+            podSpec.volumes = (podSpec.volumes ?? <IVolume[]>[]).concat(newVolumes);
+
+            // add new initcontainers (used to copy agent binaries over to the pod)
+            const newInitContainers: IContainer[] = Mutations.GenerateInitContainers(platforms);
+            podSpec.initContainers = (podSpec.initContainers ?? <IContainer[]>[]).concat(newInitContainers);
+
+            // add new environment variables (used to configure agents)
+            const newEnvironmentVariables: IEnvironmentVariable[] = Mutations.GenerateEnvironmentVariables(podInfo, platforms, connectionString, armId, armRegion, clusterName);
+
+            podSpec.containers?.forEach(container => {
+                // hold all environment variables in a dictionary, both existing and new ones
+                const allEnvironmentVariables: Record<string, IEnvironmentVariable> = {};
+
+                // add existing environment variables to the dictionary
+                container.env?.forEach(env => allEnvironmentVariables[env.name] = env);
+
+                // add new environment variables to the dictionary
+                newEnvironmentVariables.forEach(newEnv => {
+                    if (!allEnvironmentVariables[newEnv.name]) {
+                        // this mutation environment variable is not present in the container originally, so just add it
+                        allEnvironmentVariables[newEnv.name] = newEnv;
+                    } else {
+                        // we are overwriting an environment variable which already exists in the container
+                        // save the original value into a backup environment variable
+                        const backupName = `${newEnv.name}${Patcher.EnvironmentVariableBackupSuffix}`;
+                        const backupEV: IEnvironmentVariable = JSON.parse(JSON.stringify(allEnvironmentVariables[newEnv.name])) as IEnvironmentVariable;
+                        backupEV.name = backupName;
+                        allEnvironmentVariables[backupName] = backupEV;
+
+                        allEnvironmentVariables[newEnv.name] = newEnv;
+                    }
+                });
+
+                // set all environment variables contained within the dictionary on the container
+                container.env = <IEnvironmentVariable[]>[];
+                for (const envVariableName in allEnvironmentVariables) {
+                    container.env.push(allEnvironmentVariables[envVariableName]);
+                }
+
+                /*
+                    We could be receiving customer's original set of environment variables (e.g. in case of kubectl apply),
+                    or we could be receiving a mutated version of environment variables (e.g. in case of kubectl rollout restart for an object that is already mutated).
+    
+                    For each instrumentation-related environment variable we will use a backup environment variable which has name of the format `${envVariableName}${Patcher.EnvironmentVariableBackupSuffix}`
+                    and stores the original customer's value (if any). The backup environment variable only exists if there is an original value to store.
+    
+                    Additionally, during mutation we will add an additional environment variable to indicate that the entire list of environment variables is mutated.
+    
+                    When reverting mutation, the presence of this additional environment variable will tell us what to do with instrumentation-related environment variables that have no backup environment variable.
+                    If the additional environment variable is present - we must remove such environment variable. Otherwise, we must keep it with the present value.
+    
+                    The reason we are using an additional environment variable to indicate mutation and not an annnotation or a similar mechanism is because
+                    depending on a way the change is made there could be discrepancies between environment variable list specifically and other parts of the object (e.g. the customer could remove our custom annotation and reapply YAML)
+                */
+                if (!container.env.find(ev => ev.name === this.MutatedMarkerEnvironmentVariableName)) {
+                    container.env?.push({
+                        name: this.MutatedMarkerEnvironmentVariableName,
+                        value: ""
+                    });
+                }
+
+                // add new volume mounts (used by customer's application runtimes to load agent binaries)
+                const newVolumeMounts: IVolumeMount[] = Mutations.GenerateVolumeMounts(platforms);
+                container.volumeMounts = (container.volumeMounts ?? <IVolumeMount[]>[]).concat(newVolumeMounts);
+            });
+        }
+    }
+
     /**
      * Removes all mutations from a spec in-place
      */
-    private static UnpatchSpec(podSpec: ISpec): void {
-        if (!podSpec) {
-            throw `Unable to parse spec from AdmissionReview: ${JSON.stringify(podSpec)}`;
+    private static Unpatch(spec: ISpec): void {
+        const podSpec: ISpec = spec?.template?.spec;
+        
+        if (!spec || !podSpec) {
+            throw `Unable to parse spec from AdmissionReview: ${JSON.stringify(spec)}`;
+        }
+
+        // remove pod annotations
+        const isMutated: boolean = podSpec.containers?.filter(container => container.env?.find(ev => ev.name === this.MutatedMarkerEnvironmentVariableName))?.length > 0;
+        if(isMutated) {
+            spec.template.metadata = spec.template.metadata ?? <IMetadata>{};
+            spec.template.metadata.annotations = spec.template.metadata?.annotations ?? <IAnnotations>{};
+
+            delete spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName];
+            if(spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName] != null) {
+                spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName] = spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName];
+                delete spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName];
+            }
         }
 
         // we are removing all mutations (regardless of whether only some mutations are applied based on the platforms used)
