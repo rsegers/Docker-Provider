@@ -10,9 +10,19 @@ export class Mutations {
     private static initContainerNameNodeJs = "azure-monitor-auto-instrumentation-nodejs";
     
     // agent image
-    private static agentImageDotNet = "mcr.microsoft.com/applicationinsights/opentelemetry-auto-instrumentation/dotnet:1.0.0-beta3";
-    private static agentImageJava = "mcr.microsoft.com/applicationinsights/auto-instrumentation/java:3.5.1-aks";
-    private static agentImageNodeJs = "mcr.microsoft.com/applicationinsights/opentelemetry-auto-instrumentation/nodejs:3.0.0-beta.10";
+    private static agentImageCommonPrefix = "mcr.microsoft.com/applicationinsights";
+    private static agentImageDotNet = {
+        repositoryPath: "opentelemetry-auto-instrumentation/dotnet",
+        imageTag: "1.0.0-beta3"
+    };
+    private static agentImageNodeJs = {
+        repositoryPath: "opentelemetry-auto-instrumentation/nodejs",
+        imageTag: "3.0.0-beta.10"
+    };
+    private static agentImageJava = {
+        repositoryPath: "auto-instrumentation/java",
+        imageTag: "3.5.1-aks"
+    };
     
     // path on agent image to copy from
     private static imagePathDotNet = "/dotnet-tracer-home/.";
@@ -38,7 +48,7 @@ export class Mutations {
     /**
      * Creates init containers that are used to copy agent binaries onto a Pod. These containers download the agent image, copy agent binaries from inside of the image, and finish.
      */
-    public static GenerateInitContainers(platforms: AutoInstrumentationPlatforms[]): IContainer[] {
+    public static GenerateInitContainers(platforms: AutoInstrumentationPlatforms[], imageRepoPath: string): IContainer[] {
         const containers: IContainer[] = [];
 
         for (let i = 0; i < platforms.length; i++) {
@@ -46,7 +56,7 @@ export class Mutations {
                 case AutoInstrumentationPlatforms.DotNet:
                     containers.push({
                         name: Mutations.initContainerNameDotNet,
-                        image: Mutations.agentImageDotNet,
+                        image: Mutations.generateImagePath(platforms[i], imageRepoPath),
                         command: ["cp"],
                         args: ["-a", Mutations.imagePathDotNet, Mutations.agentVolumeMountPathDotNet], // cp -a <source> <destination>
                         volumeMounts: [{
@@ -69,7 +79,7 @@ export class Mutations {
                 case AutoInstrumentationPlatforms.Java:
                     containers.push({
                         name: Mutations.initContainerNameJava,
-                        image: Mutations.agentImageJava,
+                        image: Mutations.generateImagePath(platforms[i], imageRepoPath),
                         command: ["cp"],
                         args: ["-a", Mutations.imagePathJava, Mutations.agentVolumeMountPathJava], // cp -a <source> <destination> 
                         volumeMounts: [{
@@ -92,7 +102,7 @@ export class Mutations {
                 case AutoInstrumentationPlatforms.NodeJs:
                     containers.push({
                         name: Mutations.initContainerNameNodeJs,
-                        image: Mutations.agentImageNodeJs,
+                        image: Mutations.generateImagePath(platforms[i], imageRepoPath),
                         command: ["cp"],
                         args: ["-a", Mutations.imagePathNodeJs, Mutations.agentVolumeMountPathNodeJs], // cp -a <source> <destination>
                         volumeMounts: [{
@@ -372,5 +382,22 @@ ${ownerUidAttribute}`
         }       
 
         return volumes;
+    }
+
+    private static generateImagePath(platform: AutoInstrumentationPlatforms, imagePath: string): string {
+        while(imagePath?.length > 1 && imagePath.endsWith("/")) {
+            imagePath = imagePath.slice(0, imagePath.length - 1);
+        }
+        
+        switch (platform as AutoInstrumentationPlatforms) {
+            case AutoInstrumentationPlatforms.DotNet:
+                return `${imagePath ?? Mutations.agentImageCommonPrefix}/${Mutations.agentImageDotNet.repositoryPath}:${Mutations.agentImageDotNet.imageTag}`;
+            case AutoInstrumentationPlatforms.Java:
+                return `${imagePath ?? Mutations.agentImageCommonPrefix}/${Mutations.agentImageJava.repositoryPath}:${Mutations.agentImageJava.imageTag}`;
+            case AutoInstrumentationPlatforms.NodeJs:
+                return `${imagePath ?? Mutations.agentImageCommonPrefix}/${Mutations.agentImageNodeJs.repositoryPath}:${Mutations.agentImageNodeJs.imageTag}`;
+            default:
+                throw `Unsupported platform in generateImagePath(): ${platform}`;
+        }
     }
 }

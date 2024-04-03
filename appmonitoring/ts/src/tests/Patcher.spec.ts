@@ -19,6 +19,7 @@ describe("Patcher", () => {
 
         const cr1: InstrumentationCR = JSON.parse(JSON.stringify(cr));
         const platforms = cr1.spec.settings.autoInstrumentationPlatforms;
+        cr1.spec.settings.imageRepoPath = "myacr.azurecr.io/some-namespace";
         cr1.spec.settings.logCollectionSettings = { disableAppLogs: true };
 
         const podInfo: PodInfo = <PodInfo>{
@@ -46,7 +47,7 @@ describe("Patcher", () => {
         expect((<any>result[1]).path).toBe("/spec");
         expect((<any>result[1]).value).not.toBeNull();
         
-        const newInitContainers: IContainer[] = Mutations.GenerateInitContainers(platforms);
+        const newInitContainers: IContainer[] = Mutations.GenerateInitContainers(platforms, cr1.spec.settings.imageRepoPath);
         expect((<any>result[1]).value.template.spec.initContainers.length).toBe(admissionReview.request.object.spec.template.spec.initContainers.length + newInitContainers.length);
         newInitContainers.forEach(ic => expect((<any>result[1]).value.template.spec.initContainers).toContainEqual(ic));
         admissionReview.request.object.spec.template.spec.initContainers.forEach(ic => expect((<any>result[1]).value.template.spec.initContainers).toContainEqual(ic));
@@ -767,5 +768,45 @@ describe("Patcher", () => {
         expect((<any>unpatchedResult[2]).value.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "OTEL_DOTNET_AUTO_LOGS_ENABLED").value).toBe("original conflicting value for dotnet auto logs enabled");
         expect((<any>unpatchedResult[2]).value.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED").value).toBe("original conflicting value for Java logging enabled");
         expect((<any>unpatchedResult[2]).value.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT")?.value).toBeUndefined();
+    });
+
+    it("Respects alternative initcontainer image repository path", async () => {
+        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestDeployment2));
+
+        const cr1: InstrumentationCR = JSON.parse(JSON.stringify(cr));
+        const platforms = cr1.spec.settings.autoInstrumentationPlatforms;
+
+        cr1.spec.settings.imageRepoPath = "myacr.azurecr.io/some-namespace-blah///";
+        
+        const podInfo: PodInfo = <PodInfo>{
+            namespace: "default",
+            ownerName: "deployment1",
+            ownerKind: "Deployment",
+            ownerUid: "ownerUid",
+            onlyContainerName: "container1"
+        };
+
+        admissionReview.request.object.metadata.namespace = "ns1";
+        admissionReview.request.object.metadata.annotations = { 
+            preExistingAnnotationName: "preExistingAnnotationValue"
+        };
+
+        const result: object[] = Patcher.PatchSpec(JSON.parse(JSON.stringify(admissionReview.request.object.spec)), cr1, podInfo, platforms, "connection-string", clusterArmId, clusterArmRegion, clusterName);
+
+        expect((<[]>result).length).toBe(2);
+        const annotationValue: IInstrumentationAnnotationValue = JSON.parse((<any>result[0]).value) as IInstrumentationAnnotationValue;
+        expect(annotationValue.crName).toBe(cr1.metadata.name);
+        expect(annotationValue.crResourceVersion).toBe("1");
+        expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]);        
+
+        expect((<any>result[1]).op).toBe("replace");
+        expect((<any>result[1]).path).toBe("/spec");
+        expect((<any>result[1]).value).not.toBeNull();
+        
+        const newInitContainers: IContainer[] = Mutations.GenerateInitContainers(platforms, cr1.spec.settings.imageRepoPath);
+        expect((<any>result[1]).value.template.spec.initContainers.length).toBe(admissionReview.request.object.spec.template.spec.initContainers.length + newInitContainers.length);
+        expect((<any>result[1]).value.template.spec.initContainers[2].image).toBe(`myacr.azurecr.io/some-namespace-blah/opentelemetry-auto-instrumentation/dotnet:1.0.0-beta3`);
+        expect((<any>result[1]).value.template.spec.initContainers[3].image).toBe(`myacr.azurecr.io/some-namespace-blah/auto-instrumentation/java:3.5.1-aks`);
+        expect((<any>result[1]).value.template.spec.initContainers[4].image).toBe(`myacr.azurecr.io/some-namespace-blah/opentelemetry-auto-instrumentation/nodejs:3.0.0-beta.10`);
     });
 });
