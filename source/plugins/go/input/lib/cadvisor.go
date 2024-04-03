@@ -1203,12 +1203,12 @@ func getPersistentVolumeMetrics(metricInfo map[string]interface{}, hostName, met
 				excludeNamespace = true
 			}
 
-			podVolume, ok := podData["volume"].(map[string]interface{})
+			podVolume, ok := podData["volume"].([]interface{})
 			if !excludeNamespace && ok {
 				for _, volume := range podVolume {
-					pvcRef, ok := volume.(map[string]interface{})["pvcRef"].(map[string]interface{})
+					parsedVolume := volume.(map[string]interface{})
+					pvcRef, ok := parsedVolume["pvcRef"].(map[string]interface{})
 					if !ok {
-						Log.Warnf("Error: pvcRef data is not a map")
 						continue
 					}
 
@@ -1225,7 +1225,7 @@ func getPersistentVolumeMetrics(metricInfo map[string]interface{}, hostName, met
 					metricItem["CollectionTime"] = metricTime
 					metricItem["Computer"] = hostName
 					metricItem["Name"] = metricName
-					metricItem["Value"] = volume.(map[string]interface{})[metricKey]
+					metricItem["Value"] = parsedVolume[metricKey].(float64)
 					metricItem["Origin"] = INSIGHTSMETRICS_TAGS_ORIGIN
 					metricItem["Namespace"] = INSIGHTSMETRICS_TAGS_PV_NAMESPACE
 
@@ -1236,11 +1236,15 @@ func getPersistentVolumeMetrics(metricInfo map[string]interface{}, hostName, met
 					metricTags[INSIGHTSMETRICS_TAGS_POD_NAME] = podName
 					metricTags[INSIGHTSMETRICS_TAGS_PVC_NAME] = pvcName
 					metricTags[INSIGHTSMETRICS_TAGS_PVC_NAMESPACE] = pvcNamespace
-					metricTags[INSIGHTSMETRICS_TAGS_VOLUME_NAME] = volume.(map[string]interface{})["name"].(string)
-					metricTags[INSIGHTSMETRICS_TAGS_PV_CAPACITY_BYTES] = volume.(map[string]interface{})["capacityBytes"].(string)
+					metricTags[INSIGHTSMETRICS_TAGS_VOLUME_NAME] = parsedVolume["name"].(string)
+					metricTags[INSIGHTSMETRICS_TAGS_PV_CAPACITY_BYTES] = fmt.Sprintf("%.0f", parsedVolume["capacityBytes"].(float64))
 
-					metricItem["Tags"] = metricTags
-
+					jsonTags, err := json.Marshal(metricTags)
+					if (err != nil) {
+						Log.Warnf("Error marshaling metricTags: %s", err)
+						continue
+					}
+					metricItem["Tags"] = string(jsonTags)
 					metricItems = append(metricItems, metricItem)
 				}
 			}
