@@ -217,7 +217,7 @@ var (
 	// named pipe connection to ContainerInventory for AMA
 	InputPluginNamedPipe net.Conn
 	// flag to check whether Multi-tenancy mode enabled or not
-	IsMultiTenancyMode bool
+	IsMultiTenancyLogs bool
 )
 
 var (
@@ -1751,7 +1751,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
 				var n int
 				var err error
-				if IsMultiTenancyMode {
+				if IsMultiTenancyLogs {
 					totalBytes := 0
 					msgpBytesArray := GetMsgPackBytesByNamespace(msgPackEntries)
 					for _, msgpBytes := range msgpBytesArray {
@@ -1800,7 +1800,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 			var bts int
 			var er error
-			if IsMultiTenancyMode {
+			if IsMultiTenancyLogs {
 				totalBytes := 0
 				msgpBytesArray := GetMsgPackBytesByNamespace(msgPackEntries)
 				for _, msgpBytes := range msgpBytesArray {
@@ -2473,17 +2473,17 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("Running in replicaset. Disabling container enrichment caching & updates \n")
 	}
 
-	IsMultiTenancyMode = false
-	multiTenancyModeEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("MULTI_TENENANCY_MODE_ENABLED")))
-	if multiTenancyModeEnabled != "" && strings.Compare(strings.ToLower(multiTenancyModeEnabled), "true") == 0 {
-		IsMultiTenancyMode = true
+	IsMultiTenancyLogs = false
+	multiTenancyLogsEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("MULTI_TENANCY_LOGS_ENABLED")))
+	if multiTenancyLogsEnabled != "" && strings.Compare(strings.ToLower(multiTenancyLogsEnabled), "true") == 0 {
+		IsMultiTenancyLogs = true
 		Log("Logs Multitenancy mode Enabled")
 		Log("defaultNamespaceStreamIdMapUpdateIntervalSeconds = %d \n", defaultNamespaceStreamIdMapUpdateIntervalSeconds)
 		NamespaceStreamIdMapRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultNamespaceStreamIdMapUpdateIntervalSeconds))
 		go updateNamespaceStreamIdMap()
 	}
 
-	Log("ContainerLogsRouteADX: %v, IsWindows: %v, IsAADMSIAuthMode = %v IsGenevaLogsIntegrationEnabled = %v, IsMultiTenancyMode = %v \n", ContainerLogsRouteADX, IsWindows, IsAADMSIAuthMode, IsGenevaLogsIntegrationEnabled, IsMultiTenancyMode)
+	Log("ContainerLogsRouteADX: %v, IsWindows: %v, IsAADMSIAuthMode = %v IsGenevaLogsIntegrationEnabled = %v, IsMultiTenancyLogs = %v \n", ContainerLogsRouteADX, IsWindows, IsAADMSIAuthMode, IsGenevaLogsIntegrationEnabled, IsMultiTenancyLogs)
 	if !ContainerLogsRouteADX && IsWindows && IsAADMSIAuthMode {
 		Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)
 		IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
