@@ -216,7 +216,7 @@ var (
 	KubeMonAgentEventsNamedPipe net.Conn
 	// named pipe connection to ContainerInventory for AMA
 	InputPluginNamedPipe net.Conn
-	// flag to check whether Multi-tenancy mode enabled or not
+	// flag to check whether Multi-tenancy logs enabled or not
 	IsMultiTenancyLogs bool
 )
 
@@ -524,7 +524,9 @@ func updateNamespaceStreamIdMap() {
 		}
 		Log("Locking to Updating NamespaceStreamIdMap")
 		NamespaceStreamIdMapUpdateMutex.Lock()
-		NamespaceStreamIdMap = _namespaceStreamIdMap
+		for key, value := range _namespaceStreamIdMap {
+			NamespaceStreamIdMap[key] = value
+		}
 		NamespaceStreamIdMapUpdateMutex.Unlock()
 		Log("Unlocking after updating Updating NamespaceStreamIdMap")
 	}
@@ -2477,7 +2479,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	multiTenancyLogsEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("MULTI_TENANCY_LOGS_ENABLED")))
 	if multiTenancyLogsEnabled != "" && strings.Compare(strings.ToLower(multiTenancyLogsEnabled), "true") == 0 {
 		IsMultiTenancyLogs = true
-		Log("Logs Multitenancy mode Enabled")
+		Log("Multitenancy Logs Enabled")
 		Log("defaultNamespaceStreamIdMapUpdateIntervalSeconds = %d \n", defaultNamespaceStreamIdMapUpdateIntervalSeconds)
 		NamespaceStreamIdMapRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultNamespaceStreamIdMapUpdateIntervalSeconds))
 		go updateNamespaceStreamIdMap()
