@@ -23,7 +23,6 @@ import (
 	"github.com/google/uuid"
 
 	"Docker-Provider/source/plugins/go/input/lib"
-	// lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
 var (
@@ -169,12 +168,9 @@ func InitializePlugin(agentVersion string) {
 		Log.Printf("MDMLog: AAD MSI Auth Mode Configured")
 	}
 
-	Log.Printf("MDMLog: MDM Metrics supported in %s region\n", aksRegion)
-
 	if strings.Contains(strings.ToLower(aksResourceID), "microsoft.kubernetes/connectedclusters") ||
 		strings.Contains(strings.ToLower(aksResourceID), "microsoft.hybridcontainerservice/provisionedclusters") {
 		isArcK8sCluster = true
-		Log.Printf("MDMLog: inside Arc K8S cluster")
 	}
 
 	customMetricsEndpoint := os.Getenv("CUSTOM_METRICS_ENDPOINT")
@@ -664,7 +660,7 @@ func filterCAdvisor2MDM(record map[string]interface{}) ([]*GenericMetricTemplate
 	percentageMetricValue := 0.0
 	allocatablePercentageMetricValue := 0.0
 
-	if objectName == objectNameK8sNode && metricsToCollectHash[strings.ToLower(counterName)] {
+	if objectName == ObjectNameK8SNode && metricsToCollectHash[strings.ToLower(counterName)] {
 		Log.Printf("MDMLog: Processing node metric: %s", counterName)
 		var metricName string
 		metricValue := collections[0]["Value"].(float64)
@@ -885,12 +881,7 @@ func flushMetricTelemetry() {
 }
 
 func ensureCPUMemoryCapacityAndAllocatableSet() {
-	if controllerType == "replicaset" {
-		if cpuCapacity != 0.0 && memoryCapacity != 0.0 {
-			Log.Printf("MDMLog: CPU And Memory Capacity are already set and their values are as follows cpu_capacity : %f, memory_capacity: %f", cpuCapacity, memoryCapacity)
-			return
-		}
-	} else if controllerType == "daemonset" {
+	if controllerType == "daemonset" {
 		if cpuCapacity != 0.0 && memoryCapacity != 0.0 && cpuAllocatable != 0.0 && memoryAllocatable != 0.0 {
 			Log.Printf("MDMLog: CPU And Memory Capacity are already set and their values are as follows cpu_capacity : %f, memory_capacity: %f", cpuCapacity, memoryCapacity)
 			Log.Printf("MDMLog: CPU And Memory Allocatable are already set and their values are as follows cpu_allocatable : %f, memory_allocatable: %f", cpuAllocatable, memoryAllocatable)
@@ -898,68 +889,7 @@ func ensureCPUMemoryCapacityAndAllocatableSet() {
 		}
 	}
 
-	if controllerType == "replicaset" {
-		Log.Printf("MDMLog: ensure_cpu_memory_capacity_set cpu_capacity %f memory_capacity %f", cpuCapacity, memoryCapacity)
-
-		resourceUri := lib.GetNodesResourceUri("nodes?fieldSelector=metadata.name%3D" + os.Getenv("HOSTNAME"))
-		nodeInventory, err := lib.GetKubeResourceInfo(resourceUri)
-		if err != nil {
-			Log.Printf("MDMLog: Error when getting nodeInventory from kube API: %v", err)
-			lib.SendExceptionTelemetry(err.Error(), nil)
-			return
-		}
-
-		if nodeInventory != nil {
-			cpuCapacityJSON, err := ParseNodeLimits(nodeInventory, "capacity", "cpu", "cpuCapacityNanoCores", time.Now().UTC().Format(time.RFC3339))
-			if err != nil {
-				Log.Printf("MDMLog: Error getting cpu_capacity:", err)
-			} else if len(cpuCapacityJSON) > 0 {
-				var metricVal struct {
-					Value string `json:"Value"`
-				}
-
-				jsonCollections, ok := cpuCapacityJSON[0]["json_Collections"].(string)
-				if !ok {
-					Log.Printf("MDMLog: Error getting cpu capacity JSON")
-				} else {
-					err := json.Unmarshal([]byte(jsonCollections), &metricVal)
-					if err != nil {
-						Log.Printf("MDMLog: Error parsing cpu capacity JSON:", err)
-					} else {
-						cpuCapacity, _ = strconv.ParseFloat(metricVal.Value, 64)
-						Log.Printf("MDMLog: CPU Limit", cpuCapacity)
-					}
-				}
-			} else {
-				Log.Printf("MDMLog: Error getting cpu_capacity")
-			}
-
-			memoryCapacityJSON, err := ParseNodeLimits(nodeInventory, "capacity", "memory", "memoryCapacityBytes", time.Now().UTC().Format(time.RFC3339))
-			if err != nil {
-				Log.Printf("MDMLog: Error getting memory_capacity:", err)
-			} else if len(memoryCapacityJSON) > 0 {
-				var metricVal struct {
-					Value string `json:"Value"`
-				}
-
-				jsonCollections, ok := memoryCapacityJSON[0]["json_Collections"].(string)
-				if !ok {
-					Log.Printf("MDMLog: Error getting memory capacity JSON")
-				} else {
-					jsonBytes := []byte(jsonCollections)
-					err := json.Unmarshal(jsonBytes, &metricVal)
-					if err != nil {
-						Log.Printf("MDMLog: Error parsing memory capacity JSON:", err)
-					} else {
-						memoryCapacity, _ = strconv.ParseFloat(metricVal.Value, 64)
-						Log.Printf("MDMLog: Memory Limit", memoryCapacity)
-					}
-				}
-			} else {
-				Log.Printf("MDMLog: Error getting memory_capacity")
-			}
-		}
-	} else if controllerType == "daemonset" {
+	if controllerType == "daemonset" {
 		var err error
 		cpuCapacity, memoryCapacity, err = GetNodeCapacity()
 		if err != nil {

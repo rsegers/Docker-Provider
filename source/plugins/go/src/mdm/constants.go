@@ -61,7 +61,6 @@ const (
 	MDM_EXCEPTIONS_METRIC_FLUSH_INTERVAL                = 30
 	retryMDMPostWaitMinutes                             = 30
 	metricsToCollect                                    = "cpuUsageNanoCores,memoryWorkingSetBytes,memoryRssBytes,pvUsedBytes"
-	objectNameK8sNode                                   = "K8SNode"
 	InsightsMetricsTagsPVCapacityBytes                  = "pvCapacityBytes"
 )
 

@@ -131,6 +131,7 @@ func (a *ArcK8sClusterIdentity) GetTokenFromSecret(tokenSecretName, tokenSecretD
 	a.Logger.Printf("Making GET request to %s", secretResourceURI)
 	resp, err := a.HTTPClient.Do(req)
 	if err != nil {
+		SendExceptionTelemetry(err.Error(), map[string]string{"FeatureArea": "MDMGo"})
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -238,7 +239,7 @@ func (a *ArcK8sClusterIdentity) GetServiceAccountToken() string {
 	tokenStr, err := ioutil.ReadFile(a.TokenFilePath)
 	if err != nil {
 		a.Logger.Printf("get_service_account_token call failed: %v", err)
-		// Send telemetry error here
+		SendExceptionTelemetry(err.Error(), map[string]string{"FeatureArea": "MDMGo"})
 		return ""
 	}
 
@@ -249,7 +250,6 @@ func (a *ArcK8sClusterIdentity) GetHTTPClient() *http.Client {
 	baseAPIServerURL, err := url.Parse(a.KubeAPIServerURL)
 	if err != nil {
 		a.Logger.Printf("Unable to parse API server URL %s: %v", a.KubeAPIServerURL, err)
-		// Send telemetry error here
 		return nil
 	}
 
@@ -263,14 +263,12 @@ func (a *ArcK8sClusterIdentity) GetHTTPClient() *http.Client {
 
 	if _, err := os.Stat(a.CertFilePath); os.IsNotExist(err) {
 		a.Logger.Printf("%s doesn't exist: %v", a.CertFilePath, err)
-		// Send telemetry error here
 		return nil
 	}
 
 	caCert, err := ioutil.ReadFile(a.CertFilePath)
 	if err != nil {
 		a.Logger.Printf("Unable to read cert file %s: %v", a.CertFilePath, err)
-		// Send telemetry error here
 		return nil
 	}
 
