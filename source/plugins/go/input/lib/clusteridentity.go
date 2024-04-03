@@ -54,7 +54,7 @@ func NewArcK8sClusterIdentity() *ArcK8sClusterIdentity {
 
 	isTestEnv := os.Getenv("ISTEST") == "true"
 	if isTestEnv {
-		logPath = "./arc_k8s_cluster_identity.txt"
+		logPath = "./arc_k8s_cluster_identity.log"
 	}
 
 	logger := CreateLogger(logPath)

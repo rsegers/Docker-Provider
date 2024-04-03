@@ -30,7 +30,7 @@ func init() {
 
 	isTestEnv := os.Getenv("ISTEST") == "true"
 	if isTestEnv {
-		logPath = "./fluent-bit-input.txt"
+		logPath = "./fluent-bit-input.log"
 	}
 
 	FLBLogger = CreateLogger(logPath)
