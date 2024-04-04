@@ -21,7 +21,7 @@ export interface ILabels {
     app: string;
 }
 
-export interface IInstrumentationAnnotationValue {
+export interface IInstrumentationState {
     crName: string;
     crResourceVersion: string;
     platforms: string[];
@@ -29,7 +29,7 @@ export interface IInstrumentationAnnotationValue {
 
 export const InstrumentationAnnotationName = "monitor.azure.com/instrumentation";
 export const FluentBitIoExcludeAnnotationName = "fluentbit.io/exclude";
-export const FluentBitIoExcludeBeforeMutationAnnotationName = "monitor.azure.com/original-fluentbit.io-exclude";
+export const FluentBitIoExcludeBeforeMutationAnnotationName = "monitor.azure.com/fluentbit.io-exclude-before-auto-instrumentation";
 export interface IAnnotations {
     "instrumentation.opentelemetry.io/inject-dotnet"?: string;
     "instrumentation.opentelemetry.io/inject-java"?: string;
@@ -145,7 +145,8 @@ export interface IEnvironmentVariable {
     name: string;
     value?: string;
     valueFrom?: object;
-    doNotSet?: boolean; // indicates we shouldn't use this environment variable during mutation
+    doNotSet?: boolean; // indicates we shouldn't set this environment variable during mutation
+    platformSpecific?: AutoInstrumentationPlatforms; // indicates this environment is platform-specific
 }
 
 export interface IRequest {

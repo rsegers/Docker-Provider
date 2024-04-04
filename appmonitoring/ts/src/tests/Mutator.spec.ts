@@ -1,6 +1,6 @@
 ﻿import { expect, describe, it } from "@jest/globals";
 import { Mutator } from "../Mutator.js";
-import { IAdmissionReview, IAnnotations, IMetadata, InstrumentationCR, AutoInstrumentationPlatforms, DefaultInstrumentationCRName, IInstrumentationAnnotationValue } from "../RequestDefinition.js";
+import { IAdmissionReview, IAnnotations, IMetadata, InstrumentationCR, AutoInstrumentationPlatforms, DefaultInstrumentationCRName, IInstrumentationState, IObjectType, InstrumentationAnnotationName } from "../RequestDefinition.js";
 import { TestObject2, TestObject4, crs, clusterArmId, clusterArmRegion } from "./testConsts.js";
 import { logger } from "../LoggerWrapper.js"
 import { InstrumentationCRsCollection } from "../InstrumentationCRsCollection.js";
@@ -111,11 +111,11 @@ describe("Mutator", () => {
         const patchString: string = atob(result.response.patch);
         const patches: object[] = JSON.parse(patchString);
 
-        expect((<[]>patches).length).toBe(2);
-        expect((<any>patches[0]).op).toBe("add");
-        expect((<any>patches[0]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation");
+        expect((<[]>patches).length).toBe(1);
 
-        const annotationValue: IInstrumentationAnnotationValue = JSON.parse((<any>patches[0]).value) as IInstrumentationAnnotationValue;
+        const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        const annotationValue: IInstrumentationState = JSON.parse(obj.metadata.annotations[InstrumentationAnnotationName]) as IInstrumentationState;
+
         expect(annotationValue.crName).toBe(DefaultInstrumentationCRName);
         expect(annotationValue.crResourceVersion).toBe("1");
         expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]);
@@ -161,17 +161,14 @@ describe("Mutator", () => {
         expect(result.response.status.code).toBe(200);
         expect(result.response.status.message).toBe("OK");
 
-        // confirm both annotations are empty
+        // confirm annotation is absent
         const patchString: string = atob(result.response.patch);
         const patches: object[] = JSON.parse(patchString);
 
-        expect((<[]>patches).length).toBe(3);
-        expect((<any>patches[0]).op).toBe("add");
-        expect((<any>patches[0]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation");
-        expect((<any>patches[0]).value).toBeUndefined();
+        expect((<[]>patches).length).toBe(1);
 
-        expect((<any>patches[1]).op).toBe("remove");
-        expect((<any>patches[1]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation");
+        const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        expect(obj.metadata?.annotations?.[InstrumentationAnnotationName]).toBeUndefined();        
     });
 
     it("Mutating deployment - invalid annotations - multiple CRs", async () => {
@@ -300,11 +297,11 @@ describe("Mutator", () => {
         const patchString: string = atob(result.response.patch);
         const patches: object[] = JSON.parse(patchString);
 
-        expect((<[]>patches).length).toBe(2);
-        expect((<any>patches[0]).op).toBe("add");
-        expect((<any>patches[0]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation");
+        expect((<[]>patches).length).toBe(1);
+
+        const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        const annotationValue: IInstrumentationState = JSON.parse(obj.metadata.annotations[InstrumentationAnnotationName]) as IInstrumentationState;
         
-        const annotationValue: IInstrumentationAnnotationValue = JSON.parse((<any>patches[0]).value) as IInstrumentationAnnotationValue;
         expect(annotationValue.crName).toBe(DefaultInstrumentationCRName);
         expect(annotationValue.crResourceVersion).toBe("1");
         expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]);
@@ -377,11 +374,11 @@ describe("Mutator", () => {
         const patchString: string = atob(result.response.patch);
         const patches: object[] = JSON.parse(patchString);
 
-        expect((<[]>patches).length).toBe(2);
-        expect((<any>patches[0]).op).toBe("add");
-        expect((<any>patches[0]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation");
-
-        const annotationValue: IInstrumentationAnnotationValue = JSON.parse((<any>patches[0]).value) as IInstrumentationAnnotationValue;
+        expect((<[]>patches).length).toBe(1);
+        
+        const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        const annotationValue: IInstrumentationState = JSON.parse(obj.metadata.annotations[InstrumentationAnnotationName]) as IInstrumentationState;
+        
         expect(annotationValue.crName).toBe(cr1.metadata.name);
         expect(annotationValue.crResourceVersion).toBe("1");
         expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.NodeJs]);
@@ -393,7 +390,7 @@ describe("Mutator", () => {
             metadata: {
                 name: "default",
                 namespace: "ns1",
-                resourceVersion: "1"
+                resourceVersion: "12"
             },
             spec: {
                 settings: {
@@ -435,14 +432,15 @@ describe("Mutator", () => {
         const patchString: string = atob(result.response.patch);
         const patches: object[] = JSON.parse(patchString);
 
-        expect((<[]>patches).length).toBe(3);
-        expect((<any>patches[0]).op).toBe("add");
-        expect((<any>patches[0]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation");
-        expect((<any>patches[0]).value).toBeUndefined();
+        expect((<[]>patches).length).toBe(1);
 
-        expect((<any>patches[1]).op).toBe("remove");
-        expect((<any>patches[1]).path).toBe("/metadata/annotations/monitor.azure.com~1instrumentation");
+        const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        const annotationValue: IInstrumentationState = JSON.parse(obj.metadata.annotations[InstrumentationAnnotationName]) as IInstrumentationState;
 
-        expect((<any>patches[2]).value.initContainers).toBeUndefined();
+        expect(annotationValue.crName).toBe(crDefault.metadata.name);
+        expect(annotationValue.crResourceVersion).toBe("12");
+        expect(annotationValue.platforms).toStrictEqual([]);
+
+        expect((<any>patches[0]).value.spec.template.spec.initContainers).toStrictEqual([]);
     });
 });

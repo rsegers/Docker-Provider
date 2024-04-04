@@ -11,8 +11,8 @@ spec:
 
     autoInstrumentationPlatforms: # required, could be empty
       - DotNet
-      - Java
-      - NodeJs
+      # - Java
+      # - NodeJs
 
     logCollectionSettings: # optional, defaults are shown below
       disableAppLogs: true # AI log collection. Default is false (enabled)

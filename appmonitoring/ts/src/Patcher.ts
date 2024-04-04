@@ -1,76 +1,51 @@
-﻿import { isNull } from "util";
-import { Mutations } from "./Mutations.js";
-import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationAnnotationName, InstrumentationCR, IInstrumentationAnnotationValue, FluentBitIoExcludeAnnotationName, IMetadata, IAnnotations, FluentBitIoExcludeBeforeMutationAnnotationName } from "./RequestDefinition.js";
+﻿import { Mutations } from "./Mutations.js";
+import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationAnnotationName, InstrumentationCR, IInstrumentationState, FluentBitIoExcludeAnnotationName, IMetadata, IAnnotations, FluentBitIoExcludeBeforeMutationAnnotationName, IObjectType } from "./RequestDefinition.js";
 
 export class Patcher {
 
     private static readonly EnvironmentVariableBackupSuffix: string = "_BEFORE_AUTO_INSTRUMENTATION";
 
-    private static readonly MutatedMarkerEnvironmentVariableName: string = "AZURE_MONITOR_MUTATION";
-    
     /**
      * Calculates a JsonPatch string describing the difference between the old (incoming) and new (outgoing) spec
      * The spec is also patched in-place
     */
-    public static PatchSpec(spec: ISpec, cr: InstrumentationCR, podInfo: PodInfo, platforms: AutoInstrumentationPlatforms[], connectionString: string, armId: string, armRegion: string, clusterName: string): object[] {
-        if (!spec) {
-            throw `Unable to parse request.object.spec in AdmissionReview: ${spec}`;
+    public static PatchObject(obj: IObjectType, cr: InstrumentationCR, podInfo: PodInfo, platforms: AutoInstrumentationPlatforms[], armId: string, armRegion: string, clusterName: string): object[] {
+        if (!obj?.spec) {
+            throw `Unable to parse request.object.spec in AdmissionReview: ${obj}`;
         }
 
         // remove all mutation (in case it is already mutated)
-        this.Unpatch(spec);
+        this.unpatch(obj);
 
-        this.Patch(cr, platforms, spec, podInfo, connectionString, armId, armRegion, clusterName);
+        // mutate
+        this.patch(cr, platforms, obj, podInfo, armId, armRegion, clusterName);
 
-        const jsonPatch: object[] = [];
-        const annotationName = `/metadata/annotations/${InstrumentationAnnotationName.replace("/", "~1")}`;  // a slash is escaped as ~1 in Json Patch
-        if (cr && platforms.length > 0) {
-            jsonPatch.push(...[
-                // add annotation to the object describing what mutation was applied
-                {
-                    op: "add", // add will create an element if missing, or overwrite if present
-                    path: annotationName,
-                    value: JSON.stringify(<IInstrumentationAnnotationValue> {
-                        crName: cr.metadata.name,
-                        crResourceVersion: cr.metadata.resourceVersion,
-                        platforms: <string[]>platforms
-                    })
-                }
-            ]);
-        } else {
-            // no CR to apply or no instrumentation platforms, we must remove the annotation
-            jsonPatch.push(...[
-                {
-                    op: "add", // add will create an element if missing, or overwrite if present, this is required because remove below will fail if the element doesn't exist
-                    path: annotationName,
-                    value: undefined
-                },
-                {
-                    op: "remove", // remove will delete the element if it exists, otherwise it will fail, which is why the add above is required
-                    path: annotationName
-                }
-            ]);
-        }
-
-        jsonPatch.push(
-            // replace the pod spec section with the mutated one
+        const jsonPatch: object[] = [
+            // replace the entire root section with the mutated one
             {
                 op: "replace",
-                path: "/spec",
-                value: spec
-            }
-        );
+                path: "", // root, which is request.object of the admission review
+                value: obj
+            }];
 
         return jsonPatch;
     }
 
-    private static Patch(cr: InstrumentationCR, platforms: AutoInstrumentationPlatforms[], spec: ISpec, podInfo: PodInfo, connectionString: string, armId: string, armRegion: string, clusterName: string) {
-        // currently we don't mutate if no auto-instrumentation platforms are used
-        // going forward, we'll have to ensure we still do auto-wiring in that case
-        if (cr && platforms?.length > 0) {
-            const podSpec = spec.template.spec;
+    private static patch(cr: InstrumentationCR, platforms: AutoInstrumentationPlatforms[], obj: IObjectType, podInfo: PodInfo, armId: string, armRegion: string, clusterName: string) {
+        if (cr) {
+            const spec: ISpec = obj.spec;
+            const podSpec: ISpec = spec.template.spec;
+        
+            // add deployment-level annotation describing current mutation
+            obj.metadata = obj.metadata ?? <IMetadata>{};
+            obj.metadata.annotations = obj.metadata.annotations ?? <IAnnotations>{};
+            obj.metadata.annotations[InstrumentationAnnotationName] = JSON.stringify(<IInstrumentationState>{
+                crName: cr.metadata.name,
+                crResourceVersion: cr.metadata.resourceVersion,
+                platforms: <string[]>platforms
+            });
 
-            // add new pod annotations to disable CI logs if requested
+            // add pod-level annotations to disable CI logs if requested
             spec.template.metadata = spec.template.metadata ?? <IMetadata>{};
             spec.template.metadata.annotations = spec.template.metadata?.annotations ?? <IAnnotations>{};
             if (spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName] != null) {
@@ -92,7 +67,7 @@ export class Patcher {
             podSpec.initContainers = (podSpec.initContainers ?? <IContainer[]>[]).concat(newInitContainers);
 
             // add new environment variables (used to configure agents)
-            const newEnvironmentVariables: IEnvironmentVariable[] = Mutations.GenerateEnvironmentVariables(podInfo, platforms, cr.spec?.settings?.logCollectionSettings?.disableAppLogs ?? false, connectionString, armId, armRegion, clusterName);
+            const newEnvironmentVariables: IEnvironmentVariable[] = Mutations.GenerateEnvironmentVariables(podInfo, platforms, cr.spec?.settings?.logCollectionSettings?.disableAppLogs ?? false, cr.spec?.destination?.applicationInsightsConnectionString, armId, armRegion, clusterName);
 
             podSpec.containers?.forEach(container => {
                 // hold all environment variables in a dictionary, both existing and new ones
@@ -100,6 +75,17 @@ export class Patcher {
 
                 // add existing environment variables to the dictionary
                 container.env?.forEach(env => allEnvironmentVariables[env.name] = env);
+
+                /*
+                    We could be receiving customer's original set of environment variables (e.g. in case of kubectl apply),
+                    or we could be receiving a mutated version of environment variables (e.g. in case of kubectl rollout restart for an object that is already mutated).
+    
+                    For each instrumentation-related environment variable we will use a backup environment variable which has name of the format `${envVariableName}${Patcher.EnvironmentVariableBackupSuffix}`
+                    and stores the original customer's value (if any). The backup environment variable only exists if there is an original value to store.
+    
+                    When reverting mutation, the deployment-level annotation will indicate if the deployment is mutated, and which platforms were used during mutation.
+                    That annotation (or its absence) will tell us what to do with instrumentation-related environment variables that have no backup environment variable.
+                */
 
                 // add new environment variables to the dictionary
                 newEnvironmentVariables.forEach(newEnv => {
@@ -129,28 +115,6 @@ export class Patcher {
                     container.env.push(allEnvironmentVariables[envVariableName]);
                 }
 
-                /*
-                    We could be receiving customer's original set of environment variables (e.g. in case of kubectl apply),
-                    or we could be receiving a mutated version of environment variables (e.g. in case of kubectl rollout restart for an object that is already mutated).
-    
-                    For each instrumentation-related environment variable we will use a backup environment variable which has name of the format `${envVariableName}${Patcher.EnvironmentVariableBackupSuffix}`
-                    and stores the original customer's value (if any). The backup environment variable only exists if there is an original value to store.
-    
-                    Additionally, during mutation we will add an additional environment variable to indicate that the entire list of environment variables is mutated.
-    
-                    When reverting mutation, the presence of this additional environment variable will tell us what to do with instrumentation-related environment variables that have no backup environment variable.
-                    If the additional environment variable is present - we must remove such environment variable. Otherwise, we must keep it with the present value.
-    
-                    The reason we are using an additional environment variable to indicate mutation and not an annnotation or a similar mechanism is because
-                    depending on a way the change is made there could be discrepancies between environment variable list specifically and other parts of the object (e.g. the customer could remove our custom annotation and reapply YAML)
-                */
-                if (!container.env.find(ev => ev.name === this.MutatedMarkerEnvironmentVariableName)) {
-                    container.env?.push({
-                        name: this.MutatedMarkerEnvironmentVariableName,
-                        value: ""
-                    });
-                }
-
                 // add new volume mounts (used by customer's application runtimes to load agent binaries)
                 const newVolumeMounts: IVolumeMount[] = Mutations.GenerateVolumeMounts(platforms);
                 container.volumeMounts = (container.volumeMounts ?? <IVolumeMount[]>[]).concat(newVolumeMounts);
@@ -161,21 +125,27 @@ export class Patcher {
     /**
      * Removes all mutations from a spec in-place
      */
-    private static Unpatch(spec: ISpec): void {
+    private static unpatch(obj: IObjectType): void {
+        const spec: ISpec = obj?.spec;
         const podSpec: ISpec = spec?.template?.spec;
         
         if (!spec || !podSpec) {
-            throw `Unable to parse spec from AdmissionReview: ${JSON.stringify(spec)}`;
+            throw `Unable to parse spec from AdmissionReview: ${JSON.stringify(obj)}`;
         }
 
+        const instrumentationState: IInstrumentationState = obj.metadata?.annotations?.[InstrumentationAnnotationName] ? JSON.parse(obj.metadata.annotations[InstrumentationAnnotationName]) : null;
+
+        // remove deployment annotations
+        obj.metadata = obj.metadata ?? <IMetadata>{};
+        delete obj.metadata.annotations[InstrumentationAnnotationName];       
+
         // remove pod annotations
-        const isMutated: boolean = podSpec.containers?.filter(container => container.env?.find(ev => ev.name === this.MutatedMarkerEnvironmentVariableName))?.length > 0;
-        if(isMutated) {
+        if (instrumentationState?.crName) {
             spec.template.metadata = spec.template.metadata ?? <IMetadata>{};
             spec.template.metadata.annotations = spec.template.metadata?.annotations ?? <IAnnotations>{};
 
             delete spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName];
-            if(spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName] != null) {
+            if (spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName] != null) {
                 spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName] = spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName];
                 delete spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName];
             }
@@ -223,22 +193,25 @@ export class Patcher {
                     container.env?.splice(evIndex, 1);
                 } else {
                     // there is not, so this is either the original, never mutated, object, or a mutated objected where the original didn't have this environment varialbe specified
-                    if(container.env?.find(ev => ev.name === this.MutatedMarkerEnvironmentVariableName)) {
-                        // this is a mutated object, the original didn't have this variable so we must remove it during unpatching
-                        container.env?.splice(evIndex, 1);
+                    if(instrumentationState?.crName) {
+                        // this is a mutated object
+                        if(!evtr.platformSpecific || instrumentationState.platforms.includes(evtr.platformSpecific)) {
+                            // the variable is either not platform-specific, or it is platform-specific and that platform was selected during the mutation
+                            // that means it was created by the mutation, and since there is no backup - it wasn't in the original
+                            // we must remove it now that we are unpatching
+                            container.env?.splice(evIndex, 1);
+                        } else {
+                            // the variable is platform-specific, but the mutation did not include this variable's platform
+                            // that means it was not created by the mutation, so it was in the original
+                            // keep the variable as-is, do nothing
+                        }
                     } else {
                         // this is an original, never mutated object, so keep this environment variable as-is
                         // do nothing
                     }
                 }
             });
-
-            // remove the marker environment variable
-            const markerEvIndex: number = container.env?.findIndex(ev => ev.name === this.MutatedMarkerEnvironmentVariableName);
-            if(markerEvIndex !== -1) {
-                container.env?.splice(markerEvIndex, 1);
-            }
-                
+     
             container.volumeMounts = container.volumeMounts?.filter(vm => !volumeMountsToRemove.find(vmtr => vm.name === vmtr.name));
         });
     }

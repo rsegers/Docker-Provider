@@ -91,12 +91,11 @@ export class Mutator {
             logger.addHeartbeatMetric(HeartbeatMetrics.AdmissionReviewActionableCount, 1);
         }
 
-        const patchData: object[] = Patcher.PatchSpec(
-            this.admissionReview.request.object.spec,
+        const patchData: object[] = Patcher.PatchObject(
+            this.admissionReview.request.object,
             cr, // null to unpatch
             podInfo as PodInfo,
             platforms,
-            cr?.spec?.destination?.applicationInsightsConnectionString,
             this.clusterArmId,
             this.clusterArmRegion,
             clusterName);

@@ -206,35 +206,43 @@ ${ownerUidAttribute}`
                     returnValue.push(...[
                         {
                             name: "OTEL_DOTNET_AUTO_LOG_DIRECTORY",
-                            value: Mutations.agentLogsVolumeMountPath
+                            value: Mutations.agentLogsVolumeMountPath,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "DOTNET_STARTUP_HOOKS",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll`,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES",
-                            value: "OpenTelemetry.AutoInstrumentation.AspNetCoreBootstrapper"
+                            value: "OpenTelemetry.AutoInstrumentation.AspNetCoreBootstrapper",
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "DOTNET_ADDITIONAL_DEPS",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/AdditionalDeps`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/AdditionalDeps`,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "DOTNET_SHARED_STORE",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/store`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/store`,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "OTEL_DOTNET_AUTO_HOME",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/`,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "OTEL_DOTNET_AUTO_PLUGINS",
-                            value: "Azure.Monitor.OpenTelemetry.AutoInstrumentation.AzureMonitorPlugin, Azure.Monitor.OpenTelemetry.AutoInstrumentation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+                            value: "Azure.Monitor.OpenTelemetry.AutoInstrumentation.AzureMonitorPlugin, Azure.Monitor.OpenTelemetry.AutoInstrumentation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "OTEL_DOTNET_AUTO_LOGS_ENABLED",
                             value: "false",
+                            platformSpecific: platforms[i],
                             doNotSet: !disableAppLogs
                         }]
                     );
@@ -244,11 +252,13 @@ ${ownerUidAttribute}`
                     {
                         returnValue.push(...[{
                             name: "JAVA_TOOL_OPTIONS",
-                            value: `-javaagent:${Mutations.agentVolumeMountPathJava}/applicationinsights-agent-codeless.jar`
+                            value: `-javaagent:${Mutations.agentVolumeMountPathJava}/applicationinsights-agent-codeless.jar`,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED",
                             value: "false",
+                            platformSpecific: platforms[i],
                             doNotSet: !disableAppLogs
                         }]);
                     }
@@ -258,11 +268,13 @@ ${ownerUidAttribute}`
                     returnValue.push(...[
                         {
                             name: "NODE_OPTIONS",
-                            value: `--require ${Mutations.agentVolumeMountPathNodeJs}/aks.js`
+                            value: `--require ${Mutations.agentVolumeMountPathNodeJs}/aks.js`,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT",
                             value: `{"logInstrumentationOptions":{"console": { "enabled": false }, "bunyan": { "enabled": false },"winston": { "enabled": false }}}`,
+                            platformSpecific: platforms[i],
                             doNotSet: !disableAppLogs
                         }]);
                     break;
