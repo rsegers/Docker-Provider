@@ -63,13 +63,13 @@ then
  exit 1
 fi
 
-if [[ "${CONTROLLER_TYPE}" == "DaemonSet" && "${CONTAINER_TYPE}" != "PrometheusSidecar" && "${ENABLE_HIGH_LOG_SCALE_MODE}" == "true" && "${USING_AAD_MSI_AUTH}" == "true" ]]; then
-  (ps -ef | grep "amacoreagent" | grep -v "grep")
-  if [ $? -ne 0 ]
-  then
-    echo "amacoreagent is not running" > /dev/termination-log
-    exit 1
-  fi
+if [[ "${IS_HIGH_LOG_SCALE_MODE}" == "true" ]]; then
+      (ps -ef | grep "amacoreagent" | grep -v "grep")
+      if [ $? -ne 0 ]
+      then
+        echo "amacoreagent is not running" > /dev/termination-log
+        exit 1
+      fi
 fi
 
 

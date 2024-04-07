@@ -122,6 +122,7 @@
         "privateLinkScopeName": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[8]]",
         "privateLinkScopeResourceGroup": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[4]]",
         "privateLinkScopeSubscriptionId": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[2]]",
+        "updatedStreams": "[if(parameters('enableHighScaleMode'), replace(parameters('streams'), 'Microsoft-ContainerLogV2', 'Microsoft-ContainerLogV2-HighScale'), parameters('streams'))]",
         "ciOnlyTemplate": {
                 "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
                 "contentVersion": "1.0.0.0",
@@ -140,7 +141,7 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": "[parameters('streams')]",
+                                        "streams": "[variables('updatedStreams')]",
                                         "extensionSettings": {
                                             "dataCollectionSettings" : {
                                                 "interval": "[parameters('dataCollectionInterval')]",
@@ -163,7 +164,7 @@
                             },
                             "dataFlows": [
                                 {
-                                    "streams": "[parameters('streams')]",
+                                    "streams": "[variables('updatedStreams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]
@@ -202,7 +203,7 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": "[parameters('streams')]",
+                                        "streams": "[variables('updatedStreams')]",
                                         "extensionSettings": {
                                             "dataCollectionSettings" : {
                                                 "interval": "[parameters('dataCollectionInterval')]",
@@ -225,7 +226,7 @@
                             },
                             "dataFlows": [
                                 {
-                                    "streams": "[parameters('streams')]",
+                                    "streams": "[variables('updatedStreams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]

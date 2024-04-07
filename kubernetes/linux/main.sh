@@ -14,6 +14,7 @@ startAMACoreAgent() {
       export GIG_PA_ENABLE_OPTIMIZATION=true
       export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
       export PA_CONFIG_PORT=12563
+      export IS_HIGH_LOG_SCALE_MODE=true
 
       {
          echo "export PA_FLUENT_SOCKET_PORT=$PA_FLUENT_SOCKET_PORT"
@@ -22,6 +23,7 @@ startAMACoreAgent() {
          echo "export GIG_PA_ENABLE_OPTIMIZATION=$GIG_PA_ENABLE_OPTIMIZATION"
          echo "export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=$DOTNET_SYSTEM_GLOBALIZATION_INVARIANT"
          echo "export PA_CONFIG_PORT=$PA_CONFIG_PORT"
+         echo "export IS_HIGH_LOG_SCALE_MODE=$IS_HIGH_LOG_SCALE_MODE"
       } >> ~/.bashrc
 
       source ~/.bashrc
@@ -157,6 +159,20 @@ isGenevaMode() {
    false
   fi
 }
+
+isHighLogScaleMode() {
+     if [[ "${CONTROLLER_TYPE}" == "DaemonSet" && \
+          "${CONTAINER_TYPE}" != "PrometheusSidecar" && \
+          "${ENABLE_HIGH_LOG_SCALE_MODE}" == "true" && \
+          "${USING_AAD_MSI_AUTH}" == "true" && \
+          "${GENEVA_LOGS_INTEGRATION}" != "true" && \
+          "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]]; then
+         true
+     else
+         false
+     fi
+}
+
 checkAgentOnboardingStatus() {
       local sleepdurationsecs=1
       local totalsleptsecs=0
@@ -513,14 +529,14 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
                         echo "export PROXY_CA_CERT=$PROXY_CA_CERT" >> ~/.bashrc
                   fi
                   # Proxy config for AMA core agent
-                  if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${USING_AAD_MSI_AUTH}" == "true" ] && [ "${ENABLE_HIGH_LOG_SCALE_MODE}" == "true" ]; then
-                     if [ "$proxyprotocol" == "http://" ]; then
-                           export HTTP_PROXY=$PROXY_ENDPOINT
-                           echo "export HTTP_PROXY=$HTTP_PROXY" >> ~/.bashrc
-                     elif [ "$proxyprotocol" == "https://" ]; then
-                          export HTTPS_PROXY=$PROXY_ENDPOINT
-                          echo "export HTTPS_PROXY=$HTTPS_PROXY" >> ~/.bashrc
-                     fi
+                  if isHighLogScaleMode; then
+                        if [ "$proxyprotocol" == "http://" ]; then
+                              export HTTP_PROXY=$PROXY_ENDPOINT
+                              echo "export HTTP_PROXY=$HTTP_PROXY" >> ~/.bashrc
+                        elif [ "$proxyprotocol" == "https://" ]; then
+                              export HTTPS_PROXY=$PROXY_ENDPOINT
+                              echo "export HTTPS_PROXY=$HTTPS_PROXY" >> ~/.bashrc
+                        fi
                   fi
             fi
       fi
@@ -990,8 +1006,8 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
     fi
 else
       echo "starting mdsd in main container..."
-      if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${USING_AAD_MSI_AUTH}" == "true" ] && [ "${ENABLE_HIGH_LOG_SCALE_MODE}" == "true" ]; then
-                startAMACoreAgent
+      if isHighLogScaleMode; then
+            startAMACoreAgent
       fi
       # add -T 0xFFFF for full traces
       export MDSD_ROLE_PREFIX=/var/run/mdsd-ci/default
@@ -1258,7 +1274,7 @@ shutdown() {
          gracefulShutdown
       else
          pkill -f mdsd
-         if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${USING_AAD_MSI_AUTH}" == "true" ] && [ "${ENABLE_HIGH_LOG_SCALE_MODE}" == "true" ]; then
+         if isHighLogScaleMode; then
             pkill -f amacoreagent
          fi
       fi
