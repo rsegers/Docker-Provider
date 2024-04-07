@@ -400,8 +400,9 @@ spec:
               cpu: 75m
               memory: 325Mi
           env:
-            - name: ENABLE_HIGH_LOG_SCALE_MODE
-              value: "true"
+            # For high log scale testing uncomment below line
+            # - name: ENABLE_HIGH_LOG_SCALE_MODE
+            #   value: "true"
             - name: CONTAINER_MEMORY_LIMIT_IN_BYTES
               valueFrom:
                 resourceFieldRef:

@@ -261,7 +261,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				}
 
 				isHighLogScaleMode := os.Getenv("IS_HIGH_LOG_SCALE_MODE")
-				if logsAndEventsOnly != "" {
+				if isHighLogScaleMode != "" {
 					telemetryDimensions["isHighLogScaleMode"] = isHighLogScaleMode
 				}
 
