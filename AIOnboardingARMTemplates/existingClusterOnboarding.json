@@ -11,7 +11,7 @@
         "aksResourceLocation": {
             "type": "string",
             "metadata": {
-              "description": "Location of the AKS resource e.g. \"East US\""
+              "description": "Location of the AKS resource e.g. \"eastus\""
             }
         },
         "openTelemetryLogsPort": {
