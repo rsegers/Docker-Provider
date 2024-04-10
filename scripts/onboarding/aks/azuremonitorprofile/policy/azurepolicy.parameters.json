@@ -1,0 +1,25 @@
+{
+  "workspaceResourceId": {
+    "type": "string",
+    "metadata": {
+      "displayName": "Resource Id of the existing Azure Log Analytics Workspace",
+      "description": "Azure Monitor Log Analytics Resource ID"
+    }
+  },
+  "disableCustomMetrics": {
+    "type": "bool",
+    "metadata": {
+      "displayName": "Disable Custom Metrics from the container insights addon",
+      "description": "Disable Custom Metrics"
+    },
+    "value": false
+  },
+  "disablePrometheusMetricsScraping": {
+    "type": "bool",
+    "metadata": {
+      "displayName": "Disable Prometheus Metrics Scraping from the container insights addon",
+      "description": "Disable Prometheus Metrics Scraping"
+    },
+    "value": false
+  }
+}
