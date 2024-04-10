@@ -412,7 +412,7 @@
         {
             "type": "Microsoft.Resources/deployments",
             "name": "[Concat('aks-monitoring-msi-addon', '-',  uniqueString(parameters('aksResourceId')))]",
-            "apiVersion": "2024-02-02-preview",
+            "apiVersion": "2017-05-10",
             "subscriptionId": "[variables('clusterSubscriptionId')]",
             "resourceGroup": "[variables('clusterResourceGroup')]",
             "dependsOn": [
@@ -432,10 +432,8 @@
                         "type": "Microsoft.ContainerService/managedClusters",
                         "location": "[parameters('aksResourceLocation')]",
                         "tags": "[parameters('resourceTagValues')]",
-                        "apiVersion": "2018-03-31",
+                        "apiVersion": "2024-02-02-preview",
                         "properties": {
-                          "mode": "Incremental",
-                          "id": "[parameters('aksResourceId')]",
                           "azuremonitorprofile": {
                             "containerInsights": {
                               "enabled": true,
