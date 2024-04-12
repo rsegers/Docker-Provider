@@ -306,7 +306,11 @@ class LocalLogger {
                 this.client.flush();
             }
         } catch (e) {
-            logger.error(`Failed to send out an event: ${JSON.stringify(logger.sanitizeException(e))}`, operationId, this.heartbeatRequestMetadata);
+            try {
+                logger.error(`Failed to send out an event: ${JSON.stringify(logger.sanitizeException(e))}`, operationId, this.heartbeatRequestMetadata);
+            } catch (e) {
+                // swallow, no recourse
+            }
         }
     }
 
