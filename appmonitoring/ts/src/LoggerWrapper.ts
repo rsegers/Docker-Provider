@@ -287,22 +287,26 @@ class LocalLogger {
     }
 
     public SendEvent(eventName: string, operationId: string, uid: string, clusterArmId: string, clusterArmRegion: string, flush = false, ...args: unknown[]) {
-        const event: EventTelemetry = {
-            name: eventName,
-            properties: {
-                time: Date.now(),
-                extra: JSON.stringify(args),
-                operationId: operationId,
-                clusterArmId: clusterArmId,
-                clusterArmRegion: clusterArmRegion,
-                uid: uid
-            },
-        };
+        try {
+            const event: EventTelemetry = {
+                name: eventName,
+                properties: {
+                    time: Date.now(),
+                    extra: JSON.stringify(args),
+                    operationId: operationId,
+                    clusterArmId: clusterArmId,
+                    clusterArmRegion: clusterArmRegion,
+                    uid: uid
+                },
+            };
 
-        this.client.trackEvent(event);
+            this.client.trackEvent(event);
 
-        if(flush) {
-            this.client.flush();
+            if (flush) {
+                this.client.flush();
+            }
+        } catch (e) {
+            logger.error(`Failed to send out an event: ${JSON.stringify(logger.sanitizeException(e))}`, operationId, this.heartbeatRequestMetadata);
         }
     }
 

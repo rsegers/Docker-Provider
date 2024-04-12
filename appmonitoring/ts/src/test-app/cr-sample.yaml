@@ -21,7 +21,7 @@ spec:
 
   destination: # required
   
-    applicationInsightsConnectionString: "InstrumentationKey=3d2741c8-3067-4e75-9def-b4b0f23eb9c2;IngestionEndpoint=https://eastus2-3.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus2.livediagnostics.monitor.azure.com//" # zakima-1
+    applicationInsightsConnectionString: "InstrumentationKey=11111111-3067-4e75-9def-b4b0f23eb9c2;IngestionEndpoint=https://eastus2-3.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus2.livediagnostics.monitor.azure.com/"
 ---
 
 apiVersion: monitor.azure.com/v1 
