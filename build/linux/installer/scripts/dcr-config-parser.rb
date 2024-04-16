@@ -33,12 +33,12 @@ if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.cas
     end
 
     # Raise an error if no JSON file is found
-    raise 'No JSON file found in the specified directory' unless file_path
+    raise 'No JSON file found in the specified directory. Check if mdsd is running in MSI mode' unless file_path
 
     file_contents = File.read(file_path)
     data = JSON.parse(file_contents)
 
-    raise 'Invalid JSON structure: Missing required keys' unless data.is_a?(Hash) && data.key?('dataSources')
+    raise 'Invalid JSON structure: Missing required key: dataSources. Check if DCR is valid' unless data.is_a?(Hash) && data.key?('dataSources')
 
     # Extract the stream values
     streams = data['dataSources'].select { |ds| ds['id'] == 'ContainerInsightsExtension' }
