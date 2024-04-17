@@ -79,7 +79,7 @@
     "streams": {
       "value": [
         "Microsoft-ContainerLog",
-        "Microsoft-ContainerLogV2",
+        "Microsoft-ContainerLogV2-HighScale",
         "Microsoft-KubeEvents",
         "Microsoft-KubePodInventory",
         "Microsoft-KubeNodeInventory",
@@ -99,7 +99,7 @@
       "value": "/subscriptions/<SubscriptionId>/resourceGroups/<ResourceGroup>/providers/microsoft.insights/privateLinkScopes/<azureMonitorPrivateLinkScopeName>"
     },
     "enableHighLogScaleMode": {
-      "value": false
+      "value": true
     }
   }
 }

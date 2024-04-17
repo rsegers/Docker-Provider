@@ -122,7 +122,6 @@
         "privateLinkScopeName": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[8]]",
         "privateLinkScopeResourceGroup": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[4]]",
         "privateLinkScopeSubscriptionId": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[2]]",
-        "updatedStreams": "[if(parameters('enableHighScaleMode'), replace(parameters('streams'), 'Microsoft-ContainerLogV2', 'Microsoft-ContainerLogV2-HighScale'), parameters('streams'))]",
         "ciOnlyTemplate": {
                 "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
                 "contentVersion": "1.0.0.0",
@@ -141,7 +140,7 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": "[variables('updatedStreams')]",
+                                        "streams": "[parameters('streams')]",
                                         "extensionSettings": {
                                             "dataCollectionSettings" : {
                                                 "interval": "[parameters('dataCollectionInterval')]",
@@ -164,7 +163,7 @@
                             },
                             "dataFlows": [
                                 {
-                                    "streams": "[variables('updatedStreams')]",
+                                    "streams": "[parameters('streams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]
@@ -203,7 +202,7 @@
                                 "extensions": [
                                     {
                                         "name": "ContainerInsightsExtension",
-                                        "streams": "[variables('updatedStreams')]",
+                                        "streams": "[parameters('streams')]",
                                         "extensionSettings": {
                                             "dataCollectionSettings" : {
                                                 "interval": "[parameters('dataCollectionInterval')]",
@@ -226,7 +225,7 @@
                             },
                             "dataFlows": [
                                 {
-                                    "streams": "[variables('updatedStreams')]",
+                                    "streams": "[parameters('streams')]",
                                     "destinations": [
                                         "ciworkspace"
                                     ]
@@ -427,7 +426,7 @@
                           "id": "[parameters('aksResourceId')]",
                           "addonProfiles": {
                             "omsagent": {
-                              "enabled": true,
+                              "enabled": false,
                               "config": {
                                 "logAnalyticsWorkspaceResourceID": "[parameters('workspaceResourceId')]",
                                 "useAADAuth": "true"
