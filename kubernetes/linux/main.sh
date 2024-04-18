@@ -622,7 +622,7 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       done
       source geneva_config_env_var
 
-      if [ ! -e "/etc/config/kube.conf" ] && 
+      if [ ! -e "/etc/config/kube.conf" ] 
       #Parse fluent-bit-conf-customizer.rb as it uses geneva environment variables
             ruby fluent-bit-conf-customizer.rb
             
