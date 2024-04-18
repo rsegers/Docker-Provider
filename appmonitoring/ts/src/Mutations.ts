@@ -8,7 +8,7 @@ export class Mutations {
     private static initContainerNameDotNet = "azure-monitor-auto-instrumentation-dotnet";
     private static initContainerNameJava = "azure-monitor-auto-instrumentation-java";
     private static initContainerNameNodeJs = "azure-monitor-auto-instrumentation-nodejs";
-    
+
     // agent image
     private static agentImageCommonPrefix = "mcr.microsoft.com/applicationinsights";
     private static agentImageDotNet = {
@@ -17,7 +17,7 @@ export class Mutations {
     };
     private static agentImageNodeJs = {
         repositoryPath: "opentelemetry-auto-instrumentation/nodejs",
-        imageTag: "3.0.0-beta.10"
+        imageTag: "3.0.0"
     };
     private static agentImageJava = {
         repositoryPath: "auto-instrumentation/java",
