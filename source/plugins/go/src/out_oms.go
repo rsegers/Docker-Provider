@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 	"github.com/fluent/fluent-bit-go/output"
+	"github.com/microsoft/ApplicationInsights-Go/appinsights"
 )
 import (
 	"C"
@@ -16,9 +16,10 @@ func FLBPluginRegister(ctx unsafe.Pointer) int {
 	return output.FLBPluginRegister(ctx, "oms", "OMS GO!")
 }
 
-//export FLBPluginInit
 // (fluentbit will call this)
 // ctx (context) pointer to fluentbit context (state/ c code)
+//
+//export FLBPluginInit
 func FLBPluginInit(ctx unsafe.Pointer) int {
 	Log("Initializing out_oms go plugin for fluentbit")
 	var agentVersion string
@@ -42,7 +43,7 @@ func FLBPluginInit(ctx unsafe.Pointer) int {
 	if strings.Compare(strings.ToLower(enableTelemetry), "true") == 0 {
 		telemetryPushInterval := output.FLBPluginConfigKey(ctx, "TelemetryPushIntervalSeconds")
 		go SendContainerLogPluginMetrics(telemetryPushInterval)
-		go SendMdsdTracesAsMetrics(telemetryPushInterval)
+		go SendTracesAsMetrics(telemetryPushInterval)
 	} else {
 		Log("Telemetry is not enabled for the plugin %s \n", output.FLBPluginConfigKey(ctx, "Name"))
 		return output.FLB_OK

@@ -334,8 +334,8 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 	}
 }
 
-// SendMdsdTracesAsMetrics is a go-routine that flushes the mdsd traces as metrics periodically (every 5 mins to App Insights)
-func SendMdsdTracesAsMetrics(telemetryPushIntervalProperty string) {
+// SendTracesAsMetrics is a go-routine that flushes the mdsd traces as metrics periodically (every 5 mins to App Insights)
+func SendTracesAsMetrics(telemetryPushIntervalProperty string) {
 	telemetryPushInterval, err := strconv.Atoi(telemetryPushIntervalProperty)
 	if err != nil {
 		Log("Error Converting telemetryPushIntervalProperty %s. Using Default Interval... %d \n", telemetryPushIntervalProperty, defaultTelemetryPushIntervalSeconds)
