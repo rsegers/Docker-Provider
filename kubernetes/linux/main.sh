@@ -15,6 +15,7 @@ startAMACoreAgent() {
       export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
       export PA_CONFIG_PORT=12563
       export IS_HIGH_LOG_SCALE_MODE=true
+      export CounterDataReportFrequencyInMinutes=60
 
       {
          echo "export PA_FLUENT_SOCKET_PORT=$PA_FLUENT_SOCKET_PORT"
@@ -24,6 +25,7 @@ startAMACoreAgent() {
          echo "export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=$DOTNET_SYSTEM_GLOBALIZATION_INVARIANT"
          echo "export PA_CONFIG_PORT=$PA_CONFIG_PORT"
          echo "export IS_HIGH_LOG_SCALE_MODE=$IS_HIGH_LOG_SCALE_MODE"
+         echo "export CounterDataReportFrequencyInMinutes=$CounterDataReportFrequencyInMinutes"
       } >> ~/.bashrc
 
       source ~/.bashrc
