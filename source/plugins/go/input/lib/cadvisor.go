@@ -232,7 +232,6 @@ func getResponse(winNode map[string]string, relativeUri string) (*http.Response,
 			Log.Errorf("Failed to get HTTP response: %s", err)
 			return nil, err
 		}
-		// defer response.Body.Close()
 
 		Log.Infof("Got response code %d from %s", response.StatusCode, uri.RequestURI())
 	}
@@ -256,7 +255,8 @@ func GetMetrics(winNode map[string]string, namespaceFilteringMode string, namesp
 		telemetryProps := make(map[string]string)
 		telemetryProps["Computer"] = hostName
 		SendExceptionTelemetry(err.Error(), telemetryProps)
-	} else {
+	}
+	if cAdvisorStats != nil {
 		defer cAdvisorStats.Body.Close()
 	}
 
@@ -358,9 +358,11 @@ func GetInsightsMetrics(winNode map[string]string, namespaceFilteringMode string
 		telemetryProps := make(map[string]string)
 		telemetryProps["Computer"] = hostName
 		SendExceptionTelemetry(err.Error(), telemetryProps)
-	} else {
+	}
+	if cAdvisorStats != nil {
 		defer cAdvisorStats.Body.Close()
 	}
+
 	var metricInfo map[string]interface{}
 	if cAdvisorStats != nil {
 		bodybytes, err := io.ReadAll(cAdvisorStats.Body)

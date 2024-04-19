@@ -45,7 +45,9 @@ func GetNodeCapacity() (float64, float64, error) {
 		lib.SendExceptionTelemetry(err.Error(), nil)
 		return cpuCapacity, memoryCapacity, err
 	}
-	defer response.Body.Close()
+	if response != nil {
+		defer response.Body.Close()
+	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -102,7 +104,9 @@ func GetNodeAllocatable(cpuCapacity, memoryCapacity float64) (float64, float64, 
 		return 0.0, 0.0, err
 	}
 
-	defer allocatableResponse.Body.Close()
+	if allocatableResponse != nil {
+		defer allocatableResponse.Body.Close()
+	}
 
 	var parsedResponse map[string]interface{}
 	err = json.NewDecoder(allocatableResponse.Body).Decode(&parsedResponse)
@@ -298,7 +302,9 @@ func GetAllContainerLimits() (map[string]float64, map[string]float64, map[string
 	if err != nil {
 		return nil, nil, nil, err
 	}
-	defer response.Body.Close()
+	if response != nil {
+		defer response.Body.Close()
+	}
 
 	var podInventory map[string]interface{}
 

@@ -360,7 +360,9 @@ func GetKubeResourceInfo(resource string) (map[string]interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer response.Body.Close()
+	if response != nil {
+		defer response.Body.Close()
+	}
 
 	var data map[string]interface{}
 	err = json.Unmarshal(body, &data)
