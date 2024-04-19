@@ -77,7 +77,7 @@ var (
 	metricsThresholdHash                      map[string]float64
 	processIncomingStream                     bool
 	clusterIdentity                           *lib.ArcK8sClusterIdentity
-	Log 					  *log.Logger
+	Log                                       *log.Logger
 )
 
 func init() {
@@ -133,7 +133,7 @@ func InitializePlugin(agentVersion string) {
 		if r := recover(); r != nil {
 			stacktrace := debug.Stack()
 			Log.Printf("MDMLog: Error initializing mdm plugin: %v, stacktrace: %v", r, stacktrace)
-			lib.SendExceptionTelemetry(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace), map[string]string{ "FeatureArea": "MDMGo" })
+			lib.SendExceptionTelemetry(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace), map[string]string{"FeatureArea": "MDMGo"})
 		}
 	}()
 

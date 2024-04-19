@@ -451,8 +451,6 @@ func getContainerMemoryMetricItems(metricInfo map[string]interface{}, hostName, 
 					continue
 				}
 
-
-
 				metricItem := metricDataItem{}
 				metricItem["Timestamp"] = metricTime
 				metricItem["Host"] = hostName
