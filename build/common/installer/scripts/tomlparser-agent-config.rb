@@ -40,7 +40,7 @@ require_relative "ConfigParseErrorLogger"
 @nodesChunkSizeMin = 100
 @nodesChunkSizeMax = 400
 # pods
-@podsChunkSizeMin = 250
+@podsChunkSizeMin = 10
 @podsChunkSizeMax = 1500
 # events
 @eventsChunkSizeMin = 2000
@@ -66,8 +66,7 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailIgnoreOlder = ""
 @storageTotalLimitSizeMB = 200
 @outputForwardWorkers = 10
-# retries infinetly until it succeeds
-@outputForwardRetryLimit = "no_limits"
+@outputForwardRetryLimit = 10
 @requireAckResponse = "false"
 
 # configmap settings related to mdsd
