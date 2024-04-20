@@ -8,6 +8,9 @@ echo "startup script start @ $(date +'%Y-%m-%dT%H:%M:%S')"
 startAMACoreAgent() {
       echo "AMACoreAgent: Starting AMA Core Agent since High Log scale mode is enabled"
 
+      AMACALogFileDir="/var/opt/microsoft/linuxmonagent/amaca/log"
+      AMACALogFilePath="$AMACALogFileDir"/amaca.log
+      AMACAConfigFilePath="/etc/opt/microsoft/azuremonitoragent/amacoreagent"
       export PA_FLUENT_SOCKET_PORT=13000
       export PA_DATA_PORT=13000
       export PA_GIG_BRIDGE_MODE=true
@@ -29,12 +32,19 @@ startAMACoreAgent() {
       } >> ~/.bashrc
 
       source ~/.bashrc
-      /opt/microsoft/azure-mdsd/bin/amacoreagent -c /etc/opt/microsoft/azuremonitoragent/amacoreagent --configport 12563 --amacalog /var/opt/microsoft/linuxmonagent/amaca/log/amaca.log > /dev/null 2>&1 &
+      /opt/microsoft/azure-mdsd/bin/amacoreagent -c $AMACAConfigFilePath --configport $PA_CONFIG_PORT --amacalog $AMACALogFilePath > /dev/null 2>&1 &
 
       waitforlisteneronTCPport "$PA_FLUENT_SOCKET_PORT" "$WAITTIME_PORT_13000"
       waitforlisteneronTCPport "$PA_CONFIG_PORT" "$WAITTIME_PORT_12563"
-
-      echo "AMACoreAgent: AMA Core Agent started successfully."
+      # Extract AMACoreAgent version from log file
+      version=""
+      if [ -d "$AMACALogFileDir" ]; then
+            logfile=$(find "$AMACALogFileDir" -maxdepth 1 -type f -name "amaca*.log" | head -n 1)
+            if [ -n "$logfile" ]; then
+                  version=$(grep -o 'AMACoreAgent Version: [0-9.]*' "$logfile" | awk '{print $4}' | cut -d: -f2)
+            fi
+      fi
+      echo "AMACoreAgent: AMA Core Agent Version: ${version} started successfully."
 }
 
 setCloudSpecificApplicationInsightsConfig() {
