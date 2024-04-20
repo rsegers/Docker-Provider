@@ -211,7 +211,8 @@ data:
     #[agent_settings.windows_fluent_bit]
     #    disabled = "true"
 
-    # Enable high log scale mode preview feature which can support upto 50K logs/sec per node
+    # Enable high log scale mode preview feature which can support upto 50K logs/sec per node.
+    # Only supported for ContainerLogV2 schema and containerlog_schema_version MUST be v2.
     #[agent_settings.high_log_scale_config]
     #    enabled = true
 
