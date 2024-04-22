@@ -25,9 +25,20 @@ end
 
 @default_service_interval = "15"
 @default_mem_buf_limit = "10"
+@default_high_log_scale_service_interval = "1"
+@default_high_log_scale_max_storage_chunks_up = "500"
+@default_high_log_scale_max_storage_type = "filesystem"
 
 def is_number?(value)
   true if Integer(value) rescue false
+end
+
+def is_high_log_scale_mode?
+  isHighLogScaleMode = false
+  if !ENV["IS_HIGH_LOG_SCALE_MODE"].nil? && !ENV["IS_HIGH_LOG_SCALE_MODE"].empty? && ENV["IS_HIGH_LOG_SCALE_MODE"].to_s.downcase == "true"
+    isHighLogScaleMode = true
+  end
+  return isHighLogScaleMode
 end
 
 def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
@@ -79,8 +90,15 @@ def substituteFluentBitPlaceHolders
     windowsFluentBitDisabled = ENV["AZMON_WINDOWS_FLUENT_BIT_DISABLED"]
     kubernetesMetadataCollection = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
     annotationBasedLogFiltering = ENV["AZMON_ANNOTATION_BASED_LOG_FILTERING"]
+    storageMaxChunksUp = ENV["FBIT_STORAGE_MAX_CHUNKS_UP"]
+    storageType = ENV["FBIT_STORAGE_TYPE"]
 
-    serviceInterval = (!interval.nil? && is_number?(interval) && interval.to_i > 0) ? interval : @default_service_interval
+    serviceInterval = @default_service_interval
+    if is_high_log_scale_mode?
+      serviceInterval = @default_high_log_scale_service_interval
+    elsif (!interval.nil? && is_number?(interval) && interval.to_i > 0)
+      serviceInterval = interval
+    end
     serviceIntervalSetting = "Flush         " + serviceInterval
 
     tailBufferChunkSize = (!bufferChunkSize.nil? && is_number?(bufferChunkSize) && bufferChunkSize.to_i > 0) ? bufferChunkSize : nil
@@ -113,6 +131,22 @@ def substituteFluentBitPlaceHolders
       new_contents = new_contents.gsub("${TAIL_IGNORE_OLDER}", "Ignore_Older " + ignoreOlder)
     else
       new_contents = new_contents.gsub("\n    ${TAIL_IGNORE_OLDER}\n", "\n")
+    end
+
+    if !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
+      new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
+    elsif is_high_log_scale_mode?
+      new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
+    else
+      new_contents = new_contents.gsub("\n    ${MAX_STORAGE_CHUNKS_UP}\n", "\n")
+    end
+
+    if !storageType.nil? && !storageType.empty?
+      new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + storageType)
+    elsif is_high_log_scale_mode?
+      new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
+    else
+      new_contents = new_contents.gsub("\n    ${STORAGE_TYPE}\n", "\n")
     end
 
     if !kubernetesMetadataCollection.nil? && kubernetesMetadataCollection.to_s.downcase == "true"

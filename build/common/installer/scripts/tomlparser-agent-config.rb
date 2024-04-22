@@ -67,6 +67,8 @@ require_relative "ConfigParseErrorLogger"
 @outputForwardWorkers = 10
 @outputForwardRetryLimit = 10
 @requireAckResponse = "false"
+@fbitStorageMaxChunksUp = ""
+@fbitStorageType = ""
 
 # configmap settings related to mdsd
 @mdsdMonitoringMaxEventRate = 0
@@ -238,6 +240,17 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         if !enableFbitInternalMetrics.nil? && enableFbitInternalMetrics.downcase == "true"
           @enableFbitInternalMetrics = true
           puts "Using config map value: enable_internal_metrics = #{@enableFbitInternalMetrics}"
+        end
+
+        fbitStorageMaxChunksUp = fbit_config[:storage_max_chunks_up]
+        if !fbitStorageMaxChunksUp.nil? && !fbitStorageMaxChunksUp.empty?
+            @fbitStorageMaxChunksUp = fbitStorageMaxChunksUp
+            puts "Using config map value: fbitStorageMaxChunksUp  = #{@fbitStorageMaxChunksUp}"
+        end
+        fbitStorageType = fbit_config[:storage_type]
+        if !fbitStorageType.nil? && !fbitStorageType.empty?
+            @fbitStorageType = fbitStorageType
+            puts "Using config map value: fbitStorageType  = #{@fbitStorageType}"
         end
       end
 
@@ -450,6 +463,14 @@ if !file.nil?
   if !@fbitTailIgnoreOlder.nil? && !@fbitTailIgnoreOlder.empty?
     file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
   end
+  if
+  if !@fbitStorageMaxChunksUp.nil? && !@fbitStorageMaxChunksUp.empty?
+    file.write("export FBIT_STORAGE_MAX_CHUNKS_UP=#{@fbitStorageMaxChunksUp}\n")
+  end
+
+  if !@fbitStorageType.nil? && !@fbitStorageType.empty?
+    file.write("export FBIT_STORAGE_TYPE=#{@fbitStorageType}\n")
+  end
 
   if @storageTotalLimitSizeMB > 0
     file.write("export STORAGE_TOTAL_LIMIT_SIZE_MB=#{@storageTotalLimitSizeMB.to_s + "M"}\n")
@@ -560,6 +581,13 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     if !@fbitTailIgnoreOlder.nil? && !@fbitTailIgnoreOlder.empty?
       commands = get_command_windows("FBIT_TAIL_IGNORE_OLDER", @fbitTailIgnoreOlder)
       file.write(commands)
+    end
+    if !@fbitStorageMaxChunksUp.nil? && !@fbitStorageMaxChunksUp.empty?
+      commands = get_command_windows("FBIT_STORAGE_MAX_CHUNKS_UP", @fbitStorageMaxChunksUp)
+      file.write(commands)
+    end
+    if !@fbitStorageType.nil? && !@fbitStorageType.empty?
+      commands = get_command_windows("FBIT_STORAGE_TYPE", @fbitStorageType)
     end
     if @promFbitChunkSize > 0
       commands = get_command_windows("AZMON_FBIT_CHUNK_SIZE", @promFbitChunkSize.to_s + "m")
