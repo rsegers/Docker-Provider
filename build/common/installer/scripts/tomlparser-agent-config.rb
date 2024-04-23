@@ -69,6 +69,7 @@ require_relative "ConfigParseErrorLogger"
 @requireAckResponse = "false"
 @fbitStorageMaxChunksUp = ""
 @fbitStorageType = ""
+@enableFluentBitThreading = false
 
 # configmap settings related to mdsd
 @mdsdMonitoringMaxEventRate = 0
@@ -251,6 +252,12 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         if !fbitStorageType.nil? && !fbitStorageType.empty?
             @fbitStorageType = fbitStorageType
             puts "Using config map value: fbitStorageType  = #{@fbitStorageType}"
+        end
+
+        enableFluentBitThreading = fbit_config[:storage_type]
+        if !enableFluentBitThreading.nil? && enableFluentBitThreading.strip.casecmp("true") == 0
+          @enableFluentBitThreading = enableFluentBitThreading
+          puts "Using config map value: enableFluentBitThreading  = #{@enableFluentBitThreading}"
         end
       end
 
@@ -472,6 +479,10 @@ if !file.nil?
     file.write("export FBIT_STORAGE_TYPE=#{@fbitStorageType}\n")
   end
 
+  if @enableFluentBitThreading.nil? && !@enableFluentBitThreading.empty?
+    file.write("export ENABLE_FBIT_THREADING=#{@enableFluentBitThreading}\n")
+  end
+
   if @storageTotalLimitSizeMB > 0
     file.write("export STORAGE_TOTAL_LIMIT_SIZE_MB=#{@storageTotalLimitSizeMB.to_s + "M"}\n")
   end
@@ -589,6 +600,12 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     if !@fbitStorageType.nil? && !@fbitStorageType.empty?
       commands = get_command_windows("FBIT_STORAGE_TYPE", @fbitStorageType)
     end
+
+    if @enable_fbit_threading
+      commands = get_command_windows("ENABLE_FBIT_THREADING", @enable_fbit_threading)
+      file.write(commands)
+    end
+
     if @promFbitChunkSize > 0
       commands = get_command_windows("AZMON_FBIT_CHUNK_SIZE", @promFbitChunkSize.to_s + "m")
       file.write(commands)

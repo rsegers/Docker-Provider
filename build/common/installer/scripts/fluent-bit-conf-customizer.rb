@@ -92,6 +92,8 @@ def substituteFluentBitPlaceHolders
     annotationBasedLogFiltering = ENV["AZMON_ANNOTATION_BASED_LOG_FILTERING"]
     storageMaxChunksUp = ENV["FBIT_STORAGE_MAX_CHUNKS_UP"]
     storageType = ENV["FBIT_STORAGE_TYPE"]
+    enableFbitThreading = ENV["ENABLE_FBIT_THREADING"]
+
 
     serviceInterval = @default_service_interval
     if is_high_log_scale_mode?
@@ -131,6 +133,12 @@ def substituteFluentBitPlaceHolders
       new_contents = new_contents.gsub("${TAIL_IGNORE_OLDER}", "Ignore_Older " + ignoreOlder)
     else
       new_contents = new_contents.gsub("\n    ${TAIL_IGNORE_OLDER}\n", "\n")
+    end
+
+    if is_high_log_scale_mode? || (!enableFbitThreading.nil? && !enableFbitThreading.empty?)
+      new_contents = new_contents.gsub("${TAIL_THREADED}", "threaded on")
+    else
+      new_contents = new_contents.gsub("\n    ${TAIL_THREADED}\n", "\n")
     end
 
     if !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
