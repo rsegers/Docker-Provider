@@ -141,18 +141,18 @@ def substituteFluentBitPlaceHolders
       new_contents = new_contents.gsub("\n    ${TAIL_THREADED}\n", "\n")
     end
 
-    if !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
-      new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
-    elsif is_high_log_scale_mode?
+    if is_high_log_scale_mode?
       new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
+    elsif !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
+      new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
     else
       new_contents = new_contents.gsub("\n    ${MAX_STORAGE_CHUNKS_UP}\n", "\n")
     end
 
-    if !storageType.nil? && !storageType.empty?
-      new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + storageType)
-    elsif is_high_log_scale_mode?
+    if is_high_log_scale_mode?
       new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
+    elsif !storageType.nil? && !storageType.empty?
+      new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + storageType)
     else
       new_contents = new_contents.gsub("\n    ${STORAGE_TYPE}\n", "\n")
     end

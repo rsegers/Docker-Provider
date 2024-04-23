@@ -254,7 +254,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             puts "Using config map value: fbitStorageType  = #{@fbitStorageType}"
         end
 
-        enableFluentBitThreading = fbit_config[:storage_type]
+        enableFluentBitThreading = fbit_config[:enable_threading]
         if !enableFluentBitThreading.nil? && enableFluentBitThreading.strip.casecmp("true") == 0
           @enableFluentBitThreading = enableFluentBitThreading
           puts "Using config map value: enableFluentBitThreading  = #{@enableFluentBitThreading}"
