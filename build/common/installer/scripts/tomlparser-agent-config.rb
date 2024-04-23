@@ -470,7 +470,7 @@ if !file.nil?
   if !@fbitTailIgnoreOlder.nil? && !@fbitTailIgnoreOlder.empty?
     file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
   end
-  if
+
   if !@fbitStorageMaxChunksUp.nil? && !@fbitStorageMaxChunksUp.empty?
     file.write("export FBIT_STORAGE_MAX_CHUNKS_UP=#{@fbitStorageMaxChunksUp}\n")
   end
