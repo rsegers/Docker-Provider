@@ -6,7 +6,7 @@ metadata:
   annotations:
     "helm.sh/hook": post-install
   labels:
-    component: app-monitoring
+    component: ama-logs-appinsights
 spec:
   schedule: "*/5 * * * *"
   activeDeadlineSeconds: 600
@@ -185,7 +185,7 @@ metadata:
   name: app-monitoring-webhook
   namespace: kube-system
   labels: 
-    component: app-monitoring
+    component: ama-logs-appinsights
 webhooks:
   - name: app-monitoring-agent-webhook-service.kube-system.svc
     clientConfig:
@@ -223,7 +223,7 @@ kind: ClusterRoleBinding
 metadata:
   name: app-monitoring-webhook-binding
   labels:
-    component: app-monitoring
+    component: ama-logs-appinsights
 subjects:
 - kind: ServiceAccount
   name: app-monitoring-webhook-sa
@@ -239,7 +239,7 @@ metadata:
   name: appmonitoring-cert-manager-hook-install
   namespace: kube-system
   labels:
-    component: app-monitoring
+    component: ama-logs-appinsights
 spec:
   template:
     spec:
@@ -257,7 +257,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   labels:
-    component: app-monitoring
+    component: ama-logs-appinsights
     kubernetes.azure.com/managedby: aks
   name: app-monitoring-webhook-deployment
   namespace: kube-system
@@ -327,7 +327,7 @@ apiVersion: "v1"
 kind: "ServiceAccount"
 metadata: 
   labels: 
-    component: app-monitoring
+    component: ama-logs-appinsights
   name: app-monitoring-webhook-sa
   namespace: kube-system
 ---
@@ -337,7 +337,7 @@ metadata:
   name: app-monitoring-webhook-service
   namespace: kube-system
   labels:
-    component: app-monitoring
+    component: ama-logs-appinsights
 spec:
   ports:
     - port: 443
