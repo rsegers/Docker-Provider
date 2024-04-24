@@ -216,7 +216,7 @@ jobs:
         cat java-test-app.yaml | envsubst | kubectl delete -f -
         cat dotnet-test-app.yaml | envsubst | kubectl delete -f -
         cat node-test-app.yaml | envsubst | kubectl delete -f -
-        car appmonitoring-cr.yaml | envsubst | kubectl delete -f -
+        cat appmonitoring-cr.yaml | envsubst | kubectl delete -f -
 
         echo "Wait for 10s for everything to clear up..."
         sleep 10
