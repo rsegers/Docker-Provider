@@ -1,3 +1,4 @@
+apiVersion: monitor.azure.com/v1 
 kind: Instrumentation
 metadata:
   name: default
