@@ -17,7 +17,6 @@ startAMACoreAgent() {
       export GIG_PA_ENABLE_OPTIMIZATION=true
       export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
       export PA_CONFIG_PORT=12563
-      export IS_HIGH_LOG_SCALE_MODE=true
       export CounterDataReportFrequencyInMinutes=60
 
       {
@@ -27,7 +26,6 @@ startAMACoreAgent() {
          echo "export GIG_PA_ENABLE_OPTIMIZATION=$GIG_PA_ENABLE_OPTIMIZATION"
          echo "export DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=$DOTNET_SYSTEM_GLOBALIZATION_INVARIANT"
          echo "export PA_CONFIG_PORT=$PA_CONFIG_PORT"
-         echo "export IS_HIGH_LOG_SCALE_MODE=$IS_HIGH_LOG_SCALE_MODE"
          echo "export CounterDataReportFrequencyInMinutes=$CounterDataReportFrequencyInMinutes"
       } >> ~/.bashrc
 
@@ -446,6 +444,14 @@ cat common_agent_config_env_var | while read line; do
       echo $line >> ~/.bashrc
 done
 source common_agent_config_env_var
+
+# check if high log scale mode enabled
+if isHighLogScaleMode;
+    echo "Enabled High Log Scale Mode"
+    export IS_HIGH_LOG_SCALE_MODE=true
+    echo "export IS_HIGH_LOG_SCALE_MODE=$IS_HIGH_LOG_SCALE_MODE" >>~/.bashrc
+    source ~/.bashrc
+fi
 
 #Parse the configmap to set the right environment variables for agent config.
 #Note > tomlparser-agent-config.rb has to be parsed first before fluent-bit-conf-customizer.rb for fbit agent settings

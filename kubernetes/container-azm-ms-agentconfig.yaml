@@ -213,8 +213,8 @@ data:
 
     # Enable high log scale mode preview feature which can support upto 50K logs/sec per node.
     # Only supported for ContainerLogV2 schema and containerlog_schema_version MUST be v2.
-    #[agent_settings.high_log_scale_config]
-    #    enabled = true
+    # [agent_settings.high_log_scale]
+    #     enabled = true
 
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # Configuration settings for the waittime for the network listeners to be available

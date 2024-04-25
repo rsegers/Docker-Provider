@@ -74,9 +74,9 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       end
     end
     if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil?
-      high_log_scale_config = parsedConfig[:agent_settings][:high_log_scale_config]
-      if !high_log_scale_config.nil? && !high_log_scale_config[:enabled].nil?
-        @enableHighLogScaleMode = high_log_scale_config[:enabled]
+      high_log_scale = parsedConfig[:agent_settings][:high_log_scale]
+      if !high_log_scale.nil? && !high_log_scale[:enabled].nil?
+        @enableHighLogScaleMode = high_log_scale[:enabled]
         puts "Using config map value: enabled = #{@enableHighLogScaleMode} for high log scale config"
       end
     end

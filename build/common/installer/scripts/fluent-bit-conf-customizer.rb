@@ -98,6 +98,7 @@ def substituteFluentBitPlaceHolders
     serviceInterval = @default_service_interval
     if is_high_log_scale_mode?
       serviceInterval = @default_high_log_scale_service_interval
+      puts "Since high log scale mode configured hence using Flush interval: #{serviceInterval}"
     elsif (!interval.nil? && is_number?(interval) && interval.to_i > 0)
       serviceInterval = interval
     end
@@ -135,26 +136,31 @@ def substituteFluentBitPlaceHolders
       new_contents = new_contents.gsub("\n    ${TAIL_IGNORE_OLDER}\n", "\n")
     end
 
-    if is_high_log_scale_mode? || (!enableFbitThreading.nil? && !enableFbitThreading.empty?)
+    if is_high_log_scale_mode?
+      puts "Since high log scale mode configured hence using threaded on for tail plugin"
+      new_contents = new_contents.gsub("${TAIL_THREADED}", "threaded on")
+    elsif (!enableFbitThreading.nil? && !enableFbitThreading.empty?)
       new_contents = new_contents.gsub("${TAIL_THREADED}", "threaded on")
     else
       new_contents = new_contents.gsub("\n    ${TAIL_THREADED}\n", "\n")
     end
 
     if is_high_log_scale_mode?
-      new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
-    elsif !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
-      new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
-    else
-      new_contents = new_contents.gsub("\n    ${MAX_STORAGE_CHUNKS_UP}\n", "\n")
-    end
-
-    if is_high_log_scale_mode?
       new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
+      puts "Since high log scale mode configured hence using storage.type: #{default_high_log_scale_max_storage_type} for tail plugin"
     elsif !storageType.nil? && !storageType.empty?
       new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + storageType)
     else
       new_contents = new_contents.gsub("\n    ${STORAGE_TYPE}\n", "\n")
+    end
+
+    if is_high_log_scale_mode?
+      new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
+      puts "Since high log scale mode configured hence using storage.max_chunks_up: #{default_high_log_scale_max_storage_chunks_up} for tail plugin"
+    elsif !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
+      new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
+    else
+      new_contents = new_contents.gsub("\n    ${MAX_STORAGE_CHUNKS_UP}\n", "\n")
     end
 
     if !kubernetesMetadataCollection.nil? && kubernetesMetadataCollection.to_s.downcase == "true"
