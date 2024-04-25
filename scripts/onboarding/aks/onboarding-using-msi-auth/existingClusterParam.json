@@ -79,7 +79,7 @@
     "streams": {
       "value": [
         "Microsoft-ContainerLog",
-        "Microsoft-ContainerLogV2-HighScale",
+        "Microsoft-ContainerLogV2",
         "Microsoft-KubeEvents",
         "Microsoft-KubePodInventory",
         "Microsoft-KubeNodeInventory",

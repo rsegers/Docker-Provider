@@ -26,7 +26,7 @@ end
 @default_service_interval = "15"
 @default_mem_buf_limit = "10"
 @default_high_log_scale_service_interval = "1"
-@default_high_log_scale_max_storage_chunks_up = "500"
+@default_high_log_scale_max_storage_chunks_up = "500" # Each chunk size is ~2MB
 @default_high_log_scale_max_storage_type = "filesystem" # filesystem = memory + filesystem in fluent-bit
 
 def is_number?(value)
