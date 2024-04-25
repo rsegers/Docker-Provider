@@ -268,7 +268,7 @@ jobs:
         sleep 180
         
         sudo chmod u+x ./validate_ai.sh
-        ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}"
+        ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}" "test-ns"
 
   - task: AzureCLI@2
     displayName: "Retag the image as ready to deploy"

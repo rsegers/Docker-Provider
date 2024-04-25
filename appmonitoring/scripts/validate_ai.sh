@@ -1,9 +1,16 @@
 #!/bin/bash
 
-POD_DOTNET_NAME=$1
-POD_JAVA_NAME=$2
-POD_NODEJS_NAME=$3
+DEPLOYMENT_DOTNET_NAME=$1
+DEPLOYMENT_JAVA_NAME=$2
+DEPLOYMENT_NODEJS_NAME=$3
 AI_RES_ID=$4
+$NS=$5
+
+
+POD_DOTNET_NAME=$(kubectl get pods -n $NS -l app=$DEPLOYMENT_DOTNET_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
+POD_JAVA_NAME=$(kubectl get pods -n $NS -l app=$DEPLOYMENT_JAVA_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
+POD_NODEJS_NAME=$(kubectl get pods -n $NS -l app=$DEPLOYMENT_NODEJS_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
+
 
 # Get an access token
 result_rsp=$(curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-version=2018-02-01&resource=https://api.applicationinsights.io&mi_res_id=/subscriptions/66010356-d8a5-42d3-8593-6aaa3aeb1c11/resourceGroups/rambhatt-rnd-v2/providers/Microsoft.ManagedIdentity/userAssignedIdentities/rambhatt-agentpool-es-identity' -H Metadata:true -s)
