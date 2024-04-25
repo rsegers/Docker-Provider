@@ -14,18 +14,18 @@ JAVA_DEPLOYMENT_NAME=$(kubectl get deployment -n "$NAMESPACE" -o custom-columns=
 NODEJS_DEPLOYMENT_NAME=$(kubectl get deployment -n "$NAMESPACE" -o custom-columns=NAME:.metadata.name | grep "$DEPLOYMENT_NODEJS_NAME")
 
 checkit() {
-    local podName="$1"  # The first argument to the function is stored in 'name'
-    DEPLOYMENT_YAML=$(kubectl get pod "$podName" -n "$NAMESPACE" -o yaml)
+    local deploymentName="$1"  # The first argument to the function is stored in 'name'
+    DEPLOYMENT_YAML=$(kubectl get deployment "$deploymentName" -n "$NAMESPACE" -o yaml)
 
     # Check for the property
     if echo "$DEPLOYMENT_YAML" | grep -q "$PROPERTY"; then
-        echo "Property $PROPERTY found in pod $podName"
+        echo "Property $PROPERTY found in deployment $deploymentName"
         # You can add additional commands here to process the property
     else
-        echo "Property $PROPERTY not found in pod $podName"
+        echo "Property $PROPERTY not found in pdeploymentod $deploymentName"
     fi
 }
 
-checkit "$DOTNET_DEPLOYMENT_NAME" 
-checkit "$JAVA_DEPLOYMENT_NAME" 
-checkit "$NODEJS_DEPLOYMENT_NAME" 
+checkit "$DEPLOYMENT_DOTNET_NAME" 
+checkit "$DEPLOYMENT_JAVA_NAME" 
+checkit "$DEPLOYMENT_NODEJS_NAME" 
