@@ -1,4 +1,4 @@
-apiVersion: batch/v1beta1
+apiVersion: batch/v1
 kind: CronJob
 metadata:
   name: appmonitoring-cert-housekeeper-hook
@@ -8,8 +8,7 @@ metadata:
   labels:
     component: app-monitoring
 spec:
-  schedule: "*/5 * * * *"
-  activeDeadlineSeconds: 600
+  schedule: "*/30 * * * *"
   jobTemplate:
     spec:
       template:
