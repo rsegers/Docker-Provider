@@ -3,7 +3,7 @@ import { EventTelemetry, MetricTelemetry, TraceTelemetry } from "applicationinsi
 import { PodInfo } from "./RequestDefinition.js";
 
 import log4js from "log4js";
-import { AppMonitoringConfigCRsCollection } from "./AppMonitoringConfigCRsCollection.js";
+import { InstrumentationCRsCollection } from "./InstrumentationCRsCollection.js";
 
 const { configure, getLogger } = log4js;
 
@@ -35,9 +35,9 @@ configure({
 export class RequestMetadata {
     private uid: string;
     private podInfo: PodInfo;
-    private crs: AppMonitoringConfigCRsCollection;
+    private crs: InstrumentationCRsCollection;
 
-    public constructor(uid: string, crs: AppMonitoringConfigCRsCollection) {
+    public constructor(uid: string, crs: InstrumentationCRsCollection) {
         this.uid = uid;
         this.crs = crs;
     }
@@ -287,22 +287,30 @@ class LocalLogger {
     }
 
     public SendEvent(eventName: string, operationId: string, uid: string, clusterArmId: string, clusterArmRegion: string, flush = false, ...args: unknown[]) {
-        const event: EventTelemetry = {
-            name: eventName,
-            properties: {
-                time: Date.now(),
-                extra: JSON.stringify(args),
-                operationId: operationId,
-                clusterArmId: clusterArmId,
-                clusterArmRegion: clusterArmRegion,
-                uid: uid
-            },
-        };
+        try {
+            const event: EventTelemetry = {
+                name: eventName,
+                properties: {
+                    time: Date.now(),
+                    extra: JSON.stringify(args),
+                    operationId: operationId,
+                    clusterArmId: clusterArmId,
+                    clusterArmRegion: clusterArmRegion,
+                    uid: uid
+                },
+            };
 
-        this.client.trackEvent(event);
+            this.client.trackEvent(event);
 
-        if(flush) {
-            this.client.flush();
+            if (flush) {
+                this.client.flush();
+            }
+        } catch (e) {
+            try {
+                logger.error(`Failed to send out an event: ${JSON.stringify(logger.sanitizeException(e))}`, operationId, this.heartbeatRequestMetadata);
+            } catch (e) {
+                // swallow, no recourse
+            }
         }
     }
 
@@ -316,8 +324,7 @@ class LocalLogger {
         }
         
         // global AI component collecting telemetry from all webhooks
-        //!!!
-        return "InstrumentationKey=a5e8ca94-9dbb-475d-a44f-bd5f778fcd1a;IngestionEndpoint=https://eastus2-3.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus2.livediagnostics.monitor.azure.com/";
+        return "InstrumentationKey=ac00484a-3c6f-41de-b5e8-95dda51d5a60;IngestionEndpoint=https://eastus-8.in.applicationinsights.azure.com/;LiveEndpoint=https://eastus.livediagnostics.monitor.azure.com/";
     }
 }
 

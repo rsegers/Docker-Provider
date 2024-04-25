@@ -1,18 +1,28 @@
-﻿import { IContainer, IVolume, PodInfo } from "./RequestDefinition.js";
+﻿import { AutoInstrumentationPlatforms, IContainer, IEnvironmentVariable, IVolume, IVolumeMount, PodInfo } from "./RequestDefinition.js";
 
 /**
  * Contains a collection of mutations necessary to add functionality to a Pod
  */
 export class Mutations {
     // name of the init container
-    private static initContainerNameDotNet = "agent-init-dotnet";
-    private static initContainerNameJava = "agent-init-java";
-    private static initContainerNameNodeJs = "agent-init-nodejs";
+    private static initContainerNameDotNet = "azure-monitor-auto-instrumentation-dotnet";
+    private static initContainerNameJava = "azure-monitor-auto-instrumentation-java";
+    private static initContainerNameNodeJs = "azure-monitor-auto-instrumentation-nodejs";
     
     // agent image
-    private static agentImageDotNet = "mcr.microsoft.com/applicationinsights/opentelemetry-auto-instrumentation/dotnet:1.0.0-beta3";
-    private static agentImageJava = "mcr.microsoft.com/applicationinsights/auto-instrumentation/java:3.4.18-aks";
-    private static agentImageNodeJs = "mcr.microsoft.com/applicationinsights/opentelemetry-auto-instrumentation/nodejs:3.0.0-beta.10";
+    private static agentImageCommonPrefix = "mcr.microsoft.com/applicationinsights";
+    private static agentImageDotNet = {
+        repositoryPath: "opentelemetry-auto-instrumentation/dotnet",
+        imageTag: "1.0.0-rc.1"
+    };
+    private static agentImageNodeJs = {
+        repositoryPath: "opentelemetry-auto-instrumentation/nodejs",
+        imageTag: "3.0.0"
+    };
+    private static agentImageJava = {
+        repositoryPath: "auto-instrumentation/java",
+        imageTag: "3.5.1-aks"
+    };
     
     // path on agent image to copy from
     private static imagePathDotNet = "/dotnet-tracer-home/.";
@@ -20,17 +30,17 @@ export class Mutations {
     private static imagePathNodeJs = "/agents/nodejs/.";
 
     // agent volume (where init containers copy agent binaries to)
-    private static agentVolumeDotNet = "agent-volume-dotnet";
-    private static agentVolumeJava = "agent-volume-java";
-    private static agentVolumeNodeJs = "agent-volume-nodejs";
+    private static agentVolumeDotNet = "azure-monitor-auto-instrumentation-volume-dotnet";
+    private static agentVolumeJava = "azure-monitor-auto-instrumentation-volume-java";
+    private static agentVolumeNodeJs = "azure-monitor-auto-instrumentation-volume-nodejs";
 
     // agent volume mount path (where customer app's runtime loads agents from)
-    private static agentVolumeMountPathDotNet = "/agent-dotnet";
-    private static agentVolumeMountPathJava = "/agent-java";
-    private static agentVolumeMountPathNodeJs = "/agent-nodejs";
+    private static agentVolumeMountPathDotNet = "/azure-monitor-auto-instrumentation-dotnet";
+    private static agentVolumeMountPathJava = "/azure-monitor-auto-instrumentation-java";
+    private static agentVolumeMountPathNodeJs = "/azure-monitor-auto-instrumentation-nodejs";
 
     // agent logs volume (where agents dump runtime logs)
-    private static agentLogsVolume = "agent-volume-logs";
+    private static agentLogsVolume = "azure-monitor-auto-instrumentation-volume-logs";
     
     // agent logs volume mount path
     private static agentLogsVolumeMountPath = "/var/log/applicationinsights"; // this is hardcoded in Java SDK and NodeJs SDK, can't change this
@@ -38,53 +48,79 @@ export class Mutations {
     /**
      * Creates init containers that are used to copy agent binaries onto a Pod. These containers download the agent image, copy agent binaries from inside of the image, and finish.
      */
-    public static GenerateInitContainers(platforms: string[]): IContainer[] {
+    public static GenerateInitContainers(platforms: AutoInstrumentationPlatforms[], imageRepoPath: string): IContainer[] {
         const containers: IContainer[] = [];
 
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
-                case "DotNet":
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
+                case AutoInstrumentationPlatforms.DotNet:
                     containers.push({
                         name: Mutations.initContainerNameDotNet,
-                        image: Mutations.agentImageDotNet,
+                        image: Mutations.generateImagePath(platforms[i], imageRepoPath),
                         command: ["cp"],
                         args: ["-a", Mutations.imagePathDotNet, Mutations.agentVolumeMountPathDotNet], // cp -a <source> <destination>
                         volumeMounts: [{
                             name: Mutations.agentVolumeDotNet,
                             mountPath: Mutations.agentVolumeMountPathDotNet
-                        }]
+                        }],
+                        resources: {
+                            requests: {
+                                cpu: "100m",
+                                memory: "128Mi"
+                            },
+                            limits: {
+                                cpu: "2",
+                                memory: "1Gi"
+                            }
+                        }
                     });
                     break;
 
-                case "Java":
+                case AutoInstrumentationPlatforms.Java:
                     containers.push({
                         name: Mutations.initContainerNameJava,
-                        image: Mutations.agentImageJava,
+                        image: Mutations.generateImagePath(platforms[i], imageRepoPath),
                         command: ["cp"],
                         args: ["-a", Mutations.imagePathJava, Mutations.agentVolumeMountPathJava], // cp -a <source> <destination> 
                         volumeMounts: [{
                             name: Mutations.agentVolumeJava,
                             mountPath: Mutations.agentVolumeMountPathJava
-                        }]
+                        }],
+                        resources: {
+                            requests: {
+                                cpu: "100m",
+                                memory: "128Mi"
+                            },
+                            limits: {
+                                cpu: "2",
+                                memory: "1Gi"
+                            }
+                        }
                     });
                     break;
 
-                case "NodeJs":
+                case AutoInstrumentationPlatforms.NodeJs:
                     containers.push({
                         name: Mutations.initContainerNameNodeJs,
-                        image: Mutations.agentImageNodeJs,
+                        image: Mutations.generateImagePath(platforms[i], imageRepoPath),
                         command: ["cp"],
                         args: ["-a", Mutations.imagePathNodeJs, Mutations.agentVolumeMountPathNodeJs], // cp -a <source> <destination>
                         volumeMounts: [{
                             name: Mutations.agentVolumeNodeJs,
                             mountPath: Mutations.agentVolumeMountPathNodeJs
-                        }]
+                        }],
+                        resources: {
+                            requests: {
+                                cpu: "100m",
+                                memory: "128Mi"
+                            },
+                            limits: {
+                                cpu: "2",
+                                memory: "1Gi"
+                            }
+                        }
                     });
                     break;
-
-                case "OpenTelemetry":
-                    throw `Not implemented`;
-                    //break;
 
                 default:
                     throw `Unsupported platform in init_containers(): ${platforms[i]}`;
@@ -97,13 +133,12 @@ export class Mutations {
     /**
      * Generates environment variables necessary to configure agents. Agents take configuration from these environment variables once they run.
      */
-    public static GenerateEnvironmentVariables(podInfo: PodInfo, platforms: string[], connectionString: string, armId: string, armRegion: string, clusterName: string): object[] {
-        const ownerNameAttribute: string = podInfo.ownerReference ? `k8s.${podInfo.ownerReference.kind?.toLowerCase()}.name=${podInfo.ownerReference.name}` : null;
-        const ownerUidAttribute: string = podInfo.ownerReference ? `k8s.${podInfo.ownerReference.kind?.toLowerCase()}.uid=${podInfo.ownerReference.uid}` : null;
-        const deploymentNameAttribute: string = podInfo.deploymentName ? `k8s.deployment.name=${podInfo.deploymentName}` : null;
-        const containerNameAttribute: string = podInfo.onlyContainerName ? `k8s.container.name=${podInfo.onlyContainerName}` : null;
+    public static GenerateEnvironmentVariables(podInfo: PodInfo, platforms: AutoInstrumentationPlatforms[], disableAppLogs: boolean, connectionString: string, armId: string, armRegion: string, clusterName: string): IEnvironmentVariable[] {
+        const ownerNameAttribute = `k8s.${podInfo.ownerKind?.toLowerCase()}.name=${podInfo.ownerName}`;
+        const ownerUidAttribute = `k8s.${podInfo.ownerKind?.toLowerCase()}.uid=${podInfo.ownerUid}`;
+        const containerNameAttribute = `k8s.container.name=${podInfo.onlyContainerName}`;
 
-        const returnValue = [
+        const returnValue: IEnvironmentVariable[] = [
             // Downward API environment variables must come first as they are referenced later
             {
                 name: "NODE_NAME",
@@ -141,7 +176,6 @@ export class Mutations {
             // now we can reference Downward API values from environment variables above
             {
                 name: "OTEL_RESOURCE_ATTRIBUTES",
-                //!!! 
                 value: `cloud.resource_id=${armId},\
 cloud.region=${armRegion},\
 k8s.cluster.name=${clusterName},\
@@ -153,7 +187,6 @@ ${containerNameAttribute},\
 cloud.provider=Azure,\
 cloud.platform=azure_aks,\
 ${ownerNameAttribute},\
-${deploymentNameAttribute},\
 ${ownerUidAttribute}`
             },
             {
@@ -168,60 +201,83 @@ ${ownerUidAttribute}`
 
         // platform-specific environment variables
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
-                case "DotNet":
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
+                case AutoInstrumentationPlatforms.DotNet:
                     returnValue.push(...[
                         {
                             name: "OTEL_DOTNET_AUTO_LOG_DIRECTORY",
-                            value: Mutations.agentLogsVolumeMountPath
+                            value: Mutations.agentLogsVolumeMountPath,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "DOTNET_STARTUP_HOOKS",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll`,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES",
-                            value: "OpenTelemetry.AutoInstrumentation.AspNetCoreBootstrapper"
+                            value: "OpenTelemetry.AutoInstrumentation.AspNetCoreBootstrapper",
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "DOTNET_ADDITIONAL_DEPS",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/AdditionalDeps`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/AdditionalDeps`,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "DOTNET_SHARED_STORE",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/store`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/store`,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "OTEL_DOTNET_AUTO_HOME",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/`
+                            value: `${Mutations.agentVolumeMountPathDotNet}/`,
+                            platformSpecific: platforms[i]
                         },
                         {
                             name: "OTEL_DOTNET_AUTO_PLUGINS",
-                            value: "Azure.Monitor.OpenTelemetry.AutoInstrumentation.AzureMonitorPlugin, Azure.Monitor.OpenTelemetry.AutoInstrumentation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null"
+                            value: "Azure.Monitor.OpenTelemetry.AutoInstrumentation.AzureMonitorPlugin, Azure.Monitor.OpenTelemetry.AutoInstrumentation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
+                            platformSpecific: platforms[i]
+                        },
+                        {
+                            name: "OTEL_DOTNET_AUTO_LOGS_ENABLED",
+                            value: "false",
+                            platformSpecific: platforms[i],
+                            doNotSet: !disableAppLogs
                         }]
                     );
                     break;
 
-                case "Java":
+                case AutoInstrumentationPlatforms.Java:
                     {
                         returnValue.push(...[{
                             name: "JAVA_TOOL_OPTIONS",
-                            value: `-javaagent:${Mutations.agentVolumeMountPathJava}/applicationinsights-agent-codeless.jar`
+                            value: `-javaagent:${Mutations.agentVolumeMountPathJava}/applicationinsights-agent-codeless.jar`,
+                            platformSpecific: platforms[i]
+                        },
+                        {
+                            name: "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED",
+                            value: "false",
+                            platformSpecific: platforms[i],
+                            doNotSet: !disableAppLogs
                         }]);
                     }
                     break;
 
-                case "NodeJs":
+                case AutoInstrumentationPlatforms.NodeJs:
                     returnValue.push(...[
                         {
                             name: "NODE_OPTIONS",
-                            value: `--require ${Mutations.agentVolumeMountPathNodeJs}/aks.js`
+                            value: `--require ${Mutations.agentVolumeMountPathNodeJs}/aks.js`,
+                            platformSpecific: platforms[i]
+                        },
+                        {
+                            name: "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT",
+                            value: `{"logInstrumentationOptions":{"console": { "enabled": false }, "bunyan": { "enabled": false },"winston": { "enabled": false }}}`,
+                            platformSpecific: platforms[i],
+                            doNotSet: !disableAppLogs
                         }]);
                     break;
-
-                case "OpenTelemetry":
-                    throw `Not implemented`;
-                    //break;
 
                 default:
                     throw `Unsupported platform in env(): ${platforms[i]}`;
@@ -235,35 +291,31 @@ ${ownerUidAttribute}`
      * Generates volume mounts necessary for customer app's runtimes to load agent binaries.
      * Also generates volume mounts necessary for the agents to dump runtime logs.
      */
-    public static GenerateVolumeMounts(platforms: string[]): object[] {
-        const volumeMounts: object[] = [];
+    public static GenerateVolumeMounts(platforms: AutoInstrumentationPlatforms[]): IVolumeMount[] {
+        const volumeMounts: IVolumeMount[] = [];
 
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
-                case "DotNet":
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
+                case AutoInstrumentationPlatforms.DotNet:
                     volumeMounts.push({
                         name: Mutations.agentVolumeDotNet,
                         mountPath: Mutations.agentVolumeMountPathDotNet
                     });
                     break;
 
-                case "Java":
+                case AutoInstrumentationPlatforms.Java:
                     volumeMounts.push({
                         name: Mutations.agentVolumeJava,
                         mountPath: Mutations.agentVolumeMountPathJava
                     });
                     break;
 
-                case "NodeJs":
+                case AutoInstrumentationPlatforms.NodeJs:
                     volumeMounts.push({
                         name: Mutations.agentVolumeNodeJs,
                         mountPath: Mutations.agentVolumeMountPathNodeJs
                     });
                     break;
-
-                case "OpenTelemetry":
-                    throw `Not implemented`;
-                    //break;
 
                 default:
                     throw `Unsupported platform in volume_mounts(): ${platforms[i]}`;
@@ -272,10 +324,10 @@ ${ownerUidAttribute}`
 
         let logVolumeMounted = false;
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
-                case "DotNet":
-                case "Java":
-                case "NodeJs":
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
+                case AutoInstrumentationPlatforms.DotNet:
+                case AutoInstrumentationPlatforms.Java:
+                case AutoInstrumentationPlatforms.NodeJs:
                     if(!logVolumeMounted) {
                         volumeMounts.push({
                             name: Mutations.agentLogsVolume,
@@ -293,35 +345,31 @@ ${ownerUidAttribute}`
     /**
      * Generates volumes to place agent binaries, and also volumes for agents to dump runtime logs.
      */
-    public static GenerateVolumes(platforms: string[]) : IVolume[] {
+    public static GenerateVolumes(platforms: AutoInstrumentationPlatforms[]) : IVolume[] {
         const volumes: IVolume[] = [];
 
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
-                case "DotNet":
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
+                case AutoInstrumentationPlatforms.DotNet:
                     volumes.push({
                         name: Mutations.agentVolumeDotNet,
                         emptyDir: {}
                     });
                     break;
 
-                case "Java":
+                case AutoInstrumentationPlatforms.Java:
                     volumes.push({
                         name: Mutations.agentVolumeJava,
                         emptyDir: {}
                     });
                     break;
 
-                case "NodeJs":
+                case AutoInstrumentationPlatforms.NodeJs:
                     volumes.push({
                         name: Mutations.agentVolumeNodeJs,
                         emptyDir: {}
                     });
                     break;
-
-                case "OpenTelemetry":
-                    throw `Not implemented`;
-                    //break;
 
                 default:
                     throw `Unsupported platform in volumes(): ${platforms[i]}`;
@@ -330,10 +378,10 @@ ${ownerUidAttribute}`
 
         let logVolumeAdded = false;
         for (let i = 0; i < platforms.length; i++) {
-            switch (platforms[i]) {
-                case "DotNet":
-                case "Java":
-                case "NodeJs":
+            switch (platforms[i] as AutoInstrumentationPlatforms) {
+                case AutoInstrumentationPlatforms.DotNet:
+                case AutoInstrumentationPlatforms.Java:
+                case AutoInstrumentationPlatforms.NodeJs:
                     if(!logVolumeAdded) {
                         volumes.push({
                             name: Mutations.agentLogsVolume,
@@ -346,5 +394,22 @@ ${ownerUidAttribute}`
         }       
 
         return volumes;
+    }
+
+    private static generateImagePath(platform: AutoInstrumentationPlatforms, imagePath: string): string {
+        while(imagePath?.length > 1 && imagePath.endsWith("/")) {
+            imagePath = imagePath.slice(0, imagePath.length - 1);
+        }
+        
+        switch (platform as AutoInstrumentationPlatforms) {
+            case AutoInstrumentationPlatforms.DotNet:
+                return `${imagePath ?? Mutations.agentImageCommonPrefix}/${Mutations.agentImageDotNet.repositoryPath}:${Mutations.agentImageDotNet.imageTag}`;
+            case AutoInstrumentationPlatforms.Java:
+                return `${imagePath ?? Mutations.agentImageCommonPrefix}/${Mutations.agentImageJava.repositoryPath}:${Mutations.agentImageJava.imageTag}`;
+            case AutoInstrumentationPlatforms.NodeJs:
+                return `${imagePath ?? Mutations.agentImageCommonPrefix}/${Mutations.agentImageNodeJs.repositoryPath}:${Mutations.agentImageNodeJs.imageTag}`;
+            default:
+                throw `Unsupported platform in generateImagePath(): ${platform}`;
+        }
     }
 }

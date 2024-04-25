@@ -1,8 +1,18 @@
-apiVersion: azmon.app.monitoring/v1
-kind: appmonitoringconfig
+apiVersion: monitor.azure.com/v1 
+kind: Instrumentation
 metadata:
- name: appmonitoring
- namespace: ${TEST_NS}
-spec:
- autoInstrumentationPlatforms: [ NodeJs,  DotNet, Java ]
- aiConnectionString: ${AI_CONNECTION_STRING}
+  name: default
+  namespace: ${TEST_NS}
+spec:  
+  settings:
+    imageRepoPath: aicommon.azurecr.io/all-auto-instrumentation-images # optional Customers are obliged to keep their ACR in sync with MCR for new versions, or things will break
+    autoInstrumentationPlatforms: # required, could be empty
+      - DotNet
+      - Java
+      - NodeJs
+    logCollectionSettings: # optional, defaults are shown below
+      disableAppLogs: true # AI log collection. Default is false (enabled)
+      disableContainerLogs: true # CI console collection. Default is false (enabled). Webhook will mark pod with annotations to let CI know
+    #   # once log levels and log filtering are figured out, we’ll add them here 
+  destination: # required
+    applicationInsightsConnectionString: ${AI_CONNECTION_STRING}
