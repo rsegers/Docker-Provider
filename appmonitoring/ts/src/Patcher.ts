@@ -137,7 +137,9 @@ export class Patcher {
 
         // remove deployment annotations
         obj.metadata = obj.metadata ?? <IMetadata>{};
-        delete obj.metadata.annotations[InstrumentationAnnotationName];       
+        if (obj.metadata.annotations) {
+            delete obj.metadata.annotations[InstrumentationAnnotationName];
+        }
 
         // remove pod annotations
         if (instrumentationState?.crName) {

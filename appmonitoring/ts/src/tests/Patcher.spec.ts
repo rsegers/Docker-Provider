@@ -173,6 +173,76 @@ describe("Patcher", () => {
         expect(JSON.stringify((<any>unpatchResult[0]).value.spec.template.spec)).toBe(JSON.stringify(initialAdmissionReview.request.object.spec.template.spec));
     });
 
+    it("Unpatches a deployment that is not patched", async () => {
+        // ASSUME
+        const initialAdmissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestDeployment2));
+        const platforms = cr.spec.settings.autoInstrumentationPlatforms;
+        const podInfo: PodInfo = <PodInfo>{
+            namespace: "default",
+            ownerName: "deployment1",
+            ownerKind: "Deployment",
+            ownerUid: "ownerUid",
+            onlyContainerName: "container1"
+        };
+
+        initialAdmissionReview.request.object.metadata.namespace = "ns1";
+        initialAdmissionReview.request.object.metadata.annotations = { 
+            preExistingAnnotationName: "preExistingAnnotationValue"
+        };
+
+        const mutatedAdmissionReview: IAdmissionReview = JSON.parse(JSON.stringify(initialAdmissionReview));
+
+        // ACT
+        // unpatch (since CR is null) a non-mutated deployment
+        const unpatchResult: object[] = JSON.parse(JSON.stringify(Patcher.PatchObject(mutatedAdmissionReview.request.object, null, podInfo, [] as AutoInstrumentationPlatforms[], clusterArmId, clusterArmRegion, clusterName)));
+
+        // ASSERT
+        expect(JSON.stringify(mutatedAdmissionReview)).toBe(JSON.stringify(initialAdmissionReview));
+
+        expect(unpatchResult.length).toBe(1);
+
+        const obj: IObjectType = (<any>unpatchResult[0]).value as IObjectType;
+        expect(obj.metadata?.annotations?.[InstrumentationAnnotationName]).toBeUndefined();
+
+        expect((<any>unpatchResult[0]).op).toBe("replace");
+        expect((<any>unpatchResult[0]).path).toBe("");
+        expect(JSON.stringify((<any>unpatchResult[0]).value.spec.template.spec)).toBe(JSON.stringify(initialAdmissionReview.request.object.spec.template.spec));
+    });
+
+    it("Unpatches a deployment that is not patched and has no annotations", async () => {
+        // ASSUME
+        const initialAdmissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestDeployment2));
+        const platforms = cr.spec.settings.autoInstrumentationPlatforms;
+        const podInfo: PodInfo = <PodInfo>{
+            namespace: "default",
+            ownerName: "deployment1",
+            ownerKind: "Deployment",
+            ownerUid: "ownerUid",
+            onlyContainerName: "container1"
+        };
+
+        initialAdmissionReview.request.object.metadata.namespace = "ns1";
+        initialAdmissionReview.request.object.metadata.annotations = null;
+
+        const mutatedAdmissionReview: IAdmissionReview = JSON.parse(JSON.stringify(initialAdmissionReview));
+
+        // ACT
+        // unpatch (since CR is null) a non-mutated deployment
+        const unpatchResult: object[] = JSON.parse(JSON.stringify(Patcher.PatchObject(mutatedAdmissionReview.request.object, null, podInfo, [] as AutoInstrumentationPlatforms[], clusterArmId, clusterArmRegion, clusterName)));
+
+        // ASSERT
+        expect(JSON.stringify(mutatedAdmissionReview)).toBe(JSON.stringify(initialAdmissionReview));
+
+        expect(unpatchResult.length).toBe(1);
+
+        const obj: IObjectType = (<any>unpatchResult[0]).value as IObjectType;
+        expect(obj.metadata?.annotations?.[InstrumentationAnnotationName]).toBeUndefined();
+
+        expect((<any>unpatchResult[0]).op).toBe("replace");
+        expect((<any>unpatchResult[0]).path).toBe("");
+        expect(JSON.stringify((<any>unpatchResult[0]).value.spec.template.spec)).toBe(JSON.stringify(initialAdmissionReview.request.object.spec.template.spec));
+    });
+
     it("Does not patch if no CR", async () => {
         // ASSUME
         const initialAdmissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestDeployment2));
