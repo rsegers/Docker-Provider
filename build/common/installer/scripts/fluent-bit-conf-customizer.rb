@@ -139,7 +139,7 @@ def substituteFluentBitPlaceHolders
     if is_high_log_scale_mode?
       puts "Since high log scale mode configured hence using threaded on for tail plugin"
       new_contents = new_contents.gsub("${TAIL_THREADED}", "threaded on")
-    elsif (!enableFbitThreading.nil? && !enableFbitThreading.empty?)
+    elsif (!enableFbitThreading.nil? && !enableFbitThreading.empty? && enableFbitThreading.to_s.downcase == "true" )
       new_contents = new_contents.gsub("${TAIL_THREADED}", "threaded on")
     else
       new_contents = new_contents.gsub("\n    ${TAIL_THREADED}\n", "\n")

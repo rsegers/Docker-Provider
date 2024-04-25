@@ -67,7 +67,7 @@ require_relative "ConfigParseErrorLogger"
 @outputForwardWorkers = 10
 @outputForwardRetryLimit = 10
 @requireAckResponse = "false"
-@fbitStorageMaxChunksUp = ""
+@fbitStorageMaxChunksUp = 0
 @fbitStorageType = ""
 @enableFluentBitThreading = false
 
@@ -244,8 +244,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         end
 
         fbitStorageMaxChunksUp = fbit_config[:storage_max_chunks_up]
-        if !fbitStorageMaxChunksUp.nil? && !fbitStorageMaxChunksUp.empty?
-            @fbitStorageMaxChunksUp = fbitStorageMaxChunksUp
+        if is_valid_number?(fbitStorageMaxChunksUp)
+            @fbitStorageMaxChunksUp = fbitStorageMaxChunksUp.to_i
             puts "Using config map value: fbitStorageMaxChunksUp  = #{@fbitStorageMaxChunksUp}"
         end
         fbitStorageType = fbit_config[:storage_type]
@@ -471,7 +471,7 @@ if !file.nil?
     file.write("export FBIT_TAIL_IGNORE_OLDER=#{@fbitTailIgnoreOlder}\n")
   end
 
-  if !@fbitStorageMaxChunksUp.nil? && !@fbitStorageMaxChunksUp.empty?
+  if @fbitStorageMaxChunksUp > 0
     file.write("export FBIT_STORAGE_MAX_CHUNKS_UP=#{@fbitStorageMaxChunksUp}\n")
   end
 
@@ -479,7 +479,7 @@ if !file.nil?
     file.write("export FBIT_STORAGE_TYPE=#{@fbitStorageType}\n")
   end
 
-  if @enableFluentBitThreading.nil? && !@enableFluentBitThreading.empty?
+  if @enableFluentBitThreading
     file.write("export ENABLE_FBIT_THREADING=#{@enableFluentBitThreading}\n")
   end
 
@@ -593,7 +593,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       commands = get_command_windows("FBIT_TAIL_IGNORE_OLDER", @fbitTailIgnoreOlder)
       file.write(commands)
     end
-    if !@fbitStorageMaxChunksUp.nil? && !@fbitStorageMaxChunksUp.empty?
+
+    if @fbitStorageMaxChunksUp > 0
       commands = get_command_windows("FBIT_STORAGE_MAX_CHUNKS_UP", @fbitStorageMaxChunksUp)
       file.write(commands)
     end
@@ -601,8 +602,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       commands = get_command_windows("FBIT_STORAGE_TYPE", @fbitStorageType)
     end
 
-    if @enable_fbit_threading
-      commands = get_command_windows("ENABLE_FBIT_THREADING", @enable_fbit_threading)
+    if @enableFluentBitThreading
+      commands = get_command_windows("ENABLE_FBIT_THREADING", @enableFluentBitThreading)
       file.write(commands)
     end
 
