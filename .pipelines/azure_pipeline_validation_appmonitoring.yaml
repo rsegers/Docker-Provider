@@ -247,7 +247,7 @@ jobs:
         az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }}
         
         sudo chmod u+x ./validate-mutation.sh
-        ./validate-mutation.sh "dotnet-test-app" "java-test-app" "nodejs-test-app" "test-ns"
+        ./validate-mutation.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "test-ns"
 
   - task: AzureCLI@2
     displayName: "Check test apps are sending telemetry to AI"
