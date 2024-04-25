@@ -249,7 +249,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             puts "Using config map value: fbitStorageMaxChunksUp  = #{@fbitStorageMaxChunksUp}"
         end
         fbitStorageType = fbit_config[:storage_type]
-        if !fbitStorageType.nil? && !fbitStorageType.empty?
+        if !fbitStorageType.nil? && !fbitStorageType.empty? && ["memory", "filesystem"].include?(fbitStorageType)
             @fbitStorageType = fbitStorageType
             puts "Using config map value: fbitStorageType  = #{@fbitStorageType}"
         end
