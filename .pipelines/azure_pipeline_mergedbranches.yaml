@@ -129,12 +129,6 @@ jobs:
       pathToPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: drop
 
-  - task: PoliCheck@2
-    displayName: "SDL : Run PoliCheck"
-    inputs:
-      targetType: 'F'
-      targetArgument: '$(Build.SourcesDirectory)'
-
   - task: ESLint@1
     displayName: 'Run ESLint'
     inputs:
@@ -147,7 +141,23 @@ jobs:
     inputs:
       toolVersion: Latest
       targetDirectory: '$(Build.SourcesDirectory)'
-  
+
+- job: SDL_Policheck_Scan
+  displayName: "SDL: policheck scanning"
+  pool:
+    name: Azure-Pipelines-Windows-CI-Test-EO
+  variables:
+    skipComponentGovernanceDetection: true
+  steps:
+    - checkout: self
+      submodules: true
+
+    - task: PoliCheck@2
+      displayName: "SDL : Run PoliCheck"
+      inputs:
+        targetType: 'F'
+        targetArgument: '$(Build.SourcesDirectory)'
+
 - job: build_linux
   timeoutInMinutes: 120
   dependsOn: common
