@@ -8,8 +8,8 @@ spec:
     imageRepoPath: aicommon.azurecr.io/all-auto-instrumentation-images # optional Customers are obliged to keep their ACR in sync with MCR for new versions, or things will break
     autoInstrumentationPlatforms: # required, could be empty
       - DotNet
-      # - Java
-      # - NodeJs
+      - Java
+      - NodeJs
     logCollectionSettings: # optional, defaults are shown below
       disableAppLogs: true # AI log collection. Default is false (enabled)
       disableContainerLogs: true # CI console collection. Default is false (enabled). Webhook will mark pod with annotations to let CI know
