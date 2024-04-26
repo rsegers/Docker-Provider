@@ -483,7 +483,7 @@ jobs:
     inputs:
       toolVersion: Latest
       InputType:   CommandLine
-      arguments:   analyze $(Build.ArtifactStagingDirectory)\*.dll;$(Build.ArtifactStagingDirectory)\*.exe --recurse
+      arguments:   analyze $(Build.ArtifactStagingDirectory)\*\*.dll;$(Build.ArtifactStagingDirectory)\*\*.exe --recurse
 
   - task: PowerShell@2
     displayName: Replace files in origin Image
@@ -699,7 +699,7 @@ jobs:
     inputs:
       toolVersion: Latest
       InputType:   CommandLine
-      arguments:   analyze $(Build.ArtifactStagingDirectory)\*.dll;$(Build.ArtifactStagingDirectory)\*.exe --recurse
+      arguments:   analyze $(Build.ArtifactStagingDirectory)\*\*.dll;$(Build.ArtifactStagingDirectory)\*\*.exe --recurse
 
   - task: PowerShell@2
     displayName: Replace files in origin Image
