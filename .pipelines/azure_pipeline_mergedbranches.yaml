@@ -128,6 +128,15 @@ jobs:
     inputs:
       pathToPublish: '$(Build.ArtifactStagingDirectory)'
       artifactName: drop
+
+  - task: ESLint@1
+    displayName: 'Run ESLint'
+    inputs:
+      Configuration: required
+      EnableExclusions: false
+      TargetType: eslint
+      TargetsESLint: $(Build.SourcesDirectory)/**/*.{js,ts}
+    retryCountOnTaskFailure: 1 
   
   - task: Armory@2
     displayName: 'Run ARMory'
