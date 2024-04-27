@@ -26,6 +26,11 @@ const (
 	EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACE_FILTERING_MODE = "namespacefilteringmode"
 )
 
+const (
+	envHighLogScaleMode     = "IS_HIGH_LOG_SCALE_MODE"
+	containerLogV2DataType  = "CONTAINERINSIGHTS_CONTAINERLOGV2"
+)
+
 var singleton *Extension
 var once sync.Once
 var extensionconfiglock sync.Mutex
@@ -135,6 +140,18 @@ func getDataCollectionSettingsInterface() (map[string]interface{}, error) {
 	return dataCollectionSettings, nil
 }
 
+func isHighLogScaleMode() bool {
+	 isHighLogScale = false
+	 if os.Getenv(envHighLogScaleMode) == "true" {
+		isHighLogScale = true
+	 }
+	 return isHighLogScale
+}
+func isGiGLAStream(streamId string) bool {
+    parts := strings.Split(streamId, ":")
+    return len(parts) >= 3 && strings.HasPrefix(parts[2], "gigl-")
+}
+
 func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) {
 	datatypeOutputStreamMap := make(map[string]string)
 
@@ -153,11 +170,23 @@ func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) 
 	for _, extensionConfig := range extensionConfigs {
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
-			if hasNamedPipe {
-				datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
+			if isHighLogScaleMode() && datatype == containerLogV2DataType {
+				// if high log scale mode enabled, both streams Microsoft-ContainerLogV2 & Microsoft-ContainerLogV2-HighScale exists ContainerLogV2 data type
+				// pick the GIGLA streamId to ensure ContainerLogV2 flows through GIG-LA route
+				if isGiGLAStream(outputStreamID) {
+					if hasNamedPipe {
+						datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
+					} else {
+						datatypeOutputStreamMap[dataType] = outputStreamID.(string)
+					}
+				}
 			} else {
-				datatypeOutputStreamMap[dataType] = outputStreamID.(string)
-			}
+				if hasNamedPipe {
+					datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
+				} else {
+					datatypeOutputStreamMap[dataType] = outputStreamID.(string)
+				}
+		   }
 		}
 	}
 	return datatypeOutputStreamMap, nil
