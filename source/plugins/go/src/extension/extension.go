@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -141,7 +142,7 @@ func getDataCollectionSettingsInterface() (map[string]interface{}, error) {
 }
 
 func isHighLogScaleMode() bool {
-	 isHighLogScale = false
+	 isHighLogScale := false
 	 if os.Getenv(envHighLogScaleMode) == "true" {
 		isHighLogScale = true
 	 }
@@ -170,10 +171,10 @@ func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) 
 	for _, extensionConfig := range extensionConfigs {
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
-			if isHighLogScaleMode() && datatype == containerLogV2DataType {
+			if isHighLogScaleMode() && dataType == containerLogV2DataType {
 				// if high log scale mode enabled, both streams Microsoft-ContainerLogV2 & Microsoft-ContainerLogV2-HighScale exists ContainerLogV2 data type
 				// pick the GIGLA streamId to ensure ContainerLogV2 flows through GIG-LA route
-				if isGiGLAStream(outputStreamID) {
+				if isGiGLAStream(outputStreamID.(string)) {
 					if hasNamedPipe {
 						datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
 					} else {
