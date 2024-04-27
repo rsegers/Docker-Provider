@@ -446,7 +446,7 @@ done
 source common_agent_config_env_var
 
 # check if high log scale mode enabled
-if isHighLogScaleMode;
+if isHighLogScaleMode; then
     echo "Enabled High Log Scale Mode"
     export IS_HIGH_LOG_SCALE_MODE=true
     echo "export IS_HIGH_LOG_SCALE_MODE=$IS_HIGH_LOG_SCALE_MODE" >>~/.bashrc
@@ -697,7 +697,7 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       if [ ! -e "/etc/config/kube.conf" ]; then
       #Parse fluent-bit-conf-customizer.rb as it uses geneva environment variables
             ruby fluent-bit-conf-customizer.rb
-            
+
             if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
                   ruby fluent-bit-geneva-conf-customizer.rb  "common"
                   ruby fluent-bit-geneva-conf-customizer.rb  "tenant"
