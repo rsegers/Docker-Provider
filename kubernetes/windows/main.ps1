@@ -488,13 +488,6 @@ function Set-EnvironmentVariables {
     else {
         Write-Host "Failed to set environment variable KUBERNETES_SERVICE_HOST for target 'machine' since it is either null or empty"
     }
-
-    # check if high log scale mode enabled
-    $enableHighLogScaleMode = [System.Environment]::GetEnvironmentVariable("ENABLE_HIGH_LOG_SCALE_MODE", "process")
-    if (![string]::IsNullOrEmpty($enableHighLogScaleMode)) {
-        Set-ProcessAndMachineEnvVariables "IS_HIGH_LOG_SCALE_MODE" $enableHighLogScaleMode
-        Write-Host "Successfully set environment variable IS_HIGH_LOG_SCALE_MODE - $($enableHighLogScaleMode) for target 'machine'..."
-    }
 }
 
 function Read-Configs {
@@ -522,6 +515,13 @@ function Read-Configs {
     }
     else {
         Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
+    }
+
+    # check if high log scale mode enabled
+    $enableHighLogScaleMode = [System.Environment]::GetEnvironmentVariable("ENABLE_HIGH_LOG_SCALE_MODE", "process")
+    if (![string]::IsNullOrEmpty($enableHighLogScaleMode)) {
+        Set-ProcessAndMachineEnvVariables "IS_HIGH_LOG_SCALE_MODE" $enableHighLogScaleMode
+        Write-Host "Successfully set environment variable IS_HIGH_LOG_SCALE_MODE - $($enableHighLogScaleMode) for target 'machine'..."
     }
 
     #Replace placeholders in fluent-bit.conf
