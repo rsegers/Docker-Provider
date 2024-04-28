@@ -147,7 +147,7 @@ def substituteFluentBitPlaceHolders
 
     if is_high_log_scale_mode?
       new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
-      puts "Since high log scale mode configured hence using storage.type: #{default_high_log_scale_max_storage_type} for tail plugin"
+      puts "Since high log scale mode configured hence using storage.type: #{@default_high_log_scale_max_storage_type} for tail plugin"
     elsif !storageType.nil? && !storageType.empty?
       new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + storageType)
     else
@@ -156,7 +156,7 @@ def substituteFluentBitPlaceHolders
 
     if is_high_log_scale_mode?
       new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
-      puts "Since high log scale mode configured hence using storage.max_chunks_up: #{default_high_log_scale_max_storage_chunks_up} for tail plugin"
+      puts "Since high log scale mode configured hence using storage.max_chunks_up: #{@default_high_log_scale_max_storage_chunks_up} for tail plugin"
     elsif !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
       new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
     else
