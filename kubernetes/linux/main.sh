@@ -39,7 +39,7 @@ startAMACoreAgent() {
       if [ -d "$AMACALogFileDir" ]; then
             logfile=$(find "$AMACALogFileDir" -maxdepth 1 -type f -name "amaca*.log" | head -n 1)
             if [ -n "$logfile" ]; then
-                  version=$(grep -o 'AMACoreAgent Version: [0-9.]*' "$logfile" | awk '{print $4}' | cut -d: -f2)
+                  version=$(grep -o 'AMACoreAgent Version: [0-9.]*' "$logfile" | awk '{print $3}' | cut -d: -f2)
             fi
       fi
       echo "AMACoreAgent: AMA Core Agent Version: ${version} started successfully."
