@@ -190,6 +190,13 @@ func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) 
 		   }
 		}
 	}
+
+	// for debugging print the map
+	for key, value := range datatypeOutputStreamMap {
+		message := fmt.Sprintf("datatype: %s streamId: %s", key, value)
+		logger.Printf(message)
+    }
+
 	return datatypeOutputStreamMap, nil
 }
 
