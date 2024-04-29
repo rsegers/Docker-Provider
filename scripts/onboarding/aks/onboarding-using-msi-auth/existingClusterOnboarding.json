@@ -35,7 +35,7 @@
         "streams": {
             "type": "array",
             "metadata": {
-                "description": "Array of default container insights streams"
+                "description": "Array of default container insights streams. Use Microsoft-ContainerLogV2-HighScale instead of Microsoft-ContainerLogV2 when enabled in high log scale mode"
             }
         },
         "enableContainerLogV2": {
@@ -97,18 +97,6 @@
             "metadata": {
                 "description": "Specify the Resource Id of the Azure Monitor Private Link Scope."
             }
-        },
-        "enableHighLogScaleMode": {
-            "type": "bool",
-            "metadata": {
-                "description": "Flag to indicate if Azure Monitor High Log scale mode should be enabled or not"
-            }
-        },
-        "highLogScaleStream": {
-            "type": "array",
-            "defaultValue": [
-                "Microsoft-ContainerLogV2-HighScale"
-            ]
         }
     },
     "variables": {
@@ -120,7 +108,7 @@
         "workspaceLocation": "[replace(parameters('workspaceRegion'),' ', '')]",
         "dcrNameFull": "[Concat('MSCI', '-', variables('workspaceLocation'), '-', variables('clusterName'))]",
         "dcrName": "[if(greater(length(variables('dcrNameFull')), 64), substring(variables('dcrNameFull'), 0, 64), variables('dcrNameFull'))]",
-        "ciStreams": "[if(parameters('enableHighLogScaleMode'), concat(parameters('streams'), parameters('highLogScaleStream')), parameters('streams'))]",
+        "enableHighLogScaleMode": "[if(contains(parameters('streams'),'Microsoft-ContainerLogV2-HighScale'), bool('true'), bool('false'))]",
         "associationName": "ContainerInsightsExtension",
         "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]",
         "dceName": "[if(greater(length(variables('dcrName')), 43), substring(variables('dcrName'), 0, 43), variables('dcrName'))]",
@@ -147,7 +135,7 @@
                             "extensions": [
                                 {
                                     "name": "ContainerInsightsExtension",
-                                    "streams": "[variables('ciStreams')]",
+                                    "streams": "[parameters('streams')]",
                                     "extensionSettings": {
                                         "dataCollectionSettings": {
                                             "interval": "[parameters('dataCollectionInterval')]",
@@ -170,13 +158,13 @@
                         },
                         "dataFlows": [
                             {
-                                "streams": "[variables('ciStreams')]",
+                                "streams": "[parameters('streams')]",
                                 "destinations": [
                                     "ciworkspace"
                                 ]
                             }
                         ],
-                        "dataCollectionEndpointId": "[if(or(parameters('useAzureMonitorPrivateLinkScope'), parameters('enableHighLogScaleMode')), variables('dataCollectionEndpointId'), json('null'))]"
+                        "dataCollectionEndpointId": "[if(or(parameters('useAzureMonitorPrivateLinkScope'), variables('enableHighLogScaleMode')), variables('dataCollectionEndpointId'), json('null'))]"
                     }
                 }
             ]
@@ -209,7 +197,7 @@
                             "extensions": [
                                 {
                                     "name": "ContainerInsightsExtension",
-                                    "streams": "[variables('ciStreams')]",
+                                    "streams": "[parameters('streams')]",
                                     "extensionSettings": {
                                         "dataCollectionSettings": {
                                             "interval": "[parameters('dataCollectionInterval')]",
@@ -232,7 +220,7 @@
                         },
                         "dataFlows": [
                             {
-                                "streams": "[variables('ciStreams')]",
+                                "streams": "[parameters('streams')]",
                                 "destinations": [
                                     "ciworkspace"
                                 ]
@@ -246,7 +234,7 @@
                                 ]
                             }
                         ],
-                        "dataCollectionEndpointId": "[if(or(parameters('useAzureMonitorPrivateLinkScope'), parameters('enableHighLogScaleMode')), variables('dataCollectionEndpointId'), json('null'))]"
+                        "dataCollectionEndpointId": "[if(or(parameters('useAzureMonitorPrivateLinkScope'), variables('enableHighLogScaleMode')), variables('dataCollectionEndpointId'), json('null'))]"
                     }
                 }
             ]
@@ -254,7 +242,7 @@
     },
     "resources": [
         {
-            "condition": "[or(parameters('useAzureMonitorPrivateLinkScope'), parameters('enableHighLogScaleMode'))]",
+            "condition": "[or(parameters('useAzureMonitorPrivateLinkScope'), variables('enableHighLogScaleMode'))]",
             "type": "Microsoft.Insights/dataCollectionEndpoints",
             "apiVersion": "2022-06-01",
             "name": "[variables('dceName')]",
@@ -310,7 +298,7 @@
             }
         },
         {
-            "condition": "[or(parameters('useAzureMonitorPrivateLinkScope'), parameters('enableHighLogScaleMode'))]",
+            "condition": "[or(parameters('useAzureMonitorPrivateLinkScope'), variables('enableHighLogScaleMode'))]",
             "type": "Microsoft.Resources/deployments",
             "name": "[Concat('aks-monitoring-msi-dcea', '-',  uniqueString(parameters('aksResourceId')))]",
             "apiVersion": "2017-05-10",

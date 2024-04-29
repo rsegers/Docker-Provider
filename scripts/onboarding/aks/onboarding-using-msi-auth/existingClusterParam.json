@@ -97,9 +97,6 @@
     },
     "azureMonitorPrivateLinkScopeResourceId": {
       "value": "/subscriptions/<SubscriptionId>/resourceGroups/<ResourceGroup>/providers/microsoft.insights/privateLinkScopes/<azureMonitorPrivateLinkScopeName>"
-    },
-    "enableHighLogScaleMode": {
-      "value": false
     }
   }
 }

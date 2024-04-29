@@ -171,31 +171,26 @@ func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) 
 	for _, extensionConfig := range extensionConfigs {
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
-			if isHighLogScaleMode() && dataType == containerLogV2DataType {
-				// if high log scale mode enabled, both streams Microsoft-ContainerLogV2 & Microsoft-ContainerLogV2-HighScale exists ContainerLogV2 data type
-				// pick the GIGLA streamId to ensure ContainerLogV2 flows through GIG-LA route
-				if isGiGLAStream(outputStreamID.(string)) {
-					if hasNamedPipe {
-						datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
-					} else {
-						datatypeOutputStreamMap[dataType] = outputStreamID.(string)
-					}
-				}
-			} else {
+			////BUG - if DCR has both streams Microsoft-ContainerLogV2 & Microsoft-ContainerLogV2-HighScale, AMA ingests duplicate records hence ensure only stream in the DCR dependening on high log scale or not
+			// if isHighLogScaleMode() && dataType == containerLogV2DataType {
+			// 	// if high log scale mode enabled, both streams Microsoft-ContainerLogV2 & Microsoft-ContainerLogV2-HighScale exists ContainerLogV2 data type
+			// 	// pick the GIGLA streamId to ensure ContainerLogV2 flows through GIG-LA route
+			// 	if isGiGLAStream(outputStreamID.(string)) {
+			// 		if hasNamedPipe {
+			// 			datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
+			// 		} else {
+			// 			datatypeOutputStreamMap[dataType] = outputStreamID.(string)
+			// 		}
+			// 	}
+			// } else {
 				if hasNamedPipe {
 					datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
 				} else {
 					datatypeOutputStreamMap[dataType] = outputStreamID.(string)
 				}
-		   }
+		//    }
 		}
 	}
-
-	// for debugging print the map
-	for key, value := range datatypeOutputStreamMap {
-		message := fmt.Sprintf("datatype: %s streamId: %s", key, value)
-		logger.Printf(message)
-    }
 
 	return datatypeOutputStreamMap, nil
 }
