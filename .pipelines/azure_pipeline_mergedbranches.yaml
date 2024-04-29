@@ -482,8 +482,8 @@ jobs:
   - task: BinSkim@3
     inputs:
       toolVersion: Latest
-      InputType:   CommandLine
-      arguments:   analyze $(Build.ArtifactStagingDirectory) --recurse
+      InputType: CommandLine
+      arguments: analyze $(Build.ArtifactStagingDirectory)\ossSigning\BouncyCastle.Crypto.dll $(Build.ArtifactStagingDirectory)\ossSigning\Newtonsoft.Json.dll --recurse
 
   - task: PowerShell@2
     displayName: Replace files in origin Image
@@ -699,7 +699,7 @@ jobs:
     inputs:
       toolVersion: Latest
       InputType:   CommandLine
-      arguments:   analyze $(Build.ArtifactStagingDirectory)/ossSigning --recurse
+      arguments:   analyze --rich-return-code $(Build.ArtifactStagingDirectory)\ossSigning\*.dll --recurse
 
   - task: PowerShell@2
     displayName: Replace files in origin Image
