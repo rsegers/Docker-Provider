@@ -483,7 +483,7 @@ jobs:
     inputs:
       toolVersion: Latest
       InputType: CommandLine
-      arguments: analyze $(Build.ArtifactStagingDirectory)\ossSigning\BouncyCastle.Crypto.dll $(Build.ArtifactStagingDirectory)\ossSigning\Newtonsoft.Json.dll --recurse
+      arguments: analyze $(Build.ArtifactStagingDirectory)\ossSigning\out_oms.so $(Build.ArtifactStagingDirectory)\ossSigning\perf.so $(Build.ArtifactStagingDirectory)\ossSigning\containerinventory.so $(Build.ArtifactStagingDirectory)\fpSigning\livenessprobe.exe $(Build.ArtifactStagingDirectory)\fpSigning\CertificateGenerator.exe $(Build.ArtifactStagingDirectory)\fpSigning\CertificateGenerator.dll
 
   - task: PowerShell@2
     displayName: Replace files in origin Image
@@ -698,8 +698,8 @@ jobs:
   - task: BinSkim@3
     inputs:
       toolVersion: Latest
-      InputType:   CommandLine
-      arguments:   analyze --rich-return-code $(Build.ArtifactStagingDirectory)\ossSigning\*.dll --recurse
+      InputType: CommandLine
+      arguments: analyze $(Build.ArtifactStagingDirectory)\ossSigning\out_oms.so $(Build.ArtifactStagingDirectory)\ossSigning\perf.so $(Build.ArtifactStagingDirectory)\ossSigning\containerinventory.so $(Build.ArtifactStagingDirectory)\fpSigning\livenessprobe.exe $(Build.ArtifactStagingDirectory)\fpSigning\CertificateGenerator.exe $(Build.ArtifactStagingDirectory)\fpSigning\CertificateGenerator.dll
 
   - task: PowerShell@2
     displayName: Replace files in origin Image
