@@ -135,22 +135,6 @@ jobs:
       toolVersion: Latest
       targetDirectory: '$(Build.SourcesDirectory)'
 
-- job: SDL_Policheck_Scan
-  displayName: "SDL: policheck scanning"
-  pool:
-    name: Azure-Pipelines-Windows-CI-Test-EO
-  variables:
-    skipComponentGovernanceDetection: true
-  steps:
-    - checkout: self
-      submodules: true
-
-    - task: PoliCheck@2
-      displayName: "SDL : Run PoliCheck"
-      inputs:
-        targetType: 'F'
-        targetArgument: '$(Build.SourcesDirectory)'
-
 - job: build_linux
   timeoutInMinutes: 120
   dependsOn: common
@@ -486,6 +470,12 @@ jobs:
       arguments: 'analyze --rich-return-code $(Build.ArtifactStagingDirectory)\ossSigning\out_oms.so $(Build.ArtifactStagingDirectory)\ossSigning\perf.so $(Build.ArtifactStagingDirectory)\ossSigning\containerinventory.so $(Build.ArtifactStagingDirectory)\fpSigning\livenessprobe.exe $(Build.ArtifactStagingDirectory)\fpSigning\CertificateGenerator.exe $(Build.ArtifactStagingDirectory)\fpSigning\CertificateGenerator.dll'
     retryCountOnTaskFailure: 1
 
+  - task: PoliCheck@2
+    displayName: "SDL : Run PoliCheck"
+    inputs:
+      targetType: 'F'
+      targetArgument: '$(Build.SourcesDirectory)'
+
   - task: PowerShell@2
     displayName: Replace files in origin Image
     inputs:
@@ -702,6 +692,12 @@ jobs:
       InputType: 'CommandLine'
       arguments: 'analyze --rich-return-code $(Build.ArtifactStagingDirectory)\ossSigning\out_oms.so $(Build.ArtifactStagingDirectory)\ossSigning\perf.so $(Build.ArtifactStagingDirectory)\ossSigning\containerinventory.so $(Build.ArtifactStagingDirectory)\fpSigning\livenessprobe.exe $(Build.ArtifactStagingDirectory)\fpSigning\CertificateGenerator.exe $(Build.ArtifactStagingDirectory)\fpSigning\CertificateGenerator.dll'
     retryCountOnTaskFailure: 1
+
+  - task: PoliCheck@2
+    displayName: "SDL : Run PoliCheck"
+    inputs:
+      targetType: 'F'
+      targetArgument: '$(Build.SourcesDirectory)'
 
   - task: PowerShell@2
     displayName: Replace files in origin Image
