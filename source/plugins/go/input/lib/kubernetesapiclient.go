@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
 	"io/ioutil"
 	"log"
 	"math"
@@ -15,6 +14,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 const (
@@ -155,7 +156,7 @@ func GetTokenStr() string {
 					TokenExpiry = time.Now().Unix() + int64(LEGACY_SERVICE_ACCOUNT_TOKEN_EXPIRY_SECONDS)
 				}
 			} else {
-				logger.Println("Unable to read token string from %s: %v\n", TokenFileName, readErr)
+				logger.Printf("Unable to read token string from %s: %v\n", TokenFileName, readErr)
 				TokenExpiry = time.Now().Unix()
 				TokenStr = ""
 			}
@@ -328,4 +329,59 @@ func GetClusterName() string {
 		}
 	}
 	return ClusterName
+}
+
+func GetNodesResourceUri(nodesResourceUri string) string {
+	if isAROV3Cluster() {
+		if nodesResourceUri != "" && strings.Contains(nodesResourceUri, "?") {
+			nodesResourceUri += "&labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
+		} else {
+			nodesResourceUri += "labelSelector=node-role.kubernetes.io%2Fcompute%3Dtrue"
+		}
+	}
+	return nodesResourceUri
+}
+
+func isAROV3Cluster() bool {
+	cluster := GetClusterID()
+	dCluster := strings.ToLower(cluster)
+	if cluster != "" && strings.Contains(dCluster, "/microsoft.containerservice/openshiftmanagedclusters") {
+		IsAROV3Cluster = true
+	}
+	return IsAROV3Cluster
+}
+
+func GetKubeResourceInfo(resource string) (map[string]interface{}, error) {
+	response, err := getKubeResourceInfo(resource, nil)
+	if err != nil {
+		return nil, err
+	}
+	body, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, err
+	}
+	if response != nil {
+		defer response.Body.Close()
+	}
+
+	var data map[string]interface{}
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		return nil, err
+	}
+
+	return data, nil
+}
+
+func GetKubeAPIServerUrl() string {
+	kubernetesServiceHost := os.Getenv("KUBERNETES_SERVICE_HOST")
+	kubernetesPort443TcpPort := os.Getenv("KUBERNETES_PORT_443_TCP_PORT")
+
+	if kubernetesServiceHost != "" && kubernetesPort443TcpPort != "" {
+		return fmt.Sprintf("https://%s:%s", kubernetesServiceHost, kubernetesPort443TcpPort)
+	} else {
+		log.Printf("Kubernetes environment variable not set KUBERNETES_SERVICE_HOST: %s KUBERNETES_PORT_443_TCP_PORT: %s. Unable to form resourceUri", kubernetesServiceHost, kubernetesPort443TcpPort)
+	}
+
+	return ""
 }

@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -221,7 +222,6 @@ func getResponse(winNode map[string]string, relativeUri string) (*http.Response,
 			Log.Errorf("Failed to get HTTP response: %s", err)
 			return nil, err
 		}
-		// defer response.Body.Close()
 
 		Log.Infof("Got response code %d from %s", response.StatusCode, uri.RequestURI())
 	}
@@ -230,6 +230,14 @@ func getResponse(winNode map[string]string, relativeUri string) (*http.Response,
 }
 
 func GetMetrics(winNode map[string]string, namespaceFilteringMode string, namespaces []string, metricTime string) []metricDataItem {
+	defer func() {
+		if r := recover(); r != nil {
+			stacktrace := debug.Stack()
+			Log.Printf("GetMetrics: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
+			SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+		}
+	}()
+
 	cAdvisorStats, err := getSummaryStatsFromCAdvisor(winNode)
 
 	if err != nil {
@@ -237,7 +245,8 @@ func GetMetrics(winNode map[string]string, namespaceFilteringMode string, namesp
 		telemetryProps := make(map[string]string)
 		telemetryProps["Computer"] = hostName
 		SendExceptionTelemetry(err.Error(), telemetryProps)
-	} else {
+	}
+	if cAdvisorStats != nil {
 		defer cAdvisorStats.Body.Close()
 	}
 
@@ -324,6 +333,14 @@ func GetMetricsHelper(metricInfo map[string]interface{}, winNode map[string]stri
 }
 
 func GetInsightsMetrics(winNode map[string]string, namespaceFilteringMode string, namespaces []string, metricTime string) []metricDataItem {
+	defer func() {
+		if r := recover(); r != nil {
+			stacktrace := debug.Stack()
+			Log.Printf("GetInsightsMetrics: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
+			SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+		}
+	}()
+
 	metricDataItems := []metricDataItem{}
 	cAdvisorStats, err := getSummaryStatsFromCAdvisor(winNode)
 	if err != nil {
@@ -331,9 +348,11 @@ func GetInsightsMetrics(winNode map[string]string, namespaceFilteringMode string
 		telemetryProps := make(map[string]string)
 		telemetryProps["Computer"] = hostName
 		SendExceptionTelemetry(err.Error(), telemetryProps)
-	} else {
+	}
+	if cAdvisorStats != nil {
 		defer cAdvisorStats.Body.Close()
 	}
+
 	var metricInfo map[string]interface{}
 	if cAdvisorStats != nil {
 		bodybytes, err := io.ReadAll(cAdvisorStats.Body)
@@ -418,7 +437,11 @@ func getContainerMemoryMetricItems(metricInfo map[string]interface{}, hostName, 
 
 				containerName, _ := containerData["name"].(string)
 				containerDataMemory := containerData["memory"]
-				metricValue := containerDataMemory.(map[string]interface{})[metricKey].(float64)
+				metricValue, ok := containerDataMemory.(map[string]interface{})[metricKey].(float64)
+				if !ok {
+					Log.Warnf("CHECK::Error: metricValue is not a float64. %v", containerDataMemory)
+					continue
+				}
 
 				metricItem := metricDataItem{}
 				metricItem["Timestamp"] = metricTime
@@ -519,7 +542,10 @@ func getContainerCpuMetricItemRate(metricInfo map[string]interface{}, hostName, 
 
 				containerName, _ := containerData["name"].(string)
 				containerDataCpu := containerData["cpu"]
-				metricValue := containerDataCpu.(map[string]interface{})[metricKey].(float64)
+				metricValue, ok := containerDataCpu.(map[string]interface{})[metricKey].(float64)
+				if !ok {
+					continue
+				}
 
 				metricItem := metricDataItem{}
 				metricItem["Timestamp"] = metricTime
@@ -970,7 +996,10 @@ func getContainerCpuMetricItems(metricInfo map[string]interface{}, hostName, met
 
 				containerName, _ := containerData["name"].(string)
 				containerDataCpu := containerData["cpu"]
-				metricValue := containerDataCpu.(map[string]interface{})[metricKey].(float64)
+				metricValue, ok := containerDataCpu.(map[string]interface{})[metricKey].(float64)
+				if !ok {
+					continue
+				}
 
 				metricItem := metricDataItem{}
 				metricItem["Timestamp"] = metricTime
@@ -1125,7 +1154,7 @@ func getContainerGpuMetricsAsInsightsMetrics(metricInfo map[string]interface{}, 
 					continue
 				}
 				for _, accelerator := range accelerators {
-					metricValue := accelerator.(map[string]interface{})[metricKey]
+					metricValue, ok := accelerator.(map[string]interface{})[metricKey]
 					if !ok {
 						continue
 					}
@@ -1240,7 +1269,7 @@ func getPersistentVolumeMetrics(metricInfo map[string]interface{}, hostName, met
 					metricTags[INSIGHTSMETRICS_TAGS_PV_CAPACITY_BYTES] = fmt.Sprintf("%.0f", parsedVolume["capacityBytes"].(float64))
 
 					jsonTags, err := json.Marshal(metricTags)
-					if (err != nil) {
+					if err != nil {
 						Log.Warnf("Error marshaling metricTags: %s", err)
 						continue
 					}
@@ -1279,7 +1308,7 @@ func ClearDeletedWinContainersFromCache() {
 	}
 
 	if len(winContainersToBeCleared) > 0 {
-		Log.Println("Stale containers found in cache, clearing...: %v", winContainersToBeCleared)
+		Log.Printf("Stale containers found in cache, clearing...: %v", winContainersToBeCleared)
 	}
 
 	for _, containerId := range winContainersToBeCleared {

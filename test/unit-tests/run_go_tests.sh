@@ -7,6 +7,6 @@ echo "# Runnign go generate"
 go generate
 
 echo "# Running go test ."
-go test .
+ISTEST=true go test .
 
 cd $OLD_PATH
