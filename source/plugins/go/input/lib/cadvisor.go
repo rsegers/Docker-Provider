@@ -1156,6 +1156,7 @@ func getContainerGpuMetricsAsInsightsMetrics(metricInfo map[string]interface{}, 
 				for _, accelerator := range accelerators {
 					metricValue, ok := accelerator.(map[string]interface{})[metricKey]
 					if !ok {
+						Log.Warnf("Error: metricKey %v not found in the accelerator", metricKey)
 						continue
 					}
 					containerName, _ := containerData["name"].(string)
