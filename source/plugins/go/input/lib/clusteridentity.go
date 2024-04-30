@@ -52,7 +52,7 @@ func NewArcK8sClusterIdentity() *ArcK8sClusterIdentity {
 		logPath = "/etc/amalogswindows/arc_k8s_cluster_identity.log"
 	}
 
-	isTestEnv := os.Getenv("ISTEST") == "true"
+	isTestEnv := os.Getenv("GOUNITTEST") == "true"
 	if isTestEnv {
 		logPath = "./arc_k8s_cluster_identity.log"
 	}

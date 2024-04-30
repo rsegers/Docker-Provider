@@ -87,7 +87,7 @@ func init() {
 		LogPath = LinuxLogPath + "kubernetes_perf_log.txt"
 	}
 
-	isTestEnv := os.Getenv("ISTEST") == "true"
+	isTestEnv := os.Getenv("GOUNITTEST") == "true"
 	if isTestEnv {
 		LogPath = "./kubernetes_perf_log.txt"
 	}

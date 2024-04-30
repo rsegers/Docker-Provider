@@ -73,7 +73,7 @@ func (p *perfPlugin) Init(ctx context.Context, fbit *plugin.Fluentbit) error {
 		logPath = "/var/opt/microsoft/docker-cimprov/log/fluent-bit-input.log"
 	}
 
-	isTestEnv := os.Getenv("ISTEST") == "true"
+	isTestEnv := os.Getenv("GOUNITTEST") == "true"
 	if isTestEnv {
 		logPath = "./fluent-bit-input-test.log"
 	}

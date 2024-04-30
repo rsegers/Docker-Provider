@@ -28,7 +28,7 @@ func init() {
 		logPath = "/var/opt/microsoft/docker-cimprov/log/fluent-bit-input.log"
 	}
 
-	isTestEnv := os.Getenv("ISTEST") == "true"
+	isTestEnv := os.Getenv("GOUNITTEST") == "true"
 	if isTestEnv {
 		logPath = "./fluent-bit-input.log"
 	}

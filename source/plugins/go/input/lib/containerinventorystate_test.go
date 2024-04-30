@@ -110,7 +110,7 @@ func compareStringSlices(s1, s2 []string) bool {
 func setup() {
 	inventoryDirectory = "./testData" // A temporary test directory to use as inventoryDirectory
 	os.Setenv("TESTDIR", inventoryDirectory)
-	os.Setenv("ISTEST", "true")
+	os.Setenv("GOUNITTEST", "true")
 }
 
 // teardown function to be called after running all tests

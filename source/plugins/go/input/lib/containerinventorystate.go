@@ -11,7 +11,7 @@ type Container map[string]interface{}
 
 func getInventoryDirectory() string {
 	osType := os.Getenv("OS_TYPE")
-	isTestEnv := os.Getenv("ISTEST") == "true"
+	isTestEnv := os.Getenv("GOUNITTEST") == "true"
 	if isTestEnv {
 		return os.Getenv("TESTDIR")
 	}

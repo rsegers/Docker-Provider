@@ -58,7 +58,7 @@ func init() {
 		logPath = "/var/opt/microsoft/docker-cimprov/log/appinsights_error.log"
 	}
 
-	isTestEnv := os.Getenv("ISTEST") == "true"
+	isTestEnv := os.Getenv("GOUNITTEST") == "true"
 	if isTestEnv {
 		logPath = "./appinsights_error.log"
 	}

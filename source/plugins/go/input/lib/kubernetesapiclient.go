@@ -47,7 +47,7 @@ var (
 
 func init() {
 	// Define log path
-	isTestEnv := os.Getenv("ISTEST") == "true"
+	isTestEnv := os.Getenv("GOUNITTEST") == "true"
 	osType := os.Getenv("OS_TYPE")
 	if osType != "" && osType == "windows" {
 		LogPath = WindowsLogPath + "kubernetes_client_log.txt"
