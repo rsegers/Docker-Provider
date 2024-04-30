@@ -234,7 +234,7 @@ func GetMetrics(winNode map[string]string, namespaceFilteringMode string, namesp
 		if r := recover(); r != nil {
 			stacktrace := debug.Stack()
 			Log.Printf("GetMetrics: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
-			SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+			SendException(fmt.Sprintf("Error:GetMetrics: %v, stackTrace: %v", r, stacktrace))
 		}
 	}()
 
@@ -337,7 +337,7 @@ func GetInsightsMetrics(winNode map[string]string, namespaceFilteringMode string
 		if r := recover(); r != nil {
 			stacktrace := debug.Stack()
 			Log.Printf("GetInsightsMetrics: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
-			SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+			SendException(fmt.Sprintf("Error:GetInsightsMetrics: %v, stackTrace: %v", r, stacktrace))
 		}
 	}()
 

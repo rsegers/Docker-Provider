@@ -1360,8 +1360,8 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 	defer func() {
 		if r := recover(); r != nil {
 			stacktrace := debug.Stack()
-			Log("MDMLog: Error processing cadvisor metrics records: %v, stacktrace: %v", r, stacktrace)
-			SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+			Log("Error::PostInputPluginRecords Error processing cadvisor metrics records: %v, stacktrace: %v", r, stacktrace)
+			SendException(fmt.Sprintf("Error:PostInputPluginRecords: %v, stackTrace: %v", r, stacktrace))
 		}
 	}()
 

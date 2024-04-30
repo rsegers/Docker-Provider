@@ -169,7 +169,7 @@ func (p perfPlugin) enumerate() ([]map[string]interface{}, []map[string]interfac
 		if r := recover(); r != nil {
 			stacktrace := debug.Stack()
 			FLBLogger.Printf("perf::enumerate: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
-			lib.SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+			lib.SendException(fmt.Sprintf("Error:perf: %v, stackTrace: %v", r, stacktrace))
 		}
 	}()
 

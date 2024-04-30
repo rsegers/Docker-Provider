@@ -135,7 +135,7 @@ func (p containerInventoryPlugin) enumerate() []map[string]interface{} {
 		if r := recover(); r != nil {
 			stacktrace := debug.Stack()
 			FLBLogger.Printf("perf::enumerate: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
-			lib.SendException(fmt.Sprintf("Error: %v, stackTrace: %v", r, stacktrace))
+			lib.SendException(fmt.Sprintf("Error:containerinventory: %v, stackTrace: %v", r, stacktrace))
 		}
 	}()
 
