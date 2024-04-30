@@ -61,9 +61,9 @@ end
 
 def substituteStorageTotalLimitSize(new_contents)
    if is_high_log_scale_mode?
-      new_contents = new_contents.gsub("${STORAGE_TOTAL_LIMIT_SIZE_MB}", "storage.total_limit_size        1000M")
+      new_contents = new_contents.gsub("${OMS_STORAGE_TOTAL_LIMIT_SIZE_MB}", "storage.total_limit_size        1000M")
    else
-      new_contents = new_contents.gsub("\n    ${STORAGE_TOTAL_LIMIT_SIZE_MB}\n", "\n")
+      new_contents = new_contents.gsub("\n    ${OMS_STORAGE_TOTAL_LIMIT_SIZE_MB}\n", "\n")
    end
    return new_contents
 end
