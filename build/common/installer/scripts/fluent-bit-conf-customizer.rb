@@ -59,6 +59,15 @@ def substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
     return new_contents
 end
 
+def substituteStorageTotalLimitSize(new_contents)
+   if is_high_log_scale_mode?
+      new_contents = new_contents.gsub("${STORAGE_TOTAL_LIMIT_SIZE_MB}", "storage.total_limit_size        1000M")
+   else
+      new_contents = new_contents.gsub("\n    ${STORAGE_TOTAL_LIMIT_SIZE_MB}\n", "\n")
+   end
+   return new_contents
+end
+
 def substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
   #Update the config file only in two conditions: 1. Linux and resource optimization is enabled 2. Windows and using aad msi auth and not using geneva logs integration
   if (!@isWindows && !resourceOptimizationEnabled.nil? && resourceOptimizationEnabled.to_s.downcase == "true") || (@isWindows && @using_aad_msi_auth && !@geneva_logs_integration)
@@ -183,6 +192,7 @@ def substituteFluentBitPlaceHolders
 
     puts "config::Starting to substitute the placeholders in fluent-bit-common.conf file for log collection"
     text = File.read(@fluent_bit_common_conf_path)
+    text = substituteStorageTotalLimitSize(text)
     new_contents = substituteMultiline(multilineLogging, stacktraceLanguages, text)
     File.open(@fluent_bit_common_conf_path, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in fluent-bit-common.conf file"
