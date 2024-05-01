@@ -21,6 +21,23 @@ export interface ILabels {
     app: string;
 }
 
+export interface IInstrumentationState {
+    crName: string;
+    crResourceVersion: string;
+    platforms: string[];
+}
+
+export const InstrumentationAnnotationName = "monitor.azure.com/instrumentation";
+export const FluentBitIoExcludeAnnotationName = "fluentbit.io/exclude";
+export const FluentBitIoExcludeBeforeMutationAnnotationName = "monitor.azure.com/fluentbit.io-exclude-before-auto-instrumentation";
+export interface IAnnotations {
+    "instrumentation.opentelemetry.io/inject-dotnet"?: string;
+    "instrumentation.opentelemetry.io/inject-java"?: string;
+    "instrumentation.opentelemetry.io/inject-nodejs"?: string;
+
+    [key: string]: string;
+}
+
 export interface IOwnerReference {
     kind: string;
     name: string;
@@ -30,10 +47,9 @@ export interface IOwnerReference {
 export interface IMetadata {
     name: string;
     namespace: string;
-    creationTimestamp: string;
-    labels: ILabels;
-    annotations: object;
-    generateName?: string;
+    uid: string;
+    labels?: ILabels;
+    annotations?: IAnnotations;
     ownerReferences?: IOwnerReference[];
 }
 
@@ -45,15 +61,6 @@ export interface ISelector {
     matchLabels: IMatchLabels;
 }
 
-export interface ILabels2 {
-    app: string;
-}
-
-export interface IMetadata2 {
-    creationTimestamp: string;
-    labels: ILabels2;
-}
-
 export interface IPort {
     containerPort: number;
     protocol: string;
@@ -61,15 +68,17 @@ export interface IPort {
 
 export interface ILimits {
     cpu: string;
+    memory: string;
 }
 
 export interface IRequests {
     cpu: string;
+    memory: string;
 }
 
 export interface IResources {
-    limits: ILimits;
     requests: IRequests;
+    limits: ILimits;
 }
 
 export interface IContainer {
@@ -83,7 +92,7 @@ export interface IContainer {
     terminationMessagePolicy?: string;
     imagePullPolicy?: string;
     env?: IEnvironmentVariable[];
-    volumeMounts?: object[];
+    volumeMounts?: IVolumeMount[];
 }
 
 export interface IVolume {
@@ -91,21 +100,14 @@ export interface IVolume {
     emptyDir?: object;
 }
 
-export interface ISpec2 {
-    containers: IContainer[];
-    restartPolicy: string;
-    terminationGracePeriodSeconds: number;
-    dnsPolicy: string;
-    nodeSelector: object;
-    securityContext: object;
-    schedulerName: string;
-    initContainers?: object;
-    volumes?: IVolume[];
+export interface IVolumeMount {
+    name: string;
+    mountPath: string;
 }
 
 export interface ITemplate {
-    metadata: IMetadata2;
-    spec: ISpec2;
+    metadata: IMetadata;
+    spec: ISpec;
 }
 
 export interface IRollingUpdate {
@@ -122,10 +124,10 @@ export interface ISpec {
     replicas: number;
     selector: ISelector;
     template: ITemplate;
-    strategy: IStrategy;
-    minReadySeconds: number;
-    revisionHistoryLimit: number;
-    progressDeadlineSeconds: number;
+    strategy?: IStrategy;
+    minReadySeconds?: number;
+    revisionHistoryLimit?: number;
+    progressDeadlineSeconds?: number;
     initContainers?: IContainer[];
     volumes?: IVolume[];
     containers?: IContainer[];
@@ -141,6 +143,10 @@ export interface IObjectType {
 
 export interface IEnvironmentVariable {
     name: string;
+    value?: string;
+    valueFrom?: object;
+    doNotSet?: boolean; // indicates we shouldn't set this environment variable during mutation
+    platformSpecific?: AutoInstrumentationPlatforms; // indicates this environment is platform-specific
 }
 
 export interface IRequest {
@@ -164,21 +170,38 @@ export interface IAdmissionReview {
 
 export class PodInfo {
     namespace: string;
-    name: string;
-    deploymentName: string;
+    ownerKind: string;
+    ownerUid: string;
+    ownerName: string;
     onlyContainerName: string;
-    ownerReference: IOwnerReference;
 }
 
-export class AppMonitoringConfigCR {
+export enum AutoInstrumentationPlatforms {
+    DotNet = "DotNet",
+    Java = "Java",
+    NodeJs = "NodeJs"
+}
+
+export const DefaultInstrumentationCRName = "default";
+
+export class InstrumentationCR {
     metadata: {
         name: string,
-        namespace: string
+        namespace: string,
+        resourceVersion?: string
     };
     spec: {
-        autoInstrumentationPlatforms: string[];
-        aiConnectionString: string;
-        deployments: string[]
+        settings: {
+            autoInstrumentationPlatforms: AutoInstrumentationPlatforms[];
+            imageRepoPath?: string;
+            logCollectionSettings?: {
+                disableAppLogs?: boolean;
+                disableContainerLogs?: boolean;
+            }
+        },
+        destination: {
+            applicationInsightsConnectionString: string;
+        }
     }
 }
 
@@ -188,6 +211,6 @@ export class ListResponse {
         metadata: {
             resourceVersion: string
         };
-        items: AppMonitoringConfigCR[]
+        items: InstrumentationCR[]
     }
 }

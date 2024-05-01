@@ -216,7 +216,7 @@ jobs:
         cat java-test-app.yaml | envsubst | kubectl delete -f -
         cat dotnet-test-app.yaml | envsubst | kubectl delete -f -
         cat node-test-app.yaml | envsubst | kubectl delete -f -
-        car appmonitoring-cr.yaml | envsubst | kubectl delete -f -
+        cat appmonitoring-cr.yaml | envsubst | kubectl delete -f -
 
         echo "Wait for 10s for everything to clear up..."
         sleep 10
@@ -247,7 +247,7 @@ jobs:
         az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }}
         
         sudo chmod u+x ./validate-mutation.sh
-        ./validate-mutation.sh "dotnet-test-app" "java-test-app" "nodejs-test-app" "test-ns"
+        ./validate-mutation.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "test-ns"
 
   - task: AzureCLI@2
     displayName: "Check test apps are sending telemetry to AI"
@@ -268,7 +268,7 @@ jobs:
         sleep 180
         
         sudo chmod u+x ./validate_ai.sh
-        ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}"
+        ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}" "test-ns"
 
   - task: AzureCLI@2
     displayName: "Retag the image as ready to deploy"

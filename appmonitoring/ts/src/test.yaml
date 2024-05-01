@@ -1,51 +1,114 @@
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
-  name: appmonitoringconfigs.azmon.app.monitoring # name must match the spec fields below, and be in the form: <plural>.<group>
+  name: instrumentations.monitor.azure.com # name must match the spec fields below, and be in the form: <plural>.<group>
 spec:
-  group: azmon.app.monitoring # group name to use for REST API: /apis/<group>/<version>
+  group: monitor.azure.com # group name to use for REST API: /apis/<group>/<version>
   names:
-    plural: appmonitoringconfigs # plural name to be used in the URL: /apis/<group>/<version>/<plural>
-    singular: appmonitoringconfig # singular name to be used as an alias on the CLI and for display
-    kind: appmonitoringconfig # kind is normally the CamelCased singular type. Your resource manifests use this.
-    shortNames: # shortNames allow shorter string to match your resource on the CLI
-    - appmonitoring
+    plural: instrumentations # plural name to be used in the URL: /apis/<group>/<version>/<plural>
+    singular: instrumentation # singular name to be used as an alias on the CLI and for display
+    kind: Instrumentation # kind is normally the PascalCase singular type. Your resource manifests use this.
   scope: Namespaced # either Namespaced or Cluster
   versions:
     - name: v1
-      served: true # Each version can be enabled/disabled by Served flag.
-      storage: true # One and only one version must be marked as the storage version.
+      served: true # each version can be enabled/disabled. Defines whether k8s will serve this version to clients if asked to.
+      storage: true # one and only one version must be marked as the storage version. This is how all CRs will be stored internally when crated.
       schema:
         openAPIV3Schema:
+          description: >-
+            Configures application monitoring in the current namespace. Multiple CRs of this kind are allowed within a namespace. 
+            
+            CR named _default_ will be used for every workload in the namespace unless speicifically overridden through annotations.
+            To use a different CR _crName_ for a particular workload, mark it with _instrumentation.opentelemetry.io/inject-\<language\>="\<crName\>"_ annotation.
+
+            Multiple annotations (for different languages) may be applied to the same workload. Annotations must be placed at the workload's spec level (_spec.template.metadata.annotations_) level. Currently, only deployments are supported.
+            
+            Examples of annotation usage:
+
+            instrumentation.opentelemetry.io/inject-java="true"
+            Uses the default CR for the namespace with Java instrumentation (regardless of which languages the default CR specifies)
+
+            instrumentation.opentelemetry.io/inject-java="false"
+            Disables all instrumentation regardless of which languages the default CR specifies, or which language-specific annotation is used.
+
+            instrumentation.opentelemetry.io/inject-java="true"
+            instrumentation.opentelemetry.io/inject-dotnet="true"
+            Uses the default CR for the namespace with Java and .NET instrumentation (regardless of which languages the default CR specifies)
+
+            instrumentation.opentelemetry.io/inject-java="true"
+            instrumentation.opentelemetry.io/inject-dotnet="false"
+            Uses the default CR for the namespace with Java (regardless of which languages the default CR specifies)
+
+            instrumentation.opentelemetry.io/inject-java="alternativeCrInThisNamespace"
+            Uses a different, non-default CR named _alternativeCrInThisNamespace_ found within the namespace with Java instrumentation (regardless of which languages that CR specifies)
+
+            instrumentation.opentelemetry.io/inject-java="crName1"
+            instrumentation.opentelemetry.io/inject-dotnet="crName2"
+            Invalid configuration, deployment will fail.
+
+            instrumentation.opentelemetry.io/inject-dotnet="crThatDoesNotExist"
+            Invalid configuration since the CR does not exist, deployment will continue with no instrumentation.
           type: object
+          required:
+            - spec
           properties:
             spec:
               type: object
+              required: 
+                - settings
+                - destination
               properties:
-                autoInstrumentationPlatforms:
-                  type: array
-                  default: [ DotNet, Java, NodeJs, OpenTelemetry ]
-                  nullable: false
-                  minItems: 0
-                  maxItems: 4
-                  items:
-                    type: string
-                    enum:
-                    - DotNet
-                    - Java
-                    - NodeJs
-                    - OpenTelemetry
-                aiConnectionString:
-                  type: string
-                  nullable: false
-                deployments:
-                  type: array
-                  default: []
-                  nullable: false
-                  items:
-                    type: string
-              required: [ aiConnectionString ]
-          required: [ spec ]
+                settings:
+                  description: Determines which settings to apply as part of this configuration.
+                  type: object
+                  required:
+                    - autoInstrumentationPlatforms
+                  properties:
+                    imageRepoPath:
+                      description: "Path to a repository to fetch auto-instrumentation images from. Only use if you have an Artifact Cache set up to host related images normally found on Microsoft Container Registry (MCR). See here for details: https://learn.microsoft.com/en-us/azure/container-registry/tutorial-artifact-cache"
+                      type: string
+                    autoInstrumentationPlatforms:
+                      description: List of auto-instrumentation platforms to use (must match the type of the application running in the container). Can be empty to use none. Ignored for named (non-default) CRs.
+                      type: array
+                      minItems: 0
+                      items:
+                        type: string
+                        enum:
+                          - DotNet
+                          - Java
+                          - NodeJs
+                    logCollectionSettings:
+                      description: >-
+                        Before this configuration is applied, Azure Monitor already collects pod console output and uploads it to ConsoleLog / ConsoleLogV2 tables in the associated Log Analytics Workspace by Azure Monitor Container Insights.
+                        Logs that were output via the console lose distributed tracing context and cannot be visualized in the end-to-end transaction details experience.
+                        The following flags allow for configuring what works best for a particular monitoring scenario.
+                      type: object
+                      properties:
+                        disableAppLogs:
+                          description: >-
+                            Controls whether logs produced by standard logging framework are uploaded to Application Insights.
+                            Different languages may support different logging frameworks, and support will change over time.
+                            Note: enabling this flag without disabling console output (either through the flag in this setion or by removing the console adapters when configuring the SDK) might result in double collection of logs and higher cost.
+                          type: boolean
+                          default: false
+                        disableContainerLogs:
+                          description: >-
+                            Controls whether console output from the container should be collected in the associated Log Analytics Workspace.
+                            Disabling container logs collection will result in lower costs if that output is already collected by the language-specific SDK.
+                            Note: if your application outputs to console using an unsupported framework, disabling container console output might result in lost logs.
+                            If you have workloads/containers outside of your application (such as Nginx) which output to console, setting this flag will disable output from those pods as well if this CR is applied to those workloads/containers.
+                          type: boolean
+                          default: false
+                  
+                destination:
+                  description: Sink for telemetry data
+                  type: object
+                  required:
+                    - applicationInsightsConnectionString
+                  properties:
+                    applicationInsightsConnectionString:
+                      description: Connection string of the Application Insights component to send telemetry data to.
+                      type: string
 ---
 
 apiVersion: v1
@@ -60,10 +123,10 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: appmonitoringconfig-crd-watcher
+  name: instrumentation-crd-watcher
 rules:
-- apiGroups: ["azmon.app.monitoring"]
-  resources: ["appmonitoringconfigs"]
+- apiGroups: ["monitor.azure.com"]
+  resources: ["instrumentations"]
   verbs: ["get", "watch", "list"]
 ---
 
@@ -77,28 +140,28 @@ subjects:
   namespace: kube-system
 roleRef:
   kind: ClusterRole
-  name: appmonitoringconfig-crd-watcher
+  name: instrumentation-crd-watcher
   apiGroup: rbac.authorization.k8s.io
 ---
 
-# apiVersion: v1
-# kind: Secret
-# metadata:
-#   name: app-monitoring-webhook-cert
-#   namespace: default
-# data:
-#   ca.cert: Y2FDZXJ0
-#   tls.cert: dGxzQ2VydA==
-#   tls.key: dGxzS2V5
-# ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-monitoring-webhook-cert
+  namespace: kube-system
+data:
+  ca.cert: Y2FDZXJ0
+  tls.cert: dGxzQ2VydA==
+  tls.key: dGxzS2V5
+---
 
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: app-monitoring-webhook-deployment
+  name: app-monitoring-webhook
   namespace: kube-system
   labels:
-    app: app-monitoring-webhook-deployment
+    app: app-monitoring-webhook
 spec:
   selector:
     matchLabels:
@@ -115,9 +178,9 @@ spec:
           imagePullPolicy: Always # IfNotPresent
           env: 
             - name: ARM_ID
-              value: "/subscriptions/66010356-d8a5-42d3-8593-6aaa3aeb1c11/resourceGroups/rambhatt-rnd-v2/providers/Microsoft.ContainerService/managedClusters/aks-final"
+              value: "/subscriptions/5a3b3ba4-3a42-42ae-b2cb-f882345803bc/resourcegroups/alkaplan-rg/providers/Microsoft.ContainerService/managedClusters/alkaplan-aks"
             - name: ARM_REGION
-              value: "westeastafricasouthblah"
+              value: "eastus"
           ports:
             - containerPort: 1337
           resources:
@@ -167,7 +230,7 @@ webhooks:
       - operations: ["CREATE", "UPDATE"]
         apiGroups: ["*"]
         apiVersions: ["*"]
-        resources: ["pods"] 
+        resources: ["deployments"]
     failurePolicy: Ignore
     sideEffects: None
     admissionReviewVersions: ["v1"]
