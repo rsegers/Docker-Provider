@@ -191,7 +191,6 @@ func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) 
 		//    }
 		}
 	}
-
 	return datatypeOutputStreamMap, nil
 }
 

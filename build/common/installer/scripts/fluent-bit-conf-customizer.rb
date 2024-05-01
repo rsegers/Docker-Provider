@@ -61,9 +61,9 @@ end
 
 def substituteStorageTotalLimitSize(new_contents)
    if is_high_log_scale_mode?
-      new_contents = new_contents.gsub("${OMS_STORAGE_TOTAL_LIMIT_SIZE_MB}", "storage.total_limit_size        1000M")
+      new_contents = new_contents.gsub("#${OMS_STORAGE_TOTAL_LIMIT_SIZE_MB}", "storage.total_limit_size        1000M")
    else
-      new_contents = new_contents.gsub("\n    ${OMS_STORAGE_TOTAL_LIMIT_SIZE_MB}\n", "\n")
+      new_contents = new_contents.gsub("\n    #${OMS_STORAGE_TOTAL_LIMIT_SIZE_MB}\n", "\n")
    end
    return new_contents
 end
@@ -147,29 +147,29 @@ def substituteFluentBitPlaceHolders
 
     if is_high_log_scale_mode?
       puts "Since high log scale mode configured hence using threaded on for tail plugin"
-      new_contents = new_contents.gsub("${TAIL_THREADED}", "threaded on")
+      new_contents = new_contents.gsub("#${OMS_TAIL_THREADED}", "threaded on")
     elsif (!enableFbitThreading.nil? && !enableFbitThreading.empty? && enableFbitThreading.to_s.downcase == "true" )
-      new_contents = new_contents.gsub("${TAIL_THREADED}", "threaded on")
+      new_contents = new_contents.gsub("#${OMS_TAIL_THREADED}", "threaded on")
     else
-      new_contents = new_contents.gsub("\n    ${TAIL_THREADED}\n", "\n")
+      new_contents = new_contents.gsub("\n    #${OMS_TAIL_THREADED}\n", "\n")
     end
 
     if is_high_log_scale_mode?
-      new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
+      new_contents = new_contents.gsub("#${OMS_STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
       puts "Since high log scale mode configured hence using storage.type: #{@default_high_log_scale_max_storage_type} for tail plugin"
     elsif !storageType.nil? && !storageType.empty?
-      new_contents = new_contents.gsub("${STORAGE_TYPE}", "storage.type " + storageType)
+      new_contents = new_contents.gsub("#${OMS_STORAGE_TYPE}", "storage.type " + storageType)
     else
-      new_contents = new_contents.gsub("\n    ${STORAGE_TYPE}\n", "\n")
+      new_contents = new_contents.gsub("\n    #${OMS_STORAGE_TYPE}\n", "\n")
     end
 
     if is_high_log_scale_mode?
-      new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
+      new_contents = new_contents.gsub("#${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
       puts "Since high log scale mode configured hence using storage.max_chunks_up: #{@default_high_log_scale_max_storage_chunks_up} for tail plugin"
     elsif !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
-      new_contents = new_contents.gsub("${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
+      new_contents = new_contents.gsub("#${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
     else
-      new_contents = new_contents.gsub("\n    ${MAX_STORAGE_CHUNKS_UP}\n", "\n")
+      new_contents = new_contents.gsub("\n    #${MAX_STORAGE_CHUNKS_UP}\n", "\n")
     end
 
     if !kubernetesMetadataCollection.nil? && kubernetesMetadataCollection.to_s.downcase == "true"
