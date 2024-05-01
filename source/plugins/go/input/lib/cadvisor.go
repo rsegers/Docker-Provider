@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -230,14 +229,6 @@ func getResponse(winNode map[string]string, relativeUri string) (*http.Response,
 }
 
 func GetMetrics(winNode map[string]string, namespaceFilteringMode string, namespaces []string, metricTime string) []metricDataItem {
-	defer func() {
-		if r := recover(); r != nil {
-			stacktrace := debug.Stack()
-			Log.Printf("GetMetrics: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
-			SendException(fmt.Sprintf("Error:GetMetrics: %v, stackTrace: %v", r, stacktrace))
-		}
-	}()
-
 	cAdvisorStats, err := getSummaryStatsFromCAdvisor(winNode)
 
 	if err != nil {
@@ -333,14 +324,6 @@ func GetMetricsHelper(metricInfo map[string]interface{}, winNode map[string]stri
 }
 
 func GetInsightsMetrics(winNode map[string]string, namespaceFilteringMode string, namespaces []string, metricTime string) []metricDataItem {
-	defer func() {
-		if r := recover(); r != nil {
-			stacktrace := debug.Stack()
-			Log.Printf("GetInsightsMetrics: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
-			SendException(fmt.Sprintf("Error:GetInsightsMetrics: %v, stackTrace: %v", r, stacktrace))
-		}
-	}()
-
 	metricDataItems := []metricDataItem{}
 	cAdvisorStats, err := getSummaryStatsFromCAdvisor(winNode)
 	if err != nil {
