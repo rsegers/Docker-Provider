@@ -174,6 +174,7 @@ export class CertificateManager {
             }
         } catch (error) {
             logger.error(error, operationId, this.requestMetadata);
+            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
         }
     }
 
@@ -232,6 +233,53 @@ export class CertificateManager {
         return caCertificate.verify(certificate);
     }
 
+    private static IsValidCertificate(operationId: string, mwhcCaBundle: string, webhookCertData: WebhookCertData, clusterArmId: string, clusterArmRegion: string): boolean {
+        try {
+            forge.pki.certificateFromPem(mwhcCaBundle);
+            forge.pki.certificateFromPem(webhookCertData.caCert);
+            forge.pki.certificateFromPem(webhookCertData.tlsCert);
+            forge.pki.privateKeyFromPem(webhookCertData.tlsKey);
+            return true;
+        } catch (error) {
+            logger.error('Error occured while trying to validate certificates!', operationId, this.requestMetadata);
+            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
+            logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true, error);
+            return false;
+        }
+    }
+
+    private static async CheckCertificateJobStatus(kubeConfig: k8s.KubeConfig, operationId: string, clusterArmId: string, clusterArmRegion: string): Promise<boolean> {
+        kubeConfig.loadFromDefault();
+
+        const k8sApi = kubeConfig.makeApiClient(k8s.BatchV1Api);
+        const requestMetadata = this.requestMetadata;
+
+        async function checkJobStatus(namespace, jobName) : Promise<boolean> {
+            try {
+                const res = await k8sApi.readNamespacedJobStatus(jobName, namespace);
+                const jobStatus = res.body.status;
+                
+                if (jobStatus.conditions) {
+                    for (const condition of jobStatus.conditions) {
+                        if (condition.type === 'Complete' && condition.status === 'True') {
+                            logger.info(`Job ${jobName} has completed.`, operationId, requestMetadata);
+                            logger.SendEvent("CertificateJobCompleted", operationId, null, clusterArmId, clusterArmRegion);
+                            return true;
+                        }
+                    }
+                }
+                logger.info(`Job ${jobName} has not completed yet.`, operationId, requestMetadata);
+                logger.SendEvent("CertificateJobNotCompleted", operationId, null, clusterArmId, clusterArmRegion);
+                return false;
+            } catch (err) {
+                logger.error(`Failed to get job status: ${err}`, operationId, requestMetadata);
+                logger.SendEvent("CertificateJobStatusFailed", operationId, null, clusterArmId, clusterArmRegion, true, err);
+                return false;
+            }
+        }
+        return await checkJobStatus(NamespaceName, 'appmonitoring-cert-manager-hook-install');
+    }
+
     public static async CreateWebhookAndCertificates(operationId: string, clusterArmId: string, clusterArmRegion: string) {
         const kc = new k8s.KubeConfig();
         kc.loadFromDefault();
@@ -255,10 +303,10 @@ export class CertificateManager {
         try {
             webhookCertData = await CertificateManager.GetSecretDetails(operationId, kc);
             mwhcCaBundle = await CertificateManager.GetMutatingWebhookCABundle(operationId, kc);
-            if (CertificateManager.IsValidCertificate(operationId, mwhcCaBundle, webhookCertData, clusterArmId, clusterArmRegion)) {
-                logger.info('Certificates are valid, continue validation...', operationId, this.requestMetadata);
+            if (CertificateManager.CheckCertificateJobStatus(kc, operationId, clusterArmId, clusterArmRegion)) {
+                logger.info('Certificates Installer has completed, continue validation...', operationId, this.requestMetadata);
             } else {
-                logger.info('Certificates are not valid, reconciliation not needed at this time...', operationId, this.requestMetadata);
+                logger.info('Certificates Installer has not completed yet, reconciliation is not needed at this time...', operationId, this.requestMetadata);
                 logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true);
                 return;
             }
@@ -267,7 +315,8 @@ export class CertificateManager {
             logger.error(JSON.stringify(error), operationId, this.requestMetadata);
         }
 
-        const matchValidation: boolean = mwhcCaBundle && webhookCertData && mwhcCaBundle.localeCompare(webhookCertData.caCert) === 0;
+        const validCerts: boolean = CertificateManager.IsValidCertificate(operationId, mwhcCaBundle, webhookCertData, clusterArmId, clusterArmRegion);
+        const matchValidation: boolean = validCerts && mwhcCaBundle && webhookCertData && mwhcCaBundle.localeCompare(webhookCertData.caCert) === 0;
         const certSignedByGivenCA: boolean = matchValidation && CertificateManager.isCertificateSignedByCA(webhookCertData.tlsCert, mwhcCaBundle);
 
         if (!certSignedByGivenCA)
@@ -323,21 +372,6 @@ export class CertificateManager {
         }
         else {
             logger.info('Nothing to do. All is good. Ending this run...', operationId, this.requestMetadata);
-        }
-    }
-
-    private static IsValidCertificate(operationId: string, mwhcCaBundle: string, webhookCertData: WebhookCertData, clusterArmId: string, clusterArmRegion: string): boolean {
-        try {
-            forge.pki.certificateFromPem(mwhcCaBundle);
-            forge.pki.certificateFromPem(webhookCertData.caCert);
-            forge.pki.certificateFromPem(webhookCertData.tlsCert);
-            forge.pki.privateKeyFromPem(webhookCertData.tlsKey);
-            return true;
-        } catch (error) {
-            logger.error('Error occured while trying to validate certificates!', operationId, this.requestMetadata);
-            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
-            logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true, error);
-            return false;
         }
     }
 
