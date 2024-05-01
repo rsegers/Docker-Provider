@@ -24,7 +24,6 @@ setCloudSpecificApplicationInsightsConfig() {
             ;;
          "usnat")
             APPLICATIONINSIGHTS_AUTH="YTk5NTlkNDYtYzE3Zi0xZDYxLWJhODgtZWU3NDFjMGI3MTliCg=="
-            # IngestionEndpoint: usnateast-0.in.applicationinsights.azure.eaglex.ic.gov
             APPLICATIONINSIGHTS_ENDPOINT="https://dc.applicationinsights.azure.eaglex.ic.gov/v2/track"
             echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc
             echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc
@@ -33,7 +32,6 @@ setCloudSpecificApplicationInsightsConfig() {
             ;;
          "ussec")
             APPLICATIONINSIGHTS_AUTH="NTc5ZDRiZjUtMTA1Mi0wODQzLThhNTYtMjU5YzEyZmJhZTkyCg=="
-            # IngestionEndpoint: usseceast-0.in.applicationinsights.azure.microsoft.scloud
             APPLICATIONINSIGHTS_ENDPOINT="https://dc.applicationinsights.azure.microsoft.scloud/v2/track"
             echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc
             echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc

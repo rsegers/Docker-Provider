@@ -96,13 +96,11 @@ function Set-CloudSpecificApplicationInsightsConfig {
         "usnat" {
             Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USNat Cloud"
             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_AUTH" "YTk5NTlkNDYtYzE3Zi0xZDYxLWJhODgtZWU3NDFjMGI3MTliCg=="
-            # IngestionEndpoint: usnateast-0.in.applicationinsights.azure.eaglex.ic.gov
             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_ENDPOINT" "https://dc.applicationinsights.azure.eaglex.ic.gov/v2/track"
         }
         "ussec" {
             Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USSec Cloud"
             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_AUTH" "NTc5ZDRiZjUtMTA1Mi0wODQzLThhNTYtMjU5YzEyZmJhZTkyCg=="
-              # IngestionEndpoint: usseceast-0.in.applicationinsights.azure.microsoft.scloud
             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_ENDPOINT" "https://dc.applicationinsights.azure.microsoft.scloud/v2/track"
         }
         default {
