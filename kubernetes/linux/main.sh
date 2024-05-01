@@ -29,7 +29,6 @@ setCloudSpecificApplicationInsightsConfig() {
             echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc
             source ~/.bashrc
             ;;
-            ;;
          "ussec")
             APPLICATIONINSIGHTS_AUTH="NTc5ZDRiZjUtMTA1Mi0wODQzLThhNTYtMjU5YzEyZmJhZTkyCg=="
             APPLICATIONINSIGHTS_ENDPOINT="https://dc.applicationinsights.azure.microsoft.scloud/v2/track"
