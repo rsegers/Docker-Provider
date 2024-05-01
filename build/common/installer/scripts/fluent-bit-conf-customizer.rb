@@ -164,12 +164,12 @@ def substituteFluentBitPlaceHolders
     end
 
     if is_high_log_scale_mode?
-      new_contents = new_contents.gsub("#${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
+      new_contents = new_contents.gsub("#${OMS_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
       puts "Since high log scale mode configured hence using storage.max_chunks_up: #{@default_high_log_scale_max_storage_chunks_up} for tail plugin"
     elsif !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
-      new_contents = new_contents.gsub("#${MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
+      new_contents = new_contents.gsub("#${OMS_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
     else
-      new_contents = new_contents.gsub("\n    #${MAX_STORAGE_CHUNKS_UP}\n", "\n")
+      new_contents = new_contents.gsub("\n    #${OMS_MAX_STORAGE_CHUNKS_UP}\n", "\n")
     end
 
     if !kubernetesMetadataCollection.nil? && kubernetesMetadataCollection.to_s.downcase == "true"
