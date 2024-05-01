@@ -28,9 +28,6 @@ setCloudSpecificApplicationInsightsConfig() {
             APPLICATIONINSIGHTS_ENDPOINT="https://dc.applicationinsights.azure.eaglex.ic.gov/v2/track"
             echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc
             echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc
-            aikey=$(echo "$APPLICATIONINSIGHTS_AUTH" | base64 -d)
-            export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey
-            echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc
             source ~/.bashrc
             ;;
             ;;
@@ -40,9 +37,6 @@ setCloudSpecificApplicationInsightsConfig() {
             APPLICATIONINSIGHTS_ENDPOINT="https://dc.applicationinsights.azure.microsoft.scloud/v2/track"
             echo "export APPLICATIONINSIGHTS_AUTH=$APPLICATIONINSIGHTS_AUTH" >>~/.bashrc
             echo "export APPLICATIONINSIGHTS_ENDPOINT=$APPLICATIONINSIGHTS_ENDPOINT" >>~/.bashrc
-            aikey=$(echo "$APPLICATIONINSIGHTS_AUTH" | base64 -d)
-            export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey
-            echo "export TELEMETRY_APPLICATIONINSIGHTS_KEY=$aikey" >>~/.bashrc
             source ~/.bashrc
             ;;
           *)

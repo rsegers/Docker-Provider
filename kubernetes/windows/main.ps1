@@ -76,26 +76,6 @@ function Set-ProcessAndMachineEnvVariables($name, $value) {
     [System.Environment]::SetEnvironmentVariable($name, $value, "Machine")
 }
 
-function Set-AirgapCloudSpecificApplicationInsightsConfig {
-     # Need to do this before the SA fetch for AI key for airgapped clouds so that it is not overwritten with defaults.
-     $appInsightsAuth = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", "process")
-     if (![string]::IsNullOrEmpty($appInsightsAuth)) {
-         [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $appInsightsAuth, "machine")
-         Write-Host "Successfully set environment variable APPLICATIONINSIGHTS_AUTH - $($appInsightsAuth) for target 'machine'..."
-     }
-     else {
-         Write-Host "Failed to set environment variable APPLICATIONINSIGHTS_AUTH for target 'machine' since it is either null or empty"
-     }
-
-     $appInsightsEndpoint = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", "process")
-     if (![string]::IsNullOrEmpty($appInsightsEndpoint)) {
-         [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", $appInsightsEndpoint, "machine")
-         Write-Host "Successfully set environment variable APPLICATIONINSIGHTS_ENDPOINT - $($appInsightsEndpoint) for target 'machine'..."
-     }
-
-     $aiKeyDecoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:APPLICATIONINSIGHTS_AUTH))
-     Set-ProcessAndMachineEnvVariables "TELEMETRY_APPLICATIONINSIGHTS_KEY" $aiKeyDecoded
-}
 function Set-CloudSpecificApplicationInsightsConfig {
     param (
         [string]$CloudEnvironment
@@ -118,14 +98,12 @@ function Set-CloudSpecificApplicationInsightsConfig {
             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_AUTH" "YTk5NTlkNDYtYzE3Zi0xZDYxLWJhODgtZWU3NDFjMGI3MTliCg=="
             # IngestionEndpoint: usnateast-0.in.applicationinsights.azure.eaglex.ic.gov
             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_ENDPOINT" "https://dc.applicationinsights.azure.eaglex.ic.gov/v2/track"
-            Set-AirgapCloudSpecificApplicationInsightsConfig
         }
         "ussec" {
             Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USSec Cloud"
             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_AUTH" "NTc5ZDRiZjUtMTA1Mi0wODQzLThhNTYtMjU5YzEyZmJhZTkyCg=="
               # IngestionEndpoint: usseceast-0.in.applicationinsights.azure.microsoft.scloud
             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_ENDPOINT" "https://dc.applicationinsights.azure.microsoft.scloud/v2/track"
-            Set-AirgapCloudSpecificApplicationInsightsConfig
         }
         default {
             Write-Host "Set-CloudSpecificApplicationInsightsConfig: defaulting to Public Cloud Application Insights configuration"
