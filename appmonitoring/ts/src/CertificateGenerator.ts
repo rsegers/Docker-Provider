@@ -327,7 +327,7 @@ export class CertificateManager {
             logger.info('Certificates created successfully', operationId, this.requestMetadata);
             logger.SendEvent("CertificateCreated", operationId, null, clusterArmId, clusterArmRegion);
             await CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates, clusterArmId, clusterArmRegion);
-            await CertificateManager.RestartWebhookReplicaset(operationId, kc, clusterArmId, clusterArmRegion);
+            await CertificateManager.RestartWebhookDeployment(operationId, kc, clusterArmId, clusterArmRegion);
             return;
         }
 
@@ -367,7 +367,7 @@ export class CertificateManager {
             await CertificateManager.PatchWebhookAndCertificates(operationId, kc, webhookCertData, clusterArmId, clusterArmRegion);
             if (shouldRestartReplicaset) {
                 logger.info('Restarting ReplicaSet so the pods pick up new certificates...', operationId, this.requestMetadata);
-                await CertificateManager.RestartWebhookReplicaset(operationId, kc, clusterArmId, clusterArmRegion);
+                await CertificateManager.RestartWebhookDeployment(operationId, kc, clusterArmId, clusterArmRegion);
             }
         }
         else {
@@ -375,35 +375,37 @@ export class CertificateManager {
         }
     }
 
-    private static async RestartWebhookReplicaset(operationId: string, kc: k8s.KubeConfig, clusterArmId: string, clusterArmRegion: string) {
-        kc.loadFromDefault();
-
-        const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
-        const selector = "app-monitoring-webhook"
+    private static async RestartWebhookDeployment(operationId: string, kc: k8s.KubeConfig, clusterArmId: string, clusterArmRegion: string) {
         let name = null;
-
+    
         try {
-            const replicaSets: k8s.V1ReplicaSetList = (await k8sApi.listNamespacedReplicaSet(NamespaceName)).body;
-
-            const matchingReplicaSets: k8s.V1ReplicaSet[] = replicaSets.items.filter(rs => 
-                rs.spec.selector && rs.spec.selector.matchLabels && selector.localeCompare(rs.spec.selector.matchLabels.app) === 0
+            const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
+            const selector = "app-monitoring-webhook"
+            const deployments: k8s.V1DeploymentList = (await k8sApi.listNamespacedDeployment(NamespaceName)).body;
+    
+            const matchingDeployments: k8s.V1Deployment[] = deployments.items.filter(deployment => 
+                deployment.spec.selector && deployment.spec.selector.matchLabels && selector.localeCompare(deployment.spec.selector.matchLabels.app) === 0
             );
 
-            const replicaSet: k8s.V1ReplicaSet = matchingReplicaSets[0];
-            const annotations = replicaSet.spec.template.metadata.annotations || {};
+            if (matchingDeployments.length != 1) {
+                throw new Error(`Expected 1 Deployment with selector ${selector}, but found ${matchingDeployments.length}`);
+            }
+            
+            const deployment: k8s.V1Deployment = matchingDeployments[0];
+            const annotations = deployment.spec.template.metadata.annotations || {};
             annotations['kubectl.kubernetes.io/restartedAt'] = new Date().toISOString();
-            replicaSet.spec.template.metadata.annotations = annotations;
-            name = replicaSet.metadata.name;
-
-            logger.info(`Restarting ReplicaSet ${name}...`, operationId, this.requestMetadata);
-            logger.SendEvent("CertificateRestartingReplicaSet", operationId, null, clusterArmId, clusterArmRegion);
-            await k8sApi.replaceNamespacedReplicaSet(name, NamespaceName, replicaSet);
-            console.log(`Successfully restarted ReplicaSet ${name}`);
-            logger.SendEvent("CertificateRestartedReplicaSet", operationId, null, clusterArmId, clusterArmRegion);
-
+            deployment.spec.template.metadata.annotations = annotations;
+            name = deployment.metadata.name;
+    
+            logger.info(`Restarting Deployment ${name}...`, operationId, this.requestMetadata);
+            logger.SendEvent("DeploymentRestarting", operationId, null, clusterArmId, clusterArmRegion);
+            await k8sApi.replaceNamespacedDeployment(name, NamespaceName, deployment);
+            console.log(`Successfully restarted Deployment ${name}`);
+            logger.SendEvent("DeploymentRestarted", operationId, null, clusterArmId, clusterArmRegion);
+    
         } catch (err) {
-            logger.error(`Failed to get ReplicaSet ${name}: ${err}`, operationId, this.requestMetadata);
-            logger.SendEvent("CertificateRestartFailedReplicaSet", operationId, null, clusterArmId, clusterArmRegion, true, err);
+            logger.error(`Failed to get Deployment ${name}: ${err}`, operationId, this.requestMetadata);
+            logger.SendEvent("DeploymentRestartFailed", operationId, null, clusterArmId, clusterArmRegion, true, err);
             throw err;
         }
     }
