@@ -9,7 +9,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -133,9 +132,8 @@ func (p containerInventoryPlugin) enumerate() []map[string]interface{} {
 
 	defer func() {
 		if r := recover(); r != nil {
-			stacktrace := debug.Stack()
-			FLBLogger.Printf("perf::enumerate: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
-			lib.SendException(fmt.Sprintf("Error:containerinventory: %v, stackTrace: %v", r, stacktrace))
+			FLBLogger.Printf("perf::enumerate: PANIC RECOVERED: %v", r)
+			lib.SendException(fmt.Sprintf("Error:containerinventory: %v", r))
 		}
 	}()
 

@@ -12,7 +12,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
@@ -1359,9 +1358,8 @@ func PostInputPluginRecords(inputPluginRecords []map[interface{}]interface{}) in
 
 	defer func() {
 		if r := recover(); r != nil {
-			stacktrace := debug.Stack()
-			Log("Error::PostInputPluginRecords Error processing cadvisor metrics records: %v, stacktrace: %v", r, stacktrace)
-			SendException(fmt.Sprintf("Error:PostInputPluginRecords: %v, stackTrace: %v", r, stacktrace))
+			Log("Error::PostInputPluginRecords Error processing cadvisor metrics records: %v", r)
+			SendException(fmt.Sprintf("Error:PostInputPluginRecords: %v", r))
 		}
 	}()
 

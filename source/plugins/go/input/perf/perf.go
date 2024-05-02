@@ -9,7 +9,6 @@ import (
 	"log"
 	"math"
 	"os"
-	"runtime/debug"
 	"strconv"
 	"strings"
 	"time"
@@ -167,9 +166,8 @@ func (p perfPlugin) enumerate() ([]map[string]interface{}, []map[string]interfac
 
 	defer func() {
 		if r := recover(); r != nil {
-			stacktrace := debug.Stack()
-			FLBLogger.Printf("perf::enumerate: PANIC RECOVERED: %v, stacktrace: %s", r, stacktrace)
-			lib.SendException(fmt.Sprintf("Error:perf: %v, stackTrace: %v", r, stacktrace))
+			FLBLogger.Printf("perf::enumerate: PANIC RECOVERED: %v", r)
+			lib.SendException(fmt.Sprintf("Error:perf: %v", r))
 		}
 	}()
 
