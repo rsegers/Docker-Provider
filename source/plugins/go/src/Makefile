@@ -22,7 +22,7 @@ fbplugin:
 	@echo "========================= go get  ========================="
 	go get
 	@echo "========================= go build  ========================="
-	$(OPTIONS) go build -ldflags "-X 'main.revision=$(BUILDVERSION)' -X 'main.builddate=$(BUILDDATE)' -s -w" -buildmode=c-shared -o out_oms.so .
+	$(OPTIONS) GOGC=50 go build -ldflags "-X 'main.revision=$(BUILDVERSION)' -X 'main.builddate=$(BUILDDATE)' -s -w" -buildmode=c-shared -o out_oms.so .
 
 test:
 	go test -cover -race -coverprofile=coverage.txt -covermode=atomic

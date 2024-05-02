@@ -22,7 +22,7 @@ perf:
 	@echo "========================= go get  ========================="
 	go get
 	@echo "========================= go build  ========================="
-	$(OPTIONS) go build -ldflags "-X 'main.revision=$(BUILDVERSION)' -X 'main.builddate=$(BUILDDATE)' -s -w" -buildmode=c-shared -o perf.so .
+	$(OPTIONS) GOGC=50 go build -ldflags "-X 'main.revision=$(BUILDVERSION)' -X 'main.builddate=$(BUILDDATE)' -s -w" -buildmode=c-shared -o perf.so .
 
 test:
 	go test -cover -race -coverprofile=coverage.txt -covermode=atomic
