@@ -115,7 +115,7 @@ describe('CertificateManager', () => {
 
         it('should reconcile webhook and certificates - happy path', async () => {
             const secretObj: WebhookCertData = (CertificateManager as any).CreateOrUpdateCertificates('test-operationId');
-            jest.spyOn(CertificateManager as any, 'GetSecretDetails').mockResolvedValue(secretObj);
+            const getSecretDetails = jest.spyOn(CertificateManager as any, 'GetSecretDetails').mockResolvedValue(secretObj);
             const getMutatingWebhookCABundle = jest.spyOn(CertificateManager as any, 'GetMutatingWebhookCABundle').mockResolvedValue(secretObj.caCert);
             jest.spyOn(CertificateManager as any, 'isCertificateSignedByCA').mockReturnValue(true);
             const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'HasCertificateInstallerJobFinished').mockReturnValue(true);
@@ -126,6 +126,7 @@ describe('CertificateManager', () => {
 
             expect(checkCertificateJobStatus).toHaveBeenCalled();
             expect(IsValidCertificate).toHaveBeenCalled();
+            expect(getSecretDetails).toHaveBeenCalledWith(operationId, mockKubeConfig);
             expect(getMutatingWebhookCABundle).toHaveBeenCalledWith(operationId, mockKubeConfig);
             expect(patchWebhookAndCertificates).not.toBeCalled();
             expect(restartWebhookDeployment).not.toBeCalled();
