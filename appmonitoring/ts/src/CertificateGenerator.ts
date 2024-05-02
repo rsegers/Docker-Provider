@@ -173,7 +173,6 @@ export class CertificateManager {
                 return certificate;
             }
         } catch (error) {
-            logger.error(error, operationId, this.requestMetadata);
             logger.error(JSON.stringify(error), operationId, this.requestMetadata);
         }
     }
@@ -387,7 +386,6 @@ export class CertificateManager {
             {
                 throw new Error(`No Deployments found in ${NamespaceName} namespace!`);
             }
-    
             const matchingDeployments: k8s.V1Deployment[] = deployments.items.filter(deployment => 
                 deployment.spec.selector && deployment.spec.selector.matchLabels && selector.localeCompare(deployment.spec.selector.matchLabels.app) === 0
             );
@@ -395,21 +393,19 @@ export class CertificateManager {
             if (matchingDeployments.length != 1) {
                 throw new Error(`Expected 1 Deployment with selector ${selector}, but found ${matchingDeployments.length}`);
             }
-            
             const deployment: k8s.V1Deployment = matchingDeployments[0];
             const annotations = deployment.spec.template.metadata.annotations || {};
             annotations['kubectl.kubernetes.io/restartedAt'] = new Date().toISOString();
             deployment.spec.template.metadata.annotations = annotations;
             name = deployment.metadata.name;
-    
             logger.info(`Restarting Deployment ${name}...`, operationId, this.requestMetadata);
             logger.SendEvent("DeploymentRestarting", operationId, null, clusterArmId, clusterArmRegion);
             await k8sApi.replaceNamespacedDeployment(name, NamespaceName, deployment);
             console.log(`Successfully restarted Deployment ${name}`);
             logger.SendEvent("DeploymentRestarted", operationId, null, clusterArmId, clusterArmRegion);
-    
+
         } catch (err) {
-            logger.error(`Failed to get Deployment ${name}: ${err}`, operationId, this.requestMetadata);
+            logger.error(`Failed to restart Deployment ${name}: ${err}`, operationId, this.requestMetadata);
             logger.SendEvent("DeploymentRestartFailed", operationId, null, clusterArmId, clusterArmRegion, true, err);
             throw err;
         }
