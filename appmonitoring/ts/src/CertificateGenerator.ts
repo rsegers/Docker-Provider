@@ -248,35 +248,32 @@ export class CertificateManager {
     }
 
     private static async CheckCertificateJobStatus(kubeConfig: k8s.KubeConfig, operationId: string, clusterArmId: string, clusterArmRegion: string): Promise<boolean> {
-        kubeConfig.loadFromDefault();
-
         const k8sApi = kubeConfig.makeApiClient(k8s.BatchV1Api);
         const requestMetadata = this.requestMetadata;
+        const jobName = 'appmonitoring-cert-manager-hook-install';
+        const namespace = NamespaceName;
 
-        async function checkJobStatus(namespace, jobName) : Promise<boolean> {
-            try {
-                const res = await k8sApi.readNamespacedJobStatus(jobName, namespace);
-                const jobStatus = res.body.status;
-                
-                if (jobStatus.conditions) {
-                    for (const condition of jobStatus.conditions) {
-                        if (condition.type === 'Complete' && condition.status === 'True') {
-                            logger.info(`Job ${jobName} has completed.`, operationId, requestMetadata);
-                            logger.SendEvent("CertificateJobCompleted", operationId, null, clusterArmId, clusterArmRegion);
-                            return true;
-                        }
+        try {
+            const res = await k8sApi.readNamespacedJobStatus(jobName, namespace);
+            const jobStatus = res.body.status;
+            
+            if (jobStatus.conditions) {
+                for (const condition of jobStatus.conditions) {
+                    if (condition.type === 'Complete' && condition.status === 'True') {
+                        logger.info(`Job ${jobName} has completed.`, operationId, requestMetadata);
+                        logger.SendEvent("CertificateJobCompleted", operationId, null, clusterArmId, clusterArmRegion);
+                        return true;
                     }
                 }
-                logger.info(`Job ${jobName} has not completed yet.`, operationId, requestMetadata);
-                logger.SendEvent("CertificateJobNotCompleted", operationId, null, clusterArmId, clusterArmRegion);
-                return false;
-            } catch (err) {
-                logger.error(`Failed to get job status: ${err}`, operationId, requestMetadata);
-                logger.SendEvent("CertificateJobStatusFailed", operationId, null, clusterArmId, clusterArmRegion, true, err);
-                return false;
             }
+            logger.info(`Job ${jobName} has not completed yet.`, operationId, requestMetadata);
+            logger.SendEvent("CertificateJobNotCompleted", operationId, null, clusterArmId, clusterArmRegion);
+            return false;
+        } catch (err) {
+            logger.error(`Failed to get job status: ${err}`, operationId, requestMetadata);
+            logger.SendEvent("CertificateJobStatusFailed", operationId, null, clusterArmId, clusterArmRegion, true, err);
+            return false;
         }
-        return await checkJobStatus(NamespaceName, 'appmonitoring-cert-manager-hook-install');
     }
 
     public static async CreateWebhookAndCertificates(operationId: string, clusterArmId: string, clusterArmRegion: string) {
