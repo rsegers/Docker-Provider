@@ -40,21 +40,88 @@ describe('CertificateManager', () => {
     });
 
     describe('ReconcileWebhookAndCertificates', () => {
-        it('should reconcile webhook and certificates - happy path', async () => {
-            const mockKubeConfig = new k8s.KubeConfig();
-            const mockClusterArmId = 'clusterArmId';
-            const mockClusterArmRegion = 'clusterArmRegion';
+        let mockKubeConfig: k8s.KubeConfig;
+        let mockClusterArmId: string;
+        let mockClusterArmRegion: string;
+        let operationId: string;
+
+        beforeEach(() => {
+            mockKubeConfig = new k8s.KubeConfig();
+            mockClusterArmId = 'clusterArmId';
+            mockClusterArmRegion = 'clusterArmRegion';
+            operationId = 'operationId';
             jest.spyOn(k8s.KubeConfig.prototype, 'loadFromDefault').mockReturnValue(null);
+        });
+
+        it('should not do anything if it cant find the installer job', async () => {
+            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'HasCertificateInstallerJobFinished').mockRejectedValue(new Error('Job not found'));
+            const getMutatingWebhookCABundle = jest.spyOn(CertificateManager as any, 'GetMutatingWebhookCABundle').mockResolvedValue(null);
+            const getSecretDetails = jest.spyOn(CertificateManager as any, 'GetSecretDetails').mockResolvedValue(null);
+            const patchWebhookAndCertificates = jest.spyOn(CertificateManager as any, 'PatchWebhookAndCertificates').mockResolvedValue(null);
+            const restartWebhookDeployment = jest.spyOn(CertificateManager as any, 'RestartWebhookDeployment').mockResolvedValue(null);
+            await CertificateManager.ReconcileWebhookAndCertificates(operationId, mockClusterArmId, mockClusterArmRegion);
+
+            expect(checkCertificateJobStatus).toHaveBeenCalled();
+            expect(getMutatingWebhookCABundle).not.toBeCalled();
+            expect(getSecretDetails).not.toBeCalled();
+            expect(patchWebhookAndCertificates).not.toBeCalled();
+            expect(restartWebhookDeployment).not.toBeCalled();
+        });
+
+        it('should not do anything if it installer job has not finished', async () => {
+            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'HasCertificateInstallerJobFinished').mockReturnValue(false);
+            const getMutatingWebhookCABundle = jest.spyOn(CertificateManager as any, 'GetMutatingWebhookCABundle').mockResolvedValue(null);
+            const getSecretDetails = jest.spyOn(CertificateManager as any, 'GetSecretDetails').mockResolvedValue(null);
+            const patchWebhookAndCertificates = jest.spyOn(CertificateManager as any, 'PatchWebhookAndCertificates').mockResolvedValue(null);
+            const restartWebhookDeployment = jest.spyOn(CertificateManager as any, 'RestartWebhookDeployment').mockResolvedValue(null);
+            await CertificateManager.ReconcileWebhookAndCertificates(operationId, mockClusterArmId, mockClusterArmRegion);
+
+            expect(checkCertificateJobStatus).toHaveBeenCalled();
+            expect(getMutatingWebhookCABundle).not.toBeCalled();
+            expect(getSecretDetails).not.toBeCalled();
+            expect(patchWebhookAndCertificates).not.toBeCalled();
+            expect(restartWebhookDeployment).not.toBeCalled();
+        });
+
+        it('should not proceed if it fails to get secret store', async () => {
+            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'HasCertificateInstallerJobFinished').mockReturnValue(true);
+            const getSecretDetails = jest.spyOn(CertificateManager as any, 'GetSecretDetails').mockRejectedValue(new Error('Secret not found'));
+            const getMutatingWebhookCABundle = jest.spyOn(CertificateManager as any, 'GetMutatingWebhookCABundle').mockResolvedValue(null);
+            const patchWebhookAndCertificates = jest.spyOn(CertificateManager as any, 'PatchWebhookAndCertificates').mockResolvedValue(null);
+            const restartWebhookDeployment = jest.spyOn(CertificateManager as any, 'RestartWebhookDeployment').mockResolvedValue(null);
+            await CertificateManager.ReconcileWebhookAndCertificates(operationId, mockClusterArmId, mockClusterArmRegion);
+
+            expect(checkCertificateJobStatus).toHaveBeenCalled();
+            expect(getSecretDetails).toHaveBeenCalled();
+            expect(getMutatingWebhookCABundle).not.toBeCalled();
+            expect(patchWebhookAndCertificates).not.toBeCalled();
+            expect(restartWebhookDeployment).not.toBeCalled();
+        });
+
+        it('should not proceed if it fails to get mutating webhook configuration ', async () => {
+            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'HasCertificateInstallerJobFinished').mockReturnValue(true);
+            const getSecretDetails = jest.spyOn(CertificateManager as any, 'GetSecretDetails').mockReturnValue(null);
+            const getMutatingWebhookCABundle = jest.spyOn(CertificateManager as any, 'GetMutatingWebhookCABundle').mockRejectedValue(new Error('Mutating webhook not found'));
+            const patchWebhookAndCertificates = jest.spyOn(CertificateManager as any, 'PatchWebhookAndCertificates').mockResolvedValue(null);
+            const restartWebhookDeployment = jest.spyOn(CertificateManager as any, 'RestartWebhookDeployment').mockResolvedValue(null);
+            await CertificateManager.ReconcileWebhookAndCertificates(operationId, mockClusterArmId, mockClusterArmRegion);
+
+            expect(checkCertificateJobStatus).toHaveBeenCalled();
+            expect(getSecretDetails).toHaveBeenCalled();
+            expect(getMutatingWebhookCABundle).toBeCalled();
+            expect(patchWebhookAndCertificates).not.toBeCalled();
+            expect(restartWebhookDeployment).not.toBeCalled();
+        });
+
+        it('should reconcile webhook and certificates - happy path', async () => {
             const secretObj: WebhookCertData = (CertificateManager as any).CreateOrUpdateCertificates('test-operationId');
             jest.spyOn(CertificateManager as any, 'GetSecretDetails').mockResolvedValue(secretObj);
             const getMutatingWebhookCABundle = jest.spyOn(CertificateManager as any, 'GetMutatingWebhookCABundle').mockResolvedValue(secretObj.caCert);
             jest.spyOn(CertificateManager as any, 'isCertificateSignedByCA').mockReturnValue(true);
-            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'CheckCertificateJobStatus').mockReturnValue(true);
+            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'HasCertificateInstallerJobFinished').mockReturnValue(true);
             const IsValidCertificate = jest.spyOn(CertificateManager as any, 'IsValidCertificate').mockReturnValue(true);
             const patchWebhookAndCertificates = jest.spyOn(CertificateManager as any, 'PatchWebhookAndCertificates').mockResolvedValue(null);
             const restartWebhookDeployment = jest.spyOn(CertificateManager as any, 'RestartWebhookDeployment').mockResolvedValue(null);
-
-            const operationId = 'operationId';
             await CertificateManager.ReconcileWebhookAndCertificates(operationId, mockClusterArmId, mockClusterArmRegion);
 
             expect(checkCertificateJobStatus).toHaveBeenCalled();
@@ -65,35 +132,29 @@ describe('CertificateManager', () => {
         });
 
         it('should reconcile webhook and certificates - invalid certificate in secret store and/or mwhc', async () => {
-            const mockKubeConfig = new k8s.KubeConfig();
-            const mockClusterArmId = 'clusterArmId';
-            const mockClusterArmRegion = 'clusterArmRegion';
-            jest.spyOn(k8s.KubeConfig.prototype, 'loadFromDefault').mockReturnValue(null);
             jest.spyOn(CertificateManager as any, 'GetSecretDetails').mockResolvedValue(null);
             const getMutatingWebhookCABundle = jest.spyOn(CertificateManager as any, 'GetMutatingWebhookCABundle').mockResolvedValue(null);
             const getSecretDetails =  jest.spyOn(CertificateManager as any, 'GetSecretDetails').mockResolvedValue(null);
             jest.spyOn(CertificateManager as any, 'isCertificateSignedByCA').mockReturnValue(false);
-            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'CheckCertificateJobStatus').mockReturnValue(false);
-            const IsValidCertificate = jest.spyOn(CertificateManager as any, 'IsValidCertificate').mockReturnValue(true);
+            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'HasCertificateInstallerJobFinished').mockReturnValue(true);
+            const IsValidCertificate = jest.spyOn(CertificateManager as any, 'IsValidCertificate').mockReturnValue(false);
             const patchWebhookAndCertificates = jest.spyOn(CertificateManager as any, 'PatchWebhookAndCertificates').mockResolvedValue(null);
             const restartWebhookDeployment = jest.spyOn(CertificateManager as any, 'RestartWebhookDeployment').mockResolvedValue(null);
-
-            const operationId = 'operationId';
+            const certGenCaller = jest.spyOn(CertificateManager as any, 'CreateOrUpdateCertificates');
             await CertificateManager.ReconcileWebhookAndCertificates(operationId, mockClusterArmId, mockClusterArmRegion);
+            const generatedCertificate: WebhookCertData = certGenCaller.mock.results[0].value;
 
             expect(checkCertificateJobStatus).toHaveBeenCalled();
-            expect(IsValidCertificate).not.toBeCalled();
+            expect(IsValidCertificate).toBeCalled();
             expect(getMutatingWebhookCABundle).toHaveBeenCalledWith(operationId, mockKubeConfig);
             expect(getSecretDetails).toHaveBeenCalledWith(operationId, mockKubeConfig);
-            expect(patchWebhookAndCertificates).not.toBeCalled();
-            expect(restartWebhookDeployment).not.toBeCalled();
+            expect(patchWebhookAndCertificates).toHaveBeenCalledTimes(1);
+            expect(patchWebhookAndCertificates).toHaveBeenCalledWith(operationId, mockKubeConfig, generatedCertificate, mockClusterArmId, mockClusterArmRegion);
+            expect(restartWebhookDeployment).toHaveBeenCalledTimes(1);
+            expect(restartWebhookDeployment).toHaveBeenCalledWith(operationId, mockKubeConfig, mockClusterArmId, mockClusterArmRegion);
         });
 
         it('should generate all new certs for host and CA if certs are corrupted or mismatched', async () => {
-            const mockKubeConfig = new k8s.KubeConfig();
-            const mockClusterArmId = 'clusterArmId';
-            const mockClusterArmRegion = 'clusterArmRegion';
-            jest.spyOn(k8s.KubeConfig.prototype, 'loadFromDefault').mockReturnValue(null);
             const mockCertData: WebhookCertData = {
                 caCert: 'mockCACert',
                 caKey: 'mockCAKey',
@@ -116,7 +177,7 @@ describe('CertificateManager', () => {
             });
             const getMutatingWebhookCABundle = jest.spyOn(CertificateManager as any, 'GetMutatingWebhookCABundle').mockResolvedValue(mockCertData.caCert);
             jest.spyOn(CertificateManager as any, 'isCertificateSignedByCA').mockReturnValue(false);
-            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'CheckCertificateJobStatus').mockReturnValue(true);
+            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'HasCertificateInstallerJobFinished').mockReturnValue(true);
             const IsValidCertificate = jest.spyOn(CertificateManager as any, 'IsValidCertificate').mockReturnValue(true);
             const patchWebhookAndCertificates = jest.spyOn(CertificateManager as any, 'PatchWebhookAndCertificates').mockImplementation((_1: string, kc: k8s.KubeConfig, certificates: WebhookCertData, _2: string, _3: string) => {
                 if (!(kc && certificates && certificates.caCert && certificates.caKey && certificates.tlsCert && certificates.tlsKey 
@@ -133,7 +194,6 @@ describe('CertificateManager', () => {
                 return null;
             });
 
-            const operationId = 'operationId';
             await CertificateManager.ReconcileWebhookAndCertificates(operationId, mockClusterArmId, mockClusterArmRegion);
 
             //Assert
@@ -146,10 +206,6 @@ describe('CertificateManager', () => {
         });
 
         it('should handle only CA cert expiration', async () => {
-            const mockKubeConfig = new k8s.KubeConfig();
-            const mockClusterArmId = 'clusterArmId';
-            const mockClusterArmRegion = 'clusterArmRegion';
-            jest.spyOn(k8s.KubeConfig.prototype, 'loadFromDefault').mockReturnValue(null);
             jest.spyOn(Date, 'now').mockReturnValueOnce(0).mockReturnValue(800 * 24 * 60 * 60 * 1000);
             const realCertObj: WebhookCertData = (CertificateManager as any).CreateOrUpdateCertificates('test-operationId');
             const caCertDecoded: forge.pki.Certificate = forge.pki.certificateFromPem(realCertObj.caCert);
@@ -177,7 +233,7 @@ describe('CertificateManager', () => {
 
             });
             jest.spyOn(CertificateManager as any, 'isCertificateSignedByCA').mockReturnValue(true);
-            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'CheckCertificateJobStatus').mockReturnValue(true);
+            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'HasCertificateInstallerJobFinished').mockReturnValue(true);
             const IsValidCertificate = jest.spyOn(CertificateManager as any, 'IsValidCertificate').mockReturnValue(true);
             const patchWebhookAndCertificates = jest.spyOn(CertificateManager as any, 'PatchWebhookAndCertificates').mockImplementation((_1: string, kc: k8s.KubeConfig, certificates: WebhookCertData, _2: string, _3: string) => {
                 if (!(kc && certificates && certificates.caCert && certificates.caKey && certificates.tlsCert && certificates.tlsKey 
@@ -188,7 +244,6 @@ describe('CertificateManager', () => {
             });
             const restartWebhookDeployment = jest.spyOn(CertificateManager as any, 'RestartWebhookDeployment').mockResolvedValue(null);
 
-            const operationId = 'operationId';
             await CertificateManager.ReconcileWebhookAndCertificates(operationId, mockClusterArmId, mockClusterArmRegion);
 
             expect(checkCertificateJobStatus).toHaveBeenCalled();
@@ -201,11 +256,7 @@ describe('CertificateManager', () => {
         });
 
         it('should handle only Host cert expiration', async () => {
-            const mockKubeConfig = new k8s.KubeConfig();
-            const mockClusterArmId = 'clusterArmId';
-            const mockClusterArmRegion = 'clusterArmRegion';
-            jest.spyOn(k8s.KubeConfig.prototype, 'loadFromDefault').mockReturnValue(null);
-            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'CheckCertificateJobStatus').mockReturnValue(true);
+            const checkCertificateJobStatus = jest.spyOn(CertificateManager as any, 'HasCertificateInstallerJobFinished').mockReturnValue(true);
             const IsValidCertificate = jest.spyOn(CertificateManager as any, 'IsValidCertificate').mockReturnValue(true);
             jest.spyOn(Date, 'now').mockReturnValueOnce(800 * 24 * 60 * 60 * 1000).mockReturnValueOnce(0).mockReturnValue(800 * 24 * 60 * 60 * 1000);
             const realCertObj: WebhookCertData = (CertificateManager as any).CreateOrUpdateCertificates('test-operationId');
@@ -237,7 +288,6 @@ describe('CertificateManager', () => {
             }).mockResolvedValue(null);
             const restartWebhookDeployment = jest.spyOn(CertificateManager as any, 'RestartWebhookDeployment').mockResolvedValue(null);
 
-            const operationId = 'operationId';
             await CertificateManager.ReconcileWebhookAndCertificates(operationId, mockClusterArmId, mockClusterArmRegion);
 
             expect(checkCertificateJobStatus).toHaveBeenCalled();

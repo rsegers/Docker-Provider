@@ -174,6 +174,7 @@ export class CertificateManager {
             }
         } catch (error) {
             logger.error(JSON.stringify(error), operationId, this.requestMetadata);
+            throw error;
         }
     }
 
@@ -247,7 +248,7 @@ export class CertificateManager {
         }
     }
 
-    private static async CheckCertificateJobStatus(kubeConfig: k8s.KubeConfig, operationId: string, clusterArmId: string, clusterArmRegion: string): Promise<boolean> {
+    private static async HasCertificateInstallerJobFinished(kubeConfig: k8s.KubeConfig, operationId: string, clusterArmId: string, clusterArmRegion: string): Promise<boolean> {
         const k8sApi = kubeConfig.makeApiClient(k8s.BatchV1Api);
         const requestMetadata = this.requestMetadata;
         const jobName = 'appmonitoring-cert-manager-hook-install';
@@ -272,7 +273,7 @@ export class CertificateManager {
         } catch (err) {
             logger.error(`Failed to get job status: ${err}`, operationId, requestMetadata);
             logger.SendEvent("CertificateJobStatusFailed", operationId, null, clusterArmId, clusterArmRegion, true, err);
-            return false;
+            throw err;
         }
     }
 
@@ -295,20 +296,35 @@ export class CertificateManager {
         let certificates: WebhookCertData = null;
         let webhookCertData: WebhookCertData = null;
         let mwhcCaBundle: string = null;
+        let foundJob = false;
+        let foundSecret = false;
+        let foundMWHC = false;
 
         try {
-            webhookCertData = await CertificateManager.GetSecretDetails(operationId, kc);
-            mwhcCaBundle = await CertificateManager.GetMutatingWebhookCABundle(operationId, kc);
-            if (CertificateManager.CheckCertificateJobStatus(kc, operationId, clusterArmId, clusterArmRegion)) {
+            const isInstallerJobCompleted: boolean = await CertificateManager.HasCertificateInstallerJobFinished(kc, operationId, clusterArmId, clusterArmRegion);
+            foundJob = true;
+            if (isInstallerJobCompleted) {
                 logger.info('Certificates Installer has completed, continue validation...', operationId, this.requestMetadata);
             } else {
                 logger.info('Certificates Installer has not completed yet, reconciliation is not needed at this time...', operationId, this.requestMetadata);
                 logger.SendEvent("CertificateValidationFailed", operationId, null, clusterArmId, clusterArmRegion, true);
                 return;
             }
+            webhookCertData = await CertificateManager.GetSecretDetails(operationId, kc);
+            foundSecret = true;
+            mwhcCaBundle = await CertificateManager.GetMutatingWebhookCABundle(operationId, kc);
+            foundMWHC = true;
         } catch (error) {
-            logger.error('Error occured while trying to get Secret Store or MutatingWebhookConfiguration!', operationId, this.requestMetadata);
-            logger.error(JSON.stringify(error), operationId, this.requestMetadata);
+            let errorSource = '';
+            if (!foundJob) {
+                errorSource = 'Error occurred while trying to get Installer Job';
+            } else if (!foundSecret) {
+                errorSource = 'Error occurred while trying to get Secret Store';
+            } else if (!foundMWHC) {
+                errorSource = 'Error occurred while trying to get MutatingWebhookConfiguration';
+            }
+            logger.error(`${errorSource}\n${JSON.stringify(error)}`, operationId, this.requestMetadata);
+            return;
         }
 
         const validCerts: boolean = CertificateManager.IsValidCertificate(operationId, mwhcCaBundle, webhookCertData, clusterArmId, clusterArmRegion);
