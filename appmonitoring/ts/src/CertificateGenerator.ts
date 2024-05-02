@@ -382,6 +382,11 @@ export class CertificateManager {
             const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
             const selector = "app-monitoring-webhook"
             const deployments: k8s.V1DeploymentList = (await k8sApi.listNamespacedDeployment(NamespaceName)).body;
+
+            if (!deployments)
+            {
+                throw new Error(`No Deployments found in ${NamespaceName} namespace!`);
+            }
     
             const matchingDeployments: k8s.V1Deployment[] = deployments.items.filter(deployment => 
                 deployment.spec.selector && deployment.spec.selector.matchLabels && selector.localeCompare(deployment.spec.selector.matchLabels.app) === 0
