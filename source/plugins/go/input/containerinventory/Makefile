@@ -22,7 +22,7 @@ containerinventory:
 	@echo "========================= go get  ========================="
 	go get
 	@echo "========================= go build  ========================="
-	$(OPTIONS) go build -ldflags "-X 'main.revision=$(BUILDVERSION)' -X 'main.builddate=$(BUILDDATE)'" -buildmode=c-shared -o containerinventory.so .
+	$(OPTIONS) go build -ldflags "-X 'main.revision=$(BUILDVERSION)' -X 'main.builddate=$(BUILDDATE)' -s -w" -buildmode=c-shared -o containerinventory.so .
 
 test:
 	go test -cover -race -coverprofile=coverage.txt -covermode=atomic
