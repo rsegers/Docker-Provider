@@ -1,4 +1,4 @@
-import { CertificateManager, WebhookCertData } from '../CertificateGenerator.js';
+import { CertificateManager, WebhookCertData } from '../CertificateManager.js';
 import * as k8s from '@kubernetes/client-node';
 import forge from 'node-forge';
 

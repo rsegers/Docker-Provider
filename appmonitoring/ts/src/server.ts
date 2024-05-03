@@ -5,7 +5,7 @@ import { InstrumentationCR, IAdmissionReview } from "./RequestDefinition.js";
 import { K8sWatcher } from "./K8sWatcher.js";
 import { InstrumentationCRsCollection } from "./InstrumentationCRsCollection.js"
 import fs from "fs";
-import { CertificateManager } from "./CertificateGenerator.js";
+import { CertificateManager } from "./CertificateManager.js";
 import { randomUUID } from 'crypto';
 
 const containerMode = process.env.CONTAINER_MODE;
