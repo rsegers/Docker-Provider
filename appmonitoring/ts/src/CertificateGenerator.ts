@@ -248,6 +248,18 @@ export class CertificateManager {
         }
     }
 
+    /**
+     * This method checks if a specific Kubernetes job has finished. It does this by reading the status of a job
+     * named 'appmonitoring-cert-manager-hook-install' in a specific namespace. If the job status indicates completion,
+     * it logs the completion and sends an event. If the job is not yet complete, it logs this information and sends
+     * an event. If there is an error in getting the job status, it logs the error, sends an event, and throws the error.
+     *
+     * @param kubeConfig - The Kubernetes configuration.
+     * @param operationId - The operation ID.
+     * @param clusterArmId - The ARM ID of the cluster.
+     * @param clusterArmRegion - The ARM region of the cluster.
+     * @returns A promise that resolves to a boolean indicating whether the job has finished.
+     */
     private static async HasCertificateInstallerJobFinished(kubeConfig: k8s.KubeConfig, operationId: string, clusterArmId: string, clusterArmRegion: string): Promise<boolean> {
         const k8sApi = kubeConfig.makeApiClient(k8s.BatchV1Api);
         const requestMetadata = this.requestMetadata;
@@ -277,7 +289,22 @@ export class CertificateManager {
         }
     }
 
+    /**
+     * This method creates a webhook and certificates.
+     * @param operationId - The operation ID.
+     * @param clusterArmId - The ARM ID of the cluster.
+     * @param clusterArmRegion - The ARM region of the cluster.
+     */
     public static async CreateWebhookAndCertificates(operationId: string, clusterArmId: string, clusterArmRegion: string) {
+        /**
+         * The code block above creates and updates certificates for a webhook. 
+         * It starts by creating a new instance of the Kubernetes configuration and loading it from the default location. 
+         * Then, it logs a message and sends an event to indicate that the certificate creation process has started. 
+         * The CreateOrUpdateCertificates method is called to generate the certificates, and the result is stored in the certificates variable. 
+         * Another log message and event are generated to indicate that the certificates have been created successfully. 
+         * Finally, the PatchWebhookAndCertificates method is called to patch the webhook and certificates using the Kubernetes configuration, 
+         * the certificates variable, and other parameters.
+         */
         const kc = new k8s.KubeConfig();
         kc.loadFromDefault();
 
@@ -290,6 +317,16 @@ export class CertificateManager {
         await CertificateManager.PatchWebhookAndCertificates(operationId, kc, certificates, clusterArmId, clusterArmRegion);
     }
 
+    /**
+     * This method reconciles the webhook and certificates. It does this by checking if the certificate installer job has
+     * finished, getting the secret details, getting the mutating webhook CA bundle, and then checking if the certificates
+     * are valid or not or if they are close to expiry. If either certificate is regenerated, it patches the webhook and certificates and
+     * restarts the webhook deployment so it picks up the new certificates.
+     * @param operationId - The operation ID.
+     * @param clusterArmId - The ARM ID of the cluster.
+     * @param clusterArmRegion - The ARM region of the cluster.
+     * @returns - A promise that resolves when the reconciliation is complete.
+     */
     public static async ReconcileWebhookAndCertificates(operationId: string, clusterArmId: string, clusterArmRegion: string) {
         const kc = new k8s.KubeConfig();
         kc.loadFromDefault();
@@ -300,6 +337,20 @@ export class CertificateManager {
         let foundSecret = false;
         let foundMWHC = false;
 
+        /**
+         * The try block contains the main logic of the reconciliation. It first checks if the certificate installer job
+         * has finished. If the job has finished, it gets the secret details and the mutating webhook CA bundle. It then
+         * checks if the certificates are valid. If the certificates are not valid, it creates new certificates, patches
+         * the webhook and certificates, and restarts the webhook deployment. If the certificates are valid, it checks if
+         * the CA certificate is close to expiration and regenerates it if necessary. It then checks if the host certificate
+         * is close to expiration and regenerates it if necessary. If either certificate is regenerated, it patches the
+         * webhook and certificates and restarts the webhook deployment. If no certificates need to be regenerated, it logs
+         * that nothing needs to be done.
+         * If the job cannot be found, the secret cannot be found, or the mutating webhook CA bundle cannot be found, the
+         * catch block logs the error and sends an event.
+         * If the job has completed, the catch block logs that the certificates installer has completed and sends an event.
+         * If an error occurs at any point in the try block, the catch block logs the error and sends an event.
+         */
         try {
             const isInstallerJobCompleted: boolean = await CertificateManager.HasCertificateInstallerJobFinished(kc, operationId, clusterArmId, clusterArmRegion);
             foundJob = true;
@@ -327,6 +378,13 @@ export class CertificateManager {
             return;
         }
 
+        /**
+         * This block of code is responsible for validating certificates used in a certificate generation process. 
+         * The first line checks if the certificates are valid by calling the `IsValidCertificate` method, which takes in several parameters including 
+         * CA bundle, webhook certificate data etc. The next line checks if the CA bundle, webhook certificate, and CA certificate
+         * match by comparing their values. Then, it checks if the webhook certificate is signed by the CA certificate using the `isCertificateSignedByCA` method. 
+         * Each step in the validation process is assigned to a boolean variable to track the result.
+         */
         const validCerts: boolean = CertificateManager.IsValidCertificate(operationId, mwhcCaBundle, webhookCertData, clusterArmId, clusterArmRegion);
         const matchValidation: boolean = validCerts && mwhcCaBundle && webhookCertData && mwhcCaBundle.localeCompare(webhookCertData.caCert) === 0;
         const certSignedByGivenCA: boolean = matchValidation && CertificateManager.isCertificateSignedByCA(webhookCertData.tlsCert, mwhcCaBundle);
@@ -349,7 +407,13 @@ export class CertificateManager {
         let shouldRestartReplicaset = false;
         let caPublicCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.caCert);
 
-        // Check if CA Cert is relativekly close to expiration
+        /**
+         * In the provided code block, there is a check to determine if the CA (Certificate Authority) certificate is close to expiration. 
+         * If the certificate has less than 90 days until expiration, the code proceeds to regenerate the CA certificate. 
+         * It sets a flag `shouldUpdate` to true and generates a new CA certificate using the `GenerateCACertificate` function. 
+         * This function takes an optional existing key pair as a parameter, and if not provided, it generates a new key pair. 
+         * The generated CA certificate is then converted to PEM format and assigned to the `caCert` property of the `webhookCertData` object.
+         */
         let daysToExpiry = (caPublicCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
             logger.info('CA Certificate is close to expiration, regenerating CA Certificate...', operationId, this.requestMetadata);
@@ -362,7 +426,7 @@ export class CertificateManager {
             webhookCertData.caCert = forge.pki.certificateToPem(caPublicCertificate);
         }
 
-        // Check if Host Cert is relatively close to expiration
+        // Check if Host Cert is relatively close to expiration, similar to above
         const hostCertificate: forge.pki.Certificate = forge.pki.certificateFromPem(webhookCertData.tlsCert);
         daysToExpiry = (hostCertificate.validity.notAfter.valueOf() - timeNow)/dayVal;
         if (daysToExpiry < 90) {
@@ -375,6 +439,10 @@ export class CertificateManager {
             webhookCertData.tlsKey = forge.pki.privateKeyToPem(newHostCert.privateKey);
         }
 
+        /**
+         * If either the CA certificate or the host certificate is regenerated, the webhook and certificates are patched
+         * and the webhook deployment is restarted. If neither certificate is regenerated, the reconciliation is complete.
+         */
         if (shouldUpdate) {
             await CertificateManager.PatchWebhookAndCertificates(operationId, kc, webhookCertData, clusterArmId, clusterArmRegion);
             if (shouldRestartReplicaset) {
@@ -387,9 +455,22 @@ export class CertificateManager {
         }
     }
 
+    /**
+     * This method restarts the webhook deployment. 
+     * @param operationId - The operation ID.
+     * @param kc - The Kubernetes configuration.
+     * @param clusterArmId - The ARM ID of the cluster.
+     * @param clusterArmRegion - The ARM region of the cluster.
+     */
     private static async RestartWebhookDeployment(operationId: string, kc: k8s.KubeConfig, clusterArmId: string, clusterArmRegion: string) {
         let name = null;
     
+        /**
+         * The try block contains the logic to restart the webhook deployment. It first gets the webhook deployment by
+         * its selector. If there is no deployment or more than one deployment with the selector, it throws an error. If
+         * there is exactly one deployment with the selector, it restarts the deployment by updating the annotations with
+         * the current time.
+         */
         try {
             const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
             const selector = "app-monitoring-webhook"
