@@ -289,7 +289,7 @@ export class CertificateManager {
     }
 
     /**
-     * This method creates a webhook and certificates.
+     * This method creates a webhook and certificates for a secret store in AKS.
      * @param operationId - The operation ID.
      * @param clusterArmId - The ARM ID of the cluster.
      * @param clusterArmRegion - The ARM region of the cluster.
@@ -317,7 +317,7 @@ export class CertificateManager {
     }
 
     /**
-     * This method reconciles the webhook and certificates. It does this by checking if the certificate installer job has
+     * This method reconciles the webhook ca bundle and certificates in the AKS secret store. It does this by checking if the certificate installer job has
      * finished, getting the secret details, getting the mutating webhook CA bundle, and then checking if the certificates
      * are valid or not or if they are close to expiry. If either certificate is regenerated, it patches the webhook and certificates and
      * restarts the webhook deployment so it picks up the new certificates.
