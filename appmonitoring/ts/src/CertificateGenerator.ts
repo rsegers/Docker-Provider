@@ -250,10 +250,9 @@ export class CertificateManager {
 
     /**
      * This method checks if a specific Kubernetes job has finished. It does this by reading the status of a job
-     * named 'appmonitoring-cert-manager-hook-install' in a specific namespace. If the job status indicates completion,
-     * it logs the completion and sends an event. If the job is not yet complete, it logs this information and sends
-     * an event. If there is an error in getting the job status, it logs the error, sends an event, and throws the error.
-     *
+     * named `appmonitoring-cert-manager-hook-install` in a specific namespace. If the job status indicates completion,
+     * it returns true. If the job is not yet complete, it returns a false value.
+     * If there is an error in getting the job status, it throws the error.
      * @param kubeConfig - The Kubernetes configuration.
      * @param operationId - The operation ID.
      * @param clusterArmId - The ARM ID of the cluster.
