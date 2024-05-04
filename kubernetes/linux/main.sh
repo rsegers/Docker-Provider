@@ -549,11 +549,11 @@ if [ -e "/etc/ama-logs-secret/WSID" ]; then
                   # Proxy config for AMA core agent
                   if isHighLogScaleMode; then
                         if [ "$proxyprotocol" == "http://" ]; then
-                              export HTTP_PROXY=$PROXY_ENDPOINT
-                              echo "export HTTP_PROXY=$HTTP_PROXY" >> ~/.bashrc
+                              export http_proxy=$MDSD_PROXY_ADDRESS
+                              echo "export http_proxy=$http_proxy" >> ~/.bashrc
                         elif [ "$proxyprotocol" == "https://" ]; then
-                              export HTTPS_PROXY=$PROXY_ENDPOINT
-                              echo "export HTTPS_PROXY=$HTTPS_PROXY" >> ~/.bashrc
+                              export https_proxy=$MDSD_PROXY_ADDRESS
+                              echo "export https_proxy=$https_proxy" >> ~/.bashrc
                         fi
                   fi
             fi

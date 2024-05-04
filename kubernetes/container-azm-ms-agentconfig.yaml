@@ -212,7 +212,7 @@ data:
     #    disabled = "true"
 
     # Enable high log scale mode feature which can support upto 50K logs/sec per node.
-    # Only supported for ContainerLogV2 schema and containerlog_schema_version MUST be v2.
+    # Only supported for ContainerLogV2 schema and containerlog_schema_version MUST be v2 and DCR MUST have Microsoft-ContainerLogV2-HighScale stream instead of Microsoft-ContainerLogV2 stream.
     # [agent_settings.high_log_scale]
     #     enabled = true
 
