@@ -28,7 +28,7 @@ end
 @default_high_log_scale_service_interval = "1"
 @default_high_log_scale_max_storage_chunks_up = "500" # Each chunk size is ~2MB
 @default_high_log_scale_max_storage_type = "filesystem" # filesystem = memory + filesystem in fluent-bit
-@default_high_log_scale_max_storage_total_limit_size = "2G"
+@default_high_log_scale_max_storage_total_limit_size = "10G"
 
 def is_number?(value)
   true if Integer(value) rescue false
