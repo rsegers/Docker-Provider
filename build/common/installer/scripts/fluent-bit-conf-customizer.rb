@@ -84,6 +84,40 @@ def substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
   return new_contents
 end
 
+def substituteHighLogScaleConfig(enableFbitThreading, storageType, storageMaxChunksUp, new_contents)
+  begin
+      if is_high_log_scale_mode?
+        puts "Since high log scale mode configured hence using threaded on for tail plugin"
+        new_contents = new_contents.gsub("#${OMS_TAIL_THREADED}", "threaded on")
+      elsif (!enableFbitThreading.nil? && !enableFbitThreading.empty? && enableFbitThreading.to_s.downcase == "true" )
+        new_contents = new_contents.gsub("#${OMS_TAIL_THREADED}", "threaded on")
+      else
+        new_contents = new_contents.gsub("\n    #${OMS_TAIL_THREADED}\n", "\n")
+      end
+
+      if is_high_log_scale_mode?
+        new_contents = new_contents.gsub("#${OMS_STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
+        puts "Since high log scale mode configured hence using storage.type: #{@default_high_log_scale_max_storage_type} for tail plugin"
+      elsif !storageType.nil? && !storageType.empty?
+        new_contents = new_contents.gsub("#${OMS_STORAGE_TYPE}", "storage.type " + storageType)
+      else
+        new_contents = new_contents.gsub("\n    #${OMS_STORAGE_TYPE}\n", "\n")
+      end
+
+      if is_high_log_scale_mode?
+        new_contents = new_contents.gsub("#${OMS_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
+        puts "Since high log scale mode configured hence using storage.max_chunks_up: #{@default_high_log_scale_max_storage_chunks_up} for tail plugin"
+      elsif !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
+        new_contents = new_contents.gsub("#${OMS_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
+      else
+        new_contents = new_contents.gsub("\n    #${OMS_MAX_STORAGE_CHUNKS_UP}\n", "\n")
+      end
+  rescue => err
+     puts "config::substituteHighLogScaleConfig failed with an error: #{err}"
+  end
+  return new_contents
+end
+
 def substituteFluentBitPlaceHolders
   begin
     # Replace the fluentbit config file with custom values if present
@@ -146,32 +180,7 @@ def substituteFluentBitPlaceHolders
       new_contents = new_contents.gsub("\n    ${TAIL_IGNORE_OLDER}\n", "\n")
     end
 
-    if is_high_log_scale_mode?
-      puts "Since high log scale mode configured hence using threaded on for tail plugin"
-      new_contents = new_contents.gsub("#${OMS_TAIL_THREADED}", "threaded on")
-    elsif (!enableFbitThreading.nil? && !enableFbitThreading.empty? && enableFbitThreading.to_s.downcase == "true" )
-      new_contents = new_contents.gsub("#${OMS_TAIL_THREADED}", "threaded on")
-    else
-      new_contents = new_contents.gsub("\n    #${OMS_TAIL_THREADED}\n", "\n")
-    end
-
-    if is_high_log_scale_mode?
-      new_contents = new_contents.gsub("#${OMS_STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
-      puts "Since high log scale mode configured hence using storage.type: #{@default_high_log_scale_max_storage_type} for tail plugin"
-    elsif !storageType.nil? && !storageType.empty?
-      new_contents = new_contents.gsub("#${OMS_STORAGE_TYPE}", "storage.type " + storageType)
-    else
-      new_contents = new_contents.gsub("\n    #${OMS_STORAGE_TYPE}\n", "\n")
-    end
-
-    if is_high_log_scale_mode?
-      new_contents = new_contents.gsub("#${OMS_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
-      puts "Since high log scale mode configured hence using storage.max_chunks_up: #{@default_high_log_scale_max_storage_chunks_up} for tail plugin"
-    elsif !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
-      new_contents = new_contents.gsub("#${OMS_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
-    else
-      new_contents = new_contents.gsub("\n    #${OMS_MAX_STORAGE_CHUNKS_UP}\n", "\n")
-    end
+    new_contents = substituteHighLogScaleConfig(enableFbitThreading, storageType,  storageMaxChunksUp, new_contents)
 
     if !kubernetesMetadataCollection.nil? && kubernetesMetadataCollection.to_s.downcase == "true"
       new_contents = new_contents.gsub("#${KubernetesFilterEnabled}", "")
