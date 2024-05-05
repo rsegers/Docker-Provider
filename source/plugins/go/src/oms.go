@@ -1706,7 +1706,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				containerlogDataType = ContainerLogV2DataType
 			}
 			MdsdContainerLogTagName = getOutputStreamIdTag(containerlogDataType, MdsdContainerLogTagName, &MdsdContainerLogTagRefreshTracker)
-			//Log("Success::AMA::Flushing records : %s with streamId tag: %s", containerlogDataType, MdsdContainerLogTagName)
 			if MdsdContainerLogTagName == "" {
 				Log("Warn::mdsd::skipping Microsoft-ContainerLog or Microsoft-ContainerLogV2 stream since its opted out")
 				return output.FLB_RETRY
