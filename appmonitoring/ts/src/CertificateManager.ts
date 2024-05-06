@@ -249,7 +249,7 @@ export class CertificateManager {
 
     /**
      * This method checks if a specific Kubernetes job has finished. It does this by reading the status of a job
-     * named `appmonitoring-cert-manager-hook-install` in a specific namespace. If the job status indicates completion,
+     * named `app-monitoring-cert-manager-hook-install` in a specific namespace. If the job status indicates completion,
      * it returns true. If the job is not yet complete, it returns a false value.
      * If there is an error in getting the job status, it throws the error.
      * @param kubeConfig - The Kubernetes configuration.
@@ -261,7 +261,7 @@ export class CertificateManager {
     private static async HasCertificateInstallerJobFinished(kubeConfig: k8s.KubeConfig, operationId: string, clusterArmId: string, clusterArmRegion: string): Promise<boolean> {
         const k8sApi = kubeConfig.makeApiClient(k8s.BatchV1Api);
         const requestMetadata = this.requestMetadata;
-        const jobName = 'appmonitoring-cert-manager-hook-install';
+        const jobName = 'app-monitoring-secrets-installer';
         const namespace = KubeSystemNamespaceName;
 
         try {
