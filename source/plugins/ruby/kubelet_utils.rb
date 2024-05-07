@@ -3,7 +3,8 @@
 # frozen_string_literal: true
 
 require "logger"
-require "json"
+require 'oj'
+Oj.mimic_JSON()
 require_relative "CAdvisorMetricsAPIClient"
 require_relative "KubernetesApiClient"
 require "bigdecimal"

@@ -3,7 +3,8 @@ require "logger"
 require "net/http"
 require "net/https"
 require "uri"
-require "json"
+require 'oj'
+Oj.mimic_JSON()
 require "base64"
 require "time"
 require_relative "ApplicationInsightsUtility"

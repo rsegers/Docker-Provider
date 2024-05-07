@@ -10,7 +10,8 @@ module Fluent::Plugin
     def initialize
       super
       require "yaml"
-      require "json"
+      require 'oj'
+      Oj.mimic_JSON()
       require "set"
       require "time"
       require "net/http"

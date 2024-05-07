@@ -6,7 +6,8 @@ class ApplicationInsightsUtility
   require_relative "omslog"
   require_relative "oms_common"
   require_relative "proxy_utils"
-  require "json"
+  require 'oj'
+  Oj.mimic_JSON()
   require "base64"
 
   @@HeartBeat = "HeartBeatEvent"

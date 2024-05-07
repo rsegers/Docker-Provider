@@ -1,4 +1,5 @@
-require "json"
+require 'oj'
+Oj.mimic_JSON()
 require "net/http"
 require "openssl"
 require "stringio"

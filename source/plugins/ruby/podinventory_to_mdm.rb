@@ -3,7 +3,8 @@
 # frozen_string_literal: true
 
 require "logger"
-require "json"
+require 'oj'
+Oj.mimic_JSON()
 require "time"
 require_relative "oms_common"
 require_relative "CustomMetricsUtils"

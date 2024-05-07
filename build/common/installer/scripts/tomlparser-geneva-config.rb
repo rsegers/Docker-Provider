@@ -2,7 +2,8 @@
 
 @os_type = ENV["OS_TYPE"]
 require "tomlrb"
-require "json"
+require 'oj'
+Oj.mimic_JSON()
 
 require_relative "ConfigParseErrorLogger"
 

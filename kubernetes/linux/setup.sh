@@ -84,7 +84,7 @@ rm -rf /usr/lib/ruby/gems/3.1.0/gems/fluentd-$fluentd_version/test/
 echo "$(fluentd --version)" >> packages_version.txt
 fluentd --setup ./fluent
 
-gem install gyoku iso8601 bigdecimal --no-doc
+gem install gyoku iso8601 bigdecimal oj --no-doc
 gem install tomlrb -v "2.0.1" --no-document
 gem install ipaddress --no-document
 gem install jwt -v "2.7.1" --no-document

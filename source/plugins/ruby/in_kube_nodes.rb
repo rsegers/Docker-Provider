@@ -16,7 +16,8 @@ module Fluent::Plugin
       super()
 
       require "yaml"
-      require "json"
+      require 'oj'
+      Oj.mimic_JSON()
       require "time"
 
       require_relative "KubernetesApiClient"

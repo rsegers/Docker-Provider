@@ -14,7 +14,8 @@ module Fluent::Plugin
       require "net/https"
       require "securerandom"
       require "uri"
-      require "json"
+      require 'oj'
+      Oj.mimic_JSON()
       require_relative "KubernetesApiClient"
       require_relative "ApplicationInsightsUtility"
       require_relative "constants"

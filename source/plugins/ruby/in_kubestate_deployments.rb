@@ -12,7 +12,8 @@ module Fluent::Plugin
 
     def initialize
       super
-      require "json"
+      require 'oj'
+      Oj.mimic_JSON()
       require "date"
       require "time"
 

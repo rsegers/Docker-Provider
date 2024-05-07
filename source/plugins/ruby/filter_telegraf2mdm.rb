@@ -6,7 +6,8 @@ require 'fluent/plugin/filter'
 
 module Fluent::Plugin
   require "logger"
-  require "json"
+  require 'oj'
+  Oj.mimic_JSON()
   require_relative "oms_common"
   require_relative "kubelet_utils"
   require_relative "MdmMetricsGenerator"

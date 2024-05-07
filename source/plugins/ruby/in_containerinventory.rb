@@ -11,7 +11,8 @@ module Fluent::Plugin
 
     def initialize
       super
-      require "json"
+      require 'oj'
+      Oj.mimic_JSON()
       require "time"
       require_relative "ContainerInventoryState"
       require_relative "ApplicationInsightsUtility"

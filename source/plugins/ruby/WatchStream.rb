@@ -3,7 +3,8 @@
 
 require "net/http"
 require "net/https"
-require "json"
+require 'oj'
+Oj.mimic_JSON()
 require "logger"
 require "time"
 

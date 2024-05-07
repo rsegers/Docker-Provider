@@ -2,7 +2,8 @@
 # frozen_string_literal: true
 
 class ConfigParseErrorLogger
-  require "json"
+  require 'oj'
+  Oj.mimic_JSON()
 
   def initialize
   end

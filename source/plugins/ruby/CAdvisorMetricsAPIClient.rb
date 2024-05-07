@@ -2,7 +2,8 @@
 # frozen_string_literal: true
 
 class CAdvisorMetricsAPIClient
-  require "json"
+  require 'oj'
+  Oj.mimic_JSON()
   require "logger"
   require "net/http"
   require "net/https"

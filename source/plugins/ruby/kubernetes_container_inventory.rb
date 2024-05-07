@@ -2,7 +2,8 @@
 # frozen_string_literal: true
 
 class KubernetesContainerInventory
-  require "json"
+  require 'oj'
+  Oj.mimic_JSON()
   require "time"
   require_relative "omslog"
   require_relative "ApplicationInsightsUtility"

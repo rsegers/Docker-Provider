@@ -3,7 +3,8 @@
 
 class MdmMetricsGenerator
   require "logger"
-  require "json"
+  require 'oj'
+  Oj.mimic_JSON()
   require_relative "MdmAlertTemplates"
   require_relative "ApplicationInsightsUtility"
   require_relative "constants"
