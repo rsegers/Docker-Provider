@@ -577,8 +577,14 @@ func PushToAppInsightsTraces(records []map[interface{}]interface{}, severityLeve
 			UpdateTracesErrorMetrics("AddonTokenAdapterForwardingTokenRequestToIMDS")
 		} else if strings.Contains(logEntry, "watch channel is closed, retrying..") {
 			UpdateTracesErrorMetrics("AddonTokenAdapterWatchChannelClosed")
+		} else if strings.Contains(logEntry, "error modifying iptable rules:") {
+			UpdateTracesErrorMetrics("AddonTokenAdapterErrorModifyingIptableRules")
+		} else if strings.Contains(logEntry, "Token last updated at") && strings.Contains(logEntry, "exiting the container") {
+			UpdateTracesErrorMetrics("AddonTokenAdapterExitContainerTokenNotUpdated")
 		} else {
-			logLines = append(logLines, logEntry)
+			if !strings.Contains(tag, "addon-token-adapter") {
+				logLines = append(logLines, logEntry)
+			}
 		}
 	}
 
