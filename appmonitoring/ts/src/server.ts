@@ -5,7 +5,7 @@ import { InstrumentationCR, IAdmissionReview } from "./RequestDefinition.js";
 import { K8sWatcher } from "./K8sWatcher.js";
 import { InstrumentationCRsCollection } from "./InstrumentationCRsCollection.js"
 import fs from "fs";
-import { CertificateManager } from "./CertificateGenerator.js";
+import { CertificateManager } from "./CertificateManager.js";
 import { randomUUID } from 'crypto';
 
 const containerMode = process.env.CONTAINER_MODE;
@@ -34,8 +34,8 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
         logger.info("Running in certificate housekeeper mode...", operationId, null);
         await CertificateManager.ReconcileWebhookAndCertificates(operationId, clusterArmId, clusterArmRegion);
     } catch (error) {
-        logger.error(JSON.stringify(error), operationId, null);
-        logger.error("Failed to Update Certificates, Terminating...", operationId, null);
+        logger.error(`Failed to Update Certificates, Terminating...\n${JSON.stringify(error)}`, operationId, null);
+        logger.SendEvent("SecretsHouseKeeperFailed", operationId, null, clusterArmId, clusterArmRegion, true, error);
         throw error;
     }
     process.exit();

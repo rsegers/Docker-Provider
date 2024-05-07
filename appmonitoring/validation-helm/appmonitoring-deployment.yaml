@@ -235,7 +235,7 @@ roleRef:
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: appmonitoring-cert-manager-hook-install
+  name: app-monitoring-secrets-installer
   namespace: kube-system
   labels:
     component: app-monitoring
