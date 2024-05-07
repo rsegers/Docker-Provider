@@ -1,6 +1,25 @@
 #!/bin/bash
 set -e
 
+# Check if oras is installed, if not install it
+if ! command -v oras &> /dev/null
+then
+    echo "oras could not be found, installing..."
+    curl -Lo oras.tar.gz https://github.com/oras-project/oras/releases/download/v1.1.0/oras_1.1.0_linux_amd64.tar.gz
+    mkdir -p oras-install
+    tar -zxf oras.tar.gz -C oras-install
+    sudo mv oras-install/oras /usr/local/bin/
+    rm -rf oras-install oras.tar.gz
+    if ! command -v oras &> /dev/null; then
+        echo "Failed to install oras."
+        exit 1
+    fi
+    else
+        echo "oras installed successfully."
+        oras version
+    fi
+fi
+
 # Note - This script used in the pipeline as inline script
 
 if [ -z $AGENT_IMAGE_TAG_SUFFIX ]; then
@@ -21,7 +40,6 @@ if [ $? -ne 0 ]; then
 fi
 
 TAG_EXISTS_STATUS=0 #Default value for the condition when the echo fails below
-AZ_ACR_IMPORT_FORCE=""
 
 if [[ "$AGENT_IMAGE_FULL_PATH" == *"win-"* ]]; then
   echo "checking windows tags"
@@ -35,7 +53,6 @@ echo "TAG_EXISTS_STATUS = $TAG_EXISTS_STATUS; OVERRIDE_TAG = $OVERRIDE_TAG"
 
 if [[ "$OVERRIDE_TAG" == "true" ]]; then
   echo "OverrideTag set to true. Will override ${AGENT_IMAGE_TAG_SUFFIX} image"
-  AZ_ACR_IMPORT_FORCE="--force"
 elif [ "$TAG_EXISTS_STATUS" -eq 0 ]; then
   echo "-e error ${AGENT_IMAGE_TAG_SUFFIX} already exists in mcr. make sure the image tag is unique"
   exit 1
@@ -72,11 +89,13 @@ else
   exit 1
 fi     
 
-echo "Pushing ${AGENT_IMAGE_FULL_PATH} to ${ACR_NAME} with force option set to ${AZ_ACR_IMPORT_FORCE}"
-az acr import --name $ACR_NAME --source $SOURCE_IMAGE_FULL_PATH --image $AGENT_IMAGE_FULL_PATH $AZ_ACR_IMPORT_FORCE
-if [ $? -eq 0 ]; then
-  echo "Retagged and pushed image successfully"
-else
-  echo "-e error failed to retag and push image to destination ACR"
-  exit 1
+if [ "$OVERRIDE_TAG" == "true" ] || [ "$TAG_EXISTS_STATUS" -ne 0 ]; then
+  echo "Copying ${SOURCE_IMAGE_FULL_PATH} to ${ACR_NAME}/${AGENT_IMAGE_FULL_PATH}"
+  oras copy -r $SOURCE_IMAGE_FULL_PATH $ACR_NAME/$AGENT_IMAGE_FULL_PATH
+  if [ $? -eq 0 ]; then
+    echo "Retagged and pushed image and artifact successfully"
+  else
+    echo "-e error failed to retag and push image to destination ACR"
+    exit 1
+  fi
 fi
