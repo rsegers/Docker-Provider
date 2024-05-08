@@ -74,7 +74,6 @@ Write-Host ('Finished Extracting Certificate Generator Package')
 $windowsazuremonitoragent = [System.Environment]::GetEnvironmentVariable("WINDOWS_AMA_URL_NEW", "process")
 if ([string]::IsNullOrEmpty($windowsazuremonitoragent)) {
     Write-Host ('Environment variable WINDOWS_AMA_URL is not set. Using default value')
-    # TODO - Please update with official build which has GIG LA changes for Windows
     $windowsazuremonitoragent = "https://github.com/microsoft/Docker-Provider/releases/download/windows-ama-bits/genevamonitoringagent.46.17.2.zip"
 }
 Write-Host ('Installing Windows Azure Monitor Agent: ' + $windowsazuremonitoragent)
