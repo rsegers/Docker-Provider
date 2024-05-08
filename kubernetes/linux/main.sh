@@ -613,24 +613,30 @@ if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATIO
 fi
 
 #Replace the placeholders in fluent-bit.conf file for fluentbit with custom/default values in daemonset
-if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
-      ruby fluent-bit-conf-customizer.rb
+if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       #Parse geneva config
       ruby tomlparser-geneva-config.rb
+
       cat geneva_config_env_var | while read line; do
             echo $line >> ~/.bashrc
       done
       source geneva_config_env_var
-      if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-            ruby fluent-bit-geneva-conf-customizer.rb  "common"
-            ruby fluent-bit-geneva-conf-customizer.rb  "tenant"
-            ruby fluent-bit-geneva-conf-customizer.rb  "infra"
-            ruby fluent-bit-geneva-conf-customizer.rb  "tenant_filter"
-            ruby fluent-bit-geneva-conf-customizer.rb  "infra_filter"
-            # generate genavaconfig for each tenant
-            generateGenevaTenantNamespaceConfig
-            # generate genavaconfig for infra namespace
-            generateGenevaInfraNamespaceConfig
+
+      if [ ! -e "/etc/config/kube.conf" ]; then
+      #Parse fluent-bit-conf-customizer.rb as it uses geneva environment variables
+            ruby fluent-bit-conf-customizer.rb
+            
+            if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
+                  ruby fluent-bit-geneva-conf-customizer.rb  "common"
+                  ruby fluent-bit-geneva-conf-customizer.rb  "tenant"
+                  ruby fluent-bit-geneva-conf-customizer.rb  "infra"
+                  ruby fluent-bit-geneva-conf-customizer.rb  "tenant_filter"
+                  ruby fluent-bit-geneva-conf-customizer.rb  "infra_filter"
+                  # generate genavaconfig for each tenant
+                  generateGenevaTenantNamespaceConfig
+                  # generate genavaconfig for infra namespace
+                  generateGenevaInfraNamespaceConfig
+            fi
       fi
 fi
 
@@ -979,7 +985,7 @@ if [ ! -f /etc/cron.d/ci-agent ]; then
 fi
 
 setGlobalEnvVar AZMON_WINDOWS_FLUENT_BIT_DISABLED "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}"
-if [ "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" == "true" ] || [ -z "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" ] || [ "${USING_AAD_MSI_AUTH}" != "true" ] || [ "${GENEVA_LOGS_INTEGRATION}" == "true" ]; then
+if [ "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" == "true" ] || [ -z "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" ] || [ "${USING_AAD_MSI_AUTH}" != "true" ] || [ "${RS_GENEVA_LOGS_INTEGRATION}" == "true" ]; then
       if [ -e "/etc/config/kube.conf" ]; then
            # Replace a string in the configmap file
             sed -i "s/#@include windows_rs/@include windows_rs/g" /etc/fluent/kube.conf
@@ -1153,6 +1159,10 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       sed -i -e "s/placeholder_hostname/$nodename/g" $telegrafConfFile
 fi
 
+if [ "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}" == "true" ]; then
+      sed -i '/^#CustomMetricsStart/,/^#CustomMetricsEnd/ s/^/# /' $telegrafConfFile
+fi
+
 export HOST_MOUNT_PREFIX=/hostfs
 echo "export HOST_MOUNT_PREFIX=/hostfs" >>~/.bashrc
 export HOST_PROC=/hostfs/proc
@@ -1178,8 +1188,10 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE
             else
                   echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
                   waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
-                  echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
-                  waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
+                  if [ "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}" != "true" ]; then
+                        echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
+                        waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
+                  fi
             fi
       fi
 elif [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
