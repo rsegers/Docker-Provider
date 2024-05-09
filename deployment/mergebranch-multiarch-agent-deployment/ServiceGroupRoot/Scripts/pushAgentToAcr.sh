@@ -64,11 +64,19 @@ fi
 echo "Login cli using managed identity"
 az login --identity
 if [ $? -eq 0 ]; then
-  echo "Logged in successfully"
+  echo "az logged in successfully"
 else
   echo "-e error failed to login to az with managed identity credentials"
   exit 1
-fi     
+fi
+
+az acr login -n containerinsights
+if [ $? -eq 0 ]; then
+  echo "az acr logged in successfully"
+else
+  echo "-e error failed to login to az acr with managed identity credentials for containerinsights"
+  exit 1
+fi
 
 if [ "$OVERRIDE_TAG" == "true" ] || [ "$TAG_EXISTS_STATUS" -ne 0 ]; then
   echo "Copying ${SOURCE_IMAGE_FULL_PATH} to ${ACR_NAME}/${AGENT_IMAGE_FULL_PATH}"
