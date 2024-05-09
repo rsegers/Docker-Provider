@@ -1,23 +1,6 @@
 #!/bin/bash
 set -e
 
-# Check if oras is installed, if not install it
-if ! command -v oras &> /dev/null; then
-    echo "oras could not be found, installing..."
-    curl -Lo oras.tar.gz https://github.com/oras-project/oras/releases/download/v1.1.0/oras_1.1.0_linux_amd64.tar.gz
-    mkdir -p oras-install
-    tar -zxf oras.tar.gz -C oras-install
-    sudo mv oras-install/oras /usr/local/bin/
-    rm -rf oras-install oras.tar.gz
-    if ! command -v oras &> /dev/null; then
-        echo "Failed to install oras."
-        exit 1
-    else
-        echo "oras installed successfully."
-        oras version
-    fi
-fi
-
 # Note - This script used in the pipeline as inline script
 
 if [ -z $AGENT_IMAGE_TAG_SUFFIX ]; then
