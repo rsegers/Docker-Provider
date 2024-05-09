@@ -88,29 +88,29 @@ def substituteHighLogScaleConfig(enableFbitThreading, storageType, storageMaxChu
   begin
       if is_high_log_scale_mode?
         puts "Since high log scale mode configured hence using threaded on for tail plugin"
-        new_contents = new_contents.gsub("#${OMS_TAIL_THREADED}", "threaded on")
+        new_contents = new_contents.gsub("#${AZMON_TAIL_THREADED}", "threaded on")
       elsif (!enableFbitThreading.nil? && !enableFbitThreading.empty? && enableFbitThreading.to_s.downcase == "true" )
-        new_contents = new_contents.gsub("#${OMS_TAIL_THREADED}", "threaded on")
+        new_contents = new_contents.gsub("#${AZMON_TAIL_THREADED}", "threaded on")
       else
-        new_contents = new_contents.gsub("\n    #${OMS_TAIL_THREADED}\n", "\n")
+        new_contents = new_contents.gsub("\n    #${AZMON_TAIL_THREADED}\n", "\n")
       end
 
       if is_high_log_scale_mode?
-        new_contents = new_contents.gsub("#${OMS_STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
+        new_contents = new_contents.gsub("#${AZMON_STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
         puts "Since high log scale mode configured hence using storage.type: #{@default_high_log_scale_max_storage_type} for tail plugin"
       elsif !storageType.nil? && !storageType.empty?
-        new_contents = new_contents.gsub("#${OMS_STORAGE_TYPE}", "storage.type " + storageType)
+        new_contents = new_contents.gsub("#${AZMON_STORAGE_TYPE}", "storage.type " + storageType)
       else
-        new_contents = new_contents.gsub("\n    #${OMS_STORAGE_TYPE}\n", "\n")
+        new_contents = new_contents.gsub("\n    #${AZMON_STORAGE_TYPE}\n", "\n")
       end
 
       if is_high_log_scale_mode?
-        new_contents = new_contents.gsub("#${OMS_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
+        new_contents = new_contents.gsub("#${AZMON_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
         puts "Since high log scale mode configured hence using storage.max_chunks_up: #{@default_high_log_scale_max_storage_chunks_up} for tail plugin"
       elsif !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
-        new_contents = new_contents.gsub("#${OMS_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
+        new_contents = new_contents.gsub("#${AZMON_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
       else
-        new_contents = new_contents.gsub("\n    #${OMS_MAX_STORAGE_CHUNKS_UP}\n", "\n")
+        new_contents = new_contents.gsub("\n    #${AZMON_MAX_STORAGE_CHUNKS_UP}\n", "\n")
       end
   rescue => err
      puts "config::substituteHighLogScaleConfig failed with an error: #{err}"
