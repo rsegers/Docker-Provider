@@ -249,6 +249,11 @@ jobs:
 
         trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
   
+  # Find in cache or download a specific version of Go and add it to the PATH.
+  - task: GoTool@0
+    inputs:
+      version: '1.22.3'
+
   - bash: |
         cd $(System.DefaultWorkingDirectory)/build/linux/
         ls
