@@ -86,29 +86,29 @@ end
 
 def substituteHighLogScaleConfig(enableFbitThreading, storageType, storageMaxChunksUp, new_contents)
   begin
-      if is_high_log_scale_mode?
-        puts "Since high log scale mode configured hence using threaded on for tail plugin"
+      if is_high_log_scale_mode? || (!enableFbitThreading.nil? && !enableFbitThreading.empty? && enableFbitThreading.to_s.downcase == "true" )
         new_contents = new_contents.gsub("#${AZMON_TAIL_THREADED}", "threaded on")
-      elsif (!enableFbitThreading.nil? && !enableFbitThreading.empty? && enableFbitThreading.to_s.downcase == "true" )
-        new_contents = new_contents.gsub("#${AZMON_TAIL_THREADED}", "threaded on")
+        puts "using threaded on for tail plugin"
       else
         new_contents = new_contents.gsub("\n    #${AZMON_TAIL_THREADED}\n", "\n")
       end
 
       if is_high_log_scale_mode?
         new_contents = new_contents.gsub("#${AZMON_STORAGE_TYPE}", "storage.type " + @default_high_log_scale_max_storage_type)
-        puts "Since high log scale mode configured hence using storage.type: #{@default_high_log_scale_max_storage_type} for tail plugin"
+        puts "using storage.type: #{@default_high_log_scale_max_storage_type} for tail plugin"
       elsif !storageType.nil? && !storageType.empty?
         new_contents = new_contents.gsub("#${AZMON_STORAGE_TYPE}", "storage.type " + storageType)
+        puts "using storage.type: #{storageType} for tail plugin"
       else
         new_contents = new_contents.gsub("\n    #${AZMON_STORAGE_TYPE}\n", "\n")
       end
 
       if is_high_log_scale_mode?
         new_contents = new_contents.gsub("#${AZMON_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + @default_high_log_scale_max_storage_chunks_up)
-        puts "Since high log scale mode configured hence using storage.max_chunks_up: #{@default_high_log_scale_max_storage_chunks_up} for tail plugin"
+        puts "using storage.max_chunks_up: #{@default_high_log_scale_max_storage_chunks_up} for tail plugin"
       elsif !storageMaxChunksUp.nil? && !storageMaxChunksUp.empty?
         new_contents = new_contents.gsub("#${AZMON_MAX_STORAGE_CHUNKS_UP}", "storage.max_chunks_up " + storageMaxChunksUp)
+        puts "using storage.max_chunks_up: #{storageMaxChunksUp} for tail plugin"
       else
         new_contents = new_contents.gsub("\n    #${AZMON_MAX_STORAGE_CHUNKS_UP}\n", "\n")
       end
@@ -142,7 +142,7 @@ def substituteFluentBitPlaceHolders
     serviceInterval = @default_service_interval
     if is_high_log_scale_mode?
       serviceInterval = @default_high_log_scale_service_interval
-      puts "Since high log scale mode configured hence using Flush interval: #{serviceInterval}"
+      puts " using Flush interval: #{serviceInterval}"
     elsif (!interval.nil? && is_number?(interval) && interval.to_i > 0)
       serviceInterval = interval
     end
