@@ -62,9 +62,9 @@ end
 
 def substituteStorageTotalLimitSize(new_contents)
    if is_high_log_scale_mode?
-      new_contents = new_contents.gsub("#${OMS_STORAGE_TOTAL_LIMIT_SIZE_MB}", "storage.total_limit_size  " + @default_high_log_scale_max_storage_total_limit_size)
+      new_contents = new_contents.gsub("#${AZMON_STORAGE_TOTAL_LIMIT_SIZE_MB}", "storage.total_limit_size  " + @default_high_log_scale_max_storage_total_limit_size)
    else
-      new_contents = new_contents.gsub("\n    #${OMS_STORAGE_TOTAL_LIMIT_SIZE_MB}\n", "\n")
+      new_contents = new_contents.gsub("\n    #${AZMON_STORAGE_TOTAL_LIMIT_SIZE_MB}\n", "\n")
    end
    return new_contents
 end
