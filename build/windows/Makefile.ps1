@@ -157,6 +157,7 @@ if ($isCDPxEnvironment) {
   }
 
   Write-Host("getting latest go modules ...")
+  go version
   go  get
   Write-Host("successfully got latest go modules") -ForegroundColor Green
 
