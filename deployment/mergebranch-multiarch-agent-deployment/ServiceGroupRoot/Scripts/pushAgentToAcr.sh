@@ -70,8 +70,7 @@ else
   exit 1
 fi
 
-LOGIN_INFO=$(az acr login -n $ACR_NAME --expose-token)
-TOKEN=$(echo $LOGIN_INFO | jq -r '.accessToken')
+TOKEN=$(az acr login --name $ACR_NAME --expose-token --output tsv --query accessToken)
 if [ $? -eq 0 ]; then
   echo "az acr logged in successfully with token"
 else
@@ -80,8 +79,16 @@ else
 fi
 
 if [ "$OVERRIDE_TAG" == "true" ] || [ "$TAG_EXISTS_STATUS" -ne 0 ]; then
+  echo $TOKEN | oras login --password-stdin $ACR_NAME
+  if [ $? -eq 0 ]; then
+    echo "oras logged in successfully"
+  else
+    echo "-e error failed to login to oras with managed identity credentials for containerinsights"
+    exit 1
+  fi
+
   echo "Copying ${SOURCE_IMAGE_FULL_PATH} to ${ACR_NAME}/${AGENT_IMAGE_FULL_PATH}"
-  oras copy -r $SOURCE_IMAGE_FULL_PATH $ACR_NAME/$AGENT_IMAGE_FULL_PATH --to-password $TOKEN
+  oras copy -r $SOURCE_IMAGE_FULL_PATH $ACR_NAME/$AGENT_IMAGE_FULL_PATH
   if [ $? -eq 0 ]; then
     echo "Retagged and pushed image and artifact successfully"
   else
