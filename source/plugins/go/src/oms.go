@@ -1081,12 +1081,12 @@ func PostTelegrafMetricsToLA(telegrafRecords []map[interface{}]interface{}) int 
 				bts, er = MdsdInsightsMetricsMsgpUnixSocketClient.Write(msgpBytes)
 			} else {
 				if InsightsMetricsNamedPipe == nil {
-					EnsureGenevaOr3PNamedPipeExists(&InsightsMetricsNamedPipe, InsightsMetricsDataType, &ContainerLogsWindowsAMAClientCreateErrors, false, &MdsdContainerLogTagRefreshTracker)
+					EnsureGenevaOr3PNamedPipeExists(&InsightsMetricsNamedPipe, InsightsMetricsDataType, &InsightsMetricsWindowsAMAClientCreateErrors, false, &MdsdInsightsMetricsTagRefreshTracker)
 					if InsightsMetricsNamedPipe == nil {
 						Log("Error::mdsd::Unable to create mdsd client for insights metrics. Please check error log.")
 						ContainerLogTelemetryMutex.Lock()
 						defer ContainerLogTelemetryMutex.Unlock()
-						InsightsMetricsMDSDClientCreateErrors += 1
+						InsightsMetricsWindowsAMAClientCreateErrors += 1
 						return output.FLB_RETRY
 					}
 				}
@@ -2382,7 +2382,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("Creating AMA client for KubeMonAgentEvents")
 		EnsureGenevaOr3PNamedPipeExists(&KubeMonAgentEventsNamedPipe, KubeMonAgentEventDataType, &KubeMonEventsWindowsAMAClientCreateErrors, false, &MdsdKubeMonAgentEventsTagRefreshTracker)
 		Log("Creating AMA client for InsightsMetrics")
-		EnsureGenevaOr3PNamedPipeExists(&InsightsMetricsNamedPipe, InsightsMetricsDataType, &ContainerLogsWindowsAMAClientCreateErrors, false, &MdsdContainerLogTagRefreshTracker)
+		EnsureGenevaOr3PNamedPipeExists(&InsightsMetricsNamedPipe, InsightsMetricsDataType, &InsightsMetricsWindowsAMAClientCreateErrors, false, &MdsdInsightsMetricsTagRefreshTracker)
 	}
 
 	if strings.Compare(strings.ToLower(os.Getenv("CONTROLLER_TYPE")), "daemonset") == 0 {
