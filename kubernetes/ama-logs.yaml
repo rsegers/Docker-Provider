@@ -343,7 +343,7 @@ spec:
         component: ama-logs-agent
         tier: node
       annotations:
-        agentVersion: "azure-mdsd-1.29.4"
+        agentVersion: "azure-mdsd-1.31.1"
         dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
         kubernetes.azure.com/no-http-proxy-vars: "true"
@@ -394,8 +394,8 @@ spec:
           imagePullPolicy: IfNotPresent
           resources:
             limits:
-              cpu: 500m
-              memory: 750Mi
+              cpu: 3
+              memory: 2.5Gi
             requests:
               cpu: 75m
               memory: 325Mi
@@ -687,7 +687,7 @@ spec:
       labels:
         rsName: "ama-logs-rs"
       annotations:
-        agentVersion: "azure-mdsd-1.29.4"
+        agentVersion: "azure-mdsd-1.31.1"
         dockerProviderVersion: "18.0.1-0"
         schema-versions: "v1"
         kubernetes.azure.com/no-http-proxy-vars: "true"
