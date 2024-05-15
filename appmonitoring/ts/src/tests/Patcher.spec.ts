@@ -751,7 +751,7 @@ describe("Patcher", () => {
         expect((<any>patchedResult[0]).value.spec.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "NODE_NAME").valueFrom.fieldRef.fieldPath).toBe("spec.nodeName");
         expect((<any>patchedResult[0]).value.spec.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "OTEL_DOTNET_AUTO_LOGS_ENABLED").value).toBe("false");
         expect((<any>patchedResult[0]).value.spec.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "APPLICATIONINSIGHTS_INSTRUMENTATION_LOGGING_ENABLED").value).toBe("false");
-        expect((<any>patchedResult[0]).value.spec.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT").value).toBe(`{"logInstrumentationOptions":{"console": { "enabled": false }, "bunyan": { "enabled": false },"winston": { "enabled": false }}}`);
+        expect((<any>patchedResult[0]).value.spec.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "APPLICATIONINSIGHTS_CONFIGURATION_CONTENT").value).toBe(`{"instrumentationOptions":{"console": { "enabled": false }, "bunyan": { "enabled": false },"winston": { "enabled": false }}}`);
 
         expect((<any>patchedResult[0]).value.spec.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "NODE_NAME_BEFORE_AUTO_INSTRUMENTATION").value).toBe("original conflicting value for node name");
         expect((<any>patchedResult[0]).value.spec.template.spec.containers[0].env.find((ev: IEnvironmentVariable) => ev.name === "OTEL_DOTNET_AUTO_LOGS_ENABLED_BEFORE_AUTO_INSTRUMENTATION").value).toBe("original conflicting value for dotnet auto logs enabled");
@@ -983,6 +983,6 @@ describe("Patcher", () => {
         expect((<any>result[0]).value.spec.template.spec.initContainers.length).toBe(admissionReview.request.object.spec.template.spec.initContainers.length + newInitContainers.length);
         expect((<any>result[0]).value.spec.template.spec.initContainers[2].image).toBe(`myacr.azurecr.io/some-namespace-blah/opentelemetry-auto-instrumentation/dotnet:1.0.0-rc.2`);
         expect((<any>result[0]).value.spec.template.spec.initContainers[3].image).toBe(`myacr.azurecr.io/some-namespace-blah/auto-instrumentation/java:3.5.2-aks`);
-        expect((<any>result[0]).value.spec.template.spec.initContainers[4].image).toBe(`myacr.azurecr.io/some-namespace-blah/opentelemetry-auto-instrumentation/nodejs:3.0.0`);
+        expect((<any>result[0]).value.spec.template.spec.initContainers[4].image).toBe(`myacr.azurecr.io/some-namespace-blah/opentelemetry-auto-instrumentation/nodejs:3.1.0`);
     });
 });
