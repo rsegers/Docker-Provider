@@ -12,6 +12,12 @@ data:
     # Any errors related to config map settings can be found in the KubeMonAgentEvents table in the Log Analytics workspace that the cluster is sending data to.
 
     [log_collection_settings]
+        [log_collection_settings.multi_tenancy]
+          # In the absense of this configmap, default value for enabled is false
+          enabled = false # enable for multi_tenancy and default is false
+          namespaces = ["app-team-a","app-team-b","infra-team-namespace"] # optional, Defining namespaces will enable running log collection plugins in separate thread
+          namespace_config =["app-team-a":<config>", "app-team-b:<config>", "infra-team-namespace:<config>"] # optional config per namespace level setting
+          
        [log_collection_settings.stdout]
           # In the absense of this configmap, default value for enabled is true
           enabled = true
