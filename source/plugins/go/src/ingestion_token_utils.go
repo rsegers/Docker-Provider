@@ -335,6 +335,9 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 	mcsEndpoint := os.Getenv("MCS_ENDPOINT")
 
 	AmcsEndpoint = fmt.Sprintf("https://global.handler.control.%s", mcsEndpoint)
+	if strings.Compare(strings.ToLower(resourceRegion), "eastus2euap") == 0 || strings.Compare(strings.ToLower(resourceRegion), "centraluseuap") == 0 {
+		AmcsEndpoint = fmt.Sprintf("https://global.handler.canary.control.%s", resourceRegion)
+	}
 	if AMCSRedirectedEndpoint != "" {
 		AmcsEndpoint = AMCSRedirectedEndpoint
 	}
@@ -669,7 +672,7 @@ func refreshIngestionAuthToken() {
 	}
 }
 
-//true if httpStatusCode is retriable; otherwise, false.
+// true if httpStatusCode is retriable; otherwise, false.
 func IsRetriableError(httpStatusCode int) bool {
 	retryableStatusCodes := [6]int{408, 429, 500, 502, 503, 504}
 	for _, code := range retryableStatusCodes {
@@ -680,7 +683,7 @@ func IsRetriableError(httpStatusCode int) bool {
 	return false
 }
 
-//true if httpStatusCode was in the range 200-299; otherwise, false.
+// true if httpStatusCode was in the range 200-299; otherwise, false.
 func IsSuccessStatusCode(httpStatusCode int) bool {
 	return (httpStatusCode >= 200 && httpStatusCode < 300)
 }
