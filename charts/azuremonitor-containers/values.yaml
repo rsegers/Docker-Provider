@@ -182,9 +182,12 @@ amalogs:
         cpu: 150m
         memory: 750Mi
     daemonsetwindows:
-      limits:
+      requests:
         cpu: 500m
-        memory: 600Mi
+        memory: 700Mi
+      limits:
+        cpu: 2
+        memory: 2Gi
     deployment:
       requests:
         cpu: 150m
