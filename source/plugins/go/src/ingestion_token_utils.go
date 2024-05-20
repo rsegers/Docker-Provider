@@ -336,7 +336,7 @@ func getAgentConfiguration(imdsAccessToken string) (configurationId string, chan
 
 	AmcsEndpoint = fmt.Sprintf("https://global.handler.control.%s", mcsEndpoint)
 	if strings.Compare(strings.ToLower(resourceRegion), "eastus2euap") == 0 || strings.Compare(strings.ToLower(resourceRegion), "centraluseuap") == 0 {
-		AmcsEndpoint = fmt.Sprintf("https://global.handler.canary.control.%s", resourceRegion)
+		AmcsEndpoint = fmt.Sprintf("https://global.handler.canary.control.%s", mcsEndpoint)
 	}
 	if AMCSRedirectedEndpoint != "" {
 		AmcsEndpoint = AMCSRedirectedEndpoint
