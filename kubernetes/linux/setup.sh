@@ -78,7 +78,12 @@ docker_cimprov_version=$(sudo tdnf list installed | grep docker-cimprov | awk '{
 echo "DOCKER_CIMPROV_VERSION=$docker_cimprov_version" >> packages_version.txt
 
 #install fluent-bit
-sudo tdnf install fluent-bit-2.2.3 -y
+if [ "$ARCH" == "amd64" ]; then
+ wget https://github.com/microsoft/Docker-Provider/releases/download/fluent-bit%2F3.0.3-test/fluent-bit-3.0.3-1.cm2.x86_64.rpm -O fluent-bit.rpm
+else
+ wget https://github.com/microsoft/Docker-Provider/releases/download/fluent-bit%2F3.0.3-test/fluent-bit-3.0.3-1.cm2.aarch64.rpm  -O fluent-bit.rpm
+fi
+sudo tdnf install fluent-bit.rpm -y
 echo "$(fluent-bit --version)" >> packages_version.txt
 
 # install fluentd using the mariner package
