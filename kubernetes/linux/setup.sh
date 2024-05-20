@@ -28,14 +28,22 @@ rm /usr/lib/ruby/gems/3.1.0/specifications/default/openssl-3.0.1.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/openssl-3.0.1
 rm /usr/lib/ruby/gems/3.1.0/specifications/default/find-0.1.1.gemspec
 rm -rf /usr/lib/ruby/gems/3.1.0/gems/find-0.1.1
+rm /usr/lib/ruby/gems/3.1.0/specifications/default/rdoc-6.4.0.gemspec
+rm -rf /usr/lib/ruby/gems/3.1.0/gems/rdoc-6.4.0
 
 # update the time and uri package to tackle the vulnerabilities in these gems
 gem update time --default
 gem update uri --default
+gem update stringio --default
+gem update rexml --default
 mv /usr/lib/ruby/gems/3.1.0/specifications/default/time-0.2.0.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
 mv /usr/lib/ruby/gems/3.1.0/specifications/default/uri-0.11.0.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
+mv /usr/lib/ruby/gems/3.1.0/specifications/default/stringio-3.0.1.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
+mv /usr/lib/ruby/gems/3.1.0/specifications/default/rexml-3.2.5.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
 gem uninstall time --version 0.2.0
 gem uninstall uri --version 0.11.0
+gem uninstall stringio --version 3.0.1
+gem uninstall rexml --version 3.2.5
 
 sudo tdnf install -y azure-mdsd-1.31.1
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
