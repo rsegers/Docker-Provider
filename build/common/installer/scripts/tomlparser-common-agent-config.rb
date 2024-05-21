@@ -11,6 +11,7 @@ require_relative "ConfigParseErrorLogger"
 @disableTelemetry = false
 @logEnableKubernetesMetadataCacheTTLSeconds = 60
 @enableHighLogScaleMode = false
+@enableCustomMetrics = false
 
 def is_windows?
   return !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -81,6 +82,14 @@ def populateSettingValuesFromConfigMap(parsedConfig)
       end
     end
 
+    if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil?
+      enable_custom_metrics = parsedConfig[:agent_settings][:enable_custom_metrics]
+      if !enable_custom_metrics.nil? && !enable_custom_metrics[:enabled].nil?
+        @enableCustomMetrics = enable_custom_metrics[:enabled]
+        puts "Using config map value: enabled = #{@enableCustomMetrics} for custom metrics"
+      end
+    end
+
   rescue => errorStr
     puts "config::error:Exception while reading config settings for agent configuration setting - #{errorStr}, using defaults"
   end
@@ -117,6 +126,11 @@ if is_windows?
       file.write(commands)
     end
 
+    if @enableCustomMetrics
+      commands = get_command_windows("ENABLE_CUSTOM_METRICS", @enableCustomMetrics)
+      file.write(commands)
+    end
+
     commands = get_command_windows("AZMON_KUBERNETES_METADATA_CACHE_TTL_SECONDS", @logEnableKubernetesMetadataCacheTTLSeconds)
     file.write(commands)
     # Close file after writing all environment variables
@@ -135,6 +149,9 @@ else
     end
     if @enableHighLogScaleMode
       file.write("export ENABLE_HIGH_LOG_SCALE_MODE=#{@enableHighLogScaleMode}\n")
+    end
+    if @enableCustomMetrics
+      file.write("export ENABLE_CUSTOM_METRICS=#{@enableCustomMetrics}\n")
     end
     file.write("export AZMON_KUBERNETES_METADATA_CACHE_TTL_SECONDS=#{@logEnableKubernetesMetadataCacheTTLSeconds}\n")
     # Close file after writing all environment variables
