@@ -114,12 +114,16 @@ int _tmain(int argc, wchar_t *argv[])
         return NO_FLUENT_BIT_PROCESS;
     }
 
-    DWORD dwStatus = GetServiceStatus(argv[2]);
-
-    if (dwStatus != SERVICE_RUNNING)
+    DWORD enableCustomMetrics = GetEnvironmentVariable(L"ENABLE_CUSTOM_METRICS", nullptr, 0);
+    DWORD msiMode = GetEnvironmentVariable(L"USING_AAD_MSI_AUTH", nullptr, 0);
+    if (enableCustomMetrics == "true" || msiMode != "true")
     {
-        wprintf_s(L"ERROR:Service:%s is not running\n", argv[2]);
-        return FLUENTDWINAKS_SERVICE_NOT_RUNNING;
+        DWORD dwStatus = GetServiceStatus(argv[2]);
+        if (dwStatus != SERVICE_RUNNING)
+        {
+            wprintf_s(L"ERROR:Service:%s is not running\n", argv[2]);
+            return FLUENTDWINAKS_SERVICE_NOT_RUNNING;
+        }
     }
 
     if (IsFileExists(argv[3]))
@@ -134,7 +138,8 @@ int _tmain(int argc, wchar_t *argv[])
         return CERTIFICATE_RENEWAL_REQUIRED;
     }
 
-    if (argc > 5) {
+    if (argc > 5)
+    {
         if (!IsProcessRunning(argv[5]))
         {
             wprintf_s(L"ERROR:Process:%s is not running\n", argv[5]);

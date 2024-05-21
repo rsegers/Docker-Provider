@@ -45,7 +45,8 @@ function Test-FluentbitTcpListener {
         [System.Environment]::SetEnvironmentVariable("WAITTIME_PORT_25229", $waitTimeSecs, "Process")
         [System.Environment]::SetEnvironmentVariable("WAITTIME_PORT_25229", $waitTimeSecs, "Machine")
         Write-Host "Successfully set environment variable WAITTIME_PORT_25229 - $($waitTimeSecs) for target 'machine'..."
-    } else {
+    }
+    else {
         Write-Host "Failed to set environment variable WAITTIME_PORT_25229 for target 'machine' since it is either null or empty"
         $waitTimeSecs = 30
     }
@@ -187,13 +188,13 @@ function Set-AMA3PEnvironmentVariables {
 }
 
 function Generate-GenevaTenantNameSpaceConfig {
-     $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")
+    $genevaLogsTenantNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", "process")
     if (![string]::IsNullOrEmpty($genevaLogsTenantNameSpaces)) {
         [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_TENANT_NAMESPACES", $genevaLogsTenantNameSpaces, "machine")
         $genevaLogsTenantNameSpacesArray = $genevaLogsTenantNameSpaces.Split(",")
         for ($i = 0; $i -lt $genevaLogsTenantNameSpacesArray.Length; $i = $i + 1) {
-          $tenantName = $genevaLogsTenantNameSpacesArray[$i]
-          Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
+            $tenantName = $genevaLogsTenantNameSpacesArray[$i]
+            Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
           (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf  -Raw) -replace '<TENANT_NAMESPACE>', $tenantName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$tenantName.conf
         }
     }
@@ -201,18 +202,18 @@ function Generate-GenevaTenantNameSpaceConfig {
 }
 
 function Generate-GenevaInfraNameSpaceConfig {
-   $genevaLogsInfraNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", "process")
-   if (![string]::IsNullOrEmpty($genevaLogsInfraNameSpaces)) {
-       [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", $genevaLogsInfraNameSpaces, "machine")
-       $genevaLogsInfraNameSpacesArray = $genevaLogsInfraNameSpaces.Split(",")
-       for ($i = 0; $i -lt $genevaLogsInfraNameSpacesArray.Length; $i = $i + 1) {
-         $infraNameSpaceName = $genevaLogsInfraNameSpacesArray[$i]
-         $infraNamespaceWithoutSuffix = $infraNameSpaceName.TrimEnd("_*")
-         Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
+    $genevaLogsInfraNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", "process")
+    if (![string]::IsNullOrEmpty($genevaLogsInfraNameSpaces)) {
+        [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES", $genevaLogsInfraNameSpaces, "machine")
+        $genevaLogsInfraNameSpacesArray = $genevaLogsInfraNameSpaces.Split(",")
+        for ($i = 0; $i -lt $genevaLogsInfraNameSpacesArray.Length; $i = $i + 1) {
+            $infraNameSpaceName = $genevaLogsInfraNameSpacesArray[$i]
+            $infraNamespaceWithoutSuffix = $infraNameSpaceName.TrimEnd("_*")
+            Copy-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf -Destination C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
          (Get-Content -Path C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf  -Raw) -replace '<INFRA_NAMESPACE>', $infraNameSpaceName | Set-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_$infraNamespaceWithoutSuffix.conf
-       }
-   }
-   Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf
+        }
+    }
+    Remove-Item C:/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf
 }
 
 #register fluentd as a windows service
@@ -291,39 +292,40 @@ function Set-EnvironmentVariables {
     }
     if (![string]::IsNullOrEmpty($isIgnoreProxySettings) -and $isIgnoreProxySettings.ToLower() -eq 'true') {
         Write-Host "Ignoring Proxy Setttings since IGNORE_PROXY_SETTINGS is - $($isIgnoreProxySettings)"
-    } else {
-      $proxy = ""
-      if (Test-Path /etc/ama-logs-secret/PROXY) {
-        # TODO: Change to ama-logs-secret before merging
-        $proxy = Get-Content /etc/ama-logs-secret/PROXY
-        Write-Host "Validating the proxy configuration since proxy configuration provided"
-        # valide the proxy endpoint configuration
-        if (![string]::IsNullOrEmpty($proxy)) {
-            $proxy = [string]$proxy.Trim();
+    }
+    else {
+        $proxy = ""
+        if (Test-Path /etc/ama-logs-secret/PROXY) {
+            # TODO: Change to ama-logs-secret before merging
+            $proxy = Get-Content /etc/ama-logs-secret/PROXY
+            Write-Host "Validating the proxy configuration since proxy configuration provided"
+            # valide the proxy endpoint configuration
             if (![string]::IsNullOrEmpty($proxy)) {
                 $proxy = [string]$proxy.Trim();
-                $parts = $proxy -split "@"
-                if ($parts.Length -ne 2) {
-                    Write-Host "Proxy is not using credentials..."
-                }
-                $subparts1 = $parts[0] -split "//"
-                if ($subparts1.Length -ne 2) {
-                    Write-Host "Invalid ProxyConfiguration. EXITING....."
-                    exit 1
-                }
-                $protocol = $subparts1[0].ToLower().TrimEnd(":")
-                if (!($protocol -eq "http") -and !($protocol -eq "https")) {
-                    Write-Host "Unsupported protocol in ProxyConfiguration $($proxy). EXITING....."
-                    exit 1
-                }
+                if (![string]::IsNullOrEmpty($proxy)) {
+                    $proxy = [string]$proxy.Trim();
+                    $parts = $proxy -split "@"
+                    if ($parts.Length -ne 2) {
+                        Write-Host "Proxy is not using credentials..."
+                    }
+                    $subparts1 = $parts[0] -split "//"
+                    if ($subparts1.Length -ne 2) {
+                        Write-Host "Invalid ProxyConfiguration. EXITING....."
+                        exit 1
+                    }
+                    $protocol = $subparts1[0].ToLower().TrimEnd(":")
+                    if (!($protocol -eq "http") -and !($protocol -eq "https")) {
+                        Write-Host "Unsupported protocol in ProxyConfiguration $($proxy). EXITING....."
+                        exit 1
+                    }
 
+                }
             }
+            Write-Host "Provided Proxy configuration is valid"
         }
-       Write-Host "Provided Proxy configuration is valid"
-      }
 
 
-       if (Test-Path /etc/ama-logs-secret/PROXYCERT.crt) {
+        if (Test-Path /etc/ama-logs-secret/PROXYCERT.crt) {
             Write-Host "Importing Proxy CA cert since Proxy CA cert configured"
             Import-Certificate -FilePath /etc/ama-logs-secret/PROXYCERT.crt -CertStoreLocation 'Cert:\LocalMachine\Root' -Verbose
         }
@@ -487,15 +489,16 @@ function Read-Configs {
 
     if (![string]::IsNullOrEmpty($enableFbitInternalMetrics) -and $enableFbitInternalMetrics.ToLower() -eq 'true') {
         Write-Host "Fluent-bit Internal metrics configured"
-    } else {
+    }
+    else {
         Clear-Content C:/etc/fluent-bit/fluent-bit-internal-metrics.conf
     }
 
     $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
     if (![string]::IsNullOrEmpty($genevaLogsMultitenancy)) {
         if ($genevaLogsMultitenancy.ToLower() -eq 'true') {
-          [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", $genevaLogsMultitenancy, "machine")
-          Write-Host "Successfully set environment variable GENEVA_LOGS_MULTI_TENANCY - $($genevaLogsMultitenancy) for target 'machine'..."
+            [System.Environment]::SetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", $genevaLogsMultitenancy, "machine")
+            Write-Host "Successfully set environment variable GENEVA_LOGS_MULTI_TENANCY - $($genevaLogsMultitenancy) for target 'machine'..."
         }
     }
     else {
@@ -513,7 +516,8 @@ function Read-Configs {
             Generate-GenevaTenantNameSpaceConfig
             Generate-GenevaInfraNameSpaceConfig
         }
-    } else {
+    }
+    else {
         $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH", "process")
         if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
             Set-CommonAMAEnvironmentVariables
@@ -549,16 +553,16 @@ function Set-EnvironmentVariablesFromFile {
 }
 
 function Set-AgentConfigSchemaVersion {
-      #set agent config schema version
-      $schemaVersionFile = '/etc/config/settings/schema-version'
-      if (Test-Path $schemaVersionFile) {
-          $schemaVersion = Get-Content $schemaVersionFile | ForEach-Object { $_.TrimEnd() }
-          if ($schemaVersion.GetType().Name -eq 'String') {
-              [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Process")
-              [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Machine")
-          }
-          $env:AZMON_AGENT_CFG_SCHEMA_VERSION
-      }
+    #set agent config schema version
+    $schemaVersionFile = '/etc/config/settings/schema-version'
+    if (Test-Path $schemaVersionFile) {
+        $schemaVersion = Get-Content $schemaVersionFile | ForEach-Object { $_.TrimEnd() }
+        if ($schemaVersion.GetType().Name -eq 'String') {
+            [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Process")
+            [System.Environment]::SetEnvironmentVariable("AZMON_AGENT_CFG_SCHEMA_VERSION", $schemaVersion, "Machine")
+        }
+        $env:AZMON_AGENT_CFG_SCHEMA_VERSION
+    }
 }
 function Get-ContainerRuntime {
     # containerd is the default runtime on AKS windows
@@ -672,6 +676,37 @@ function Get-ContainerRuntime {
     return $containerRuntime
 }
 
+function Disable-CustomMetrics-Config {
+    param (
+        [string]$filePath
+    )
+    $content = Get-Content -Path $filePath
+
+    $inCustomMetricsBlock = $false
+    $customMetricsStart = "#CustomMetricsStart"
+    $customMetricsEnd = "#CustomMetricsEnd"
+
+    $updatedContent = $content | ForEach-Object {
+        if ($_ -eq $customMetricsStart) {
+            $inCustomMetricsBlock = $true
+        }
+
+        if ($inCustomMetricsBlock) {
+            $_ = "# " + $_
+        }
+
+        if ($_ -eq "# " + $customMetricsEnd) {
+            $inCustomMetricsBlock = $false
+        }
+
+        $_
+    }
+
+    $updatedContent | Set-Content -Path $filePath
+
+    Write-Output "Successfully commented the custom metrics block."
+}
+
 function Start-Fluent-Telegraf {
 
     Set-ProcessAndMachineEnvVariables "TELEMETRY_CUSTOM_PROM_MONITOR_PODS" "false"
@@ -705,7 +740,8 @@ function Start-Fluent-Telegraf {
         # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
         # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
         Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit-geneva.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
-    } else {
+    }
+    else {
         $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit.conf"
         Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
         # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
@@ -719,7 +755,17 @@ function Start-Fluent-Telegraf {
         Start-Telegraf
     }
 
-    fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'
+    $enableCustomMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_CUSTOM_METRICS", "process")
+    if ([string]::IsNullOrEmpty($enableCustomMetrics) -or $enableCustomMetrics.ToLower() -ne 'true') {
+        Disable-CustomMetrics-Config -filePath 'C:/etc/fluent/fluent.conf'
+    }
+
+    $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
+
+    # Start fluentd as a windows service only if custom metrics is enabled or legacy mode
+    if ($enableCustomMetrics.ToLower() -eq 'true' -or [string]::IsNullOrEmpty($isAADMSIAuth) -or $isAADMSIAuth.ToLower() -eq "false") {
+        fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'
+    }
 
     Notepad.exe | Out-Null
 }
@@ -802,7 +848,8 @@ function Start-Telegraf {
                 C:\opt\telegraf\telegraf.exe --service start
                 Get-Service telegraf
             }
-        } else {
+        }
+        else {
             Write-Host "Telegraf not started since Fluentbit tcp listener is not up and running on port 25229"
         }
     }
@@ -852,24 +899,24 @@ function Bootstrap-CACertificates {
 }
 
 function IsGenevaMode() {
-    $isGenevaLogsIntegration=$false
-    $isGenevaLogsMultitenancy=$false
+    $isGenevaLogsIntegration = $false
+    $isGenevaLogsMultitenancy = $false
     $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION")
     $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY")
     $genevaLogsInfraNameSpaces = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INFRA_NAMESPACES")
-    $isGenevaLogsInfraNameSpacesEmpty=$true
+    $isGenevaLogsInfraNameSpacesEmpty = $true
 
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true') {
-        $isGenevaLogsIntegration=$true
+        $isGenevaLogsIntegration = $true
     }
     if (![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
-        $isGenevaLogsMultitenancy=$true
+        $isGenevaLogsMultitenancy = $true
     }
     if (![string]::IsNullOrEmpty($genevaLogsInfraNameSpaces)) {
-        $isGenevaLogsInfraNameSpacesEmpty=$false
+        $isGenevaLogsInfraNameSpacesEmpty = $false
     }
-    if ($isGenevaLogsIntegration -and (!$isGenevaLogsMultitenancy -or !$isGenevaLogsInfraNameSpacesEmpty)){
-      return $true
+    if ($isGenevaLogsIntegration -and (!$isGenevaLogsMultitenancy -or !$isGenevaLogsInfraNameSpacesEmpty)) {
+        return $true
     }
     return $false
 }
@@ -898,7 +945,7 @@ $isGenevaModeVar = IsGenevaMode
 if ($isGenevaModeVar) {
     Write-Host "Starting Windows AMA in 1P Mode"
     #start Windows AMA
-    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
+    Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") }
     if (![string]::IsNullOrEmpty($isAADMSIAuth) -and $isAADMSIAuth.ToLower() -eq 'true') {
         Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
     }
@@ -913,7 +960,7 @@ else {
         Write-Host "skipping agent onboarding via cert since AAD MSI Auth configured"
 
         #start Windows AMA
-        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv")}
+        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\windowsazuremonitoragent\windowsazuremonitoragent\Monitoring\Agent\MonAgentLauncher.exe" -ArgumentList @("-useenv") }
         $version = Get-Content -Path "C:\opt\windowsazuremonitoragent\version.txt"
         Write-Host $version
     }
