@@ -113,10 +113,13 @@ int _tmain(int argc, wchar_t *argv[])
         wprintf_s(L"ERROR:Process:%s is not running\n", argv[1]);
         return NO_FLUENT_BIT_PROCESS;
     }
+    const DWORD bufferSize = 256;
+    wchar_t enableCustomMetricsValue[bufferSize];
+    wchar_t msiModeValue[bufferSize];
+    GetEnvironmentVariable(L"ENABLE_CUSTOM_METRICS", enableCustomMetricsValue, bufferSize);
+    GetEnvironmentVariable(L"USING_AAD_MSI_AUTH", msiModeValue, bufferSize);
 
-    DWORD enableCustomMetrics = GetEnvironmentVariable(L"ENABLE_CUSTOM_METRICS", nullptr, 0);
-    DWORD msiMode = GetEnvironmentVariable(L"USING_AAD_MSI_AUTH", nullptr, 0);
-    if (enableCustomMetrics == "true" || msiMode != "true")
+    if (_wcsicmp(enableCustomMetricsValue, L"true") == 0 || _wcsicmp(msiModeValue, L"true") != 0)
     {
         DWORD dwStatus = GetServiceStatus(argv[2]);
         if (dwStatus != SERVICE_RUNNING)
