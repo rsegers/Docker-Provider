@@ -2069,15 +2069,6 @@ func GetControllerNameFromK8sPodName(podName string) (string, string) {
 
 // InitializePlugin reads and populates plugin configuration
 func InitializePlugin(pluginConfPath string, agentVersion string) {
-	go func() {
-		isTest := os.Getenv("ISTEST")
-		if strings.Compare(strings.ToLower(strings.TrimSpace(isTest)), "true") == 0 {
-			e1 := http.ListenAndServe("localhost:6060", nil)
-			if e1 != nil {
-				Log("HTTP Listen Error: %s \n", e1.Error())
-			}
-		}
-	}()
 	StdoutIgnoreNsSet = make(map[string]bool)
 	StdoutIncludeSystemResourceSet = make(map[string]bool)
 	StdoutIncludeSystemNamespaceSet = make(map[string]bool)

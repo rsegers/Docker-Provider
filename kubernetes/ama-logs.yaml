@@ -363,8 +363,9 @@ spec:
         #     - --secret-name=aad-msi-auth-token
         #     - --token-server-listening-port=8888
         #     - --health-server-listening-port=9999
+        #     - --restart-pod-waiting-minutes-on-broken-connection=240
         #   # Make sure this matching with version in AKS RP side
-        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.221118.2
+        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.230804.1
         #   imagePullPolicy: IfNotPresent
         #   env:
         #     - name: AZMON_COLLECT_ENV
@@ -446,6 +447,16 @@ spec:
               valueFrom:
                 fieldRef:
                   fieldPath: spec.nodeName
+            - name: AZMON_RESOURCE_OPTIMIZATION_ENABLED
+              value: "false"
+            - name: APPMONITORING_AUTOINSTRUMENTATION_ENABLED
+              value: "false"
+            - name: APPMONITORING_OPENTELEMETRYLOGS_ENABLED
+              value: "false"
+            - name: APPMONITORING_OPENTELEMETRYLOGS_PORT
+              value: "28331"
+            - name: CUSTOM_METRICS_DISABLED
+              value: "false"
           securityContext:
             privileged: true
           ports:
@@ -739,8 +750,9 @@ spec:
         #     - --secret-name=aad-msi-auth-token
         #     - --token-server-listening-port=8888
         #     - --health-server-listening-port=9999
+        #     - --restart-pod-waiting-minutes-on-broken-connection=240
         #   # Make sure this matching with version in AKS RP side
-        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.221118.2
+        #   image: mcr.microsoft.com/aks/msi/addon-token-adapter:master.230804.1
         #   imagePullPolicy: IfNotPresent
         #   env:
         #     - name: AZMON_COLLECT_ENV
@@ -821,6 +833,14 @@ spec:
             # Uncomment below lines when the Addon-resizer VPA enabled
             # - name: RS_ADDON-RESIZER_VPA_ENABLED
             #   value: "true"
+            - name: APPMONITORING_AUTOINSTRUMENTATION_ENABLED
+              value: "false"
+            - name: APPMONITORING_OPENTELEMETRYLOGS_ENABLED
+              value: "false"
+            - name: APPMONITORING_OPENTELEMETRYLOGS_PORT
+              value: "28331"
+            - name: CUSTOM_METRICS_DISABLED
+              value: "false"
           securityContext:
             privileged: true
           ports:
@@ -990,7 +1010,7 @@ spec:
       #     - --secret-name=aad-msi-auth-token
       #     - --token-server-listening-port=7777
       #     - --health-server-listening-port=9999
-      #    image: "mcr.microsoft.com/aks/hcp/addon-token-adapter:20230120winbeta"
+      #    image: "mcr.microsoft.com/aks/msi/addon-token-adapter:master.240102.1"
       #    imagePullPolicy: Always
       #    livenessProbe:
       #     httpGet:
@@ -1012,9 +1032,12 @@ spec:
          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.20"
          imagePullPolicy: IfNotPresent
          resources:
-          limits:
+          requests:
            cpu: 500m
            memory: 700Mi
+          limits:
+           cpu: 2
+           memory: 2Gi
          env:
           - name: CONTAINER_MEMORY_LIMIT_IN_BYTES
             valueFrom:
@@ -1059,6 +1082,16 @@ spec:
           # Uncomment below lines for MSI Auth Mode  testing
           # - name: USING_AAD_MSI_AUTH
           #   value: "true"
+          - name: AZMON_WINDOWS_FLUENT_BIT_DISABLED
+            value: "true"
+          - name: APPMONITORING_AUTOINSTRUMENTATION_ENABLED
+            value: "false"
+          - name: APPMONITORING_OPENTELEMETRYLOGS_ENABLED
+            value: "false"
+          - name: APPMONITORING_OPENTELEMETRYLOGS_PORT
+            value: "28331"
+          - name: CUSTOM_METRICS_DISABLED
+            value: "false"
          volumeMounts:
           #  Uncomment below lines when telegraf upgraded to 1.28.5 or higher
           # - name: kube-api-access
