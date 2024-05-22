@@ -676,37 +676,6 @@ function Get-ContainerRuntime {
     return $containerRuntime
 }
 
-function Disable-CustomMetrics-Config {
-    param (
-        [string]$filePath
-    )
-    $content = Get-Content -Path $filePath
-
-    $inCustomMetricsBlock = $false
-    $customMetricsStart = "#CustomMetricsStart"
-    $customMetricsEnd = "#CustomMetricsEnd"
-
-    $updatedContent = $content | ForEach-Object {
-        if ($_ -eq $customMetricsStart) {
-            $inCustomMetricsBlock = $true
-        }
-
-        if ($inCustomMetricsBlock) {
-            $_ = "# " + $_
-        }
-
-        if ($_ -eq "# " + $customMetricsEnd) {
-            $inCustomMetricsBlock = $false
-        }
-
-        $_
-    }
-
-    $updatedContent | Set-Content -Path $filePath
-
-    Write-Output "Successfully commented the custom metrics block."
-}
-
 function Start-Fluent-Telegraf {
 
     Set-ProcessAndMachineEnvVariables "TELEMETRY_CUSTOM_PROM_MONITOR_PODS" "false"
