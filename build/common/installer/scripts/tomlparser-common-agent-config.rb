@@ -85,7 +85,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     if !parsedConfig.nil? && !parsedConfig[:agent_settings].nil?
       custom_metrics = parsedConfig[:agent_settings][:custom_metrics]
       if !custom_metrics.nil? && !custom_metrics[:enabled].nil?
-        @enableCustomMetrics = enable_custom_metrics[:enabled]
+        @enableCustomMetrics = custom_metrics[:enabled]
         puts "Using config map value: enabled = #{@enableCustomMetrics} for custom metrics"
       end
     end
