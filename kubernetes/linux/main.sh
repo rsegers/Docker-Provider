@@ -1080,8 +1080,8 @@ if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
             if [ ! -e "/etc/config/kube.conf" ]; then
                   if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
                         echo "*** starting fluentd v1 in daemonset"
-                        if [ "${ENABLE_CUSTOM_METRICS}" != "true" ]; then
-                              sed -i '/^#CustomMetricsStart/,/^#CustomMetricsEnd/ s/^/# /' /etc/fluent/container.conf
+                        if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
+                              mv /etc/fluent/container-cm.conf /etc/fluent/container.conf
                         fi
                         fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
                   else
@@ -1089,8 +1089,8 @@ if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
                   fi
             else
                   echo "*** starting fluentd v1 in replicaset"
-                  if [ "${ENABLE_CUSTOM_METRICS}" != "true" ]; then
-                        sed -i '/^#CustomMetricsStart/,/^#CustomMetricsEnd/ s/^/# /' /etc/fluent/kube.conf
+                  if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
+                        mv /etc/fluent/kube-cm.conf /etc/fluent/kube.conf
                   fi
                   fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
             fi

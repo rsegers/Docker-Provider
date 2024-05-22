@@ -756,12 +756,11 @@ function Start-Fluent-Telegraf {
     }
 
     $enableCustomMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_CUSTOM_METRICS", "process")
-    if ([string]::IsNullOrEmpty($enableCustomMetrics) -or $enableCustomMetrics.ToLower() -ne 'true') {
-        Disable-CustomMetrics-Config -filePath 'C:/etc/fluent/fluent.conf'
+    if ($enableCustomMetrics.ToLower() -eq 'true') {
+        Move-Item -Path "C:/etc/fluent/fluent-cm.conf" -Destination "C:/etc/fluent/fluent.conf" -Force
     }
 
     $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
-
     # Start fluentd as a windows service only if custom metrics is enabled or legacy mode
     if ($enableCustomMetrics.ToLower() -eq 'true' -or [string]::IsNullOrEmpty($isAADMSIAuth) -or $isAADMSIAuth.ToLower() -eq "false") {
         fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'
