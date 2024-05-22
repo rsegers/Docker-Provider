@@ -212,11 +212,6 @@ data:
     #[agent_settings.windows_fluent_bit]
     #    disabled = "true"
 
-    # Enable high log scale mode feature which can support upto 50K logs/sec per node.
-    # Only supported for ContainerLogV2 schema and containerlog_schema_version MUST be v2 and DCR MUST have Microsoft-ContainerLogV2-HighScale stream instead of Microsoft-ContainerLogV2 stream.
-    # [agent_settings.high_log_scale]
-    #     enabled = true
-
     # The following settings are "undocumented", we don't recommend uncommenting them unless directed by Microsoft.
     # Configuration settings for the waittime for the network listeners to be available
     # [agent_settings.network_listener_waittime]
