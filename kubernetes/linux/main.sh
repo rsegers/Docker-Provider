@@ -1073,7 +1073,14 @@ if [ -e "/opt/dcr_env_var" ]; then
       setGlobalEnvVar LOGS_AND_EVENTS_ONLY "${LOGS_AND_EVENTS_ONLY}"
 fi
 
-setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}"
+setGlobalEnvVar ENABLE_CUSTOM_METRICS "${ENABLE_CUSTOM_METRICS}"
+if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
+      setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "false"
+      export AZMON_RESOURCE_OPTIMIZATION_ENABLED="false"
+else
+      setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}"
+fi
+
 if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
       # no dependency on fluentd for prometheus side car container
       if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
@@ -1226,7 +1233,7 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       sed -i -e "s/placeholder_hostname/$nodename/g" $telegrafConfFile
 fi
 
-if [ "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}" == "true" ] || [ "${ENABLE_CUSTOM_METRICS}" != "true" ]; then
+if [ "${ENABLE_CUSTOM_METRICS}" != "true" ]; then
       sed -i '/^#CustomMetricsStart/,/^#CustomMetricsEnd/ s/^/# /' $telegrafConfFile
 fi
 
@@ -1255,7 +1262,7 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE
             else
                   echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
                   waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
-                    if [ "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}" != "true" ] || [ "${ENABLE_CUSTOM_METRICS}" == true ]; then
+                    if [ "${ENABLE_CUSTOM_METRICS}" == true ]; then
                         echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
                         waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
                   fi
