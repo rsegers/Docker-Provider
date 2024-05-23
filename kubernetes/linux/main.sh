@@ -1050,6 +1050,7 @@ if [ "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" == "true" ] || [ -z "${AZMON_WINDOWS
       if [ -e "/etc/config/kube.conf" ]; then
            # Replace a string in the configmap file
             sed -i "s/#@include windows_rs/@include windows_rs/g" /etc/fluent/kube.conf
+            sed -i "s/#@include windows_rs/@include windows_rs/g" /etc/fluent/kube-cm.conf
       fi
 fi
 
