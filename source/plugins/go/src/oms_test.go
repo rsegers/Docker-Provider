@@ -8,11 +8,11 @@ import (
 )
 
 var kubernetesJSON = `{
-	"pod_name":"defender-publisher-ds-bssg6",
+	"pod_name":"test-publisher-ds-bssg6",
 	"namespace_name":"kube-system",
 	"pod_id":"93bf47d2-5c1a-42bc-9a22-481939a93a66",
 	"labels":{
-		"app":"defender",
+		"app":"test",
 		"controller-revision-hash":"f48799794",
 		"dsName":"defender-publisher-ds",
 		"kubernetes.azure.com/managedby":"aks",
@@ -22,11 +22,11 @@ var kubernetesJSON = `{
 		"kubernetes.io/config.seen":"2023-10-02T08:21:49.954540360Z",
 		"kubernetes.io/config.source":"api"
 	},
-	"host":"aks-agentpool-15410898-vmss000001",
-	"container_name":"defender-publisher",
+	"host":"test-agentpool-test-test000001",
+	"container_name":"test-publisher",
 	"docker_id":"1234567890123213213123213213213213",
 	"container_hash":publisher@sha256:1234567890123213213123213213213213",
-	"container_image":"security-publisher:1.0.67"
+	"container_image":"test-publisher:1.0.67"
 }`
 
 func toInterfaceMap(m map[string]interface{}) map[interface{}]interface{} {
