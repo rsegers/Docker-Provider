@@ -9,6 +9,7 @@ require (
 	github.com/golang/mock v1.6.0
 	github.com/google/uuid v1.6.0
 	github.com/microsoft/ApplicationInsights-Go v0.4.4
+	github.com/stretchr/testify v1.9.0
 	github.com/tinylib/msgp v1.1.9
 	github.com/ugorji/go/codec v1.2.12
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -74,6 +75,7 @@ require (
 )
 
 require (
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	golang.org/x/mod v0.15.0 // indirect
 	golang.org/x/tools v0.18.0 // indirect
 	google.golang.org/protobuf v1.33.0 // indirect
