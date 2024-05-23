@@ -8,13 +8,13 @@ import (
 )
 
 var kubernetesJSON = `{
-	"pod_name":"microsoft-defender-publisher-ds-bssg6",
+	"pod_name":"defender-publisher-ds-bssg6",
 	"namespace_name":"kube-system",
 	"pod_id":"93bf47d2-5c1a-42bc-9a22-481939a93a66",
 	"labels":{
 		"app":"defender",
 		"controller-revision-hash":"f48799794",
-		"dsName":"microsoft-defender-publisher-ds",
+		"dsName":"defender-publisher-ds",
 		"kubernetes.azure.com/managedby":"aks",
 		"pod-template-generation":"2"
 	},
@@ -23,10 +23,10 @@ var kubernetesJSON = `{
 		"kubernetes.io/config.source":"api"
 	},
 	"host":"aks-agentpool-15410898-vmss000001",
-	"container_name":"microsoft-defender-publisher",
-	"docker_id":"c695de72af6b3f5a6ed9770813f3235c20225ca344172335e030abc8431a1216",
-	"container_hash":"mcr.microsoft.com/azuredefender/stable/security-publisher@sha256:f64bbdbd552c18dcd6455508ba7282ee03cf86de5dbfbca665e9573f29218d69",
-	"container_image":"mcr.microsoft.com/azuredefender/stable/security-publisher:1.0.67"
+	"container_name":"defender-publisher",
+	"docker_id":"1234567890123213213123213213213213",
+	"container_hash":publisher@sha256:1234567890123213213123213213213213",
+	"container_image":"security-publisher:1.0.67"
 }`
 
 func toInterfaceMap(m map[string]interface{}) map[interface{}]interface{} {
