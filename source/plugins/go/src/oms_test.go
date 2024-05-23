@@ -37,8 +37,8 @@ func toInterfaceMap(m map[string]interface{}) map[interface{}]interface{} {
 	return result
 }
 
-// Test PostDataHelper
-func TestPostDataHelper(t *testing.T) {
+// Test PostDataHelper KuberneteMetadata
+func TestPostDataHelperKuberneteMetadata(t *testing.T) {
 	var intermediateMap map[string]interface{}
     // Unmarshal JSON data into a map
     err := json.Unmarshal([]byte(kubernetesJSON), &intermediateMap)
