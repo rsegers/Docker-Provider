@@ -99,6 +99,8 @@ spec:
          value: {{ .Values.amalogs.sidecarscraping | quote }}
        - name: ENABLE_CUSTOM_METRICS
          value: {{ .Values.amalogs.enableCustomMetrics | quote }}
+       - name: AZMON_KUBERNETES_METADATA_ENABLED
+         value: {{ .Values.amalogs.enableMetadataCollection | quote }}
        volumeMounts:
         #  Uncomment when telegraf upgraded to 1.28.5 or higher
         # {{- if .Values.amalogs.enableServiceAccountTimeBoundToken }}
