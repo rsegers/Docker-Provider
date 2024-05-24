@@ -74,9 +74,6 @@ def test_e2e_workflows(env_dict):
     if not access_token:
         pytest.fail("access_token shouldnt be null or empty")
 
-    is_container_log_v2 = env_dict.get('IS_CONTAINERLOGV2', False)
-    is_container_log_v2_metadata = env_dict.get('IS_CONTAINERLOGV2_METADATA', False)
-
     # validate e2e workflows by checking data in log analytics workspace through resource centric queries
     queryUrl = resource + "/v1" + clusterResourceId + "/query"
     Headers = {
