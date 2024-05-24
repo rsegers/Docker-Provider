@@ -103,6 +103,10 @@ data:
         value: "0"
       - name: AZURE_CLOUD
         value: "AZURE_PUBLIC_CLOUD"
+      - name: IS_CONTAINERLOGV2
+        value: "IS_CONTAINERLOGV2_VALUE"
+      - name: IS_CONTAINERLOGV2_METADATA
+        value: "IS_CONTAINERLOGV2_METADATA_VALUE"
       # image tag should be updated if new tests being added after this image
       image: mcr.microsoft.com/azuremonitor/containerinsights/cidev:ciconftest11082022
       imagePullPolicy: IfNotPresent

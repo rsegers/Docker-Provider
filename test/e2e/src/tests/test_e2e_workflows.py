@@ -75,6 +75,7 @@ def test_e2e_workflows(env_dict):
         pytest.fail("access_token shouldnt be null or empty")
 
     is_container_log_v2 = env_dict.get('IS_CONTAINERLOGV2', False)
+    is_container_log_v2_metadata = env_dict.get('IS_CONTAINERLOGV2_METADATA', False)
 
     # validate e2e workflows by checking data in log analytics workspace through resource centric queries
     queryUrl = resource + "/v1" + clusterResourceId + "/query"
@@ -346,7 +347,7 @@ def test_e2e_workflows(env_dict):
             pytest.fail("rowCount should be greater than for cluster: {0} for workflow: {1} ".format(clusterResourceId, 'CONTAINER_LOG_V2'))
 
     # Container log v2 Kubernetes Metadata
-    if is_container_log_v2:
+    if is_container_log_v2 and is_container_log_v2_metadata:
         query = constants.CONTAINER_LOG_V2_K8S_METADATA_QUERY.format(queryTimeInterval)
         params = { 'query': query}
         result = requests.get(queryUrl, params=params, headers=Headers)
