@@ -2,7 +2,6 @@
   "description": "Dashboard visualizing ContainerLogV2 records collected by Azure Monitor",
   "editable": true,
   "gnetId": 19866,
-  "graphTooltip": 0,
   "id": null,
   "links": [],
   "liveNow": false,
