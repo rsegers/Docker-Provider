@@ -66,6 +66,9 @@ amalogs:
   # This flag to enable and disable service account timebound token and default is enabled
   enableServiceAccountTimeBoundToken: true
 
+  # This flag to enable and disable custom metrics and default is enabled
+  enableCustomMetrics: true
+
   ## To get your workspace id and key do the following
   ## You can create a Azure Loganalytics workspace from portal.azure.com and get its ID & PRIMARY KEY from 'Advanced Settings' tab in the Ux.
 

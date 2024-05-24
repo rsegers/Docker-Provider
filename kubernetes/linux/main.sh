@@ -1050,6 +1050,7 @@ if [ "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" == "true" ] || [ -z "${AZMON_WINDOWS
       if [ -e "/etc/config/kube.conf" ]; then
            # Replace a string in the configmap file
             sed -i "s/#@include windows_rs/@include windows_rs/g" /etc/fluent/kube.conf
+            sed -i "s/#@include windows_rs/@include windows_rs/g" /etc/fluent/kube-cm.conf
       fi
 fi
 
@@ -1073,19 +1074,32 @@ if [ -e "/opt/dcr_env_var" ]; then
       setGlobalEnvVar LOGS_AND_EVENTS_ONLY "${LOGS_AND_EVENTS_ONLY}"
 fi
 
-setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}"
+setGlobalEnvVar ENABLE_CUSTOM_METRICS "${ENABLE_CUSTOM_METRICS}"
+if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
+      setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "false"
+      export AZMON_RESOURCE_OPTIMIZATION_ENABLED="false"
+else
+      setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}"
+fi
+
 if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
       # no dependency on fluentd for prometheus side car container
       if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
             if [ ! -e "/etc/config/kube.conf" ]; then
                   if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
                         echo "*** starting fluentd v1 in daemonset"
+                        if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
+                              mv /etc/fluent/container-cm.conf /etc/fluent/container.conf
+                        fi
                         fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
                   else
                         echo "Skipping fluentd since LOGS_AND_EVENTS_ONLY is set to true"
                   fi
             else
                   echo "*** starting fluentd v1 in replicaset"
+                  if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
+                        mv /etc/fluent/kube-cm.conf /etc/fluent/kube.conf
+                  fi
                   fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
             fi
       fi
@@ -1220,7 +1234,7 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       sed -i -e "s/placeholder_hostname/$nodename/g" $telegrafConfFile
 fi
 
-if [ "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}" == "true" ]; then
+if [ "${ENABLE_CUSTOM_METRICS}" != "true" ]; then
       sed -i '/^#CustomMetricsStart/,/^#CustomMetricsEnd/ s/^/# /' $telegrafConfFile
 fi
 
@@ -1249,7 +1263,7 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE
             else
                   echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
                   waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
-                  if [ "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}" != "true" ]; then
+                    if [ "${ENABLE_CUSTOM_METRICS}" == true ]; then
                         echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
                         waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
                   fi

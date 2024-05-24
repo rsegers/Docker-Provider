@@ -131,6 +131,7 @@ def substituteFluentBitPlaceHolders
     multilineLogging = ENV["AZMON_MULTILINE_ENABLED"]
     stacktraceLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
     resourceOptimizationEnabled = ENV["AZMON_RESOURCE_OPTIMIZATION_ENABLED"]
+    enableCustomMetrics = ENV["ENABLE_CUSTOM_METRICS"]
     windowsFluentBitDisabled = ENV["AZMON_WINDOWS_FLUENT_BIT_DISABLED"]
     kubernetesMetadataCollection = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
     annotationBasedLogFiltering = ENV["AZMON_ANNOTATION_BASED_LOG_FILTERING"]
@@ -194,7 +195,10 @@ def substituteFluentBitPlaceHolders
 
     new_contents = substituteMultiline(multilineLogging, stacktraceLanguages, new_contents)
 
-    if !@isWindows || (@isWindows && (!windowsFluentBitDisabled.nil? && windowsFluentBitDisabled.to_s.downcase == "false"))
+    # Valid resource optimization scenarios
+    # if Linux and Custom Metrics not enabled
+    # or if Windows and Fluent Bit is not disabled
+    if (!@isWindows && (enableCustomMetrics.nil? || enableCustomMetrics.to_s.downcase == "false")) || (@isWindows && (!windowsFluentBitDisabled.nil? && windowsFluentBitDisabled.to_s.downcase == "false"))
       new_contents = substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
     end
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }

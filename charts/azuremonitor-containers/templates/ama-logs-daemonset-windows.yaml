@@ -97,6 +97,8 @@ spec:
               fieldPath: metadata.name
        - name: SIDECAR_SCRAPING_ENABLED
          value: {{ .Values.amalogs.sidecarscraping | quote }}
+       - name: ENABLE_CUSTOM_METRICS
+         value: {{ .Values.amalogs.enableCustomMetrics | quote }}
        volumeMounts:
         #  Uncomment when telegraf upgraded to 1.28.5 or higher
         # {{- if .Values.amalogs.enableServiceAccountTimeBoundToken }}

@@ -112,6 +112,8 @@ spec:
        {{- end }}
        - name: IS_CUSTOM_CERT
          value: {{ .Values.Azure.proxySettings.isCustomCert | quote }}
+       - name: ENABLE_CUSTOM_METRICS
+         value: {{ .Values.amalogs.enableCustomMetrics | quote }}
        - name: HOSTNAME
          valueFrom:
             fieldRef:

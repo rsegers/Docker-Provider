@@ -132,7 +132,9 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/fluent/plugin/extension_utils.rb;                                                  source/plugins/ruby/extension_utils.rb; 644; root; root
 
 /etc/fluent/kube.conf;			                                                          build/linux/installer/conf/kube.conf;                  644; root; root
+/etc/fluent/kube-cm.conf;			                                                       build/linux/installer/conf/kube-cm.conf;                  644; root; root
 /etc/fluent/container.conf;			                                                    build/linux/installer/conf/container.conf;                  644; root; root
+/etc/fluent/container-cm.conf;			                                                 build/linux/installer/conf/container-cm.conf;                  644; root; root
 /etc/fluent/windows_rs_containerinventory.conf;                                         build/linux/installer/conf/windows_rs_containerinventory.conf;                  644; root; root
 /etc/fluent/windows_rs_perf.conf;                                                       build/linux/installer/conf/windows_rs_perf.conf;                  644; root; root
 
