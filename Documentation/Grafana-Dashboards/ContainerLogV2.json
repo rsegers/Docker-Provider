@@ -10,7 +10,7 @@
     {
       "description": "",
       "gridPos": {
-        "h": 7,
+        "h": 8,
         "w": 24,
         "x": 0,
         "y": 0
@@ -22,7 +22,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "## Kubernetes Logs Metadata \n\nKubernetes Logs Metadata encompasses essential information such as Pod labels, Pod Annotations, Image, ImageHash, ImageRepo, and PodUID. This metadata plays a crucial role in enabling rich context for log records, allowing seamless correlation with Kubernetes resources.\n\nThe dashboard presented here visualizes ContainerLogV2 data alongside Kubernetes Metadata. \n\nBefore diving in, ensure the following prerequisites:\n\n1. [Container Insights](https://learn.microsoft.com/en-us/azure/azure-monitor/containers/kubernetes-monitoring-enable?tabs=cli#enable-container-insights) is enabled for your selected AKS cluster.\n2. [ContainerLogV2](https://learn.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-logs-schema#enable-the-containerlogv2-schema) and the [log_collection_settings.metadata_collection](https://aka.ms/container-azm-ms-agentconfig) setting via [configmap](https://learn.microsoft.com/en-us/azure/azure-monitor/containers/container-insights-data-collection-configmap#configure-and-deploy-configmap) are both enabled.\n\nFor further details and step by step onboarding guide, please refer to the documentation here:\n[Kubernetes Metadata Private Preview Onboarding Guide](https://aka.ms/KubernetesMetadataOnboardingGuide).",
+        "content": "## Kubernetes Logs Metadata \n\nKubernetes Logs Metadata encompasses essential information such as Pod labels, Pod Annotations, Image, ImageHash, ImageRepo, and PodUID. This metadata plays a crucial role in enabling rich context for log records, allowing seamless correlation with Kubernetes resources.\n\nThe dashboard presented here visualizes ContainerLogV2 data alongside Kubernetes Metadata. \n\nFor further details and step by step onboarding guide, please refer to the documentation here:\n[Kubernetes Logs Metadata Documentation](https://aka.ms/KubernetesMetadataAndLogsFilteringDocumentation).",
         "mode": "markdown"
       },
       "type": "text"
@@ -33,7 +33,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 7
+        "y": 8
       },
       "id": 73,
       "panels": [],
@@ -72,8 +72,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": []
       },
@@ -81,7 +80,7 @@
         "h": 5,
         "w": 3,
         "x": 0,
-        "y": 8
+        "y": 9
       },
       "id": 87,
       "options": {
@@ -168,8 +167,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": []
       },
@@ -177,7 +175,7 @@
         "h": 5,
         "w": 3,
         "x": 3,
-        "y": 8
+        "y": 9
       },
       "id": 75,
       "options": {
@@ -264,8 +262,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": []
       },
@@ -273,7 +270,7 @@
         "h": 5,
         "w": 3,
         "x": 6,
-        "y": 8
+        "y": 9
       },
       "id": 68,
       "options": {
@@ -360,8 +357,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": []
       },
@@ -369,7 +365,7 @@
         "h": 5,
         "w": 3,
         "x": 9,
-        "y": 8
+        "y": 9
       },
       "id": 69,
       "options": {
@@ -456,8 +452,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": []
       },
@@ -465,7 +460,7 @@
         "h": 5,
         "w": 4,
         "x": 12,
-        "y": 8
+        "y": 9
       },
       "id": 70,
       "options": {
@@ -552,8 +547,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": []
       },
@@ -561,7 +555,7 @@
         "h": 5,
         "w": 4,
         "x": 16,
-        "y": 8
+        "y": 9
       },
       "id": 71,
       "options": {
@@ -648,8 +642,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": []
       },
@@ -657,7 +650,7 @@
         "h": 5,
         "w": 4,
         "x": 20,
-        "y": 8
+        "y": 9
       },
       "id": 72,
       "options": {
@@ -737,8 +730,7 @@
               "url": "explore?left={\r\n   \"datasource\":\"${DataSource}\",\r\n   \"queries\":[\r\n      {\r\n         \"datasource\":{\r\n            \"type\":\"grafana-azure-monitor-datasource\",\r\n            \"uid\":\"${DataSource}\"\r\n         },\r\n         \"azureLogAnalytics\":{\r\n            \"resultFormat\":\"time_series\",\r\n            \"query\":\"ContainerLogV2\\r\\n| where $__timeFilter(TimeGenerated)\\r\\n| where _ResourceId =~ \\\"/subscriptions/${Subscription}/resourcegroups/${rg}/providers/Microsoft.ContainerService/managedClusters/${Cluster}\\\"\\r\\n| where PodNamespace =~ \\\"${Namespace}\\\"\\r\\n| extend PodLabels = KubernetesMetadata.podLabels\\r\\n| mv-expand PodLabels\\r\\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\\r\\n| where labelKey in (${LabelKey:singlequote})\\r\\n| extend labelVal = tostring(PodLabels[labelKey])\\r\\n| where labelVal in (${LabelValue:singlequote})\\r\\n| project TimeGenerated, LogMessage, LogLevel, Computer, PodName, ContainerName, ContainerId, KubernetesMetadata\\r\\n\",\r\n            \"resources\":[\r\n               \"${LAWorkspace}\"\r\n            ],\r\n            \"workspace\":\"\"\r\n         },\r\n         \"azureMonitor\":{\r\n            \"allowedTimeGrainsMs\":[\r\n               \r\n            ],\r\n            \"timeGrain\":\"auto\"\r\n         },\r\n         \"queryType\":\"Azure Log Analytics\",\r\n         \"refId\":\"A\"\r\n      }\r\n   ],\r\n   \"range\":{\r\n      \"from\": \"${__from}\",\r\n      \"to\": \"${__to}\"\r\n   }\r\n}&orgId=1&right={\r\n   \"datasource\":\"${DataSource}\",\r\n   \"queries\":[\r\n      {\r\n         \"datasource\":{\r\n            \"type\":\"grafana-azure-monitor-datasource\",\r\n            \"uid\":\"${DataSource}\"\r\n         },\r\n         \"azureLogAnalytics\":{\r\n            \"resultFormat\":\"time_series\",\r\n            \"query\":\"ContainerLogV2\\r\\n| where $__timeFilter(TimeGenerated)\\r\\n| where _ResourceId =~ \\\"/subscriptions/${Subscription}/resourcegroups/${rg}/providers/Microsoft.ContainerService/managedClusters/${Cluster}\\\"\\r\\n| where PodNamespace =~ \\\"${Namespace}\\\"\\r\\n| extend PodLabels = KubernetesMetadata.podLabels\\r\\n| mv-expand PodLabels\\r\\n| extend labelKey = tostring(bag_keys(PodLabels)[0])\\r\\n| where labelKey in (${LabelKey:singlequote})\\r\\n| extend labelVal = tostring(PodLabels[labelKey])\\r\\n| where labelVal in (${LabelValue:singlequote})\\r\\n| summarize count() by bin(TimeGenerated, 1m)\\r\\n| render timechart \\r\\n\",\r\n            \"resources\":[\r\n               \"${LAWorkspace}\"\r\n            ],\r\n            \"workspace\":\"\"\r\n         },\r\n         \"azureMonitor\":{\r\n            \"allowedTimeGrainsMs\":[\r\n               \r\n            ],\r\n            \"timeGrain\":\"auto\"\r\n         },\r\n         \"queryType\":\"Azure Log Analytics\",\r\n         \"refId\":\"A\"\r\n      }\r\n   ],\r\n   \"range\":{\r\n      \"from\": \"${__from}\",\r\n      \"to\": \"${__to}\"\r\n   }\r\n}"
             }
           ],
-          "mappings": [],
-          "unitScale": true
+          "mappings": []
         },
         "overrides": [
           {
@@ -852,7 +844,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 13
+        "y": 14
       },
       "id": 17,
       "options": {
@@ -958,8 +950,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": [
           {
@@ -1178,7 +1169,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 13
+        "y": 14
       },
       "id": 32,
       "options": {
@@ -1224,7 +1215,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 23
+        "y": 24
       },
       "id": 77,
       "panels": [],
@@ -1253,13 +1244,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "text",
-                "value": null
+                "color": "text"
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": []
       },
@@ -1267,7 +1256,7 @@
         "h": 9,
         "w": 4,
         "x": 0,
-        "y": 24
+        "y": 25
       },
       "id": 42,
       "options": {
@@ -1350,8 +1339,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
-                "value": null
+                "color": "green"
               },
               {
                 "color": "red",
@@ -1359,8 +1347,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": [
           {
@@ -1408,7 +1395,7 @@
         "h": 9,
         "w": 20,
         "x": 4,
-        "y": 24
+        "y": 25
       },
       "id": 84,
       "options": {
@@ -1501,8 +1488,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": [
           {
@@ -1550,7 +1536,7 @@
         "h": 9,
         "w": 12,
         "x": 0,
-        "y": 33
+        "y": 34
       },
       "id": 85,
       "options": {
@@ -1643,8 +1629,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": [
           {
@@ -1692,7 +1677,7 @@
         "h": 9,
         "w": 12,
         "x": 12,
-        "y": 33
+        "y": 34
       },
       "id": 86,
       "options": {
@@ -1747,7 +1732,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 42
+        "y": 43
       },
       "id": 79,
       "panels": [],
@@ -1780,8 +1765,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": []
       },
@@ -1789,7 +1773,7 @@
         "h": 9,
         "w": 4,
         "x": 0,
-        "y": 43
+        "y": 44
       },
       "id": 80,
       "options": {
@@ -1890,8 +1874,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": []
       },
@@ -1899,7 +1882,7 @@
         "h": 9,
         "w": 20,
         "x": 4,
-        "y": 43
+        "y": 44
       },
       "id": 81,
       "options": {
@@ -1993,8 +1976,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": []
       },
@@ -2002,7 +1984,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 52
+        "y": 53
       },
       "id": 82,
       "options": {
@@ -2109,8 +2091,7 @@
                 "value": 80
               }
             ]
-          },
-          "unitScale": true
+          }
         },
         "overrides": []
       },
@@ -2118,7 +2099,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 52
+        "y": 53
       },
       "id": 83,
       "options": {
@@ -2164,7 +2145,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 62
+        "y": 63
       },
       "id": 28,
       "panels": [],
@@ -2197,8 +2178,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": []
       },
@@ -2206,7 +2186,7 @@
         "h": 9,
         "w": 4,
         "x": 0,
-        "y": 63
+        "y": 64
       },
       "id": 78,
       "options": {
@@ -2297,8 +2277,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": [
           {
@@ -2346,7 +2325,7 @@
         "h": 9,
         "w": 20,
         "x": 4,
-        "y": 63
+        "y": 64
       },
       "id": 41,
       "options": {
@@ -2438,8 +2417,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": [
           {
@@ -2487,7 +2465,7 @@
         "h": 10,
         "w": 12,
         "x": 0,
-        "y": 72
+        "y": 73
       },
       "id": 74,
       "options": {
@@ -2579,8 +2557,7 @@
               }
             ]
           },
-          "unit": "short",
-          "unitScale": true
+          "unit": "short"
         },
         "overrides": [
           {
@@ -2628,7 +2605,7 @@
         "h": 10,
         "w": 12,
         "x": 12,
-        "y": 72
+        "y": 73
       },
       "id": 35,
       "options": {
@@ -2682,7 +2659,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 82
+        "y": 83
       },
       "id": 31,
       "panels": [],
@@ -2699,7 +2676,7 @@
         "h": 13,
         "w": 24,
         "x": 0,
-        "y": 83
+        "y": 84
       },
       "id": 16,
       "options": {
@@ -2978,11 +2955,10 @@
     "from": "now-1h",
     "to": "now"
   },
-  "timeRangeUpdatedDuringEditOrView": false,
   "timepicker": {},
   "timezone": "",
   "title": "Azure Monitor / Container Insights / ContainerLogV2",
   "uid": "ContainerLogV2MetadataDashboard",
-  "version": 6,
+  "version": 4,
   "weekStart": ""
 }
