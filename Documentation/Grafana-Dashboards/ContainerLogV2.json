@@ -2982,5 +2982,5 @@
   "timezone": "",
   "title": "Azure Monitor / Container Insights / ContainerLogV2",
   "uid": "ContainerLogV2MetadataDashboard",
-  "version": 6
+  "version": 7
 }
