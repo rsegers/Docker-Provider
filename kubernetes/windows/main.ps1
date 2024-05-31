@@ -76,62 +76,6 @@ function Set-ProcessAndMachineEnvVariables($name, $value) {
     [System.Environment]::SetEnvironmentVariable($name, $value, "Machine")
 }
 
-function Set-AirgapCloudSpecificApplicationInsightsConfig {
-     # Need to do this before the SA fetch for AI key for airgapped clouds so that it is not overwritten with defaults.
-     $appInsightsAuth = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", "process")
-     if (![string]::IsNullOrEmpty($appInsightsAuth)) {
-         [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_AUTH", $appInsightsAuth, "machine")
-         Write-Host "Successfully set environment variable APPLICATIONINSIGHTS_AUTH - $($appInsightsAuth) for target 'machine'..."
-     }
-     else {
-         Write-Host "Failed to set environment variable APPLICATIONINSIGHTS_AUTH for target 'machine' since it is either null or empty"
-     }
-
-     $appInsightsEndpoint = [System.Environment]::GetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", "process")
-     if (![string]::IsNullOrEmpty($appInsightsEndpoint)) {
-         [System.Environment]::SetEnvironmentVariable("APPLICATIONINSIGHTS_ENDPOINT", $appInsightsEndpoint, "machine")
-         Write-Host "Successfully set environment variable APPLICATIONINSIGHTS_ENDPOINT - $($appInsightsEndpoint) for target 'machine'..."
-     }
-
-     # Check if the instrumentation key needs to be fetched from a storage account (as in airgapped clouds)
-     $aiKeyURl = [System.Environment]::GetEnvironmentVariable('APPLICATIONINSIGHTS_AUTH_URL')
-     if ($aiKeyURl) {
-         $aiKeyFetched = ""
-         # retry up to 5 times
-         for ( $i = 1; $i -le 4; $i++) {
-             try {
-                 $response = Invoke-WebRequest -uri $aiKeyURl -UseBasicParsing -TimeoutSec 5 -ErrorAction:Stop
-
-                 if ($response.StatusCode -ne 200) {
-                     Write-Host "Expecting reponse code 200, was: $($response.StatusCode), retrying"
-                     Start-Sleep -Seconds ([MATH]::Pow(2, $i) / 4)
-                 }
-                 else {
-                     $aiKeyFetched = $response.Content
-                     break
-                 }
-             }
-             catch {
-                 Write-Host "Exception encountered fetching instrumentation key:"
-                 Write-Host $_.Exception
-             }
-         }
-
-         # Check if the fetched IKey was properly encoded. if not then turn off telemetry
-         if ($aiKeyFetched -match '^[A-Za-z0-9=]+$') {
-             Write-Host "Using cloud-specific instrumentation key"
-             Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_AUTH" $aiKeyFetched
-         }
-         else {
-             # Couldn't fetch the Ikey, turn telemetry off
-             Write-Host "Could not get cloud-specific instrumentation key (network error?). Disabling telemetry"
-             Set-ProcessAndMachineEnvVariables "DISABLE_TELEMETRY" "True"
-         }
-     }
-
-     $aiKeyDecoded = [System.Text.Encoding]::UTF8.GetString([System.Convert]::FromBase64String($env:APPLICATIONINSIGHTS_AUTH))
-     Set-ProcessAndMachineEnvVariables "TELEMETRY_APPLICATIONINSIGHTS_KEY" $aiKeyDecoded
-}
 function Set-CloudSpecificApplicationInsightsConfig {
     param (
         [string]$CloudEnvironment
@@ -151,11 +95,13 @@ function Set-CloudSpecificApplicationInsightsConfig {
         }
         "usnat" {
             Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USNat Cloud"
-            Set-AirgapCloudSpecificApplicationInsightsConfig
+            Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_AUTH" "YTk5NTlkNDYtYzE3Zi0xZDYxLWJhODgtZWU3NDFjMGI3MTliCg=="
+            Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_ENDPOINT" "https://dc.applicationinsights.azure.eaglex.ic.gov/v2/track"
         }
         "ussec" {
             Write-Host "Set-CloudSpecificApplicationInsightsConfig: Setting Application Insights configuration for USSec Cloud"
-            Set-AirgapCloudSpecificApplicationInsightsConfig
+            Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_AUTH" "NTc5ZDRiZjUtMTA1Mi0wODQzLThhNTYtMjU5YzEyZmJhZTkyCg=="
+            Set-ProcessAndMachineEnvVariables "APPLICATIONINSIGHTS_ENDPOINT" "https://dc.applicationinsights.azure.microsoft.scloud/v2/track"
         }
         default {
             Write-Host "Set-CloudSpecificApplicationInsightsConfig: defaulting to Public Cloud Application Insights configuration"
@@ -204,6 +150,9 @@ function Set-AMA3PEnvironmentVariables {
     $domain = "opinsights.azure.com"
     $mcs_endpoint = "https://monitor.azure.com/"
     $mcs_globalendpoint = "https://global.handler.control.monitor.azure.com"
+    if ($aksRegion.ToLower() -eq "eastus2euap" -or $aksRegion.ToLower() -eq "centraluseuap") {
+        $mcs_globalendpoint = "https://global.handler.canary.control.monitor.azure.com"
+    }
     if (Test-Path /etc/ama-logs-secret/DOMAIN) {
         $domain = Get-Content /etc/ama-logs-secret/DOMAIN
         if (![string]::IsNullOrEmpty($domain)) {
@@ -517,6 +466,13 @@ function Read-Configs {
         Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
     }
 
+    # check if high log scale mode enabled
+    $enableHighLogScaleMode = [System.Environment]::GetEnvironmentVariable("ENABLE_HIGH_LOG_SCALE_MODE", "process")
+    if (![string]::IsNullOrEmpty($enableHighLogScaleMode)) {
+        Set-ProcessAndMachineEnvVariables "IS_HIGH_LOG_SCALE_MODE" $enableHighLogScaleMode
+        Write-Host "Successfully set environment variable IS_HIGH_LOG_SCALE_MODE - $($enableHighLogScaleMode) for target 'machine'..."
+    }
+
     #Replace placeholders in fluent-bit.conf
     ruby /opt/amalogswindows/scripts/ruby/fluent-bit-conf-customizer.rb
 
@@ -763,7 +719,16 @@ function Start-Fluent-Telegraf {
         Start-Telegraf
     }
 
-    fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'
+    $enableCustomMetrics = [System.Environment]::GetEnvironmentVariable("ENABLE_CUSTOM_METRICS", "process")
+    if (![string]::IsNullOrEmpty($enableCustomMetrics) -and $enableCustomMetrics.ToLower() -eq 'true') {
+        Move-Item -Path "C:/etc/fluent/fluent-cm.conf" -Destination "C:/etc/fluent/fluent.conf" -Force
+    }
+
+    $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH")
+    # Start fluentd as a windows service only if custom metrics is enabled or legacy mode
+    if ((![string]::IsNullOrEmpty($enableCustomMetrics) -and $enableCustomMetrics.ToLower() -eq 'true') -or [string]::IsNullOrEmpty($isAADMSIAuth) -or $isAADMSIAuth.ToLower() -eq "false") {
+        fluentd --reg-winsvc i --reg-winsvc-auto-start --winsvc-name fluentdwinaks --reg-winsvc-fluentdopt '-c C:/etc/fluent/fluent.conf -o C:/etc/fluent/fluent.log'
+    }
 
     Notepad.exe | Out-Null
 }

@@ -21,7 +21,6 @@ if [ $? -ne 0 ]; then
 fi
 
 TAG_EXISTS_STATUS=0 #Default value for the condition when the echo fails below
-AZ_ACR_IMPORT_FORCE=""
 
 if [[ "$AGENT_IMAGE_FULL_PATH" == *"win-"* ]]; then
   echo "checking windows tags"
@@ -35,7 +34,6 @@ echo "TAG_EXISTS_STATUS = $TAG_EXISTS_STATUS; OVERRIDE_TAG = $OVERRIDE_TAG"
 
 if [[ "$OVERRIDE_TAG" == "true" ]]; then
   echo "OverrideTag set to true. Will override ${AGENT_IMAGE_TAG_SUFFIX} image"
-  AZ_ACR_IMPORT_FORCE="--force"
 elif [ "$TAG_EXISTS_STATUS" -eq 0 ]; then
   echo "-e error ${AGENT_IMAGE_TAG_SUFFIX} already exists in mcr. make sure the image tag is unique"
   exit 1
@@ -66,17 +64,35 @@ fi
 echo "Login cli using managed identity"
 az login --identity
 if [ $? -eq 0 ]; then
-  echo "Logged in successfully"
+  echo "az logged in successfully"
 else
   echo "-e error failed to login to az with managed identity credentials"
   exit 1
-fi     
+fi
 
-echo "Pushing ${AGENT_IMAGE_FULL_PATH} to ${ACR_NAME} with force option set to ${AZ_ACR_IMPORT_FORCE}"
-az acr import --name $ACR_NAME --source $SOURCE_IMAGE_FULL_PATH --image $AGENT_IMAGE_FULL_PATH $AZ_ACR_IMPORT_FORCE
+TOKEN=$(az acr login --name $ACR_NAME --expose-token --output tsv --query accessToken)
 if [ $? -eq 0 ]; then
-  echo "Retagged and pushed image successfully"
+  echo "az acr logged in successfully with token"
 else
-  echo "-e error failed to retag and push image to destination ACR"
+  echo "-e error failed to login to az acr with managed identity credentials for containerinsights"
   exit 1
+fi
+
+if [ "$OVERRIDE_TAG" == "true" ] || [ "$TAG_EXISTS_STATUS" -ne 0 ]; then
+  echo $TOKEN | oras login --password-stdin $ACR_NAME
+  if [ $? -eq 0 ]; then
+    echo "oras logged in successfully"
+  else
+    echo "-e error failed to login to oras with managed identity credentials for containerinsights"
+    exit 1
+  fi
+
+  echo "Copying ${SOURCE_IMAGE_FULL_PATH} to ${ACR_NAME}/${AGENT_IMAGE_FULL_PATH}"
+  oras copy -r $SOURCE_IMAGE_FULL_PATH $ACR_NAME/$AGENT_IMAGE_FULL_PATH
+  if [ $? -eq 0 ]; then
+    echo "Retagged and pushed image and artifact successfully"
+  else
+    echo "-e error failed to retag and push image to destination ACR"
+    exit 1
+  fi
 fi
