@@ -72,7 +72,7 @@ amalogs:
   # This flag to enable and disable containerlogv2 KubernetesMetadataCollection and default is enabled
   enableMetadataCollection: true
 
-    # This flag to enable and disable collectAllKubeEvents and default is enabled
+  # This flag to enable and disable collectAllKubeEvents and default is enabled
   collectAllKubeEvents: true
 
   ## To get your workspace id and key do the following
