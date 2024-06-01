@@ -391,7 +391,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.20"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.21"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -455,8 +455,6 @@ spec:
               value: "false"
             - name: APPMONITORING_OPENTELEMETRYLOGS_PORT
               value: "28331"
-            - name: CUSTOM_METRICS_DISABLED
-              value: "false"
           securityContext:
             privileged: true
           ports:
@@ -518,7 +516,7 @@ spec:
             timeoutSeconds: 15
 #Only in sidecar scraping mode
         - name: ama-logs-prometheus
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.20"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.21"
           imagePullPolicy: IfNotPresent
           resources:
             limits:
@@ -778,7 +776,7 @@ spec:
         #         - NET_ADMIN
         #         - NET_RAW
         - name: ama-logs
-          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.20"
+          image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.21"
           imagePullPolicy: IfNotPresent
           # comment resources if VPA configured since the VPA will set these values
           resources:
@@ -839,8 +837,6 @@ spec:
               value: "false"
             - name: APPMONITORING_OPENTELEMETRYLOGS_PORT
               value: "28331"
-            - name: CUSTOM_METRICS_DISABLED
-              value: "false"
           securityContext:
             privileged: true
           ports:
@@ -1029,7 +1025,7 @@ spec:
       #       add:
       #         - NET_ADMIN
        - name: ama-logs-windows
-         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.20"
+         image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.21"
          imagePullPolicy: IfNotPresent
          resources:
           requests:
@@ -1090,8 +1086,6 @@ spec:
             value: "false"
           - name: APPMONITORING_OPENTELEMETRYLOGS_PORT
             value: "28331"
-          - name: CUSTOM_METRICS_DISABLED
-            value: "false"
          volumeMounts:
           #  Uncomment below lines when telegraf upgraded to 1.28.5 or higher
           # - name: kube-api-access

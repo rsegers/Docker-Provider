@@ -8,6 +8,52 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 05/31/2024 -
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.21 (linux)
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.21 (windows)
+- Linux
+  - [CBL-Mariner 2.0.20240425](https://github.com/microsoft/azurelinux/releases/tag/2.0.20240425-2.0)
+  - Golang - 1.20.14
+  - Ruby - 3.1.3
+  - MDSD - 1.31.1
+  - Telegraf - 1.29.4
+  - Fluent-bit - 2.2.3
+  - Fluentd - 1.16.3
+- Windows
+  - Ruby - 3.1.1
+  - Fluent-bit - 2.0.14
+  - Telegraf - 1.24.2
+  - Fluentd - 1.16.3
+  - Windows AMA - 46.17.2
+  - Golang - 1.20.14
+##### Code change log
+## What's Changed
+- Common
+  * Add scan tools to the build pipeline by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1237
+  * streamline input plugin code. by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1238
+  * Telemetry optimization: adding addon token adapter traces as metrics by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1231
+  * Update ai instrumentation key for USNAT/USSEC by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1239
+  * apply resourceTags on DCE also by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1252
+  * Longw/signing payload drop by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1246
+  * sync yamls, agent log level to info and remove redundant test http server by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1256
+  * update go to 1.20.14 by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1259
+  * use managed identity for arc releases by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1263
+  * disable custom metrics by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1260
+  * Update to use red color for config parsing error messages by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1265
+  * Add unit tests for containerlogv2 kubernetesmetadata by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1264
+  * Update template for containerlogv2 metadata public preview by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1267
+- Linux
+  * Geneva -send windows container inventory and perf with RS by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1233
+  * Gangams/logs 50k eps per node by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1235
+  * update the ruby packages to remove the vulnerabilities by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1257
+  * Upgrade golang protobuf version by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1258
+  * update telegraf to 1.29.4 for Linux by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1261
+  * remove high log scale preview setting by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1262
+  * update fluent-bit for security patches by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1269
+- Windows
+  * Send insights metrics data to AMA by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1250
+  * win ama fix: Update the canary mcs endpoint by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1253
+  
 ### 04/22/2024 -
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.20 (linux)
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.20 (windows)
@@ -60,7 +106,7 @@ additional questions or comments.
 ## What's Changed
 - Common
     * Gangams/telemetry cloud specific by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1199
-    * Bump github.com/docker/docker from 24.0.6+incompatible to 24.0.7+incompatible in /source/plugins/go/input by @dependabot in https://github.com/microsoft/Docker-Provider/pull/1194 
+    * Bump github.com/docker/docker from 24.0.6+incompatible to 24.0.7+incompatible in /source/plugins/go/input by @dependabot in https://github.com/microsoft/Docker-Provider/pull/1194
     * Containerlogv2 Metadata and annotations based filtering by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1148
     * Move LOGS_AND_EVENTS_ONLY telemetry to DS by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1212
     * Fix input plugin bugs by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1207
@@ -127,7 +173,7 @@ additional questions or comments.
     * Longw/fluentd upgrade win by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1193
     * Update the code to take toggle for env vars in windows by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1196
     * Update windows_fluent_bit default to disable by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1201
- 
+
 ### 01/31/2024 -
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.17 (linux)
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.17 (windows)
@@ -206,7 +252,7 @@ additional questions or comments.
 
 ### 10/25/2023 - HOTFIX
 ##### ARC Version - 3.1.15.1
-##### Commit: https://github.com/microsoft/Docker-Provider/commit/fac0c9381f52009bafbcb6fcae52165073e63035 
+##### Commit: https://github.com/microsoft/Docker-Provider/commit/fac0c9381f52009bafbcb6fcae52165073e63035
 ##### Code change log
 ## What's Changed
 * Revert token changes for arc due to Telegraf bug by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1101
@@ -263,7 +309,7 @@ additional questions or comments.
   - Golang - 1.20.5
 ##### Code change log
 - Common
-  * Gangams/implement timebound token and token refresh by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1075 
+  * Gangams/implement timebound token and token refresh by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1075
   * Add nil check for non existence of the fields to avoid nil class exception by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1080
   * Force 1hour expiry for default 1 year valid tokens by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1086
   * Remove wait time for stable MCR release by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1077
@@ -350,7 +396,7 @@ additional questions or comments.
   - Add multiline test yamls
   - Disable threaded by default and make optional
   - Update golang version to 1.20.5
-  - Add CI templates support for containerlogv2 
+  - Add CI templates support for containerlogv2
   - Add streams params in templates
   - Add env vars: CONTAINER_MEMORY_LIMIT_IN_BYTES and HOSTNAME to ama-logs-yaml
 - Linux
@@ -498,10 +544,10 @@ additional questions or comments.
   - Config AMA specific envvars only if 1p mode is configured
   - Update prometheus.io/scheme default description in configmap
   - Add support to specify azure autonomous resource endpoint parameter for the Extension chart for custom metrics
-  - Add autonomous fqdn to endpoint for metrics 
+  - Add autonomous fqdn to endpoint for metrics
   - Add devskim as github action and codeql as enabled in ADO pipeline
   - AgentLogCollection.sh update for collecting more detailed logs
-  - Fix pod ready condition issue for pods that are job ready 
+  - Fix pod ready condition issue for pods that are job ready
   - Updating packages for go vulnerabilities
   - Remove the necessary askcoin references in troubleshooter and readme
   - Change md5 to sha256 for the omslogger
