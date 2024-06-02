@@ -20,12 +20,12 @@ additional questions or comments.
   - Fluent-bit - 2.2.3
   - Fluentd - 1.16.3
 - Windows
-  - Ruby - 3.1.1
-  - Fluent-bit - 2.0.14
-  - Telegraf - 1.24.2
-  - Fluentd - 1.16.3
-  - Windows AMA - 46.17.2
   - Golang - 1.20.14
+  - Ruby - 3.1.1
+  - Windows AMA - 46.17.2
+  - Telegraf - 1.24.2
+  - Fluent-bit - 2.0.14
+  - Fluentd - 1.16.3
 ##### Code change log
 ## What's Changed
 - Common
