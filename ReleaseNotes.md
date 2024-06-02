@@ -42,18 +42,18 @@ additional questions or comments.
   * Update to use red color for config parsing error messages by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1265
   * Add unit tests for containerlogv2 kubernetesmetadata by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1264
   * Update template for containerlogv2 metadata public preview by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1267
+  * Upgrade golang protobuf version by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1258
 - Linux
   * Geneva -send windows container inventory and perf with RS by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1233
   * Gangams/logs 50k eps per node by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1235
   * update the ruby packages to remove the vulnerabilities by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1257
-  * Upgrade golang protobuf version by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1258
   * update telegraf to 1.29.4 for Linux by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1261
   * remove high log scale preview setting by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1262
   * update fluent-bit for security patches by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1269
 - Windows
   * Send insights metrics data to AMA by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1250
   * win ama fix: Update the canary mcs endpoint by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1253
-  
+
 ### 04/22/2024 -
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.20 (linux)
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.20 (windows)
