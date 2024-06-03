@@ -200,13 +200,18 @@ jobs:
     displayName: "Install oras and build the payload json file"
     condition: eq(variables.IS_PR, false)
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     condition: eq(variables.IS_PR, false)
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
-      FolderPath: '$(Build.ArtifactStagingDirectory)/linux'
-      Pattern: 'payload.json'
-      signConfigType: 'inlineSignParams'
+      ConnectedServiceName: "ESRPServiceConnectionPrometheus"  
+      AppRegistrationClientId: '73f8d5f9-b507-497f-b698-4ed00fcba5a3' 
+      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47' 
+      AuthAKVName: 'ESRPPrometheusKVProd' 
+      AuthCertName: 'ESRPContainerImageSignCert'
+      AuthSignCertName: ESRPReqPrometheusProdCert      
+      FolderPath: $(Build.ArtifactStagingDirectory)/refappgolanglinux/
+      Pattern: "*.json"
+      signConfigType: inlineSignParams
       inlineOperation: |
         [
                     {
