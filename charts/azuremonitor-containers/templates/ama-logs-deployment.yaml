@@ -116,7 +116,7 @@ spec:
          value: {{ .Values.amalogs.enableCustomMetrics | quote }}
        {{ if .Values.amalogs.ISTEST }}
        - name: AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS
-         value: {{ .Values.amalogs.collectAllKubeEvents | quote }}
+         value: "true"
        {{- end }}
        - name: HOSTNAME
          valueFrom:

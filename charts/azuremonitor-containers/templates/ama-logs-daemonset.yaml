@@ -133,7 +133,7 @@ spec:
          value: {{ .Values.amalogs.enableCustomMetrics | quote }}
        {{ if .Values.amalogs.ISTEST }}
        - name: AZMON_KUBERNETES_METADATA_ENABLED
-         value: {{ .Values.amalogs.enableMetadataCollection | quote }}
+         value: "true"
        {{- end }}
        - name: HOSTNAME
          valueFrom:
