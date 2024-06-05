@@ -22,11 +22,11 @@ variables:
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
   IS_MAIN_BRANCH: $[eq(variables['Build.SourceBranchName'], 'ci_prod')]
   IS_RELEASE: $[ne(variables['TELEMETRY_TAG'], '')]
-  appRegistrationClientId: '$[variables['APP_REGISTRATION_CLIENT_ID']]'
-  appRegistrationTenantId: '$[variables['APP_REGISTRATION_TENANT_ID']]'
-  authAKVName: '$[variables['AUTH_AKV_NAME']]'
-  authCertName: '$[variables['AUTH_CERT_NAME']]'
-  authSignCertName: '$[variables['AUTH_SIGN_CERT_NAME']]'
+  appRegistrationClientId: $[variables['APP_REGISTRATION_CLIENT_ID']]
+  appRegistrationTenantId: $[variables['APP_REGISTRATION_TENANT_ID']]
+  authAKVName: $[variables['AUTH_AKV_NAME']]
+  authCertName: $[variables['AUTH_CERT_NAME']]
+  authSignCertName: $[variables['AUTH_SIGN_CERT_NAME']]
 
 jobs:
 - job: common
@@ -216,11 +216,11 @@ jobs:
     condition: eq(variables.IS_PR, false)
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
-      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
-      AuthAKVName: ${{ variables.authAKVName }}
-      AuthCertName: ${{ variables.authCertName }}
-      AuthSignCertName: ${{ variables.authSignCertName }}
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/linux'
       Pattern: 'payload.json'
       signConfigType: 'inlineSignParams'
