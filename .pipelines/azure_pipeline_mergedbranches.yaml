@@ -209,9 +209,9 @@ jobs:
       AuthAKVName: 'ESRPContainerInsights' 
       AuthCertName: 'ESRPContainerInsightsAuthenticate'
       AuthSignCertName: 'ESRPContainerInsights'      
-      FolderPath: $(Build.ArtifactStagingDirectory)/refappgolanglinux/
-      Pattern: "*.json"
-      signConfigType: inlineSignParams
+      FolderPath: '$(Build.ArtifactStagingDirectory)/linux'
+      Pattern: 'payload.json'
+      signConfigType: 'inlineSignParams'
       inlineOperation: |
         [
                     {
