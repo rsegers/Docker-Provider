@@ -204,7 +204,7 @@ jobs:
   - task: EsrpCodeSigning@5
     condition: eq(variables.IS_PR, false)
     inputs:
-      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
       AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
       AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
       AuthAKVName: 'ESRPContainerInsights'
@@ -411,7 +411,7 @@ jobs:
 
   - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
       AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
       AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
       AuthAKVName: 'ESRPContainerInsights'
@@ -450,7 +450,7 @@ jobs:
 
   - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
       AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
       AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
       AuthAKVName: 'ESRPContainerInsights'
@@ -644,7 +644,7 @@ jobs:
 
   - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
       AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
       AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
       AuthAKVName: 'ESRPContainerInsights'
@@ -683,7 +683,7 @@ jobs:
 
   - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
       AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
       AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
       AuthAKVName: 'ESRPContainerInsights'
@@ -840,7 +840,7 @@ jobs:
   - task: EsrpCodeSigning@5
     condition: eq(variables.IS_PR, false)
     inputs:
-      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
       AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
       AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
       AuthAKVName: 'ESRPContainerInsights'
