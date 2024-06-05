@@ -203,12 +203,12 @@ jobs:
   - task: EsrpCodeSigning@5
     condition: eq(variables.IS_PR, false)
     inputs:
-      ConnectedServiceName: "ESRPServiceConnectionPrometheus"  
-      AppRegistrationClientId: '73f8d5f9-b507-497f-b698-4ed00fcba5a3' 
+      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"  
+      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d' 
       AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47' 
-      AuthAKVName: 'ESRPPrometheusKVProd' 
-      AuthCertName: 'ESRPContainerImageSignCert'
-      AuthSignCertName: ESRPReqPrometheusProdCert      
+      AuthAKVName: 'ESRPContainerInsights' 
+      AuthCertName: 'ESRPContainerInsightsAuthenticate'
+      AuthSignCertName: 'ESRPContainerInsights'      
       FolderPath: $(Build.ArtifactStagingDirectory)/refappgolanglinux/
       Pattern: "*.json"
       signConfigType: inlineSignParams
