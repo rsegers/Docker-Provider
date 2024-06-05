@@ -203,12 +203,12 @@ jobs:
   - task: EsrpCodeSigning@5
     condition: eq(variables.IS_PR, false)
     inputs:
-      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"  
-      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d' 
-      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47' 
-      AuthAKVName: 'ESRPContainerInsights' 
+      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
+      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
+      AuthAKVName: 'ESRPContainerInsights'
       AuthCertName: 'ESRPContainerInsightsAuthenticate'
-      AuthSignCertName: 'ESRPContainerInsights'      
+      AuthSignCertName: 'ESRPContainerInsights'
       FolderPath: '$(Build.ArtifactStagingDirectory)/linux'
       Pattern: 'payload.json'
       signConfigType: 'inlineSignParams'
@@ -399,9 +399,14 @@ jobs:
   - script: dir $(Build.ArtifactStagingDirectory)
     displayName: 'List files in Staging Directory'
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
+      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
+      AuthAKVName: 'ESRPContainerInsights'
+      AuthCertName: 'ESRPContainerInsightsAuthenticate'
+      AuthSignCertName: 'ESRPContainerInsights'
       FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
       Pattern: '*.dll,*.exe,*.so,*.ps1'
       signConfigType: 'inlineSignParams'
@@ -433,9 +438,14 @@ jobs:
       MaxRetryAttempts: '5'
     displayName: 'EsrpCodeSigning for first party'
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
+      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
+      AuthAKVName: 'ESRPContainerInsights'
+      AuthCertName: 'ESRPContainerInsightsAuthenticate'
+      AuthSignCertName: 'ESRPContainerInsights'
       FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
@@ -622,9 +632,14 @@ jobs:
   - script: dir $(Build.ArtifactStagingDirectory)
     displayName: 'List files in Staging Directory'
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
+      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
+      AuthAKVName: 'ESRPContainerInsights'
+      AuthCertName: 'ESRPContainerInsightsAuthenticate'
+      AuthSignCertName: 'ESRPContainerInsights'
       FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
       Pattern: '*.dll,*.exe,*.so,*.ps1'
       signConfigType: 'inlineSignParams'
@@ -656,9 +671,14 @@ jobs:
       MaxRetryAttempts: '5'
     displayName: 'EsrpCodeSigning for first party'
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
+      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
+      AuthAKVName: 'ESRPContainerInsights'
+      AuthCertName: 'ESRPContainerInsightsAuthenticate'
+      AuthSignCertName: 'ESRPContainerInsights'
       FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
@@ -807,10 +827,15 @@ jobs:
     displayName: "Install oras and build the payload json file"
     condition: eq(variables.IS_PR, false)
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     condition: eq(variables.IS_PR, false)
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: "AME ESRPContainerInsights MSI Service Connection"
+      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
+      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
+      AuthAKVName: 'ESRPContainerInsights'
+      AuthCertName: 'ESRPContainerInsightsAuthenticate'
+      AuthSignCertName: 'ESRPContainerInsights'
       FolderPath: '$(Build.ArtifactStagingDirectory)/windows'
       Pattern: 'payload.json'
       signConfigType: 'inlineSignParams'
