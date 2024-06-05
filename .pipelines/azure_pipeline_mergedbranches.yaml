@@ -423,11 +423,11 @@ jobs:
   - task: EsrpCodeSigning@5
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
-      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
-      AuthAKVName: ${{ variables.authAKVName }}
-      AuthCertName: ${{ variables.authCertName }}
-      AuthSignCertName: ${{ variables.authSignCertName }}
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
       Pattern: '*.dll,*.exe,*.so,*.ps1'
       signConfigType: 'inlineSignParams'
@@ -462,11 +462,11 @@ jobs:
   - task: EsrpCodeSigning@5
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
-      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
-      AuthAKVName: ${{ variables.authAKVName }}
-      AuthCertName: ${{ variables.authCertName }}
-      AuthSignCertName: ${{ variables.authSignCertName }}
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
@@ -656,11 +656,11 @@ jobs:
   - task: EsrpCodeSigning@5
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
-      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
-      AuthAKVName: ${{ variables.authAKVName }}
-      AuthCertName: ${{ variables.authCertName }}
-      AuthSignCertName: ${{ variables.authSignCertName }}
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
       Pattern: '*.dll,*.exe,*.so,*.ps1'
       signConfigType: 'inlineSignParams'
@@ -695,11 +695,11 @@ jobs:
   - task: EsrpCodeSigning@5
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
-      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
-      AuthAKVName: ${{ variables.authAKVName }}
-      AuthCertName: ${{ variables.authCertName }}
-      AuthSignCertName: ${{ variables.authSignCertName }}
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
@@ -852,11 +852,11 @@ jobs:
     condition: eq(variables.IS_PR, false)
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
-      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
-      AuthAKVName: ${{ variables.authAKVName }}
-      AuthCertName: ${{ variables.authCertName }}
-      AuthSignCertName: ${{ variables.authSignCertName }}
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/windows'
       Pattern: 'payload.json'
       signConfigType: 'inlineSignParams'
