@@ -21,6 +21,7 @@ variables:
   repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/containerinsights/cidev'
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
   IS_MAIN_BRANCH: $[eq(variables['Build.SourceBranchName'], 'ci_prod')]
+  IS_RELEASE: $[ne(variables['TELEMETRY_TAG'], '')]
 
 jobs:
 - job: common
@@ -237,6 +238,15 @@ jobs:
     workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
     displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
     condition: eq(variables.IS_PR, false)
+
+  - bash: |
+        set -euxo pipefail
+        oras attach ${{ variables.repoImageName }}:$(linuxImagetag) \
+            --artifact-type 'application/vnd.microsoft.artifact.lifecycle' \
+            --annotation "vnd.microsoft.artifact.lifecycle.end-of-life.date=$(date -u -d '-1 hour' +"%Y-%m-%dT%H:%M:%SZ")"
+    workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
+    displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
+    condition: eq(variables.IS_RELEASE, false)
 
   - task: AzureCLI@2
     displayName: "Vulnerability Scan with Trivy"
@@ -841,6 +851,13 @@ jobs:
     workingDirectory: $(Build.ArtifactStagingDirectory)/windows
     displayName: "Run oras attach"
     condition: eq(variables.IS_PR, false)
+
+  - powershell: |
+      $env:PATH = "$env:USERPROFILE\bin;$env:PATH"
+      oras attach ${{ variables.repoImageName }}:$(windowsImageTag) --artifact-type 'application/vnd.microsoft.artifact.lifecycle' --annotation "vnd.microsoft.artifact.lifecycle.end-of-life.date=$(powershell -Command "(Get-Date).AddHours(-1).ToString('yyyy-MM-ddTHH:mm:ssZ')")"
+    workingDirectory: $(Build.ArtifactStagingDirectory)/windows
+    displayName: "Run oras attach"
+    condition: eq(variables.IS_RELEASE, false)
 
   - task: PublishBuildArtifacts@1
     inputs:

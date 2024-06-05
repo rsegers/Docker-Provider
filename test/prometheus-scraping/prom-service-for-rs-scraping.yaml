@@ -1,0 +1,25 @@
+# for use with prometheus-reference-app.yaml to test replicaset scraping
+# apply both files and then in configmap update url/kuberenetes service section with details from this service
+# eg urls = ["http://10.224.1.101:2112/metrics"]
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-reference-service
+  labels:
+    app: prometheus-reference-app
+spec:
+  selector:
+    app: prometheus-reference-app
+  ports:
+    - name: "weather-app"
+      protocol: TCP
+      port: 2112
+      targetPort: 2112
+    - name: "untyped-metrics"
+      protocol: TCP
+      port: 2113
+      targetPort: 2113
+    - name: "python-client"
+      protocol: TCP
+      port: 2114
+      targetPort: 2114

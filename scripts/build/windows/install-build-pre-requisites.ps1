@@ -155,7 +155,7 @@ function Install-cmetrics() {
 # https://stackoverflow.com/questions/28682642/powershell-why-is-using-invoke-webrequest-much-slower-than-a-browser-download
 $ProgressPreference = 'SilentlyContinue'
 
-Write-Host "Install GO 1.22.3 version"
+Write-Host "Install GO 1.18.3 version"
 Install-Go
 Write-Host "Install Build dependencies"
 Build-Dependencies

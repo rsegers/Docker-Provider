@@ -53,6 +53,8 @@ var (
 	ContainerLogsWindowsAMAClientCreateErrors float64
 	//Tracks the number of mdsd client create errors for insightsmetrics (uses ContainerLogTelemetryTicker)
 	InsightsMetricsMDSDClientCreateErrors float64
+	//Tracks the number of windows ama client create errors for insightsmetrics (uses ContainerLogTelemetryTicker)
+	InsightsMetricsWindowsAMAClientCreateErrors float64
 	//Tracks the number of mdsd client create errors for Input plugin records (uses ContainerLogTelemetryTicker)
 	InputPluginRecordsErrors float64
 	//Tracks the number of mdsd client create errors for kubemonevents (uses ContainerLogTelemetryTicker)
@@ -109,6 +111,7 @@ const (
 	metricNameErrorCountInsightsMetricsMDSDClientCreateError          = "InsightsMetricsMDSDClientCreateErrorsCount"
 	metricNameErrorCountContainerLogsSendErrorsToWindowsAMAFromFluent = "ContainerLogsSendErrorsToWindowsAMAFromFluent"
 	metricNameErrorCountContainerLogsWindowsAMAClientCreateError      = "ContainerLogsWindowsAMAClientCreateErrors"
+	metricNameErrorCountInsightsMetricsWindowsAMAClientCreateError    = "InsightsMetricsWindowsAMAClientCreateErrors"
 	metricNameErrorCountKubeMonEventsWindowsAMAClientCreateError      = "KubeMonEventsWindowsAMAClientCreateErrors"
 	metricNameErrorCountKubeMonEventsMDSDClientCreateError            = "KubeMonEventsMDSDClientCreateErrorsCount"
 	metricNameErrorCountContainerLogsSendErrorsToADXFromFluent        = "ContainerLogs2ADXSendErrorCount"
@@ -155,6 +158,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		containerLogsSendErrorsToWindowsAMAFromFluent := ContainerLogsSendErrorsToWindowsAMAFromFluent
 		containerLogsWindowsAMAClientCreateErrors := ContainerLogsWindowsAMAClientCreateErrors
 		insightsMetricsMDSDClientCreateErrors := InsightsMetricsMDSDClientCreateErrors
+		insightsMetricsWindowsAMAClientCreateErrors := InsightsMetricsWindowsAMAClientCreateErrors
 		kubeMonEventsMDSDClientCreateErrors := KubeMonEventsMDSDClientCreateErrors
 		kubeMonEventsWindowsAMAClientCreateErrors := KubeMonEventsWindowsAMAClientCreateErrors
 		osmNamespaceCount := OSMNamespaceCount
@@ -182,9 +186,9 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		ContainerLogsWindowsAMAClientCreateErrors = 0.0
 		ContainerLogsSendErrorsToADXFromFluent = 0.0
 		ContainerLogsSendErrorsToWindowsAMAFromFluent = 0.0
-		ContainerLogsWindowsAMAClientCreateErrors = 0.0
 		ContainerLogsADXClientCreateErrors = 0.0
 		InsightsMetricsMDSDClientCreateErrors = 0.0
+		InsightsMetricsWindowsAMAClientCreateErrors = 0.0
 		KubeMonEventsMDSDClientCreateErrors = 0.0
 		KubeMonEventsWindowsAMAClientCreateErrors = 0.0
 		ContainerLogRecordCountWithEmptyTimeStamp = 0.0
@@ -260,6 +264,16 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 					telemetryDimensions["logsAndEventsOnly"] = logsAndEventsOnly
 				}
 
+				isHighLogScaleMode := os.Getenv("IS_HIGH_LOG_SCALE_MODE")
+				if isHighLogScaleMode != "" {
+					telemetryDimensions["isHighLogScaleMode"] = isHighLogScaleMode
+				}
+
+				enableCustomMetrics := os.Getenv("ENABLE_CUSTOM_METRICS")
+				if enableCustomMetrics != "" {
+					telemetryDimensions["enableCustomMetrics"] = enableCustomMetrics
+				}
+
 				telemetryDimensions["PromFbitChunkSize"] = os.Getenv("AZMON_FBIT_CHUNK_SIZE")
 				telemetryDimensions["PromFbitBufferSize"] = os.Getenv("AZMON_FBIT_BUFFER_SIZE")
 				telemetryDimensions["PromFbitMemBufLimit"] = os.Getenv("AZMON_FBIT_MEM_BUF_LIMIT")
@@ -316,6 +330,9 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		}
 		if insightsMetricsMDSDClientCreateErrors > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountInsightsMetricsMDSDClientCreateError, insightsMetricsMDSDClientCreateErrors))
+		}
+		if insightsMetricsWindowsAMAClientCreateErrors > 0.0 {
+			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountInsightsMetricsWindowsAMAClientCreateError, insightsMetricsWindowsAMAClientCreateErrors))
 		}
 		if kubeMonEventsMDSDClientCreateErrors > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameErrorCountKubeMonEventsMDSDClientCreateError, kubeMonEventsMDSDClientCreateErrors))

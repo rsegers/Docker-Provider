@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "fluent/plugin/input"
+require_relative "oms_common"
 
 module Fluent::Plugin
   class Kube_PodInventory_Input < Input
