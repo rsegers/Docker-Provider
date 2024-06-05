@@ -22,6 +22,11 @@ variables:
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
   IS_MAIN_BRANCH: $[eq(variables['Build.SourceBranchName'], 'ci_prod')]
   IS_RELEASE: $[ne(variables['TELEMETRY_TAG'], '')]
+  appRegistrationClientId: $[variables['APP_REGISTRATION_CLIENT_ID']]
+  appRegistrationTenantId: $[variables['APP_REGISTRATION_TENANT_ID']]
+  authAKVName: $[variables['AUTH_AKV_NAME']]
+  authCertName: $[variables['AUTH_CERT_NAME']]
+  authSignCertName: $[variables['AUTH_SIGN_CERT_NAME']]
 
 jobs:
 - job: common
@@ -205,11 +210,11 @@ jobs:
     condition: eq(variables.IS_PR, false)
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
-      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
-      AuthAKVName: 'ESRPContainerInsights'
-      AuthCertName: 'ESRPContainerInsightsAuthenticate'
-      AuthSignCertName: 'ESRPContainerInsights'
+      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
+      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
+      AuthAKVName: ${{ variables.authAKVName }}
+      AuthCertName: ${{ variables.authCertName }}
+      AuthSignCertName: ${{ variables.authSignCertName }}
       FolderPath: '$(Build.ArtifactStagingDirectory)/linux'
       Pattern: 'payload.json'
       signConfigType: 'inlineSignParams'
@@ -412,11 +417,11 @@ jobs:
   - task: EsrpCodeSigning@5
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
-      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
-      AuthAKVName: 'ESRPContainerInsights'
-      AuthCertName: 'ESRPContainerInsightsAuthenticate'
-      AuthSignCertName: 'ESRPContainerInsights'
+      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
+      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
+      AuthAKVName: ${{ variables.authAKVName }}
+      AuthCertName: ${{ variables.authCertName }}
+      AuthSignCertName: ${{ variables.authSignCertName }}
       FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
       Pattern: '*.dll,*.exe,*.so,*.ps1'
       signConfigType: 'inlineSignParams'
@@ -451,11 +456,11 @@ jobs:
   - task: EsrpCodeSigning@5
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
-      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
-      AuthAKVName: 'ESRPContainerInsights'
-      AuthCertName: 'ESRPContainerInsightsAuthenticate'
-      AuthSignCertName: 'ESRPContainerInsights'
+      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
+      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
+      AuthAKVName: ${{ variables.authAKVName }}
+      AuthCertName: ${{ variables.authCertName }}
+      AuthSignCertName: ${{ variables.authSignCertName }}
       FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
@@ -645,11 +650,11 @@ jobs:
   - task: EsrpCodeSigning@5
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
-      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
-      AuthAKVName: 'ESRPContainerInsights'
-      AuthCertName: 'ESRPContainerInsightsAuthenticate'
-      AuthSignCertName: 'ESRPContainerInsights'
+      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
+      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
+      AuthAKVName: ${{ variables.authAKVName }}
+      AuthCertName: ${{ variables.authCertName }}
+      AuthSignCertName: ${{ variables.authSignCertName }}
       FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
       Pattern: '*.dll,*.exe,*.so,*.ps1'
       signConfigType: 'inlineSignParams'
@@ -684,11 +689,11 @@ jobs:
   - task: EsrpCodeSigning@5
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
-      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
-      AuthAKVName: 'ESRPContainerInsights'
-      AuthCertName: 'ESRPContainerInsightsAuthenticate'
-      AuthSignCertName: 'ESRPContainerInsights'
+      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
+      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
+      AuthAKVName: ${{ variables.authAKVName }}
+      AuthCertName: ${{ variables.authCertName }}
+      AuthSignCertName: ${{ variables.authSignCertName }}
       FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
@@ -841,11 +846,11 @@ jobs:
     condition: eq(variables.IS_PR, false)
     inputs:
       ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
-      AppRegistrationClientId: 'bc3b3065-9256-4473-a288-e419f37f4d6d'
-      AppRegistrationTenantId: '72f988bf-86f1-41af-91ab-2d7cd011db47'
-      AuthAKVName: 'ESRPContainerInsights'
-      AuthCertName: 'ESRPContainerInsightsAuthenticate'
-      AuthSignCertName: 'ESRPContainerInsights'
+      AppRegistrationClientId: ${{ variables.appRegistrationClientId }}
+      AppRegistrationTenantId: ${{ variables.appRegistrationTenantId }}
+      AuthAKVName: ${{ variables.authAKVName }}
+      AuthCertName: ${{ variables.authCertName }}
+      AuthSignCertName: ${{ variables.authSignCertName }}
       FolderPath: '$(Build.ArtifactStagingDirectory)/windows'
       Pattern: 'payload.json'
       signConfigType: 'inlineSignParams'
