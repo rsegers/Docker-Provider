@@ -28,6 +28,7 @@ additional questions or comments.
   - Fluentd - 1.16.3
 ##### Code change log
 ## What's Changed
+ > Note: Default resource limits on the Linux DaemonSet container have been increased: CPU limit has been raised from 500m to 3 cores, and memory limit has been increased from 750Mi to 2.5GB to support high log scale collection.
 - Common
   * Add scan tools to the build pipeline by @jatakiajanvi12 in https://github.com/microsoft/Docker-Provider/pull/1237
   * streamline input plugin code. by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1238

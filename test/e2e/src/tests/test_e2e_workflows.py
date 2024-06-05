@@ -319,16 +319,27 @@ def test_e2e_workflows(env_dict):
     if not rowCount:
         pytest.fail("rowCount should be greater than for cluster: {0} for workflow: {1} ".format(clusterResourceId, 'CONTAINER_PERF_RESTART_TIME_EPOCH'))
 
-    # Container log
-    query = constants.CONTAINER_LOG_QUERY.format(queryTimeInterval)
+    # Container log v2
+    query = constants.CONTAINER_LOG_V2_QUERY.format(queryTimeInterval)
     params = { 'query': query}
     result = requests.get(queryUrl, params=params, headers=Headers)
     if not result:
-        pytest.fail("log analytics query response shouldnt be null or empty for workflow: {0}".format('CONTAINER_LOG'))
+        pytest.fail("log analytics query response shouldnt be null or empty for workflow: {0}".format('CONTAINER_LOG_V2'))
 
     rowCount = result.json()['tables'][0]['rows'][0][0]
     if not rowCount:
-        pytest.fail("rowCount should be greater than for cluster: {0} for workflow: {1} ".format(clusterResourceId, 'CONTAINER_LOG'))
+        pytest.fail("rowCount should be greater than for cluster: {0} for workflow: {1} ".format(clusterResourceId, 'CONTAINER_LOG_V2'))
+
+    # Container log v2 Kubernetes Metadata
+    query = constants.CONTAINER_LOG_V2_K8S_METADATA_QUERY.format(queryTimeInterval)
+    params = { 'query': query}
+    result = requests.get(queryUrl, params=params, headers=Headers)
+    if not result:
+        pytest.fail("log analytics query response shouldnt be null or empty for workflow: {0}".format('CONTAINER_LOG_V2_K8S_METADATA'))
+
+    rowCount = result.json()['tables'][0]['rows'][0][0]
+    if not rowCount:
+        pytest.fail("rowCount should be greater than for cluster: {0} for workflow: {1} ".format(clusterResourceId, 'CONTAINER_LOG_V2_K8S_METADATA'))
 
      # InsightsMetrics
     query = constants.INSIGHTS_METRICS_QUERY.format(queryTimeInterval)

@@ -131,6 +131,10 @@ spec:
          value: {{ .Values.Azure.proxySettings.isCustomCert | quote }}
        - name: ENABLE_CUSTOM_METRICS
          value: {{ .Values.amalogs.enableCustomMetrics | quote }}
+       {{ if .Values.amalogs.ISTEST }}
+       - name: AZMON_KUBERNETES_METADATA_ENABLED
+         value: "true"
+       {{- end }}
        - name: HOSTNAME
          valueFrom:
             fieldRef:
