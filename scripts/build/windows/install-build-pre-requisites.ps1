@@ -13,8 +13,8 @@ function Install-Go {
         exit 1
     }
 
-   $url = "https://go.dev/dl/go1.22.3.windows-amd64.msi"
-   $output = Join-Path -Path $tempGo -ChildPath "go1.22.3.windows-amd64.msi"
+   $url = "https://go.dev/dl/go1.22.4.windows-amd64.msi"
+   $output = Join-Path -Path $tempGo -ChildPath "go1.22.4.windows-amd64.msi"
    Write-Host("downloading go msi into directory path : " + $output + "  ...")
    Invoke-WebRequest -Uri $url -OutFile $output -ErrorAction Stop
    Write-Host("downloading of go msi into directory path : " + $output + "  completed")
