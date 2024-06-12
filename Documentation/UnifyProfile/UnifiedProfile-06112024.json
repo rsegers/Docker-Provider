@@ -1,0 +1,43 @@
+{
+    "azureMonitorProfile": {
+        "metrics": {
+            "enabled": "boolean",
+            "kubeStateMetrics": {
+                "metricAnnotationsAllowList": "pods=[k8s-annotation-1,k8s-annotation-n]",
+                "metricLabelsAllowlist": "namespaces=[k8s-label-1,k8s-label-n]"
+            }
+        },
+        "logs": {
+            "containerInsights": {
+                "enabled": "boolean",
+                "logAnalyticsWorkspaceResourceID": "<workspaceResourceId>",
+                "syslogPort": "integer",
+                "enablePrometheusMetricsScraping": "boolean",
+                "disableEnvironmentVariablesCollection": "boolean",
+                "enableHighLogScaleMode": "boolean",
+                "multitenancyLogsConfig": {
+                   "enabled": "boolean",
+                   "configureLogsServiceDeployment": "boolean",
+                   "hpaProfile": {
+                      "enabled": "boolean",
+                      "minReplicas": "integer",
+                      "maxReplicas": "integer"
+                    }
+                }
+            }
+        },
+        "appMonitoring": {
+          "autoInstrumentation": {
+            "enabled": "boolean"
+           },
+            "openTelemetryLogs": {
+                "enabled": "boolean",
+                "openTelemetryLogsAndTracesPort": "integer"
+            },
+            "openTelemetryMetrics": {
+                "enabled": "boolean",
+                "openTelemetryMetricsPort": "integer"
+            }
+         }
+    }
+}
