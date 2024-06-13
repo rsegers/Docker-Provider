@@ -262,7 +262,7 @@ jobs:
             --annotation "vnd.microsoft.artifact.lifecycle.end-of-life.date=$(date -u -d '-1 hour' +"%Y-%m-%dT%H:%M:%SZ")"
     workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
     displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
-    condition: eq(variables.IS_RELEASE, false)
+    condition: and(eq(variables.IS_RELEASE, false), eq(variables.IS_PR, false))
 
   - task: AzureCLI@2
     displayName: "Vulnerability Scan with Trivy"
@@ -893,7 +893,7 @@ jobs:
       oras attach ${{ variables.repoImageName }}:$(windowsImageTag) --artifact-type 'application/vnd.microsoft.artifact.lifecycle' --annotation "vnd.microsoft.artifact.lifecycle.end-of-life.date=$(powershell -Command "(Get-Date).AddHours(-1).ToString('yyyy-MM-ddTHH:mm:ssZ')")"
     workingDirectory: $(Build.ArtifactStagingDirectory)/windows
     displayName: "Run oras attach"
-    condition: eq(variables.IS_RELEASE, false)
+    condition: and(eq(variables.IS_RELEASE, false), eq(variables.IS_PR, false))
 
   - task: PublishBuildArtifacts@1
     inputs:
