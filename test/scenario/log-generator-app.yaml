@@ -16,6 +16,7 @@ spec:
     spec:
       nodeSelector:
         kubernetes.io/os: "linux"
+        50keps: "true"
       containers:
       - name: log-gen
         image: docker.io/mffiedler/ocp-logtest:latest
