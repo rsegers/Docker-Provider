@@ -563,11 +563,6 @@ spec:
             #   value: "true"
           securityContext:
             privileged: true
-          ports:        
-            - name: syslog
-              containerPort: 28330
-              hostPort: 28330
-              protocol: TCP  
           volumeMounts:
             - mountPath: /var/run/mdsd-ci
               name: mdsd-sock

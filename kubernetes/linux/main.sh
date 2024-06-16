@@ -1018,6 +1018,7 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
       echo "export TENANT_NAME=$TENANT_NAME" >> ~/.bashrc
       export MDSD_ROLE_PREFIX=/var/run/mdsd-${CONTAINER_TYPE}/default
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
+      SYSLOG_PORT_CONFIG="-y 0"
       if [[ "${GENEVA_LOGS_INTEGRATION}" == "true" ]]; then
             export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
             echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
@@ -1026,11 +1027,12 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
             else
                mkdir -p /var/run/mdsd-ci
             fi
+            SYSLOG_PORT_CONFIG=""
       fi
       source ~/.bashrc
       mkdir -p /var/run/mdsd-${CONTAINER_TYPE}
       # add -T 0xFFFF for full traces
-      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -y 0 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 ${SYSLOG_PORT_CONFIG} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
     else
       echo "not starting mdsd (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
     fi
