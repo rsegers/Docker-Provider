@@ -1007,6 +1007,20 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
       echo "export TENANT_NAME=$TENANT_NAME" >> ~/.bashrc
       export MDSD_ROLE_PREFIX=/var/run/mdsd-${CONTAINER_TYPE}/default
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
+      if [[ "${GENEVA_LOGS_INTEGRATION}" == "true" ]]; then
+            if [ -n "$SYSLOG_HOST_PORT" ] && [ "$SYSLOG_HOST_PORT" != "28330" ]; then
+                  echo "Updating rsyslog config file with non default SYSLOG_HOST_PORT value ${SYSLOG_HOST_PORT}"
+                  if sed -i "s/Port=\"[0-9]*\"/Port=\"$SYSLOG_HOST_PORT\"/g" /etc/opt/microsoft/docker-cimprov/70-rsyslog-forward-mdsd-ci.conf; then
+                        echo "Successfully updated the rsylog config file."
+                  else
+                        echo "Failed to update the rsyslog config file."
+                  fi
+            else
+                  echo "SYSLOG_HOST_PORT is ${SYSLOG_HOST_PORT}. No changes made."
+            fi
+            export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
+            echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
+      fi
       source ~/.bashrc
       mkdir -p /var/run/mdsd-${CONTAINER_TYPE}
       # add -T 0xFFFF for full traces
@@ -1022,18 +1036,20 @@ else
       # add -T 0xFFFF for full traces
       export MDSD_ROLE_PREFIX=/var/run/mdsd-ci/default
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
-      if [ -n "$SYSLOG_HOST_PORT" ] && [ "$SYSLOG_HOST_PORT" != "28330" ]; then
-            echo "Updating rsyslog config file with non default SYSLOG_HOST_PORT value ${SYSLOG_HOST_PORT}"
-            if sed -i "s/Port=\"[0-9]*\"/Port=\"$SYSLOG_HOST_PORT\"/g" /etc/opt/microsoft/docker-cimprov/70-rsyslog-forward-mdsd-ci.conf; then
-                  echo "Successfully updated the rsylog config file."
+      if [[ "${GENEVA_LOGS_INTEGRATION}" != "true" ]]; then
+            if [ -n "$SYSLOG_HOST_PORT" ] && [ "$SYSLOG_HOST_PORT" != "28330" ]; then
+                  echo "Updating rsyslog config file with non default SYSLOG_HOST_PORT value ${SYSLOG_HOST_PORT}"
+                  if sed -i "s/Port=\"[0-9]*\"/Port=\"$SYSLOG_HOST_PORT\"/g" /etc/opt/microsoft/docker-cimprov/70-rsyslog-forward-mdsd-ci.conf; then
+                        echo "Successfully updated the rsylog config file."
+                  else
+                        echo "Failed to update the rsyslog config file."
+                  fi
             else
-                  echo "Failed to update the rsyslog config file."
+                  echo "SYSLOG_HOST_PORT is ${SYSLOG_HOST_PORT}. No changes made."
             fi
-      else
-            echo "SYSLOG_HOST_PORT is ${SYSLOG_HOST_PORT}. No changes made."
+            export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
+            echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
       fi
-      export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
-      echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
       source ~/.bashrc
       mkdir -p /var/run/mdsd-ci
       mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
