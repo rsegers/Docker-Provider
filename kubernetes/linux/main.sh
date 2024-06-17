@@ -1006,7 +1006,8 @@ if [ -n "$SYSLOG_HOST_PORT" ] && [ "$SYSLOG_HOST_PORT" != "28330" ]; then
          echo "Failed to update the rsyslog config file."
       fi
 else
-    echo "SYSLOG_HOST_PORT is ${SYSLOG_HOST_PORT}. No changes made."
+    SYSLOG_HOST_PORT="28330"
+    echo "SYSLOG_HOST_PORT is ${SYSLOG_HOST_PORT}. No changes made and using default port."
 fi
 
 if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
@@ -1020,7 +1021,7 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
       SYSLOG_PORT_CONFIG="-y 0"
       if [[ "${GENEVA_LOGS_INTEGRATION}" == "true" ]]; then
-            export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
+            export MDSD_DEFAULT_TCP_SYSLOG_PORT=$SYSLOG_HOST_PORT
             echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
             if [[ -d "/var/run/mdsd-ci" ]]; then
                echo "Directory exists: /var/run/mdsd-ci"
@@ -1045,7 +1046,7 @@ else
       export MDSD_ROLE_PREFIX=/var/run/mdsd-ci/default
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
       if [[ "${GENEVA_LOGS_INTEGRATION}" != "true" ]]; then
-            export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
+            export MDSD_DEFAULT_TCP_SYSLOG_PORT=$SYSLOG_HOST_PORT
             echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
       fi
       source ~/.bashrc

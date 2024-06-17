@@ -561,6 +561,8 @@ spec:
             # Uncomment below lines for MSI Auth Mode  testing
             # - name: USING_AAD_MSI_AUTH
             #   value: "true"
+            - name: SYSLOG_HOST_PORT
+              value: "28330"
           securityContext:
             privileged: true
           volumeMounts:
