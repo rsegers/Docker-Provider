@@ -1,21 +1,7 @@
 #!/bin/bash
 source /opt/env_vars
 
-if [[ "${CONTROLLER_TYPE}" == "DaemonSet" ]]; then
-  if [[ "${CONTAINER_TYPE}" == "PrometheusSidecar" && "${GENEVA_LOGS_INTEGRATION}" == "true" && -d "/var/run/mdsd-ci" ]]; then
-        syslog_status=$(cat /var/opt/microsoft/docker-cimprov/state/syslog.status 2>/dev/null)
-        if grep -qr LINUX_SYSLOGS_BLOB /etc/mdsd.d/config-cache/configchunks > /dev/null 2>&1; then
-                if [[ "$syslog_status" == "disabled" ]]; then
-                        echo "enabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
-                        cp /etc/opt/microsoft/docker-cimprov/70-rsyslog-forward-mdsd-ci.conf /var/run/mdsd-ci && echo "add" > /var/run/mdsd-ci/update.status
-                fi
-        else
-                if [[ "$syslog_status" == "enabled" ]]; then
-                        echo "disabled" > /var/opt/microsoft/docker-cimprov/state/syslog.status
-                        [ -f "/var/run/mdsd-ci/70-rsyslog-forward-mdsd-ci.conf" ] && rm /var/run/mdsd-ci/70-rsyslog-forward-mdsd-ci.conf && echo "remove" > /var/run/mdsd-ci/update.status
-                fi
-        fi
-  else
+syslogSetup() {
     syslog_status=$(cat /var/opt/microsoft/docker-cimprov/state/syslog.status 2>/dev/null)
     if grep -qr LINUX_SYSLOGS_BLOB /etc/mdsd.d/config-cache/configchunks > /dev/null 2>&1; then
             if [[ "$syslog_status" == "disabled" ]]; then
@@ -28,7 +14,13 @@ if [[ "${CONTROLLER_TYPE}" == "DaemonSet" ]]; then
                     [ -f "/var/run/mdsd-ci/70-rsyslog-forward-mdsd-ci.conf" ] && rm /var/run/mdsd-ci/70-rsyslog-forward-mdsd-ci.conf && echo "remove" > /var/run/mdsd-ci/update.status
             fi
     fi
+}
 
+if [[ "${CONTROLLER_TYPE}" == "DaemonSet" ]]; then
+  if [[ "${CONTAINER_TYPE}" == "PrometheusSidecar" && "${GENEVA_LOGS_INTEGRATION}" == "true" && -d "/var/run/mdsd-ci" ]]; then
+    syslogSetup
+  else
+    syslogSetup
     CURRENT_LOGS_AND_EVENTS_ONLY=${LOGS_AND_EVENTS_ONLY}
     ruby /opt/dcr-config-parser.rb > /dev/write-to-traces 2>&1
     source /opt/dcr_env_var
