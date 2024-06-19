@@ -547,6 +547,8 @@ spec:
               value: "PrometheusSidecar"
             - name: CONTROLLER_TYPE
               value: "DaemonSet"
+            - name: SYSLOG_HOST_PORT
+              value: "28330"
             - name: NODE_IP
               valueFrom:
                 fieldRef:
@@ -567,6 +569,8 @@ spec:
             - name: kube-api-access
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
               readOnly: true
+            - mountPath: /var/run/mdsd-ci
+              name: mdsd-sock
             - mountPath: /var/run/mdsd-PrometheusSidecar
               name: mdsd-prometheus-sock
             - mountPath: /etc/kubernetes/host
