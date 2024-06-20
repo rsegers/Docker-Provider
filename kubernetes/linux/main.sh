@@ -1023,7 +1023,7 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
       source ~/.bashrc
       mkdir -p /var/run/mdsd-${CONTAINER_TYPE}
-      if [[ "${GENEVA_LOGS_INTEGRATION}" == "true" && -d "/var/run/mdsd-ci" ]]; then
+      if [[ "${GENEVA_LOGS_INTEGRATION}" == "true" && -d "/var/run/mdsd-ci" && -n "${SYSLOG_HOST_PORT}" ]]; then
             export MDSD_DEFAULT_TCP_SYSLOG_PORT=$SYSLOG_HOST_PORT
             echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
             source ~/.bashrc
