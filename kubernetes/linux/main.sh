@@ -1024,6 +1024,7 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
       source ~/.bashrc
       mkdir -p /var/run/mdsd-${CONTAINER_TYPE}
       if [[ "${GENEVA_LOGS_INTEGRATION}" == "true" && -d "/var/run/mdsd-ci" && -n "${SYSLOG_HOST_PORT}" ]]; then
+            echo "enabling syslog listener for mdsd in prometheus sidecar container"
             export MDSD_DEFAULT_TCP_SYSLOG_PORT=$SYSLOG_HOST_PORT
             echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
             source ~/.bashrc
@@ -1039,16 +1040,17 @@ else
       if isHighLogScaleMode; then
             startAMACoreAgent
       fi
-      # add -T 0xFFFF for full traces
       export MDSD_ROLE_PREFIX=/var/run/mdsd-ci/default
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
       if [[ "${GENEVA_LOGS_INTEGRATION}" != "true" ]]; then
+            echo "enabling syslog listener for mdsd in main container"
             export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
             echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
             source ~/.bashrc
             SYSLOG_PORT_CONFIG="" # enable syslog listener for mdsd for main sidecar when not in geneva mode
       fi
       mkdir -p /var/run/mdsd-ci
+      # add -T 0xFFFF for full traces
       mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} "${SYSLOG_PORT_CONFIG}" -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
 fi
 
