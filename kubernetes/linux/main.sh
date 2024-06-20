@@ -1047,7 +1047,7 @@ else
             export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
             echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
             source ~/.bashrc
-            SYSLOG_PORT_CONFIG="" # enable syslog listener for mdsd for main sidecar when not in geneva mode
+            SYSLOG_PORT_CONFIG="" # enable syslog listener for mdsd for main container when not in geneva mode
       fi
       mkdir -p /var/run/mdsd-ci
       # add -T 0xFFFF for full traces
