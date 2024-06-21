@@ -47,7 +47,7 @@ gem uninstall rexml --version 3.2.5
 
 
 if [ "${ARCH}" != "arm64" ]; then
-    wget "https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.31.0/azure-mdsd-1.32.0-build.main.3299.x86_64.rpm" -O azure-mdsd.rpm
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.31.0/azure-mdsd-1.32.0-build.main.3366.x86_64.rpm" -O azure-mdsd.rpm
 else
     sudo tdnf install -y azure-mdsd-1.31.1
 fi
