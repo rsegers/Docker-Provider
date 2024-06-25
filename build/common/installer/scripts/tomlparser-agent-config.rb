@@ -384,10 +384,16 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         end
       end
 
+      enable_custom_metrics = ENV["ENABLE_CUSTOM_METRICS"]
+      if !enable_custom_metrics.nil? && enable_custom_metrics.to_s.downcase == "true"
+        @resource_optimization_enabled = false
+        puts "Resource Optimization disabled since custom metrics is enabled"
+      end
+
       windows_fluent_bit_config = parsedConfig[:agent_settings][:windows_fluent_bit]
       if !windows_fluent_bit_config.nil?
         windows_fluent_bit_disabled = windows_fluent_bit_config[:disabled]
-        if !windows_fluent_bit_disabled.nil? && windows_fluent_bit_disabled.downcase == "false"
+        if !windows_fluent_bit_disabled.nil? && windows_fluent_bit_disabled.to_s.downcase == "false"
           @windows_fluent_bit_disabled = false
         end
         puts "Using config map value: AZMON_WINDOWS_FLUENT_BIT_DISABLED = #{@windows_fluent_bit_disabled}"

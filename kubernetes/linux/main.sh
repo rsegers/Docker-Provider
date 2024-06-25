@@ -660,6 +660,8 @@ else
     true > /etc/opt/microsoft/docker-cimprov/fluent-bit-internal-metrics.conf
 fi
 
+setGlobalEnvVar GENEVA_LOGS_INTEGRATION "${GENEVA_LOGS_INTEGRATION}"
+
 if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       #Parse the configmap to set the right environment variables.
       ruby tomlparser.rb
@@ -998,6 +1000,18 @@ else
       echo "MDSD backpressure threshold not set since tail_mem_buf_limit_megabytes is used in configmap. Use backpressure_memory_threshold_in_mb in configmap to set it."
 fi
 
+if [ -n "$SYSLOG_HOST_PORT" ] && [ "$SYSLOG_HOST_PORT" != "28330" ]; then
+      echo "Updating rsyslog config file with non default SYSLOG_HOST_PORT value ${SYSLOG_HOST_PORT}"
+      if sed -i "s/Port=\"[0-9]*\"/Port=\"$SYSLOG_HOST_PORT\"/g" /etc/opt/microsoft/docker-cimprov/70-rsyslog-forward-mdsd-ci.conf; then
+            echo "Successfully updated the rsylog config file."
+      else
+            echo "Failed to update the rsyslog config file."
+      fi
+else
+      echo "SYSLOG_HOST_PORT is ${SYSLOG_HOST_PORT}. No changes made."
+fi
+SYSLOG_PORT_CONFIG="-y 0" # disables syslog listener for mdsd
+
 if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
     if [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
       echo "starting mdsd with mdsd-port=26130, fluentport=26230 and influxport=26330 in sidecar container..."
@@ -1009,8 +1023,15 @@ if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ]; then
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
       source ~/.bashrc
       mkdir -p /var/run/mdsd-${CONTAINER_TYPE}
+      if [[ "${GENEVA_LOGS_INTEGRATION}" == "true" && -d "/var/run/mdsd-ci" && -n "${SYSLOG_HOST_PORT}" ]]; then
+            echo "enabling syslog listener for mdsd in prometheus sidecar container"
+            export MDSD_DEFAULT_TCP_SYSLOG_PORT=$SYSLOG_HOST_PORT
+            echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
+            source ~/.bashrc
+            SYSLOG_PORT_CONFIG="" # enable syslog listener for mdsd for prometheus sidecar in geneva mode
+      fi
       # add -T 0xFFFF for full traces
-      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 -y 0 -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
+      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -p 26130 -f 26230 -i 26330 "${SYSLOG_PORT_CONFIG}" -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos &
     else
       echo "not starting mdsd (no metrics to scrape since MUTE_PROM_SIDECAR is true)"
     fi
@@ -1019,24 +1040,18 @@ else
       if isHighLogScaleMode; then
             startAMACoreAgent
       fi
-      # add -T 0xFFFF for full traces
       export MDSD_ROLE_PREFIX=/var/run/mdsd-ci/default
       echo "export MDSD_ROLE_PREFIX=$MDSD_ROLE_PREFIX" >> ~/.bashrc
-      if [ -n "$SYSLOG_HOST_PORT" ] && [ "$SYSLOG_HOST_PORT" != "28330" ]; then
-            echo "Updating rsyslog config file with non default SYSLOG_HOST_PORT value ${SYSLOG_HOST_PORT}"
-            if sed -i "s/Port=\"[0-9]*\"/Port=\"$SYSLOG_HOST_PORT\"/g" /etc/opt/microsoft/docker-cimprov/70-rsyslog-forward-mdsd-ci.conf; then
-                  echo "Successfully updated the rsylog config file."
-            else
-                  echo "Failed to update the rsyslog config file."
-            fi
-      else
-            echo "SYSLOG_HOST_PORT is ${SYSLOG_HOST_PORT}. No changes made."
+      if [[ "${GENEVA_LOGS_INTEGRATION}" != "true" ]]; then
+            echo "enabling syslog listener for mdsd in main container"
+            export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
+            echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
+            source ~/.bashrc
+            SYSLOG_PORT_CONFIG="" # enable syslog listener for mdsd for main container when not in geneva mode
       fi
-      export MDSD_DEFAULT_TCP_SYSLOG_PORT=28330
-      echo "export MDSD_DEFAULT_TCP_SYSLOG_PORT=$MDSD_DEFAULT_TCP_SYSLOG_PORT" >> ~/.bashrc
-      source ~/.bashrc
       mkdir -p /var/run/mdsd-ci
-      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
+      # add -T 0xFFFF for full traces
+      mdsd ${MDSD_AAD_MSI_AUTH_ARGS} -r ${MDSD_ROLE_PREFIX} "${SYSLOG_PORT_CONFIG}" -e ${MDSD_LOG}/mdsd.err -w ${MDSD_LOG}/mdsd.warn -o ${MDSD_LOG}/mdsd.info -q ${MDSD_LOG}/mdsd.qos 2>>/dev/null &
 fi
 
 # # Set up a cron job for logrotation
@@ -1050,6 +1065,7 @@ if [ "${AZMON_WINDOWS_FLUENT_BIT_DISABLED}" == "true" ] || [ -z "${AZMON_WINDOWS
       if [ -e "/etc/config/kube.conf" ]; then
            # Replace a string in the configmap file
             sed -i "s/#@include windows_rs/@include windows_rs/g" /etc/fluent/kube.conf
+            sed -i "s/#@include windows_rs/@include windows_rs/g" /etc/fluent/kube-cm.conf
       fi
 fi
 
@@ -1073,19 +1089,32 @@ if [ -e "/opt/dcr_env_var" ]; then
       setGlobalEnvVar LOGS_AND_EVENTS_ONLY "${LOGS_AND_EVENTS_ONLY}"
 fi
 
-setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}"
+setGlobalEnvVar ENABLE_CUSTOM_METRICS "${ENABLE_CUSTOM_METRICS}"
+if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
+      setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "false"
+      export AZMON_RESOURCE_OPTIMIZATION_ENABLED="false"
+else
+      setGlobalEnvVar AZMON_RESOURCE_OPTIMIZATION_ENABLED "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}"
+fi
+
 if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
       # no dependency on fluentd for prometheus side car container
       if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
             if [ ! -e "/etc/config/kube.conf" ]; then
                   if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
                         echo "*** starting fluentd v1 in daemonset"
+                        if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
+                              mv /etc/fluent/container-cm.conf /etc/fluent/container.conf
+                        fi
                         fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
                   else
                         echo "Skipping fluentd since LOGS_AND_EVENTS_ONLY is set to true"
                   fi
             else
                   echo "*** starting fluentd v1 in replicaset"
+                  if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
+                        mv /etc/fluent/kube-cm.conf /etc/fluent/kube.conf
+                  fi
                   fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
             fi
       fi
@@ -1220,7 +1249,7 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
       sed -i -e "s/placeholder_hostname/$nodename/g" $telegrafConfFile
 fi
 
-if [ "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}" == "true" ]; then
+if [ "${ENABLE_CUSTOM_METRICS}" != "true" ]; then
       sed -i '/^#CustomMetricsStart/,/^#CustomMetricsEnd/ s/^/# /' $telegrafConfFile
 fi
 
@@ -1249,7 +1278,7 @@ if [ ! -e "/etc/config/kube.conf" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE
             else
                   echo "checking for listener on tcp #25226 and waiting for $WAITTIME_PORT_25226 secs if not.."
                   waitforlisteneronTCPport 25226 $WAITTIME_PORT_25226
-                  if [ "${AZMON_RESOURCE_OPTIMIZATION_ENABLED}" != "true" ]; then
+                    if [ "${ENABLE_CUSTOM_METRICS}" == true ]; then
                         echo "checking for listener on tcp #25228 and waiting for $WAITTIME_PORT_25228 secs if not.."
                         waitforlisteneronTCPport 25228 $WAITTIME_PORT_25228
                   fi

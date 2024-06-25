@@ -21,6 +21,12 @@ variables:
   repoImageName: '${{ variables.containerRegistry }}.azurecr.io/public/azuremonitor/containerinsights/cidev'
   IS_PR: $[eq(variables['Build.Reason'], 'PullRequest')]
   IS_MAIN_BRANCH: $[eq(variables['Build.SourceBranchName'], 'ci_prod')]
+  IS_RELEASE: $[ne(variables['TELEMETRY_TAG'], '')]
+  appRegistrationClientId: $[variables['APP_REGISTRATION_CLIENT_ID']]
+  appRegistrationTenantId: $[variables['APP_REGISTRATION_TENANT_ID']]
+  authAKVName: $[variables['AUTH_AKV_NAME']]
+  authCertName: $[variables['AUTH_CERT_NAME']]
+  authSignCertName: $[variables['AUTH_SIGN_CERT_NAME']]
 
 jobs:
 - job: common
@@ -60,6 +66,12 @@ jobs:
       echo "##vso[task.setvariable variable=windowsImageTag;isOutput=true]$windowsImageTag"
       echo "##vso[task.setvariable variable=linuxTelemetryTag;isOutput=true]$linuxTelemetryTag"
       echo "##vso[task.setvariable variable=windowsTelemetryTag;isOutput=true]$windowsTelemetryTag"
+
+      echo "appRegistrationClientId is $APP_REGISTRATION_CLIENT_ID"
+      echo "appRegistrationTenantId is $APP_REGISTRATION_TENANT_ID"
+      echo "authAKVName is $AUTH_AKV_NAME"
+      echo "authCertName is $AUTH_CERT_NAME"
+      echo "authSignCertName is $AUTH_SIGN_CERT_NAME"
 
       cd $(Build.SourcesDirectory)/deployment/mergebranch-multiarch-agent-deployment/ServiceGroupRoot/Scripts
       tar -czvf ../artifacts.tar.gz pushAgentToAcr.sh
@@ -200,10 +212,15 @@ jobs:
     displayName: "Install oras and build the payload json file"
     condition: eq(variables.IS_PR, false)
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     condition: eq(variables.IS_PR, false)
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/linux'
       Pattern: 'payload.json'
       signConfigType: 'inlineSignParams'
@@ -237,6 +254,15 @@ jobs:
     workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
     displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
     condition: eq(variables.IS_PR, false)
+
+  - bash: |
+        set -euxo pipefail
+        oras attach ${{ variables.repoImageName }}:$(linuxImagetag) \
+            --artifact-type 'application/vnd.microsoft.artifact.lifecycle' \
+            --annotation "vnd.microsoft.artifact.lifecycle.end-of-life.date=$(date -u -d '-1 hour' +"%Y-%m-%dT%H:%M:%SZ")"
+    workingDirectory: $(Build.ArtifactStagingDirectory)/linux/
+    displayName: "ORAS Push Artifacts in $(Build.ArtifactStagingDirectory)/linux/"
+    condition: and(eq(variables.IS_RELEASE, false), eq(variables.IS_PR, false))
 
   - task: AzureCLI@2
     displayName: "Vulnerability Scan with Trivy"
@@ -394,9 +420,14 @@ jobs:
   - script: dir $(Build.ArtifactStagingDirectory)
     displayName: 'List files in Staging Directory'
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
       Pattern: '*.dll,*.exe,*.so,*.ps1'
       signConfigType: 'inlineSignParams'
@@ -428,9 +459,14 @@ jobs:
       MaxRetryAttempts: '5'
     displayName: 'EsrpCodeSigning for first party'
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
@@ -617,9 +653,14 @@ jobs:
   - script: dir $(Build.ArtifactStagingDirectory)
     displayName: 'List files in Staging Directory'
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/fpSigning'
       Pattern: '*.dll,*.exe,*.so,*.ps1'
       signConfigType: 'inlineSignParams'
@@ -651,9 +692,14 @@ jobs:
       MaxRetryAttempts: '5'
     displayName: 'EsrpCodeSigning for first party'
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/ossSigning'
       Pattern: '*.dll,*.exe,*.so'
       signConfigType: 'inlineSignParams'
@@ -802,10 +848,15 @@ jobs:
     displayName: "Install oras and build the payload json file"
     condition: eq(variables.IS_PR, false)
 
-  - task: EsrpCodeSigning@3
+  - task: EsrpCodeSigning@5
     condition: eq(variables.IS_PR, false)
     inputs:
-      ConnectedServiceName: 'AME ESRPContainerInsights Service Connection'
+      ConnectedServiceName: 'AME ESRPContainerInsights MSI Service Connection'
+      AppRegistrationClientId: $(appRegistrationClientId)
+      AppRegistrationTenantId: $(appRegistrationTenantId)
+      AuthAKVName: $(authAKVName)
+      AuthCertName: $(authCertName)
+      AuthSignCertName: $(authSignCertName)
       FolderPath: '$(Build.ArtifactStagingDirectory)/windows'
       Pattern: 'payload.json'
       signConfigType: 'inlineSignParams'
@@ -836,6 +887,13 @@ jobs:
     workingDirectory: $(Build.ArtifactStagingDirectory)/windows
     displayName: "Run oras attach"
     condition: eq(variables.IS_PR, false)
+
+  - powershell: |
+      $env:PATH = "$env:USERPROFILE\bin;$env:PATH"
+      oras attach ${{ variables.repoImageName }}:$(windowsImageTag) --artifact-type 'application/vnd.microsoft.artifact.lifecycle' --annotation "vnd.microsoft.artifact.lifecycle.end-of-life.date=$(powershell -Command "(Get-Date).AddHours(-1).ToString('yyyy-MM-ddTHH:mm:ssZ')")"
+    workingDirectory: $(Build.ArtifactStagingDirectory)/windows
+    displayName: "Run oras attach"
+    condition: and(eq(variables.IS_RELEASE, false), eq(variables.IS_PR, false))
 
   - task: PublishBuildArtifacts@1
     inputs:
