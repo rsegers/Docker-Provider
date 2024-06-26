@@ -8,6 +8,41 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 06/26/2024 -
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.22 (linux)
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.22 (windows)
+- Linux
+  - [CBL-Mariner 2.0.20240425](https://github.com/microsoft/azurelinux/releases/tag/2.0.20240425-2.0)
+  - Golang - 1.20.14
+  - Ruby - 3.1.3
+  - MDSD - 1.31.4
+  - Telegraf - 1.29.4
+  - Fluent-bit - 2.2.3
+  - Fluentd - 1.16.3
+- Windows
+  - Golang - 1.20.14
+  - Ruby - 3.1.1
+  - Windows AMA - 46.17.2
+  - Telegraf - 1.24.2
+  - Fluent-bit - 3.0.6
+  - Fluentd - 1.16.3
+##### Code change log
+## What's Changed
+ > Note: Default resource request values on the Windows DaemonSet container have been changed: CPU request has been changed from 500m to 100m, and memory request has been changed from 700Mi to 150Mi.
+- Common
+  * Longw/metadata e2e test by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1266
+  * Gangams/improve release notes by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1272
+  * Add life cycle metadata to container insights dev images by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1241
+  * Longw/esrp change service connection by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1274
+  * Skip lifecycle annotation attach for PR by @wanlonghenry in https://github.com/microsoft/Docker-Provider/pull/1279
+  * Bump github.com/Azure/azure-sdk-for-go/sdk/azidentity by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1281
+- Linux
+  * update e2e test image by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1280
+  * enable syslog collection for cosmic by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1282
+  * MDSD minor version update for log loss fix in high log scale mode by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1283
+- Windows
+  * update fluent-bit on windows to 3.0.6 by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1275
+
 ### 05/31/2024 -
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.21 (linux)
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.21 (windows)
