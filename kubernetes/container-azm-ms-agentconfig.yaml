@@ -167,6 +167,11 @@ data:
 
 # Doc - https://github.com/microsoft/Docker-Provider/blob/ci_prod/Documentation/AgentSettings/ReadMe.md
   agent-settings: |-
+    # Enable high log scale mode preview feature which can support upto 50K logs/sec per node.
+    # Only supported for ContainerLogV2 schema and containerlog_schema_version MUST be v2.
+    [agent_settings.high_log_scale]
+       enabled = true
+
     # prometheus scrape fluent bit settings for high scale
     # buffer size should be greater than or equal to chunk size else we set it to chunk size.
     # settings scoped to prometheus sidecar container. all values in mb
