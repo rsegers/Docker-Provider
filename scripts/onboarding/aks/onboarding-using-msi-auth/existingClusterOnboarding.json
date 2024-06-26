@@ -111,9 +111,14 @@
         "enableHighLogScaleMode": "[if(contains(parameters('streams'),'Microsoft-ContainerLogV2-HighScale'), bool('true'), bool('false'))]",
         "associationName": "ContainerInsightsExtension",
         "dataCollectionRuleId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionRules', variables('dcrName'))]",
-        "dceName": "[if(greater(length(variables('dcrName')), 43), substring(variables('dcrName'), 0, 43), variables('dcrName'))]",
-        "dceAssociationName": "configurationAccessEndpoint",
-        "dataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('dceName'))]",
+        "configDCENameFull": "[Concat('MSCI-config', '-', variables('clusterLocation'), '-', variables('clusterName'))]",
+        "ingestionDCENameFull": "[Concat('MSCI-ingest', '-', variables('workspaceLocation'), '-', variables('clusterName'))]",
+        "configDCEName": "[if(greater(length(variables('configDCENameFull')), 43), substring(variables('configDCENameFull'), 0, 43), variables('configDCENameFull'))]",
+        "ingestionDCEName": "[if(greater(length(variables('ingestionDCENameFull')), 43), substring(variables('ingestionDCENameFull'), 0, 43), variables('ingestionDCENameFull'))]",
+        "configDCEAssociationName": "configurationAccessEndpoint",
+        "ingestionDCEAssociationName": "ingestionEndpoint",
+        "configDataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('configDCEName'))]",
+        "ingestionDataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('ingestionDCEName'))]",
         "privateLinkScopeName": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[8]]",
         "privateLinkScopeResourceGroup": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[4]]",
         "privateLinkScopeSubscriptionId": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[2]]",
@@ -164,7 +169,7 @@
                                 ]
                             }
                         ],
-                        "dataCollectionEndpointId": "[if(or(parameters('useAzureMonitorPrivateLinkScope'), variables('enableHighLogScaleMode')), variables('dataCollectionEndpointId'), json('null'))]"
+                        "dataCollectionEndpointId": "[if(variables('enableHighLogScaleMode'), variables('ingestionDataCollectionEndpointId'), json('null'))]"
                     }
                 }
             ]
@@ -234,7 +239,8 @@
                                 ]
                             }
                         ],
-                        "dataCollectionEndpointId": "[if(or(parameters('useAzureMonitorPrivateLinkScope'), variables('enableHighLogScaleMode')), variables('dataCollectionEndpointId'), json('null'))]"
+
+                       "dataCollectionEndpointId": "[if(variables('enableHighLogScaleMode'), variables('ingestionDataCollectionEndpointId'), json('null'))]"
                     }
                 }
             ]
@@ -242,10 +248,24 @@
     },
     "resources": [
         {
-            "condition": "[or(parameters('useAzureMonitorPrivateLinkScope'), variables('enableHighLogScaleMode'))]",
+            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
             "type": "Microsoft.Insights/dataCollectionEndpoints",
             "apiVersion": "2022-06-01",
-            "name": "[variables('dceName')]",
+            "name": "[variables('configDCEName')]",
+            "location": "[variables('clusterLocation')]",
+            "tags": "[parameters('resourceTagValues')]",
+            "kind": "Linux",
+            "properties": {
+                "networkAcls": {
+                    "publicNetworkAccess": "[if(parameters('useAzureMonitorPrivateLinkScope'), 'Disabled', 'Enabled')]"
+                }
+            }
+        },
+        {
+            "condition": "[variables('enableHighLogScaleMode')]",
+            "type": "Microsoft.Insights/dataCollectionEndpoints",
+            "apiVersion": "2022-06-01",
+            "name": "[variables('ingestionDCEName')]",
             "location": "[variables('workspaceLocation')]",
             "tags": "[parameters('resourceTagValues')]",
             "kind": "Linux",
@@ -299,14 +319,14 @@
             }
         },
         {
-            "condition": "[or(parameters('useAzureMonitorPrivateLinkScope'), variables('enableHighLogScaleMode'))]",
+            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
             "type": "Microsoft.Resources/deployments",
-            "name": "[Concat('aks-monitoring-msi-dcea', '-',  uniqueString(parameters('aksResourceId')))]",
+            "name": "[Concat('aks-monitoring-msi-dcea-config', '-',  uniqueString(parameters('aksResourceId')))]",
             "apiVersion": "2017-05-10",
             "subscriptionId": "[variables('clusterSubscriptionId')]",
             "resourceGroup": "[variables('clusterResourceGroup')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('dceName'))]"
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('configDCEName'))]"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -318,11 +338,11 @@
                     "resources": [
                         {
                             "type": "Microsoft.ContainerService/managedClusters/providers/dataCollectionRuleAssociations",
-                            "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('dceAssociationName'))]",
+                            "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('configDCEAssociationName'))]",
                             "apiVersion": "2022-06-01",
                             "properties": {
                                 "description": "Association of data collection rule endpoint. Deleting this association will break the data collection endpoint for this AKS Cluster.",
-                                "dataCollectionEndpointId": "[variables('dataCollectionEndpointId')]"
+                                "dataCollectionEndpointId": "[variables('configDataCollectionEndpointId')]"
                             }
                         }
                     ]
@@ -338,7 +358,7 @@
             "subscriptionId": "[variables('privateLinkScopeSubscriptionId')]",
             "resourceGroup": "[variables('privateLinkScopeResourceGroup')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('dceName'))]"
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('configDCEName'))]"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -350,10 +370,10 @@
                     "resources": [
                         {
                             "type": "microsoft.insights/privatelinkscopes/scopedresources",
-                            "name": "[concat(variables('privateLinkScopeName'), '/', concat(variables('dceName'), '-connection'))]",
+                            "name": "[concat(variables('privateLinkScopeName'), '/', concat(variables('configDCEName'), '-connection'))]",
                             "apiVersion": "2021-07-01-preview",
                             "properties": {
-                                "linkedResourceId": "[variables('dataCollectionEndpointId')]"
+                                "linkedResourceId": "[variables('configDataCollectionEndpointId')]"
                             }
                         }
                     ]
@@ -397,7 +417,7 @@
             "resourceGroup": "[variables('clusterResourceGroup')]",
             "dependsOn": [
                 "[Concat('aks-monitoring-msi-dcra', '-',  uniqueString(parameters('aksResourceId')))]",
-                "[Concat('aks-monitoring-msi-dcea', '-',  uniqueString(parameters('aksResourceId')))]"
+                "[Concat('aks-monitoring-msi-dcea-config', '-',  uniqueString(parameters('aksResourceId')))]"
             ],
             "properties": {
                 "mode": "Incremental",
