@@ -355,7 +355,7 @@
         {
             "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
             "type": "Microsoft.Resources/deployments",
-            "name": "[Concat('aks-monitoring-msi-ampls-scope', '-',  uniqueString(parameters('aksResourceId')))]",
+            "name": "[Concat('aks-monitoring-msi-ampls-scope-config', '-',  uniqueString(parameters('aksResourceId')))]",
             "apiVersion": "2017-05-10",
             "subscriptionId": "[variables('privateLinkScopeSubscriptionId')]",
             "resourceGroup": "[variables('privateLinkScopeResourceGroup')]",
@@ -376,6 +376,37 @@
                             "apiVersion": "2021-07-01-preview",
                             "properties": {
                                 "linkedResourceId": "[variables('configDataCollectionEndpointId')]"
+                            }
+                        }
+                    ]
+                },
+                "parameters": {}
+            }
+        },
+        {
+            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "[Concat('aks-monitoring-msi-ampls-scope-ingest', '-',  uniqueString(parameters('aksResourceId')))]",
+            "apiVersion": "2017-05-10",
+            "subscriptionId": "[variables('privateLinkScopeSubscriptionId')]",
+            "resourceGroup": "[variables('privateLinkScopeResourceGroup')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('ingestionDCE'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "microsoft.insights/privatelinkscopes/scopedresources",
+                            "name": "[concat(variables('privateLinkScopeName'), '/', concat(variables('ingestionDCE'), '-connection'))]",
+                            "apiVersion": "2021-07-01-preview",
+                            "properties": {
+                                "linkedResourceId": "[variables('ingestionDataCollectionEndpointId')]"
                             }
                         }
                     ]
