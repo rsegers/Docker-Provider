@@ -114,11 +114,13 @@
         "configDCENameFull": "[Concat('MSCI-config', '-', variables('clusterLocation'), '-', variables('clusterName'))]",
         "ingestionDCENameFull": "[Concat('MSCI-ingest', '-', variables('workspaceLocation'), '-', variables('clusterName'))]",
         "configDCEName": "[if(greater(length(variables('configDCENameFull')), 43), substring(variables('configDCENameFull'), 0, 43), variables('configDCENameFull'))]",
+        "configDCE": "[if(endsWith(variables('configDCEName'), '-'), substring(variables('configDCEName'), 0, 42), variables('configDCEName'))]",
         "ingestionDCEName": "[if(greater(length(variables('ingestionDCENameFull')), 43), substring(variables('ingestionDCENameFull'), 0, 43), variables('ingestionDCENameFull'))]",
+        "ingestionDCE": "[if(endsWith(variables('ingestionDCEName'), '-'), substring(variables('ingestionDCEName'), 0, 42), variables('ingestionDCEName'))]",
         "configDCEAssociationName": "configurationAccessEndpoint",
         "ingestionDCEAssociationName": "ingestionEndpoint",
-        "configDataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('configDCEName'))]",
-        "ingestionDataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('ingestionDCEName'))]",
+        "configDataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('configDCE'))]",
+        "ingestionDataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('ingestionDCE'))]",
         "privateLinkScopeName": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[8]]",
         "privateLinkScopeResourceGroup": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[4]]",
         "privateLinkScopeSubscriptionId": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[2]]",
@@ -251,7 +253,7 @@
             "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
             "type": "Microsoft.Insights/dataCollectionEndpoints",
             "apiVersion": "2022-06-01",
-            "name": "[variables('configDCEName')]",
+            "name": "[variables('configDCE')]",
             "location": "[variables('clusterLocation')]",
             "tags": "[parameters('resourceTagValues')]",
             "kind": "Linux",
@@ -265,7 +267,7 @@
             "condition": "[variables('enableHighLogScaleMode')]",
             "type": "Microsoft.Insights/dataCollectionEndpoints",
             "apiVersion": "2022-06-01",
-            "name": "[variables('ingestionDCEName')]",
+            "name": "[variables('ingestionDCE')]",
             "location": "[variables('workspaceLocation')]",
             "tags": "[parameters('resourceTagValues')]",
             "kind": "Linux",
@@ -326,7 +328,7 @@
             "subscriptionId": "[variables('clusterSubscriptionId')]",
             "resourceGroup": "[variables('clusterResourceGroup')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('configDCEName'))]"
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('configDCE'))]"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -358,7 +360,7 @@
             "subscriptionId": "[variables('privateLinkScopeSubscriptionId')]",
             "resourceGroup": "[variables('privateLinkScopeResourceGroup')]",
             "dependsOn": [
-                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('configDCEName'))]"
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('configDCE'))]"
             ],
             "properties": {
                 "mode": "Incremental",
@@ -370,7 +372,7 @@
                     "resources": [
                         {
                             "type": "microsoft.insights/privatelinkscopes/scopedresources",
-                            "name": "[concat(variables('privateLinkScopeName'), '/', concat(variables('configDCEName'), '-connection'))]",
+                            "name": "[concat(variables('privateLinkScopeName'), '/', concat(variables('configDCE'), '-connection'))]",
                             "apiVersion": "2021-07-01-preview",
                             "properties": {
                                 "linkedResourceId": "[variables('configDataCollectionEndpointId')]"
