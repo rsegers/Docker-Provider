@@ -76,7 +76,8 @@ validateCommonParameters() {
    if [ -z $TENANT_ID ]; then
 	   echo "ERROR: parameter TENANT_ID is required." > ${results_dir}/error
 	   python3 setup_failure_handler.py
-	fi
+   fi
+
    ## Look for WORKLOAD_CLIENT_ID
    if [[ -z "${WORKLOAD_CLIENT_ID}" ]]
    then
