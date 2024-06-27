@@ -384,7 +384,7 @@
             }
         },
         {
-            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+            "condition": "[and(parameters('useAzureMonitorPrivateLinkScope'), variables('enableHighLogScaleMode'))]",
             "type": "Microsoft.Resources/deployments",
             "name": "[Concat('aks-monitoring-msi-ampls-scope-ingest', '-',  uniqueString(parameters('aksResourceId')))]",
             "apiVersion": "2017-05-10",
