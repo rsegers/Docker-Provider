@@ -73,7 +73,7 @@ waitForCIExtensionInstalled() {
 }
 
 validateCommonParameters() {
-    if [ -z $TENANT_ID ]; then
+   if [ -z $TENANT_ID ]; then
 	   echo "ERROR: parameter TENANT_ID is required." > ${results_dir}/error
 	   python3 setup_failure_handler.py
 	fi
@@ -89,12 +89,6 @@ validateCommonParameters() {
          echo "ERROR: parameter CLIENT_SECRET is required." > ${results_dir}/error
          python3 setup_failure_handler.py
       fi
-   else
-    if [[ -z "${CLIENT_ID}" ]]
-    then
-        echo "ERROR: either parameter CLIENT_ID" > ${results_dir}/error
-        python3 setup_failure_handler.py
-    fi
    fi
 }
 
@@ -160,7 +154,6 @@ deleteArcCIExtension() {
 }
 
 login_to_azure() {
-	# Login with service principal
    if [[ -z $WORKLOAD_CLIENT_ID ]]; then
       echo "logging in using service principal '${CLIENT_ID}'"
       az login --service-principal \
