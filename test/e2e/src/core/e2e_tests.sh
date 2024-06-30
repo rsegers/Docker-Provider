@@ -73,19 +73,24 @@ waitForCIExtensionInstalled() {
 }
 
 validateCommonParameters() {
-    if [ -z $TENANT_ID ]; then
+   if [ -z $TENANT_ID ]; then
 	   echo "ERROR: parameter TENANT_ID is required." > ${results_dir}/error
 	   python3 setup_failure_handler.py
-	fi
-	if [ -z $CLIENT_ID ]; then
-	   echo "ERROR: parameter CLIENT_ID is required." > ${results_dir}/error
-	   python3 setup_failure_handler.py
-	fi
+   fi
 
-	if [ -z $CLIENT_SECRET ]; then
-	   echo "ERROR: parameter CLIENT_SECRET is required." > ${results_dir}/error
-	   python3 setup_failure_handler.py
-	fi
+   ## Look for WORKLOAD_CLIENT_ID
+   if [[ -z "${WORKLOAD_CLIENT_ID}" ]]
+   then
+      if [ -z $CLIENT_ID ]; then
+         echo "ERROR: parameter CLIENT_ID is required." > ${results_dir}/error
+         python3 setup_failure_handler.py
+      fi
+
+      if [ -z $CLIENT_SECRET ]; then
+         echo "ERROR: parameter CLIENT_SECRET is required." > ${results_dir}/error
+         python3 setup_failure_handler.py
+      fi
+   fi
 }
 
 validateArcConfTestParameters() {
@@ -150,12 +155,17 @@ deleteArcCIExtension() {
 }
 
 login_to_azure() {
-	# Login with service principal
-    echo "login to azure using the SP creds"
-	az login --service-principal \
-	-u ${CLIENT_ID} \
-	-p ${CLIENT_SECRET} \
-	--tenant ${TENANT_ID} 2> ${results_dir}/error || python3 setup_failure_handler.py
+   if [[ -z $WORKLOAD_CLIENT_ID ]]; then
+      echo "logging in using service principal '${CLIENT_ID}'"
+      az login --service-principal \
+         -u ${CLIENT_ID} \
+         -p ${CLIENT_SECRET} \
+         --tenant ${TENANT_ID} 2> ${results_dir}/error || python3 setup_failure_handler.py
+   else
+      echo "logging in using managed identity '${WORKLOAD_CLIENT_ID}'"
+      az login --identity \
+         -u ${WORKLOAD_CLIENT_ID} 2> ${results_dir}/error || python3 setup_failure_handler.py
+   fi
 
 	echo "setting subscription: ${SUBSCRIPTION_ID} as default subscription"
 	az account set -s $SUBSCRIPTION_ID
