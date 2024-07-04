@@ -100,6 +100,7 @@ const defaultContainerInventoryRefreshInterval = 60
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
 const agentConfigRefreshIntervalSeconds = 300
+const defaultNamespaceStreamIdMapRefreshIntervalSeconds = 300
 
 // Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -259,6 +260,10 @@ var (
 	IngestionAuthTokenUpdateMutex = &sync.Mutex{}
 	// ODSIngestionAuthToken for windows agent AAD MSI Auth
 	ODSIngestionAuthToken string
+	// NamespaceStreamIdMap caches the Namespace to StreamId map
+	NamespaceStreamIdMap map[string]string
+	// NamespaceStreamIdMapUpdateMutex read and write mutex access to the NamespaceStreamIdMap
+	NamespaceStreamIdMapUpdateMutex = &sync.Mutex{}
 )
 
 var (
@@ -268,6 +273,8 @@ var (
 	KubeMonAgentConfigEventsSendTicker *time.Ticker
 	// IngestionAuthTokenRefreshTicker to refresh ingestion token
 	IngestionAuthTokenRefreshTicker *time.Ticker
+	// NamespaceStreamIdRefreshTicker to refresh namespace to stream id mapping
+	NamespaceStreamIdRefreshTicker *time.Ticker
 )
 
 var (
@@ -506,6 +513,20 @@ func updateContainerImageNameMaps() {
 		NameIDMap = _nameIDMap
 		DataUpdateMutex.Unlock()
 		Log("Unlocking after updating image and name maps")
+	}
+}
+
+func updateNamespaceStreamIdMap() {
+	for ; true; <-NamespaceStreamIdRefreshTicker.C {
+		Log("GetMsgPackBytesByNamespace: Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
+		_namespaceStreamIdMap, _ := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdMap()
+		Log("Locking to update NamespaceStreamIdMap")
+		NamespaceStreamIdMapUpdateMutex.Lock()
+		for key, value := range _namespaceStreamIdMap {
+			NamespaceStreamIdMap[key] = value
+		}
+		NamespaceStreamIdMapUpdateMutex.Unlock()
+		Log("Unlocking after updating NamespaceStreamIdMap")
 	}
 }
 
@@ -2024,16 +2045,19 @@ func GetMsgPackBytes(msgPackEntries []MsgPackEntry) []byte {
 
 func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
 	msgPackEntriesByNamespace := make(map[string][]MsgPackEntry)
-	Log("GetMsgPackBytesByNamespace: Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
-	namespaceStreamIdMap, _ := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdMap()
-	message := fmt.Sprintf("GetMsgPackBytesByNamespace: namespaceStreamIdMap : %v \n", namespaceStreamIdMap)
-	Log(message)
-
+	namespaceStreamIdMap := make(map[string]string)
 	for _, entry := range msgPackEntries {
 		msgPackEntriesByNamespace[entry.Record["PodNamespace"]] = append(msgPackEntriesByNamespace[entry.Record["PodNamespace"]], entry)
 	}
-
 	msgpBytesArray := make([][]byte, len(msgPackEntriesByNamespace))
+
+	Log("Locking to read NamespaceStreamIdMap")
+	NamespaceStreamIdMapUpdateMutex.Lock()
+	for key, value := range NamespaceStreamIdMap {
+		namespaceStreamIdMap[key] = value
+	}
+	NamespaceStreamIdMapUpdateMutex.Unlock()
+	Log("Unlocking after reading NamespaceStreamIdMap")
 
 	index := 0
 	for namespace, entries := range msgPackEntriesByNamespace {
@@ -2322,6 +2346,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("kubeMonAgentConfigEventFlushInterval = %d \n", kubeMonAgentConfigEventFlushInterval)
 	KubeMonAgentConfigEventsSendTicker = time.NewTicker(time.Minute * time.Duration(kubeMonAgentConfigEventFlushInterval))
 
+	Log("NamespaceStreamIdMapRefreshIntervalSeconds = %d \n", defaultNamespaceStreamIdMapRefreshIntervalSeconds)
+	NamespaceStreamIdRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultNamespaceStreamIdMapRefreshIntervalSeconds))
+
 	Log("Computer == %s \n", Computer)
 
 	ret, err := InitializeTelemetryClient(agentVersion)
@@ -2503,5 +2530,9 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		Log("defaultIngestionAuthTokenRefreshIntervalSeconds = %d \n", defaultIngestionAuthTokenRefreshIntervalSeconds)
 		IngestionAuthTokenRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultIngestionAuthTokenRefreshIntervalSeconds))
 		go refreshIngestionAuthToken()
+	}
+
+	if IsMultiTenancyMode {
+		go updateNamespaceStreamIdMap()
 	}
 }
