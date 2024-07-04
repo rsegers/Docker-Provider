@@ -320,6 +320,73 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 	return namespaceFilteringMode
 }
 
+func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string]string, error) {
+	namespaceStreamIdMap := make(map[string]string)
+	guid := uuid.New()
+	var extensionData TaggedData
+	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerLogV2Extension", "Version": "1"}
+	jsonBytes, err := json.Marshal(taggedData)
+	if err != nil {
+		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdMap::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdMap, err
+	}
+
+	responseBytes, err := getExtensionConfigResponse(jsonBytes)
+	if err != nil {
+		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdMap::Failed to get config response data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdMap, err
+	}
+	var responseObject AgentTaggedDataResponse
+	err = json.Unmarshal(responseBytes, &responseObject)
+	if err != nil {
+		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdMap::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdMap, err
+	}
+
+	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
+	extensionConfigs := extensionData.ExtensionConfigs
+
+	for _, extensionConfig := range extensionConfigs {
+		outputStreamId := ""
+		outputStreams := extensionConfig.OutputStreams
+		for dataType, outputStreamID := range outputStreams {
+			logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::extensionConfig datatype: %s, outputStreamID: %s", dataType, outputStreamID.(string))
+			if strings.Compare(strings.ToLower(dataType), "containerinsights_containerlogv2") == 0 {
+				logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap:: extensionConfig found for ContainerLogV2Extension")
+				outputStreamId = outputStreamID.(string)
+			}
+		}
+
+		extensionSettings := extensionConfig.ExtensionSettings
+		dataCollectionSettingsItr, ok := extensionSettings["dataCollectionSettings"]
+
+		dataCollectionSettings := make(map[string]interface{})
+		if ok && len(dataCollectionSettingsItr) > 0 {
+			for k, v := range dataCollectionSettingsItr {
+				lk := strings.ToLower(k)
+				dataCollectionSettings[lk] = v
+			}
+		}
+
+		namespaces, ok := dataCollectionSettings["namespaces"].([]interface{})
+		if !ok {
+			logger.Printf("Interface does not contain a []interface{}")
+			return namespaceStreamIdMap, err
+		}
+
+		for _, v := range namespaces {
+			namespace, ok := v.(string)
+			if !ok {
+				logger.Printf("namespaces in  dataCollectionSettings does not contain a string")
+				return namespaceStreamIdMap, err
+			}
+			namespaceStreamIdMap[namespace] = outputStreamId
+		}
+	}
+
+	return namespaceStreamIdMap, err
+}
+
 func toMinutes(interval string) (int, error) {
 	// Trim the trailing "m" from the interval string
 	trimmedInterval := strings.TrimSuffix(interval, "m")
