@@ -129,7 +129,7 @@
                                         "destinations": [
                                             "ciworkspace"
                                         ],
-                                        "transformKql":  "[parameters('transformKql')]"
+                                        "transformKql": "[if(empty(parameters('transformKql')), json('null'), parameters('transformKql'))]"
                                     }
                                 ],
                                 "dataCollectionEndpointId": "[variables('ingestionDataCollectionEndpointId')]"
