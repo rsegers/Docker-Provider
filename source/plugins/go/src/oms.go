@@ -518,15 +518,24 @@ func updateContainerImageNameMaps() {
 
 func updateNamespaceStreamIdMap() {
 	for ; true; <-NamespaceStreamIdRefreshTicker.C {
-		Log("GetMsgPackBytesByNamespace: Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
-		_namespaceStreamIdMap, _ := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdMap()
-		Log("Locking to update NamespaceStreamIdMap")
-		NamespaceStreamIdMapUpdateMutex.Lock()
-		for key, value := range _namespaceStreamIdMap {
-			NamespaceStreamIdMap[key] = value
+		Log("updateNamespaceStreamIdMap::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
+		maxRetries := 3
+		for attempt := 1; attempt <= maxRetries; attempt++ {
+			_namespaceStreamIdMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdMap()
+			if err != nil {
+				Log("updateNamespaceStreamIdMap::error: %s", string(err.Error()))
+				time.Sleep(time.Duration(attempt+1) * time.Second)
+			} else {
+				Log("updateNamespaceStreamIdMap:Info:Locking to update NamespaceStreamIdMap")
+				NamespaceStreamIdMapUpdateMutex.Lock()
+				for key, value := range _namespaceStreamIdMap {
+					NamespaceStreamIdMap[key] = value
+				}
+				NamespaceStreamIdMapUpdateMutex.Unlock()
+				Log("updateNamespaceStreamIdMap::Info: Unlocking after updating NamespaceStreamIdMap")
+				break
+			}
 		}
-		NamespaceStreamIdMapUpdateMutex.Unlock()
-		Log("Unlocking after updating NamespaceStreamIdMap")
 	}
 }
 
@@ -1847,6 +1856,17 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				msgpBytesArray := GetMsgPackBytesByNamespace(msgPackEntries)
 				for _, msgpBytes := range msgpBytesArray {
 					bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
+					if er != nil {
+						Log("Error::mdsd::Failed to write to mdsd records after %s. Will retry ... error : %s", elapsed, er.Error())
+						if MdsdMsgpUnixSocketClient != nil {
+							MdsdMsgpUnixSocketClient.Close()
+							MdsdMsgpUnixSocketClient = nil
+						}
+						ContainerLogTelemetryMutex.Lock()
+						defer ContainerLogTelemetryMutex.Unlock()
+						ContainerLogsSendErrorsToMDSDFromFluent += 1
+						return output.FLB_RETRY
+					}
 					totalBytes = totalBytes + bts
 				}
 				bts = totalBytes
