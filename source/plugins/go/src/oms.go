@@ -261,7 +261,7 @@ var (
 	// ODSIngestionAuthToken for windows agent AAD MSI Auth
 	ODSIngestionAuthToken string
 	// NamespaceStreamIdMap caches the Namespace to StreamId map
-	NamespaceStreamIdMap map[string]string
+	NamespaceStreamIdMap map[string][]string
 	// NamespaceStreamIdMapUpdateMutex read and write mutex access to the NamespaceStreamIdMap
 	NamespaceStreamIdMapUpdateMutex = &sync.Mutex{}
 )
@@ -2065,7 +2065,7 @@ func GetMsgPackBytes(msgPackEntries []MsgPackEntry) []byte {
 
 func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
 	msgPackEntriesByNamespace := make(map[string][]MsgPackEntry)
-	namespaceStreamIdMap := make(map[string]string)
+	namespaceStreamIdMap := make(map[string][]string)
 	for _, entry := range msgPackEntries {
 		msgPackEntriesByNamespace[entry.Record["PodNamespace"]] = append(msgPackEntriesByNamespace[entry.Record["PodNamespace"]], entry)
 	}
@@ -2082,38 +2082,60 @@ func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
 	index := 0
 	for namespace, entries := range msgPackEntriesByNamespace {
 		var msgpBytes []byte
-		streamTag := namespaceStreamIdMap[namespace]
-		msg := fmt.Sprintf("GetMsgPackBytesByNamespace: namespace : %s streamTag: %s \n", namespace, streamTag)
-		Log(msg)
+		if streamTags, exists := namespaceStreamIdMap[namespace]; exists {
+			msg := fmt.Sprintf("GetMsgPackBytesByNamespace: namespace : %s streamTag: %s \n", namespace, strings.Join(streamTags, ", "))
+			Log(msg)
+			for _, streamTag := range streamTags {
+				fluentForward := MsgPackForward{
+					Tag:     streamTag,
+					Entries: entries,
+				}
 
-		if streamTag == "" {
-			streamTag = MdsdContainerLogTagName
-			Log("GetMsgPackBytesByNamespace: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, streamTag)
-		}
+				msgpSize := 1 + msgp.StringPrefixSize + len(fluentForward.Tag) + msgp.ArrayHeaderSize
+				for i := range fluentForward.Entries {
+					msgpSize += 1 + msgp.Int64Size + msgp.GuessSize(fluentForward.Entries[i].Record)
+				}
 
-		fluentForward := MsgPackForward{
-			Tag:     streamTag,
-			Entries: entries,
-		}
+				msgpBytes = msgp.Require(nil, msgpSize)
 
-		msgpSize := 1 + msgp.StringPrefixSize + len(fluentForward.Tag) + msgp.ArrayHeaderSize
-		for i := range fluentForward.Entries {
-			msgpSize += 1 + msgp.Int64Size + msgp.GuessSize(fluentForward.Entries[i].Record)
-		}
+				msgpBytes = append(msgpBytes, 0x92)
+				msgpBytes = msgp.AppendString(msgpBytes, fluentForward.Tag)
+				msgpBytes = msgp.AppendArrayHeader(msgpBytes, uint32(len(fluentForward.Entries)))
+				batchTime := time.Now().Unix()
+				for entry := range fluentForward.Entries {
+					msgpBytes = append(msgpBytes, 0x92)
+					msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
+					msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
+				}
+				msgpBytesArray[index] = msgpBytes
+				index = index + 1
+			}
+		} else {
+			Log("GetMsgPackBytesByNamespace: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, MdsdContainerLogTagName)
+			fluentForward := MsgPackForward{
+				Tag:     MdsdContainerLogTagName,
+				Entries: entries,
+			}
 
-		msgpBytes = msgp.Require(nil, msgpSize)
+			msgpSize := 1 + msgp.StringPrefixSize + len(fluentForward.Tag) + msgp.ArrayHeaderSize
+			for i := range fluentForward.Entries {
+				msgpSize += 1 + msgp.Int64Size + msgp.GuessSize(fluentForward.Entries[i].Record)
+			}
 
-		msgpBytes = append(msgpBytes, 0x92)
-		msgpBytes = msgp.AppendString(msgpBytes, fluentForward.Tag)
-		msgpBytes = msgp.AppendArrayHeader(msgpBytes, uint32(len(fluentForward.Entries)))
-		batchTime := time.Now().Unix()
-		for entry := range fluentForward.Entries {
+			msgpBytes = msgp.Require(nil, msgpSize)
+
 			msgpBytes = append(msgpBytes, 0x92)
-			msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
-			msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
+			msgpBytes = msgp.AppendString(msgpBytes, fluentForward.Tag)
+			msgpBytes = msgp.AppendArrayHeader(msgpBytes, uint32(len(fluentForward.Entries)))
+			batchTime := time.Now().Unix()
+			for entry := range fluentForward.Entries {
+				msgpBytes = append(msgpBytes, 0x92)
+				msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
+				msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
+			}
+			msgpBytesArray[index] = msgpBytes
+			index = index + 1
 		}
-		msgpBytesArray[index] = msgpBytes
-		index = index + 1
 	}
 
 	return msgpBytesArray
@@ -2216,7 +2238,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	PodNameToControllerNameMap = make(map[string][2]string)
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
-	NamespaceStreamIdMap = make(map[string]string)
+	NamespaceStreamIdMap = make(map[string][]string)
 	// Keeping the two error hashes separate since we need to keep the config error hash for the lifetime of the container
 	// whereas the prometheus scrape error hash needs to be refreshed every hour
 	ConfigErrorEvent = make(map[string]KubeMonAgentEventTags)

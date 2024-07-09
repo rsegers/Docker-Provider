@@ -153,11 +153,11 @@ func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) 
 	for _, extensionConfig := range extensionConfigs {
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
-				if hasNamedPipe {
-					datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
-				} else {
-					datatypeOutputStreamMap[dataType] = outputStreamID.(string)
-				}
+			if hasNamedPipe {
+				datatypeOutputStreamMap[dataType] = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
+			} else {
+				datatypeOutputStreamMap[dataType] = outputStreamID.(string)
+			}
 		}
 	}
 	return datatypeOutputStreamMap, nil
@@ -320,8 +320,8 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 	return namespaceFilteringMode
 }
 
-func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string]string, error) {
-	namespaceStreamIdMap := make(map[string]string)
+func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string][]string, error) {
+	namespaceStreamIdMap := make(map[string][]string)
 	guid := uuid.New()
 	var extensionData TaggedData
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerLogV2Extension", "Version": "1"}
@@ -380,7 +380,13 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 				logger.Printf("namespaces in  dataCollectionSettings does not contain a string")
 				return namespaceStreamIdMap, err
 			}
-			namespaceStreamIdMap[namespace] = outputStreamId
+			if value, exists := namespaceStreamIdMap[namespace]; exists {
+				if !contains(value, outputStreamId) {
+					namespaceStreamIdMap[namespace] = append(value, outputStreamId)
+				}
+			} else {
+				namespaceStreamIdMap[namespace] = []string{outputStreamId}
+			}
 		}
 	}
 
