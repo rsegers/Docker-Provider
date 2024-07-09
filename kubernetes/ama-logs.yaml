@@ -457,6 +457,11 @@ spec:
               value: "28331"
           securityContext:
             privileged: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - DAC_OVERRIDE
           ports:
             - containerPort: 25225
               protocol: TCP
@@ -565,6 +570,11 @@ spec:
             #   value: "true"
           securityContext:
             privileged: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - DAC_OVERRIDE
           volumeMounts:
             - name: kube-api-access
               mountPath: /var/run/secrets/kubernetes.io/serviceaccount
@@ -843,6 +853,11 @@ spec:
               value: "28331"
           securityContext:
             privileged: true
+            capabilities:
+              drop:
+                - ALL
+              add:
+                - DAC_OVERRIDE
           ports:
             - containerPort: 25225
               protocol: TCP
@@ -1038,6 +1053,12 @@ spec:
           limits:
            cpu: 2
            memory: 2Gi
+         securityContext:
+          capabilities:
+           drop:
+            - ALL
+           add:
+            - DAC_OVERRIDE
          env:
           - name: CONTAINER_MEMORY_LIMIT_IN_BYTES
             valueFrom:

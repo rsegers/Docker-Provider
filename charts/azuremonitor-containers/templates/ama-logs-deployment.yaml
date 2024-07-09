@@ -124,6 +124,11 @@ spec:
               fieldPath: spec.nodeName
        securityContext:
          privileged: true
+         capabilities:
+          drop:
+            - ALL
+          add:
+            - DAC_OVERRIDE
        ports:
        - containerPort: 25225
          protocol: TCP
