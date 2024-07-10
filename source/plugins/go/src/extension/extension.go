@@ -350,7 +350,6 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 		outputStreamId := ""
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
-			logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap::extensionConfig datatype: %s, outputStreamID: %s", dataType, outputStreamID.(string))
 			if strings.Compare(strings.ToLower(dataType), "containerinsights_containerlogv2") == 0 {
 				logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap:: extensionConfig found for ContainerLogV2Extension")
 				outputStreamId = outputStreamID.(string)
