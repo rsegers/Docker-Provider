@@ -269,6 +269,11 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 					telemetryDimensions["isHighLogScaleMode"] = isHighLogScaleMode
 				}
 
+				isAzMonMultitenancyEnabled := os.Getenv("AZMON_MULTI_TENANCY_LOG_COLLECTION")
+				if isAzMonMultitenancyEnabled != "" {
+					telemetryDimensions["isAzMonMultitenancyEnabled"] = isAzMonMultitenancyEnabled
+				}
+
 				enableCustomMetrics := os.Getenv("ENABLE_CUSTOM_METRICS")
 				if enableCustomMetrics != "" {
 					telemetryDimensions["enableCustomMetrics"] = enableCustomMetrics

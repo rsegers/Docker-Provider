@@ -31,7 +31,7 @@ require_relative "ConfigParseErrorLogger"
 @logKubernetesMetadataIncludeFields = "podlabels,podannotations,poduid,image,imageid,imagerepo,imagetag"
 @annotationBasedLogFiltering = false
 @allowed_system_namespaces = ['kube-system', 'gatekeeper-system', 'calico-system', 'azure-arc', 'kube-public', 'kube-node-lease']
-@multiTenancyLogCollection = false
+@isAzMonMultiTenancyLogCollectionEnabled = false
 
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -345,7 +345,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     begin
       if !parsedConfig[:log_collection_settings][:multi_tenancy].nil? && !parsedConfig[:log_collection_settings][:multi_tenancy][:enabled].nil?
         puts "config::INFO: Using config map setting for Multi-tenancy log collection"
-        @multiTenancyLogCollection = parsedConfig[:log_collection_settings][:multi_tenancy][:enabled]
+        @isAzMonMultiTenancyLogCollectionEnabled = parsedConfig[:log_collection_settings][:multi_tenancy][:enabled]
       end
     rescue => errorStr
       ConfigParseErrorLogger.logError("config::error: Exception while reading config map settings for Multi-tenancy log collection - #{errorStr}, please check config map for errors")
@@ -403,7 +403,7 @@ if !file.nil?
   file.write("export AZMON_KUBERNETES_METADATA_ENABLED=#{@logEnableKubernetesMetadata}\n")
   file.write("export AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS=#{@logKubernetesMetadataIncludeFields}\n")
   file.write("export AZMON_ANNOTATION_BASED_LOG_FILTERING=#{@annotationBasedLogFiltering}\n")
-  file.write("export AZMON_MULTI_TENANCY_LOG_COLLECTION=#{@multiTenancyLogCollection}\n")
+  file.write("export AZMON_MULTI_TENANCY_LOG_COLLECTION=#{@isAzMonMultiTenancyLogCollectionEnabled}\n")
 
   # Close file after writing all environment variables
   file.close
@@ -481,7 +481,7 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     file.write(commands)
     commands = get_command_windows("AZMON_ANNOTATION_BASED_LOG_FILTERING", @annotationBasedLogFiltering)
     file.write(commands)
-    commands = get_command_windows("AZMON_MULTI_TENANCY_LOG_COLLECTION", @multiTenancyLogCollection)
+    commands = get_command_windows("AZMON_MULTI_TENANCY_LOG_COLLECTION", @isAzMonMultiTenancyLogCollectionEnabled)
     file.write(commands)
     # Close file after writing all environment variables
     file.close
