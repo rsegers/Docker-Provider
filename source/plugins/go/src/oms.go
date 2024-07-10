@@ -219,8 +219,8 @@ var (
 	InputPluginNamedPipe net.Conn
 	// named pipe connection to send InsightsMetrics for AMA
 	InsightsMetricsNamedPipe net.Conn
-	// flag to check whether Multi-tenancy mode enabled or not
-	IsAzMonMultiTenancyModeEnabled bool
+	// flag to check whether Azure Monitor Multi-tenancy Log Collection enabled or not
+	IsAzMonMultiTenancyLogCollectionEnabled bool
 )
 
 var (
@@ -1851,7 +1851,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 			var bts int
 			var er error
-			if IsAzMonMultiTenancyModeEnabled {
+			if IsAzMonMultiTenancyLogCollectionEnabled {
 				totalBytes := 0
 				msgpBytesArray := GetMsgPackBytesByNamespace(msgPackEntries)
 				for _, msgpBytes := range msgpBytesArray {
@@ -2443,11 +2443,11 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ContainerLogSchemaV2 = false //default is v1 schema
 	ContainerLogV2ConfigMap = (strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0)
 
-	IsAzMonMultiTenancyModeEnabled = false
+	IsAzMonMultiTenancyLogCollectionEnabled = false
 	multiTenancyModeEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_MULTI_TENANCY_LOG_COLLECTION")))
 	if multiTenancyModeEnabled != "" && strings.Compare(strings.ToLower(multiTenancyModeEnabled), "true") == 0 {
-		IsAzMonMultiTenancyModeEnabled = true
-		Log("Logs Multitenancy mode Enabled")
+		IsAzMonMultiTenancyLogCollectionEnabled = true
+		Log("Azure Monitor Multi-tenancy Log Collection Enabled")
 	}
 
 	KubernetesMetadataEnabled = false
@@ -2532,7 +2532,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		go refreshIngestionAuthToken()
 	}
 
-	if IsAzMonMultiTenancyModeEnabled {
+	if IsAzMonMultiTenancyLogCollectionEnabled {
 		go updateNamespaceStreamIdMap()
 	}
 }
