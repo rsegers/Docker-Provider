@@ -1871,7 +1871,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				}
 				bts = totalBytes
 			} else {
-				msgpBytes := GetMsgPackBytes(msgPackEntries)
+				msgpBytes := GetMsgPackBytes(MdsdContainerLogTagName, msgPackEntries)
 				bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
 			}
 
@@ -2037,9 +2037,9 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	return output.FLB_OK
 }
 
-func GetMsgPackBytes(msgPackEntries []MsgPackEntry) []byte {
+func GetMsgPackBytes(streamTag string, msgPackEntries []MsgPackEntry) []byte {
 	fluentForward := MsgPackForward{
-		Tag:     MdsdContainerLogTagName,
+		Tag:     streamTag,
 		Entries: msgPackEntries,
 	}
 
@@ -2081,59 +2081,16 @@ func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
 
 	index := 0
 	for namespace, entries := range msgPackEntriesByNamespace {
-		var msgpBytes []byte
 		if streamTags, exists := namespaceStreamIdMap[namespace]; exists {
-			msg := fmt.Sprintf("GetMsgPackBytesByNamespace: namespace : %s streamTag: %s \n", namespace, strings.Join(streamTags, ", "))
+			msg := fmt.Sprintf("GetMsgPackBytesByNamespace: namespace : %s streamTags: %s \n", namespace, strings.Join(streamTags, ", "))
 			Log(msg)
 			for _, streamTag := range streamTags {
-				fluentForward := MsgPackForward{
-					Tag:     streamTag,
-					Entries: entries,
-				}
-
-				msgpSize := 1 + msgp.StringPrefixSize + len(fluentForward.Tag) + msgp.ArrayHeaderSize
-				for i := range fluentForward.Entries {
-					msgpSize += 1 + msgp.Int64Size + msgp.GuessSize(fluentForward.Entries[i].Record)
-				}
-
-				msgpBytes = msgp.Require(nil, msgpSize)
-
-				msgpBytes = append(msgpBytes, 0x92)
-				msgpBytes = msgp.AppendString(msgpBytes, fluentForward.Tag)
-				msgpBytes = msgp.AppendArrayHeader(msgpBytes, uint32(len(fluentForward.Entries)))
-				batchTime := time.Now().Unix()
-				for entry := range fluentForward.Entries {
-					msgpBytes = append(msgpBytes, 0x92)
-					msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
-					msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
-				}
-				msgpBytesArray[index] = msgpBytes
+				msgpBytesArray[index] = GetMsgPackBytes(streamTag, entries)
 				index = index + 1
 			}
 		} else {
 			Log("GetMsgPackBytesByNamespace: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, MdsdContainerLogTagName)
-			fluentForward := MsgPackForward{
-				Tag:     MdsdContainerLogTagName,
-				Entries: entries,
-			}
-
-			msgpSize := 1 + msgp.StringPrefixSize + len(fluentForward.Tag) + msgp.ArrayHeaderSize
-			for i := range fluentForward.Entries {
-				msgpSize += 1 + msgp.Int64Size + msgp.GuessSize(fluentForward.Entries[i].Record)
-			}
-
-			msgpBytes = msgp.Require(nil, msgpSize)
-
-			msgpBytes = append(msgpBytes, 0x92)
-			msgpBytes = msgp.AppendString(msgpBytes, fluentForward.Tag)
-			msgpBytes = msgp.AppendArrayHeader(msgpBytes, uint32(len(fluentForward.Entries)))
-			batchTime := time.Now().Unix()
-			for entry := range fluentForward.Entries {
-				msgpBytes = append(msgpBytes, 0x92)
-				msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
-				msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
-			}
-			msgpBytesArray[index] = msgpBytes
+			msgpBytesArray[index] = GetMsgPackBytes(MdsdContainerLogTagName, entries)
 			index = index + 1
 		}
 	}
