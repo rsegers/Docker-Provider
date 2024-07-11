@@ -1821,9 +1821,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 			deadline := 10 * time.Second
 			MdsdMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-			var bts int
-			var er error
-			bts, er = writeMsgPackEntries(MdsdMsgpUnixSocketClient, ContainerLogSchemaV2, MdsdContainerLogTagName, msgPackEntries)
+			bts, er := writeMsgPackEntries(MdsdMsgpUnixSocketClient, ContainerLogSchemaV2, MdsdContainerLogTagName, msgPackEntries)
 			elapsed = time.Since(start)
 
 			if er != nil {
