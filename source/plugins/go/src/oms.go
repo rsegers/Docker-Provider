@@ -1848,30 +1848,59 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 
 			deadline := 10 * time.Second
 			MdsdMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
-
 			var bts int
 			var er error
 			if IsAzMonMultiTenancyLogCollectionEnabled {
-				totalBytes := 0
-				msgpBytesArray := GetMsgPackBytesByNamespace(msgPackEntries)
-				for _, msgpBytes := range msgpBytesArray {
-					bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
-					if er != nil {
-						Log("Error::mdsd::Failed to write to mdsd records after %s. Will retry ... error : %s", elapsed, er.Error())
-						if MdsdMsgpUnixSocketClient != nil {
-							MdsdMsgpUnixSocketClient.Close()
-							MdsdMsgpUnixSocketClient = nil
+				namespaceStreamIdMap := getNamespaceStreamIdMap()
+				if len(namespaceStreamIdMap) > 0 {
+					msgPackEntriesByNamespace := getMsgPackEntriesByNamespace(msgPackEntries)
+					totalBytes := 0
+					for namespace, entries := range msgPackEntriesByNamespace {
+						if streamTags, exists := namespaceStreamIdMap[namespace]; exists {
+							msg := fmt.Sprintf("Info::mdsd:: namespace : %s streamTags: %s \n", namespace, strings.Join(streamTags, ", "))
+							Log(msg)
+							for _, streamTag := range streamTags {
+								msgpBytes := getMsgPackBytes(streamTag, entries)
+								bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
+								if er != nil {
+									Log("Error::mdsd::Failed to write to mdsd records after %s. Will retry ... error : %s", elapsed, er.Error())
+									if MdsdMsgpUnixSocketClient != nil {
+										MdsdMsgpUnixSocketClient.Close()
+										MdsdMsgpUnixSocketClient = nil
+									}
+									ContainerLogTelemetryMutex.Lock()
+									defer ContainerLogTelemetryMutex.Unlock()
+									ContainerLogsSendErrorsToMDSDFromFluent += 1
+									return output.FLB_RETRY
+								}
+								totalBytes = totalBytes + bts
+							}
+						} else {
+							Log("Info::mdsd:: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, MdsdContainerLogTagName)
+							msgpBytes := getMsgPackBytes(MdsdContainerLogTagName, entries)
+							bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
+							if er != nil {
+								Log("Error::mdsd::Failed to write to mdsd records after %s. Will retry ... error : %s", elapsed, er.Error())
+								if MdsdMsgpUnixSocketClient != nil {
+									MdsdMsgpUnixSocketClient.Close()
+									MdsdMsgpUnixSocketClient = nil
+								}
+								ContainerLogTelemetryMutex.Lock()
+								defer ContainerLogTelemetryMutex.Unlock()
+								ContainerLogsSendErrorsToMDSDFromFluent += 1
+								return output.FLB_RETRY
+							}
+							totalBytes = totalBytes + bts
 						}
-						ContainerLogTelemetryMutex.Lock()
-						defer ContainerLogTelemetryMutex.Unlock()
-						ContainerLogsSendErrorsToMDSDFromFluent += 1
-						return output.FLB_RETRY
 					}
-					totalBytes = totalBytes + bts
+					bts = totalBytes
+				} else {
+					msgpBytes := getMsgPackBytes(MdsdContainerLogTagName, msgPackEntries)
+					bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
 				}
-				bts = totalBytes
+
 			} else {
-				msgpBytes := GetMsgPackBytes(MdsdContainerLogTagName, msgPackEntries)
+				msgpBytes := getMsgPackBytes(MdsdContainerLogTagName, msgPackEntries)
 				bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
 			}
 
@@ -2037,7 +2066,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	return output.FLB_OK
 }
 
-func GetMsgPackBytes(streamTag string, msgPackEntries []MsgPackEntry) []byte {
+func getMsgPackBytes(streamTag string, msgPackEntries []MsgPackEntry) []byte {
 	fluentForward := MsgPackForward{
 		Tag:     streamTag,
 		Entries: msgPackEntries,
@@ -2063,13 +2092,13 @@ func GetMsgPackBytes(streamTag string, msgPackEntries []MsgPackEntry) []byte {
 	return msgpBytes
 }
 
-func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
-	msgPackEntriesByNamespace := make(map[string][]MsgPackEntry)
+func containsKey(currentMap map[string]bool, key string) bool {
+	_, c := currentMap[key]
+	return c
+}
+
+func getNamespaceStreamIdMap() map[string][]string {
 	namespaceStreamIdMap := make(map[string][]string)
-	for _, entry := range msgPackEntries {
-		msgPackEntriesByNamespace[entry.Record["PodNamespace"]] = append(msgPackEntriesByNamespace[entry.Record["PodNamespace"]], entry)
-	}
-	msgpBytesArray := make([][]byte, len(msgPackEntriesByNamespace))
 
 	Log("Locking to read NamespaceStreamIdMap")
 	NamespaceStreamIdMapUpdateMutex.Lock()
@@ -2079,28 +2108,15 @@ func GetMsgPackBytesByNamespace(msgPackEntries []MsgPackEntry) [][]byte {
 	NamespaceStreamIdMapUpdateMutex.Unlock()
 	Log("Unlocking after reading NamespaceStreamIdMap")
 
-	index := 0
-	for namespace, entries := range msgPackEntriesByNamespace {
-		if streamTags, exists := namespaceStreamIdMap[namespace]; exists {
-			msg := fmt.Sprintf("GetMsgPackBytesByNamespace: namespace : %s streamTags: %s \n", namespace, strings.Join(streamTags, ", "))
-			Log(msg)
-			for _, streamTag := range streamTags {
-				msgpBytesArray[index] = GetMsgPackBytes(streamTag, entries)
-				index = index + 1
-			}
-		} else {
-			Log("GetMsgPackBytesByNamespace: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, MdsdContainerLogTagName)
-			msgpBytesArray[index] = GetMsgPackBytes(MdsdContainerLogTagName, entries)
-			index = index + 1
-		}
-	}
-
-	return msgpBytesArray
+	return namespaceStreamIdMap
 }
 
-func containsKey(currentMap map[string]bool, key string) bool {
-	_, c := currentMap[key]
-	return c
+func getMsgPackEntriesByNamespace(msgPackEntries []MsgPackEntry) map[string][]MsgPackEntry {
+	msgPackEntriesByNamespace := make(map[string][]MsgPackEntry)
+	for _, entry := range msgPackEntries {
+		msgPackEntriesByNamespace[entry.Record["PodNamespace"]] = append(msgPackEntriesByNamespace[entry.Record["PodNamespace"]], entry)
+	}
+	return msgPackEntriesByNamespace
 }
 
 // GetContainerIDK8sNamespacePodNameFromFileName Gets the container ID, k8s namespace, pod name and containername From the file Name
