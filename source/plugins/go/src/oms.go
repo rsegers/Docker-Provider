@@ -20,7 +20,6 @@ import (
 
 	"github.com/fluent/fluent-bit-go/output"
 	"github.com/google/uuid"
-	"github.com/tinylib/msgp/msgp"
 
 	"Docker-Provider/source/plugins/go/src/extension"
 
@@ -1787,8 +1786,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				Log("Info::AMA::Starting to write container logs to named pipe")
 				deadline := 10 * time.Second
 				ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
-				msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdContainerLogTagName, msgPackEntries)
-				n, err := ContainerLogNamedPipe.Write(msgpBytes)
+				n, err := writeMsgPackEntries(ContainerLogNamedPipe, ContainerLogSchemaV2, MdsdContainerLogTagName, msgPackEntries)
 				if err != nil {
 					Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
 					if ContainerLogNamedPipe != nil {
@@ -1825,60 +1823,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			MdsdMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
 			var bts int
 			var er error
-			if IsAzMonMultiTenancyLogCollectionEnabled {
-				namespaceStreamIdMap := getNamespaceStreamIdMap()
-				if len(namespaceStreamIdMap) > 0 {
-					msgPackEntriesByNamespace := getMsgPackEntriesByNamespace(msgPackEntries)
-					totalBytes := 0
-					for namespace, entries := range msgPackEntriesByNamespace {
-						if streamTags, exists := namespaceStreamIdMap[namespace]; exists {
-							msg := fmt.Sprintf("Info::mdsd:: namespace : %s streamTags: %s \n", namespace, strings.Join(streamTags, ", "))
-							Log(msg)
-							for _, streamTag := range streamTags {
-								msgpBytes := convertMsgPackEntriesToMsgpBytes(streamTag, entries)
-								bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
-								if er != nil {
-									Log("Error::mdsd::Failed to write to mdsd records after %s. Will retry ... error : %s", elapsed, er.Error())
-									if MdsdMsgpUnixSocketClient != nil {
-										MdsdMsgpUnixSocketClient.Close()
-										MdsdMsgpUnixSocketClient = nil
-									}
-									ContainerLogTelemetryMutex.Lock()
-									defer ContainerLogTelemetryMutex.Unlock()
-									ContainerLogsSendErrorsToMDSDFromFluent += 1
-									return output.FLB_RETRY
-								}
-								totalBytes = totalBytes + bts
-							}
-						} else {
-							Log("Info::mdsd:: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, MdsdContainerLogTagName)
-							msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdContainerLogTagName, entries)
-							bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
-							if er != nil {
-								Log("Error::mdsd::Failed to write to mdsd records after %s. Will retry ... error : %s", elapsed, er.Error())
-								if MdsdMsgpUnixSocketClient != nil {
-									MdsdMsgpUnixSocketClient.Close()
-									MdsdMsgpUnixSocketClient = nil
-								}
-								ContainerLogTelemetryMutex.Lock()
-								defer ContainerLogTelemetryMutex.Unlock()
-								ContainerLogsSendErrorsToMDSDFromFluent += 1
-								return output.FLB_RETRY
-							}
-							totalBytes = totalBytes + bts
-						}
-					}
-					bts = totalBytes
-				} else {
-					msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdContainerLogTagName, msgPackEntries)
-					bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
-				}
-
-			} else {
-				msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdContainerLogTagName, msgPackEntries)
-				bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
-			}
-
+			bts, er = writeMsgPackEntries(MdsdMsgpUnixSocketClient, ContainerLogSchemaV2, MdsdContainerLogTagName, msgPackEntries)
 			elapsed = time.Since(start)
 
 			if er != nil {
@@ -2044,6 +1989,55 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 func containsKey(currentMap map[string]bool, key string) bool {
 	_, c := currentMap[key]
 	return c
+}
+
+func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluentForwardTag string, msgPackEntries []MsgPackEntry) (totalBytes int, err error) {
+	var bts int
+	var er error
+	if IsAzMonMultiTenancyLogCollectionEnabled && isContainerLogV2Schema && !IsGenevaLogsIntegrationEnabled {
+		namespaceStreamIdMap := getNamespaceStreamIdMap()
+		if len(namespaceStreamIdMap) > 0 {
+			msgPackEntriesByNamespace := getMsgPackEntriesByNamespace(msgPackEntries)
+			totalBytes := 0
+			for namespace, entries := range msgPackEntriesByNamespace {
+				if streamTags, exists := namespaceStreamIdMap[namespace]; exists {
+					msg := fmt.Sprintf("Info::ama:: namespace : %s streamTags: %s \n", namespace, strings.Join(streamTags, ", "))
+					Log(msg)
+					for _, streamTag := range streamTags {
+						msgpBytes := convertMsgPackEntriesToMsgpBytes(streamTag, entries)
+						bts, er = connection.Write(msgpBytes)
+						if er != nil {
+							return bts, er
+						}
+						totalBytes = totalBytes + bts
+					}
+				} else {
+					Log("Info::ama:: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, fluentForwardTag)
+					msgpBytes := convertMsgPackEntriesToMsgpBytes(fluentForwardTag, entries)
+					bts, er = connection.Write(msgpBytes)
+					if er != nil {
+						return bts, er
+					}
+					totalBytes = totalBytes + bts
+				}
+			}
+			bts = totalBytes
+		} else {
+			msgpBytes := convertMsgPackEntriesToMsgpBytes(fluentForwardTag, msgPackEntries)
+			bts, er = connection.Write(msgpBytes)
+			if er != nil {
+				return bts, er
+			}
+		}
+	} else {
+		msgpBytes := convertMsgPackEntriesToMsgpBytes(fluentForwardTag, msgPackEntries)
+		bts, er = connection.Write(msgpBytes)
+		if er != nil {
+			return bts, er
+		}
+	}
+
+	return bts, er
 }
 
 func getNamespaceStreamIdMap() map[string][]string {
