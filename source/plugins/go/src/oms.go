@@ -1860,7 +1860,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 							msg := fmt.Sprintf("Info::mdsd:: namespace : %s streamTags: %s \n", namespace, strings.Join(streamTags, ", "))
 							Log(msg)
 							for _, streamTag := range streamTags {
-								msgpBytes := getMsgPackBytes(streamTag, entries)
+								msgpBytes := convertMsgPackEntriesToMsgpBytes(streamTag, entries)
 								bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
 								if er != nil {
 									Log("Error::mdsd::Failed to write to mdsd records after %s. Will retry ... error : %s", elapsed, er.Error())
@@ -1877,7 +1877,7 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 							}
 						} else {
 							Log("Info::mdsd:: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, MdsdContainerLogTagName)
-							msgpBytes := getMsgPackBytes(MdsdContainerLogTagName, entries)
+							msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdContainerLogTagName, entries)
 							bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
 							if er != nil {
 								Log("Error::mdsd::Failed to write to mdsd records after %s. Will retry ... error : %s", elapsed, er.Error())
@@ -1895,12 +1895,12 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 					}
 					bts = totalBytes
 				} else {
-					msgpBytes := getMsgPackBytes(MdsdContainerLogTagName, msgPackEntries)
+					msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdContainerLogTagName, msgPackEntries)
 					bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
 				}
 
 			} else {
-				msgpBytes := getMsgPackBytes(MdsdContainerLogTagName, msgPackEntries)
+				msgpBytes := convertMsgPackEntriesToMsgpBytes(MdsdContainerLogTagName, msgPackEntries)
 				bts, er = MdsdMsgpUnixSocketClient.Write(msgpBytes)
 			}
 
@@ -2064,32 +2064,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	}
 
 	return output.FLB_OK
-}
-
-func getMsgPackBytes(streamTag string, msgPackEntries []MsgPackEntry) []byte {
-	fluentForward := MsgPackForward{
-		Tag:     streamTag,
-		Entries: msgPackEntries,
-	}
-
-	msgpSize := 1 + msgp.StringPrefixSize + len(fluentForward.Tag) + msgp.ArrayHeaderSize
-	for i := range fluentForward.Entries {
-		msgpSize += 1 + msgp.Int64Size + msgp.GuessSize(fluentForward.Entries[i].Record)
-	}
-
-	var msgpBytes []byte
-	msgpBytes = msgp.Require(nil, msgpSize)
-
-	msgpBytes = append(msgpBytes, 0x92)
-	msgpBytes = msgp.AppendString(msgpBytes, fluentForward.Tag)
-	msgpBytes = msgp.AppendArrayHeader(msgpBytes, uint32(len(fluentForward.Entries)))
-	batchTime := time.Now().Unix()
-	for entry := range fluentForward.Entries {
-		msgpBytes = append(msgpBytes, 0x92)
-		msgpBytes = msgp.AppendInt64(msgpBytes, batchTime)
-		msgpBytes = msgp.AppendMapStrStr(msgpBytes, fluentForward.Entries[entry].Record)
-	}
-	return msgpBytes
 }
 
 func containsKey(currentMap map[string]bool, key string) bool {
