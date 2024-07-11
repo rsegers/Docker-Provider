@@ -1,5 +1,5 @@
 ﻿import { Mutations } from "./Mutations.js";
-import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationAnnotationName, InstrumentationCR, IInstrumentationState, FluentBitIoExcludeAnnotationName, IMetadata, IAnnotations, FluentBitIoExcludeBeforeMutationAnnotationName, IObjectType } from "./RequestDefinition.js";
+import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationAnnotationName, EnableApplicationLogsAnnotationName, InstrumentationCR, IInstrumentationState, IMetadata, IAnnotations, IObjectType } from "./RequestDefinition.js";
 
 export class Patcher {
 
@@ -45,19 +45,10 @@ export class Patcher {
                 platforms: <string[]>platforms
             });
 
-            // add pod-level annotations to disable CI logs if requested
-            spec.template.metadata = spec.template.metadata ?? <IMetadata>{};
-            spec.template.metadata.annotations = spec.template.metadata?.annotations ?? <IAnnotations>{};
-            if (spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName] != null) {
-                // a value is provided and must be saved to be restored during unpatching
-                spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName] = spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName];
-            }
-
-            if (cr.spec?.settings?.logCollectionSettings?.disableContainerLogs != null) {
-                // we have a setting to use
-                spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName] = cr.spec.settings.logCollectionSettings.disableContainerLogs ? "true" : "false";
-            }
-
+            // determine if application logs should be enabled as indicated by a pod spec annotation (specified by the customer)
+            const enableApplicationLogsAnnotation = spec.template.metadata?.annotations?.[EnableApplicationLogsAnnotationName]; 
+            const enableApplicationLogs: boolean = enableApplicationLogsAnnotation?.toLocaleLowerCase() === "true" || enableApplicationLogsAnnotation?.toLocaleLowerCase() === "1";
+            
             // add new volumes (used to store agent binaries)
             const newVolumes: IVolume[] = Mutations.GenerateVolumes(platforms);
             podSpec.volumes = (podSpec.volumes ?? <IVolume[]>[]).concat(newVolumes);
@@ -67,7 +58,7 @@ export class Patcher {
             podSpec.initContainers = (podSpec.initContainers ?? <IContainer[]>[]).concat(newInitContainers);
 
             // add new environment variables (used to configure agents)
-            const newEnvironmentVariables: IEnvironmentVariable[] = Mutations.GenerateEnvironmentVariables(podInfo, platforms, cr.spec?.settings?.logCollectionSettings?.disableAppLogs ?? false, cr.spec?.destination?.applicationInsightsConnectionString, armId, armRegion, clusterName);
+            const newEnvironmentVariables: IEnvironmentVariable[] = Mutations.GenerateEnvironmentVariables(podInfo, platforms, !enableApplicationLogs, cr.spec?.destination?.applicationInsightsConnectionString, armId, armRegion, clusterName);
 
             podSpec.containers?.forEach(container => {
                 // hold all environment variables in a dictionary, both existing and new ones
@@ -139,18 +130,6 @@ export class Patcher {
         obj.metadata = obj.metadata ?? <IMetadata>{};
         if (obj.metadata.annotations) {
             delete obj.metadata.annotations[InstrumentationAnnotationName];
-        }
-
-        // remove pod annotations
-        if (instrumentationState?.crName) {
-            spec.template.metadata = spec.template.metadata ?? <IMetadata>{};
-            spec.template.metadata.annotations = spec.template.metadata?.annotations ?? <IAnnotations>{};
-
-            delete spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName];
-            if (spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName] != null) {
-                spec.template.metadata.annotations[FluentBitIoExcludeAnnotationName] = spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName];
-                delete spec.template.metadata.annotations[FluentBitIoExcludeBeforeMutationAnnotationName];
-            }
         }
 
         // we are removing all mutations (regardless of whether only some mutations are applied based on the platforms used)
