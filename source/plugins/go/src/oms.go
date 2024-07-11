@@ -1784,8 +1784,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			}
 			if EnsureGenevaOr3PNamedPipeExists(&ContainerLogNamedPipe, datatype, &ContainerLogsWindowsAMAClientCreateErrors, IsGenevaLogsIntegrationEnabled, &MdsdContainerLogTagRefreshTracker) {
 				Log("Info::AMA::Starting to write container logs to named pipe")
-				deadline := 10 * time.Second
-				ContainerLogNamedPipe.SetWriteDeadline(time.Now().Add(deadline))
 				n, err := writeMsgPackEntries(ContainerLogNamedPipe, ContainerLogSchemaV2, MdsdContainerLogTagName, msgPackEntries)
 				if err != nil {
 					Log("Error::AMA::Failed to write to AMA %d records. Will retry ... error : %s", len(msgPackEntries), err.Error())
@@ -1819,8 +1817,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				}
 			}
 
-			deadline := 10 * time.Second
-			MdsdMsgpUnixSocketClient.SetWriteDeadline(time.Now().Add(deadline)) //this is based of clock time, so cannot reuse
 			bts, er := writeMsgPackEntries(MdsdMsgpUnixSocketClient, ContainerLogSchemaV2, MdsdContainerLogTagName, msgPackEntries)
 			elapsed = time.Since(start)
 
@@ -2003,6 +1999,8 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 					Log(msg)
 					for _, streamTag := range streamTags {
 						msgpBytes := convertMsgPackEntriesToMsgpBytes(streamTag, entries)
+						deadline := 10 * time.Second
+						connection.SetWriteDeadline(time.Now().Add(deadline))
 						bts, er = connection.Write(msgpBytes)
 						if er != nil {
 							return bts, er
@@ -2012,6 +2010,8 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 				} else {
 					Log("Info::ama:: streamTag is empty for namespace: %s hence using default workspace stream id: %s \n", namespace, fluentForwardTag)
 					msgpBytes := convertMsgPackEntriesToMsgpBytes(fluentForwardTag, entries)
+					deadline := 10 * time.Second
+					connection.SetWriteDeadline(time.Now().Add(deadline))
 					bts, er = connection.Write(msgpBytes)
 					if er != nil {
 						return bts, er
@@ -2022,6 +2022,8 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 			bts = totalBytes
 		} else {
 			msgpBytes := convertMsgPackEntriesToMsgpBytes(fluentForwardTag, msgPackEntries)
+			deadline := 10 * time.Second
+			connection.SetWriteDeadline(time.Now().Add(deadline))
 			bts, er = connection.Write(msgpBytes)
 			if er != nil {
 				return bts, er
@@ -2029,6 +2031,8 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 		}
 	} else {
 		msgpBytes := convertMsgPackEntriesToMsgpBytes(fluentForwardTag, msgPackEntries)
+		deadline := 10 * time.Second
+		connection.SetWriteDeadline(time.Now().Add(deadline))
 		bts, er = connection.Write(msgpBytes)
 		if er != nil {
 			return bts, er
