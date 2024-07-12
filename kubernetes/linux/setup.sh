@@ -45,7 +45,7 @@ gem uninstall uri --version 0.11.0
 gem uninstall stringio --version 3.0.1
 gem uninstall rexml --version 3.2.5
 
-sudo tdnf install -y azure-mdsd-1.31.4
+sudo tdnf install -y azure-mdsd-1.29.7
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d
 rm /usr/sbin/telegraf
