@@ -49,6 +49,12 @@ spec:
        imagePullPolicy: IfNotPresent
        resources:
 {{ toYaml .Values.amalogs.resources.daemonsetwindows | indent 9 }}
+       securityContext:
+        capabilities:
+          drop:
+            - ALL
+          add:
+            - DAC_OVERRIDE
        env:
        - name: FBIT_SERVICE_FLUSH_INTERVAL
          value: "15"

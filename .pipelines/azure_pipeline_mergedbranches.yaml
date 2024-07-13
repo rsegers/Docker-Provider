@@ -188,6 +188,8 @@ jobs:
         if [ "$(Build.Reason)" != "PullRequest" ]; then
           docker buildx build --platform $(BUILD_PLATFORMS) --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --push --provenance=false .
 
+          echo "##vso[task.logissue type=warning]Linux image built with tag: ${{ variables.repoImageName }}:$(linuxImagetag)"
+
           docker pull ${{ variables.repoImageName }}:$(linuxImagetag)
         else
           docker buildx build --platform $(BUILD_PLATFORMS) --tag ${{ variables.repoImageName }}:$(linuxImagetag) -f kubernetes/linux/Dockerfile.multiarch --metadata-file $(Build.ArtifactStagingDirectory)/linux/metadata.json --build-arg IMAGE_TAG=$(linuxTelemetryTag) --build-arg GOLANG_BASE_IMAGE=$(GOLANG_BASE_IMAGE) --build-arg CI_BASE_IMAGE=$(CI_BASE_IMAGE) --provenance=false .
@@ -274,7 +276,12 @@ jobs:
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
         trivy image --ignore-unfixed --no-progress --severity HIGH,CRITICAL,MEDIUM --exit-code 1 ${{ variables.repoImageName }}:$(linuxImagetag)
-  
+
+    # Find in cache or download a specific version of Go and add it to the PATH.
+  - task: GoTool@0
+    inputs:
+      version: '1.22.5'
+
   - bash: |
         cd $(System.DefaultWorkingDirectory)/build/linux/
         ls
@@ -813,6 +820,7 @@ jobs:
         if ("$(Build.Reason)" -ne "PullRequest") {
            docker manifest create ${{ variables.repoImageName }}:$(windowsImageTag) ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion) ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
            docker manifest push ${{ variables.repoImageName }}:$(windowsImageTag)
+           Write-Host "##vso[task.logissue type=warning]Windows image built with tag: ${{ variables.repoImageName }}:$(windowsImageTag)"
         }
   - task: AzureArtifacts.manifest-generator-task.manifest-generator-task.ManifestGeneratorTask@0
     displayName: 'Generation Task'
