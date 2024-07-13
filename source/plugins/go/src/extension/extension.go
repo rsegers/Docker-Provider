@@ -320,26 +320,26 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 	return namespaceFilteringMode
 }
 
-func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string][]string, error) {
+func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdsMap() (map[string][]string, error) {
 	namespaceStreamIdsMap := make(map[string][]string)
 	guid := uuid.New()
 	var extensionData TaggedData
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerLogV2Extension", "Version": "1"}
 	jsonBytes, err := json.Marshal(taggedData)
 	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdMap::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
+		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdsMap::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
 		return namespaceStreamIdsMap, err
 	}
 
 	responseBytes, err := getExtensionConfigResponse(jsonBytes)
 	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdMap::Failed to get config response data. Error message: %s", string(err.Error()))
+		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdsMap::Failed to get config response data. Error message: %s", string(err.Error()))
 		return namespaceStreamIdsMap, err
 	}
 	var responseObject AgentTaggedDataResponse
 	err = json.Unmarshal(responseBytes, &responseObject)
 	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdMap::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
+		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdsMap::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
 		return namespaceStreamIdsMap, err
 	}
 
@@ -351,7 +351,7 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
 			if strings.Compare(strings.ToLower(dataType), "containerinsights_containerlogv2") == 0 {
-				logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdMap:: extensionConfig found for ContainerLogV2Extension")
+				logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdsMap:: extensionConfig found for ContainerLogV2Extension")
 				outputStreamId = outputStreamID.(string)
 			}
 		}

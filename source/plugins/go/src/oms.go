@@ -520,7 +520,7 @@ func updateNamespaceStreamIdMap() {
 		Log("updateNamespaceStreamIdMap::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			_namespaceStreamIdMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdMap()
+			_namespaceStreamIdMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdsMap()
 			if err != nil {
 				Log("updateNamespaceStreamIdMap::error: %s", string(err.Error()))
 				time.Sleep(time.Duration(attempt+1) * time.Second)
