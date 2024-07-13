@@ -99,7 +99,7 @@ const defaultContainerInventoryRefreshInterval = 60
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
 const agentConfigRefreshIntervalSeconds = 300
-const defaultNamespaceStreamIdMapRefreshIntervalSeconds = 300
+const defaultNamespaceStreamIdsMapRefreshIntervalSeconds = 300
 
 // Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -272,8 +272,8 @@ var (
 	KubeMonAgentConfigEventsSendTicker *time.Ticker
 	// IngestionAuthTokenRefreshTicker to refresh ingestion token
 	IngestionAuthTokenRefreshTicker *time.Ticker
-	// NamespaceStreamIdRefreshTicker to refresh namespace to stream id mapping
-	NamespaceStreamIdRefreshTicker *time.Ticker
+	// NamespaceStreamIdsRefreshTicker to refresh namespace to stream id mapping
+	NamespaceStreamIdsRefreshTicker *time.Ticker
 )
 
 var (
@@ -515,23 +515,23 @@ func updateContainerImageNameMaps() {
 	}
 }
 
-func updateNamespaceStreamIdMap() {
+func updateNamespaceStreamIdsMap() {
 	for ; true; <-NamespaceStreamIdRefreshTicker.C {
-		Log("updateNamespaceStreamIdMap::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
+		Log("updateNamespaceStreamIdsMap::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			_namespaceStreamIdMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdsMap()
+			_namespaceStreamIdsMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdsMap()
 			if err != nil {
-				Log("updateNamespaceStreamIdMap::error: %s", string(err.Error()))
+				Log("updateNamespaceStreamIdsMap::error: %s", string(err.Error()))
 				time.Sleep(time.Duration(attempt+1) * time.Second)
 			} else {
-				Log("updateNamespaceStreamIdMap:Info:Locking to update NamespaceStreamIdsMap")
+				Log("updateNamespaceStreamIdsMap:Info:Locking to update NamespaceStreamIdsMap")
 				NamespaceStreamIdsMapUpdateMutex.Lock()
-				for key, value := range _namespaceStreamIdMap {
+				for key, value := range _namespaceStreamIdsMap {
 					NamespaceStreamIdsMap[key] = value
 				}
 				NamespaceStreamIdsMapUpdateMutex.Unlock()
-				Log("updateNamespaceStreamIdMap::Info: Unlocking after updating NamespaceStreamIdsMap")
+				Log("updateNamespaceStreamIdsMap::Info: Unlocking after updating NamespaceStreamIdsMap")
 				break
 			}
 		}
@@ -2307,8 +2307,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("kubeMonAgentConfigEventFlushInterval = %d \n", kubeMonAgentConfigEventFlushInterval)
 	KubeMonAgentConfigEventsSendTicker = time.NewTicker(time.Minute * time.Duration(kubeMonAgentConfigEventFlushInterval))
 
-	Log("NamespaceStreamIdMapRefreshIntervalSeconds = %d \n", defaultNamespaceStreamIdMapRefreshIntervalSeconds)
-	NamespaceStreamIdRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultNamespaceStreamIdMapRefreshIntervalSeconds))
+	Log("NamespaceStreamIdMapRefreshIntervalSeconds = %d \n", defaultNamespaceStreamIdsMapRefreshIntervalSeconds)
+	NamespaceStreamIdsRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultNamespaceStreamIdsMapRefreshIntervalSeconds))
 
 	Log("Computer == %s \n", Computer)
 
@@ -2494,6 +2494,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	}
 
 	if IsAzMonMultiTenancyLogCollectionEnabled {
-		go updateNamespaceStreamIdMap()
+		go updateNamespaceStreamIdsMap()
 	}
 }
