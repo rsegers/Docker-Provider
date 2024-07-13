@@ -259,10 +259,10 @@ var (
 	IngestionAuthTokenUpdateMutex = &sync.Mutex{}
 	// ODSIngestionAuthToken for windows agent AAD MSI Auth
 	ODSIngestionAuthToken string
-	// NamespaceStreamIdMap caches the Namespace to StreamId map
-	NamespaceStreamIdMap map[string][]string
-	// NamespaceStreamIdMapUpdateMutex read and write mutex access to the NamespaceStreamIdMap
-	NamespaceStreamIdMapUpdateMutex = &sync.Mutex{}
+	// NamespaceStreamIdsMap caches the Namespace to StreamIds map
+	NamespaceStreamIdsMap map[string][]string
+	// NamespaceStreamIdsMapUpdateMutex read and write mutex access to the NamespaceStreamIdsMap
+	NamespaceStreamIdsMapUpdateMutex = &sync.Mutex{}
 )
 
 var (
@@ -525,13 +525,13 @@ func updateNamespaceStreamIdMap() {
 				Log("updateNamespaceStreamIdMap::error: %s", string(err.Error()))
 				time.Sleep(time.Duration(attempt+1) * time.Second)
 			} else {
-				Log("updateNamespaceStreamIdMap:Info:Locking to update NamespaceStreamIdMap")
-				NamespaceStreamIdMapUpdateMutex.Lock()
+				Log("updateNamespaceStreamIdMap:Info:Locking to update NamespaceStreamIdsMap")
+				NamespaceStreamIdsMapUpdateMutex.Lock()
 				for key, value := range _namespaceStreamIdMap {
-					NamespaceStreamIdMap[key] = value
+					NamespaceStreamIdsMap[key] = value
 				}
-				NamespaceStreamIdMapUpdateMutex.Unlock()
-				Log("updateNamespaceStreamIdMap::Info: Unlocking after updating NamespaceStreamIdMap")
+				NamespaceStreamIdsMapUpdateMutex.Unlock()
+				Log("updateNamespaceStreamIdMap::Info: Unlocking after updating NamespaceStreamIdsMap")
 				break
 			}
 		}
@@ -1989,12 +1989,12 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 	var bts int
 	var er error
 	if IsAzMonMultiTenancyLogCollectionEnabled && isContainerLogV2Schema && !IsGenevaLogsIntegrationEnabled {
-		namespaceStreamIdMap := getNamespaceStreamIdMap()
-		if len(namespaceStreamIdMap) > 0 {
+		namespaceStreamIdsMap := getNamespaceStreamIdsMap()
+		if len(namespaceStreamIdsMap) > 0 {
 			msgPackEntriesByNamespace := getMsgPackEntriesByNamespace(msgPackEntries)
 			totalBytes := 0
 			for namespace, entries := range msgPackEntriesByNamespace {
-				if streamTags, exists := namespaceStreamIdMap[namespace]; exists {
+				if streamTags, exists := namespaceStreamIdsMap[namespace]; exists {
 					msg := fmt.Sprintf("Info::ama:: namespace : %s streamTags: %s \n", namespace, strings.Join(streamTags, ", "))
 					Log(msg)
 					for _, streamTag := range streamTags {
@@ -2042,18 +2042,18 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 	return bts, er
 }
 
-func getNamespaceStreamIdMap() map[string][]string {
-	namespaceStreamIdMap := make(map[string][]string)
+func getNamespaceStreamIdsMap() map[string][]string {
+	namespaceStreamIdsMap := make(map[string][]string)
 
-	Log("Locking to read NamespaceStreamIdMap")
-	NamespaceStreamIdMapUpdateMutex.Lock()
-	for key, value := range NamespaceStreamIdMap {
-		namespaceStreamIdMap[key] = value
+	Log("Locking to read NamespaceStreamIdsMap")
+	NamespaceStreamIdsMapUpdateMutex.Lock()
+	for key, value := range NamespaceStreamIdsMap {
+		namespaceStreamIdsMap[key] = value
 	}
-	NamespaceStreamIdMapUpdateMutex.Unlock()
-	Log("Unlocking after reading NamespaceStreamIdMap")
+	NamespaceStreamIdsMapUpdateMutex.Unlock()
+	Log("Unlocking after reading NamespaceStreamIdsMap")
 
-	return namespaceStreamIdMap
+	return namespaceStreamIdsMap
 }
 
 func getMsgPackEntriesByNamespace(msgPackEntries []MsgPackEntry) map[string][]MsgPackEntry {
@@ -2156,7 +2156,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	PodNameToControllerNameMap = make(map[string][2]string)
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
-	NamespaceStreamIdMap = make(map[string][]string)
+	NamespaceStreamIdsMap = make(map[string][]string)
 	// Keeping the two error hashes separate since we need to keep the config error hash for the lifetime of the container
 	// whereas the prometheus scrape error hash needs to be refreshed every hour
 	ConfigErrorEvent = make(map[string]KubeMonAgentEventTags)

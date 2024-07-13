@@ -321,26 +321,26 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 }
 
 func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string][]string, error) {
-	namespaceStreamIdMap := make(map[string][]string)
+	namespaceStreamIdsMap := make(map[string][]string)
 	guid := uuid.New()
 	var extensionData TaggedData
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerLogV2Extension", "Version": "1"}
 	jsonBytes, err := json.Marshal(taggedData)
 	if err != nil {
 		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdMap::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
-		return namespaceStreamIdMap, err
+		return namespaceStreamIdsMap, err
 	}
 
 	responseBytes, err := getExtensionConfigResponse(jsonBytes)
 	if err != nil {
 		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdMap::Failed to get config response data. Error message: %s", string(err.Error()))
-		return namespaceStreamIdMap, err
+		return namespaceStreamIdsMap, err
 	}
 	var responseObject AgentTaggedDataResponse
 	err = json.Unmarshal(responseBytes, &responseObject)
 	if err != nil {
 		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdMap::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
-		return namespaceStreamIdMap, err
+		return namespaceStreamIdsMap, err
 	}
 
 	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
@@ -370,26 +370,26 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdMap() (map[string
 		namespaces, ok := dataCollectionSettings["namespaces"].([]interface{})
 		if !ok {
 			logger.Printf("Interface does not contain a []interface{}")
-			return namespaceStreamIdMap, err
+			return namespaceStreamIdsMap, err
 		}
 
 		for _, v := range namespaces {
 			namespace, ok := v.(string)
 			if !ok {
 				logger.Printf("namespaces in  dataCollectionSettings does not contain a string")
-				return namespaceStreamIdMap, err
+				return namespaceStreamIdsMap, err
 			}
-			if value, exists := namespaceStreamIdMap[namespace]; exists {
+			if value, exists := namespaceStreamIdsMap[namespace]; exists {
 				if !contains(value, outputStreamId) {
-					namespaceStreamIdMap[namespace] = append(value, outputStreamId)
+					namespaceStreamIdsMap[namespace] = append(value, outputStreamId)
 				}
 			} else {
-				namespaceStreamIdMap[namespace] = []string{outputStreamId}
+				namespaceStreamIdsMap[namespace] = []string{outputStreamId}
 			}
 		}
 	}
 
-	return namespaceStreamIdMap, err
+	return namespaceStreamIdsMap, err
 }
 
 func toMinutes(interval string) (int, error) {
