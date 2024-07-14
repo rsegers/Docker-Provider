@@ -516,7 +516,7 @@ func updateContainerImageNameMaps() {
 }
 
 func updateNamespaceStreamIdsMap() {
-	for ; true; <-NamespaceStreamIdRefreshTicker.C {
+	for ; true; <-NamespaceStreamIdsRefreshTicker.C {
 		Log("updateNamespaceStreamIdsMap::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
