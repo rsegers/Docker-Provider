@@ -89,9 +89,9 @@ var (
 	//Mutex for mdsd error metrics
 	TracesErrorMetricsMutex = &sync.Mutex{}
 	// ContainerLogV2ExtensionDCRCount indicates the number of ContainerLogV2 extension DCRs
-	ContainerLogV2ExtensionDCRCount float64
+	ContainerLogV2ExtensionDCRCount int
 	// MultitenantNamespaceCount indicates the number of unique k8s namespaces enabled for multi-tenancy
-	MultitenantNamespaceCount float64
+	MultitenantNamespaceCount int
 )
 
 const (
@@ -179,8 +179,8 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		TelegrafMetricsSend429ErrorCount = 0.0
 		WinTelegrafMetricsCountWithTagsSize64KBorMore = 0.0
 		FlushedRecordsCount = 0.0
-		ContainerLogV2ExtensionDCRCount = 0.0
-		MultitenantNamespaceCount = 0.0
+		ContainerLogV2ExtensionDCRCount = 0
+		MultitenantNamespaceCount = 0
 		FlushedRecordsSize = 0.0
 		FlushedMetadataSize = 0.0
 		FlushedRecordsTimeTaken = 0.0
