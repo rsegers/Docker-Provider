@@ -344,8 +344,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
     #Get Multi-tenancy log collection settings
     begin
       if !parsedConfig[:log_collection_settings][:multi_tenancy].nil? && !parsedConfig[:log_collection_settings][:multi_tenancy][:enabled].nil?
-        puts "config::INFO: Using config map setting for Multi-tenancy log collection"
         @isAzMonMultiTenancyLogCollectionEnabled = parsedConfig[:log_collection_settings][:multi_tenancy][:enabled]
+        puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled} for Multi-tenancy log collection"
       end
     rescue => errorStr
       ConfigParseErrorLogger.logError("config::error: Exception while reading config map settings for Multi-tenancy log collection - #{errorStr}, please check config map for errors")
