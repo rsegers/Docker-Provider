@@ -527,6 +527,9 @@ func updateNamespaceStreamIdsMap() {
 			} else {
 				Log("updateNamespaceStreamIdsMap:Info:Locking to update NamespaceStreamIdsMap")
 				NamespaceStreamIdsMapUpdateMutex.Lock()
+				for key := range NamespaceStreamIdsMap {
+					delete(NamespaceStreamIdsMap, key)
+				}
 				for key, value := range _namespaceStreamIdsMap {
 					NamespaceStreamIdsMap[key] = value
 				}
