@@ -1991,6 +1991,12 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 	if IsAzMonMultiTenancyLogCollectionEnabled && isContainerLogV2Schema && !IsGenevaLogsIntegrationEnabled {
 		namespaceStreamIdsMap := getNamespaceStreamIdsMap()
 		if len(namespaceStreamIdsMap) > 0 {
+			MultitenantNamespaceCount = len(namespaceStreamIdsMap)
+			streamTagCount := 0
+			for _, streamTags := range namespaceStreamIdsMap {
+				streamTagCount += len(streamTags)
+			}
+			ContainerLogV2ExtensionDCRCount = streamTagCount
 			msgPackEntriesByNamespace := getMsgPackEntriesByNamespace(msgPackEntries)
 			totalBytes := 0
 			for namespace, entries := range msgPackEntriesByNamespace {
