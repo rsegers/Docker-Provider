@@ -345,6 +345,7 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdsMap(hasNamedPipe
 
 	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 	extensionConfigs := extensionData.ExtensionConfigs
+	outputStreamDefinitions := make(map[string]StreamDefinition)
 	if hasNamedPipe {
 		outputStreamDefinitions = extensionData.OutputStreamDefinitions
 	}
