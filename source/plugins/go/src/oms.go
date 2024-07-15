@@ -263,6 +263,8 @@ var (
 	NamespaceStreamIdsMap map[string][]string
 	// NamespaceStreamIdsMapUpdateMutex read and write mutex access to the NamespaceStreamIdsMap
 	NamespaceStreamIdsMapUpdateMutex = &sync.Mutex{}
+	// StreamId and namedpipe connection map for windows
+	StreamIdNamedPipeConnectionMap map[string]*net.Conn
 )
 
 var (
@@ -520,7 +522,7 @@ func updateNamespaceStreamIdsMap() {
 		Log("updateNamespaceStreamIdsMap::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			_namespaceStreamIdsMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdsMap()
+			_namespaceStreamIdsMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdsMap(IsWindows)
 			if err != nil {
 				Log("updateNamespaceStreamIdsMap::error: %s", string(err.Error()))
 				time.Sleep(time.Duration(attempt+1) * time.Second)
@@ -2009,8 +2011,17 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 					for _, streamTag := range streamTags {
 						msgpBytes := convertMsgPackEntriesToMsgpBytes(streamTag, entries)
 						deadline := 10 * time.Second
-						connection.SetWriteDeadline(time.Now().Add(deadline))
-						bts, er = connection.Write(msgpBytes)
+						if IsWindows {
+							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to multi-tenancy CLv2 DCR
+							if conn, ok := StreamIdNamedPipeConnectionMap[streamTag]; !ok {
+								CreateWindowsNamedPipeClient(streamTag, &conn)
+								StreamIdNamedPipeConnectionMap[streamTag] = &conn
+							}
+							bts, er = conn.Write(msgpBytes)
+						} else {
+							connection.SetWriteDeadline(time.Now().Add(deadline))
+							bts, er = connection.Write(msgpBytes)
+						}
 						if er != nil {
 							return bts, er
 						}
@@ -2166,6 +2177,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
 	NamespaceStreamIdsMap = make(map[string][]string)
+	StreamIdNamedPipeConnectionMap = make(map[string]*net.Conn)
 	// Keeping the two error hashes separate since we need to keep the config error hash for the lifetime of the container
 	// whereas the prometheus scrape error hash needs to be refreshed every hour
 	ConfigErrorEvent = make(map[string]KubeMonAgentEventTags)

@@ -320,7 +320,7 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 	return namespaceFilteringMode
 }
 
-func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdsMap() (map[string][]string, error) {
+func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdsMap(hasNamedPipe bool) (map[string][]string, error) {
 	namespaceStreamIdsMap := make(map[string][]string)
 	guid := uuid.New()
 	var extensionData TaggedData
@@ -345,14 +345,21 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdsMap() (map[strin
 
 	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 	extensionConfigs := extensionData.ExtensionConfigs
+	if hasNamedPipe {
+		outputStreamDefinitions = extensionData.OutputStreamDefinitions
+	}
 
 	for _, extensionConfig := range extensionConfigs {
 		outputStreamId := ""
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
 			if strings.Compare(strings.ToLower(dataType), "containerinsights_containerlogv2") == 0 {
-				logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdsMap:: extensionConfig found for ContainerLogV2Extension")
-				outputStreamId = outputStreamID.(string)
+				if hasNamedPipe {
+					outputStreamId = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
+				} else {
+					outputStreamId = outputStreamID.(string)
+				}
+				logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdsMap:: outputStreamId: %s", outputStreamId)
 			}
 		}
 
