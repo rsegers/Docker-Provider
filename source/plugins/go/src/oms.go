@@ -2012,12 +2012,20 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 						msgpBytes := convertMsgPackEntriesToMsgpBytes(streamTag, entries)
 						deadline := 10 * time.Second
 						if IsWindows {
-							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to multi-tenancy CLv2 DCR
+							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to DCR associated to that namespace
+							var conn net.Conn
 							if conn, ok := StreamIdNamedPipeConnectionMap[streamTag]; !ok {
 								CreateWindowsNamedPipeClient(streamTag, &conn)
 								StreamIdNamedPipeConnectionMap[streamTag] = &conn
 							}
 							bts, er = conn.Write(msgpBytes)
+							if er != nil {
+								if conn != nil {
+									ContainerLogNamedPipe.Close()
+									conn = nil
+									delete(StreamIdNamedPipeConnectionMap, streamTag)
+								}
+							}
 						} else {
 							connection.SetWriteDeadline(time.Now().Add(deadline))
 							bts, er = connection.Write(msgpBytes)
