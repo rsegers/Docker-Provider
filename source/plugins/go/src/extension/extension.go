@@ -382,14 +382,14 @@ func (e *Extension) GetContainerLogV2ExtensionInfo(isWindows bool) (map[string][
 		namespaces, ok := dataCollectionSettings["namespaces"].([]interface{})
 		if !ok {
 			logger.Printf("Interface does not contain a []interface{}")
-			return namespaceStreamIdsMap, err
+			return namespaceStreamIdsMap, StreamIdNamedPipeMap, err
 		}
 
 		for _, v := range namespaces {
 			namespace, ok := v.(string)
 			if !ok {
 				logger.Printf("namespaces in  dataCollectionSettings does not contain a string")
-				return namespaceStreamIdsMap, err
+				return namespaceStreamIdsMap, StreamIdNamedPipeMap, err
 			}
 			if value, exists := namespaceStreamIdsMap[namespace]; exists {
 				if !contains(value, outputStreamId) {
