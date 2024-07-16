@@ -2016,7 +2016,8 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 						if IsWindows {
 							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to DCR
 							var dcrSpecificConn net.Conn
-							if dcrSpecificConn, ok := StreamIdNamedPipeConnectionCache[streamTag]; !ok {
+							dcrSpecificConn, ok := StreamIdNamedPipeConnectionCache[streamTag]
+							if !ok || dcrSpecificConn == nil {
 								CreateWindowsNamedPipeClient(streamTag, &dcrSpecificConn)
 								StreamIdNamedPipeConnectionCache[streamTag] = dcrSpecificConn
 							}
