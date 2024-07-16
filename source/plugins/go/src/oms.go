@@ -264,7 +264,7 @@ var (
 	// NamespaceStreamIdsMap caches the Namespace to StreamIds map
 	NamespaceStreamIdsMap map[string][]string
 	// StreamIdNamedPipeMap caches the StreamId to NamedPipe map
-	StreamIdNamedPipeMap map[string][]string
+	StreamIdNamedPipeMap map[string]string
 	// ContainerLogV2ExtensionMapUpdateMutex read and write mutex access to the NamespaceStreamIdsMap
 	ContainerLogV2ExtensionMapUpdateMutex = &sync.Mutex{}
 	// NamedPipe and namedpipe connection cache for windows
