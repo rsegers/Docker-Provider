@@ -129,7 +129,7 @@ const DefaultAdxDatabaseName = "containerinsights"
 
 const PodNameToControllerNameMapCacheSize = 300 // AKS 250 pod per node limit + 50 extra
 
-const StreamIdNamedPipeConnectionCacheSize = 500 // Max 500 DCRs
+const StreamIdNamedPipeConnectionCacheSize = 200
 
 var (
 	// PluginConfiguration the plugins configuration
@@ -2033,8 +2033,8 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 								for streamTag, conn := range StreamIdNamedPipeConnectionCache {
 									if conn != nil {
 										conn.Close()
-										delete(StreamIdNamedPipeConnectionCache, streamTag)
 									}
+									delete(StreamIdNamedPipeConnectionCache, streamTag)
 								}
 							}
 						} else {
