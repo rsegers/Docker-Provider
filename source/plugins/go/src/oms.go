@@ -2034,7 +2034,7 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 							if ok {
 								namedPipeConn, ok := NamedPipeConnectionCache[namedPipe]
 								if !ok || namedPipeConn == nil {
-									CreateWindowsNamedPipeClient(streamTag, &namedPipeConn)
+									CreateWindowsNamedPipeClient(namedPipe, &namedPipeConn)
 									NamedPipeConnectionCache[namedPipe] = namedPipeConn
 								}
 								bts, er = namedPipeConn.Write(msgpBytes)
