@@ -99,7 +99,7 @@ const defaultContainerInventoryRefreshInterval = 60
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
 const agentConfigRefreshIntervalSeconds = 300
-const defaultNamespaceStreamIdsMapRefreshIntervalSeconds = 300
+const defaultContainerLogV2ExtensionInfoRefreshIntervalSeconds = 300
 
 // Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -278,8 +278,8 @@ var (
 	KubeMonAgentConfigEventsSendTicker *time.Ticker
 	// IngestionAuthTokenRefreshTicker to refresh ingestion token
 	IngestionAuthTokenRefreshTicker *time.Ticker
-	// NamespaceStreamIdsRefreshTicker to refresh namespace to stream id mapping
-	NamespaceStreamIdsRefreshTicker *time.Ticker
+	// ContainerLogV2ExtensionInfoRefreshTicker to refresh namespace to stream id mapping
+	ContainerLogV2ExtensionInfoRefreshTicker *time.Ticker
 )
 
 var (
@@ -522,7 +522,7 @@ func updateContainerImageNameMaps() {
 }
 
 func updateContainerLogV2ExtensionMaps(isWindows bool) {
-	for ; true; <-NamespaceStreamIdsRefreshTicker.C {
+	for ; true; <-ContainerLogV2ExtensionInfoRefreshTicker.C {
 		Log("updateContainerLogV2ExtensionMaps::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
@@ -2221,6 +2221,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
 	NamespaceStreamIdsMap = make(map[string][]string)
+	StreamIdNamedPipeMap = make(map[string]string)
 	NamedPipeConnectionCache = make(map[string]net.Conn)
 	// Keeping the two error hashes separate since we need to keep the config error hash for the lifetime of the container
 	// whereas the prometheus scrape error hash needs to be refreshed every hour
@@ -2372,8 +2373,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("kubeMonAgentConfigEventFlushInterval = %d \n", kubeMonAgentConfigEventFlushInterval)
 	KubeMonAgentConfigEventsSendTicker = time.NewTicker(time.Minute * time.Duration(kubeMonAgentConfigEventFlushInterval))
 
-	Log("NamespaceStreamIdMapRefreshIntervalSeconds = %d \n", defaultNamespaceStreamIdsMapRefreshIntervalSeconds)
-	NamespaceStreamIdsRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultNamespaceStreamIdsMapRefreshIntervalSeconds))
+	Log("ContainerLogV2ExtensionInfoRefreshIntervalSeconds = %d \n", defaultContainerLogV2ExtensionInfoRefreshIntervalSeconds)
+	ContainerLogV2ExtensionInfoRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultContainerLogV2ExtensionInfoRefreshIntervalSeconds))
 
 	Log("Computer == %s \n", Computer)
 
