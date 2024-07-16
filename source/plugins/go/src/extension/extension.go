@@ -362,9 +362,10 @@ func (e *Extension) GetContainerLogV2ExtensionInfo(isWindows bool) (map[string][
 				if isWindows {
 					namedPipe = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
 					StreamIdNamedPipeMap[outputStreamId] = namedPipe
-					logger.Printf("GetContainerLogV2ExtensionInfo:: outputStreamId: %s namedPipe", outputStreamId, namedPipe)
+					logger.Printf("GetContainerLogV2ExtensionInfo:: outputStreamId: %s namedPipe: %s", outputStreamId, namedPipe)
+				} else {
+					logger.Printf("GetContainerLogV2ExtensionInfo:: outputStreamId: %s", outputStreamId)
 				}
-				logger.Printf("GetContainerLogV2ExtensionInfo:: outputStreamId: %s", outputStreamId)
 			}
 		}
 

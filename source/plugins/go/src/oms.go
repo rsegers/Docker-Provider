@@ -521,7 +521,7 @@ func updateContainerImageNameMaps() {
 	}
 }
 
-func updateContainerLogV2ExtensionMaps() {
+func updateContainerLogV2ExtensionMaps(isWindows bool) {
 	for ; true; <-NamespaceStreamIdsRefreshTicker.C {
 		Log("updateContainerLogV2ExtensionMaps::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
 		maxRetries := 3
@@ -533,19 +533,23 @@ func updateContainerLogV2ExtensionMaps() {
 			} else {
 				Log("updateContainerLogV2ExtensionMaps:Info:Locking to update NamespaceStreamIdsMap")
 				ContainerLogV2ExtensionMapUpdateMutex.Lock()
+				Log("updateContainerLogV2ExtensionMaps:Info:start updating NamespaceStreamIdsMap")
 				for key := range NamespaceStreamIdsMap {
 					delete(NamespaceStreamIdsMap, key)
 				}
 				for key, value := range _namespaceStreamIdsMap {
 					NamespaceStreamIdsMap[key] = value
 				}
-				if IsWindows {
+				Log("updateContainerLogV2ExtensionMaps:Info:complete updating NamespaceStreamIdsMap")
+				if isWindows {
+					Log("updateContainerLogV2ExtensionMaps:Info:start updating StreamIdNamedPipeMap")
 					for key := range StreamIdNamedPipeMap {
 						delete(StreamIdNamedPipeMap, key)
 					}
 					for key, np := range _streamIdNamedPipeMap {
 						StreamIdNamedPipeMap[key] = np
 					}
+					Log("updateContainerLogV2ExtensionMaps:Info:complete updating NamespaceStreamIdsMap")
 				}
 				ContainerLogV2ExtensionMapUpdateMutex.Unlock()
 				Log("updateContainerLogV2ExtensionMaps::Info: Unlocking after updating NamespaceStreamIdsMap")
@@ -2026,6 +2030,7 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 						if IsWindows {
 							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to DCR
 							namedPipe, ok := streamIdNamedPipeMap[streamTag]
+							Log("Info::ama:: namedpipe: %s and streamTag: %s: namespace: %s \n", namedPipe, streamTag, namespace)
 							if ok {
 								namedPipeConn, ok := NamedPipeConnectionCache[namedPipe]
 								if !ok || namedPipeConn == nil {
@@ -2034,6 +2039,7 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 								}
 								bts, er = namedPipeConn.Write(msgpBytes)
 								if er != nil {
+									Log("Error::ama:: failed to ingest the logs to namedpipe: %s \n", namedPipe)
 									if namedPipeConn != nil {
 										namedPipeConn.Close()
 										namedPipeConn = nil
@@ -2553,6 +2559,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	}
 
 	if IsAzMonMultiTenancyLogCollectionEnabled {
-		go updateContainerLogV2ExtensionMaps()
+		go updateContainerLogV2ExtensionMaps(IsWindows)
 	}
 }
