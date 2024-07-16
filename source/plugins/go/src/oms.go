@@ -129,7 +129,7 @@ const DefaultAdxDatabaseName = "containerinsights"
 
 const PodNameToControllerNameMapCacheSize = 300 // AKS 250 pod per node limit + 50 extra
 
-const StreamIdNamedPipeConnectionCacheSize = 200
+const NamedPipeConnectionCacheSize = 200
 
 var (
 	// PluginConfiguration the plugins configuration
@@ -263,10 +263,12 @@ var (
 	ODSIngestionAuthToken string
 	// NamespaceStreamIdsMap caches the Namespace to StreamIds map
 	NamespaceStreamIdsMap map[string][]string
-	// NamespaceStreamIdsMapUpdateMutex read and write mutex access to the NamespaceStreamIdsMap
-	NamespaceStreamIdsMapUpdateMutex = &sync.Mutex{}
-	// StreamId and namedpipe connection cache for windows
-	StreamIdNamedPipeConnectionCache map[string]net.Conn
+	// StreamIdNamedPipeMap caches the StreamId to NamedPipe map
+	StreamIdNamedPipeMap map[string][]string
+	// ContainerLogV2ExtensionMapUpdateMutex read and write mutex access to the NamespaceStreamIdsMap
+	ContainerLogV2ExtensionMapUpdateMutex = &sync.Mutex{}
+	// NamedPipe and namedpipe connection cache for windows
+	NamedPipeConnectionCache map[string]net.Conn
 )
 
 var (
@@ -519,26 +521,34 @@ func updateContainerImageNameMaps() {
 	}
 }
 
-func updateNamespaceStreamIdsMap() {
+func updateContainerLogV2ExtensionMaps() {
 	for ; true; <-NamespaceStreamIdsRefreshTicker.C {
-		Log("updateNamespaceStreamIdsMap::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
+		Log("updateContainerLogV2ExtensionMaps::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			_namespaceStreamIdsMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionNamespaceStreamIdsMap(IsWindows)
+			_namespaceStreamIdsMap, _streamIdNamedPipeMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionInfo(IsWindows)
 			if err != nil {
-				Log("updateNamespaceStreamIdsMap::error: %s", string(err.Error()))
+				Log("updateContainerLogV2ExtensionMaps::error: %s", string(err.Error()))
 				time.Sleep(time.Duration(attempt+1) * time.Second)
 			} else {
-				Log("updateNamespaceStreamIdsMap:Info:Locking to update NamespaceStreamIdsMap")
-				NamespaceStreamIdsMapUpdateMutex.Lock()
+				Log("updateContainerLogV2ExtensionMaps:Info:Locking to update NamespaceStreamIdsMap")
+				ContainerLogV2ExtensionMapUpdateMutex.Lock()
 				for key := range NamespaceStreamIdsMap {
 					delete(NamespaceStreamIdsMap, key)
 				}
 				for key, value := range _namespaceStreamIdsMap {
 					NamespaceStreamIdsMap[key] = value
 				}
-				NamespaceStreamIdsMapUpdateMutex.Unlock()
-				Log("updateNamespaceStreamIdsMap::Info: Unlocking after updating NamespaceStreamIdsMap")
+				if IsWindows {
+					for key := range StreamIdNamedPipeMap {
+						delete(StreamIdNamedPipeMap, key)
+					}
+					for key, np := range _streamIdNamedPipeMap {
+						StreamIdNamedPipeMap[key] = np
+					}
+				}
+				ContainerLogV2ExtensionMapUpdateMutex.Unlock()
+				Log("updateContainerLogV2ExtensionMaps::Info: Unlocking after updating NamespaceStreamIdsMap")
 				break
 			}
 		}
@@ -1996,7 +2006,7 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 	var bts int
 	var er error
 	if IsAzMonMultiTenancyLogCollectionEnabled && isContainerLogV2Schema && !IsGenevaLogsIntegrationEnabled {
-		namespaceStreamIdsMap := getNamespaceStreamIdsMap()
+		namespaceStreamIdsMap, streamIdNamedPipeMap := getContainerLogV2ExtensionMaps()
 		if len(namespaceStreamIdsMap) > 0 {
 			MultitenantNamespaceCount = len(namespaceStreamIdsMap)
 			streamTagCount := 0
@@ -2016,26 +2026,29 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 						if IsWindows {
 							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to DCR
 							var dcrSpecificConn net.Conn
-							dcrSpecificConn, ok := StreamIdNamedPipeConnectionCache[streamTag]
-							if !ok || dcrSpecificConn == nil {
-								CreateWindowsNamedPipeClient(streamTag, &dcrSpecificConn)
-								StreamIdNamedPipeConnectionCache[streamTag] = dcrSpecificConn
-							}
-							bts, er = dcrSpecificConn.Write(msgpBytes)
-							if er != nil {
-								if dcrSpecificConn != nil {
-									dcrSpecificConn.Close()
-									dcrSpecificConn = nil
-									delete(StreamIdNamedPipeConnectionCache, streamTag)
+							namedPipe, ok := streamIdNamedPipeMap[streamTag]
+							if ok {
+								namedPipeConn, ok := NamedPipeConnectionCache[namedPipe]
+								if !ok || namedPipeConn == nil {
+									CreateWindowsNamedPipeClient(streamTag, &namedPipeConn)
+									NamedPipeConnectionCache[namedPipe] = namedPipeConn
+								}
+								bts, er = namedPipeConn.Write(msgpBytes)
+								if er != nil {
+									if namedPipeConn != nil {
+										namedPipeConn.Close()
+										namedPipeConn = nil
+										delete(NamedPipeConnectionCache, namedPipe)
+									}
 								}
 							}
 							// clear the cache if its cachesize limit is reached
-							if len(StreamIdNamedPipeConnectionCache) >= StreamIdNamedPipeConnectionCacheSize {
-								for streamTag, conn := range StreamIdNamedPipeConnectionCache {
+							if len(NamedPipeConnectionCache) >= NamedPipeConnectionCacheSize {
+								for np, conn := range NamedPipeConnectionCache {
 									if conn != nil {
 										conn.Close()
 									}
-									delete(StreamIdNamedPipeConnectionCache, streamTag)
+									delete(NamedPipeConnectionCache, np)
 								}
 							}
 						} else {
@@ -2082,18 +2095,22 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 	return bts, er
 }
 
-func getNamespaceStreamIdsMap() map[string][]string {
+func getContainerLogV2ExtensionMaps() (map[string][]string, map[string]string) {
 	namespaceStreamIdsMap := make(map[string][]string)
+	streamIdNamedPipeMap := make(map[string]string)
 
 	Log("Locking to read NamespaceStreamIdsMap")
-	NamespaceStreamIdsMapUpdateMutex.Lock()
+	ContainerLogV2ExtensionMapUpdateMutex.Lock()
 	for key, value := range NamespaceStreamIdsMap {
 		namespaceStreamIdsMap[key] = value
 	}
-	NamespaceStreamIdsMapUpdateMutex.Unlock()
+	for key, value := range StreamIdNamedPipeMap {
+		streamIdNamedPipeMap[key] = value
+	}
+	ContainerLogV2ExtensionMapUpdateMutex.Unlock()
 	Log("Unlocking after reading NamespaceStreamIdsMap")
 
-	return namespaceStreamIdsMap
+	return namespaceStreamIdsMap, streamIdNamedPipeMap
 }
 
 func getMsgPackEntriesByNamespace(msgPackEntries []MsgPackEntry) map[string][]MsgPackEntry {
@@ -2197,7 +2214,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
 	NamespaceStreamIdsMap = make(map[string][]string)
-	StreamIdNamedPipeConnectionCache = make(map[string]net.Conn)
+	NamedPipeConnectionCache = make(map[string]net.Conn)
 	// Keeping the two error hashes separate since we need to keep the config error hash for the lifetime of the container
 	// whereas the prometheus scrape error hash needs to be refreshed every hour
 	ConfigErrorEvent = make(map[string]KubeMonAgentEventTags)
@@ -2535,6 +2552,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	}
 
 	if IsAzMonMultiTenancyLogCollectionEnabled {
-		go updateNamespaceStreamIdsMap()
+		go updateContainerLogV2ExtensionMaps()
 	}
 }

@@ -320,47 +320,51 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 	return namespaceFilteringMode
 }
 
-func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdsMap(hasNamedPipe bool) (map[string][]string, error) {
+func (e *Extension) GetContainerLogV2ExtensionInfo(isWindows bool) (map[string][]string, map[string]string, error) {
 	namespaceStreamIdsMap := make(map[string][]string)
+	StreamIdNamedPipeMap := make(map[string]string)
+
 	guid := uuid.New()
 	var extensionData TaggedData
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerLogV2Extension", "Version": "1"}
 	jsonBytes, err := json.Marshal(taggedData)
 	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdsMap::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
-		return namespaceStreamIdsMap, err
+		logger.Printf("extension::GetContainerLogV2ExtensionInfo::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdsMap, StreamIdNamedPipeMap, err
 	}
 
 	responseBytes, err := getExtensionConfigResponse(jsonBytes)
 	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdsMap::Failed to get config response data. Error message: %s", string(err.Error()))
-		return namespaceStreamIdsMap, err
+		logger.Printf("extension::GetContainerLogV2ExtensionInfo::Failed to get config response data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdsMap, StreamIdNamedPipeMap, err
 	}
 	var responseObject AgentTaggedDataResponse
 	err = json.Unmarshal(responseBytes, &responseObject)
 	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionNamespaceStreamIdsMap::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
-		return namespaceStreamIdsMap, err
+		logger.Printf("extension::GetContainerLogV2ExtensionInfo::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
+		return namespaceStreamIdsMap, StreamIdNamedPipeMap, err
 	}
 
 	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 	extensionConfigs := extensionData.ExtensionConfigs
 	outputStreamDefinitions := make(map[string]StreamDefinition)
-	if hasNamedPipe {
+	if isWindows {
 		outputStreamDefinitions = extensionData.OutputStreamDefinitions
 	}
 
 	for _, extensionConfig := range extensionConfigs {
 		outputStreamId := ""
+		namedPipe := ""
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
 			if strings.Compare(strings.ToLower(dataType), "containerinsights_containerlogv2") == 0 {
-				if hasNamedPipe {
-					outputStreamId = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
-				} else {
-					outputStreamId = outputStreamID.(string)
+				outputStreamId = outputStreamID.(string)
+				if isWindows {
+					namedPipe = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
+					StreamIdNamedPipeMap[outputStreamId] = namedPipe
+					logger.Printf("GetContainerLogV2ExtensionInfo:: outputStreamId: %s namedPipe", outputStreamId, namedPipe)
 				}
-				logger.Printf("GetContainerLogV2ExtensionNamespaceStreamIdsMap:: outputStreamId: %s", outputStreamId)
+				logger.Printf("GetContainerLogV2ExtensionInfo:: outputStreamId: %s", outputStreamId)
 			}
 		}
 
@@ -397,7 +401,7 @@ func (e *Extension) GetContainerLogV2ExtensionNamespaceStreamIdsMap(hasNamedPipe
 		}
 	}
 
-	return namespaceStreamIdsMap, err
+	return namespaceStreamIdsMap, StreamIdNamedPipeMap, err
 }
 
 func toMinutes(interval string) (int, error) {
