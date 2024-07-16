@@ -129,6 +129,8 @@ const DefaultAdxDatabaseName = "containerinsights"
 
 const PodNameToControllerNameMapCacheSize = 300 // AKS 250 pod per node limit + 50 extra
 
+const StreamIdNamedPipeConnectionCacheSize = 500 // Max 500 DCRs
+
 var (
 	// PluginConfiguration the plugins configuration
 	PluginConfiguration map[string]string
@@ -263,8 +265,8 @@ var (
 	NamespaceStreamIdsMap map[string][]string
 	// NamespaceStreamIdsMapUpdateMutex read and write mutex access to the NamespaceStreamIdsMap
 	NamespaceStreamIdsMapUpdateMutex = &sync.Mutex{}
-	// StreamId and namedpipe connection map for windows
-	StreamIdNamedPipeConnectionMap map[string]*net.Conn
+	// StreamId and namedpipe connection cache for windows
+	StreamIdNamedPipeConnectionCache map[string]net.Conn
 )
 
 var (
@@ -2012,18 +2014,27 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 						msgpBytes := convertMsgPackEntriesToMsgpBytes(streamTag, entries)
 						deadline := 10 * time.Second
 						if IsWindows {
-							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to DCR associated to that namespace
-							var conn net.Conn
-							if conn, ok := StreamIdNamedPipeConnectionMap[streamTag]; !ok {
-								CreateWindowsNamedPipeClient(streamTag, &conn)
-								StreamIdNamedPipeConnectionMap[streamTag] = &conn
+							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to DCR
+							var dcrSpecificConn net.Conn
+							if dcrSpecificConn, ok := StreamIdNamedPipeConnectionCache[streamTag]; !ok {
+								CreateWindowsNamedPipeClient(streamTag, &dcrSpecificConn)
+								StreamIdNamedPipeConnectionCache[streamTag] = dcrSpecificConn
 							}
-							bts, er = conn.Write(msgpBytes)
+							bts, er = dcrSpecificConn.Write(msgpBytes)
 							if er != nil {
-								if conn != nil {
-									ContainerLogNamedPipe.Close()
-									conn = nil
-									delete(StreamIdNamedPipeConnectionMap, streamTag)
+								if dcrSpecificConn != nil {
+									dcrSpecificConn.Close()
+									dcrSpecificConn = nil
+									delete(StreamIdNamedPipeConnectionCache, streamTag)
+								}
+							}
+							// clear the cache if its cachesize limit is reached
+							if len(StreamIdNamedPipeConnectionCache) >= StreamIdNamedPipeConnectionCacheSize {
+								for streamTag, conn := range StreamIdNamedPipeConnectionCache {
+									if conn != nil {
+										conn.Close()
+										delete(StreamIdNamedPipeConnectionCache, streamTag)
+									}
 								}
 							}
 						} else {
@@ -2185,7 +2196,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ImageIDMap = make(map[string]string)
 	NameIDMap = make(map[string]string)
 	NamespaceStreamIdsMap = make(map[string][]string)
-	StreamIdNamedPipeConnectionMap = make(map[string]*net.Conn)
+	StreamIdNamedPipeConnectionCache = make(map[string]net.Conn)
 	// Keeping the two error hashes separate since we need to keep the config error hash for the lifetime of the container
 	// whereas the prometheus scrape error hash needs to be refreshed every hour
 	ConfigErrorEvent = make(map[string]KubeMonAgentEventTags)
