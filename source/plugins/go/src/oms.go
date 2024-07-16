@@ -2025,7 +2025,6 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 						deadline := 10 * time.Second
 						if IsWindows {
 							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to DCR
-							var namedPipeConn net.Conn
 							namedPipe, ok := streamIdNamedPipeMap[streamTag]
 							if ok {
 								namedPipeConn, ok := NamedPipeConnectionCache[namedPipe]
