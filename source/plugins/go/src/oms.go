@@ -2025,7 +2025,7 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 						deadline := 10 * time.Second
 						if IsWindows {
 							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to DCR
-							var dcrSpecificConn net.Conn
+							var namedPipeConn net.Conn
 							namedPipe, ok := streamIdNamedPipeMap[streamTag]
 							if ok {
 								namedPipeConn, ok := NamedPipeConnectionCache[namedPipe]
@@ -2041,6 +2041,8 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 										delete(NamedPipeConnectionCache, namedPipe)
 									}
 								}
+							} else {
+								Log("Error::ama:: namedPipe is empty for streamId: %s \n", streamTag)
 							}
 							// clear the cache if its cachesize limit is reached
 							if len(NamedPipeConnectionCache) >= NamedPipeConnectionCacheSize {
