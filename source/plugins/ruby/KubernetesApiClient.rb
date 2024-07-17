@@ -112,7 +112,6 @@ class KubernetesApiClient
               response = http.request(kubeApiRequest)
               responseCode = response.code
               @Log.info "KubernetesAPIClient::getKubeResourceInfoV2 : Got response of #{response.code} for #{uri.request_uri} @ #{Time.now.utc.iso8601}"
-              
               # Send telemetry for response code if not success
               if !response.nil? && !response.code.nil? && !response.code.start_with?("2")
                 @@K8sApiResponseTelemetryTimeTracker = ApplicationInsightsUtility.sendAPIResponseTelemetry(response.code, resource, "K8sAPIStatus", @@K8sApiResponseCodeHash, @@K8sApiResponseTelemetryTimeTracker)
@@ -213,6 +212,7 @@ class KubernetesApiClient
             end
           end
         end
+        @@ClusterName = "#{@@ClusterName}"
       rescue => error
         @Log.warn("getClusterName failed: #{error}")
       end
@@ -231,6 +231,7 @@ class KubernetesApiClient
         if cluster && !cluster.nil? && !cluster.empty?
           @@ClusterId = cluster
         end
+        @@ClusterId = "#{@@ClusterId}"
       rescue => error
         @Log.warn("getClusterId failed: #{error}")
       end
