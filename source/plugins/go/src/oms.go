@@ -491,36 +491,32 @@ func updateContainerImageNameMaps() {
 
 func updateContainerLogV2ExtensionMaps(isWindows bool) {
 	for ; true; <-ContainerLogV2ExtensionConfigRefreshTicker.C {
-		Log("updateContainerLogV2ExtensionMaps::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
+		Log("updateContainerLogV2ExtensionMaps::Info: Invoking GetInstance for GetContainerLogV2ExtensionConfig")
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
 			_namespaceStreamIdsMap, _streamIdNamedPipeMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionConfig(IsWindows)
 			if err != nil {
-				Log("updateContainerLogV2ExtensionMaps::error: %s", string(err.Error()))
+				Log("updateContainerLogV2ExtensionMaps::error: %s attempt: %d", string(err.Error()), attempt)
 				time.Sleep(time.Duration(attempt+1) * time.Second)
 			} else {
-				Log("updateContainerLogV2ExtensionMaps:Info:Locking to update NamespaceStreamIdsMap")
+				Log("updateContainerLogV2ExtensionMaps:Info:Locking to update NamespaceStreamIdsMap and StreamIdNamedPipeMap")
 				ContainerLogV2ExtensionMapUpdateMutex.Lock()
-				Log("updateContainerLogV2ExtensionMaps:Info:start updating NamespaceStreamIdsMap")
 				for key := range NamespaceStreamIdsMap {
 					delete(NamespaceStreamIdsMap, key)
 				}
 				for key, value := range _namespaceStreamIdsMap {
 					NamespaceStreamIdsMap[key] = value
 				}
-				Log("updateContainerLogV2ExtensionMaps:Info:complete updating NamespaceStreamIdsMap")
 				if isWindows {
-					Log("updateContainerLogV2ExtensionMaps:Info:start updating StreamIdNamedPipeMap")
 					for key := range StreamIdNamedPipeMap {
 						delete(StreamIdNamedPipeMap, key)
 					}
 					for key, np := range _streamIdNamedPipeMap {
 						StreamIdNamedPipeMap[key] = np
 					}
-					Log("updateContainerLogV2ExtensionMaps:Info:complete updating NamespaceStreamIdsMap")
 				}
 				ContainerLogV2ExtensionMapUpdateMutex.Unlock()
-				Log("updateContainerLogV2ExtensionMaps::Info: Unlocking after updating NamespaceStreamIdsMap")
+				Log("updateContainerLogV2ExtensionMaps::Info: Unlocking after updating NamespaceStreamIdsMap and StreamIdNamedPipeMap")
 				break
 			}
 		}
