@@ -320,7 +320,7 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 	return namespaceFilteringMode
 }
 
-func (e *Extension) GetContainerLogV2ExtensionInfo(isWindows bool) (map[string][]string, map[string]string, error) {
+func (e *Extension) GetContainerLogV2ExtensionConfig(isWindows bool) (map[string][]string, map[string]string, error) {
 	namespaceStreamIdsMap := make(map[string][]string)
 	StreamIdNamedPipeMap := make(map[string]string)
 
@@ -329,19 +329,19 @@ func (e *Extension) GetContainerLogV2ExtensionInfo(isWindows bool) (map[string][
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerLogV2Extension", "Version": "1"}
 	jsonBytes, err := json.Marshal(taggedData)
 	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionInfo::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
+		logger.Printf("extension::GetContainerLogV2ExtensionConfig::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
 		return namespaceStreamIdsMap, StreamIdNamedPipeMap, err
 	}
 
 	responseBytes, err := getExtensionConfigResponse(jsonBytes)
 	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionInfo::Failed to get config response data. Error message: %s", string(err.Error()))
+		logger.Printf("extension::GetContainerLogV2ExtensionConfig::Failed to get config response data. Error message: %s", string(err.Error()))
 		return namespaceStreamIdsMap, StreamIdNamedPipeMap, err
 	}
 	var responseObject AgentTaggedDataResponse
 	err = json.Unmarshal(responseBytes, &responseObject)
 	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionInfo::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
+		logger.Printf("extension::GetContainerLogV2ExtensionConfig::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
 		return namespaceStreamIdsMap, StreamIdNamedPipeMap, err
 	}
 
@@ -362,9 +362,9 @@ func (e *Extension) GetContainerLogV2ExtensionInfo(isWindows bool) (map[string][
 				if isWindows {
 					namedPipe = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
 					StreamIdNamedPipeMap[outputStreamId] = namedPipe
-					logger.Printf("GetContainerLogV2ExtensionInfo:: outputStreamId: %s namedPipe: %s", outputStreamId, namedPipe)
+					logger.Printf("GetContainerLogV2ExtensionConfig:: outputStreamId: %s namedPipe: %s", outputStreamId, namedPipe)
 				} else {
-					logger.Printf("GetContainerLogV2ExtensionInfo:: outputStreamId: %s", outputStreamId)
+					logger.Printf("GetContainerLogV2ExtensionConfig:: outputStreamId: %s", outputStreamId)
 				}
 			}
 		}

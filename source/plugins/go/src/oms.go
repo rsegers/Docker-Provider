@@ -99,7 +99,7 @@ const defaultContainerInventoryRefreshInterval = 60
 const kubeMonAgentConfigEventFlushInterval = 60
 const defaultIngestionAuthTokenRefreshIntervalSeconds = 3600
 const agentConfigRefreshIntervalSeconds = 300
-const defaultContainerLogV2ExtensionInfoRefreshIntervalSeconds = 300
+const defaultContainerLogV2ExtensionConfigRefreshIntervalSeconds = 300
 
 // Eventsource name in mdsd
 const MdsdContainerLogSourceName = "ContainerLogSource"
@@ -278,8 +278,8 @@ var (
 	KubeMonAgentConfigEventsSendTicker *time.Ticker
 	// IngestionAuthTokenRefreshTicker to refresh ingestion token
 	IngestionAuthTokenRefreshTicker *time.Ticker
-	// ContainerLogV2ExtensionInfoRefreshTicker to refresh namespace to stream id mapping
-	ContainerLogV2ExtensionInfoRefreshTicker *time.Ticker
+	// ContainerLogV2ExtensionConfigRefreshTicker to refresh namespace to stream id mapping
+	ContainerLogV2ExtensionConfigRefreshTicker *time.Ticker
 )
 
 var (
@@ -522,11 +522,11 @@ func updateContainerImageNameMaps() {
 }
 
 func updateContainerLogV2ExtensionMaps(isWindows bool) {
-	for ; true; <-ContainerLogV2ExtensionInfoRefreshTicker.C {
+	for ; true; <-ContainerLogV2ExtensionConfigRefreshTicker.C {
 		Log("updateContainerLogV2ExtensionMaps::Info: Invoking GetInstance for ContainerLogV2ExtensionNamespaceStreamIdMap")
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
-			_namespaceStreamIdsMap, _streamIdNamedPipeMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionInfo(IsWindows)
+			_namespaceStreamIdsMap, _streamIdNamedPipeMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionConfig(IsWindows)
 			if err != nil {
 				Log("updateContainerLogV2ExtensionMaps::error: %s", string(err.Error()))
 				time.Sleep(time.Duration(attempt+1) * time.Second)
@@ -2373,8 +2373,8 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("kubeMonAgentConfigEventFlushInterval = %d \n", kubeMonAgentConfigEventFlushInterval)
 	KubeMonAgentConfigEventsSendTicker = time.NewTicker(time.Minute * time.Duration(kubeMonAgentConfigEventFlushInterval))
 
-	Log("ContainerLogV2ExtensionInfoRefreshIntervalSeconds = %d \n", defaultContainerLogV2ExtensionInfoRefreshIntervalSeconds)
-	ContainerLogV2ExtensionInfoRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultContainerLogV2ExtensionInfoRefreshIntervalSeconds))
+	Log("ContainerLogV2ExtensionConfigRefreshIntervalSeconds = %d \n", defaultContainerLogV2ExtensionConfigRefreshIntervalSeconds)
+	ContainerLogV2ExtensionConfigRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultContainerLogV2ExtensionConfigRefreshIntervalSeconds))
 
 	Log("Computer == %s \n", Computer)
 
