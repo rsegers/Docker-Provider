@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"log"
 	"net"
@@ -25,7 +24,6 @@ import (
 
 	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 
-	"github.com/Azure/azure-kusto-go/kusto/ingest"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
@@ -124,9 +122,6 @@ const MdsdOutputStreamIdTagPrefix = "dcr-"
 // env variable to container type
 const ContainerTypeEnv = "CONTAINER_TYPE"
 
-// Default ADX destination database name, can be overriden through configuration
-const DefaultAdxDatabaseName = "containerinsights"
-
 const PodNameToControllerNameMapCacheSize = 300 // AKS 250 pod per node limit + 50 extra
 
 const NamedPipeConnectionCacheSize = 200
@@ -144,8 +139,6 @@ var (
 	MdsdInsightsMetricsMsgpUnixSocketClient net.Conn
 	// Client for MDSD msgp Unix socket for Input Plugin Records
 	MdsdInputPluginRecordsMsgpUnixSocketClient net.Conn
-	// Ingestor for ADX
-	ADXIngestor *ingest.Ingestion
 	// OMSEndpoint ingestion endpoint
 	OMSEndpoint string
 	// Computer (Hostname) when ingesting into ContainerLog table
@@ -180,16 +173,6 @@ var (
 	KubernetesMetadataEnabled bool
 	// Kubernetes Metadata enabled include list
 	KubernetesMetadataIncludeList []string
-	//ADX Cluster URI
-	AdxClusterUri string
-	// ADX clientID
-	AdxClientID string
-	// ADX tenantID
-	AdxTenantID string
-	//ADX client secret
-	AdxClientSecret string
-	//ADX destination database name, default is DefaultAdxDatabaseName, can be overridden in configuration
-	AdxDatabaseName string
 	// container log or container log v2 tag name for oneagent route
 	MdsdContainerLogTagName string
 	// ContainerLog Tag Refresh Tracker
@@ -255,8 +238,6 @@ var (
 	PromScrapeErrorEvent map[string]KubeMonAgentEventTags
 	// EventHashUpdateMutex read and write mutex access to the event hash
 	EventHashUpdateMutex = &sync.Mutex{}
-	// parent context used by ADX uploader
-	ParentContext = context.Background()
 	// IngestionAuthTokenUpdateMutex read and write mutex access for ODSIngestionAuthToken
 	IngestionAuthTokenUpdateMutex = &sync.Mutex{}
 	// ODSIngestionAuthToken for windows agent AAD MSI Auth
@@ -320,19 +301,6 @@ type DataItemLAv2 struct {
 	LogMessage         string `json:"LogMessage"`
 	LogSource          string `json:"LogSource"`
 	KubernetesMetadata string `json:"KubernetesMetadata"`
-}
-
-// DataItemADX == ContainerLogV2 table in ADX
-type DataItemADX struct {
-	TimeGenerated   string `json:"TimeGenerated"`
-	Computer        string `json:"Computer"`
-	ContainerId     string `json:"ContainerId"`
-	ContainerName   string `json:"ContainerName"`
-	PodName         string `json:"PodName"`
-	PodNamespace    string `json:"PodNamespace"`
-	LogMessage      string `json:"LogMessage"`
-	LogSource       string `json:"LogSource"`
-	AzureResourceId string `json:"AzureResourceId"`
 }
 
 // telegraf metric DataItem represents the object corresponding to the json that is sent by fluentbit tail plugin
@@ -1538,7 +1506,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 	start := time.Now()
 	var dataItemsLAv1 []DataItemLAv1
 	var dataItemsLAv2 []DataItemLAv2
-	var dataItemsADX []DataItemADX
 
 	var msgPackEntries []MsgPackEntry
 	var stringMap map[string]string
@@ -1683,7 +1650,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 		}
 		var dataItemLAv1 DataItemLAv1
 		var dataItemLAv2 DataItemLAv2
-		var dataItemADX DataItemADX
 		var msgPackEntry MsgPackEntry
 
 		FlushedRecordsSize += float64(len(stringMap["LogEntry"]))
@@ -1699,25 +1665,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				Record: stringMap,
 			}
 			msgPackEntries = append(msgPackEntries, msgPackEntry)
-		} else if ContainerLogsRouteADX == true {
-			if ResourceCentric == true {
-				stringMap["AzureResourceId"] = ResourceID
-			} else {
-				stringMap["AzureResourceId"] = ""
-			}
-			dataItemADX = DataItemADX{
-				TimeGenerated:   stringMap["TimeGenerated"],
-				Computer:        stringMap["Computer"],
-				ContainerId:     stringMap["ContainerId"],
-				ContainerName:   stringMap["ContainerName"],
-				PodName:         stringMap["PodName"],
-				PodNamespace:    stringMap["PodNamespace"],
-				LogMessage:      stringMap["LogMessage"],
-				LogSource:       stringMap["LogSource"],
-				AzureResourceId: stringMap["AzureResourceId"],
-			}
-			//ADX
-			dataItemsADX = append(dataItemsADX, dataItemADX)
 		} else {
 			if ContainerLogSchemaV2 == true {
 				dataItemLAv2 = DataItemLAv2{
@@ -1858,59 +1805,6 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 				Log("Success::mdsd::Successfully flushed %d container log records that was %d bytes to mdsd in %s ", numContainerLogRecords, bts, elapsed)
 			}
 		}
-	} else if ContainerLogsRouteADX == true && len(dataItemsADX) > 0 {
-		// Route to ADX
-		r, w := io.Pipe()
-		defer r.Close()
-		enc := json.NewEncoder(w)
-		go func() {
-			defer w.Close()
-			for _, data := range dataItemsADX {
-				if encError := enc.Encode(data); encError != nil {
-					message := fmt.Sprintf("Error::ADX Encoding data for ADX %s", encError)
-					Log(message)
-					//SendException(message) //use for testing/debugging only as this can generate a lot of exceptions
-					//continue and move on, so one poisoned message does not impact the whole batch
-				}
-			}
-		}()
-
-		if ADXIngestor == nil {
-			Log("Error::ADX::ADXIngestor does not exist. re-creating ...")
-			CreateADXClient()
-			if ADXIngestor == nil {
-				Log("Error::ADX::Unable to create ADX client. Please check error log.")
-
-				ContainerLogTelemetryMutex.Lock()
-				defer ContainerLogTelemetryMutex.Unlock()
-				ContainerLogsADXClientCreateErrors += 1
-
-				return output.FLB_RETRY
-			}
-		}
-
-		// Setup a maximum time for completion to be 30 Seconds.
-		ctx, cancel := context.WithTimeout(ParentContext, 30*time.Second)
-		defer cancel()
-
-		//ADXFlushMutex.Lock()
-		//defer ADXFlushMutex.Unlock()
-		//MultiJSON support is not there yet
-		if _, ingestionErr := ADXIngestor.FromReader(ctx, r, ingest.IngestionMappingRef("ContainerLogV2Mapping", ingest.JSON), ingest.FileFormat(ingest.JSON)); ingestionErr != nil {
-			Log("Error when streaming to ADX Ingestion: %s", ingestionErr.Error())
-			//ADXIngestor = nil  //not required as per ADX team. Will keep it to indicate that we tried this approach
-
-			ContainerLogTelemetryMutex.Lock()
-			defer ContainerLogTelemetryMutex.Unlock()
-			ContainerLogsSendErrorsToADXFromFluent += 1
-
-			return output.FLB_RETRY
-		}
-
-		elapsed = time.Since(start)
-		numContainerLogRecords = len(dataItemsADX)
-		Log("Success::ADX::Successfully wrote %d container log records to ADX in %s", numContainerLogRecords, elapsed)
-
 	} else if (ContainerLogSchemaV2 == true && len(dataItemsLAv2) > 0) || len(dataItemsLAv1) > 0 { //ODS
 		var logEntry interface{}
 		recordType := ""
@@ -2415,49 +2309,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		ContainerLogsRouteV2 = true // AMA route for geneva logs integration
 	}
 	if strings.Compare(ContainerLogsRoute, ContainerLogsADXRoute) == 0 {
-		// Try to read the ADX database name from environment variables. Default to DefaultAdsDatabaseName if not set.
-		// This SHOULD be set by tomlparser.rb so it's a highly unexpected event if it isn't.
-		// It should be set by the logic in tomlparser.rb EVEN if ADX logging isn't enabled
-		AdxDatabaseName = strings.TrimSpace(os.Getenv("AZMON_ADX_DATABASE_NAME"))
-
-		// Check the len of the provided name for database and use default if 0, just to be sure
-		if len(AdxDatabaseName) == 0 {
-			Log("Adx database name unexpecedly empty (check config AND implementation, should have been set by tomlparser.rb?) - will default to '%s'", DefaultAdxDatabaseName)
-			AdxDatabaseName = DefaultAdxDatabaseName
-		}
-
-		//check if adx clusteruri, clientid & secret are set
-		var err error
-		AdxClusterUri, err = ReadFileContents(PluginConfiguration["adx_cluster_uri_path"])
-		if err != nil {
-			Log("Error when reading AdxClusterUri %s", err)
-		}
-		if !isValidUrl(AdxClusterUri) {
-			Log("Invalid AdxClusterUri %s", AdxClusterUri)
-			AdxClusterUri = ""
-		}
-
-		AdxClientID, err = ReadFileContents(PluginConfiguration["adx_client_id_path"])
-		if err != nil {
-			Log("Error when reading AdxClientID %s", err)
-		}
-
-		AdxTenantID, err = ReadFileContents(PluginConfiguration["adx_tenant_id_path"])
-		if err != nil {
-			Log("Error when reading AdxTenantID %s", err)
-		}
-
-		AdxClientSecret, err = ReadFileContents(PluginConfiguration["adx_client_secret_path"])
-		if err != nil {
-			Log("Error when reading AdxClientSecret %s", err)
-		}
-
-		// AdxDatabaseName should never get in a state where its length is 0, but it doesn't hurt to add the check
-		if len(AdxClusterUri) > 0 && len(AdxClientID) > 0 && len(AdxClientSecret) > 0 && len(AdxTenantID) > 0 && len(AdxDatabaseName) > 0 {
-			ContainerLogsRouteADX = true
-			Log("Routing container logs thru %s route...", ContainerLogsADXRoute)
-			fmt.Fprintf(os.Stdout, "Routing container logs thru %s route...\n", ContainerLogsADXRoute)
-		}
+		Log("ERROR: ADX mode has been deprecated")
 	} else if IsWindows == false || IsAADMSIAuthMode { //for linux and windows AadMSIAuth, oneagent will be default route
 		ContainerLogsRouteV2 = true //default is mdsd route
 		Log("Routing container logs thru %s route...", ContainerLogsRoute)
@@ -2510,8 +2362,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		} else {
 			CreateMDSDClient(ContainerLogV2, ContainerType)
 		}
-	} else if ContainerLogsRouteADX == true {
-		CreateADXClient()
 	}
 	if IsWindows || (!ContainerLogsRouteV2 && !ContainerLogsRouteADX) {
 		// windows for both Geneva and 3P for insights metrics and for ContainerLog in legacy auth
