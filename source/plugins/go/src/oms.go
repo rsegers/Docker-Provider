@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -2001,7 +2000,7 @@ func getContainerLogV2ExtensionMaps() (map[string][]string, map[string]string) {
 	namespaceStreamIdsMap := make(map[string][]string)
 	streamIdNamedPipeMap := make(map[string]string)
 
-	Log("Locking to read NamespaceStreamIdsMap")
+	Log("Locking to read namespaceStreamIdsMap and streamIdNamedPipeMap")
 	ContainerLogV2ExtensionMapUpdateMutex.Lock()
 	for key, value := range NamespaceStreamIdsMap {
 		namespaceStreamIdsMap[key] = value
@@ -2010,7 +2009,7 @@ func getContainerLogV2ExtensionMaps() (map[string][]string, map[string]string) {
 		streamIdNamedPipeMap[key] = value
 	}
 	ContainerLogV2ExtensionMapUpdateMutex.Unlock()
-	Log("Unlocking after reading NamespaceStreamIdsMap")
+	Log("Unlocking after reading namespaceStreamIdsMap and streamIdNamedPipeMap")
 
 	return namespaceStreamIdsMap, streamIdNamedPipeMap
 }
