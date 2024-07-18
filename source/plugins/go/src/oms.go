@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -1924,7 +1925,11 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 							if ok {
 								namedPipeConn, ok := NamedPipeConnectionCache[namedPipe]
 								if !ok || namedPipeConn == nil {
-									CreateWindowsNamedPipeClient(namedPipe, &namedPipeConn)
+									err := CreateWindowsNamedPipeClient(namedPipe, &namedPipeConn)
+									if err != nil {
+										Log("Error::ama:: failed to create namedpipe client for streamId: %s \n", streamTag)
+										return 0, err
+									}
 									NamedPipeConnectionCache[namedPipe] = namedPipeConn
 								}
 								bts, er = namedPipeConn.Write(msgpBytes)
@@ -1937,7 +1942,7 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 									}
 								}
 							} else {
-								Log("Error::ama:: namedPipe is empty for streamId: %s \n", streamTag)
+								return 0, fmt.Errorf("Error::ama:: namedPipe is empty for streamId: %s \n", streamTag)
 							}
 							// clear the cache if its cachesize limit is reached
 							if len(NamedPipeConnectionCache) >= NamedPipeConnectionCacheSize {
