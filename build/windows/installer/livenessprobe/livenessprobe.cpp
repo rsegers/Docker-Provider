@@ -16,6 +16,7 @@
 #define CERTIFICATE_RENEWAL_REQUIRED 0x00000003
 #define FLUENTDWINAKS_SERVICE_NOT_RUNNING 0x00000004
 #define NO_WINDOWS_AMA_MONAGENTCORE_PROCESS 0x00000005
+#define NO_TELEGRAF_PROCESS 0x00000006
 #define UNEXPECTED_ERROR 0xFFFFFFFF
 
 /*
@@ -102,52 +103,69 @@ int GetServiceStatus(const wchar_t *const serivceName)
 **/
 int _tmain(int argc, wchar_t *argv[])
 {
-    if (argc < 5)
+    if (argc < 6)
     {
-        wprintf_s(L"ERROR:unexpected number arguments and expected is 5");
+        wprintf_s(L"ERROR:unexpected number arguments and expected is 6");
         return UNEXPECTED_ERROR;
     }
 
-    if (!IsProcessRunning(argv[1]))
-    {
-        wprintf_s(L"ERROR:Process:%s is not running\n", argv[1]);
-        return NO_FLUENT_BIT_PROCESS;
-    }
     const DWORD bufferSize = 16;
     wchar_t enableCustomMetricsValue[bufferSize];
     wchar_t msiModeValue[bufferSize];
+    wchar_t sidecarScrapingEnabled[bufferSize];
+    wchar_t telegrafLivenessprobeEnabled[bufferSize];
     GetEnvironmentVariable(L"ENABLE_CUSTOM_METRICS", enableCustomMetricsValue, bufferSize);
     GetEnvironmentVariable(L"USING_AAD_MSI_AUTH", msiModeValue, bufferSize);
+    GetEnvironmentVariable(L"SIDECAR_SCRAPING_ENABLED", sidecarScrapingEnabled, bufferSize);
+    GetEnvironmentVariable(L"AZMON_TELEGRAF_LIVENESSPROBE_ENABLED", telegrafLivenessprobeEnabled, bufferSize);
+
+    int argvNum = 2;
+    bool telegrafChecked = false, fluentBitChecked = false, monAgentCoreChecked = false;
+    for (int i = 1; i < argc; i++) {
+        if (_wcsicmp(argv[i], L"telegraf.exe") == 0) {
+            telegrafChecked = true;
+            if (!IsProcessRunning(argv[i])) {
+                wprintf_s(L"ERROR: Telegraf process is not running.\n");
+                return NO_TELEGRAF_PROCESS;
+            }
+        } else if (_wcsicmp(argv[i], L"fluent-bit.exe" ) == 0 && _wcsicmp(sidecarScrapingEnabled, L"true") == 0 && _wcsicmp(telegrafLivenessprobeEnabled, L"true") == 0) {
+            fluentBitChecked = true;
+            if (!IsProcessRunning(argv[i])) {
+                wprintf_s(L"ERROR: Fluent-bit process is not running.\n");
+                return NO_FLUENT_BIT_PROCESS;
+            }
+        } else if (_wcsicmp(argv[i], L"MonAgentCore.exe") == 0) {
+            monAgentCoreChecked = true;
+            if (!IsProcessRunning(argv[i])) {
+                wprintf_s(L"ERROR: MonAgentCore process is not running.\n");
+                return NO_WINDOWS_AMA_MONAGENTCORE_PROCESS;
+            }
+        }
+    }
+    if (telegrafChecked) argvNum++;
 
     if (_wcsicmp(enableCustomMetricsValue, L"true") == 0 || _wcsicmp(msiModeValue, L"true") != 0)
     {
-        DWORD dwStatus = GetServiceStatus(argv[2]);
+        DWORD dwStatus = GetServiceStatus(argv[argvNum]);
         if (dwStatus != SERVICE_RUNNING)
         {
-            wprintf_s(L"ERROR:Service:%s is not running\n", argv[2]);
+            wprintf_s(L"ERROR:Service:%s is not running\n", argv[argvNum]);
             return FLUENTDWINAKS_SERVICE_NOT_RUNNING;
         }
     }
+    argvNum++;
 
-    if (IsFileExists(argv[3]))
+    if (IsFileExists(argv[argvNum]))
     {
-        wprintf_s(L"INFO:File:%s exists indicates Config Map Updated since agent started.\n", argv[3]);
+        wprintf_s(L"INFO:File:%s exists indicates Config Map Updated since agent started.\n", argv[argvNum]);
         return FILESYSTEM_WATCHER_FILE_EXISTS;
     }
+    argvNum++;
 
-    if (IsFileExists(argv[4]))
+    if (IsFileExists(argv[argvNum]))
     {
-        wprintf_s(L"INFO:File:%s exists indicates Certificate needs to be renewed.\n", argv[4]);
+        wprintf_s(L"INFO:File:%s exists indicates Certificate needs to be renewed.\n", argv[argvNum]);
         return CERTIFICATE_RENEWAL_REQUIRED;
-    }
-
-    if (argc > 5)
-    {
-        if (!IsProcessRunning(argv[5]))
-        {
-            wprintf_s(L"ERROR:Process:%s is not running\n", argv[5]);
-            return NO_WINDOWS_AMA_MONAGENTCORE_PROCESS;
-        }
     }
 
     return SUCCESS;
