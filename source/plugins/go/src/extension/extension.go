@@ -46,25 +46,29 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 	return singleton
 }
 
-func getExtensionData() (TaggedData, error) {
+func getDefaultExtensionData() (TaggedData, error) {
+	return getExtensionData("ContainerInsights", "1")
+}
+
+func getExtensionData(extensionName string, extensionVersion version) (TaggedData, error) {
 	guid := uuid.New()
 	var extensionData TaggedData
-	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerInsights", "Version": "1"}
+	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": extensionName, "Version": extensionVersion}
 	jsonBytes, err := json.Marshal(taggedData)
 	if err != nil {
-		logger.Printf("Error::mdsd/ama::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
+		logger.Printf("Error::mdsd/ama::Failed to marshal taggedData data for extension: %s, error: %s", extensionName, string(err.Error()))
 		return extensionData, err
 	}
 
 	responseBytes, err := getExtensionConfigResponse(jsonBytes)
 	if err != nil {
-		logger.Printf("Error::mdsd/ama::Failed to get config response data. Error message: %s", string(err.Error()))
+		logger.Printf("Error::mdsd/ama::Failed to get config response data for extension: %s, error: %s", extensionName, string(err.Error()))
 		return extensionData, err
 	}
 	var responseObject AgentTaggedDataResponse
 	err = json.Unmarshal(responseBytes, &responseObject)
 	if err != nil {
-		logger.Printf("Error::mdsd/ama::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
+		logger.Printf("Error::mdsd/ama::Failed to unmarshal config response data for extension: %s, error: %s", extensionName, string(err.Error()))
 		return extensionData, err
 	}
 
@@ -74,7 +78,7 @@ func getExtensionData() (TaggedData, error) {
 }
 
 func getExtensionConfigs() ([]ExtensionConfig, error) {
-	extensionData, err := getExtensionData()
+	extensionData, err := getDefaultExtensionData()
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +148,7 @@ func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) 
 	}
 	outputStreamDefinitions := make(map[string]StreamDefinition)
 	if hasNamedPipe == true {
-		extensionData, err := getExtensionData()
+		extensionData, err := getDefaultExtensionData()
 		if err != nil {
 			return datatypeOutputStreamMap, err
 		}
@@ -323,29 +327,12 @@ func (e *Extension) GetNamespaceFilteringModeForDataCollection() string {
 func (e *Extension) GetContainerLogV2ExtensionConfig(isWindows bool) (map[string][]string, map[string]string, error) {
 	namespaceStreamIdsMap := make(map[string][]string)
 	streamIdNamedPipeMap := make(map[string]string)
-
-	guid := uuid.New()
 	var extensionData TaggedData
-	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": "ContainerLogV2Extension", "Version": "1"}
-	jsonBytes, err := json.Marshal(taggedData)
+	extensionData, err := getExtensionData("ContainerLogV2Extension", "1")
 	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionConfig::Failed to marshal taggedData data. Error message: %s", string(err.Error()))
+		logger.Printf("Error::GetContainerLogV2ExtensionConfig::Failed to get extension data: %s", err.Error())
 		return namespaceStreamIdsMap, streamIdNamedPipeMap, err
 	}
-
-	responseBytes, err := getExtensionConfigResponse(jsonBytes)
-	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionConfig::Failed to get config response data. Error message: %s", string(err.Error()))
-		return namespaceStreamIdsMap, streamIdNamedPipeMap, err
-	}
-	var responseObject AgentTaggedDataResponse
-	err = json.Unmarshal(responseBytes, &responseObject)
-	if err != nil {
-		logger.Printf("extension::GetContainerLogV2ExtensionConfig::Failed to unmarshal config response data. Error message: %s", string(err.Error()))
-		return namespaceStreamIdsMap, streamIdNamedPipeMap, err
-	}
-
-	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
 	extensionConfigs := extensionData.ExtensionConfigs
 	outputStreamDefinitions := make(map[string]StreamDefinition)
 	if isWindows {
