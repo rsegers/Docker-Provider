@@ -163,7 +163,7 @@ func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) 
 	return datatypeOutputStreamMap, nil
 }
 
-func getNamespacesFromDataCollectionSettings(dataCollectionSettings map[string]interface{}) string[] {
+func getNamespacesFromDataCollectionSettings(dataCollectionSettings map[string]interface{}) []string {
 	var namespaces []string
 	if len(dataCollectionSettings) > 0 {
 		namespacesSetting, found := dataCollectionSettings[EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES].([]interface{})
@@ -308,7 +308,7 @@ func (e *Extension) GetNamespacesForDataCollection() []string {
 		logger.Printf(message)
 	}
 
-    namespaces = getNamespacesFromDataCollectionSettings(dataCollectionSettings)
+	namespaces = getNamespacesFromDataCollectionSettings(dataCollectionSettings)
 
 	return namespaces
 }
