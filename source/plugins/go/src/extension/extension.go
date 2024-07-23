@@ -139,7 +139,7 @@ func getDataCollectionSettingsFromExtensionSettings(extensionSettings map[string
 	return dataCollectionSettings, nil
 }
 
-func getDataTypeToStreamIdMapping(hasNamedPipe bool) (map[string]string, error) {
+func getDataTypeToStreamIdMappingFromCIExtension(hasNamedPipe bool) (map[string]string, error) {
 	datatypeOutputStreamMap := make(map[string]string)
 	extensionData, err := getExtensionData(ContainerInsightsExtension, ContainerInsightsExtensionVersion)
 	if err != nil {
@@ -229,7 +229,7 @@ func (e *Extension) GetOutputStreamId(datatype string, useFromCache bool) string
 		return e.datatypeStreamIdMap[datatype]
 	}
 	var err error
-	e.datatypeStreamIdMap, err = getDataTypeToStreamIdMapping(false)
+	e.datatypeStreamIdMap, err = getDataTypeToStreamIdMappingFromCIExtension(false)
 	if err != nil {
 		message := fmt.Sprintf("Error getting datatype to streamid mapping: %s", err.Error())
 		logger.Printf(message)
@@ -244,7 +244,7 @@ func (e *Extension) GetOutputNamedPipe(datatype string, useFromCache bool) strin
 		return e.datatypeNamedPipeMap[datatype]
 	}
 	var err error
-	e.datatypeNamedPipeMap, err = getDataTypeToStreamIdMapping(true)
+	e.datatypeNamedPipeMap, err = getDataTypeToStreamIdMappingFromCIExtension(true)
 	if err != nil {
 		message := fmt.Sprintf("Error getting datatype to named pipe mapping: %s", err.Error())
 		logger.Printf(message)
