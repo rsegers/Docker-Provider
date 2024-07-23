@@ -114,10 +114,12 @@ int _tmain(int argc, wchar_t *argv[])
     wchar_t msiModeValue[bufferSize];
     wchar_t sidecarScrapingEnabled[bufferSize];
     wchar_t telegrafLivenessprobeEnabled[bufferSize];
+    wchar_t telemetryCustomPromMonitorPods[bufferSize];
     GetEnvironmentVariable(L"ENABLE_CUSTOM_METRICS", enableCustomMetricsValue, bufferSize);
     GetEnvironmentVariable(L"USING_AAD_MSI_AUTH", msiModeValue, bufferSize);
     GetEnvironmentVariable(L"SIDECAR_SCRAPING_ENABLED", sidecarScrapingEnabled, bufferSize);
     GetEnvironmentVariable(L"AZMON_TELEGRAF_LIVENESSPROBE_ENABLED", telegrafLivenessprobeEnabled, bufferSize);
+    GetEnvironmentVariable(L"TELEMETRY_CUSTOM_PROM_MONITOR_PODS", telemetryCustomPromMonitorPods, bufferSize);
 
     int argvNum = 2;
     bool telegrafChecked = false, fluentBitChecked = false, monAgentCoreChecked = false;
@@ -128,7 +130,7 @@ int _tmain(int argc, wchar_t *argv[])
                 wprintf_s(L"ERROR: Telegraf process is not running.\n");
                 return NO_TELEGRAF_PROCESS;
             }
-        } else if (_wcsicmp(argv[i], L"fluent-bit.exe" ) == 0 && _wcsicmp(sidecarScrapingEnabled, L"true") == 0 && _wcsicmp(telegrafLivenessprobeEnabled, L"true") == 0) {
+        } else if (_wcsicmp(argv[i], L"fluent-bit.exe" ) == 0 && _wcsicmp(sidecarScrapingEnabled, L"true") == 0 && _wcsicmp(telemetryCustomPromMonitorPods, L"true") == 0 && _wcsicmp(telegrafLivenessprobeEnabled, L"true") == 0) {
             fluentBitChecked = true;
             if (!IsProcessRunning(argv[i])) {
                 wprintf_s(L"ERROR: Fluent-bit process is not running.\n");
