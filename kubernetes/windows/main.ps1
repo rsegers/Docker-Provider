@@ -440,13 +440,20 @@ function Set-EnvironmentVariables {
 }
 
 function Read-Configs {
-    # run config parser
-    ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
-    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setenv.txt"
-
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-common-agent-config.rb
     Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setcommonagentenv.txt"
+
+    # check if high log scale mode enabled
+    $enableHighLogScaleMode = [System.Environment]::GetEnvironmentVariable("ENABLE_HIGH_LOG_SCALE_MODE", "process")
+    if (![string]::IsNullOrEmpty($enableHighLogScaleMode)) {
+        Set-ProcessAndMachineEnvVariables "IS_HIGH_LOG_SCALE_MODE" $enableHighLogScaleMode
+        Write-Host "Successfully set environment variable IS_HIGH_LOG_SCALE_MODE - $($enableHighLogScaleMode) for target 'machine'..."
+    }
+
+    # run config parser
+    ruby /opt/amalogswindows/scripts/ruby/tomlparser.rb
+    Set-EnvironmentVariablesFromFile "/opt/amalogswindows/scripts/powershell/setenv.txt"
 
     #Parse the configmap to set the right environment variables for agent config.
     ruby /opt/amalogswindows/scripts/ruby/tomlparser-agent-config.rb
@@ -464,13 +471,6 @@ function Read-Configs {
     }
     else {
         Write-Host "Failed to set environment variable GENEVA_LOGS_INTEGRATION for target 'machine' since it is either null or empty"
-    }
-
-    # check if high log scale mode enabled
-    $enableHighLogScaleMode = [System.Environment]::GetEnvironmentVariable("ENABLE_HIGH_LOG_SCALE_MODE", "process")
-    if (![string]::IsNullOrEmpty($enableHighLogScaleMode)) {
-        Set-ProcessAndMachineEnvVariables "IS_HIGH_LOG_SCALE_MODE" $enableHighLogScaleMode
-        Write-Host "Successfully set environment variable IS_HIGH_LOG_SCALE_MODE - $($enableHighLogScaleMode) for target 'machine'..."
     }
 
     #Replace placeholders in fluent-bit.conf
