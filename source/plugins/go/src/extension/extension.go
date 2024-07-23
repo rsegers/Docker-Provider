@@ -54,7 +54,7 @@ func GetInstance(flbLogger *log.Logger, containertype string) *Extension {
 	return singleton
 }
 
-func getExtensionData(extensionName string, extensionVersion version) (TaggedData, error) {
+func getExtensionData(extensionName string, extensionVersion string) (TaggedData, error) {
 	guid := uuid.New()
 	var extensionData TaggedData
 	taggedData := map[string]interface{}{"Request": "AgentTaggedData", "RequestId": guid.String(), "Tag": extensionName, "Version": extensionVersion}
@@ -378,12 +378,7 @@ func (e *Extension) GetContainerLogV2ExtensionConfig(isWindows bool) (map[string
 				logger.Printf("Error::GetContainerLogV2ExtensionConfig::Failed to getDataCollectionSettingsFromExtensionSettings: %s", err.Error())
 			} else {
 				namespaces := getNamespacesFromDataCollectionSettings(dataCollectionSettingsItr)
-				for _, v := range namespaces {
-					namespace, ok := v.(string)
-					if !ok {
-						logger.Printf("namespaces in  dataCollectionSettings does not contain a string")
-						return namespaceStreamIdsMap, streamIdNamedPipeMap, err
-					}
+				for _, namespace := range namespaces {
 					if value, exists := namespaceStreamIdsMap[namespace]; exists {
 						if !contains(value, outputStreamId) {
 							namespaceStreamIdsMap[namespace] = append(value, outputStreamId)
