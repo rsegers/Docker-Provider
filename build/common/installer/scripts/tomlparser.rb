@@ -59,12 +59,30 @@ def parseConfigMap
   end
 end
 
-def is_high_log_scale_mode?
-  isHighLogScaleMode = false
-  if !ENV["IS_HIGH_LOG_SCALE_MODE"].nil? && !ENV["IS_HIGH_LOG_SCALE_MODE"].empty? && ENV["IS_HIGH_LOG_SCALE_MODE"].to_s.downcase == "true"
-    isHighLogScaleMode = true
+def isHighLogScaleMode?
+  highLogScaleMode = false
+  begin
+    highscale = ENV["isHighLogScaleMode"]
+    if !highscale.nil? && !highscale.empty? && highscale.to_s.downcase == "true"
+      highLogScaleMode = true
+    end
+  rescue => errorStr
+     ConfigParseErrorLogger.logError("Exception while reading isHighLogScaleMode env variable - #{errorStr}, using defaults, please check isHighLogScaleMode env variable for errors")
   end
-  return isHighLogScaleMode
+  return highLogScaleMode
+end
+
+def isDaemonSet?
+   isDaemonSet = false
+   begin
+     controllerType = ENV["CONTROLLER_TYPE"]
+     if !controllerType.nil? && !controllerType.empty? && controllerType.to_s.downcase == "daemonset"
+        isDaemonSet = true
+     end
+   rescue => errorStr
+    ConfigParseErrorLogger.logError("Exception while reading CONTROLLER_TYPE env variable - #{errorStr}, using defaults, please check CONTROLLER_TYPE env variable for errors")
+   end
+   return isDaemonSet
 end
 
 # Use the ruby structure created after config parsing to set the right values to be used as environment variables
@@ -334,14 +352,16 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
     #Get Multi-tenancy log collection settings
     begin
-      if !parsedConfig[:log_collection_settings][:multi_tenancy].nil? && !parsedConfig[:log_collection_settings][:multi_tenancy][:enabled].nil?
-         multi_tenancy_enabled = parsedConfig[:log_collection_settings][:multi_tenancy][:enabled]
-         if multi_tenancy_enabled && is_high_log_scale_mode? # Multi-tenancy log collection supported only in high log scale mode
-           @isAzMonMultiTenancyLogCollectionEnabled = multi_tenancy_enabled
-         else
-           ConfigParseErrorLogger.logError("config::error: High Log Scale Mode MUST be enabled for Multi-tenancy log collection and ignoring the multi_tenancy config map setting")
-         end
-         puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled} for Multi-tenancy log collection"
+      if isDaemonSet? # high log scale mode only applicable for daemonset
+        if !parsedConfig[:log_collection_settings][:multi_tenancy].nil? && !parsedConfig[:log_collection_settings][:multi_tenancy][:enabled].nil?
+          multi_tenancy_enabled = parsedConfig[:log_collection_settings][:multi_tenancy][:enabled]
+          if multi_tenancy_enabled && isHighLogScaleMode? # Multi-tenancy log collection supported only in high log scale mode
+            @isAzMonMultiTenancyLogCollectionEnabled = multi_tenancy_enabled
+          else
+            ConfigParseErrorLogger.logError("config::error: High Log Scale Mode MUST be enabled for Multi-tenancy log collection and ignoring the multi_tenancy config map setting")
+          end
+          puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled} for Multi-tenancy log collection"
+        end
       end
     rescue => errorStr
       ConfigParseErrorLogger.logError("config::error: Exception while reading config map settings for Multi-tenancy log collection - #{errorStr}, please check config map for errors")
