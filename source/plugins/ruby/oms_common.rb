@@ -10,7 +10,7 @@ module OMS
   end
 
   class Common
-    require 'socket'        
+    require 'socket'
     require_relative 'omslog'
 
     @@Hostname = nil
@@ -114,7 +114,7 @@ module OMS
         # we are otherwise instructed.
         rfcl = "RFCs 1123, 2181 with hostname range of {1,63} octets for non-root item."
         return if is_hostname_compliant?(hnBuffer)
-        return if is_like_ipv4_string?(hnBuffer) 
+        return if is_like_ipv4_string?(hnBuffer)
         return if is_like_ipv6_string?(hnBuffer)
         msg = "Hostname '#{hnBuffer}' not compliant (#{rfcl}).  Not IP Address Either."
         OMS::Log.warn_once(msg)
@@ -136,6 +136,7 @@ module OMS
         rescue => error
           OMS::Log.warn_once("Hostname '#{@@Hostname}' found, but did NOT validate as compliant.  #{error}.  Using anyway.")
         end
+        @@Hostname = "#{@@Hostname}"
         return @@Hostname
       end
     end # Class methods
