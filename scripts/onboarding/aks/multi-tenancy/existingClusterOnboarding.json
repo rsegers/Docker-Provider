@@ -43,6 +43,18 @@
             "metadata": {
                 "description": "KQL filter for ingestion transformation"
             }
+        },
+        "useAzureMonitorPrivateLinkScope": {
+            "type": "bool",
+            "metadata": {
+                "description": "Flag to indicate if Azure Monitor Private Link Scope should be used or not"
+            }
+        },
+        "azureMonitorPrivateLinkScopeResourceId": {
+            "type": "string",
+            "metadata": {
+                "description": "Specify the Resource Id of the Azure Monitor Private Link Scope."
+            }
         }
     },
     "variables": {
@@ -59,9 +71,31 @@
         "ingestionDCENameFull": "[Concat('MSCI-multi-tenancy', '-', variables('workspaceLocation'), '-', uniqueString(parameters('workspaceResourceId')))]",
         "ingestionDCEName": "[if(greater(length(variables('ingestionDCENameFull')), 43), substring(variables('ingestionDCENameFull'), 0, 43), variables('ingestionDCENameFull'))]",
         "ingestionDCE": "[if(endsWith(variables('ingestionDCEName'), '-'), substring(variables('ingestionDCEName'), 0, 42), variables('ingestionDCEName'))]",
-        "ingestionDataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('ingestionDCE'))]"
+        "ingestionDataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('ingestionDCE'))]",
+        "configDCENameFull": "[Concat('MSCI-config', '-', variables('clusterLocation'), '-', variables('clusterName'))]",
+        "configDCEName": "[if(greater(length(variables('configDCENameFull')), 43), substring(variables('configDCENameFull'), 0, 43), variables('configDCENameFull'))]",
+        "configDCE": "[if(endsWith(variables('configDCEName'), '-'), substring(variables('configDCEName'), 0, 42), variables('configDCEName'))]",
+        "configDataCollectionEndpointId": "[resourceId(variables('clusterSubscriptionId'), variables('clusterResourceGroup'), 'Microsoft.Insights/dataCollectionEndpoints', variables('configDCE'))]",
+        "configDCEAssociationName": "configurationAccessEndpoint",
+        "privateLinkScopeName": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[8]]",
+        "privateLinkScopeResourceGroup": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[4]]",
+        "privateLinkScopeSubscriptionId": "[split(parameters('azureMonitorPrivateLinkScopeResourceId'),'/')[2]]"
     },
     "resources": [
+        {
+            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+            "type": "Microsoft.Insights/dataCollectionEndpoints",
+            "apiVersion": "2022-06-01",
+            "name": "[variables('configDCE')]",
+            "location": "[variables('clusterLocation')]",
+            "tags": "[parameters('resourceTagValues')]",
+            "kind": "Linux",
+            "properties": {
+                "networkAcls": {
+                    "publicNetworkAccess": "[if(parameters('useAzureMonitorPrivateLinkScope'), 'Disabled', 'Enabled')]"
+                }
+            }
+        },
         {
             "type": "Microsoft.Insights/dataCollectionEndpoints",
             "apiVersion": "2023-03-11",
@@ -71,7 +105,7 @@
             "kind": "Linux",
             "properties": {
                 "networkAcls": {
-                    "publicNetworkAccess": "Enabled"
+                    "publicNetworkAccess": "[if(parameters('useAzureMonitorPrivateLinkScope'), 'Disabled', 'Enabled')]"
                 }
             }
         },
@@ -136,6 +170,128 @@
                                     }
                                 ],
                                 "dataCollectionEndpointId": "[variables('ingestionDataCollectionEndpointId')]"
+                            }
+                        }
+                    ]
+                },
+                "parameters": {}
+            }
+        },
+        {
+            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "[Concat('aks-monitoring-msi-dcea-config', '-',  uniqueString(parameters('aksResourceId')))]",
+            "apiVersion": "2017-05-10",
+            "subscriptionId": "[variables('clusterSubscriptionId')]",
+            "resourceGroup": "[variables('clusterResourceGroup')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('configDCE'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "Microsoft.ContainerService/managedClusters/providers/dataCollectionRuleAssociations",
+                            "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('configDCEAssociationName'))]",
+                            "apiVersion": "2022-06-01",
+                            "properties": {
+                                "description": "Association of data collection rule endpoint. Deleting this association will break the data collection endpoint for this AKS Cluster.",
+                                "dataCollectionEndpointId": "[variables('configDataCollectionEndpointId')]"
+                            }
+                        }
+                    ]
+                },
+                "parameters": {}
+            }
+        },
+        {
+            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "[Concat('aks-monitoring-msi-ampls-scope-config', '-',  uniqueString(parameters('aksResourceId')))]",
+            "apiVersion": "2017-05-10",
+            "subscriptionId": "[variables('privateLinkScopeSubscriptionId')]",
+            "resourceGroup": "[variables('privateLinkScopeResourceGroup')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('configDCE'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "microsoft.insights/privatelinkscopes/scopedresources",
+                            "name": "[concat(variables('privateLinkScopeName'), '/', concat(variables('configDCE'), '-connection'))]",
+                            "apiVersion": "2021-07-01-preview",
+                            "properties": {
+                                "linkedResourceId": "[variables('configDataCollectionEndpointId')]"
+                            }
+                        }
+                    ]
+                },
+                "parameters": {}
+            }
+        },
+        {
+           "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "[Concat('aks-monitoring-msi-ampls-scope-ingest', '-',  uniqueString(parameters('aksResourceId')))]",
+            "apiVersion": "2017-05-10",
+            "subscriptionId": "[variables('privateLinkScopeSubscriptionId')]",
+            "resourceGroup": "[variables('privateLinkScopeResourceGroup')]",
+            "dependsOn": [
+                "[resourceId('Microsoft.Insights/dataCollectionEndpoints/', variables('ingestionDCE'))]"
+            ],
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "microsoft.insights/privatelinkscopes/scopedresources",
+                            "name": "[concat(variables('privateLinkScopeName'), '/', concat(variables('ingestionDCE'), '-connection'))]",
+                            "apiVersion": "2021-07-01-preview",
+                            "properties": {
+                                "linkedResourceId": "[variables('ingestionDataCollectionEndpointId')]"
+                            }
+                        }
+                    ]
+                },
+                "parameters": {}
+            }
+        },
+        {
+            "condition": "[parameters('useAzureMonitorPrivateLinkScope')]",
+            "type": "Microsoft.Resources/deployments",
+            "name": "[Concat('aks-monitoring-msi-ampls-scope', '-',  uniqueString(parameters('workspaceResourceId')))]",
+            "apiVersion": "2017-05-10",
+            "subscriptionId": "[variables('privateLinkScopeSubscriptionId')]",
+            "resourceGroup": "[variables('privateLinkScopeResourceGroup')]",
+            "properties": {
+                "mode": "Incremental",
+                "template": {
+                    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+                    "contentVersion": "1.0.0.0",
+                    "parameters": {},
+                    "variables": {},
+                    "resources": [
+                        {
+                            "type": "microsoft.insights/privatelinkscopes/scopedresources",
+                            "name": "[concat(variables('privateLinkScopeName'), '/', concat(variables('workspaceName'), '-connection'))]",
+                            "apiVersion": "2021-07-01-preview",
+                            "properties": {
+                                "linkedResourceId": "[parameters('workspaceResourceId')]"
                             }
                         }
                     ]

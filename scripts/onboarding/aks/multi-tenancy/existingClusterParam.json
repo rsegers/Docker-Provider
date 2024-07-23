@@ -30,6 +30,12 @@
     },
     "transformKql":{
        "value": "<KQL filter for ingestion transformation>"
+    },
+    "useAzureMonitorPrivateLinkScope": {
+      "value": false
+    },
+    "azureMonitorPrivateLinkScopeResourceId": {
+      "value": "/subscriptions/<SubscriptionId>/resourceGroups/<ResourceGroup>/providers/microsoft.insights/privateLinkScopes/<azureMonitorPrivateLinkScopeName>"
     }
   }
 }
