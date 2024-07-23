@@ -377,14 +377,16 @@ func (e *Extension) GetContainerLogV2ExtensionConfig(isWindows bool) (map[string
 			if err != nil {
 				logger.Printf("Error::GetContainerLogV2ExtensionConfig::Failed to getDataCollectionSettingsFromExtensionSettings: %s", err.Error())
 			} else {
-				namespaces := getNamespacesFromDataCollectionSettings(dataCollectionSettingsItr)
-				for _, namespace := range namespaces {
-					if value, exists := namespaceStreamIdsMap[namespace]; exists {
-						if !contains(value, outputStreamId) {
-							namespaceStreamIdsMap[namespace] = append(value, outputStreamId)
+				if len(dataCollectionSettingsItr) > 0 {
+					namespaces := getNamespacesFromDataCollectionSettings(dataCollectionSettingsItr)
+					for _, namespace := range namespaces {
+						if value, exists := namespaceStreamIdsMap[namespace]; exists {
+							if !contains(value, outputStreamId) {
+								namespaceStreamIdsMap[namespace] = append(value, outputStreamId)
+							}
+						} else {
+							namespaceStreamIdsMap[namespace] = []string{outputStreamId}
 						}
-					} else {
-						namespaceStreamIdsMap[namespace] = []string{outputStreamId}
 					}
 				}
 			}

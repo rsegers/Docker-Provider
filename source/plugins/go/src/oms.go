@@ -491,7 +491,7 @@ func updateContainerImageNameMaps() {
 
 func updateContainerLogV2ExtensionMaps(isWindows bool) {
 	for ; true; <-ContainerLogV2ExtensionConfigRefreshTicker.C {
-		Log("updateContainerLogV2ExtensionMaps::Info: Invoking GetInstance for GetContainerLogV2ExtensionConfig")
+		Log("updateContainerLogV2ExtensionMaps::Info: Invoking GetContainerLogV2ExtensionConfig")
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
 			_namespaceStreamIdsMap, _streamIdNamedPipeMap, err := extension.GetInstance(FLBLogger, ContainerType).GetContainerLogV2ExtensionConfig(IsWindows)
