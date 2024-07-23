@@ -64,7 +64,7 @@
     "resources": [
         {
             "type": "Microsoft.Insights/dataCollectionEndpoints",
-            "apiVersion": "2022-06-01",
+            "apiVersion": "2023-03-11",
             "name": "[variables('ingestionDCE')]",
             "location": "[variables('workspaceLocation')]",
             "tags": "[parameters('resourceTagValues')]",
@@ -94,7 +94,7 @@
                     "resources": [
                         {
                             "type": "Microsoft.Insights/dataCollectionRules",
-                            "apiVersion": "2022-06-01",
+                            "apiVersion": "2023-03-11",
                             "name": "[variables('dcrName')]",
                             "location": "[parameters('workspaceRegion')]",
                             "tags": "[parameters('resourceTagValues')]",
@@ -163,7 +163,7 @@
                         {
                             "type": "Microsoft.ContainerService/managedClusters/providers/dataCollectionRuleAssociations",
                             "name": "[concat(variables('clusterName'),'/microsoft.insights/', variables('associationName'))]",
-                            "apiVersion": "2022-06-01",
+                            "apiVersion": "2023-03-11",
                             "properties": {
                                 "description": "Association of Logs Multi-tenancy collection rule. Deleting this association will break the Multi-tenancy logs data collection for this AKS Cluster.",
                                 "dataCollectionRuleId": "[variables('dataCollectionRuleId')]"
