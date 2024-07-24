@@ -63,12 +63,12 @@ end
 def isHighLogScaleMode?
   highLogScaleMode = false
   begin
-    highscale = ENV["isHighLogScaleMode"]
+    highscale = ENV["IS_HIGH_LOG_SCALE_MODE"]
     if !highscale.nil? && !highscale.empty? && highscale.to_s.downcase == "true"
       highLogScaleMode = true
     end
   rescue => errorStr
-     ConfigParseErrorLogger.logError("Exception while reading isHighLogScaleMode env variable - #{errorStr}, using defaults, please check isHighLogScaleMode env variable for errors")
+     ConfigParseErrorLogger.logError("Exception while reading IS_HIGH_LOG_SCALE_MODE env variable - #{errorStr}, using defaults, please check isHighLogScaleMode env variable for errors")
   end
   return highLogScaleMode
 end
