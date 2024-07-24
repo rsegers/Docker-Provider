@@ -31,6 +31,7 @@ require_relative "ConfigParseErrorLogger"
 @annotationBasedLogFiltering = false
 @allowed_system_namespaces = ['kube-system', 'gatekeeper-system', 'calico-system', 'azure-arc', 'kube-public', 'kube-node-lease']
 @isAzMonMultiTenancyLogCollectionEnabled = false
+@azMonMultiTenantNamespaces = ""
 
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -360,7 +361,23 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           else
             ConfigParseErrorLogger.logError("config::error: High Log Scale Mode MUST be enabled for Multi-tenancy log collection and ignoring the multi_tenancy config map setting")
           end
-          puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled} for Multi-tenancy log collection"
+          if @isAzMonMultiTenancyLogCollectionEnabled
+            namespaces = parsedConfig[:log_collection_settings][:multi_tenancy][:namespaces]
+            puts "config::INFO:multi_tenancy namespaces provided in the configmap: #{namespaces}"
+            if !namespaces.nil? && !namespaces.empty? &&
+              namespaces.kind_of?(Array) && namespaces.length > 0 &&
+              namespaces[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+              namespaces.each do |namespace|
+                if @azMonMultiTenantNamespaces.empty?
+                  # To not append , for the first element
+                  @azMonMultiTenantNamespaces.concat(namespace)
+                else
+                  @azMonMultiTenantNamespaces.concat("," + namespace)
+                end
+              end
+            end
+          end
+          puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled} and namespaces: #{@azMonMultiTenantNamespaces} for Multi-tenancy log collection"
         end
       end
     rescue => errorStr
@@ -419,6 +436,7 @@ if !file.nil?
   file.write("export AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS=#{@logKubernetesMetadataIncludeFields}\n")
   file.write("export AZMON_ANNOTATION_BASED_LOG_FILTERING=#{@annotationBasedLogFiltering}\n")
   file.write("export AZMON_MULTI_TENANCY_LOG_COLLECTION=#{@isAzMonMultiTenancyLogCollectionEnabled}\n")
+  file.write("export AZMON_MULTI_TENANCY_NAMESPACES=#{@azMonMultiTenantNamespaces}\n")
 
   # Close file after writing all environment variables
   file.close
@@ -495,6 +513,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     commands = get_command_windows("AZMON_ANNOTATION_BASED_LOG_FILTERING", @annotationBasedLogFiltering)
     file.write(commands)
     commands = get_command_windows("AZMON_MULTI_TENANCY_LOG_COLLECTION", @isAzMonMultiTenancyLogCollectionEnabled)
+    file.write(commands)
+    commands = get_command_windows("AZMON_MULTI_TENANCY_NAMESPACES", @azMonMultiTenantNamespaces)
     file.write(commands)
     # Close file after writing all environment variables
     file.close

@@ -326,6 +326,22 @@ generateGenevaTenantNamespaceConfig() {
       rm /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf
 }
 
+generateAzMonMultiTenantNamespaceConfig() {
+      echo "generating AzMonMultiTenant Namespace config since AzMonMultitenancy Enabled"
+      OnboardedNameSpaces=${AZMON_MULTI_TENANCY_NAMESPACES}
+      IFS=',' read -ra TenantNamespaces <<< "$OnboardedNameSpaces"
+      for tenantNamespace in "${TenantNamespaces[@]}"; do
+            tenantNamespace=$(echo $tenantNamespace | xargs)
+            echo "namespace onboarded to azmon multi-tenancy logs:${tenantNamespace}"
+            cp /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_${tenantNamespace}.conf
+            sed -i "s/<TENANT_NAMESPACE>/${tenantNamespace}/g" /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_${tenantNamespace}.conf
+            cp /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter.conf /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter_${tenantNamespace}.conf
+            sed -i "s/<TENANT_NAMESPACE>/${tenantNamespace}/g" /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter_${tenantNamespace}.conf
+      done
+      rm /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf
+      rm /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter.conf
+}
+
 generateGenevaInfraNamespaceConfig() {
       echo "generating GenevaInfraNamespaceConfig since GenevaLogsIntegration Enabled "
       suffix="-*"
@@ -1193,6 +1209,10 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   source ~/.bashrc
                   # Delay FBIT service start to ensure MDSD is ready in 1P mode to avoid data loss
                   sleep "${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
+            elif [ "${AZMON_MULTI_TENANCY_LOG_COLLECTION}" == "true" -a -n "${AZMON_MULTI_TENANCY_NAMESPACES}" ]; then
+                  # generate azmon multitenancy namespace config for each namespace 
+                  generateAzMonMultiTenantNamespaceConfig
+                  fluentBitConfFile="fluent-bit-azmon-multi-tenancy.conf"
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then
