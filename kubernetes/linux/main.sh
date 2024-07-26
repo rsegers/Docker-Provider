@@ -703,11 +703,11 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
             ruby fluent-bit-conf-customizer.rb
 
             if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-                  ruby fluent-bit-geneva-conf-customizer.rb  "common"
-                  ruby fluent-bit-geneva-conf-customizer.rb  "tenant"
-                  ruby fluent-bit-geneva-conf-customizer.rb  "infra"
-                  ruby fluent-bit-geneva-conf-customizer.rb  "tenant_filter"
-                  ruby fluent-bit-geneva-conf-customizer.rb  "infra_filter"
+                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "geneva_common"
+                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "geneva_tenant"
+                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "geneva_infra"
+                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "geneva_tenant_filter"
+                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "geneva_infra_filter"
                   # generate genavaconfig for each tenant
                   generateGenevaTenantNamespaceConfig
                   # generate genavaconfig for infra namespace
@@ -1210,7 +1210,10 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   # Delay FBIT service start to ensure MDSD is ready in 1P mode to avoid data loss
                   sleep "${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
             elif [ "${AZMON_MULTI_TENANCY_LOG_COLLECTION}" == "true" -a -n "${AZMON_MULTI_TENANCY_NAMESPACES}" ]; then
-                  # generate azmon multitenancy namespace config for each namespace 
+                  # generate azmon multitenancy namespace config for each namespace
+                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_common"
+                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_tenant"
+                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_tenant_filter"
                   generateAzMonMultiTenantNamespaceConfig
                   fluentBitConfFile="fluent-bit-azmon-multi-tenancy.conf"
             fi
