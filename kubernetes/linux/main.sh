@@ -160,6 +160,8 @@ isHighLogScaleMode() {
           "${GENEVA_LOGS_INTEGRATION}" != "true" && \
           "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]]; then
          true
+     elif [[ "${AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE}" == "true" ]]; then
+         true
      else
          false
      fi
@@ -773,7 +775,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
 fi
 
 #Parse the configmap to set the right environment variables for MDM metrics configuration for Alerting.
-if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
+if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ] && [ "${AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE}" != "true" ]; then
       ruby tomlparser-mdm-metrics-config.rb
 
       cat config_mdm_metrics_env_var | while read line; do
@@ -819,8 +821,9 @@ echo "MUTE_PROM_SIDECAR = $MUTE_PROM_SIDECAR"
 
 if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
      echo "running in geneva logs telemetry service mode"
+elif [ "${AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE}" == "true" ]; then
+     echo "running in azmon multi tenancy logs service mode"
 else
-
       #Setting environment variable for CAdvisor metrics to use port 10255/10250 based on curl request
       echo "Making wget request to cadvisor endpoint with port 10250"
       #Defaults to use secure port: 10250
@@ -1115,7 +1118,7 @@ fi
 
 if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
       # no dependency on fluentd for prometheus side car container
-      if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
+      if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ] && [ "${AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE}" != "true" ]; then
             if [ ! -e "/etc/config/kube.conf" ]; then
                   if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
                         echo "*** starting fluentd v1 in daemonset"
@@ -1141,6 +1144,8 @@ fi
 #If config parsing was successful, a copy of the conf file with replaced custom settings file is created
 if  [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
      echo "****************Skipping Telegraf Run in Test Mode since GENEVA_LOGS_INTEGRATION_SERVICE_MODE is true**************************"
+elif  [ "${AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE}" == "true" ]; then
+     echo "****************Skipping Telegraf Run in Test Mode since AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE is true**************************"
 else
       if [ ! -e "/etc/config/kube.conf" ]; then
             if [ "${CONTAINER_TYPE}" == "PrometheusSidecar" ] && [ -e "/opt/telegraf-test-prom-side-car.conf" ]; then
@@ -1209,13 +1214,17 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   source ~/.bashrc
                   # Delay FBIT service start to ensure MDSD is ready in 1P mode to avoid data loss
                   sleep "${FBIT_SERVICE_GRACE_INTERVAL_SECONDS}"
-            elif [ "${AZMON_MULTI_TENANCY_LOG_COLLECTION}" == "true" -a -n "${AZMON_MULTI_TENANCY_NAMESPACES}" ]; then
-                  # generate azmon multitenancy namespace config for each namespace
-                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_common"
-                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_tenant"
-                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_tenant_filter"
-                  generateAzMonMultiTenantNamespaceConfig
-                  fluentBitConfFile="fluent-bit-azmon-multi-tenancy.conf"
+            elif [ "${AZMON_MULTI_TENANCY_LOG_COLLECTION}" == "true" ]; then
+                  if [ "${AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE}" == "true" ]; then
+                       fluentBitConfFile="fluent-bit-azmon-logs-svc.conf"
+                  elif [ -n "${AZMON_MULTI_TENANCY_NAMESPACES}" ]; then
+                        # generate azmon multitenancy namespace config for each namespace
+                        ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_common"
+                        ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_tenant"
+                        ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_tenant_filter"
+                        generateAzMonMultiTenantNamespaceConfig
+                        fluentBitConfFile="fluent-bit-azmon-multi-tenancy.conf"
+                  fi
             fi
             echo "using fluentbitconf file: ${fluentBitConfFile} for fluent-bit"
             if [ "$CONTAINER_RUNTIME" == "docker" ]; then

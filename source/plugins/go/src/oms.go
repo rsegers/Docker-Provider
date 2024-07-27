@@ -205,6 +205,8 @@ var (
 	InsightsMetricsNamedPipe net.Conn
 	// flag to check whether Azure Monitor Multi-tenancy Log Collection enabled or not
 	IsAzMonMultiTenancyLogCollectionEnabled bool
+	// flag to check whether Azure Monitor Multi-tenancy Logs ServiceMode enabled or not
+	IsAzMonMultitenancyLogsServiceMode bool
 )
 
 var (
@@ -1585,6 +1587,8 @@ func PostDataHelper(tailPluginRecords []map[interface{}]interface{}) int {
 			stringMap["AzureResourceId"] = ToString(record["AzureResourceId"])
 		} else if IsGenevaLogsIntegrationEnabled == true {
 			stringMap["AzureResourceId"] = ResourceID
+		} else if IsAzMonMultitenancyLogsServiceMode {
+			Computer = ToString(record["Computer"])
 		}
 
 		logEntry := ToString(record["log"])
@@ -1899,7 +1903,7 @@ func containsKey(currentMap map[string]bool, key string) bool {
 func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluentForwardTag string, msgPackEntries []MsgPackEntry) (totalBytes int, err error) {
 	var bts int
 	var er error
-	if IsAzMonMultiTenancyLogCollectionEnabled && isContainerLogV2Schema && !IsGenevaLogsIntegrationEnabled {
+	if (IsAzMonMultiTenancyLogCollectionEnabled || IsAzMonMultitenancyLogsServiceMode) && isContainerLogV2Schema && !IsGenevaLogsIntegrationEnabled {
 		namespaceStreamIdsMap, streamIdNamedPipeMap := getContainerLogV2ExtensionMaps()
 		if len(namespaceStreamIdsMap) > 0 {
 			MultitenantNamespaceCount = len(namespaceStreamIdsMap)
@@ -2144,6 +2148,12 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 
 	ContainerType = os.Getenv(ContainerTypeEnv)
 	Log("Container Type %s", ContainerType)
+
+	IsAzMonMultitenancyLogsServiceMode = false
+	azMonMultitenancyLogsServiceMode := os.Getenv("AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE")
+	if strings.Compare(strings.ToLower(azMonMultitenancyLogsServiceMode), "true") == 0 {
+		IsAzMonMultitenancyLogsServiceMode = true
+	}
 
 	osType := os.Getenv("OS_TYPE")
 	IsWindows = false
@@ -2409,7 +2419,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		go refreshIngestionAuthToken()
 	}
 
-	if IsAzMonMultiTenancyLogCollectionEnabled {
+	if IsAzMonMultiTenancyLogCollectionEnabled || IsAzMonMultitenancyLogsServiceMode {
 		go updateContainerLogV2ExtensionMaps(IsWindows)
 	}
 }
