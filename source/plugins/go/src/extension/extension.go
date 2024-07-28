@@ -77,6 +77,10 @@ func getExtensionData(extensionName string, extensionVersion string) (TaggedData
 	}
 
 	err = json.Unmarshal([]byte(responseObject.TaggedData), &extensionData)
+	if err != nil {
+		logger.Printf("Error::mdsd/ama::Failed to unmarshal config response TaggedData for extension: %s, error: %s", extensionName, string(err.Error()))
+		return extensionData, err
+	}
 
 	return extensionData, err
 }
