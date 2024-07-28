@@ -821,8 +821,6 @@ echo "MUTE_PROM_SIDECAR = $MUTE_PROM_SIDECAR"
 
 if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
      echo "running in geneva logs telemetry service mode"
-elif [ "${AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE}" == "true" ]; then
-     echo "running in azmon multi tenancy logs service mode"
 else
       #Setting environment variable for CAdvisor metrics to use port 10255/10250 based on curl request
       echo "Making wget request to cadvisor endpoint with port 10250"
