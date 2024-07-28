@@ -690,6 +690,42 @@ spec:
             name: container-azm-ms-osmconfig
             optional: true
 ---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: ama-logs-hpa
+  namespace: kube-system
+  labels:
+    component: ama-logs-agent
+    tier: node
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: ama-logs-multitenancy
+  minReplicas: 2
+  maxReplicas: 100
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 200
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 200
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 1200
+      policies:
+      - type: Percent
+        value: 5
+        periodSeconds: 180
+---
 apiVersion: v1
 kind: Service
 metadata:
@@ -773,14 +809,13 @@ spec:
         - name: ama-logs
           image: "mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.22"
           imagePullPolicy: IfNotPresent
-          # comment resources if VPA configured since the VPA will set these values
           resources:
             limits:
               cpu: 2
               memory: 2Gi
             requests:
-              cpu: 150m
-              memory: 250Mi
+              cpu: 500m
+              memory: 500Mi
           env:
             - name: AZMON_MULTI_TENANCY_LOG_COLLECTION
               value: "true"
