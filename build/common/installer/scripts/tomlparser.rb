@@ -435,8 +435,10 @@ if !file.nil?
   file.write("export AZMON_KUBERNETES_METADATA_ENABLED=#{@logEnableKubernetesMetadata}\n")
   file.write("export AZMON_KUBERNETES_METADATA_INCLUDES_FIELDS=#{@logKubernetesMetadataIncludeFields}\n")
   file.write("export AZMON_ANNOTATION_BASED_LOG_FILTERING=#{@annotationBasedLogFiltering}\n")
-  file.write("export AZMON_MULTI_TENANCY_LOG_COLLECTION=#{@isAzMonMultiTenancyLogCollectionEnabled}\n")
-  file.write("export AZMON_MULTI_TENANCY_NAMESPACES=#{@azMonMultiTenantNamespaces}\n")
+  if @isAzMonMultiTenancyLogCollectionEnabled
+    file.write("export AZMON_MULTI_TENANCY_LOG_COLLECTION=#{@isAzMonMultiTenancyLogCollectionEnabled}\n")
+    file.write("export AZMON_MULTI_TENANCY_NAMESPACES=#{@azMonMultiTenantNamespaces}\n")
+  end
 
   # Close file after writing all environment variables
   file.close
@@ -512,10 +514,12 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     file.write(commands)
     commands = get_command_windows("AZMON_ANNOTATION_BASED_LOG_FILTERING", @annotationBasedLogFiltering)
     file.write(commands)
-    commands = get_command_windows("AZMON_MULTI_TENANCY_LOG_COLLECTION", @isAzMonMultiTenancyLogCollectionEnabled)
-    file.write(commands)
-    commands = get_command_windows("AZMON_MULTI_TENANCY_NAMESPACES", @azMonMultiTenantNamespaces)
-    file.write(commands)
+    if @isAzMonMultiTenancyLogCollectionEnabled
+      commands = get_command_windows("AZMON_MULTI_TENANCY_LOG_COLLECTION", @isAzMonMultiTenancyLogCollectionEnabled)
+      file.write(commands)
+      commands = get_command_windows("AZMON_MULTI_TENANCY_NAMESPACES", @azMonMultiTenantNamespaces)
+      file.write(commands)
+    end
     # Close file after writing all environment variables
     file.close
     puts "Both stdout & stderr log collection are turned off for namespaces: '#{@excludePath}' "
