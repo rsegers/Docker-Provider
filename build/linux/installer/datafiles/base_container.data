@@ -62,7 +62,7 @@ MAINTAINER:              'Microsoft Corporation'
 /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-multi-tenancy.conf;        build/linux/installer/conf/fluent-bit-azmon-multi-tenancy.conf;              644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf;          build/linux/installer/conf/fluent-bit-azmon-logs_tenant.conf;                644; root; root
 /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter.conf;   build/linux/installer/conf/fluent-bit-azmon-logs_tenant_filter.conf;         644; root; root
-/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs-svc.conf;             build/linux/installer/conf/	fluent-bit-azmon-logs-svc.conf;                644; root; root
+/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs-svc.conf;             build/linux/installer/conf/fluent-bit-azmon-logs-svc.conf;                   644; root; root
 
 
 /opt/tomlparser-agent-config.rb;                                build/common/installer/scripts/tomlparser-agent-config.rb;     755; root; root
