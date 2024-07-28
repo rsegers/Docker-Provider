@@ -337,11 +337,8 @@ generateAzMonMultiTenantNamespaceConfig() {
             echo "namespace onboarded to azmon multi-tenancy logs:${tenantNamespace}"
             cp /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_${tenantNamespace}.conf
             sed -i "s/<TENANT_NAMESPACE>/${tenantNamespace}/g" /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_${tenantNamespace}.conf
-            cp /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter.conf /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter_${tenantNamespace}.conf
-            sed -i "s/<TENANT_NAMESPACE>/${tenantNamespace}/g" /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter_${tenantNamespace}.conf
       done
       rm /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf
-      rm /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter.conf
 }
 
 generateGenevaInfraNamespaceConfig() {

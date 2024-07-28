@@ -9,7 +9,7 @@ LINUX_CONFIG_PATHS = {
   "geneva_tenant_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant_filter.conf",
   "azmon_common" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-multi-tenancy.conf",
   "azmon_tenant" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf",
-  "azmon_tenant_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter.conf",
+  "azmon_tenant_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_metadata_filter.conf",
 }
 
 WINDOWS_CONFIG_PATHS = {
@@ -20,7 +20,7 @@ WINDOWS_CONFIG_PATHS = {
   "geneva_tenant_filter" => "/etc/fluent-bit/fluent-bit-geneva-logs_tenant_filter.conf",
   "azmon_common" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-multi-tenancy.conf",
   "azmon_tenant" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf",
-  "azmon_tenant_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_filter.conf",
+  "azmon_tenant_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_metadata_filter.conf",
 }
 SUPPORTED_CONFIG_TYPES = ["geneva_common", "geneva_infra", "geneva_tenant", "geneva_infra_filter", "geneva_tenant_filter", "azmon_common", "azmon_tenant", "azmon_tenant_filter"]
 
