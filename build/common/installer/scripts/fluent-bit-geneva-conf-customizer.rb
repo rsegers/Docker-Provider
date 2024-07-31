@@ -2,27 +2,21 @@
 require_relative "ConfigParseErrorLogger"
 
 LINUX_CONFIG_PATHS = {
-  "geneva_common" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva.conf",
-  "geneva_infra" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf",
-  "geneva_infra_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra_filter.conf",
-  "geneva_tenant" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf",
-  "geneva_tenant_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant_filter.conf",
-  "azmon_common" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-multi-tenancy.conf",
-  "azmon_tenant" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf",
-  "azmon_tenant_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_metadata_filter.conf",
+  "common" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva.conf",
+  "infra" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf",
+  "infra_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra_filter.conf",
+  "tenant" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf",
+  "tenant_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant_filter.conf",
 }
 
 WINDOWS_CONFIG_PATHS = {
-  "geneva_common" => "/etc/fluent-bit/fluent-bit-geneva.conf",
-  "geneva_infra" => "/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf",
-  "geneva_infra_filter" => "/etc/fluent-bit/fluent-bit-geneva-logs_infra_filter.conf",
-  "geneva_tenant" => "/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf",
-  "geneva_tenant_filter" => "/etc/fluent-bit/fluent-bit-geneva-logs_tenant_filter.conf",
-  "azmon_common" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-multi-tenancy.conf",
-  "azmon_tenant" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf",
-  "azmon_tenant_filter" => "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_metadata_filter.conf",
+  "common" => "/etc/fluent-bit/fluent-bit-geneva.conf",
+  "infra" => "/etc/fluent-bit/fluent-bit-geneva-logs_infra.conf",
+  "infra_filter" => "/etc/fluent-bit/fluent-bit-geneva-logs_infra_filter.conf",
+  "tenant" => "/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf",
+  "tenant_filter" => "/etc/fluent-bit/fluent-bit-geneva-logs_tenant_filter.conf",
 }
-SUPPORTED_CONFIG_TYPES = ["geneva_common", "geneva_infra", "geneva_tenant", "geneva_infra_filter", "geneva_tenant_filter", "azmon_common", "azmon_tenant", "azmon_tenant_filter"]
+SUPPORTED_CONFIG_TYPES = ["common", "infra", "tenant", "infra_filter", "tenant_filter"]
 
 @default_service_interval = "15"
 @default_mem_buf_limit = "10"
@@ -121,7 +115,7 @@ def substituteFluentBitPlaceHolders(configFilePath)
     File.open(configFilePath, "w") { |file| file.puts new_contents }
     puts "config::Successfully substituted the placeholders in #{configFileName} file"
   rescue => errorStr
-    ConfigParseErrorLogger.logError("fluent-bit-multi-tenancy-conf-customizer: error while substituting values in #{configFilePath} file: #{errorStr}")
+    ConfigParseErrorLogger.logError("fluent-bit-geneva-conf-customizer: error while substituting values in #{configFilePath} file: #{errorStr}")
   end
 end
 

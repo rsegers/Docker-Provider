@@ -689,11 +689,11 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
             ruby fluent-bit-conf-customizer.rb
 
             if [ "${GENEVA_LOGS_INTEGRATION}" == "true" ] && [ "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then
-                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "geneva_common"
-                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "geneva_tenant"
-                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "geneva_infra"
-                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "geneva_tenant_filter"
-                  ruby fluent-bit-multi-tenancy-conf-customizer.rb "geneva_infra_filter"
+                  ruby fluent-bit-geneva-conf-customizer.rb "geneva_common"
+                  ruby fluent-bit-geneva-conf-customizer.rb "geneva_tenant"
+                  ruby fluent-bit-geneva-conf-customizer.rb "geneva_infra"
+                  ruby fluent-bit-geneva-conf-customizer.rb "geneva_tenant_filter"
+                  ruby fluent-bit-geneva-conf-customizer.rb "geneva_infra_filter"
                   # generate genavaconfig for each tenant
                   generateGenevaTenantNamespaceConfig
                   # generate genavaconfig for infra namespace
