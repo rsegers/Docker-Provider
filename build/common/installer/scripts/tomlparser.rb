@@ -47,14 +47,13 @@ def generateAzMonMultiTenantNamespaceConfig
    mem_buf_limit = '10m'
    buffer_chunk_size = '1m'
    buffer_max_size = '5m'
-   cluster_log_tail_exclude_path = '/var/log/exclude'
    throttle_rate = 1000
    throttle_window = 300
    throttle_interval = '1s'
-   tenant_output_forward_worker_count = 10
-   tenant_output_forward_retry_limit = 10
-   tenant_output_forward_storage_total_limit_size = '2G'
-   tenant_require_ack_response = false
+   output_forward_worker_count = 10
+   output_forward_retry_limit = 10
+   output_forward_storage_total_limit_size = '2G'
+   require_ack_response = false
 
    begin
     @azMonMultiTenantNamespaces.each do |namespace|
@@ -71,10 +70,10 @@ def generateAzMonMultiTenantNamespaceConfig
         throttle_rate = tenant_settings['throttle_rate'] || throttle_rate
         throttle_window = tenant_settings['throttle_window'] || throttle_window
         throttle_interval = tenant_settings['throttle_interval'] || throttle_interval
-        tenant_output_forward_worker_count = tenant_settings['tenant_output_forward_worker_count'] || tenant_output_forward_worker_count
-        tenant_output_forward_retry_limit = tenant_settings['tenant_output_forward_retry_limit'] || tenant_output_forward_retry_limit
-        tenant_output_forward_storage_total_limit_size = tenant_settings['tenant_output_forward_storage_total_limit_size'] || tenant_output_forward_storage_total_limit_size
-        tenant_require_ack_response = tenant_settings['tenant_require_ack_response'] || tenant_require_ack_response
+        output_forward_worker_count = tenant_settings['output_forward_worker_count'] || output_forward_worker_count
+        output_forward_retry_limit = tenant_settings['output_forward_retry_limit'] || output_forward_retry_limit
+        output_forward_storage_total_limit_size = tenant_settings['output_forward_storage_total_limit_size'] || output_forward_storage_total_limit_size
+        require_ack_response = tenant_settings['require_ack_response'] || require_ack_response
       end
       templatefile = File.read(templatefilePath)
       templatefile = templatefile.gsub("<TENANT_NAMESPACE>", tenant_namespace)
@@ -87,11 +86,11 @@ def generateAzMonMultiTenantNamespaceConfig
       templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_WINDOW}", throttle_window.to_s)
       templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_INTERVAL}", throttle_interval)
 
-      templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_WORKERS_COUNT}", tenant_output_forward_worker_count.to_s)
-      templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_RETRY_LIMIT}", tenant_output_forward_retry_limit.to_s)
-      templatefile = templatefile.gsub("${AZMON_TENANT_REQUIRE_ACK_RESPONSE}", tenant_require_ack_response)
+      templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_WORKERS_COUNT}", output_forward_worker_count.to_s)
+      templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_RETRY_LIMIT}", output_forward_retry_limit.to_s)
+      templatefile = templatefile.gsub("${AZMON_TENANT_REQUIRE_ACK_RESPONSE}", require_ack_response)
 
-      templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_STORAGE_TOTAL_LIMIT_SIZE}", tenant_output_forward_storage_total_limit_size)
+      templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_STORAGE_TOTAL_LIMIT_SIZE}", output_forward_storage_total_limit_size)
 
       tenant_file_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_#{tenant_namespace}.conf"
       File.open(tenant_file_path, 'w') { |file| file.write(templatefile) }
