@@ -328,19 +328,6 @@ generateGenevaTenantNamespaceConfig() {
       rm /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf
 }
 
-generateAzMonMultiTenantNamespaceConfig() {
-      echo "generating AzMonMultiTenant Namespace config since AzMonMultitenancy Enabled"
-      OnboardedNameSpaces=${AZMON_MULTI_TENANCY_NAMESPACES}
-      IFS=',' read -ra TenantNamespaces <<< "$OnboardedNameSpaces"
-      for tenantNamespace in "${TenantNamespaces[@]}"; do
-            tenantNamespace=$(echo $tenantNamespace | xargs)
-            echo "namespace onboarded to azmon multi-tenancy logs:${tenantNamespace}"
-            cp /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_${tenantNamespace}.conf
-            sed -i "s/<TENANT_NAMESPACE>/${tenantNamespace}/g" /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_${tenantNamespace}.conf
-      done
-      rm /etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf
-}
-
 generateGenevaInfraNamespaceConfig() {
       echo "generating GenevaInfraNamespaceConfig since GenevaLogsIntegration Enabled "
       suffix="-*"
@@ -1213,11 +1200,6 @@ if [ ! -e "/etc/config/kube.conf" ]; then
                   if [ "${AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE}" == "true" ]; then
                        fluentBitConfFile="fluent-bit-azmon-logs-svc.conf"
                   elif [ -n "${AZMON_MULTI_TENANCY_NAMESPACES}" ]; then
-                        # generate azmon multitenancy namespace config for each namespace
-                        ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_common"
-                        ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_tenant"
-                        ruby fluent-bit-multi-tenancy-conf-customizer.rb "azmon_tenant_filter"
-                        generateAzMonMultiTenantNamespaceConfig
                         fluentBitConfFile="fluent-bit-azmon-multi-tenancy.conf"
                   fi
             fi
