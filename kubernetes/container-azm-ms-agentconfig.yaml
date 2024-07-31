@@ -15,6 +15,8 @@ data:
        [log_collection_settings.multi_tenancy]
          enabled = true
          storage_max_chunks_up = 1000 # if this is not applied, default value is 500 and each chunk is 2MB and total size 2MB*500 = 1GB
+         service_buffer_chunk_size_mb = 15  # if this is not applied, default value is 15MB
+         service_buffer_max_size_mb = 30  # if this is not applied, default value is 30MB
          namespaces = ["app-team-1","app-team-2"]
          namespace_settings = ["app-team-1:storage_type=filesystem;throttle_rate=1000;throttle_window=300;throttle_interval=1s","app-team-2:storage_type=filesystem;throttle_rate=5000;throttle_window=600;throttle_interval=1s"]
 

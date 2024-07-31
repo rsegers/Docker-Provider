@@ -34,6 +34,8 @@ require_relative "ConfigParseErrorLogger"
 @azMonMultiTenantNamespaces = []
 @azMonMultiTenancyMaxStorageChunksUp = 500
 @namespace_to_settings = {}
+@azMonMultiTenancyServiceBufferChunkSize = "10m"
+@azMonMultiTenancyServiceBufferMaxSize = "30m"
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
@@ -461,6 +463,16 @@ def populateSettingValuesFromConfigMap(parsedConfig)
               end
               generateAzMonMultiTenantNamespaceConfig()
             end
+
+            # azmon multi-tenancy service buffer settings
+            service_buffer_chunk_size = parsedConfig[:log_collection_settings][:multi_tenancy][:service_buffer_chunk_size_mb]
+            if !service_buffer_chunk_size.nil? && !service_buffer_chunk_size.empty? && service_buffer_chunk_size.to_i > 0
+                @azMonMultiTenancyServiceBufferChunkSize = service_buffer_chunk_size + "m"
+            end
+            service_buffer_max_size = parsedConfig[:log_collection_settings][:multi_tenancy][:service_buffer_max_size_mb]
+            if !service_buffer_max_size.nil? && !service_buffer_max_size.empty? && service_buffer_max_size.to_i > 0
+                @azMonMultiTenancyServiceBufferMaxSize = service_buffer_max_size + "m"
+            end
           end
           puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled} and namespaces: #{@azMonMultiTenantNamespaces} for Multi-tenancy log collection"
         end
@@ -525,6 +537,8 @@ if !file.nil?
     azMonMultiTenantNamespacesString = @azMonMultiTenantNamespaces.join(",")
     file.write("export AZMON_MULTI_TENANCY_NAMESPACES=#{azMonMultiTenantNamespacesString}\n")
     file.write("export AZMON_MULTI_TENANCY_STORAGE_MAX_CHUNKS_UP=#{@azMonMultiTenancyMaxStorageChunksUp}\n")
+    file.write("exportAZMON_MULTI_TENANCY_SVC_BUFFER_CHUNK_SIZE=#{@azMonMultiTenancyServiceBufferChunkSiz}\n")
+    file.write("exportAZMON_MULTI_TENANCY_SVC_BUFFER_MAX_SIZE=#{@azMonMultiTenancyServiceBufferMaxSize}\n")
   end
 
   # Close file after writing all environment variables
