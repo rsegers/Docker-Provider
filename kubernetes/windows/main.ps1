@@ -505,11 +505,11 @@ function Read-Configs {
         Write-Host "Setting Geneva Windows AMA Environment variables"
         Set-CommonAMAEnvironmentVariables
         if (![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
-            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb  "geneva_common"
-            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb  "geneva_tenant"
-            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb  "geneva_infra"
-            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb  "geneva_tenant_filter"
-            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb  "geneva_infra_filter"
+            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "common"
+            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "tenant"
+            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "infra"
+            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "tenant_filter"
+            ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "infra_filter"
             Generate-GenevaTenantNameSpaceConfig
             Generate-GenevaInfraNameSpaceConfig
         }
