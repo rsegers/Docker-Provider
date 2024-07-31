@@ -32,6 +32,7 @@ require_relative "ConfigParseErrorLogger"
 @allowed_system_namespaces = ['kube-system', 'gatekeeper-system', 'calico-system', 'azure-arc', 'kube-public', 'kube-node-lease']
 @isAzMonMultiTenancyLogCollectionEnabled = false
 @azMonMultiTenantNamespaces = ""
+@azMonMultiTenancyMaxStorageChunksUp = 500
 
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -376,6 +377,11 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 end
               end
             end
+            # max storage chunks
+            storage_max_chunks_up = parsedConfig[:log_collection_settings][:multi_tenancy][:storage_max_chunks_up]
+            if !storage_max_chunks_up.nil? && !storage_max_chunks_up.empty? && storage_max_chunks_up.to_i > 0
+               @azMonMultiTenancyMaxStorageChunksUp = storage_max_chunks_up.to_i
+            end
           end
           puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled} and namespaces: #{@azMonMultiTenantNamespaces} for Multi-tenancy log collection"
         end
@@ -438,6 +444,20 @@ if !file.nil?
   if @isAzMonMultiTenancyLogCollectionEnabled
     file.write("export AZMON_MULTI_TENANCY_LOG_COLLECTION=#{@isAzMonMultiTenancyLogCollectionEnabled}\n")
     file.write("export AZMON_MULTI_TENANCY_NAMESPACES=#{@azMonMultiTenantNamespaces}\n")
+    file.write("export AZMON_MULTI_TENANCY_STORAGE_MAX_CHUNKS_UP=#{@azMonMultiTenancyMaxStorageChunksUp}\n")
+    # setting default values for all the tenants
+    # TODO: implement per tenant values
+    file.write("export AZMON_TENANT_TAIL_STORAGE_TYPE=filesystem\n")
+    file.write("export AZMON_TENANT_TAIL_MEM_BUF_LIMIT=10m\n")
+    file.write("export AZMON_TENANT_TAIL_BUFFER_CHUNK_SIZE=1m\n")
+    file.write("export AZMON_TENANT_TAIL_BUFFER_MAX_SIZE=1m\n")
+    file.write("export AZMON_TENANT_OUTPUT_FORWARD_WORKERS_COUNT=10\n")
+    file.write("export AZMON_TENANT_OUTPUT_FORWARD_RETRY_LIMIT=10\n")
+    file.write("export AZMON_TENANT_REQUIRE_ACK_RESPONSE=false\n")
+    file.write("export AZMON_TENANT_OUTPUT_FORWARD_STORAGE_TOTAL_LIMIT_SIZE=2G\n")
+    file.write("export AZMON_TENANT_THROTTLE_RATE=1000\n")
+    file.write("export AZMON_TENANT_THROTTLE_WINDOW=300\n")
+    file.write("export AZMON_TENANT_THROTTLE_INTERVAL=1s\n")
   end
 
   # Close file after writing all environment variables
@@ -518,6 +538,30 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
       commands = get_command_windows("AZMON_MULTI_TENANCY_LOG_COLLECTION", @isAzMonMultiTenancyLogCollectionEnabled)
       file.write(commands)
       commands = get_command_windows("AZMON_MULTI_TENANCY_NAMESPACES", @azMonMultiTenantNamespaces)
+      file.write(commands)
+      commands = get_command_windows("AZMON_MULTI_TENANCY_STORAGE_MAX_CHUNKS_UP", @azMonMultiTenancyMaxStorageChunksUp)
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_TAIL_STORAGE_TYPE", "filesystem")
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_TAIL_MEM_BUF_LIMIT", "10m")
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_TAIL_BUFFER_CHUNK_SIZE", "1m")
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_TAIL_BUFFER_MAX_SIZE", "1m")
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_OUTPUT_FORWARD_WORKERS_COUNT", "10")
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_OUTPUT_FORWARD_RETRY_LIMIT", "10")
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_REQUIRE_ACK_RESPONSE", "false")
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_OUTPUT_FORWARD_STORAGE_TOTAL_LIMIT_SIZE", "2G")
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_THROTTLE_RATE", "1000")
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_THROTTLE_WINDOW", "300")
+      file.write(commands)
+      commands = get_command_windows("AZMON_TENANT_THROTTLE_INTERVAL", "1s")
       file.write(commands)
     end
     # Close file after writing all environment variables
