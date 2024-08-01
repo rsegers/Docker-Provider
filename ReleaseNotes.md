@@ -8,6 +8,35 @@ information see the [Code of Conduct FAQ](https://opensource.microsoft.com/codeo
 additional questions or comments.
 
 ## Release History
+### 07/29/2024 -
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.23 (linux)
+##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.23 (windows)
+- Linux
+  - [CBL-Mariner 2.0.20240628](https://github.com/microsoft/azurelinux/releases/tag/2.0.20240628-2.0)
+  - Golang - 1.22.5
+  - Ruby - 3.1.3
+  - MDSD - 1.31.4
+  - Telegraf - 1.29.4
+  - Fluent-bit - 2.2.3
+  - Fluentd - 1.16.3
+- Windows
+  - Golang - 1.22.5
+  - Ruby - 3.1.1
+  - Windows AMA - 46.17.2
+  - Telegraf - 1.24.2
+  - Fluent-bit - 3.0.6
+  - Fluentd - 1.16.3
+##### Code change log
+## What's Changed
+- Common
+  * Gangams/bugfix-high-log-scale-mode by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1284
+  * Gangams/conformance tests mi migration by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1286
+  * add shieldGuard changes by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1287
+  * User/amagraw/display image id in build summary by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1289
+  * set golang to 1.22.5 by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1288
+  * remove adal go package and disable ADX log route by @pfrcks in https://github.com/microsoft/Docker-Provider/pull/1294
+  * wrap into string by @ganga1980 in https://github.com/microsoft/Docker-Provider/pull/1295
+
 ### 06/26/2024 -
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:3.1.22 (linux)
 ##### Version mcr.microsoft.com/azuremonitor/containerinsights/ciprod:win-3.1.22 (windows)
