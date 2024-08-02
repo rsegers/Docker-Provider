@@ -91,7 +91,7 @@ def generateAzMonMultiTenantNamespaceConfig
 
           templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_WORKERS_COUNT}", output_forward_worker_count.to_s)
           templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_RETRY_LIMIT}", output_forward_retry_limit.to_s)
-          templatefile = templatefile.gsub("${AZMON_TENANT_REQUIRE_ACK_RESPONSE}", require_ack_response)
+          templatefile = templatefile.gsub("${AZMON_TENANT_REQUIRE_ACK_RESPONSE}", require_ack_response.to_s)
 
           templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_STORAGE_TOTAL_LIMIT_SIZE}", output_forward_storage_total_limit_size)
 
