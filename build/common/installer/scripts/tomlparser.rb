@@ -435,31 +435,32 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             if !namespaces.nil? && !namespaces.empty? &&
               namespaces.kind_of?(Array) && namespaces.length > 0 &&
               namespaces[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
-              namespaces.each do |namespace|
-                namespace = namespace.strip.downcase
-                if !@azMonMultiTenantNamespaces.include?(namespace)
-                   @azMonMultiTenantNamespaces.push(namespace)
-                end
-              end
+              @azMonMultiTenantNamespaces = namespaces.map(&:strip).map(&:downcase).uniq
             end
+            puts "config::INFO:multi_tenancy unique namespaces provided: #{@azMonMultiTenantNamespaces}"
             # max storage chunks
             storage_max_chunks_up = parsedConfig[:log_collection_settings][:multi_tenancy][:storage_max_chunks_up]
             if !storage_max_chunks_up.nil? && !storage_max_chunks_up.empty? && storage_max_chunks_up.to_i > 0
                @azMonMultiTenancyMaxStorageChunksUp = storage_max_chunks_up.to_i
             end
+            puts "config::INFO:multi_tenancy storage_max_chunks_up: #{@azMonMultiTenancyMaxStorageChunksUp}"
+
             # namepsace to settings
             namespace_settings = parsedConfig[:log_collection_settings][:multi_tenancy][:namespace_settings]
-            if  @azMonMultiTenantNamespaces.length > 0 && !namespace_settings.nil? && !namespace_settings.empty? &&
-              namespace_settings.kind_of?(Array) && namespace_settings.length > 0 &&
-              namespace_settings[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
-              namespace_settings.each do |entry|
-                namespace, settings_str = entry.split(':')
-                settings = settings_str.split(';').map { |s| s.split('=') }.to_h
-                namespace = namespace.strip.downcase
-                if @namespace_to_settings.key?(namespace)
-                  puts "config::WARN: Duplicate namespace settings found for namespace: #{namespace}, using the previous settings"
-                else
-                   @namespace_to_settings[namespace] = settings
+            puts "config::INFO:multi_tenancy namespace_settings: #{namespace_settings}"
+            if  @azMonMultiTenantNamespaces.length > 0
+              if !namespace_settings.nil? && !namespace_settings.empty? &&
+                namespace_settings.kind_of?(Array) && namespace_settings.length > 0 &&
+                namespace_settings[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+                namespace_settings.each do |entry|
+                  namespace, settings_str = entry.split(':')
+                  settings = settings_str.split(';').map { |s| s.split('=') }.to_h
+                  namespace = namespace.strip.downcase
+                  if @namespace_to_settings.key?(namespace)
+                    puts "config::WARN: Duplicate namespace settings found for namespace: #{namespace}, using the previous settings"
+                  else
+                    @namespace_to_settings[namespace] = settings
+                  end
                 end
               end
               generateAzMonMultiTenantNamespaceConfig()
