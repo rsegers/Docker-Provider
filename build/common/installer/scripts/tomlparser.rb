@@ -36,6 +36,20 @@ require_relative "ConfigParseErrorLogger"
 @namespace_to_settings = {}
 @azMonMultiTenancyServiceBufferChunkSize = "10m"
 @azMonMultiTenancyServiceBufferMaxSize = "30m"
+# default values for namespace settings
+@default_namespace_settings = {
+  storage_type: 'filesystem',
+  mem_buf_limit: '10m',
+  buffer_chunk_size: '1m',
+  buffer_max_size: '5m',
+  throttle_rate: 1000,
+  throttle_window: 300,
+  throttle_interval: '1s',
+  out_forward_worker_count: 10,
+  out_forward_retry_limit: 10,
+  out_forward_storage_total_limit_size: '2G',
+  out_forward_require_ack_response: false
+}
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
@@ -43,68 +57,68 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @logTailPath = "C:\\var\\log\\containers\\*.log"
 end
 
-def generateAzMonMultiTenantNamespaceConfig
-   templatefilePath = "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf"
-   tail_storage_type = 'filesystem'
-   mem_buf_limit = '10m'
-   buffer_chunk_size = '1m'
-   buffer_max_size = '5m'
-   throttle_rate = 1000
-   throttle_window = 300
-   throttle_interval = '1s'
-   output_forward_worker_count = 10
-   output_forward_retry_limit = 10
-   output_forward_storage_total_limit_size = '2G'
-   require_ack_response = false
-
-   begin
-    @azMonMultiTenantNamespaces.each do |namespace|
-      puts "namespace onboarded to azmon multi-tenancy logs: #{namespace}"
-      tenant_namespace = namespace
-      tenant_settings = @namespace_to_settings[namespace]
-      if tenant_settings.nil?
-        puts "tenant settings not provided for namespace: #{namespace}, using defaults"
-      else
-        tail_storage_type = tenant_settings['tail_storage_type'] || tail_storage_type
-        mem_buf_limit = tenant_settings['mem_buf_limit'] || mem_buf_limit
-        buffer_chunk_size = tenant_settings['buffer_chunk_size'] || buffer_chunk_size
-        buffer_max_size = tenant_settings['buffer_max_size'] || buffer_max_size
-        throttle_rate = tenant_settings['throttle_rate'] || throttle_rate
-        throttle_window = tenant_settings['throttle_window'] || throttle_window
-        throttle_interval = tenant_settings['throttle_interval'] || throttle_interval
-        output_forward_worker_count = tenant_settings['output_forward_worker_count'] || output_forward_worker_count
-        output_forward_retry_limit = tenant_settings['output_forward_retry_limit'] || output_forward_retry_limit
-        output_forward_storage_total_limit_size = tenant_settings['output_forward_storage_total_limit_size'] || output_forward_storage_total_limit_size
-        require_ack_response = tenant_settings['require_ack_response'] || require_ack_response
-      end
-      if File.file?(templatefilePath)
-          templatefile = File.read(templatefilePath)
-          templatefile = templatefile.gsub("<TENANT_NAMESPACE>", tenant_namespace)
-          templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_STORAGE_TYPE}", tail_storage_type)
-          templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_MEM_BUF_LIMIT}", mem_buf_limit)
-          templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_BUFFER_CHUNK_SIZE}", buffer_chunk_size)
-          templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_BUFFER_MAX_SIZE}", buffer_max_size)
-
-          templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_RATE}", throttle_rate.to_s)
-          templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_WINDOW}", throttle_window.to_s)
-          templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_INTERVAL}", throttle_interval)
-
-          templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_WORKERS_COUNT}", output_forward_worker_count.to_s)
-          templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_RETRY_LIMIT}", output_forward_retry_limit.to_s)
-          templatefile = templatefile.gsub("${AZMON_TENANT_REQUIRE_ACK_RESPONSE}", require_ack_response.to_s)
-
-          templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_STORAGE_TOTAL_LIMIT_SIZE}", output_forward_storage_total_limit_size)
-
-          tenant_file_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_#{tenant_namespace}.conf"
-          File.open(tenant_file_path, 'w') { |file| file.write(templatefile) }
-      end
+def getNamespaceSettingsConfigEntryValue(configSettings, configEntryName)
+  value = @default_namespace_settings[configEntryName]
+  begin
+    if !configSettings.nil? && !configSettings[configEntryName].nil? && !configSettings[configEntryName].empty?
+      value = configSettings[configEntryName]
     end
-    # clear the template file
+  rescue => errorStr
+    ConfigParseErrorLogger.logError("Exception while getting getConfigEntryValue - #{errorStr}")
+  end
+  return value
+end
+
+def clearTemplateFile(templatefilePath)
+  begin
     if File.file?(templatefilePath)
       File.open(templatefilePath, 'r+') do |file|
         file.truncate(0) # clear the file
       end
     end
+  rescue => exception
+    ConfigParseErrorLogger.logError("clearTemplateFile: Exception while clearing template file: #{exception}")
+  end
+end
+
+def generateAzMonMultiTenantNamespaceConfig
+   templatefilePath = "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf"
+   begin
+    @azMonMultiTenantNamespaces.each do |namespace|
+      puts "namespace onboarded to azmon multi-tenancy logs: #{namespace}"
+      tenant_namespace = namespace
+      tenant_namespace_settings = @namespace_to_settings[namespace]
+      storage_type =  getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'storage_type')
+      mem_buf_limit = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'mem_buf_limit')
+      buffer_chunk_size = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'buffer_chunk_size')
+      buffer_max_size = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'buffer_max_size')
+      throttle_rate = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'throttle_rate')
+      throttle_window = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'throttle_window')
+      throttle_interval = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'throttle_interval')
+      out_forward_worker_count = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'out_forward_worker_count')
+      out_forward_retry_limit = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'out_forward_retry_limit')
+      out_forward_storage_total_limit_size = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'out_forward_storage_total_limit_size')
+      out_forward_require_ack_response = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'out_forward_require_ack_response')
+      if File.file?(templatefilePath)
+          templatefile = File.read(templatefilePath)
+          templatefile = templatefile.gsub("<TENANT_NAMESPACE>", tenant_namespace)
+          templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_STORAGE_TYPE}", storage_type)
+          templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_MEM_BUF_LIMIT}", mem_buf_limit)
+          templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_BUFFER_CHUNK_SIZE}", buffer_chunk_size)
+          templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_BUFFER_MAX_SIZE}", buffer_max_size)
+          templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_RATE}", throttle_rate.to_s)
+          templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_WINDOW}", throttle_window.to_s)
+          templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_INTERVAL}", throttle_interval)
+          templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_WORKERS_COUNT}", out_forward_worker_count.to_s)
+          templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_RETRY_LIMIT}", out_forward_retry_limit.to_s)
+          templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_STORAGE_TOTAL_LIMIT_SIZE}", out_forward_storage_total_limit_size)
+          templatefile = templatefile.gsub("${AZMON_TENANT_REQUIRE_ACK_RESPONSE}", out_forward_require_ack_response.to_s)
+          tenant_file_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_#{tenant_namespace}.conf"
+          File.open(tenant_file_path, 'w') { |file| file.write(templatefile) }
+      end
+    end
+    # clear the template file
+    clearTemplateFile(templatefilePath)
    rescue => exception
     puts "generateAzMonMultiTenantNamespaceConfig: Exception while generating tenant config files: #{exception}"
    end
@@ -445,6 +459,56 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             end
             puts "config::INFO:multi_tenancy storage_max_chunks_up: #{@azMonMultiTenancyMaxStorageChunksUp}"
 
+            storage_type =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_storage_type]
+            if !storage_type.nil? && !storage_type.empty? && (storage_type.downcase == 'filesystem' || storage_type.downcase == 'memory')
+              @default_namespace_settings[:storage_type] = storage_type.downcase
+            end
+
+            mem_buf_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_mem_buf_limit]
+            if !mem_buf_limit.nil? && !mem_buf_limit.empty?
+              @default_namespace_settings[:mem_buf_limit] = mem_buf_limit
+            end
+
+            buffer_chunk_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_buffer_chunk_size]
+            if !buffer_chunk_size.nil? && !buffer_chunk_size.empty?
+              @default_namespace_settings[:buffer_chunk_size] = buffer_chunk_size
+            end
+
+            buffer_max_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_buffer_max_size]
+            if !buffer_max_size.nil? && !buffer_max_size.empty?
+              @default_namespace_settings[:buffer_max_size] = buffer_max_size
+            end
+
+            throttle_rate =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_throttle_rate]
+            if !throttle_rate.nil? && !throttle_rate.empty? && throttle_rate.to_i > 0
+              @default_namespace_settings[:throttle_rate] = throttle_rate.to_i
+            end
+
+            throttle_window =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_throttle_window]
+            if !throttle_window.nil? && !throttle_window.empty? && throttle_window.to_i > 0
+              @default_namespace_settings[:throttle_window] = throttle_window.to_i
+            end
+
+            out_forward_worker_count =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_out_forward_worker_count]
+            if !out_forward_worker_count.nil? && !out_forward_worker_count.empty? && out_forward_worker_count.to_i > 0
+              @default_namespace_settings[:out_forward_worker_count] = out_forward_worker_count.to_i
+            end
+
+            out_forward_retry_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_out_forward_retry_limit]
+            if !out_forward_retry_limit.nil? && !out_forward_retry_limit.empty? && out_forward_retry_limit.to_i > 0
+              @default_namespace_settings[:out_forward_retry_limit] = out_forward_retry_limit.to_i
+            end
+
+            out_forward_storage_total_limit_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_out_forward_storage_total_limit_size]
+            if !out_forward_storage_total_limit_size.nil? && !out_forward_storage_total_limit_size.empty?
+              @default_namespace_settings[:out_forward_storage_total_limit_size] = out_forward_storage_total_limit_size
+            end
+
+            out_forward_require_ack_response =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_out_forward_require_ack_response]
+            if !out_forward_require_ack_response.nil? && !out_forward_require_ack_response.empty? && (out_forward_require_ack_response.to_s.downcase == 'true' || out_forward_require_ack_response.to_s.downcase == 'false')
+              @default_namespace_settings[:out_forward_require_ack_response] = out_forward_require_ack_response
+            end
+
             # namepsace to settings
             namespace_settings = parsedConfig[:log_collection_settings][:multi_tenancy][:namespace_settings]
             puts "config::INFO:multi_tenancy namespace_settings: #{namespace_settings}"
@@ -467,13 +531,13 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             end
 
             # azmon multi-tenancy service buffer settings
-            service_buffer_chunk_size = parsedConfig[:log_collection_settings][:multi_tenancy][:service_buffer_chunk_size_mb]
-            if !service_buffer_chunk_size.nil? && !service_buffer_chunk_size.empty? && service_buffer_chunk_size.to_i > 0
-                @azMonMultiTenancyServiceBufferChunkSize = service_buffer_chunk_size + "m"
+            service_buffer_chunk_size = parsedConfig[:log_collection_settings][:multi_tenancy][:service_buffer_chunk_size]
+            if !service_buffer_chunk_size.nil? && !service_buffer_chunk_size.empty?
+                @azMonMultiTenancyServiceBufferChunkSize = service_buffer_chunk_size
             end
-            service_buffer_max_size = parsedConfig[:log_collection_settings][:multi_tenancy][:service_buffer_max_size_mb]
-            if !service_buffer_max_size.nil? && !service_buffer_max_size.empty? && service_buffer_max_size.to_i > 0
-                @azMonMultiTenancyServiceBufferMaxSize = service_buffer_max_size + "m"
+            service_buffer_max_size = parsedConfig[:log_collection_settings][:multi_tenancy][:service_buffer_max_size]
+            if !service_buffer_max_size.nil? && !service_buffer_max_size.empty?
+                @azMonMultiTenancyServiceBufferMaxSize = service_buffer_max_size
             end
           end
           puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled} and namespaces: #{@azMonMultiTenantNamespaces} for Multi-tenancy log collection"
