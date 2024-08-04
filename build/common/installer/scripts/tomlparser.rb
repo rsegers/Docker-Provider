@@ -36,8 +36,9 @@ require_relative "ConfigParseErrorLogger"
 @namespace_to_settings = {}
 @azMonMultiTenancyServiceBufferChunkSize = "10m"
 @azMonMultiTenancyServiceBufferMaxSize = "30m"
-# default values for namespace settings
-@default_namespace_settings = {
+
+# configure common settings which applicable for all namespaces unless namespace specific setting specified
+@default_settings = {
   storage_type: 'filesystem',
   mem_buf_limit: '10m',
   buffer_chunk_size: '1m',
@@ -57,8 +58,30 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
   @logTailPath = "C:\\var\\log\\containers\\*.log"
 end
 
+def is_number?(value)
+  true if Integer(value) rescue false
+end
+
+def is_valid_number?(value)
+  return !value.nil? && is_number?(value) && value.to_i > 0
+end
+
+def updateDefaultConfigSetting(configEntryName, configValue)
+  begin
+    if !configValue.nil? && !configValue.empty?
+      if is_number?(configValue) && configValue.to_i > 0
+        @default_settings[configEntryName] = configValue
+      else
+        @default_settings[configEntryName] = configValue.to_s
+      end
+    end
+  rescue => errorStr
+    ConfigParseErrorLogger.logError("Exception while updateDefaultConfigSetting- #{errorStr}")
+  end
+end
+
 def getNamespaceSettingsConfigEntryValue(configSettings, configEntryName)
-  value = @default_namespace_settings[configEntryName]
+  value = @default_settings[configEntryName]
   begin
     if !configSettings.nil? && !configSettings[configEntryName].nil? && !configSettings[configEntryName].empty?
       value = configSettings[configEntryName]
@@ -454,60 +477,32 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             puts "config::INFO:multi_tenancy unique namespaces provided: #{@azMonMultiTenantNamespaces}"
             # max storage chunks
             storage_max_chunks_up = parsedConfig[:log_collection_settings][:multi_tenancy][:storage_max_chunks_up]
-            if !storage_max_chunks_up.nil? && !storage_max_chunks_up.empty? && storage_max_chunks_up.to_i > 0
+            if is_valid_number?(storage_max_chunks_up)
                @azMonMultiTenancyMaxStorageChunksUp = storage_max_chunks_up.to_i
             end
             puts "config::INFO:multi_tenancy storage_max_chunks_up: #{@azMonMultiTenancyMaxStorageChunksUp}"
 
-            storage_type =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_storage_type]
-            if !storage_type.nil? && !storage_type.empty? && (storage_type.downcase == 'filesystem' || storage_type.downcase == 'memory')
-              @default_namespace_settings[:storage_type] = storage_type.downcase
-            end
-
-            mem_buf_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_mem_buf_limit]
-            if !mem_buf_limit.nil? && !mem_buf_limit.empty?
-              @default_namespace_settings[:mem_buf_limit] = mem_buf_limit
-            end
-
-            buffer_chunk_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_buffer_chunk_size]
-            if !buffer_chunk_size.nil? && !buffer_chunk_size.empty?
-              @default_namespace_settings[:buffer_chunk_size] = buffer_chunk_size
-            end
-
-            buffer_max_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_buffer_max_size]
-            if !buffer_max_size.nil? && !buffer_max_size.empty?
-              @default_namespace_settings[:buffer_max_size] = buffer_max_size
-            end
-
-            throttle_rate =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_throttle_rate]
-            if !throttle_rate.nil? && !throttle_rate.empty? && throttle_rate.to_i > 0
-              @default_namespace_settings[:throttle_rate] = throttle_rate.to_i
-            end
-
-            throttle_window =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_throttle_window]
-            if !throttle_window.nil? && !throttle_window.empty? && throttle_window.to_i > 0
-              @default_namespace_settings[:throttle_window] = throttle_window.to_i
-            end
-
-            out_forward_worker_count =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_out_forward_worker_count]
-            if !out_forward_worker_count.nil? && !out_forward_worker_count.empty? && out_forward_worker_count.to_i > 0
-              @default_namespace_settings[:out_forward_worker_count] = out_forward_worker_count.to_i
-            end
-
-            out_forward_retry_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_out_forward_retry_limit]
-            if !out_forward_retry_limit.nil? && !out_forward_retry_limit.empty? && out_forward_retry_limit.to_i > 0
-              @default_namespace_settings[:out_forward_retry_limit] = out_forward_retry_limit.to_i
-            end
-
-            out_forward_storage_total_limit_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_out_forward_storage_total_limit_size]
-            if !out_forward_storage_total_limit_size.nil? && !out_forward_storage_total_limit_size.empty?
-              @default_namespace_settings[:out_forward_storage_total_limit_size] = out_forward_storage_total_limit_size
-            end
-
-            out_forward_require_ack_response =  parsedConfig[:log_collection_settings][:multi_tenancy][:default_namespace_out_forward_require_ack_response]
-            if !out_forward_require_ack_response.nil? && !out_forward_require_ack_response.empty? && (out_forward_require_ack_response.to_s.downcase == 'true' || out_forward_require_ack_response.to_s.downcase == 'false')
-              @default_namespace_settings[:out_forward_require_ack_response] = out_forward_require_ack_response
-            end
+            # default settings
+            storage_type =  parsedConfig[:log_collection_settings][:multi_tenancy][:storage_type]
+            updateDefaultConfigSetting(:storage_type, storage_type)
+            mem_buf_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:mem_buf_limit]
+            updateDefaultConfigSetting(:mem_buf_limit, mem_buf_limit)
+            buffer_chunk_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:buffer_chunk_size]
+            updateDefaultConfigSetting(:buffer_chunk_size, buffer_chunk_size)
+            buffer_max_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:buffer_max_size]
+            updateDefaultConfigSetting(:buffer_max_size, buffer_max_size)
+            throttle_rate =  parsedConfig[:log_collection_settings][:multi_tenancy][:throttle_rate]
+            updateDefaultConfigSetting(:throttle_rate, throttle_rate)
+            throttle_window =  parsedConfig[:log_collection_settings][:multi_tenancy][:throttle_window]
+            updateDefaultConfigSetting(:throttle_window, throttle_window)
+            out_forward_worker_count =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_worker_count]
+            updateDefaultConfigSetting(:out_forward_worker_count, out_forward_worker_count)
+            out_forward_retry_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_retry_limit]
+            updateDefaultConfigSetting(:out_forward_retry_limit, out_forward_retry_limit)
+            out_forward_storage_total_limit_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_storage_total_limit_size]
+            updateDefaultConfigSetting(:out_forward_storage_total_limit_size, out_forward_storage_total_limit_size)
+            out_forward_require_ack_response =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_require_ack_response]
+            updateDefaultConfigSetting(:out_forward_require_ack_response, out_forward_require_ack_response)
 
             # namepsace to settings
             namespace_settings = parsedConfig[:log_collection_settings][:multi_tenancy][:namespace_settings]

@@ -17,18 +17,18 @@ data:
          storage_max_chunks_up = 1000 # if this is not applied, default value is 500 and each chunk is 2MB and total size 2MB*500 = 1GB
          service_buffer_chunk_size = '5m'  # if this is not applied, default value is '15m'
          service_buffer_max_size = '10m'  # if this is not applied, default value is '30m'
-         # configure tenant namespace level default settings
-         #  default_namespace_storage_type = 'filesystem' # if this is not applied, default value is 'filesystem' and supported values are 'filesystem' and 'memory'
-         #  default_namespace_mem_buf_limit = '10mb' # if this is not applied, default value is '10mb'
-         #  default_namespace_buffer_chunk_size = '1mb' # if this is not applied, default value is '1mb'
-         #  default_namespace_buffer_max_size = '5mb' # if this is not applied, default value is '5mb'
-         #  default_namespace_throttle_rate = 2000 # if this is not applied, default value is 1000
-         #  default_namespace_throttle_window = 600 # if this is not applied, default value is 300
-         #  default_namespace_throttle_interval = '1s' # if this is not applied, default value is '1s'
-         #  default_namespace_out_forward_worker_count = 20 # if this is not applied, default value is 10
-         #  default_namespace_out_forward_retry_limit = 5 # if this is not applied, default value is 10
-         #  default_namespace_out_forward_storage_total_limit_size = '5G' # if this is not applied, default value is '2G'
-         #  default_namespace_out_forward_require_ack_response = true # if this is not applied, default value is false
+         # configure common settings which applicable for all namespaces unless namespace setting specified
+         # storage_type = 'filesystem' # if this is not applied, default value is 'filesystem' and supported values are 'filesystem' and 'memory'
+         # mem_buf_limit = '10mb' # if this is not applied, default value is '10mb'
+         # buffer_chunk_size = '1mb' # if this is not applied, default value is '1mb'
+         # buffer_max_size = '5mb' # if this is not applied, default value is '5mb'
+         # throttle_rate = 2000 # if this is not applied, default value is 1000
+         # throttle_window = 600 # if this is not applied, default value is 300
+         # throttle_interval = '1s' # if this is not applied, default value is '1s'
+         # out_forward_worker_count = 20 # if this is not applied, default value is 10
+         # out_forward_retry_limit = 5 # if this is not applied, default value is 10
+         # out_forward_storage_total_limit_size = '5G' # if this is not applied, default value is '2G'
+         # out_forward_require_ack_response = true # if this is not applied, default value is false
          namespaces = ["app-team-1","app-team-2"]
          namespace_settings = ["app-team-1:storage_type=filesystem;throttle_rate=1000;throttle_window=300;throttle_interval=1s","app-team-2:storage_type=filesystem;throttle_rate=5000;throttle_window=600;throttle_interval=1s"]
 
