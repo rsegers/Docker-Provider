@@ -123,13 +123,15 @@ else
   if [ $? -ne 0 ]
   then
     if [ "${CONTROLLER_TYPE}" == "ReplicaSet" ] && [ ! -z "${TELEMETRY_RS_TELEGRAF_DISABLED}" ] && [ "${TELEMETRY_RS_TELEGRAF_DISABLED}" == "true" ]; then
-      # telegraf is disabed on replicaset if prom scraping is disabled
+      # telegraf is disabled on replicaset if prom scraping is disabled
       exit 0
     else
       # echo "Telegraf is not running" > /dev/termination-log
       echo "Telegraf is not running (controller: ${CONTROLLER_TYPE}, container type: ${CONTAINER_TYPE})" > /dev/write-to-traces  # this file is tailed and sent to traces
       ## Remember to evaluate all the wait times and polls we have in main.sh before enabling telegraf for livenessprobe
-      # exit 1
+      if [ "${AZMON_TELEGRAF_LIVENESSPROBE_ENABLED}" == "true" ] && [ "${MUTE_PROM_SIDECAR}" != "true" ]; then
+        exit 1
+      fi
     fi
   fi
 fi
