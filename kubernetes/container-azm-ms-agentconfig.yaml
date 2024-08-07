@@ -171,7 +171,7 @@ data:
     # Refer to public documentation for more details - https://aka.ms/HighLogScaleMode before enabling this setting
     # Please note, this setting has additional dependencies such as Data Collection endpoint and Microsoft-ContainerLogV2-HighScale stream instead of Microsoft-ContainerLogV2.
     [agent_settings.high_log_scale]
-      enabled = true
+      enabled = false
 
     # prometheus scrape fluent bit settings for high scale
     # buffer size should be greater than or equal to chunk size else we set it to chunk size.
