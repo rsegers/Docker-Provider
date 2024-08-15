@@ -135,6 +135,10 @@ spec:
        - name: AZMON_KUBERNETES_METADATA_ENABLED
          value: "true"
        {{- end }}
+       {{- if .Values.amalogs.enableTelegrafLivenessprobe }}
+       - name: AZMON_TELEGRAF_LIVENESSPROBE_ENABLED
+         value: {{ .Values.amalogs.enableTelegrafLivenessprobe | quote }}
+       {{- end }}
        - name: HOSTNAME
          valueFrom:
             fieldRef:

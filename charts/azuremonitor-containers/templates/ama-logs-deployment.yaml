@@ -118,6 +118,10 @@ spec:
        - name: AZMON_CLUSTER_COLLECT_ALL_KUBE_EVENTS
          value: "true"
        {{- end }}
+       {{- if .Values.amalogs.enableTelegrafLivenessprobe }}
+       - name: AZMON_TELEGRAF_LIVENESSPROBE_ENABLED
+         value: {{ .Values.amalogs.enableTelegrafLivenessprobe | quote }}
+       {{- end }}
        - name: HOSTNAME
          valueFrom:
             fieldRef:
