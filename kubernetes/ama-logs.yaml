@@ -431,6 +431,8 @@ spec:
               value: "DaemonSet"
             - name: SYSLOG_HOST_PORT
               value: "28330"
+            - name: AZMON_TELEGRAF_LIVENESSPROBE_ENABLED
+              value: "false"
             - name: NODE_IP
               valueFrom:
                 fieldRef:
@@ -455,6 +457,8 @@ spec:
               value: "false"
             - name: APPMONITORING_OPENTELEMETRYLOGS_PORT
               value: "28331"
+            - name: AZMON_TELEGRAF_LIVENESSPROBE_ENABLED
+              value: "false"
           securityContext:
             privileged: true
             capabilities:
@@ -554,6 +558,8 @@ spec:
               value: "DaemonSet"
             - name: SYSLOG_HOST_PORT
               value: "28330"
+            - name: AZMON_TELEGRAF_LIVENESSPROBE_ENABLED
+              value: "false"
             - name: NODE_IP
               valueFrom:
                 fieldRef:

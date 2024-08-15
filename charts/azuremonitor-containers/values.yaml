@@ -69,6 +69,9 @@ amalogs:
   # This flag to enable and disable custom metrics and default is enabled
   enableCustomMetrics: true
 
+  # This flag to enable and disable Telegraf livenessprobe and default is disabled
+  enableTelegrafLivenessprobe: false
+
   ## To get your workspace id and key do the following
   ## You can create a Azure Loganalytics workspace from portal.azure.com and get its ID & PRIMARY KEY from 'Advanced Settings' tab in the Ux.
 
