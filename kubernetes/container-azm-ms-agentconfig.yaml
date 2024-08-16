@@ -187,6 +187,11 @@ data:
 
 # Doc - https://github.com/microsoft/Docker-Provider/blob/ci_prod/Documentation/AgentSettings/ReadMe.md
   agent-settings: |-
+    # High log scale option for container logs high log volume scenarios. This mode is optimized for high log volume scenarios and have little higher resource utilization on low scale which will be addressed in subsequent agent releases.
+    # Refer to public documentation for more details - https://aka.ms/cihsmode before enabling this setting as this setting has additional dependencies such as Data Collection endpoint and Microsoft-ContainerLogV2-HighScale stream instead of Microsoft-ContainerLogV2.
+    [agent_settings.high_log_scale]
+      enabled = false
+
     # prometheus scrape fluent bit settings for high scale
     # buffer size should be greater than or equal to chunk size else we set it to chunk size.
     # settings scoped to prometheus sidecar container. all values in mb
