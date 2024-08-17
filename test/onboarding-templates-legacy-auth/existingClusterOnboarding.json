@@ -26,7 +26,7 @@
             "name": "[split(parameters('aksResourceId'),'/')[8]]",
             "type": "Microsoft.ContainerService/managedClusters",
             "location": "[parameters('aksResourceLocation')]",
-            "apiVersion": "2018-03-31",
+            "apiVersion": "2019-04-01",
             "properties": {
                 "mode": "Incremental",
                 "id": "[parameters('aksResourceId')]",

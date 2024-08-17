@@ -84,7 +84,7 @@ resource aks_monitoring_msi_dcr 'Microsoft.Insights/dataCollectionRules@2022-06-
   }
 }
 
-resource aks_monitoring_msi_addon 'Microsoft.ContainerService/managedClusters@2018-03-31' = {
+resource aks_monitoring_msi_addon 'Microsoft.ContainerService/managedClusters@2019-04-01' = {
   name: clusterName
   location: aksResourceLocation
   tags: resourceTagValues
