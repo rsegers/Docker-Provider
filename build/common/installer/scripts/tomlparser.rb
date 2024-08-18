@@ -168,32 +168,6 @@ def parseConfigMap
   end
 end
 
-def isHighLogScaleMode?
-  highLogScaleMode = false
-  begin
-    highscale = ENV["IS_HIGH_LOG_SCALE_MODE"]
-    if !highscale.nil? && !highscale.empty? && highscale.to_s.downcase == "true"
-      highLogScaleMode = true
-    end
-  rescue => errorStr
-     ConfigParseErrorLogger.logError("Exception while reading IS_HIGH_LOG_SCALE_MODE env variable - #{errorStr}, using defaults, please check isHighLogScaleMode env variable for errors")
-  end
-  return highLogScaleMode
-end
-
-def isDaemonSet?
-   isDaemonSet = false
-   begin
-     controllerType = ENV["CONTROLLER_TYPE"]
-     if !controllerType.nil? && !controllerType.empty? && controllerType.to_s.downcase == "daemonset"
-        isDaemonSet = true
-     end
-   rescue => errorStr
-    ConfigParseErrorLogger.logError("Exception while reading CONTROLLER_TYPE env variable - #{errorStr}, using defaults, please check CONTROLLER_TYPE env variable for errors")
-   end
-   return isDaemonSet
-end
-
 # Use the ruby structure created after config parsing to set the right values to be used as environment variables
 def populateSettingValuesFromConfigMap(parsedConfig)
   if !parsedConfig.nil? && !parsedConfig[:log_collection_settings].nil?
@@ -465,8 +439,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
           multi_tenancy_enabled = parsedConfig[:log_collection_settings][:multi_tenancy][:enabled]
           if multi_tenancy_enabled
             @isAzMonMultiTenancyLogCollectionEnabled = multi_tenancy_enabled
-          end
-          if @isAzMonMultiTenancyLogCollectionEnabled
             namespaces = parsedConfig[:log_collection_settings][:multi_tenancy][:namespaces]
             puts "config::INFO:multi_tenancy namespaces provided in the configmap: #{namespaces}"
             if !namespaces.nil? && !namespaces.empty? &&
