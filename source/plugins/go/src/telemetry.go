@@ -303,11 +303,11 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		if osType != "" && strings.EqualFold(osType, "windows") {
 			telegrafEnabled["IsTelegrafEnabled"] = os.Getenv("TELEMETRY_CUSTOM_PROM_MONITOR_PODS") // If TELEMETRY_CUSTOM_PROM_MONITOR_PODS, then telegraf is enabled
 			if telegrafEnabled["IsTelegrafEnabled"] == "true" {
-                isTelegrafRunning := isTelegrafRunning()
-                if !isTelegrafRunning {
-                    telemetryDimensions["WinTelegrafNotRunning"] = "true"
-                }
-            }
+				isTelegrafRunning := isTelegrafRunning()
+				if !isTelegrafRunning {
+					telemetryDimensions["WinTelegrafNotRunning"] = "true"
+				}
+			}
 		}
 		SendMetric(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount, telegrafEnabled)
 		if telegrafMetricsSendErrorCount > 0.0 {

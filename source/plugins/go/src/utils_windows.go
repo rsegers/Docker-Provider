@@ -5,9 +5,9 @@ package main
 import (
 	"context"
 	"net"
+	"os/exec"
 	"syscall"
 	"time"
-	"os/exec"
 
 	"github.com/Microsoft/go-winio"
 )
