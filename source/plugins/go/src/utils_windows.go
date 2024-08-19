@@ -7,6 +7,7 @@ import (
 	"net"
 	"syscall"
 	"time"
+	"os/exec"
 
 	"github.com/Microsoft/go-winio"
 )
@@ -48,4 +49,15 @@ func EnsureGenevaOr3PNamedPipeExists(namedPipeConnection *net.Conn, datatype str
 		}
 	}
 	return true
+}
+
+func isTelegrafRunning() bool {
+	cmd := exec.Command("pgrep", "telegraf")
+	output, err := cmd.Output()
+
+	// If err is nil and we have some output, Telegraf is running
+	if err == nil && len(strings.TrimSpace(string(output))) > 0 {
+		return true
+	}
+	return false
 }
