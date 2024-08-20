@@ -39,17 +39,17 @@ require_relative "ConfigParseErrorLogger"
 
 # configure common settings which applicable for all namespaces unless namespace specific setting specified
 @default_settings = {
-  storage_type: 'filesystem',
-  mem_buf_limit: '10m',
-  buffer_chunk_size: '1m',
-  buffer_max_size: '5m',
-  throttle_rate: 1000,
-  throttle_window: 300,
-  throttle_interval: '1s',
-  out_forward_worker_count: 10,
-  out_forward_retry_limit: 10,
-  out_forward_storage_total_limit_size: '2G',
-  out_forward_require_ack_response: false
+  "storage_type" => "filesystem",
+  "mem_buf_limit" => "10m",
+  "buffer_chunk_size" => "1m",
+  "buffer_max_size" => "5m",
+  "throttle_rate" => "1000",
+  "throttle_window" => "300",
+  "throttle_interval" => "1s",
+  "out_forward_worker_count" => "10",
+  "out_forward_retry_limit" => "10",
+  "out_forward_storage_total_limit_size" => "2G",
+  "out_forward_require_ack_response" => "false"
 }
 
 if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
@@ -129,11 +129,11 @@ def generateAzMonMultiTenantNamespaceConfig
           templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_MEM_BUF_LIMIT}", mem_buf_limit)
           templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_BUFFER_CHUNK_SIZE}", buffer_chunk_size)
           templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_BUFFER_MAX_SIZE}", buffer_max_size)
-          templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_RATE}", throttle_rate.to_s)
-          templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_WINDOW}", throttle_window.to_s)
+          templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_RATE}", throttle_rate)
+          templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_WINDOW}", throttle_window)
           templatefile = templatefile.gsub("${AZMON_TENANT_THROTTLE_INTERVAL}", throttle_interval)
-          templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_WORKERS_COUNT}", out_forward_worker_count.to_s)
-          templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_RETRY_LIMIT}", out_forward_retry_limit.to_s)
+          templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_WORKERS_COUNT}", out_forward_worker_count)
+          templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_RETRY_LIMIT}", out_forward_retry_limit)
           templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_STORAGE_TOTAL_LIMIT_SIZE}", out_forward_storage_total_limit_size)
           templatefile = templatefile.gsub("${AZMON_TENANT_REQUIRE_ACK_RESPONSE}", out_forward_require_ack_response.to_s)
           tenant_file_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_#{tenant_namespace}.conf"
