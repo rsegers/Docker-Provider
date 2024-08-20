@@ -512,6 +512,9 @@ function Read-Configs {
             ruby /opt/amalogswindows/scripts/ruby/fluent-bit-geneva-conf-customizer.rb "infra_filter"
             Generate-GenevaTenantNameSpaceConfig
             Generate-GenevaInfraNameSpaceConfig
+        } else {
+            Clear-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant.conf
+            Clear-Content C:/etc/fluent-bit/fluent-bit-geneva-logs_tenant_filter.conf
         }
     } else {
         $isAADMSIAuth = [System.Environment]::GetEnvironmentVariable("USING_AAD_MSI_AUTH", "process")

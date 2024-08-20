@@ -702,8 +702,6 @@ if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
                   # clear content of the files
                   true > /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant.conf
                   true > /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_tenant_filter.conf
-                  true > /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra.conf
-                  true > /etc/opt/microsoft/docker-cimprov/fluent-bit-geneva-logs_infra_filter.conf
             fi
       fi
 fi
