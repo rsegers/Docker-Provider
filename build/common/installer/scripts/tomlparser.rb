@@ -52,7 +52,11 @@ require_relative "ConfigParseErrorLogger"
   "out_forward_require_ack_response" => "false"
 }
 
-if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+def is_windows?()
+  return !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
+end
+
+if is_windows?()
   @containerLogsRoute = "v1" # default is v1 for windows until windows agent integrates windows ama
   # This path format is necessary for fluent-bit in windows
   @logTailPath = "C:\\var\\log\\containers\\*.log"
@@ -104,8 +108,24 @@ def clearTemplateFile(templatefilePath)
   end
 end
 
+def getTenantTemplateFilePath()
+  templatefilePath = "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf"
+   if is_windows?()
+    templatefilePath =  "C:\\etc\\fluent-bit\\fluent-bit-azmon-logs_tenant.conf"
+   end
+  return templatefilePath
+end
+
+def getTenantFilePath(tenant_namespace)
+  tenant_file_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_#{tenant_namespace}.conf"
+  if is_windows?()
+    tenant_file_path =  "C:\\etc\\fluent-bit\\fluent-bit-azmon-logs_tenant_#{tenant_namespace}.conf"
+  end
+  return tenant_file_path
+end
+
 def generateAzMonMultiTenantNamespaceConfig
-   templatefilePath = "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant.conf"
+   templatefilePath = getTenantTemplateFilePath()
    begin
     @azMonMultiTenantNamespaces.each do |namespace|
       puts "namespace onboarded to azmon multi-tenancy logs: #{namespace}"
@@ -136,7 +156,7 @@ def generateAzMonMultiTenantNamespaceConfig
           templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_RETRY_LIMIT}", out_forward_retry_limit)
           templatefile = templatefile.gsub("${AZMON_TENANT_OUTPUT_FORWARD_STORAGE_TOTAL_LIMIT_SIZE}", out_forward_storage_total_limit_size)
           templatefile = templatefile.gsub("${AZMON_TENANT_REQUIRE_ACK_RESPONSE}", out_forward_require_ack_response.to_s)
-          tenant_file_path = "/etc/opt/microsoft/docker-cimprov/fluent-bit-azmon-logs_tenant_#{tenant_namespace}.conf"
+          tenant_file_path = getTenantFilePath(tenant_namespace)
           File.open(tenant_file_path, 'w') { |file| file.write(templatefile) }
       end
     end
