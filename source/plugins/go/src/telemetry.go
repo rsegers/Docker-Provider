@@ -305,7 +305,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 			if telegrafEnabled["IsTelegrafEnabled"] == "true" {
 				isTelegrafRunning := isTelegrafRunning()
 				if !isTelegrafRunning {
-					telemetryDimensions["WinTelegrafNotRunning"] = "true"
+					telegrafEnabled["WinTelegrafNotRunning"] = "true"
 				}
 			}
 		}
