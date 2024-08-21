@@ -52,7 +52,7 @@ func EnsureGenevaOr3PNamedPipeExists(namedPipeConnection *net.Conn, datatype str
 }
 
 func isTelegrafRunning() bool {
-	cmd := exec.Command("pgrep", "telegraf")
+	cmd := exec.Command("tasklist", "/FI", "IMAGENAME eq telegraf.exe")
 	output, err := cmd.Output()
 
 	// If err is nil and we have some output, Telegraf is running
