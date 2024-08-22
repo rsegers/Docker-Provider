@@ -32,7 +32,7 @@ data:
           action: keep
           regex: 'ReplicaSet'
         - source_labels: [__meta_kubernetes_pod_controller_name]
-          regex: 'ama-logs-multitenancy'
+          regex: '^ama-logs-multitenancy(-.*)?$'
           action: keep
         - source_labels: [__address__]
           action: replace

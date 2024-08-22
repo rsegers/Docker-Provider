@@ -125,7 +125,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_filter_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by () (rate(fluentbit_filter_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
@@ -218,7 +218,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_filter_drop_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by () (rate(fluentbit_filter_drop_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
@@ -310,7 +310,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_input_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by () (rate(fluentbit_input_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
@@ -402,7 +402,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by () (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
@@ -494,7 +494,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_filter_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_filter_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -586,7 +586,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_filter_drop_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_filter_drop_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -679,7 +679,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_input_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_input_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -771,7 +771,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -863,7 +863,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_input_bytes_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by () (rate(fluentbit_input_bytes_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
@@ -955,7 +955,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_input_bytes_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_input_bytes_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -1047,7 +1047,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_output_proc_bytes_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by () (rate(fluentbit_output_proc_bytes_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
@@ -1139,7 +1139,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_output_proc_bytes_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_output_proc_bytes_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -1231,7 +1231,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "\r\nsum by (node) (rate(fluentbit_output_retries_failed_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "\r\nsum by (node) (rate(fluentbit_output_retries_failed_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -1323,7 +1323,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_output_errors_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_output_errors_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name=~\"azmon_tenant_${namespace}_.*\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -1426,7 +1426,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_filter_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_filter_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\",name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*|fluentbit_metrics_input|oms_output\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -1518,7 +1518,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_filter_drop_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_filter_drop_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*|fluentbit_metrics_input|oms_output\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -1610,7 +1610,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_input_records_total{cluster=~\"$cluster\",  name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_input_records_total{cluster=~\"$cluster\", name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*|fluentbit_metrics_input|oms_output\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -1702,7 +1702,7 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\",name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\",name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*|fluentbit_metrics_input|oms_output\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
@@ -1783,7 +1783,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 13,
         "w": 5,
         "x": 0,
         "y": 37
@@ -1808,13 +1808,13 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_input_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (instance) (rate(fluentbit_input_records_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-.*\", name=\"input_ama-logs-service_forward\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit input forward records/s by All Nodes",
+      "title": "Fluent-bit received records/s by Instance",
       "type": "timeseries"
     },
     {
@@ -1876,9 +1876,102 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
-        "w": 5,
+        "h": 13,
+        "w": 7,
         "x": 5,
+        "y": 37
+      },
+      "id": 39,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (instance) (rate(fluentbit_output_dropped_records_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-*\", name=\"output_ama-logs-service_azmon\"}[5m]))",
+          "legendFormat": "All",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit output dropped (to LA) records/s by Instance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 11,
+        "x": 12,
         "y": 37
       },
       "id": 30,
@@ -1901,13 +1994,199 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by () (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", name=~\"$namespace-*\"}[5m]))",
+          "expr": "sum by (instance) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-*\"}[5m]))",
           "legendFormat": "All",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit out forward (to LA) records/s by All Nodes",
+      "title": "Fluent-bit out forward (to LA) records/s by Instance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 5,
+        "x": 0,
+        "y": 50
+      },
+      "id": 37,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (instance) (rate(fluentbit_output_errors_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-*\", name=\"output_ama-logs-service_azmon\"}[5m]))",
+          "legendFormat": "All",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit output errors (to LA) count/s by Instance",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "description": "",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 10,
+        "w": 7,
+        "x": 5,
+        "y": 50
+      },
+      "id": 38,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (instance) (rate(fluentbit_output_retries_failed_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-*\", name=\"output_ama-logs-service_azmon\"}[5m]))",
+          "legendFormat": "All",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit output retries failed (to LA) count/s by Instance",
       "type": "timeseries"
     }
   ],
@@ -1964,8 +2243,8 @@
       {
         "current": {
           "selected": true,
-          "text": "app-team-30",
-          "value": "app-team-30"
+          "text": "app-team-27",
+          "value": "app-team-27"
         },
         "datasource": {
           "type": "prometheus",
@@ -1991,13 +2270,13 @@
     ]
   },
   "time": {
-    "from": "now-1h",
+    "from": "now-3h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Azure Monitor for Containers - Logs Multitenacy",
   "uid": "E_FvdCC4z",
-  "version": 10,
+  "version": 14,
   "weekStart": ""
 }
