@@ -310,7 +310,7 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				if err != nil {
 					Log("Error checking Telegraf process: %s", err.Error())
 				}
-				telegrafConfig["IsTelegrafRunning"] = isTelegrafRunning
+				telegrafConfig["isTelegrafRunning"] = isTelegrafRunning
 			}
 		}
 		SendMetric(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount, telegrafConfig)
