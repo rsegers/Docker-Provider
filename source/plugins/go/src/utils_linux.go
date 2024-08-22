@@ -20,12 +20,13 @@ func EnsureGenevaOr3PNamedPipeExists(namedPipeConnection *net.Conn, datatype str
 	return false
 }
 
-func isTelegrafRunning() bool {
-	cmd := exec.Command("pgrep", "telegraf")
+func isProcessRunning(processName string) (string, error) {
+	cmd := exec.Command("pgrep", processName)
 	output, err := cmd.Output()
 
-	if err == nil && len(strings.TrimSpace(string(output))) > 0 {
-		return true
+	if err != nil || len(strings.TrimSpace(string(output))) == 0 {
+		return "false", err
 	}
-	return false
+
+	return "true", nil
 }
