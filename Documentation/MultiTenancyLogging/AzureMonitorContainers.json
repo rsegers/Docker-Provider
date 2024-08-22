@@ -29,14 +29,16 @@
   "liveNow": false,
   "panels": [
     {
+      "collapsed": false,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 0
       },
-      "id": 28,
-      "title": "Daemonset ",
+      "id": 31,
+      "panels": [],
+      "title": "Daemonset (for selected namespace)",
       "type": "row"
     },
     {
@@ -103,7 +105,7 @@
         "x": 0,
         "y": 1
       },
-      "id": 25,
+      "id": 32,
       "options": {
         "legend": {
           "calcs": [],
@@ -129,7 +131,7 @@
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit incoming records/s by All Nodes",
+      "title": "Fluent-bit incoming (before throttle) records/s by All Nodes",
       "type": "timeseries"
     },
     {
@@ -314,7 +316,7 @@
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit input  records/s by All Nodes",
+      "title": "Fluent-bit input (after throttle)  records/s by All Nodes",
       "type": "timeseries"
     },
     {
@@ -498,7 +500,7 @@
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit incoming records/s by Node",
+      "title": "Fluent-bit incoming (before throttle) records/s by Node",
       "type": "timeseries"
     },
     {
@@ -590,7 +592,7 @@
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit dropped (due to throttle) records process records/s by Node",
+      "title": "Fluent-bit dropped (due to throttle) records/s by Node",
       "type": "timeseries"
     },
     {
@@ -683,7 +685,7 @@
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit input records/s by Node",
+      "title": "Fluent-bit input (after throttle) records/s by Node",
       "type": "timeseries"
     },
     {
@@ -933,7 +935,7 @@
         "x": 5,
         "y": 16
       },
-      "id": 10,
+      "id": 33,
       "options": {
         "legend": {
           "calcs": [],
@@ -959,7 +961,7 @@
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit input bytes/s by Node",
+      "title": "Fluent-bit input  bytes/s by Node",
       "type": "timeseries"
     },
     {
@@ -1331,12 +1333,391 @@
       "type": "timeseries"
     },
     {
-      "collapsed": true,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 28
+      },
+      "id": 28,
+      "title": "Daemonset (all namespaces)",
+      "type": "row"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 5,
+        "x": 0,
+        "y": 29
+      },
+      "id": 10,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (node) (rate(fluentbit_filter_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*\"}[5m]))",
+          "legendFormat": "{{node}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit incoming(before throttle) records/s by Node",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 5,
+        "y": 29
+      },
+      "id": 34,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (node) (rate(fluentbit_filter_drop_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*\"}[5m]))",
+          "legendFormat": "{{node}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit dropped (due to throttle) records/s by Node",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 6,
+        "x": 11,
+        "y": 29
+      },
+      "id": 35,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (node) (rate(fluentbit_input_records_total{cluster=~\"$cluster\",  name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*\"}[5m]))",
+          "legendFormat": "{{node}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit input (after throttle) records/s by Node",
+      "type": "timeseries"
+    },
+    {
+      "datasource": {
+        "type": "prometheus",
+        "uid": "${datasource}"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineInterpolation": "linear",
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 7,
+        "w": 7,
+        "x": 17,
+        "y": 29
+      },
+      "id": 36,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        }
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "${datasource}"
+          },
+          "editorMode": "code",
+          "expr": "sum by (node) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\",name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*\"}[5m]))",
+          "legendFormat": "{{node}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "title": "Fluent-bit output (after throttle) records/s by Node",
+      "type": "timeseries"
+    },
+    {
+      "collapsed": false,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 36
       },
       "id": 27,
       "panels": [],
@@ -1405,7 +1786,7 @@
         "h": 8,
         "w": 5,
         "x": 0,
-        "y": 29
+        "y": 37
       },
       "id": 29,
       "options": {
@@ -1498,7 +1879,7 @@
         "h": 8,
         "w": 5,
         "x": 5,
-        "y": 29
+        "y": 37
       },
       "id": 30,
       "options": {
@@ -1583,8 +1964,8 @@
       {
         "current": {
           "selected": true,
-          "text": "app-team-1",
-          "value": "app-team-1"
+          "text": "app-team-30",
+          "value": "app-team-30"
         },
         "datasource": {
           "type": "prometheus",
@@ -1617,6 +1998,6 @@
   "timezone": "",
   "title": "Azure Monitor for Containers - Logs Multitenacy",
   "uid": "E_FvdCC4z",
-  "version": 4,
+  "version": 10,
   "weekStart": ""
 }
