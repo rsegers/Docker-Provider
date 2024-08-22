@@ -298,12 +298,22 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				TelemetryClient.Track(logLatencyMetric)
 			}
 		}
-		telegrafEnabled := make(map[string]string)
+		telegrafConfig := make(map[string]string)
 		osType := os.Getenv("OS_TYPE")
 		if osType != "" && strings.EqualFold(osType, "windows") {
-			telegrafEnabled["IsTelegrafEnabled"] = os.Getenv("TELEMETRY_CUSTOM_PROM_MONITOR_PODS") // If TELEMETRY_CUSTOM_PROM_MONITOR_PODS, then telegraf is enabled
+			// check if telegraf is enabled
+			isTelegrafEnabled := os.Getenv("TELEMETRY_CUSTOM_PROM_MONITOR_PODS") // If TELEMETRY_CUSTOM_PROM_MONITOR_PODS, then telegraf is enabled
+			telegrafConfig["isTelegrafEnabled"] = isTelegrafEnabled
+			// check if telegraf is running
+			if isTelegrafEnabled == "true" {
+				isTelegrafRunning, err := isProcessRunning("telegraf")
+				if err != nil {
+					Log("Error checking Telegraf process: %s", err.Error())
+				}
+				telegrafConfig["IsTelegrafRunning"] = isTelegrafRunning
+			}
 		}
-		SendMetric(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount, telegrafEnabled)
+		SendMetric(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount, telegrafConfig)
 		if telegrafMetricsSendErrorCount > 0.0 {
 			TelemetryClient.Track(appinsights.NewMetricTelemetry(metricNameNumberofSendErrorsTelegrafMetrics, telegrafMetricsSendErrorCount))
 		}

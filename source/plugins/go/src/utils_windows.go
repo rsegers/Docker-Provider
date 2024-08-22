@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 	"net"
+	"os/exec"
 	"syscall"
 	"time"
 
@@ -48,4 +49,15 @@ func EnsureGenevaOr3PNamedPipeExists(namedPipeConnection *net.Conn, datatype str
 		}
 	}
 	return true
+}
+
+func isProcessRunning(processName string) (string, error) {
+	cmd := exec.Command("tasklist", "/FI", fmt.Sprintf("IMAGENAME eq %s", processName))
+	output, err := cmd.Output()
+
+	if err != nil || len(strings.TrimSpace(string(output))) == 0 {
+		return "false", err
+	}
+
+	return "true", nil
 }
