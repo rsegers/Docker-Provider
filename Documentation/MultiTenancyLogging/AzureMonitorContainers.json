@@ -1494,11 +1494,11 @@
       },
       "gridPos": {
         "h": 7,
-        "w": 6,
+        "w": 5,
         "x": 5,
         "y": 29
       },
-      "id": 34,
+      "id": 40,
       "options": {
         "legend": {
           "calcs": [],
@@ -1518,13 +1518,13 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (node) (rate(fluentbit_filter_drop_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\", name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*|fluentbit_metrics_input|oms_output\"}[5m]))",
+          "expr": "sum by (node) (rate(fluentbit_filter_records_total{cluster=~\"$cluster\", job=\"ama-logs-daemonset\",name!~\"ama-logs-*|mon-agent-*|telegraf-*|azmon_tenant_record_modifier|azmon_tenant_grep|fluentbit_metrics_input|storage_*|fluentbit_metrics_input|oms_output\"}[5m]))",
           "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit dropped (due to throttle) records/s by Node",
+      "title": "Fluent-bit incoming(before throttle) records/s by Node",
       "type": "timeseries"
     },
     {
@@ -1729,7 +1729,6 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1783,12 +1782,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 13,
-        "w": 5,
+        "h": 7,
+        "w": 6,
         "x": 0,
         "y": 37
       },
-      "id": 29,
+      "id": 34,
       "options": {
         "legend": {
           "calcs": [],
@@ -1809,7 +1808,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (instance) (rate(fluentbit_input_records_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-.*\", name=\"input_ama-logs-service_forward\"}[5m]))",
-          "legendFormat": "All",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -1822,7 +1821,6 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1876,12 +1874,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 13,
-        "w": 7,
-        "x": 5,
+        "h": 7,
+        "w": 6,
+        "x": 6,
         "y": 37
       },
-      "id": 39,
+      "id": 43,
       "options": {
         "legend": {
           "calcs": [],
@@ -1901,13 +1899,13 @@
             "uid": "${datasource}"
           },
           "editorMode": "code",
-          "expr": "sum by (instance) (rate(fluentbit_output_dropped_records_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-*\", name=\"output_ama-logs-service_azmon\"}[5m]))",
-          "legendFormat": "All",
+          "expr": "sum by (instance) (rate(fluentbit_input_records_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-.*\", name=\"input_ama-logs-service_forward\"}[5m]))",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Fluent-bit output dropped (to LA) records/s by Instance",
+      "title": "Fluent-bit received records/s by Instance",
       "type": "timeseries"
     },
     {
@@ -1915,7 +1913,6 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -1969,12 +1966,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 13,
-        "w": 11,
+        "h": 7,
+        "w": 12,
         "x": 12,
         "y": 37
       },
-      "id": 30,
+      "id": 42,
       "options": {
         "legend": {
           "calcs": [],
@@ -1995,7 +1992,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (instance) (rate(fluentbit_output_proc_records_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-*\"}[5m]))",
-          "legendFormat": "All",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -2008,7 +2005,6 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2062,12 +2058,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 5,
+        "h": 7,
+        "w": 6,
         "x": 0,
-        "y": 50
+        "y": 44
       },
-      "id": 37,
+      "id": 41,
       "options": {
         "legend": {
           "calcs": [],
@@ -2088,7 +2084,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (instance) (rate(fluentbit_output_errors_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-*\", name=\"output_ama-logs-service_azmon\"}[5m]))",
-          "legendFormat": "All",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -2101,7 +2097,6 @@
         "type": "prometheus",
         "uid": "${datasource}"
       },
-      "description": "",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -2155,12 +2150,12 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
-        "w": 7,
-        "x": 5,
-        "y": 50
+        "h": 7,
+        "w": 6,
+        "x": 6,
+        "y": 44
       },
-      "id": 38,
+      "id": 44,
       "options": {
         "legend": {
           "calcs": [],
@@ -2181,7 +2176,7 @@
           },
           "editorMode": "code",
           "expr": "sum by (instance) (rate(fluentbit_output_retries_failed_total{cluster=~\"$cluster\", job=\"ama-logs-multitenancy\", instance=~\"ama-logs-multitenancy-*\", name=\"output_ama-logs-service_azmon\"}[5m]))",
-          "legendFormat": "All",
+          "legendFormat": "{{node}}",
           "range": true,
           "refId": "A"
         }
@@ -2270,13 +2265,13 @@
     ]
   },
   "time": {
-    "from": "now-3h",
+    "from": "now-6h",
     "to": "now"
   },
   "timepicker": {},
   "timezone": "",
   "title": "Azure Monitor for Containers - Logs Multitenacy",
   "uid": "E_FvdCC4z",
-  "version": 14,
+  "version": 15,
   "weekStart": ""
 }
