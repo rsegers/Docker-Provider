@@ -303,14 +303,14 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 		if osType != "" && strings.EqualFold(osType, "windows") {
 			// check if telegraf is enabled
 			isTelegrafEnabled := os.Getenv("TELEMETRY_CUSTOM_PROM_MONITOR_PODS") // If TELEMETRY_CUSTOM_PROM_MONITOR_PODS, then telegraf is enabled
-			telegrafConfig["isTelegrafEnabled"] = isTelegrafEnabled
+			telegrafConfig["IsTelegrafEnabled"] = isTelegrafEnabled
 			// check if telegraf is running
 			if isTelegrafEnabled == "true" {
-				isTelegrafRunning, err := isProcessRunning("telegraf")
+				isTelegrafRunning, err := isProcessRunning("telegraf.exe")
 				if err != nil {
 					Log("Error checking Telegraf process: %s", err.Error())
 				}
-				telegrafConfig["isTelegrafRunning"] = isTelegrafRunning
+				telegrafConfig["IsTelegrafRunning"] = isTelegrafRunning
 			}
 		}
 		SendMetric(metricNameNumberofTelegrafMetricsSentSuccessfully, telegrafMetricsSentCount, telegrafConfig)

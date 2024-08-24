@@ -57,9 +57,17 @@ func isProcessRunning(processName string) (string, error) {
 	cmd := exec.Command("tasklist", "/FI", fmt.Sprintf("IMAGENAME eq %s", processName))
 	output, err := cmd.Output()
 
-	if err != nil || len(strings.TrimSpace(string(output))) == 0 {
+	if err != nil {
 		return "false", err
 	}
 
-	return "true", nil
+	outputStr := strings.TrimSpace(string(output))
+	if strings.Contains(outputStr, "INFO: No tasks are running") {
+		return "false", nil
+	}
+	if strings.Contains(outputStr, processName) {
+		return "true", nil
+	}
+
+	return "false", nil
 }
