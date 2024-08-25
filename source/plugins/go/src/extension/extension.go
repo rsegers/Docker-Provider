@@ -170,18 +170,16 @@ func getDataTypeToStreamIdMappingFromCIExtension(hasNamedPipe bool) (map[string]
 func getNamespacesFromDataCollectionSettings(dataCollectionSettings map[string]interface{}) []string {
 	var namespaces []string
 	if len(dataCollectionSettings) > 0 {
-		namespacesSetting, found := dataCollectionSettings[EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES].([]interface{})
-		if found {
+		if namespacesSetting, found := dataCollectionSettings[EXTENSION_SETTINGS_DATA_COLLECTION_SETTINGS_NAMESPACES].([]interface{}); found {
 			if len(namespacesSetting) > 0 {
 				// Remove duplicates from the namespacesSetting slice
 				uniqueNamespaces := make(map[string]bool)
 				for _, ns := range namespacesSetting {
-					str, ok := ns.(string)
-					if !ok {
-						logger.Println("ExtensionUtils::getNamespacesForDataCollection: namespace:", ns, "not valid hence skipping")
-						continue
-					}
-					uniqueNamespaces[strings.ToLower(str)] = true
+					if str, ok := ns.(string); ok {
+						uniqueNamespaces[strings.ToLower(str)] = true
+					} else {
+					    logger.Println("ExtensionUtils::getNamespacesForDataCollection: namespace:", ns, "not valid hence skipping")						
+					}					
 				}
 
 				// Convert the map keys to a new slice
@@ -362,17 +360,20 @@ func (e *Extension) GetContainerLogV2ExtensionConfig(isWindows bool) (map[string
 	for _, extensionConfig := range extensionConfigs {
 		outputStreamId := ""
 		namedPipe := ""
+		ok := false 
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
 			if strings.Compare(strings.ToLower(dataType), "containerinsights_containerlogv2") == 0 {
-				outputStreamId = outputStreamID.(string)
-				if isWindows {
-					namedPipe = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
-					streamIdNamedPipeMap[outputStreamId] = namedPipe
-					logger.Printf("GetContainerLogV2ExtensionConfig:: outputStreamId: %s namedPipe: %s", outputStreamId, namedPipe)
-				} else {
-					logger.Printf("GetContainerLogV2ExtensionConfig:: outputStreamId: %s", outputStreamId)
-				}
+				outputStreamId, ok = outputStreamID.(string)
+				if ok {
+					if isWindows {
+						namedPipe = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
+						streamIdNamedPipeMap[outputStreamId] = namedPipe
+						logger.Printf("GetContainerLogV2ExtensionConfig:: outputStreamId: %s namedPipe: %s", outputStreamId, namedPipe)
+					} else {
+						logger.Printf("GetContainerLogV2ExtensionConfig:: outputStreamId: %s", outputStreamId)
+					} 
+			    }
 			}
 		}
 		extensionSettings := extensionConfig.ExtensionSettings
@@ -390,7 +391,7 @@ func (e *Extension) GetContainerLogV2ExtensionConfig(isWindows bool) (map[string
 							}
 						} else {
 							namespaceStreamIdsMap[namespace] = []string{outputStreamId}
-						}
+						}						
 					}
 				}
 			}
