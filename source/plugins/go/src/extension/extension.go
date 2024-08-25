@@ -364,8 +364,7 @@ func (e *Extension) GetContainerLogV2ExtensionConfig(isWindows bool) (map[string
 		outputStreams := extensionConfig.OutputStreams
 		for dataType, outputStreamID := range outputStreams {
 			if strings.Compare(strings.ToLower(dataType), "containerinsights_containerlogv2") == 0 {
-				outputStreamId, ok = outputStreamID.(string)
-				if ok {
+				if outputStreamId, ok = outputStreamID.(string); ok {
 					if isWindows {
 						namedPipe = outputStreamDefinitions[outputStreamID.(string)].NamedPipe
 						streamIdNamedPipeMap[outputStreamId] = namedPipe
