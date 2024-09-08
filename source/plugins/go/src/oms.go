@@ -492,7 +492,7 @@ func updateContainerImageNameMaps() {
 }
 
 func updateContainerLogV2ExtensionMaps(isWindows bool) {
-	for ; true; <-ContainerLogV2ExtensionConfigRefreshTicker.C {
+	for range ContainerLogV2ExtensionConfigRefreshTicker.C {
 		Log("updateContainerLogV2ExtensionMaps::Info: Invoking GetContainerLogV2ExtensionConfig")
 		maxRetries := 3
 		for attempt := 1; attempt <= maxRetries; attempt++ {
