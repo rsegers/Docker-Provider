@@ -112,23 +112,15 @@ func getExtensionSettings(extensionName string, extensionVersion string) (map[st
 
 func getDataCollectionSettingsInterface(extensionName string, extensionVersion string) (map[string]interface{}, error) {
 	dataCollectionSettings := make(map[string]interface{})
+	var err error
 
 	extensionSettings, err := getExtensionSettings(extensionName, extensionVersion)
 	if err != nil {
 		return dataCollectionSettings, err
 	}
 
-	dataCollectionSettings, _ = getDataCollectionSettingsFromExtensionSettings(extensionSettings)
-
-	return dataCollectionSettings, nil
-}
-
-func getDataCollectionSettingsFromExtensionSettings(extensionSettings map[string]map[string]interface{}) (map[string]interface{}, error) {
-	dataCollectionSettings := make(map[string]interface{})
-
-	dataCollectionSettings, _ = getDataCollectionSettingsFromExtensionSettings(extensionSettings)
-
-	return dataCollectionSettings, nil
+	dataCollectionSettings, err = getDataCollectionSettingsFromExtensionSettings(extensionSettings)
+	return dataCollectionSettings, err
 }
 
 func getDataCollectionSettingsFromExtensionSettings(extensionSettings map[string]map[string]interface{}) (map[string]interface{}, error) {
