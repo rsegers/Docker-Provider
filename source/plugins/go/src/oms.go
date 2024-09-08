@@ -1900,6 +1900,45 @@ func containsKey(currentMap map[string]bool, key string) bool {
 	return c
 }
 
+func writeMsgPackEntriesToNamedPipeConnection(streamTag string, msgPackEntries []MsgPackEntry, streamIdNamedPipeMap map[string]string) (int, error) {
+	var bts int
+	var er error
+	namedPipe, ok := streamIdNamedPipeMap[streamTag]
+	if !ok {
+		return 0, fmt.Errorf("Error::ama:: namedPipe is empty for streamId: %s \n", streamTag)
+	}
+	namedPipeConn, ok := NamedPipeConnectionCache[namedPipe]
+	if !ok || namedPipeConn == nil {
+		err := CreateWindowsNamedPipeClient(namedPipe, &namedPipeConn)
+		if err != nil {
+			Log("Error::ama:: failed to create namedpipe client for streamId: %s \n", streamTag)
+			return 0, err
+		}
+		NamedPipeConnectionCache[namedPipe] = namedPipeConn
+	}
+	msgpBytes := convertMsgPackEntriesToMsgpBytes(streamTag, msgPackEntries)
+	bts, er = namedPipeConn.Write(msgpBytes)
+	if er != nil {
+		Log("Error::ama:: failed to ingest the logs to namedpipe: %s \n", namedPipe)
+		if namedPipeConn != nil {
+			namedPipeConn.Close()
+			namedPipeConn = nil
+			delete(NamedPipeConnectionCache, namedPipe)
+		}
+	}
+	// clear the cache if its cachesize limit is reached
+	if len(NamedPipeConnectionCache) >= NamedPipeConnectionCacheSize {
+		for np, conn := range NamedPipeConnectionCache {
+			if conn != nil {
+				conn.Close()
+			}
+			delete(NamedPipeConnectionCache, np)
+		}
+	}
+
+	return bts, er
+}
+
 func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluentForwardTag string, msgPackEntries []MsgPackEntry) (totalBytes int, err error) {
 	var bts int
 	var er error
@@ -1919,44 +1958,11 @@ func writeMsgPackEntries(connection net.Conn, isContainerLogV2Schema bool, fluen
 					msg := fmt.Sprintf("Info::ama:: namespace : %s streamTags: %s \n", namespace, strings.Join(streamTags, ", "))
 					Log(msg)
 					for _, streamTag := range streamTags {
-						msgpBytes := convertMsgPackEntriesToMsgpBytes(streamTag, entries)
-						deadline := 10 * time.Second
 						if IsWindows {
-							// in windows, there will be dedicated namedpipe for each DCR and hence use namedpipe specific to DCR
-							namedPipe, ok := streamIdNamedPipeMap[streamTag]
-							Log("Info::ama:: namedpipe: %s and streamTag: %s: namespace: %s \n", namedPipe, streamTag, namespace)
-							if ok {
-								namedPipeConn, ok := NamedPipeConnectionCache[namedPipe]
-								if !ok || namedPipeConn == nil {
-									err := CreateWindowsNamedPipeClient(namedPipe, &namedPipeConn)
-									if err != nil {
-										Log("Error::ama:: failed to create namedpipe client for streamId: %s \n", streamTag)
-										return 0, err
-									}
-									NamedPipeConnectionCache[namedPipe] = namedPipeConn
-								}
-								bts, er = namedPipeConn.Write(msgpBytes)
-								if er != nil {
-									Log("Error::ama:: failed to ingest the logs to namedpipe: %s \n", namedPipe)
-									if namedPipeConn != nil {
-										namedPipeConn.Close()
-										namedPipeConn = nil
-										delete(NamedPipeConnectionCache, namedPipe)
-									}
-								}
-							} else {
-								return 0, fmt.Errorf("Error::ama:: namedPipe is empty for streamId: %s \n", streamTag)
-							}
-							// clear the cache if its cachesize limit is reached
-							if len(NamedPipeConnectionCache) >= NamedPipeConnectionCacheSize {
-								for np, conn := range NamedPipeConnectionCache {
-									if conn != nil {
-										conn.Close()
-									}
-									delete(NamedPipeConnectionCache, np)
-								}
-							}
+							bts, er = writeMsgPackEntriesToNamedPipeConnection(streamTag, entries, streamIdNamedPipeMap)
 						} else {
+							msgpBytes := convertMsgPackEntriesToMsgpBytes(streamTag, entries)
+							deadline := 10 * time.Second
 							connection.SetWriteDeadline(time.Now().Add(deadline))
 							bts, er = connection.Write(msgpBytes)
 						}
