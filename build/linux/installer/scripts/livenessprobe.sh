@@ -55,7 +55,7 @@ if [[ "${CONTAINER_TYPE}" == "PrometheusSidecar" && "${MUTE_PROM_SIDECAR}" == "t
 fi
 
 #test to exit non zero value if mdsd is not running
-(ps -ef | grep "mdsd" | grep -v "grep")
+(ps -ef | grep "mdsd" | grep -v -E "grep|amacoreagent")
 if [ $? -ne 0 ]
 then
   echo "mdsd is not running" > /dev/termination-log
