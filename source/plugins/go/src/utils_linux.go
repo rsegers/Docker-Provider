@@ -5,6 +5,9 @@ package main
 import (
 	"errors"
 	"net"
+	"net"
+	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -16,4 +19,15 @@ func EnsureGenevaOr3PNamedPipeExists(namedPipeConnection *net.Conn, datatype str
 	//function unimplemented
 	Log("Error::EnsureGenevaOr3PNamedPipeExists not implemented for Linux")
 	return false
+}
+
+func isProcessRunning(processName string) (string, error) {
+	cmd := exec.Command("pgrep", processName)
+	output, err := cmd.Output()
+
+	if err != nil || len(strings.TrimSpace(string(output))) == 0 {
+		return "false", err
+	}
+
+	return "true", nil
 }
