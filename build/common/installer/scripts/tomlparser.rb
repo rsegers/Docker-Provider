@@ -73,7 +73,7 @@ end
 
 def updateDefaultConfigSetting(configEntryName, configValue)
   begin
-    if !configValue.nil? && !configValue.empty?
+    if !configValue.nil?
       if is_number?(configValue) && configValue.to_i > 0
         @default_settings[configEntryName] = configValue
       else
