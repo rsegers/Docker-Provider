@@ -45,7 +45,15 @@ gem uninstall uri --version 0.11.0
 gem uninstall stringio --version 3.0.1
 gem uninstall rexml --version 3.2.5
 
-sudo tdnf install -y azure-mdsd-1.31.4
+if [ "${ARCH}" != "arm64" ]; then
+    # mdsd version with 50k eps changes for x64
+    # TODO - For PROD release, make sure to consume the MDSD version from Mariner package repo
+    wget "https://github.com/microsoft/Docker-Provider/releases/download/mdsd-1.31.0/azure-mdsd-1.34.0-build.main.3783.dynamicssl.x86_64.rpm" -O azure-mdsd.deb
+    sudo tdnf install -y azure-mdsd.rpm
+else
+    sudo tdnf install -y azure-mdsd-1.29.7
+fi
+
 cp -f $TMPDIR/mdsd.xml /etc/mdsd.d
 cp -f $TMPDIR/envmdsd /etc/mdsd.d
 rm /usr/sbin/telegraf
