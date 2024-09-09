@@ -49,7 +49,8 @@ require_relative "ConfigParseErrorLogger"
   "out_forward_worker_count" => "10",
   "out_forward_retry_limit" => "10",
   "out_forward_storage_total_limit_size" => "2G",
-  "out_forward_require_ack_response" => "false"
+  "out_forward_require_ack_response" => "false",
+  "disable_throttle" => "false"
 }
 
 def is_windows?()
@@ -142,8 +143,12 @@ def generateAzMonMultiTenantNamespaceConfig
       out_forward_retry_limit = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'out_forward_retry_limit')
       out_forward_storage_total_limit_size = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'out_forward_storage_total_limit_size')
       out_forward_require_ack_response = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'out_forward_require_ack_response')
+      disable_throttle = getNamespaceSettingsConfigEntryValue(tenant_namespace_settings, 'disable_throttle')
       if File.file?(templatefilePath)
           templatefile = File.read(templatefilePath)
+          if !disable_throttle.nil? && disable_throttle.to_s.casecmp("false") == 0 # enable throttle
+            templatefile = templatefile.gsub("#${ThrottleEnabled}", "")
+          end
           templatefile = templatefile.gsub("<TENANT_NAMESPACE>", tenant_namespace)
           templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_STORAGE_TYPE}", storage_type)
           templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_MEM_BUF_LIMIT}", mem_buf_limit)
@@ -495,6 +500,8 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             updateDefaultConfigSetting(:out_forward_storage_total_limit_size, out_forward_storage_total_limit_size)
             out_forward_require_ack_response =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_require_ack_response]
             updateDefaultConfigSetting(:out_forward_require_ack_response, out_forward_require_ack_response)
+            disable_throttle =  parsedConfig[:log_collection_settings][:multi_tenancy][:disable_throttle]
+            updateDefaultConfigSetting(:disable_throttle, disable_throttle)
 
             # namepsace to settings
             namespace_settings = parsedConfig[:log_collection_settings][:multi_tenancy][:namespace_settings]
