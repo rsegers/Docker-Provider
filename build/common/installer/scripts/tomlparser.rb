@@ -148,6 +148,8 @@ def generateAzMonMultiTenantNamespaceConfig
           templatefile = File.read(templatefilePath)
           if !disable_throttle.nil? && disable_throttle.to_s.casecmp("false") == 0 # enable throttle
             templatefile = templatefile.gsub("#${ThrottleEnabled}", "")
+          else
+            puts "Throttle is disabled for namespace: #{tenant_namespace}"
           end
           templatefile = templatefile.gsub("<TENANT_NAMESPACE>", tenant_namespace)
           templatefile = templatefile.gsub("${AZMON_TENANT_TAIL_STORAGE_TYPE}", storage_type)
@@ -481,27 +483,27 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
             # default settings
             storage_type =  parsedConfig[:log_collection_settings][:multi_tenancy][:storage_type]
-            updateDefaultConfigSetting(:storage_type, storage_type)
+            updateDefaultConfigSetting("storage_type", storage_type)
             mem_buf_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:mem_buf_limit]
-            updateDefaultConfigSetting(:mem_buf_limit, mem_buf_limit)
+            updateDefaultConfigSetting("mem_buf_limit", mem_buf_limit)
             buffer_chunk_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:buffer_chunk_size]
-            updateDefaultConfigSetting(:buffer_chunk_size, buffer_chunk_size)
+            updateDefaultConfigSetting("buffer_chunk_size", buffer_chunk_size)
             buffer_max_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:buffer_max_size]
-            updateDefaultConfigSetting(:buffer_max_size, buffer_max_size)
+            updateDefaultConfigSetting("buffer_max_size", buffer_max_size)
             throttle_rate =  parsedConfig[:log_collection_settings][:multi_tenancy][:throttle_rate]
-            updateDefaultConfigSetting(:throttle_rate, throttle_rate)
+            updateDefaultConfigSetting("throttle_rate", throttle_rate)
             throttle_window =  parsedConfig[:log_collection_settings][:multi_tenancy][:throttle_window]
-            updateDefaultConfigSetting(:throttle_window, throttle_window)
+            updateDefaultConfigSetting("throttle_window", throttle_window)
             out_forward_worker_count =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_worker_count]
-            updateDefaultConfigSetting(:out_forward_worker_count, out_forward_worker_count)
+            updateDefaultConfigSetting("out_forward_worker_count", out_forward_worker_count)
             out_forward_retry_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_retry_limit]
-            updateDefaultConfigSetting(:out_forward_retry_limit, out_forward_retry_limit)
+            updateDefaultConfigSetting("out_forward_retry_limit", out_forward_retry_limit)
             out_forward_storage_total_limit_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_storage_total_limit_size]
-            updateDefaultConfigSetting(:out_forward_storage_total_limit_size, out_forward_storage_total_limit_size)
+            updateDefaultConfigSetting("out_forward_storage_total_limit_size", out_forward_storage_total_limit_size)
             out_forward_require_ack_response =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_require_ack_response]
-            updateDefaultConfigSetting(:out_forward_require_ack_response, out_forward_require_ack_response)
+            updateDefaultConfigSetting("out_forward_require_ack_response", out_forward_require_ack_response)
             disable_throttle =  parsedConfig[:log_collection_settings][:multi_tenancy][:disable_throttle]
-            updateDefaultConfigSetting(:disable_throttle, disable_throttle)
+            updateDefaultConfigSetting("disable_throttle", disable_throttle)
 
             # namepsace to settings
             namespace_settings = parsedConfig[:log_collection_settings][:multi_tenancy][:namespace_settings]
