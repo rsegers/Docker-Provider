@@ -17,8 +17,12 @@ export interface IUserInfo {
     groups: string[];
 }
 
+export const InstrumentationLabelName = "monitor.azure.com/instrumentation";
+
 export interface ILabels {
     app: string;
+
+    [key: string]: string;
 }
 
 export interface IInstrumentationState {

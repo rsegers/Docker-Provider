@@ -1,5 +1,5 @@
 ﻿import { Mutations } from "./Mutations.js";
-import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationAnnotationName, EnableApplicationLogsAnnotationName, InstrumentationCR, IInstrumentationState, IMetadata, IAnnotations, IObjectType } from "./RequestDefinition.js";
+import { PodInfo, IContainer, ISpec, IVolume, IEnvironmentVariable, AutoInstrumentationPlatforms, IVolumeMount, InstrumentationAnnotationName, EnableApplicationLogsAnnotationName, InstrumentationCR, IInstrumentationState, IMetadata, IAnnotations, IObjectType, ILabels, InstrumentationLabelName } from "./RequestDefinition.js";
 
 export class Patcher {
 
@@ -36,8 +36,12 @@ export class Patcher {
             const spec: ISpec = obj.spec;
             const podSpec: ISpec = spec.template.spec;
         
-            // add deployment-level annotation describing current mutation
+            // add deployment-level label and annotation describing current mutation
             obj.metadata = obj.metadata ?? <IMetadata>{};
+
+            obj.metadata.labels = obj.metadata.labels ?? <ILabels>{};
+            obj.metadata.labels[InstrumentationLabelName] = "";
+
             obj.metadata.annotations = obj.metadata.annotations ?? <IAnnotations>{};
             obj.metadata.annotations[InstrumentationAnnotationName] = JSON.stringify(<IInstrumentationState>{
                 crName: cr.metadata.name,
@@ -126,8 +130,13 @@ export class Patcher {
 
         const instrumentationState: IInstrumentationState = obj.metadata?.annotations?.[InstrumentationAnnotationName] ? JSON.parse(obj.metadata.annotations[InstrumentationAnnotationName]) : null;
 
-        // remove deployment annotations
+        // remove deployment labels and annotations
         obj.metadata = obj.metadata ?? <IMetadata>{};
+
+        if(obj.metadata.labels) {
+            delete obj.metadata.labels[InstrumentationLabelName];
+        }
+
         if (obj.metadata.annotations) {
             delete obj.metadata.annotations[InstrumentationAnnotationName];
         }

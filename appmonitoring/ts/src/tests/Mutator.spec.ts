@@ -1,6 +1,6 @@
 ﻿import { expect, describe, it } from "@jest/globals";
 import { Mutator } from "../Mutator.js";
-import { IAdmissionReview, IAnnotations, IMetadata, InstrumentationCR, AutoInstrumentationPlatforms, DefaultInstrumentationCRName, IInstrumentationState, IObjectType, InstrumentationAnnotationName } from "../RequestDefinition.js";
+import { IAdmissionReview, IAnnotations, IMetadata, InstrumentationCR, AutoInstrumentationPlatforms, DefaultInstrumentationCRName, IInstrumentationState, IObjectType, InstrumentationAnnotationName, InstrumentationLabelName } from "../RequestDefinition.js";
 import { TestObject2, TestObject4, crs, clusterArmId, clusterArmRegion } from "./testConsts.js";
 import { logger } from "../LoggerWrapper.js"
 import { InstrumentationCRsCollection } from "../InstrumentationCRsCollection.js";
@@ -114,8 +114,10 @@ describe("Mutator", () => {
         expect((<[]>patches).length).toBe(1);
 
         const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        const labelValue: string = obj.metadata.labels[InstrumentationLabelName];
         const annotationValue: IInstrumentationState = JSON.parse(obj.metadata.annotations[InstrumentationAnnotationName]) as IInstrumentationState;
-
+        
+        expect(labelValue).toBe("");
         expect(annotationValue.crName).toBe(DefaultInstrumentationCRName);
         expect(annotationValue.crResourceVersion).toBe("1");
         expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]);
@@ -168,6 +170,7 @@ describe("Mutator", () => {
         expect((<[]>patches).length).toBe(1);
 
         const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        expect(obj.metadata?.labels?.[InstrumentationLabelName]).toBeUndefined();
         expect(obj.metadata?.annotations?.[InstrumentationAnnotationName]).toBeUndefined();        
     });
 
@@ -300,8 +303,10 @@ describe("Mutator", () => {
         expect((<[]>patches).length).toBe(1);
 
         const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        const labelValue: string = obj.metadata.labels[InstrumentationLabelName];
         const annotationValue: IInstrumentationState = JSON.parse(obj.metadata.annotations[InstrumentationAnnotationName]) as IInstrumentationState;
         
+        expect(labelValue).toBe("");
         expect(annotationValue.crName).toBe(DefaultInstrumentationCRName);
         expect(annotationValue.crResourceVersion).toBe("1");
         expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]);
@@ -377,8 +382,10 @@ describe("Mutator", () => {
         expect((<[]>patches).length).toBe(1);
         
         const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        const labelValue: string = obj.metadata.labels[InstrumentationLabelName];
         const annotationValue: IInstrumentationState = JSON.parse(obj.metadata.annotations[InstrumentationAnnotationName]) as IInstrumentationState;
         
+        expect(labelValue).toBe("");
         expect(annotationValue.crName).toBe(cr1.metadata.name);
         expect(annotationValue.crResourceVersion).toBe("1");
         expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.NodeJs]);
@@ -435,8 +442,10 @@ describe("Mutator", () => {
         expect((<[]>patches).length).toBe(1);
 
         const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        const labelValue: string = obj.metadata.labels[InstrumentationLabelName];
         const annotationValue: IInstrumentationState = JSON.parse(obj.metadata.annotations[InstrumentationAnnotationName]) as IInstrumentationState;
 
+        expect(labelValue).toBe("");
         expect(annotationValue.crName).toBe(crDefault.metadata.name);
         expect(annotationValue.crResourceVersion).toBe("12");
         expect(annotationValue.platforms).toStrictEqual([]);
