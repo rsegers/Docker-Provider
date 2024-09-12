@@ -132,7 +132,8 @@ def substituteFluentBitPlaceHolders
     stacktraceLanguages = ENV["AZMON_MULTILINE_LANGUAGES"]
     resourceOptimizationEnabled = ENV["AZMON_RESOURCE_OPTIMIZATION_ENABLED"]
     enableCustomMetrics = ENV["ENABLE_CUSTOM_METRICS"]
-    windowsFluentBitDisabled = ENV["AZMON_WINDOWS_FLUENT_BIT_DISABLED"]
+    # windowsFluentBitDisabled = ENV["AZMON_WINDOWS_FLUENT_BIT_DISABLED"]
+    windowsFluentBitDisabled = !resourceOptimizationEnabled
     kubernetesMetadataCollection = ENV["AZMON_KUBERNETES_METADATA_ENABLED"]
     annotationBasedLogFiltering = ENV["AZMON_ANNOTATION_BASED_LOG_FILTERING"]
     storageMaxChunksUp = ENV["FBIT_STORAGE_MAX_CHUNKS_UP"]
