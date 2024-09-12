@@ -15,7 +15,7 @@ afterEach(() => {
 
 describe("Mutator", () => {
     it("Null admission review", async () => {
-        const result = JSON.parse(await new Mutator(null, crs, clusterArmId, clusterArmRegion, null).Mutate());
+        const result = JSON.parse(await new Mutator(null, crs, false, clusterArmId, clusterArmRegion, null).Mutate());
 
         expect(result.response.allowed).toBe(true);
         expect(result.response.patchType).toBe("JSONPatch");
@@ -28,7 +28,7 @@ describe("Mutator", () => {
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject2));
         admissionReview.request.resource.resource = "Not a pod!";
 
-        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+        const result = JSON.parse(await new Mutator(admissionReview, crs, false, clusterArmId, clusterArmRegion, null).Mutate());
 
         expect(result.response.allowed).toBe(true);
         expect(result.response.patchType).toBe("JSONPatch");
@@ -41,13 +41,85 @@ describe("Mutator", () => {
         const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject2));
         admissionReview.request.operation = "DELETE";
 
-        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+        const result = JSON.parse(await new Mutator(admissionReview, crs, false, clusterArmId, clusterArmRegion, null).Mutate());
 
         expect(result.response.allowed).toBe(true);
         expect(result.response.patchType).toBe("JSONPatch");
         expect(result.response.uid).toBe(admissionReview.request.uid);
         expect(result.response.status.code).toBe(400);
         expect(result.response.status.message).toContain("Exception encountered: Validation of the incoming AdmissionReview failed");
+    });
+
+    it("Cleanup mode - no mutation occurs", async () => {
+        // ASSUME
+        const admissionReview: IAdmissionReview = JSON.parse(JSON.stringify(TestObject4));
+
+        // no annotations
+        admissionReview.request.object.spec.template.metadata = <IMetadata>{ annotations: <IAnnotations>{} };
+        admissionReview.request.object.metadata.namespace = "ns1";
+        
+        admissionReview.request.object.metadata.annotations = <IAnnotations>{};
+        admissionReview.request.object.metadata.annotations.preExistingAnnotationName = "preExistingAnnotationValue";
+
+        const crDefault: InstrumentationCR = {
+            metadata: {
+                name: "default",
+                namespace: "ns1",
+                resourceVersion: "1"
+            },
+            spec: {
+                settings: {
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                },
+                destination: {
+                    applicationInsightsConnectionString: "InstrumentationKey=default"
+                }
+            }
+        };
+
+        const cr1: InstrumentationCR = {
+            metadata: {
+                name: "cr1",
+                namespace: "ns1",
+                resourceVersion: "1"
+            },
+            spec: {
+                settings: {
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                },
+                destination: {
+                    applicationInsightsConnectionString: "InstrumentationKey=cr1"
+                }
+            }
+        };
+
+        const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
+        crs.Upsert(cr1);
+        crs.Upsert(crDefault);
+
+        // ACT
+        // cleanup mode is set to true
+        const result = JSON.parse(await new Mutator(admissionReview, crs, true, clusterArmId, clusterArmRegion, null).Mutate());
+
+        // ASSERT
+        expect(result.response.allowed).toBe(true);
+        expect(result.response.patchType).toBe("JSONPatch");
+        expect(result.response.uid).toBe(admissionReview.request.uid);
+        expect(result.response.status.code).toBe(200);
+        expect(result.response.status.message).toBe("OK");
+
+        // confirm default CR and its platforms were written into the annotations
+        const patchString: string = atob(result.response.patch);
+        const patches: object[] = JSON.parse(patchString);
+
+        expect((<[]>patches).length).toBe(1);
+
+        const obj: IObjectType = (<any>patches[0]).value as IObjectType;
+        const labelValue: string = obj.metadata.labels[InstrumentationLabelName];
+        expect(obj.metadata.annotations[InstrumentationAnnotationName]).toBeUndefined();
+        
+        expect(labelValue).toBeUndefined();
+        expect((<any>patches[0]).value.spec.template.spec.initContainers).toBeUndefined();
     });
 
     it("Mutating deployment - no inject- annotations, default CR found", async () => {
@@ -98,7 +170,7 @@ describe("Mutator", () => {
         crs.Upsert(crDefault);
 
         // ACT
-        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+        const result = JSON.parse(await new Mutator(admissionReview, crs, false, clusterArmId, clusterArmRegion, null).Mutate());
 
         // ASSERT
         expect(result.response.allowed).toBe(true);
@@ -154,7 +226,7 @@ describe("Mutator", () => {
         crs.Upsert(cr1);
 
         // ACT
-        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+        const result = JSON.parse(await new Mutator(admissionReview, crs, false, clusterArmId, clusterArmRegion, null).Mutate());
 
         // ASSERT
         expect(result.response.allowed).toBe(true);
@@ -222,7 +294,7 @@ describe("Mutator", () => {
             admissionReview.request.object.spec.template.metadata = metadata;
 
              // ACT
-            const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+            const result = JSON.parse(await new Mutator(admissionReview, crs, false, clusterArmId, clusterArmRegion, null).Mutate());
             
             // ASSERT
             expect(result.response.allowed).toBe(true);
@@ -287,7 +359,7 @@ describe("Mutator", () => {
         admissionReview.request.object.spec.template.metadata = metadata;
 
         // ACT
-        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+        const result = JSON.parse(await new Mutator(admissionReview, crs, false, clusterArmId, clusterArmRegion, null).Mutate());
 
         // ASSERT
         expect(result.response.allowed).toBe(true);
@@ -366,7 +438,7 @@ describe("Mutator", () => {
         admissionReview.request.object.spec.template.metadata = metadata;
 
         // ACT
-        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+        const result = JSON.parse(await new Mutator(admissionReview, crs, false, clusterArmId, clusterArmRegion, null).Mutate());
 
         // ASSERT
         expect(result.response.allowed).toBe(true);
@@ -426,7 +498,7 @@ describe("Mutator", () => {
         admissionReview.request.object.spec.template.metadata = metadata;
 
         // ACT
-        const result = JSON.parse(await new Mutator(admissionReview, crs, clusterArmId, clusterArmRegion, null).Mutate());
+        const result = JSON.parse(await new Mutator(admissionReview, crs, false, clusterArmId, clusterArmRegion, null).Mutate());
 
         // ASSERT
         expect(result.response.allowed).toBe(true);
