@@ -2,6 +2,7 @@ import * as k8s from '@kubernetes/client-node';
 import { CertificateStoreName, KubeSystemNamespaceName, WebhookDNSEndpoint, WebhookName } from './Constants.js'
 import forge from 'node-forge';
 import { HeartbeatMetrics, logger, RequestMetadata } from './LoggerWrapper.js';
+import { Utilities } from './Utilities.js';
 
 export class WebhookCertData {
     caCert: string;
@@ -398,7 +399,7 @@ export class CertificateManager {
             logger.info('Certificates created successfully', operationId, this.requestMetadata);
             logger.SendEvent("CertificateCreated", operationId, null, clusterArmId, clusterArmRegion);
             await this.PatchWebhookAndSecretStore(operationId, kc, certificates, clusterArmId, clusterArmRegion);
-            await this.RestartWebhookDeployment(operationId, kc, clusterArmId, clusterArmRegion);
+            await Utilities.RestartWebhookDeployment(null, operationId, this.requestMetadata, kc, clusterArmId, clusterArmRegion);
             return;
         }
 
@@ -448,61 +449,11 @@ export class CertificateManager {
             await this.PatchWebhookAndSecretStore(operationId, kc, webhookCertData, clusterArmId, clusterArmRegion);
             if (shouldRestartDeployment) {
                 logger.info('Restarting webhook deployment so the pods pick up new certificates...', operationId, this.requestMetadata);
-                await this.RestartWebhookDeployment(operationId, kc, clusterArmId, clusterArmRegion);
+                await Utilities.RestartWebhookDeployment(null, operationId, this.requestMetadata, kc, clusterArmId, clusterArmRegion);
             }
         }
         else {
             logger.info('Nothing to do. All is good. Ending this run...', operationId, this.requestMetadata);
-        }
-    }
-
-    /**
-     * This method restarts the webhook deployment. 
-     * @param operationId - The operation ID.
-     * @param kc - The Kubernetes configuration.
-     * @param clusterArmId - The ARM ID of the cluster.
-     * @param clusterArmRegion - The ARM region of the cluster.
-     */
-    private async RestartWebhookDeployment(operationId: string, kc: k8s.KubeConfig, clusterArmId: string, clusterArmRegion: string): Promise<void> {
-        let name = null;
-    
-        /**
-         * The try block contains the logic to restart the webhook deployment. It first gets the webhook deployment by
-         * its selector. If there is no deployment or more than one deployment with the selector, it throws an error. If
-         * there is exactly one deployment with the selector, it restarts the deployment by updating the annotations with
-         * the current time.
-         */
-        try {
-            const k8sApi = kc.makeApiClient(k8s.AppsV1Api);
-            const selector = "app-monitoring-webhook"
-            const deployments: k8s.V1DeploymentList = (await k8sApi.listNamespacedDeployment(KubeSystemNamespaceName)).body;
-
-            if (!deployments)
-            {
-                throw new Error(`No Deployments found in ${KubeSystemNamespaceName} namespace!`);
-            }
-            const matchingDeployments: k8s.V1Deployment[] = deployments.items.filter(deployment => selector.localeCompare(deployment.spec.selector?.matchLabels?.app) === 0);
-
-            if (matchingDeployments.length != 1) {
-                throw new Error(`Expected 1 Deployment with selector ${selector}, but found ${matchingDeployments.length}`);
-            }
-
-            const deployment: k8s.V1Deployment = matchingDeployments[0];
-            const annotations = deployment.spec.template.metadata.annotations ?? {};
-            annotations["kubectl.kubernetes.io/restartedAt"] = new Date().toISOString();
-            deployment.spec.template.metadata.annotations = annotations;
-
-            name = deployment.metadata.name;
-
-            logger.info(`Restarting deployment ${name}...`, operationId, this.requestMetadata);
-            logger.SendEvent("DeploymentRestarting", operationId, null, clusterArmId, clusterArmRegion);
-            await k8sApi.replaceNamespacedDeployment(name, KubeSystemNamespaceName, deployment);
-            console.log(`Successfully restarted Deployment ${name}`);
-            logger.SendEvent("DeploymentRestarted", operationId, null, clusterArmId, clusterArmRegion);
-        } catch (err) {
-            logger.error(`Failed to restart Deployment ${name}: ${err}`, operationId, this.requestMetadata);
-            logger.SendEvent("DeploymentRestartFailed", operationId, null, clusterArmId, clusterArmRegion, true, err);
-            throw err;
         }
     }
 

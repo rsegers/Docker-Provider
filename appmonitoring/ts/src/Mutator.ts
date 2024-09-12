@@ -11,14 +11,16 @@ export class Mutator {
     private readonly clusterArmRegion: string;
     private readonly operationId: string;
     private readonly requestMetadata: RequestMetadata;
+    private readonly isCleanupMode: boolean;
 
-    public constructor(admissionReview: IAdmissionReview, crs: InstrumentationCRsCollection, clusterArmId: string, clusterArmRegion: string, operationId: string) {
+    public constructor(admissionReview: IAdmissionReview, crs: InstrumentationCRsCollection, cleanupMode: boolean, clusterArmId: string, clusterArmRegion: string, operationId: string) {
         this.admissionReview = admissionReview;
         this.crs = crs;
         this.clusterArmId = clusterArmId;
         this.clusterArmRegion = clusterArmRegion;
         this.operationId = operationId;
         this.requestMetadata = new RequestMetadata(this.admissionReview?.request?.uid, this.crs);
+        this.isCleanupMode = cleanupMode;
     }
 
     public async Mutate(): Promise<string> {
@@ -93,7 +95,7 @@ export class Mutator {
 
         const patchData: object[] = Patcher.PatchObject(
             this.admissionReview.request.object,
-            cr, // null to unpatch
+            this.isCleanupMode ? null : cr, // null to unpatch
             podInfo as PodInfo,
             platforms,
             this.clusterArmId,

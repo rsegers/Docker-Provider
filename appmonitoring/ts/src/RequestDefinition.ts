@@ -33,6 +33,7 @@ export interface IInstrumentationState {
 
 export const InstrumentationAnnotationName = "monitor.azure.com/instrumentation";
 export const EnableApplicationLogsAnnotationName = "monitor.azure.com/enable-application-logs";
+export const CleanupModeWebhoohEnvironmentVariableName = "CLEANUP_MODE";
 export interface IAnnotations {
     "instrumentation.opentelemetry.io/inject-dotnet"?: string;
     "instrumentation.opentelemetry.io/inject-java"?: string;
@@ -203,12 +204,30 @@ export class InstrumentationCR {
     }
 }
 
-export class ListResponse {
+export class Deployment {
+    metadata: {
+        name: string,
+        namespace: string,
+        resourceVersion?: string
+    };
+}
+
+export class CRsListResponse {
     response: http.IncomingMessage;
     body: {
         metadata: {
             resourceVersion: string
         };
         items: InstrumentationCR[]
+    }
+}
+
+export class DeploymentsListResponse {
+    response: http.IncomingMessage;
+    body: {
+        metadata: {
+            resourceVersion: string
+        };
+        items: Deployment[]
     }
 }

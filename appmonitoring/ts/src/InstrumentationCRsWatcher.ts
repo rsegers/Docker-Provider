@@ -1,9 +1,9 @@
 ﻿import { HeartbeatLogs, HeartbeatMetrics, RequestMetadata, logger } from "./LoggerWrapper.js";
 import * as k8s from "@kubernetes/client-node";
-import { InstrumentationCR, ListResponse } from "./RequestDefinition.js"
+import { InstrumentationCR, CRsListResponse } from "./RequestDefinition.js"
 import { InstrumentationCRsCollection } from "./InstrumentationCRsCollection.js";
 
-export class K8sWatcher {
+export class InstrumentationCRsWatcher {
 
     private static crdNamePlural = "instrumentations";
     private static crdApiGroup = "monitor.azure.com";
@@ -19,7 +19,7 @@ export class K8sWatcher {
         let latestResourceVersion = "0";
         while (true) { // eslint-disable-line
             try {
-                latestResourceVersion = await K8sWatcher.WatchCRs(k8sApi, watch, latestResourceVersion, crs,  operationId, onNewCR);
+                latestResourceVersion = await InstrumentationCRsWatcher.WatchCRs(k8sApi, watch, latestResourceVersion, crs,  operationId, onNewCR);
             } catch (e) {
                 const ex = logger.sanitizeException(e);
                 
@@ -44,15 +44,15 @@ export class K8sWatcher {
 
         logger.info(`Listing CRs, resourceVersion=${latestResourceVersion}...`, operationId, requestMetadata);
 
-        const crsResult: ListResponse = <ListResponse>await k8sApi.listClusterCustomObject(
-            K8sWatcher.crdApiGroup,
-            K8sWatcher.crdApiVersion,
-            K8sWatcher.crdNamePlural,
+        const crsResult: CRsListResponse = <CRsListResponse>await k8sApi.listClusterCustomObject(
+            InstrumentationCRsWatcher.crdApiGroup,
+            InstrumentationCRsWatcher.crdApiVersion,
+            InstrumentationCRsWatcher.crdNamePlural,
             undefined,
             undefined,
             undefined,
-            undefined, // `metadata.name=${K8sWatcher.crName}`
-            undefined,
+            undefined, // fieldSelector: `metadata.name=name`
+            undefined, // labelSelector: `labelName=labelValue` or `labelName`
             undefined,
             latestResourceVersion);
 
@@ -71,11 +71,12 @@ export class K8sWatcher {
         const watchIsDonePromise: Promise<string> = new Promise(resolveWatchPromise => {
             // /api/v1/namespaces
             // /apis/monitor.azure.com/v1/namespaces/default/instrumentations
-            watch.watch(`/apis/${K8sWatcher.crdApiGroup}/${K8sWatcher.crdApiVersion}/${K8sWatcher.crdNamePlural}`,
+            watch.watch(`/apis/${InstrumentationCRsWatcher.crdApiGroup}/${InstrumentationCRsWatcher.crdApiVersion}/${InstrumentationCRsWatcher.crdNamePlural}`,
                 {
                     allowWatchBookmarks: true,
-                    resourceVersion: latestResourceVersion
-                    //fieldSelector: fieldSelector
+                    resourceVersion: latestResourceVersion,
+                    //fieldSelector: 'metadata.name=my-namespace',
+                    //labelSelector: 'env=production' or 'env'
                 },
                 (type, apiObj) => {
                     requestMetadata = new RequestMetadata("CR watcher", crs);
