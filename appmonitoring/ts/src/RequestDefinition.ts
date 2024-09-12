@@ -33,7 +33,7 @@ export interface IInstrumentationState {
 
 export const InstrumentationAnnotationName = "monitor.azure.com/instrumentation";
 export const EnableApplicationLogsAnnotationName = "monitor.azure.com/enable-application-logs";
-export const CleanupModeWebhoohEnvironmentVariableName = "CLEANUP_MODE";
+export const CleanupModeWebhookAnnotationName = "monitor.azure.com/cleanup-mode";
 export interface IAnnotations {
     "instrumentation.opentelemetry.io/inject-dotnet"?: string;
     "instrumentation.opentelemetry.io/inject-java"?: string;

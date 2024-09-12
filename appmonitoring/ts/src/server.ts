@@ -1,7 +1,7 @@
 ﻿import * as https from "https";
 import { Mutator } from "./Mutator.js";
 import { HeartbeatMetrics, HeartbeatLogs, logger, RequestMetadata } from "./LoggerWrapper.js";
-import { InstrumentationCR, IAdmissionReview, Deployment, CleanupModeWebhoohEnvironmentVariableName } from "./RequestDefinition.js";
+import { InstrumentationCR, IAdmissionReview, Deployment, CleanupModeWebhookAnnotationName } from "./RequestDefinition.js";
 import { InstrumentationCRsWatcher } from "./InstrumentationCRsWatcher.js";
 import { InstrumentationCRsCollection } from "./InstrumentationCRsCollection.js"
 import fs from "fs";
@@ -14,7 +14,6 @@ import { Utilities } from "./Utilities.js";
 const containerMode = process.env.CONTAINER_MODE;
 const clusterArmId = process.env.ARM_ID;
 const clusterArmRegion = process.env.ARM_REGION;
-const isServerModeInCleanupMode: boolean = "1".localeCompare(process.env.CLEANUP_MODE) === 0;
 
 let operationId = randomUUID();
 
@@ -56,7 +55,7 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
         logger.info("Running in cleanup mode...", operationId, null);
 
         // mark the webhook deployment with an annotation and restart it
-        await Utilities.RestartWebhookDeployment([CleanupModeWebhoohEnvironmentVariableName, "1"], operationId, null, null, clusterArmId, clusterArmRegion);
+        await Utilities.RestartWebhookDeployment([CleanupModeWebhookAnnotationName, "1"], operationId, null, null, clusterArmId, clusterArmRegion);
 
         const mutatedDeployments: DeploymentsCollection = new DeploymentsCollection();
         await DeploymentsWatcher.StartWatching((deployment: Deployment, isRemoved: boolean) => {
@@ -86,7 +85,9 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
 
 const crs: InstrumentationCRsCollection = new InstrumentationCRsCollection();
 
-logger.info("Running in server mode...", operationId, null);
+const isServerModeInCleanupMode: boolean = "1".localeCompare(process.env.CLEANUP_MODE) === 0;
+
+logger.info(`Running in server mode... Cleanup mode is ${isServerModeInCleanupMode}`, operationId, null);
 logger.SendEvent("ServerModeRun", operationId, null, clusterArmId, clusterArmRegion);
 
 const armIdMatches = /^\/subscriptions\/(?<SubscriptionId>[^/]+)\/resourceGroups\/(?<ResourceGroup>[^/]+)\/providers\/(?<Provider>[^/]+)\/(?<ResourceType>[^/]+)\/(?<ResourceName>[^/]+).*$/i.exec(clusterArmId);

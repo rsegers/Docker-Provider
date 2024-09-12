@@ -4,7 +4,7 @@ import { logger, RequestMetadata } from './LoggerWrapper.js';
 
 export class Utilities {
     
-    public static async RestartWebhookDeployment(envVariableNameValue: string[], operationId: string, requestMetadata: RequestMetadata, kc: k8s.KubeConfig, clusterArmId: string, clusterArmRegion: string): Promise<void> {
+    public static async RestartWebhookDeployment(additionalAnnotationNameValue: string[], operationId: string, requestMetadata: RequestMetadata, kc: k8s.KubeConfig, clusterArmId: string, clusterArmRegion: string): Promise<void> {
         let name = null;
         if (!kc) {
             kc = new k8s.KubeConfig();
@@ -35,21 +35,10 @@ export class Utilities {
             const deployment: k8s.V1Deployment = matchingDeployments[0];
             const annotations = deployment.spec.template.metadata.annotations ?? {};
             annotations["kubectl.kubernetes.io/restartedAt"] = new Date().toISOString();
-            deployment.spec.template.metadata.annotations = annotations;
-
-            if (envVariableNameValue) {
-                const envVars = deployment.spec.template.spec.containers[0].env ?? [];
-
-                // remove it if present
-                const evIndex = envVars.findIndex(ev => ev.name === envVariableNameValue[0]);
-                if(evIndex !== -1) {
-                    envVars.splice(evIndex, 1);
-                }
-
-                envVars.push(<k8s.V1EnvVar>{ name: envVariableNameValue[0], value: envVariableNameValue[1] });
-
-                deployment.spec.template.spec.containers[0].env = envVars;
+            if (additionalAnnotationNameValue) {
+                annotations[additionalAnnotationNameValue[0]] = additionalAnnotationNameValue[1];
             }
+            deployment.spec.template.metadata.annotations = annotations;
 
             name = deployment.metadata.name;
 

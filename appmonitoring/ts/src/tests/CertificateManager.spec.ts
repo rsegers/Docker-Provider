@@ -494,7 +494,7 @@ describe('CertificateManager', () => {
             expect(replaceNamespacedDeployment).toHaveBeenCalledWith('app-monitoring-webhook', 'kube-system', updatedDeployment);
         });
 
-        it('should set additional environment variable if required', async () => {
+        it('should set additional annotation if required', async () => {
             // Arrange
             const operationId = 'operationId';
             const clusterArmId = 'clusterArmId';
@@ -545,17 +545,17 @@ describe('CertificateManager', () => {
                 name: 'app-monitoring-webhook',
                 annotations: {
                     'anno1': 'anno1',
-                    'kubectl.kubernetes.io/restartedAt': 'GivenDate'
+                    'kubectl.kubernetes.io/restartedAt': 'GivenDate',
+                    'test-annotation-name': 'test-annotation-value'
                 }
             };
-            updatedDeployment.spec.template.spec.containers[0].env.push({ name: "TEST_ENVVAR", value: "test-env-var-value" });
-
+            
             const listNamespacedDeployment = jest.spyOn(k8s.AppsV1Api.prototype, 'listNamespacedDeployment').mockResolvedValue(deploymentList);
             const replaceNamespacedDeployment = jest.spyOn(k8s.AppsV1Api.prototype, 'replaceNamespacedDeployment').mockResolvedValue(null);
             jest.spyOn(k8s.KubeConfig.prototype, 'makeApiClient').mockReturnValue(new k8s.AppsV1Api());
             
             // Act
-            await Utilities.RestartWebhookDeployment(["TEST_ENVVAR", "test-env-var-value"], operationId, null, mockKubeConfig, clusterArmId, clusterArmRegion);
+            await Utilities.RestartWebhookDeployment(["test-annotation-name", "test-annotation-value"], operationId, null, mockKubeConfig, clusterArmId, clusterArmRegion);
 
             // Assert
             expect(listNamespacedDeployment).toHaveBeenCalledWith('kube-system');
