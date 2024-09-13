@@ -71,7 +71,7 @@ end
 
 def substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
   #Update the config file only in two conditions: 1. Linux and resource optimization is enabled 2. Windows and using aad msi auth and not using geneva logs integration
-  if (!@isWindows && !resourceOptimizationEnabled.nil? && resourceOptimizationEnabled.to_s.downcase == "true") || (@isWindows && @using_aad_msi_auth && !@geneva_logs_integration)
+  if (!@isWindows && !resourceOptimizationEnabled.nil? && resourceOptimizationEnabled.to_s.downcase == "true") || (@isWindows && @using_aad_msi_auth)
     puts "config::Starting to substitute the placeholders in fluent-bit.conf file for resource optimization"
     if (@isWindows)
       new_contents = new_contents.gsub("#${ResourceOptimizationPluginFile}", "plugins_file  /etc/fluent-bit/azm-containers-input-plugins.conf")
@@ -198,7 +198,7 @@ def substituteFluentBitPlaceHolders
     # Valid resource optimization scenarios
     # if Linux and Custom Metrics not enabled
     # or if Windows and Fluent Bit is not disabled
-    if (!@isWindows && (enableCustomMetrics.nil? || enableCustomMetrics.to_s.downcase == "false")) || (@isWindows && (!windowsFluentBitDisabled.nil? && windowsFluentBitDisabled.to_s.downcase == "false"))
+    if (enableCustomMetrics.nil? || enableCustomMetrics.to_s.downcase == "false"))
       new_contents = substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
     end
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
