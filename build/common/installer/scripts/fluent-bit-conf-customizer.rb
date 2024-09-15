@@ -198,7 +198,7 @@ def substituteFluentBitPlaceHolders
     # Valid resource optimization scenarios
     # if Linux and Custom Metrics not enabled
     # or if Windows and Fluent Bit is not disabled
-    if (enableCustomMetrics.nil? || enableCustomMetrics.to_s.downcase == "false"))
+    if (enableCustomMetrics.nil? || enableCustomMetrics.to_s.downcase == "false")
       new_contents = substituteResourceOptimization(resourceOptimizationEnabled, new_contents)
     end
     File.open(@fluent_bit_conf_path, "w") { |file| file.puts new_contents }
