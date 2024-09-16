@@ -97,7 +97,6 @@ require_relative "ConfigParseErrorLogger"
 @ignoreProxySettings = false
 
 @multiline_enabled = "false"
-@resource_optimization_enabled = false
 @windows_fluent_bit_disabled = true
 
 @waittime_port_25226 = 45
@@ -373,23 +372,6 @@ def populateSettingValuesFromConfigMap(parsedConfig)
         puts "Using config map value: AZMON_MULTILINE_ENABLED = #{@multiline_enabled}"
       end
 
-      if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0 && @containerType.nil?
-        resource_optimization_config = parsedConfig[:agent_settings][:resource_optimization]
-        if !resource_optimization_config.nil?
-          resource_optimization_enabled = resource_optimization_config[:enabled]
-          if !resource_optimization_enabled.nil? && (!!resource_optimization_enabled == resource_optimization_enabled) #Checking for Boolean type, since 'Boolean' is not defined as a type in ruby
-            @resource_optimization_enabled = resource_optimization_enabled
-          end
-          puts "Using config map value: AZMON_RESOURCE_OPTIMIZATION_ENABLED = #{@resource_optimization_enabled}"
-        end
-      end
-
-      enable_custom_metrics = ENV["ENABLE_CUSTOM_METRICS"]
-      if !enable_custom_metrics.nil? && enable_custom_metrics.to_s.downcase == "true"
-        @resource_optimization_enabled = false
-        puts "Resource Optimization disabled since custom metrics is enabled"
-      end
-
       windows_fluent_bit_config = parsedConfig[:agent_settings][:windows_fluent_bit]
       if !windows_fluent_bit_config.nil?
         windows_fluent_bit_disabled = windows_fluent_bit_config[:disabled]
@@ -549,7 +531,6 @@ if !file.nil?
     file.write("export AZMON_MULTILINE_ENABLED=#{@multiline_enabled}\n")
   end
 
-  file.write("export AZMON_RESOURCE_OPTIMIZATION_ENABLED=#{@resource_optimization_enabled}\n")
 
   if !@windows_fluent_bit_disabled
     file.write("export AZMON_WINDOWS_FLUENT_BIT_DISABLED=#{@windows_fluent_bit_disabled}\n")
@@ -657,10 +638,6 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     end
     if @multiline_enabled.strip.casecmp("true") == 0
       commands = get_command_windows("AZMON_MULTILINE_ENABLED", @multiline_enabled)
-      file.write(commands)
-    end
-    if @resource_optimization_enabled
-      commands = get_command_windows("AZMON_RESOURCE_OPTIMIZATION_ENABLED", @resource_optimization_enabled)
       file.write(commands)
     end
 
