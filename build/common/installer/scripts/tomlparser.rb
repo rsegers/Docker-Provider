@@ -10,10 +10,10 @@ require_relative "ConfigParseErrorLogger"
 @configVersion = ""
 @configSchemaVersion = ""
 # Setting default values which will be used in case they are not set in the configmap or if configmap doesnt exist
-@collectStdoutLogs = true
+@collectStdoutLogs = false # # disabling container logging by default for cosmic
 @stdoutExcludeNamespaces = "kube-system,gatekeeper-system"
 @stdoutIncludeSystemPods = ""
-@collectStderrLogs = true
+@collectStderrLogs = false # disabling container logging by default for cosmic
 @stderrExcludeNamespaces = "kube-system,gatekeeper-system"
 @stderrIncludeSystemPods = ""
 @collectClusterEnvVariables = true
@@ -62,137 +62,137 @@ end
 def populateSettingValuesFromConfigMap(parsedConfig)
   if !parsedConfig.nil? && !parsedConfig[:log_collection_settings].nil?
     #Get stdout log config settings
-    begin
-      if !parsedConfig[:log_collection_settings][:stdout].nil? && !parsedConfig[:log_collection_settings][:stdout][:enabled].nil?
-        @collectStdoutLogs = parsedConfig[:log_collection_settings][:stdout][:enabled]
-        puts "config::Using config map setting for stdout log collection"
-        stdoutNamespaces = parsedConfig[:log_collection_settings][:stdout][:exclude_namespaces]
-        
-        stdoutSystemPods = Array.new
-        if !parsedConfig[:log_collection_settings][:stdout][:collect_system_pod_logs].nil?
-          stdoutSystemPods = parsedConfig[:log_collection_settings][:stdout][:collect_system_pod_logs]
-        end
+    # begin
+    #   if !parsedConfig[:log_collection_settings][:stdout].nil? && !parsedConfig[:log_collection_settings][:stdout][:enabled].nil?
+    #     @collectStdoutLogs = parsedConfig[:log_collection_settings][:stdout][:enabled]
+    #     puts "config::Using config map setting for stdout log collection"
+    #     stdoutNamespaces = parsedConfig[:log_collection_settings][:stdout][:exclude_namespaces]
 
-        #Clearing it, so that it can be overridden with the config map settings
-        @stdoutExcludeNamespaces.clear
-        if @collectStdoutLogs && !stdoutNamespaces.nil?
-          if stdoutNamespaces.kind_of?(Array)
-            # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
-            if stdoutNamespaces.length > 0 && stdoutNamespaces[0].kind_of?(String)
-              #Empty the array to use the values from configmap
-              stdoutNamespaces.each do |namespace|
-                if @stdoutExcludeNamespaces.empty?
-                  # To not append , for the first element
-                  @stdoutExcludeNamespaces.concat(namespace)
-                else
-                  @stdoutExcludeNamespaces.concat("," + namespace)
-                end
-              end
-              puts "config::Using config map setting for stdout log collection to exclude namespace"
-            end
-          end
-        end
+    #     stdoutSystemPods = Array.new
+    #     if !parsedConfig[:log_collection_settings][:stdout][:collect_system_pod_logs].nil?
+    #       stdoutSystemPods = parsedConfig[:log_collection_settings][:stdout][:collect_system_pod_logs]
+    #     end
 
-        if @collectStdoutLogs && stdoutSystemPods.is_a?(Array) && !stdoutSystemPods.empty?
-          # Using is_a? for type checking and directly checking if the array is not empty
-          filtered_entries = stdoutSystemPods.each_with_object([]) do |pod, entries|
-            namespace, controller = pod.split(':') # Split once and use the result
-            if namespace && @allowed_system_namespaces.include?(namespace) && !@stdoutExcludeNamespaces.include?(namespace) && controller && !controller.empty?
-              entries << pod
-            else
-              puts "config:: invalid entry for collect_system_pod_logs: #{pod}"
-              unless @allowed_system_namespaces.include?(namespace)
-                puts "config:: collect_system_pod_logs only works for system namespaces #{@allowed_system_namespaces}"
-              end
-              if @stdoutExcludeNamespaces.include?(namespace)
-                puts "config:: please remove #{namespace} from exclude_namespaces to use collect_system_pod_logs"
-              end
-              if !controller || controller.empty?
-                puts "config:: Please provide valid controller name. controller name is empty"
-              end
-            end
-          end
+    #     #Clearing it, so that it can be overridden with the config map settings
+    #     @stdoutExcludeNamespaces.clear
+    #     if @collectStdoutLogs && !stdoutNamespaces.nil?
+    #       if stdoutNamespaces.kind_of?(Array)
+    #         # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+    #         if stdoutNamespaces.length > 0 && stdoutNamespaces[0].kind_of?(String)
+    #           #Empty the array to use the values from configmap
+    #           stdoutNamespaces.each do |namespace|
+    #             if @stdoutExcludeNamespaces.empty?
+    #               # To not append , for the first element
+    #               @stdoutExcludeNamespaces.concat(namespace)
+    #             else
+    #               @stdoutExcludeNamespaces.concat("," + namespace)
+    #             end
+    #           end
+    #           puts "config::Using config map setting for stdout log collection to exclude namespace"
+    #         end
+    #       end
+    #     end
 
-          @stdoutIncludeSystemPods = filtered_entries.join(",")
-          puts "config::Using config map setting for stdout log collection to include system pods" if filtered_entries.any?
-        else
-          puts "config::Stdout log collection is not enabled or stdoutSystemPods is not properly configured." unless @collectStdoutLogs
-        end
+    #     if @collectStdoutLogs && stdoutSystemPods.is_a?(Array) && !stdoutSystemPods.empty?
+    #       # Using is_a? for type checking and directly checking if the array is not empty
+    #       filtered_entries = stdoutSystemPods.each_with_object([]) do |pod, entries|
+    #         namespace, controller = pod.split(':') # Split once and use the result
+    #         if namespace && @allowed_system_namespaces.include?(namespace) && !@stdoutExcludeNamespaces.include?(namespace) && controller && !controller.empty?
+    #           entries << pod
+    #         else
+    #           puts "config:: invalid entry for collect_system_pod_logs: #{pod}"
+    #           unless @allowed_system_namespaces.include?(namespace)
+    #             puts "config:: collect_system_pod_logs only works for system namespaces #{@allowed_system_namespaces}"
+    #           end
+    #           if @stdoutExcludeNamespaces.include?(namespace)
+    #             puts "config:: please remove #{namespace} from exclude_namespaces to use collect_system_pod_logs"
+    #           end
+    #           if !controller || controller.empty?
+    #             puts "config:: Please provide valid controller name. controller name is empty"
+    #           end
+    #         end
+    #       end
 
-      end
-    rescue => errorStr
-      ConfigParseErrorLogger.logError("Exception while reading config map settings for stdout log collection - #{errorStr}, using defaults, please check config map for errors")
-    end
+    #       @stdoutIncludeSystemPods = filtered_entries.join(",")
+    #       puts "config::Using config map setting for stdout log collection to include system pods" if filtered_entries.any?
+    #     else
+    #       puts "config::Stdout log collection is not enabled or stdoutSystemPods is not properly configured." unless @collectStdoutLogs
+    #     end
 
-    #Get stderr log config settings
-    begin
-      if !parsedConfig[:log_collection_settings][:stderr].nil? && !parsedConfig[:log_collection_settings][:stderr][:enabled].nil?
-        @collectStderrLogs = parsedConfig[:log_collection_settings][:stderr][:enabled]
-        puts "config::Using config map setting for stderr log collection"
-        stderrNamespaces = parsedConfig[:log_collection_settings][:stderr][:exclude_namespaces]
+    #   end
+    # rescue => errorStr
+    #   ConfigParseErrorLogger.logError("Exception while reading config map settings for stdout log collection - #{errorStr}, using defaults, please check config map for errors")
+    # end
 
-        stderrSystemPods = Array.new
-        if !parsedConfig[:log_collection_settings][:stderr][:collect_system_pod_logs].nil?
-          stderrSystemPods = parsedConfig[:log_collection_settings][:stderr][:collect_system_pod_logs]
-        end
+    # #Get stderr log config settings
+    # begin
+    #   if !parsedConfig[:log_collection_settings][:stderr].nil? && !parsedConfig[:log_collection_settings][:stderr][:enabled].nil?
+    #     @collectStderrLogs = parsedConfig[:log_collection_settings][:stderr][:enabled]
+    #     puts "config::Using config map setting for stderr log collection"
+    #     stderrNamespaces = parsedConfig[:log_collection_settings][:stderr][:exclude_namespaces]
 
-        stdoutNamespaces = Array.new
-        #Clearing it, so that it can be overridden with the config map settings
-        @stderrExcludeNamespaces.clear
-        if @collectStderrLogs && !stderrNamespaces.nil?
-          if stderrNamespaces.kind_of?(Array)
-            if !@stdoutExcludeNamespaces.nil? && !@stdoutExcludeNamespaces.empty?
-              stdoutNamespaces = @stdoutExcludeNamespaces.split(",")
-            end
-            # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
-            if stderrNamespaces.length > 0 && stderrNamespaces[0].kind_of?(String)
-              stderrNamespaces.each do |namespace|
-                if @stderrExcludeNamespaces.empty?
-                  # To not append , for the first element
-                  @stderrExcludeNamespaces.concat(namespace)
-                else
-                  @stderrExcludeNamespaces.concat("," + namespace)
-                end
-                # Add this namespace to excludepath if both stdout & stderr are excluded for this namespace, to ensure are optimized and dont tail these files at all
-                if stdoutNamespaces.include? namespace
-                  @excludePath.concat("," + "*_" + namespace + "_*.log")
-                end
-              end
-              puts "config::Using config map setting for stderr log collection to exclude namespace"
-            end
-          end
-        end
+    #     stderrSystemPods = Array.new
+    #     if !parsedConfig[:log_collection_settings][:stderr][:collect_system_pod_logs].nil?
+    #       stderrSystemPods = parsedConfig[:log_collection_settings][:stderr][:collect_system_pod_logs]
+    #     end
 
-        if @collectStderrLogs && stderrSystemPods.is_a?(Array) && !stderrSystemPods.empty?
-          # Using is_a? for type checking and directly checking if the array is not empty
-          filtered_entries = stderrSystemPods.each_with_object([]) do |pod, entries|
-            namespace, controller = pod.split(':') # Split once and use the result
-            if namespace && @allowed_system_namespaces.include?(namespace) && !@stderrExcludeNamespaces.include?(namespace) && controller && !controller.empty?
-              entries << pod
-            else
-              puts "config:: invalid entry for collect_system_pod_logs: #{pod}"
-              unless @allowed_system_namespaces.include?(namespace)
-                puts "config:: collect_system_pod_logs only works for system namespaces #{@allowed_system_namespaces}"
-              end
-              if @stdoutExcludeNamespaces.include?(namespace)
-                puts "config:: please remove #{namespace} from exclude_namespaces to use collect_system_pod_logs"
-              end
-              if !controller || controller.empty?
-                puts "config:: Please provide valid controller name. controller name is empty"
-              end
-            end
-          end
+    #     stdoutNamespaces = Array.new
+    #     #Clearing it, so that it can be overridden with the config map settings
+    #     @stderrExcludeNamespaces.clear
+    #     if @collectStderrLogs && !stderrNamespaces.nil?
+    #       if stderrNamespaces.kind_of?(Array)
+    #         if !@stdoutExcludeNamespaces.nil? && !@stdoutExcludeNamespaces.empty?
+    #           stdoutNamespaces = @stdoutExcludeNamespaces.split(",")
+    #         end
+    #         # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+    #         if stderrNamespaces.length > 0 && stderrNamespaces[0].kind_of?(String)
+    #           stderrNamespaces.each do |namespace|
+    #             if @stderrExcludeNamespaces.empty?
+    #               # To not append , for the first element
+    #               @stderrExcludeNamespaces.concat(namespace)
+    #             else
+    #               @stderrExcludeNamespaces.concat("," + namespace)
+    #             end
+    #             # Add this namespace to excludepath if both stdout & stderr are excluded for this namespace, to ensure are optimized and dont tail these files at all
+    #             if stdoutNamespaces.include? namespace
+    #               @excludePath.concat("," + "*_" + namespace + "_*.log")
+    #             end
+    #           end
+    #           puts "config::Using config map setting for stderr log collection to exclude namespace"
+    #         end
+    #       end
+    #     end
 
-          @stderrIncludeSystemPods = filtered_entries.join(",")
-          puts "config::Using config map setting for stderr log collection to include system pods" if filtered_entries.any?
-        else
-          puts "config::stderr log collection is not enabled or stderrSystemPods is not properly configured." unless @collectStderrLogs
-        end
+    #     if @collectStderrLogs && stderrSystemPods.is_a?(Array) && !stderrSystemPods.empty?
+    #       # Using is_a? for type checking and directly checking if the array is not empty
+    #       filtered_entries = stderrSystemPods.each_with_object([]) do |pod, entries|
+    #         namespace, controller = pod.split(':') # Split once and use the result
+    #         if namespace && @allowed_system_namespaces.include?(namespace) && !@stderrExcludeNamespaces.include?(namespace) && controller && !controller.empty?
+    #           entries << pod
+    #         else
+    #           puts "config:: invalid entry for collect_system_pod_logs: #{pod}"
+    #           unless @allowed_system_namespaces.include?(namespace)
+    #             puts "config:: collect_system_pod_logs only works for system namespaces #{@allowed_system_namespaces}"
+    #           end
+    #           if @stdoutExcludeNamespaces.include?(namespace)
+    #             puts "config:: please remove #{namespace} from exclude_namespaces to use collect_system_pod_logs"
+    #           end
+    #           if !controller || controller.empty?
+    #             puts "config:: Please provide valid controller name. controller name is empty"
+    #           end
+    #         end
+    #       end
 
-      end
-    rescue => errorStr
-      ConfigParseErrorLogger.logError("Exception while reading config map settings for stderr log collection - #{errorStr}, using defaults, please check config map for errors")
-    end
+    #       @stderrIncludeSystemPods = filtered_entries.join(",")
+    #       puts "config::Using config map setting for stderr log collection to include system pods" if filtered_entries.any?
+    #     else
+    #       puts "config::stderr log collection is not enabled or stderrSystemPods is not properly configured." unless @collectStderrLogs
+    #     end
+
+    #   end
+    # rescue => errorStr
+    #   ConfigParseErrorLogger.logError("Exception while reading config map settings for stderr log collection - #{errorStr}, using defaults, please check config map for errors")
+    # end
 
     #Get environment variables log config settings
     begin

@@ -71,7 +71,7 @@ def populateGenevaIntegrationSettings(parsedConfig)
     @geneva_account_namespace = ""
     @geneva_gcs_region = ""
   end
-end  
+end
 
 # Use the ruby structure created after config parsing to set the right values to be used as environment variables
 def populateSettingValuesFromConfigMap(parsedConfig)
@@ -284,9 +284,11 @@ if !@configSchemaVersion.nil? && !@configSchemaVersion.empty? && @configSchemaVe
   configMapSettings = parseConfigMap
   if !configMapSettings.nil?
     if !@controllerType.nil? && !@controllerType.empty? && @controllerType.strip.casecmp(@daemonset) == 0
-      populateSettingValuesFromConfigMap(configMapSettings)
+      puts "config::warn ignore geneva config settings for daemonset"
+      # populateSettingValuesFromConfigMap(configMapSettings)
     else
-      populateGenevaIntegrationSettings(configMapSettings)
+      puts "config::warn ignore geneva config settings for replicaset"
+      # populateGenevaIntegrationSettings(configMapSettings)
     end
   end
 else
