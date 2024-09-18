@@ -1098,24 +1098,16 @@ else
 fi
 
 if [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
-      # no dependency on fluentd for prometheus side car container
-      if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ]; then
-            if [ ! -e "/etc/config/kube.conf" ]; then
-                  if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
-                        echo "*** starting fluentd v1 in daemonset"
-                        if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
-                              mv /etc/fluent/container-cm.conf /etc/fluent/container.conf
-                        fi
-                        fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
-                  else
-                        echo "Skipping fluentd since LOGS_AND_EVENTS_ONLY is set to true"
-                  fi
-            else
-                  echo "*** starting fluentd v1 in replicaset"
+      # no dependency on fluentd for prometheus side car container and linux deamonset
+      if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ] && [ ! -e "/etc/config/kube.conf" ]; then
+            if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
+                  echo "*** starting fluentd v1 in daemonset"
                   if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
-                        mv /etc/fluent/kube-cm.conf /etc/fluent/kube.conf
+                        mv /etc/fluent/container-cm.conf /etc/fluent/container.conf
                   fi
-                  fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+                  fluentd -c /etc/fluent/container.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
+            else
+                  echo "Skipping fluentd since LOGS_AND_EVENTS_ONLY is set to true"
             fi
       fi
 else
