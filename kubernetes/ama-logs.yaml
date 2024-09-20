@@ -1084,6 +1084,8 @@ spec:
               value: "28331"
             - name: AZMON_TELEGRAF_LIVENESSPROBE_ENABLED
               value: "false"
+            - name: AZMON_WINDOWS_FLUENT_BIT_ENABLED
+              value: "false"
           securityContext:
             privileged: true
             capabilities:
@@ -1336,8 +1338,8 @@ spec:
           # Uncomment below lines for MSI Auth Mode  testing
           # - name: USING_AAD_MSI_AUTH
           #   value: "true"
-          - name: AZMON_WINDOWS_FLUENT_BIT_DISABLED
-            value: "true"
+          - name: AZMON_WINDOWS_FLUENT_BIT_ENABLED
+            value: "false"
           - name: APPMONITORING_AUTOINSTRUMENTATION_ENABLED
             value: "false"
           - name: APPMONITORING_OPENTELEMETRYLOGS_ENABLED
