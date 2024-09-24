@@ -509,17 +509,11 @@ function Read-Configs {
           Write-Host "Successfully set environment variable AZMON_MULTI_TENANCY_LOG_COLLECTION - $($azmonLogsMultitenancy) for target 'machine'..."
         }
     }
-    else {
-        Write-Host "Failed to set environment variable AZMON_MULTI_TENANCY_LOG_COLLECTION for target 'machine' since it is either null or empty"
-    }
 
     $azmonLogsMultitenancyNamespaces = [System.Environment]::GetEnvironmentVariable("AZMON_MULTI_TENANCY_NAMESPACES", "process")
     if (![string]::IsNullOrEmpty($azmonLogsMultitenancyNamespaces)) {
         [System.Environment]::SetEnvironmentVariable("AZMON_MULTI_TENANCY_NAMESPACES", $azmonLogsMultitenancyNamespaces, "machine")
         Write-Host "Successfully set environment variable AZMON_MULTI_TENANCY_NAMESPACES - $($azmonLogsMultitenancyNamespaces) for target 'machine'..."
-    }
-    else {
-        Write-Host "Failed to set environment variable AZMON_MULTI_TENANCY_NAMESPACES for target 'machine' since it is either null or empty"
     }
 
     if (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true') {
