@@ -1326,7 +1326,7 @@ echo "startup script took: $elapsed seconds"
 echo "startup script end @ $(date +'%Y-%m-%dT%H:%M:%S')"
 
 shutdown() {
-     if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ]; then
+     if [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" == "true" ] || [ "${AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE}" == "true" ]; then
          echo "graceful shutdown"
          gracefulShutdown
       else
