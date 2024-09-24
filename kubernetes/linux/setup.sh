@@ -36,6 +36,7 @@ gem update time --default
 gem update uri --default
 gem update stringio --default
 gem update rexml --default
+gem update webrick --default
 mv /usr/lib/ruby/gems/3.1.0/specifications/default/time-0.2.0.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
 mv /usr/lib/ruby/gems/3.1.0/specifications/default/uri-0.11.0.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
 mv /usr/lib/ruby/gems/3.1.0/specifications/default/stringio-3.0.1.gemspec /usr/lib/ruby/gems/3.1.0/specifications/default/..
