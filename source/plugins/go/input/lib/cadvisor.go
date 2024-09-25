@@ -456,7 +456,11 @@ func getContainerMemoryMetricItems(metricInfo map[string]interface{}, hostName, 
 				isKubeSystemNamespace := podNamespaceLower == "kube-system"
 				isAmaLogsContainer := strings.HasPrefix(containerNameLower, "ama-logs")
 
-				if (isAmaLogsPod && isKubeSystemNamespace && isAmaLogsContainer && strings.EqualFold(metricName, MEMORY_RSS_BYTES) && operatingSystemLower == "linux") || (strings.EqualFold(metricName, MEMORY_WORKING_SET_BYTES) && operatingSystemLower == "windows") {
+				if (isAmaLogsPod &&	isKubeSystemNamespace && isAmaLogsContainer &&
+					(
+					 (strings.EqualFold(metricName, MEMORY_RSS_BYTES) && operatingSystemLower == "linux") ||
+					 (strings.EqualFold(metricName, MEMORY_WORKING_SET_BYTES) && operatingSystemLower == "windows")
+					)) {
 					if timeDifferenceInMinutes >= TELEMETRY_FLUSH_INTERVAL_IN_MINUTES {
 						telemetryProps := map[string]string{}
 						telemetryProps["Pod"] = podName
