@@ -53,6 +53,7 @@ if ("secrets-manager".localeCompare(containerMode) === 0) {
     */
     try {
         logger.info("Running in cleanup mode...", operationId, null);
+        logger.SendEvent("CleanupModeRun", operationId, null, clusterArmId, clusterArmRegion, true);
 
         // mark the webhook deployment with an annotation and restart it
         await Utilities.RestartWebhookDeployment([CleanupModeWebhookAnnotationName, "1"], operationId, null, null, clusterArmId, clusterArmRegion);
