@@ -536,7 +536,7 @@ jobs:
         docker cp $(Build.ArtifactStagingDirectory)/ossSigning/Newtonsoft.Json.dll pushContainer:C:\opt\amalogswindows\certgenerator\Newtonsoft.Json.dll
         docker cp $(Build.ArtifactStagingDirectory)/ossSigning/fluent-bit/. pushContainer:C:\opt\fluent-bit/
         docker cp $(Build.ArtifactStagingDirectory)/ossSigning/ruby31/. pushContainer:C:\ruby31/
-        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/telegraf.exe pushContainer::C:\opt\telegraf\telegraf.exe
+        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/telegraf.exe pushContainer:C:\opt\telegraf\telegraf.exe
         docker cp $(Build.ArtifactStagingDirectory)/ossSigning/out_oms.so pushContainer:C:\opt\amalogswindows\out_oms.so
 
         docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2019BaseImageVersion)
@@ -769,7 +769,7 @@ jobs:
         docker cp $(Build.ArtifactStagingDirectory)/ossSigning/Newtonsoft.Json.dll pushContainer:C:\opt\amalogswindows\certgenerator\Newtonsoft.Json.dll
         docker cp $(Build.ArtifactStagingDirectory)/ossSigning/fluent-bit/. pushContainer:C:\opt\fluent-bit/
         docker cp $(Build.ArtifactStagingDirectory)/ossSigning/ruby31/. pushContainer:C:\ruby31/
-        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/telegraf.exe pushContainer::C:\opt\telegraf\telegraf.exe
+        docker cp $(Build.ArtifactStagingDirectory)/ossSigning/telegraf.exe pushContainer:C:\opt\telegraf\telegraf.exe
         docker cp $(Build.ArtifactStagingDirectory)/ossSigning/out_oms.so pushContainer:C:\opt\amalogswindows\out_oms.so
 
         docker commit pushContainer ${{ variables.repoImageName }}:$(windowsImageTag)-$(windows2022BaseImageVersion)
