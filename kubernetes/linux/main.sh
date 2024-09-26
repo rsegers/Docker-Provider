@@ -1111,7 +1111,7 @@ if [ "${CONTROLLER_TYPE}" == "ReplicaSet" ] && [ "${GENEVA_LOGS_INTEGRATION_SERV
     fluentd -c /etc/fluent/kube.conf -o /var/opt/microsoft/docker-cimprov/log/fluentd.log --log-rotate-age 5 --log-rotate-size 20971520 &
 elif [ "$AZMON_RESOURCE_OPTIMIZATION_ENABLED" != "true" ]; then
     # no dependency on fluentd for Prometheus sidecar container
-    if [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ] && [ "${GENEVA_LOGS_INTEGRATION_SERVICE_MODE}" != "true" ] && [ ! -e "/etc/config/kube.conf" ]; then
+    if [ "${CONTROLLER_TYPE}" == "DaemonSet" ] && [ "${CONTAINER_TYPE}" != "PrometheusSidecar" ]; then
         if [ "$LOGS_AND_EVENTS_ONLY" != "true" ]; then
             echo "*** starting fluentd v1 in daemonset"
             if [ "${ENABLE_CUSTOM_METRICS}" == "true" ]; then
