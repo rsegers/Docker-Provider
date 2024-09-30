@@ -209,7 +209,7 @@ export class Deployment {
         name: string,
         namespace: string,
         resourceVersion?: string
-    };
+    }
 }
 
 export class CRsListResponse {
@@ -217,7 +217,7 @@ export class CRsListResponse {
     body: {
         metadata: {
             resourceVersion: string
-        };
+        },
         items: InstrumentationCR[]
     }
 }
@@ -227,7 +227,7 @@ export class DeploymentsListResponse {
     body: {
         metadata: {
             resourceVersion: string
-        };
+        },
         items: Deployment[]
     }
 }
