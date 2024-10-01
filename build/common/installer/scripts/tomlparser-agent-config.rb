@@ -65,7 +65,7 @@ require_relative "ConfigParseErrorLogger"
 @fbitTailIgnoreOlder = ""
 @storageTotalLimitSizeMB = 200
 @outputForwardWorkers = 10
-@outputForwardRetryLimit = 10
+@outputForwardRetryLimit = 30
 @requireAckResponse = "false"
 @fbitStorageMaxChunksUp = 0
 @fbitStorageType = ""
