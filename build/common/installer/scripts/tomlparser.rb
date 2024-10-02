@@ -47,7 +47,7 @@ require_relative "ConfigParseErrorLogger"
   "throttle_window" => "300",
   "throttle_interval" => "1s",
   "out_forward_worker_count" => "10",
-  "out_forward_retry_limit" => "10",
+  "out_forward_retry_limit" => "30",
   "out_forward_storage_total_limit_size" => "2G",
   "out_forward_require_ack_response" => "false",
   "disable_throttle" => "false"
