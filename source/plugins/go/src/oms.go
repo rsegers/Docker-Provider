@@ -205,6 +205,8 @@ var (
 	InsightsMetricsNamedPipe net.Conn
 	// flag to check whether Azure Monitor Multi-tenancy Log Collection enabled or not
 	IsAzMonMultiTenancyLogCollectionEnabled bool
+	// flag to check whether Azure Monitor Multi-tenancy Log Collection Advanced Mode enabled or not
+	IsAzMonMultiTenancyLogCollectionAdvancedModeEnabled bool
 	// flag to check whether Azure Monitor Multi-tenancy Logs ServiceMode enabled or not
 	IsAzMonMultitenancyLogsServiceMode bool
 )
@@ -2339,10 +2341,17 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	ContainerLogV2ConfigMap = (strings.Compare(ContainerLogSchemaVersion, ContainerLogV2SchemaVersion) == 0)
 
 	IsAzMonMultiTenancyLogCollectionEnabled = false
-	multiTenancyModeEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_MULTI_TENANCY_LOG_COLLECTION")))
-	if multiTenancyModeEnabled != "" && strings.Compare(strings.ToLower(multiTenancyModeEnabled), "true") == 0 {
+	multiTenancyEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_MULTI_TENANCY_LOG_COLLECTION")))
+	if multiTenancyEnabled != "" && strings.Compare(strings.ToLower(multiTenancyEnabled), "true") == 0 {
 		IsAzMonMultiTenancyLogCollectionEnabled = true
 		Log("Azure Monitor Multi-tenancy Log Collection Enabled")
+	}
+
+	IsAzMonMultiTenancyLogCollectionAdvancedModeEnabled = false
+	multiTenancyAdvancedModeEnabled := strings.TrimSpace(strings.ToLower(os.Getenv("AZMON_MULTI_TENANCY_LOG_COLLECTION_ADVANCED_MODE")))
+	if multiTenancyAdvancedModeEnabled != "" && strings.Compare(strings.ToLower(multiTenancyAdvancedModeEnabled), "true") == 0 {
+		IsAzMonMultiTenancyLogCollectionAdvancedModeEnabled = true
+		Log("Azure Monitor Multi-tenancy Log Collection Advanced Mode Enabled")
 	}
 
 	KubernetesMetadataEnabled = false
@@ -2425,7 +2434,7 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		go refreshIngestionAuthToken()
 	}
 
-	if IsAzMonMultiTenancyLogCollectionEnabled || IsAzMonMultitenancyLogsServiceMode {
+	if IsAzMonMultitenancyLogsServiceMode || (IsAzMonMultiTenancyLogCollectionEnabled && !IsAzMonMultiTenancyLogCollectionAdvancedModeEnabled) {
 		go updateContainerLogV2ExtensionMaps(IsWindows)
 	}
 }

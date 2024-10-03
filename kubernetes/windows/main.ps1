@@ -510,6 +510,14 @@ function Read-Configs {
         }
     }
 
+    $azmonLogsMultitenancyAdvancedMode = [System.Environment]::GetEnvironmentVariable("AZMON_MULTI_TENANCY_LOG_COLLECTION_ADVANCED_MODE", "process")
+    if (![string]::IsNullOrEmpty($azmonLogsMultitenancyAdvancedMode)) {
+        if ($azmonLogsMultitenancyAdvancedMode.ToLower() -eq 'true') {
+          [System.Environment]::SetEnvironmentVariable("AZMON_MULTI_TENANCY_LOG_COLLECTION_ADVANCED_MODE", $azmonLogsMultitenancyAdvancedMode, "machine")
+          Write-Host "Successfully set environment variable AZMON_MULTI_TENANCY_LOG_COLLECTION_ADVANCED_MODE - $($azmonLogsMultitenancyAdvancedMode) for target 'machine'..."
+        }
+    }
+
     $azmonLogsMultitenancyNamespaces = [System.Environment]::GetEnvironmentVariable("AZMON_MULTI_TENANCY_NAMESPACES", "process")
     if (![string]::IsNullOrEmpty($azmonLogsMultitenancyNamespaces)) {
         [System.Environment]::SetEnvironmentVariable("AZMON_MULTI_TENANCY_NAMESPACES", $azmonLogsMultitenancyNamespaces, "machine")
@@ -718,12 +726,21 @@ function Start-Fluent-Telegraf {
     $genevaLogsIntegration = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_INTEGRATION", "process")
     $genevaLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("GENEVA_LOGS_MULTI_TENANCY", "process")
     $azmonLogsMultitenancy = [System.Environment]::GetEnvironmentVariable("AZMON_MULTI_TENANCY_LOG_COLLECTION", "process")
+    $azmonLogsMultitenancyAdvancedMode = [System.Environment]::GetEnvironmentVariable("AZMON_MULTI_TENANCY_LOG_COLLECTION_ADVANCED_MODE", "process")
     if  (![string]::IsNullOrEmpty($azmonLogsMultitenancy) -and $azmonLogsMultitenancy.ToLower() -eq 'true') {
-        $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit-azmon-multi-tenancy.conf"
-        Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
-        # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
-        # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
-        Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit-azmon-multi-tenancy.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+        if  (![string]::IsNullOrEmpty($azmonLogsMultitenancyAdvancedMode) -and $azmonLogsMultitenancyAdvancedMode.ToLower() -eq 'true') {
+            $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit-azmon-multi-tenancy.conf"
+            Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
+            # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
+            # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
+            Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit-azmon-multi-tenancy.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+        } else {
+            $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit.conf"
+            Write-Host "Using fluent-bit config: $($fluentbitConfFile)"
+            # Run fluent-bit service first so that we do not miss any logs being forwarded by the telegraf service.
+            # Run fluent-bit as a background job. Switch this to a windows service once fluent-bit supports natively running as a windows service
+            Start-Job -ScriptBlock { Start-Process -NoNewWindow -FilePath "C:\opt\fluent-bit\bin\fluent-bit.exe" -ArgumentList @("-c", "C:/etc/fluent-bit/fluent-bit.conf", "-e", "C:\opt\amalogswindows\out_oms.so") }
+        }
     }
     elseif (![string]::IsNullOrEmpty($genevaLogsIntegration) -and $genevaLogsIntegration.ToLower() -eq 'true' -and ![string]::IsNullOrEmpty($genevaLogsMultitenancy) -and $genevaLogsMultitenancy.ToLower() -eq 'true') {
         $fluentbitConfFile = "C:/etc/fluent-bit/fluent-bit-geneva.conf"

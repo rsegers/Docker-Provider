@@ -31,6 +31,7 @@ require_relative "ConfigParseErrorLogger"
 @annotationBasedLogFiltering = false
 @allowed_system_namespaces = ['kube-system', 'gatekeeper-system', 'calico-system', 'azure-arc', 'kube-public', 'kube-node-lease']
 @isAzMonMultiTenancyLogCollectionEnabled = false
+@isAzMonMultiTenancyLogCollectionAdvancedMode = false
 @azMonMultiTenantNamespaces = []
 @azMonMultiTenancyMaxStorageChunksUp = 500
 @namespace_to_settings = {}
@@ -462,81 +463,96 @@ def populateSettingValuesFromConfigMap(parsedConfig)
 
     #Get Multi-tenancy log collection settings
     begin
-        if !parsedConfig[:log_collection_settings][:multi_tenancy].nil? && !parsedConfig[:log_collection_settings][:multi_tenancy][:enabled].nil?
-          multi_tenancy_enabled = parsedConfig[:log_collection_settings][:multi_tenancy][:enabled]
-          if multi_tenancy_enabled
-            @isAzMonMultiTenancyLogCollectionEnabled = multi_tenancy_enabled
-            namespaces = parsedConfig[:log_collection_settings][:multi_tenancy][:namespaces]
-            puts "config::INFO:multi_tenancy namespaces provided in the configmap: #{namespaces}"
-            if !namespaces.nil? && !namespaces.empty? &&
-              namespaces.kind_of?(Array) && namespaces.length > 0 &&
-              namespaces[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
-              @azMonMultiTenantNamespaces = namespaces.map(&:strip).map(&:downcase).uniq
-            end
-            puts "config::INFO:multi_tenancy unique namespaces provided: #{@azMonMultiTenantNamespaces}"
-            # max storage chunks
-            storage_max_chunks_up = parsedConfig[:log_collection_settings][:multi_tenancy][:storage_max_chunks_up]
-            if is_valid_number?(storage_max_chunks_up)
-               @azMonMultiTenancyMaxStorageChunksUp = storage_max_chunks_up.to_i
-            end
-            puts "config::INFO:multi_tenancy storage_max_chunks_up: #{@azMonMultiTenancyMaxStorageChunksUp}"
-
-            # default settings
-            storage_type =  parsedConfig[:log_collection_settings][:multi_tenancy][:storage_type]
-            updateDefaultConfigSetting("storage_type", storage_type)
-            mem_buf_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:mem_buf_limit]
-            updateDefaultConfigSetting("mem_buf_limit", mem_buf_limit)
-            buffer_chunk_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:buffer_chunk_size]
-            updateDefaultConfigSetting("buffer_chunk_size", buffer_chunk_size)
-            buffer_max_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:buffer_max_size]
-            updateDefaultConfigSetting("buffer_max_size", buffer_max_size)
-            throttle_rate =  parsedConfig[:log_collection_settings][:multi_tenancy][:throttle_rate]
-            updateDefaultConfigSetting("throttle_rate", throttle_rate)
-            throttle_window =  parsedConfig[:log_collection_settings][:multi_tenancy][:throttle_window]
-            updateDefaultConfigSetting("throttle_window", throttle_window)
-            out_forward_worker_count =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_worker_count]
-            updateDefaultConfigSetting("out_forward_worker_count", out_forward_worker_count)
-            out_forward_retry_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_retry_limit]
-            updateDefaultConfigSetting("out_forward_retry_limit", out_forward_retry_limit)
-            out_forward_storage_total_limit_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_storage_total_limit_size]
-            updateDefaultConfigSetting("out_forward_storage_total_limit_size", out_forward_storage_total_limit_size)
-            out_forward_require_ack_response =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_require_ack_response]
-            updateDefaultConfigSetting("out_forward_require_ack_response", out_forward_require_ack_response)
-            disable_throttle =  parsedConfig[:log_collection_settings][:multi_tenancy][:disable_throttle]
-            updateDefaultConfigSetting("disable_throttle", disable_throttle)
-
-            # namepsace to settings
-            namespace_settings = parsedConfig[:log_collection_settings][:multi_tenancy][:namespace_settings]
-            puts "config::INFO:multi_tenancy namespace_settings: #{namespace_settings}"
-            if  @azMonMultiTenantNamespaces.length > 0
-              if !namespace_settings.nil? && !namespace_settings.empty? &&
-                namespace_settings.kind_of?(Array) && namespace_settings.length > 0 &&
-                namespace_settings[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
-                namespace_settings.each do |entry|
-                  namespace, settings_str = entry.split(':')
-                  settings = settings_str.split(';').map { |s| s.split('=') }.to_h
-                  namespace = namespace.strip.downcase
-                  if @namespace_to_settings.key?(namespace)
-                    puts "config::WARN: Duplicate namespace settings found for namespace: #{namespace}, using the previous settings"
-                  else
-                    @namespace_to_settings[namespace] = settings
+        if !parsedConfig[:log_collection_settings][:multi_tenancy].nil?
+          if !parsedConfig[:log_collection_settings][:multi_tenancy][:enabled].nil?
+            multi_tenancy_enabled = parsedConfig[:log_collection_settings][:multi_tenancy][:enabled]
+            if multi_tenancy_enabled
+              @isAzMonMultiTenancyLogCollectionEnabled = multi_tenancy_enabled
+              puts "config::INFO: Using config map setting for multi_tenancy enabled: #{@isAzMonMultiTenancyLogCollectionEnabled}"
+              # multi-tenancy advanced mode
+              if !parsedConfig[:log_collection_settings][:multi_tenancy][:advanced_mode_enabled].nil?
+                advanced_mode_enabled = parsedConfig[:log_collection_settings][:multi_tenancy][:advanced_mode_enabled]
+              end
+              puts "config::INFO: Using config map setting for multi_tenancy advanced_mode_enabled: #{advanced_mode_enabled}"
+              if advanced_mode_enabled
+                @isAzMonMultiTenancyLogCollectionAdvancedMode = advanced_mode_enabled
+                namespaces = parsedConfig[:log_collection_settings][:multi_tenancy][:namespaces]
+                puts "config::INFO:multi_tenancy namespaces provided in the configmap: #{namespaces}"
+                if !namespaces.nil? && !namespaces.empty? &&
+                  namespaces.kind_of?(Array) && namespaces.length > 0 &&
+                  namespaces[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+                  @azMonMultiTenantNamespaces = namespaces.map(&:strip).map(&:downcase).uniq
+                end
+                puts "config::INFO:multi_tenancy unique namespaces provided: #{@azMonMultiTenantNamespaces}"
+                if  @azMonMultiTenantNamespaces.length > 0
+                  # max storage chunks
+                  storage_max_chunks_up = parsedConfig[:log_collection_settings][:multi_tenancy][:storage_max_chunks_up]
+                  if is_valid_number?(storage_max_chunks_up)
+                    @azMonMultiTenancyMaxStorageChunksUp = storage_max_chunks_up.to_i
                   end
+                  puts "config::INFO:multi_tenancy storage_max_chunks_up: #{@azMonMultiTenancyMaxStorageChunksUp}"
+
+                  # default settings
+                  storage_type =  parsedConfig[:log_collection_settings][:multi_tenancy][:storage_type]
+                  updateDefaultConfigSetting("storage_type", storage_type)
+                  mem_buf_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:mem_buf_limit]
+                  updateDefaultConfigSetting("mem_buf_limit", mem_buf_limit)
+                  buffer_chunk_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:buffer_chunk_size]
+                  updateDefaultConfigSetting("buffer_chunk_size", buffer_chunk_size)
+                  buffer_max_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:buffer_max_size]
+                  updateDefaultConfigSetting("buffer_max_size", buffer_max_size)
+                  throttle_rate =  parsedConfig[:log_collection_settings][:multi_tenancy][:throttle_rate]
+                  updateDefaultConfigSetting("throttle_rate", throttle_rate)
+                  throttle_window =  parsedConfig[:log_collection_settings][:multi_tenancy][:throttle_window]
+                  updateDefaultConfigSetting("throttle_window", throttle_window)
+                  out_forward_worker_count =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_worker_count]
+                  updateDefaultConfigSetting("out_forward_worker_count", out_forward_worker_count)
+                  out_forward_retry_limit =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_retry_limit]
+                  updateDefaultConfigSetting("out_forward_retry_limit", out_forward_retry_limit)
+                  out_forward_storage_total_limit_size =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_storage_total_limit_size]
+                  updateDefaultConfigSetting("out_forward_storage_total_limit_size", out_forward_storage_total_limit_size)
+                  out_forward_require_ack_response =  parsedConfig[:log_collection_settings][:multi_tenancy][:out_forward_require_ack_response]
+                  updateDefaultConfigSetting("out_forward_require_ack_response", out_forward_require_ack_response)
+                  disable_throttle =  parsedConfig[:log_collection_settings][:multi_tenancy][:disable_throttle]
+                  updateDefaultConfigSetting("disable_throttle", disable_throttle)
+
+                  # namepsace to settings
+                  namespace_settings = parsedConfig[:log_collection_settings][:multi_tenancy][:namespace_settings]
+                  puts "config::INFO:multi_tenancy namespace_settings: #{namespace_settings}"
+                  if !namespace_settings.nil? && !namespace_settings.empty? &&
+                    namespace_settings.kind_of?(Array) && namespace_settings.length > 0 &&
+                    namespace_settings[0].kind_of?(String) # Checking only for the first element to be string because toml enforces the arrays to contain elements of same type
+                    namespace_settings.each do |entry|
+                        namespace, settings_str = entry.split(':')
+                        settings = settings_str.split(';').map { |s| s.split('=') }.to_h
+                        namespace = namespace.strip.downcase
+                        if @namespace_to_settings.key?(namespace)
+                          puts "config::WARN: Duplicate namespace settings found for namespace: #{namespace}, using the previous settings"
+                        else
+                          @namespace_to_settings[namespace] = settings
+                        end
+                    end
+                  end
+                  generateAzMonMultiTenantNamespaceConfig()
+
+
+                  # azmon multi-tenancy service buffer settings
+                  service_buffer_chunk_size = parsedConfig[:log_collection_settings][:multi_tenancy][:service_buffer_chunk_size]
+                  if !service_buffer_chunk_size.nil? && !service_buffer_chunk_size.empty?
+                      @azMonMultiTenancyServiceBufferChunkSize = service_buffer_chunk_size
+                  end
+                  service_buffer_max_size = parsedConfig[:log_collection_settings][:multi_tenancy][:service_buffer_max_size]
+                  if !service_buffer_max_size.nil? && !service_buffer_max_size.empty?
+                      @azMonMultiTenancyServiceBufferMaxSize = service_buffer_max_size
+                  end
+                else
+                  puts "config::WARN: Multi-tenancy log collection is enabled with advanced_mode_enabled but no namespaces provided, disabling advanced_mode_enabled"
+                  @isAzMonMultiTenancyLogCollectionAdvancedMode = false
                 end
               end
-              generateAzMonMultiTenantNamespaceConfig()
             end
-
-            # azmon multi-tenancy service buffer settings
-            service_buffer_chunk_size = parsedConfig[:log_collection_settings][:multi_tenancy][:service_buffer_chunk_size]
-            if !service_buffer_chunk_size.nil? && !service_buffer_chunk_size.empty?
-                @azMonMultiTenancyServiceBufferChunkSize = service_buffer_chunk_size
-            end
-            service_buffer_max_size = parsedConfig[:log_collection_settings][:multi_tenancy][:service_buffer_max_size]
-            if !service_buffer_max_size.nil? && !service_buffer_max_size.empty?
-                @azMonMultiTenancyServiceBufferMaxSize = service_buffer_max_size
-            end
+            puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled}, advanced_mode_enabled: #{@isAzMonMultiTenancyLogCollectionAdvancedMode} and namespaces: #{@azMonMultiTenantNamespaces} for Multi-tenancy log collection"
           end
-          puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled} and namespaces: #{@azMonMultiTenantNamespaces} for Multi-tenancy log collection"
         end
     rescue => errorStr
       ConfigParseErrorLogger.logError("config::error: Exception while reading config map settings for Multi-tenancy log collection - #{errorStr}, please check config map for errors")
@@ -595,6 +611,7 @@ if !file.nil?
   file.write("export AZMON_ANNOTATION_BASED_LOG_FILTERING=#{@annotationBasedLogFiltering}\n")
   if @isAzMonMultiTenancyLogCollectionEnabled
     file.write("export AZMON_MULTI_TENANCY_LOG_COLLECTION=#{@isAzMonMultiTenancyLogCollectionEnabled}\n")
+    file.write("export AZMON_MULTI_TENANCY_LOG_COLLECTION_ADVANCED_MODE=#{@isAzMonMultiTenancyLogCollectionAdvancedMode}\n")
     azMonMultiTenantNamespacesString = @azMonMultiTenantNamespaces.join(",")
     file.write("export AZMON_MULTI_TENANCY_NAMESPACES=#{azMonMultiTenantNamespacesString}\n")
     file.write("export AZMON_MULTI_TENANCY_STORAGE_MAX_CHUNKS_UP=#{@azMonMultiTenancyMaxStorageChunksUp}\n")
@@ -678,6 +695,8 @@ if !@os_type.nil? && !@os_type.empty? && @os_type.strip.casecmp("windows") == 0
     file.write(commands)
     if @isAzMonMultiTenancyLogCollectionEnabled
       commands = get_command_windows("AZMON_MULTI_TENANCY_LOG_COLLECTION", @isAzMonMultiTenancyLogCollectionEnabled)
+      file.write(commands)
+      commands = get_command_windows("AZMON_MULTI_TENANCY_LOG_COLLECTION_ADVANCED_MODE", @isAzMonMultiTenancyLogCollectionAdvancedMode)
       file.write(commands)
       azMonMultiTenantNamespacesString = @azMonMultiTenantNamespaces.join(",")
       commands = get_command_windows("AZMON_MULTI_TENANCY_NAMESPACES", azMonMultiTenantNamespacesString)
