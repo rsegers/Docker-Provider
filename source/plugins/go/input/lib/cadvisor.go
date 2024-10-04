@@ -606,7 +606,11 @@ func getContainerCpuMetricItemRate(metricInfo map[string]interface{}, hostName, 
 							telemetryProps["clusterenvvars"] = os.Getenv("AZMON_CLUSTER_COLLECT_ENV_VAR")
 							telemetryProps["clusterstderrlogs"] = os.Getenv("AZMON_CLUSTER_COLLECT_STDERR_LOGS")
 							telemetryProps["clusterstdoutlogs"] = os.Getenv("AZMON_CLUSTER_COLLECT_STDOUT_LOGS")
-							telemetryProps["clusterlogtailexcludepath"] = os.Getenv("AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH")
+							clusterlogtailexcludepath = os.Getenv("AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH")
+							// Limit the length of the clusterlogtailexcludepath to 1KB since it can impact telemetry ingestion
+							if len(clusterlogtailexcludepath) <= 1024 {
+								telemetryProps["clusterlogtailexcludepath"] = clusterlogtailexcludepath
+							}
 							telemetryProps["clusterLogTailPath"] = os.Getenv("AZMON_LOG_TAIL_PATH")
 							telemetryProps["clusterAgentSchemaVersion"] = os.Getenv("AZMON_AGENT_CFG_SCHEMA_VERSION")
 							telemetryProps["clusterCLEnrich"] = os.Getenv("AZMON_CLUSTER_CONTAINER_LOG_ENRICH")
@@ -1030,7 +1034,11 @@ func getContainerCpuMetricItems(metricInfo map[string]interface{}, hostName, met
 							telemetryProps["clusterenvvars"] = os.Getenv("AZMON_CLUSTER_COLLECT_ENV_VAR")
 							telemetryProps["clusterstderrlogs"] = os.Getenv("AZMON_CLUSTER_COLLECT_STDERR_LOGS")
 							telemetryProps["clusterstdoutlogs"] = os.Getenv("AZMON_CLUSTER_COLLECT_STDOUT_LOGS")
-							telemetryProps["clusterlogtailexcludepath"] = os.Getenv("AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH")
+							clusterlogtailexcludepath = os.Getenv("AZMON_CLUSTER_LOG_TAIL_EXCLUDE_PATH")
+							// Limit the length of the clusterlogtailexcludepath to 1KB since it can impact telemetry ingestion
+							if len(clusterlogtailexcludepath) <= 1024 {
+								telemetryProps["clusterlogtailexcludepath"] = clusterlogtailexcludepath
+							}
 							telemetryProps["clusterLogTailPath"] = os.Getenv("AZMON_LOG_TAIL_PATH")
 							telemetryProps["clusterAgentSchemaVersion"] = os.Getenv("AZMON_AGENT_CFG_SCHEMA_VERSION")
 							telemetryProps["clusterCLEnrich"] = os.Getenv("AZMON_CLUSTER_CONTAINER_LOG_ENRICH")
