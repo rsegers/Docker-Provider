@@ -82,6 +82,7 @@ COPY --from=builder /var/lib/logrotate /var/lib/logrotate
 COPY --from=builder /var/spool/cron /var/spool/cron
 
 # executables
+COPY --from=builder /usr/bin/sh /usr/bin/sh
 COPY --from=builder /usr/bin/bash /usr/bin/bash
 COPY --from=builder /usr/bin/ruby /usr/bin/ruby
 COPY --from=builder /usr/lib/ruby /usr/lib/ruby
@@ -98,6 +99,10 @@ COPY --from=builder /usr/bin/jq /usr/bin/jq
 COPY --from=builder /usr/bin/base64 /usr/bin/base64
 COPY --from=builder /usr/bin/fluentd /usr/bin/fluentd
 COPY --from=builder /usr/bin/update-ca-trust /usr/bin/update-ca-trust
+COPY --from=builder /usr/bin/p11-kit /usr/bin/p11-kit
+COPY --from=builder /usr/bin/trust /usr/bin/trust
+COPY --from=builder /usr/share/pki/ca-trust-source /usr/share/pki/ca-trust-source
+COPY --from=builder /usr/share/p11-kit/ /usr/share/p11-kit/
 
 # bash dependencies
 COPY --from=builder /lib/libreadline.so.8 /lib/
@@ -126,6 +131,11 @@ COPY --from=builder /lib/libcurl.so.4 /lib/libz.so.1 /lib/libc.so.6 /lib/libnght
 COPY --from=builder /usr/lib/libkrb5.so.3 /usr/lib/libk5crypto.so.3 /usr/lib/libcom_err.so.2 /usr/lib/libkrb5support.so.0 /usr/lib/libresolv.so.2 /usr/lib/
 # jq dependencies
 COPY --from=builder /lib/libjq.so.1 /lib/libc.so.6 /lib/libm.so.6 /lib/libonig.so.5 /lib/
+# update-ca-trust dependencies
+COPY --from=builder /lib/libp11-kit.so.0 /lib/libffi.so.8 /lib/libtasn1.so.6 /lib/
+COPY --from=builder /lib/pkcs11/p11-kit-trust.so /lib/pkcs11/
+RUN ln -s /lib/pkcs11/p11-kit-trust.so /lib/libnssckbi.so
+RUN ln -s /lib/libnssckbi.so /lib/p11-kit-trust.so
 
 # Do vulnerability scan in a seperate stage to avoid adding layer
 FROM distroless_image AS vulnscan
