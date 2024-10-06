@@ -2285,9 +2285,6 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 	Log("kubeMonAgentConfigEventFlushInterval = %d \n", kubeMonAgentConfigEventFlushInterval)
 	KubeMonAgentConfigEventsSendTicker = time.NewTicker(time.Minute * time.Duration(kubeMonAgentConfigEventFlushInterval))
 
-	Log("ContainerLogV2ExtensionConfigRefreshIntervalSeconds = %d \n", defaultContainerLogV2ExtensionConfigRefreshIntervalSeconds)
-	ContainerLogV2ExtensionConfigRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultContainerLogV2ExtensionConfigRefreshIntervalSeconds))
-
 	Log("Computer == %s \n", Computer)
 
 	ret, err := InitializeTelemetryClient(agentVersion)
@@ -2434,7 +2431,10 @@ func InitializePlugin(pluginConfPath string, agentVersion string) {
 		go refreshIngestionAuthToken()
 	}
 
-	if IsAzMonMultitenancyLogsServiceMode || (IsAzMonMultiTenancyLogCollectionEnabled && !IsAzMonMultiTenancyLogCollectionAdvancedModeEnabled) {
+	Log("IsAzMonMultitenancyLogsServiceMode: %v, IsAzMonMultiTenancyLogCollectionEnabled: %v, IsAzMonMultiTenancyLogCollectionAdvancedModeEnabled = %v \n", IsAzMonMultitenancyLogsServiceMode, IsAzMonMultiTenancyLogCollectionEnabled, IsAzMonMultiTenancyLogCollectionAdvancedModeEnabled)
+	if IsAADMSIAuthMode && (IsAzMonMultitenancyLogsServiceMode || (IsAzMonMultiTenancyLogCollectionEnabled && !IsAzMonMultiTenancyLogCollectionAdvancedModeEnabled)) {
+		Log("ContainerLogV2ExtensionConfigRefreshIntervalSeconds = %d \n", defaultContainerLogV2ExtensionConfigRefreshIntervalSeconds)
+		ContainerLogV2ExtensionConfigRefreshTicker = time.NewTicker(time.Second * time.Duration(defaultContainerLogV2ExtensionConfigRefreshIntervalSeconds))
 		go updateContainerLogV2ExtensionMaps(IsWindows)
 	}
 }
