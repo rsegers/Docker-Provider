@@ -1185,7 +1185,7 @@ if [ ! -e "/etc/config/kube.conf" ]; then
             if [ "${AZMON_MULTI_TENANCY_LOG_COLLECTION}" == "true" ]; then
                   if [ "${AZMON_MULTI_TENANCY_LOGS_SERVICE_MODE}" == "true" ]; then
                        fluentBitConfFile="fluent-bit-azmon-logs-svc.conf"
-                  elif [ -n "${AZMON_MULTI_TENANCY_NAMESPACES}" ]; then
+                  elif [ "${AZMON_MULTI_TENANCY_LOG_COLLECTION_ADVANCED_MODE}" == "true" ]; then
                         fluentBitConfFile="fluent-bit-azmon-multi-tenancy.conf"
                   fi
             elif [ "${GENEVA_LOGS_INTEGRATION}" == "true" -a "${GENEVA_LOGS_MULTI_TENANCY}" == "true" ]; then

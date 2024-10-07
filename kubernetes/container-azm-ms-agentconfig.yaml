@@ -16,9 +16,10 @@ data:
       #  [log_collection_settings.multi_tenancy]
       #    # High log scale MUST be enabled to use this feature. Refer to https://aka.ms/cihsmode for more details on high log scale mode
       #    enabled = true
-      #    # Below advanced settings MUST be provided when ama-logs-multitenancy service deployed through AKS Monitoring Addon
-      #    namespaces = ["app-team-1","app-team-2"]
-      #    namespace_settings = ["app-team-1:throttle_rate=2000","app-team-2:throttle_rate=5000"]
+      ###   Below advanced settings MUST be provided when ama-logs-multitenancy service deployed through AKS Monitoring Addon
+      ##    advanced_mode_enabled = false # Default value is false
+      ##    namespaces = ["app-team-1","app-team-2"]
+      ##    namespace_settings = ["app-team-1:throttle_rate=2000","app-team-2:throttle_rate=5000"]
 
        [log_collection_settings.stdout]
           # In the absense of this configmap, default value for enabled is true

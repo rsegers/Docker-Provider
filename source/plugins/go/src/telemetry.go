@@ -278,8 +278,10 @@ func SendContainerLogPluginMetrics(telemetryPushIntervalProperty string) {
 				}
 
 				isAzMonMultitenancyEnabled := os.Getenv("AZMON_MULTI_TENANCY_LOG_COLLECTION")
+				isAzMonMultitenancyAdvancedMode := os.Getenv("AZMON_MULTI_TENANCY_LOG_COLLECTION_ADVANCED_MODE")
 				if isAzMonMultitenancyEnabled != "" {
 					telemetryDimensions["isAzMonMultitenancyEnabled"] = isAzMonMultitenancyEnabled
+					telemetryDimensions["isAzMonMultitenancyAdvancedMode"] = isAzMonMultitenancyAdvancedMode
 					telemetryDimensions["containerLogV2ExtensionDCRCount"] = strconv.Itoa(containerLogV2ExtensionDCRCount)
 					telemetryDimensions["multitenantNamespaceCount"] = strconv.Itoa(multitenantNamespaceCount)
 				}
