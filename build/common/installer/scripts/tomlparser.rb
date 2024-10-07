@@ -468,13 +468,11 @@ def populateSettingValuesFromConfigMap(parsedConfig)
             multi_tenancy_enabled = parsedConfig[:log_collection_settings][:multi_tenancy][:enabled]
             if multi_tenancy_enabled
               @isAzMonMultiTenancyLogCollectionEnabled = multi_tenancy_enabled
-              puts "config::INFO: Using config map setting for multi_tenancy enabled: #{@isAzMonMultiTenancyLogCollectionEnabled}"
               # multi-tenancy advanced mode
               if !parsedConfig[:log_collection_settings][:multi_tenancy][:advanced_mode_enabled].nil?
                 advanced_mode_enabled = parsedConfig[:log_collection_settings][:multi_tenancy][:advanced_mode_enabled]
-                puts "config::INFO: Using config map setting for multi_tenancy advanced_mode_enabled: #{advanced_mode_enabled}"
               end
-              
+
               if advanced_mode_enabled
                 @isAzMonMultiTenancyLogCollectionAdvancedMode = advanced_mode_enabled
                 namespaces = parsedConfig[:log_collection_settings][:multi_tenancy][:namespaces]
@@ -552,7 +550,7 @@ def populateSettingValuesFromConfigMap(parsedConfig)
                 end
               end
             end
-            puts "config::INFO: Using config map setting enabled: #{@isAzMonMultiTenancyLogCollectionEnabled}, advanced_mode_enabled: #{@isAzMonMultiTenancyLogCollectionAdvancedMode} and namespaces: #{@azMonMultiTenantNamespaces} for Multi-tenancy log collection"
+            puts "config::INFO: Using config map setting multi_tenancy enabled: #{@isAzMonMultiTenancyLogCollectionEnabled}, advanced_mode_enabled: #{@isAzMonMultiTenancyLogCollectionAdvancedMode} and namespaces: #{@azMonMultiTenantNamespaces} for Multi-tenancy log collection"
           end
         end
     rescue => errorStr
