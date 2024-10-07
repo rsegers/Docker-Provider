@@ -65,8 +65,14 @@ func GetContainerInventoryRecords(podItem map[string]interface{}, batchTime stri
 		containerRuntime := ""
 		containerID := ""
 		if containerIDValue, ok := containerStatusMap["containerID"].(string); ok {
-			containerRuntime = strings.Split(containerIDValue, ":")[0]
-			containerID = strings.Split(containerIDValue, "//")[1]
+			containerIDParts := strings.Split(containerIDValue, "//")
+			if len(containerIDParts) > 1 {
+				containerID = containerIDParts[1]
+			}
+			containerRuntimeParts := strings.Split(containerIDValue, ":")
+			if len(containerRuntimeParts) > 0 {
+				containerRuntime = containerRuntimeParts[0]
+			}
 		}
 		containerInventoryRecord["InstanceID"] = containerID
 
