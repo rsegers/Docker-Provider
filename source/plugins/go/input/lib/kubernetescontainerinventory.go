@@ -362,7 +362,11 @@ func obtainContainerEnvironmentVarsFromPodsResponse(pod map[string]interface{}, 
 								value = hashMapValue[subField].(string)
 							}
 						} else {
-							value = pod[fields[0]].(map[string]interface{})[fields[1]].(string)
+							if podField, ok := pod[fields[0]].(map[string]interface{}); ok {
+								if fieldValue, ok := podField[fields[1]].(string); ok {
+									value = fieldValue
+								}
+							}
 						}
 					}
 				} else if resourceFieldRef, ok := valueFrom["resourceFieldRef"].(map[string]interface{}); ok && resourceFieldRef["resource"] != nil && resourceFieldRef["resource"].(string) != "" {
@@ -500,22 +504,24 @@ func GetContainerInventoryHelper(podList map[string]interface{}, namespaceFilter
 				for _, containerRecord := range containerInventoryRecords {
 					WriteContainerState(containerRecord)
 
-					computer := containerRecord["Computer"].(string)
-					if hostName == "" && computer != "" {
+					computer, ok := containerRecord["Computer"].(string)
+					if ok && hostName == "" && computer != "" {
 						hostName = computer
 					}
 
-					elementName := containerRecord["ElementName"].(string)
-					imageTag := containerRecord["ImageTag"].(string)
-					if addonTokenAdapterImageTag == "" && IsAADMSIAuthMode() &&
+					elementName, ok := containerRecord["ElementName"].(string)
+					imageTag, ok2 := containerRecord["ImageTag"].(string)
+					if ok && ok2 && addonTokenAdapterImageTag == "" && IsAADMSIAuthMode() &&
 						elementName != "" && strings.Contains(elementName, "_kube-system_") &&
 						strings.Contains(elementName, "addon-token-adapter_ama-logs") &&
 						imageTag != "" {
 						addonTokenAdapterImageTag = imageTag
 					}
 
-					instanceID := containerRecord["InstanceID"].(string)
-					containerIds = append(containerIds, instanceID)
+					instanceID, ok := containerRecord["InstanceID"].(string)
+					if ok {
+						containerIds = append(containerIds, instanceID)
+					}
 					containerInventory = append(containerInventory, containerRecord)
 				}
 			}
