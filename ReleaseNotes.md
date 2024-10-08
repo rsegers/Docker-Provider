@@ -16,7 +16,7 @@ additional questions or comments.
   - Golang - 1.22.5
   - Ruby - 3.1.3
   - MDSD - 1.31.4
-  - Telegraf - 1.29.4
+  - Telegraf - 1.29.4-8
   - Fluent-bit - 2.2.3
   - Fluentd - 1.16.3
 - Windows
