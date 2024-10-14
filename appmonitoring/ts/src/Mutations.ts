@@ -5,16 +5,11 @@
  */
 export class Mutations {
     // name of the init container
-    private static initContainerNameDotNet = "azure-monitor-auto-instrumentation-dotnet";
     private static initContainerNameJava = "azure-monitor-auto-instrumentation-java";
     private static initContainerNameNodeJs = "azure-monitor-auto-instrumentation-nodejs";
     
     // agent image
     private static agentImageCommonPrefix = "mcr.microsoft.com/applicationinsights";
-    private static agentImageDotNet = {
-        repositoryPath: "opentelemetry-auto-instrumentation/dotnet",
-        imageTag: "1.0.0-rc.3"
-    };
     private static agentImageNodeJs = {
         repositoryPath: "opentelemetry-auto-instrumentation/nodejs",
         imageTag: "3.2.4"
@@ -25,17 +20,14 @@ export class Mutations {
     };
     
     // path on agent image to copy from
-    private static imagePathDotNet = "/dotnet-tracer-home/.";
     private static imagePathJava = "/agents/java/.";
     private static imagePathNodeJs = "/agents/nodejs/.";
 
     // agent volume (where init containers copy agent binaries to)
-    private static agentVolumeDotNet = "azure-monitor-auto-instrumentation-volume-dotnet";
     private static agentVolumeJava = "azure-monitor-auto-instrumentation-volume-java";
     private static agentVolumeNodeJs = "azure-monitor-auto-instrumentation-volume-nodejs";
 
     // agent volume mount path (where customer app's runtime loads agents from)
-    private static agentVolumeMountPathDotNet = "/azure-monitor-auto-instrumentation-dotnet";
     private static agentVolumeMountPathJava = "/azure-monitor-auto-instrumentation-java";
     private static agentVolumeMountPathNodeJs = "/azure-monitor-auto-instrumentation-nodejs";
 
@@ -53,29 +45,6 @@ export class Mutations {
 
         for (let i = 0; i < platforms.length; i++) {
             switch (platforms[i] as AutoInstrumentationPlatforms) {
-                case AutoInstrumentationPlatforms.DotNet:
-                    containers.push({
-                        name: Mutations.initContainerNameDotNet,
-                        image: Mutations.generateImagePath(platforms[i], imageRepoPath),
-                        command: ["cp"],
-                        args: ["-a", Mutations.imagePathDotNet, Mutations.agentVolumeMountPathDotNet], // cp -a <source> <destination>
-                        volumeMounts: [{
-                            name: Mutations.agentVolumeDotNet,
-                            mountPath: Mutations.agentVolumeMountPathDotNet
-                        }],
-                        resources: {
-                            requests: {
-                                cpu: "100m",
-                                memory: "128Mi"
-                            },
-                            limits: {
-                                cpu: "2",
-                                memory: "1Gi"
-                            }
-                        }
-                    });
-                    break;
-
                 case AutoInstrumentationPlatforms.Java:
                     containers.push({
                         name: Mutations.initContainerNameJava,
@@ -202,52 +171,6 @@ ${ownerUidAttribute}`
         // platform-specific environment variables
         for (let i = 0; i < platforms.length; i++) {
             switch (platforms[i] as AutoInstrumentationPlatforms) {
-                case AutoInstrumentationPlatforms.DotNet:
-                    returnValue.push(...[
-                        {
-                            name: "OTEL_DOTNET_AUTO_LOG_DIRECTORY",
-                            value: Mutations.agentLogsVolumeMountPath,
-                            platformSpecific: platforms[i]
-                        },
-                        {
-                            name: "DOTNET_STARTUP_HOOKS",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/net/OpenTelemetry.AutoInstrumentation.StartupHook.dll`,
-                            platformSpecific: platforms[i]
-                        },
-                        {
-                            name: "ASPNETCORE_HOSTINGSTARTUPASSEMBLIES",
-                            value: "OpenTelemetry.AutoInstrumentation.AspNetCoreBootstrapper",
-                            platformSpecific: platforms[i]
-                        },
-                        {
-                            name: "DOTNET_ADDITIONAL_DEPS",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/AdditionalDeps`,
-                            platformSpecific: platforms[i]
-                        },
-                        {
-                            name: "DOTNET_SHARED_STORE",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/store`,
-                            platformSpecific: platforms[i]
-                        },
-                        {
-                            name: "OTEL_DOTNET_AUTO_HOME",
-                            value: `${Mutations.agentVolumeMountPathDotNet}/`,
-                            platformSpecific: platforms[i]
-                        },
-                        {
-                            name: "OTEL_DOTNET_AUTO_PLUGINS",
-                            value: "Azure.Monitor.OpenTelemetry.AutoInstrumentation.AzureMonitorPlugin, Azure.Monitor.OpenTelemetry.AutoInstrumentation, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null",
-                            platformSpecific: platforms[i]
-                        },
-                        {
-                            name: "OTEL_DOTNET_AUTO_LOGS_ENABLED",
-                            value: "false",
-                            platformSpecific: platforms[i],
-                            doNotSet: !disableAppLogs
-                        }]
-                    );
-                    break;
-
                 case AutoInstrumentationPlatforms.Java:
                     {
                         returnValue.push(...[{
@@ -296,13 +219,6 @@ ${ownerUidAttribute}`
 
         for (let i = 0; i < platforms.length; i++) {
             switch (platforms[i] as AutoInstrumentationPlatforms) {
-                case AutoInstrumentationPlatforms.DotNet:
-                    volumeMounts.push({
-                        name: Mutations.agentVolumeDotNet,
-                        mountPath: Mutations.agentVolumeMountPathDotNet
-                    });
-                    break;
-
                 case AutoInstrumentationPlatforms.Java:
                     volumeMounts.push({
                         name: Mutations.agentVolumeJava,
@@ -325,7 +241,6 @@ ${ownerUidAttribute}`
         let logVolumeMounted = false;
         for (let i = 0; i < platforms.length; i++) {
             switch (platforms[i] as AutoInstrumentationPlatforms) {
-                case AutoInstrumentationPlatforms.DotNet:
                 case AutoInstrumentationPlatforms.Java:
                 case AutoInstrumentationPlatforms.NodeJs:
                     if(!logVolumeMounted) {
@@ -350,13 +265,6 @@ ${ownerUidAttribute}`
 
         for (let i = 0; i < platforms.length; i++) {
             switch (platforms[i] as AutoInstrumentationPlatforms) {
-                case AutoInstrumentationPlatforms.DotNet:
-                    volumes.push({
-                        name: Mutations.agentVolumeDotNet,
-                        emptyDir: {}
-                    });
-                    break;
-
                 case AutoInstrumentationPlatforms.Java:
                     volumes.push({
                         name: Mutations.agentVolumeJava,
@@ -379,7 +287,6 @@ ${ownerUidAttribute}`
         let logVolumeAdded = false;
         for (let i = 0; i < platforms.length; i++) {
             switch (platforms[i] as AutoInstrumentationPlatforms) {
-                case AutoInstrumentationPlatforms.DotNet:
                 case AutoInstrumentationPlatforms.Java:
                 case AutoInstrumentationPlatforms.NodeJs:
                     if(!logVolumeAdded) {
@@ -404,8 +311,6 @@ ${ownerUidAttribute}`
         }
         
         switch (platform as AutoInstrumentationPlatforms) {
-            case AutoInstrumentationPlatforms.DotNet:
-                return `${imagePath ?? Mutations.agentImageCommonPrefix}/${Mutations.agentImageDotNet.repositoryPath}:${Mutations.agentImageDotNet.imageTag}`;
             case AutoInstrumentationPlatforms.Java:
                 return `${imagePath ?? Mutations.agentImageCommonPrefix}/${Mutations.agentImageJava.repositoryPath}:${Mutations.agentImageJava.imageTag}`;
             case AutoInstrumentationPlatforms.NodeJs:

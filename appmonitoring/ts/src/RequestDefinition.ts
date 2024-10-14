@@ -30,7 +30,6 @@ export interface IInstrumentationState {
 export const InstrumentationAnnotationName = "monitor.azure.com/instrumentation";
 export const EnableApplicationLogsAnnotationName = "monitor.azure.com/enable-application-logs";
 export interface IAnnotations {
-    "instrumentation.opentelemetry.io/inject-dotnet"?: string;
     "instrumentation.opentelemetry.io/inject-java"?: string;
     "instrumentation.opentelemetry.io/inject-nodejs"?: string;
 
@@ -176,7 +175,6 @@ export class PodInfo {
 }
 
 export enum AutoInstrumentationPlatforms {
-    DotNet = "DotNet",
     Java = "Java",
     NodeJs = "NodeJs"
 }
