@@ -18,7 +18,7 @@
       "value": true
     },
     "enableSyslog": {
-      "value": false
+      "value": true
     },
     "syslogLevels": {
       "value": [

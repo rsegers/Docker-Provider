@@ -471,7 +471,7 @@
                                 "id": "[parameters('aksResourceId')]",
                                 "addonProfiles": {
                                     "omsagent": {
-                                        "enabled": true,
+                                        "enabled": false,
                                         "config": {
                                             "logAnalyticsWorkspaceResourceID": "[parameters('workspaceResourceId')]",
                                             "useAADAuth": "true"
