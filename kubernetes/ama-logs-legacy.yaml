@@ -307,7 +307,7 @@ data:
   WSID: "VALUE_WSID"
   KEY: "VALUE_KEY"
   #Below Setting required Only for non Public cloud testing
-  # DOMAIN: "Base64 encoded value of Log analytics domain name"
+  DOMAIN: "VALUE_LOG_ANALYTICS_DOMAIN"
   #Below settings required Only for HTTP Proxy testing
   # PROXY: "Base64 encoded value of HTTP(s) Proxy endpoint"
   # PROXY.CERT: "Base64 encoded value of Proxy trusted CA cert"
