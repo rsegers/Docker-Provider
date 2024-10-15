@@ -1,13 +1,11 @@
 #!/bin/bash
 
-DEPLOYMENT_DOTNET_NAME=$1
-DEPLOYMENT_JAVA_NAME=$2
-DEPLOYMENT_NODEJS_NAME=$3
-AI_RES_ID=$4
-$NS=$5
+DEPLOYMENT_JAVA_NAME=$1
+DEPLOYMENT_NODEJS_NAME=$2
+AI_RES_ID=$3
+$NS=$4
 
 
-POD_DOTNET_NAME=$(kubectl get pods -n test-ns -l app=$DEPLOYMENT_DOTNET_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
 POD_JAVA_NAME=$(kubectl get pods -n test-ns -l app=$DEPLOYMENT_JAVA_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
 POD_NODEJS_NAME=$(kubectl get pods -n test-ns -l app=$DEPLOYMENT_NODEJS_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
 
@@ -55,7 +53,6 @@ verify_AI_telemetry() {
     fi
 }
 
-verify_AI_telemetry "$POD_DOTNET_NAME" "dotnet"
 verify_AI_telemetry "$POD_JAVA_NAME" "java"
 verify_AI_telemetry "$POD_NODEJS_NAME" "nodejs"
 

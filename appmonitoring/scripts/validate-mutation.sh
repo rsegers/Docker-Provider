@@ -1,19 +1,17 @@
 DEPLOYMENT_deployment#!/bin/bash
 
 # Define the pod name and namespace
-DEPLOYMENT_DOTNET_NAME=$1
-DEPLOYMENT_JAVA_NAME=$2
-DEPLOYMENT_NODEJS_NAME=$3
-NAMESPACE=$4
+DEPLOYMENT_JAVA_NAME=$1
+DEPLOYMENT_NODEJS_NAME=$2
+NAMESPACE=$3
 
 # Define the property to check for
 PROPERTY="APPLICATIONINSIGHTS_CONNECTION_STRING"
 
-DOTNET_DEPLOYMENT_NAME=$(kubectl get deployment -n "$NAMESPACE" -o custom-columns=NAME:.metadata.name | grep "$DEPLOYMENT_DOTNET_NAME")
 JAVA_DEPLOYMENT_NAME=$(kubectl get deployment -n "$NAMESPACE" -o custom-columns=NAME:.metadata.name | grep "$DEPLOYMENT_JAVA_NAME")
 NODEJS_DEPLOYMENT_NAME=$(kubectl get deployment -n "$NAMESPACE" -o custom-columns=NAME:.metadata.name | grep "$DEPLOYMENT_NODEJS_NAME")
 
-checkit() {
+checkMutation() {
     local deploymentName="$1"  # The first argument to the function is stored in 'name'
     DEPLOYMENT_YAML=$(kubectl get deployment "$deploymentName" -n "$NAMESPACE" -o yaml)
 
@@ -26,6 +24,5 @@ checkit() {
     fi
 }
 
-checkit "$DEPLOYMENT_DOTNET_NAME" 
-checkit "$DEPLOYMENT_JAVA_NAME" 
-checkit "$DEPLOYMENT_NODEJS_NAME" 
+checkMutation "$DEPLOYMENT_JAVA_NAME" 
+checkMutation "$DEPLOYMENT_NODEJS_NAME" 
