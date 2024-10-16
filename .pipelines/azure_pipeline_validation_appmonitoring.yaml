@@ -56,8 +56,6 @@ jobs:
     fullImageName: ${{ variables.repoImageName }}:$(imageTag)
     javaTestAppImageName: 'aicommon.azurecr.io/demoaks-java-app:latest'
     javaTestAppName: 'test-app-java'
-    dotnetTestAppImageName: 'aicommon.azurecr.io/demoaks-dotnet-app:latest'
-    dotnetTestAppName: 'test-app-dotnet'
     nodeTestAppImageName: 'aicommon.azurecr.io/demoaks-nodejs-app:latest'
     nodeTestAppName: 'test-app-nodejs'
     testNamespace: 'test-ns'
@@ -205,16 +203,13 @@ jobs:
         az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
 
         export JAVA_TEST_IMAGE_NAME=${{ variables.javaTestAppImageName }}
-        export DOTNET_TEST_IMAGE_NAME=${{ variables.dotnetTestAppImageName }}
         export NODEJS_TEST_IMAGE_NAME=${{ variables.nodeTestAppImageName }}
         export TEST_NS="${{ variables.testNamespace }}"
         export AI_CONNECTION_STRING="${{ variables.aiConnectionString }}"
-        export DOTNET_TEST_APP_NAME="${{ variables.dotnetTestAppName }}"
         export JAVA_TEST_APP_NAME="${{ variables.javaTestAppName }}"
         export NODEJS_TEST_APP_NAME="${{ variables.nodeTestAppName }}"
 
         cat java-test-app.yaml | envsubst | kubectl delete -f -
-        cat dotnet-test-app.yaml | envsubst | kubectl delete -f -
         cat node-test-app.yaml | envsubst | kubectl delete -f -
         cat appmonitoring-cr.yaml | envsubst | kubectl delete -f -
 
@@ -228,7 +223,6 @@ jobs:
         sleep 10
 
         cat java-test-app.yaml | envsubst | kubectl apply -f -
-        cat dotnet-test-app.yaml | envsubst | kubectl apply -f -
         cat node-test-app.yaml | envsubst | kubectl apply -f -
 
         echo "Wait for 60s for charts to be applied..."
@@ -247,7 +241,7 @@ jobs:
         az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }}
         
         sudo chmod u+x ./validate-mutation.sh
-        ./validate-mutation.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "test-ns"
+        ./validate-mutation.sh "test-app-java" "test-app-nodejs" "test-ns"
 
   - task: AzureCLI@2
     displayName: "Check test apps are sending telemetry to AI"
@@ -260,7 +254,6 @@ jobs:
         pwd
         az account set --subscription ${{ variables.subscription }}
         az aks get-credentials --resource-group ${{ variables.AKSResourceGroup }} --name ${{ variables.AKSResourceName }} 
-        export DOTNET_TEST_APP_NAME="${{ variables.dotnetTestAppName }}"
         export JAVA_TEST_APP_NAME="${{ variables.javaTestAppName }}"
         export NODEJS_TEST_APP_NAME="${{ variables.nodeTestAppName }}"
 
@@ -268,7 +261,7 @@ jobs:
         sleep 180
         
         sudo chmod u+x ./validate_ai.sh
-        ./validate_ai.sh "test-app-dotnet" "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}" "test-ns"
+        ./validate_ai.sh "test-app-java" "test-app-nodejs" "${{ variables.aiResourceId }}" "test-ns"
 
   - task: AzureCLI@2
     displayName: "Retag the image as ready to deploy"

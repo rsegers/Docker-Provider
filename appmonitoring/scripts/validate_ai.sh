@@ -1,15 +1,13 @@
 #!/bin/bash
 
-DEPLOYMENT_DOTNET_NAME=$1
-DEPLOYMENT_JAVA_NAME=$2
-DEPLOYMENT_NODEJS_NAME=$3
-AI_RES_ID=$4
-$NS=$5
+DEPLOYMENT_JAVA_NAME=$1
+DEPLOYMENT_NODEJS_NAME=$2
+AI_RES_ID=$3
+NAMESPACE=$4
 
 
-POD_DOTNET_NAME=$(kubectl get pods -n test-ns -l app=$DEPLOYMENT_DOTNET_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
-POD_JAVA_NAME=$(kubectl get pods -n test-ns -l app=$DEPLOYMENT_JAVA_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
-POD_NODEJS_NAME=$(kubectl get pods -n test-ns -l app=$DEPLOYMENT_NODEJS_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
+POD_JAVA_NAME=$(kubectl get pods -n "$NAMESPACE" -l app=$DEPLOYMENT_JAVA_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
+POD_NODEJS_NAME=$(kubectl get pods -n "$NAMESPACE" -l app=$DEPLOYMENT_NODEJS_NAME --no-headers -o custom-columns=":metadata.name" | head -n 1)
 
 
 # Get an access token
@@ -17,7 +15,7 @@ result_rsp=$(curl 'http://169.254.169.254/metadata/identity/oauth2/token?api-ver
 # echo "Result: $result_rsp"
 access_token=$(echo $result_rsp | jq -r '.access_token')
 
-echo $AI_RES_ID
+echo "$AI_RES_ID"
 
 # Define your variables
 url="https://api.loganalytics.io/v1$AI_RES_ID/query"
@@ -35,7 +33,7 @@ verify_AI_telemetry() {
         }
     }";
 
-    echo $json_body
+    echo "$json_body"
 
     # Make the POST request
     response=$(curl -s -X POST $url \
@@ -55,7 +53,6 @@ verify_AI_telemetry() {
     fi
 }
 
-verify_AI_telemetry "$POD_DOTNET_NAME" "dotnet"
 verify_AI_telemetry "$POD_JAVA_NAME" "java"
 verify_AI_telemetry "$POD_NODEJS_NAME" "nodejs"
 

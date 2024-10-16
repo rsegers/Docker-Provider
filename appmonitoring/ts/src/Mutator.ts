@@ -145,11 +145,10 @@ export class Mutator {
      * Based on the admission review's inject-* annotations and available CRs, picks a CR to be applied to the admission review
      */
     private pickCR(): string {
-        const injectDotNetAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-dotnet"];
         const injectJavaAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-java"];
         const injectNodeJsAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-nodejs"];
 
-        const injectAnnotationValues: string[] = [injectDotNetAnnotation, injectJavaAnnotation, injectNodeJsAnnotation];
+        const injectAnnotationValues: string[] = [injectJavaAnnotation, injectNodeJsAnnotation];
 
         // if any of the annotations contain a value other than "true" or "false", that must be the same value for all annotations, we can't apply multiple CRs to the same pod
         const specificCRNames: string[] = injectAnnotationValues.filter(value => value && value.toLowerCase() != "true" && value.toLowerCase() != "false", this);
@@ -171,11 +170,10 @@ export class Mutator {
 
         // assuming annotation set is valid
         // annotations are on the pod template spec
-        const injectDotNetAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-dotnet"];
         const injectJavaAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-java"];
         const injectNodeJsAnnotation: string = this.admissionReview.request.object.spec.template.metadata?.annotations?.["instrumentation.opentelemetry.io/inject-nodejs"];
 
-        const injectAnnotationValues: string[] = [injectDotNetAnnotation, injectJavaAnnotation, injectNodeJsAnnotation];
+        const injectAnnotationValues: string[] = [injectJavaAnnotation, injectNodeJsAnnotation];
 
         if(injectAnnotationValues.filter(value => value).length == 0) {
             // no annotations specified, use platform list from the CR
@@ -184,10 +182,6 @@ export class Mutator {
         }
 
         const platforms: AutoInstrumentationPlatforms[] = [];
-
-        if (injectDotNetAnnotation && injectDotNetAnnotation.toLowerCase() !== "false") {
-            platforms.push(AutoInstrumentationPlatforms.DotNet);
-        }
 
         if (injectJavaAnnotation && injectJavaAnnotation.toLowerCase() !== "false") {
             platforms.push(AutoInstrumentationPlatforms.Java);

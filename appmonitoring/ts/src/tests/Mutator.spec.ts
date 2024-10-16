@@ -69,7 +69,7 @@ describe("Mutator", () => {
             },
             spec: {
                 settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
                 },
                 destination: {
                     applicationInsightsConnectionString: "InstrumentationKey=default"
@@ -85,7 +85,7 @@ describe("Mutator", () => {
             },
             spec: {
                 settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
                 },
                 destination: {
                     applicationInsightsConnectionString: "InstrumentationKey=cr1"
@@ -118,7 +118,7 @@ describe("Mutator", () => {
 
         expect(annotationValue.crName).toBe(DefaultInstrumentationCRName);
         expect(annotationValue.crResourceVersion).toBe("1");
-        expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]);
+        expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]);
     });
 
     it("Mutating deployment - no inject- annotations, default CR not found", async () => {
@@ -140,7 +140,7 @@ describe("Mutator", () => {
             },
             spec: {
                 settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
                 },
                 destination: {
                     applicationInsightsConnectionString: "InstrumentationKey=cr1"
@@ -178,36 +178,8 @@ describe("Mutator", () => {
         // invalid sets of annotations, all pointing to multiple CRs
         const invalidAnnotationSets: IAnnotations[] = [
             {
-                "instrumentation.opentelemetry.io/inject-dotnet": "cr1",
-                "instrumentation.opentelemetry.io/inject-java": "cr2"
-            },
-            {
-                "instrumentation.opentelemetry.io/inject-dotnet": "cr1",
-                "instrumentation.opentelemetry.io/inject-nodejs": "cr2"
-            },
-            {
                 "instrumentation.opentelemetry.io/inject-java": "cr1",
                 "instrumentation.opentelemetry.io/inject-nodejs": "cr2"
-            },
-            {
-                "instrumentation.opentelemetry.io/inject-dotnet": "cr1",
-                "instrumentation.opentelemetry.io/inject-java": "cr2",
-                "instrumentation.opentelemetry.io/inject-nodejs": "cr3"
-            },
-            {
-                "instrumentation.opentelemetry.io/inject-dotnet": "true",
-                "instrumentation.opentelemetry.io/inject-java": "cr2",
-                "instrumentation.opentelemetry.io/inject-nodejs": "cr3"
-            },
-            {
-                "instrumentation.opentelemetry.io/inject-dotnet": "cr1",
-                "instrumentation.opentelemetry.io/inject-java": "true",
-                "instrumentation.opentelemetry.io/inject-nodejs": "cr3"
-            },
-            {
-                "instrumentation.opentelemetry.io/inject-dotnet": "cr1",
-                "instrumentation.opentelemetry.io/inject-java": "cr2",
-                "instrumentation.opentelemetry.io/inject-nodejs": "true"
             }
         ];
        
@@ -240,7 +212,7 @@ describe("Mutator", () => {
             },
             spec: {
                 settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.NodeJs]
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
                 },
                 destination: {
                     applicationInsightsConnectionString: "InstrumentationKey=default"
@@ -275,8 +247,7 @@ describe("Mutator", () => {
 
         const metadata: IMetadata = <IMetadata>{
             annotations: {
-                "instrumentation.opentelemetry.io/inject-dotnet": "false",
-                "instrumentation.opentelemetry.io/inject-java": "true",
+                "instrumentation.opentelemetry.io/inject-java": "false",
                 "instrumentation.opentelemetry.io/inject-nodejs": "true"
             }
         };
@@ -304,7 +275,7 @@ describe("Mutator", () => {
         
         expect(annotationValue.crName).toBe(DefaultInstrumentationCRName);
         expect(annotationValue.crResourceVersion).toBe("1");
-        expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]);
+        expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.NodeJs]);
     });
 
     it("Mutating deployment - per language inject - annotations with specific CR", async () => {
@@ -333,7 +304,7 @@ describe("Mutator", () => {
             },
             spec: {
                 settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.DotNet]
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java]
                 },
                 destination: {
                     applicationInsightsConnectionString: "InstrumentationKey=cr1"
@@ -352,7 +323,6 @@ describe("Mutator", () => {
 
         const metadata: IMetadata = <IMetadata>{
             annotations: {
-                "instrumentation.opentelemetry.io/inject-dotnet": "cr1",
                 "instrumentation.opentelemetry.io/inject-java": "false",
                 "instrumentation.opentelemetry.io/inject-nodejs": "cr1"
             }
@@ -381,7 +351,7 @@ describe("Mutator", () => {
         
         expect(annotationValue.crName).toBe(cr1.metadata.name);
         expect(annotationValue.crResourceVersion).toBe("1");
-        expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.DotNet, AutoInstrumentationPlatforms.NodeJs]);
+        expect(annotationValue.platforms).toStrictEqual([AutoInstrumentationPlatforms.NodeJs]);
     });
 
     it("Mutating deployment - per language inject - single inject - annotations is set to false", async () => {
@@ -394,7 +364,7 @@ describe("Mutator", () => {
             },
             spec: {
                 settings: {
-                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.Java, AutoInstrumentationPlatforms.NodeJs]
+                    autoInstrumentationPlatforms: [AutoInstrumentationPlatforms.NodeJs]
                 },
                 destination: {
                     applicationInsightsConnectionString: "InstrumentationKey=default"
@@ -412,7 +382,7 @@ describe("Mutator", () => {
 
         const metadata: IMetadata = <IMetadata>{
             annotations: {
-                "instrumentation.opentelemetry.io/inject-dotnet": "false"
+                "instrumentation.opentelemetry.io/inject-java": "false"
             }
         };
 
