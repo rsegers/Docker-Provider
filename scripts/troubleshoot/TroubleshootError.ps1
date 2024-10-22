@@ -722,6 +722,12 @@ else {
     }
     else {
 
+        Write-Host('Verifying shared keys are allowed to used on the workspace') -ForegroundColor Green
+        if ($WorkspaceInformation.WorkspaceFeatures.DisableLocalAuth -eq $true) {
+            Write-Host("The Log Analytics Workspace does not allow the usage of shared keys. Set 'disableLocalAuth' to 'false' on the workspace or enable AADAuth on AKS monitoring addon.") -ForegroundColor Red
+        }
+	Write-Host("")
+
         try {
             $WorkspaceIPDetails = Get-AzOperationalInsightsIntelligencePacks -ResourceGroupName $workspaceResourceGroupName -WorkspaceName $workspaceName -ErrorAction Stop -WarningAction silentlyContinue
             Write-Host("Successfully fetched workspace IP details...") -ForegroundColor Green
